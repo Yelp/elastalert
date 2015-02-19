@@ -1,0 +1,7 @@
+config.yaml
+.tox/
+.coverage
+__pycache__/
+*.pyc
+virtualenv_run/
+*.egg-info/

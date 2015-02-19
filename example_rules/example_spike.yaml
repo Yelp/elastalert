@@ -1,0 +1,67 @@
+# Alert when there is a sudden spike in the volume of events 
+
+# (Required) 
+# Elasticsearch host
+es_host: elasticsearch.example.com
+
+# (Required) 
+# Elasticsearch port
+es_port: 14900
+
+# (Required) 
+# Rule name, must be unique
+name: Event spike
+
+# (Required) 
+# Type of alert.
+# the spike rule type compares the number of events within two sliding windows to each other
+type: spike
+
+# (Required) 
+# Index to search, wildcard supported
+index: logstash-*
+
+# (Required, spike specific)
+# The minimum number of events to be used as a baseline
+# For example, if there are only 2 eventss between 12:00 and 2:00, and 20 between 2:00 and 4:00
+# This rule will ignore that 'spike', because the reference window did not meet the threshold of 5
+threshold: 5
+
+# (Required, spike specific)
+# The size of the window used to determine average event frequency
+# We use two sliding windows each of size timeframe
+# To measure the 'reference' rate and the current rate
+timeframe: 
+  hours: 2
+
+# (Required, spike specific)
+# The spike rule matches when the current window contains spike_height times more
+# events than the reference window
+spike_height: 3
+
+# (Required, spike specific)
+# The direction of the spike
+# 'up' matches only spikes, 'down' matches only troughs
+# 'both' matches both spikes and troughs
+spike_type: "up"
+
+# (Required)
+# A list of elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter: 
+- query:
+    query_string:
+      query: "field: value"
+- type:
+    value: "some_doc_type"
+
+# (Required)
+# The alert is use when a match is found
+alert: 
+- "email"
+
+# (required, email specific)
+# a list of email addresses to send alerts to
+email: 
+- "elastalert@example.com"

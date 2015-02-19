@@ -1,0 +1,30 @@
+[unix_http_server]
+file=/var/run/elastalert_supervisor.sock
+
+[supervisord]
+logfile=/var/log/elastalert_supervisord.log
+logfile_maxbytes=1MB
+logfile_backups=2
+loglevel=debug
+nodaemon=false
+directory=%(here)s
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix:///var/run/elastalert_supervisor.sock
+
+[program:elastalert]
+command =
+        python elastalert.py
+               --verbose
+process_name=elastalert
+autorestart=true
+startsecs=15
+stopsignal=INT
+stopasgroup=true
+killasgroup=true
+stderr_logfile=/var/log/elastalert_stderr.log
+stderr_logfile_maxbytes=5MB
+

@@ -1,0 +1,7 @@
+# Example jira_account information file
+# You should make sure that this file is not globally readable or version controlled! (Except for this example)
+
+# Jira username
+user: elastalert-jira
+# Jira password
+password: p455w0rd

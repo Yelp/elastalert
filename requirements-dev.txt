@@ -1,0 +1,8 @@
+-r requirements.txt
+mock
+coverage
+flake8
+setuptools
+pytest
+pre-commit
+tox
