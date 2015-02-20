@@ -4,13 +4,12 @@ import hashlib
 import logging
 import os
 
-from staticconf.loader import yaml_loader
-import yaml
-import yaml.scanner
-
 import alerts
 import enhancements
 import ruletypes
+import yaml
+import yaml.scanner
+from staticconf.loader import yaml_loader
 from util import EAException
 
 

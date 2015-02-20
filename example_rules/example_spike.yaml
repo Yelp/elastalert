@@ -1,23 +1,23 @@
-# Alert when there is a sudden spike in the volume of events 
+# Alert when there is a sudden spike in the volume of events
 
-# (Required) 
+# (Required)
 # Elasticsearch host
 es_host: elasticsearch.example.com
 
-# (Required) 
+# (Required)
 # Elasticsearch port
 es_port: 14900
 
-# (Required) 
+# (Required)
 # Rule name, must be unique
 name: Event spike
 
-# (Required) 
+# (Required)
 # Type of alert.
 # the spike rule type compares the number of events within two sliding windows to each other
 type: spike
 
-# (Required) 
+# (Required)
 # Index to search, wildcard supported
 index: logstash-*
 
@@ -31,7 +31,7 @@ threshold: 5
 # The size of the window used to determine average event frequency
 # We use two sliding windows each of size timeframe
 # To measure the 'reference' rate and the current rate
-timeframe: 
+timeframe:
   hours: 2
 
 # (Required, spike specific)
@@ -49,7 +49,7 @@ spike_type: "up"
 # A list of elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
 # For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
-filter: 
+filter:
 - query:
     query_string:
       query: "field: value"
@@ -58,10 +58,10 @@ filter:
 
 # (Required)
 # The alert is use when a match is found
-alert: 
+alert:
 - "email"
 
 # (required, email specific)
 # a list of email addresses to send alerts to
-email: 
+email:
 - "elastalert@example.com"

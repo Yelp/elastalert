@@ -7,8 +7,8 @@ import pytest
 
 import elastalert.alerts
 import elastalert.ruletypes
-from elastalert.config import load_rules
 from elastalert.config import load_configuration
+from elastalert.config import load_rules
 from elastalert.util import EAException
 
 

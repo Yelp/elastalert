@@ -1,4 +1,5 @@
 import json
+
 from elastalert.kibana import filters_from_dashboard
 
 

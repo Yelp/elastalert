@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import datetime
+
 import argparse
 
 from elastalert.config import load_configuration

@@ -1,23 +1,23 @@
 # Alert when the rate of events exceeds a threshold
 
-# (Required) 
+# (Required)
 # Elasticsearch host
 es_host: elasticsearch.example.com
 
-# (Required) 
+# (Required)
 # Elasticsearch port
 es_port: 14900
 
-# (Required) 
+# (Required)
 # Rule name, must be unique
 name: Example rule
 
-# (Required) 
+# (Required)
 # Type of alert.
 # the frequency rule type alerts when num_events events occur with timeframe time
 type: frequency
 
-# (Required) 
+# (Required)
 # Index to search, wildcard supported
 index: logstash-*
 
@@ -27,23 +27,23 @@ num_events: 50
 
 # (Required, frequency specific)
 # num_events must occur within this amount of time to trigger an alert
-timeframe: 
+timeframe:
   hours: 4
 
 # (Required)
 # A list of elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
 # For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
-filter: 
+filter:
 - term:
     some_field: "some_value"
 
 # (Required)
 # The alert is use when a match is found
-alert: 
+alert:
 - "email"
 
 # (required, email specific)
 # a list of email addresses to send alerts to
-email: 
+email:
 - "elastalert@example.com"

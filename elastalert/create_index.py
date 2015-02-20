@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
-from elasticsearch.client import Elasticsearch
 import json
 import os
+
 import yaml
+from elasticsearch.client import Elasticsearch
 
 
 def main():

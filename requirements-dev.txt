@@ -1,8 +1,8 @@
 -r requirements.txt
-mock
 coverage
 flake8
-setuptools
-pytest
+mock
 pre-commit
+pytest
+setuptools
 tox
