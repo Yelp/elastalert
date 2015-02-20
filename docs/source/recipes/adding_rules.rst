@@ -63,7 +63,7 @@ to clear any state that may be obsolete as of ``timestamp``. ``timestamp`` is an
 
 
 Tutorial
-================
+--------
 
 As an example, we are going to create a rule type for detecting suspicious logins. Lets imagine the data we are querying is login
 events that contains IP address, username and a timestamp. Our configuration will take a list of usernames and a time range

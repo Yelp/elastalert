@@ -47,8 +47,8 @@ This function is called to get information about the alert to save back to Elast
 return a dictionary, which is uploaded directly to Elasticsearch, and should contain useful information
 about the alert such as the type, recipients, parameters, etc.
 
-Tutorial: Creating a new alert
-==============================
+Tutorial
+--------
 
 Let's create a new alert that will write alerts to a local output file. First,
 create a modules folder in the base ElastAlert folder:

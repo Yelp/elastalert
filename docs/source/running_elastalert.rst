@@ -1,6 +1,6 @@
 .. _tutorial:
 
-Running ElastAlert For The First Time
+Running ElastAlert for the First Time
 =====================================
 
 Requirements
@@ -11,7 +11,7 @@ Requirements
 - ISO8601 timestamped data
 - Python 2.6
 
-Downloading And Configuring
+Downloading and Configuring
 ---------------------------
 
 First, clone the ElastAlert repository::
@@ -40,7 +40,7 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 Save the file as ``config.yaml``
 
-Setting up Elasticsearch
+Setting Up Elasticsearch
 ------------------------
 
 ElastAlert saves information and metadata about its queries and its alerts back to Elasticsearch. This is useful for auditing, debugging, and it allows ElastAlert to restart and resume exactly where it left off. This is not required for ElastAlert to run, but highly recommended.

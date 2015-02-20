@@ -1,5 +1,5 @@
-ElastAlert monitoring framework
-*******************************
+ElastAlert - Easy & Flexible Alerting With ElasticSearch
+********************************************************
 
 ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
 
@@ -29,7 +29,7 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 - "Match on any event matching a given filter" (``any`` type)
 - "Match when a field has two different values within some time" (``change`` type)
 
-Currently, we only have support built in for two alert types:
+Currently, we have support built in for two alert types:
 
 - Email
 - JIRA
