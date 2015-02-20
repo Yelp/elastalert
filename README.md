@@ -51,3 +51,7 @@ within a time period. This example will send an email when 50 documents matching
 - ``example_change.yaml`` is an example of the "change" rule type, which will alert when a certain field in two documents changes. In this example,
 the alert email is sent when two documents with the same 'username' field but a different value of the 'country_name' field occur within 24 hours
 of each other.
+
+## License
+
+ElastAlert is licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
