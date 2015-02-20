@@ -1,18 +1,20 @@
-## ElastAlert
+### Read the documentation at [Read the Docs](http://elastalert.readthedocs.org).
 
+## ElastAlert
+### Easy & Flexible Alerting With ElasticSearch
 ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
 
 At Yelp, we use Elasticsearch, Logstash and Kibana for managing our ever increasing amount of data and logs.
 Kibana is great for visualizing and querying data, but we quickly realized that it needed a companion tool for alerting
 on inconsistencies in our data. Out of this need, ElastAlert was created.
 
-If you have data being written into Elasticsearch in near real time and want to be alerted when that data matches certain patterns, ElastAlert is the tool for you.
+If you have data being written into Elasticsearch in near real time and want to be alerted when that data matches certain patterns, ElastAlert is the tool for you. If you can see it in Kibana, ElastAlert can alert on it.
 
 ## Overview
 
 We designed ElastAlert to be reliable, highly modular, and easy to set up and configure.
 
-It works by combining Elasticsearch with two types of components, rule types and alerts. 
+It works by combining Elasticsearch with two types of components, rule types and alerts.
 Elasticsearch is periodically queried and the data is passed to the rule type, which determines when
 a match is found. When a match occurs, it is given to one or more alerts, which take action based on the match.
 
@@ -27,7 +29,7 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 - "Match on any event matching a given filter" (``any`` type)
 - "Match when a field has two different values within some time" (``change`` type)
 
-Currently, we only have support built in for two alert types:
+Currently, we have support built in for two alert types:
 
 - Email
 - JIRA
@@ -90,3 +92,5 @@ of each other.
 ## License
 
 ElastAlert is licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+
+### Read the documentation at [Read the Docs](http://elastalert.readthedocs.org).
