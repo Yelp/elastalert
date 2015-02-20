@@ -31,11 +31,7 @@ Eg: ``--rule this_rule.yaml``
 
 ## Documentation
 
-Documentation is located in the docs/ folder. Several styles can be built using the makefile in docs/.
-```
-$ cd docs/
-$ make html
-```
+Read the documentation at [Read the Docs](http://elastalert.readthedocs.org).
 
 ## Configuration
 
