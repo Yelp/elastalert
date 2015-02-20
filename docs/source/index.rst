@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to ElastAlert's documentation!
-======================================
+ElastAlert - Easy & Flexible Alerting With ElasticSearch
+========================================================
 
 Contents:
 
@@ -20,7 +20,7 @@ Contents:
    recipes/writing_filters
    recipes/adding_enhancements
 
-Indices and tables
+Indices and Tables
 ==================
 
 * :ref:`genindex`

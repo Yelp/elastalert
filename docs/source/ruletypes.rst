@@ -1,17 +1,17 @@
-Rule types and configuration options
+Rule Types and Configuration Options
 ************************************
 
 Examples of several types of rule configuration can be found in the example_rules folder.
 
 .. _commonconfig:
 
-Common configuration options
+Common Configuration Options
 ============================
 
 Every file that ends in ``.yaml`` in the ``rules_folder`` will be run by default.
 The following configuration settings are common to all types of rules:
 
-Required settings
+Required Settings
 ~~~~~~~~~~~~~~~~~
 
 ``es_host``: The hostname of the Elasticsearch cluster the rule will use to query. (Required, string, no default)
@@ -38,7 +38,7 @@ or loaded from a module. For loading from a module, the type should be specified
 ``alert``: The ``Alerter`` type to use. This may be one of the built in alerts, see :ref:`Alert Types <alerts>` section below for more information,
 or loaded from a module. For loading from a module, the alert should be specified as ``module.file.AlertName``. (Required, string, no default)
 
-Optional settings
+Optional Settings
 ~~~~~~~~~~~~~~~~~
 
 ``aggregation``: This option allows you to aggregate multiple matches together into one alert. Every time a match is found,
@@ -94,7 +94,7 @@ that will be given the match dictionary and can modify it before it is passed to
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
 
-Testing if your rule is valid
+Testing If Your Rule Is Valid
 ==============================
 
 Once you've written a rule configuration, you will want to validate it. To do so, use ``elastalert-test-rule``.

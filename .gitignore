@@ -5,3 +5,6 @@ __pycache__/
 *.pyc
 virtualenv_run/
 *.egg-info/
+dist/
+venv/
+docs/build/
