@@ -1,13 +1,48 @@
-# ElastAlert
+## ElastAlert
 
-A framework for alerting out of Elasticsearch. You should use ElastAlert if you have data being indexed into Elasticsearch in near real time and would like
-to take action when that data matches certain patterns.
+ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
 
-## About
+At Yelp, we use Elasticsearch, Logstash and Kibana for managing our ever increasing amount of data and logs.
+Kibana is great for visualizing and querying data, but we quickly realized that it needed a companion tool for alerting
+on inconsistencies in our data. Out of this need, ElastAlert was created.
 
-ElastAlert is a generic alerting framework for querying, processing and alerting on data in Elasticsearch.
-It takes a set of rules, periodically queries Elasticsearch, and runs the rules against the data.
-Each rule is defined in a yaml file, which specifies the rule type, Elasticsearch filters, and alerts.
+If you have data being written into Elasticsearch in near real time and want to be alerted when that data matches certain patterns, ElastAlert is the tool for you.
+
+## Overview
+
+We designed ElastAlert to be reliable, highly modular, and easy to set up and configure.
+
+It works by combining Elasticsearch with two types of components, rule types and alerts. 
+Elasticsearch is periodically queried and the data is passed to the rule type, which determines when
+a match is found. When a match occurs, it is given to one or more alerts, which take action based on the match.
+
+This is configured by a set of rules, each of which defines a query, a rule type, and a set of alerts.
+
+Several rule types with common monitoring paradigms are included with ElastAlert:
+
+- "Match where there are X events in Y time" (``frequency`` type)
+- "Match when the rate of events increases or decreases" (``spike`` type)
+- "Match when there are less than X events in Y time" (``flatline`` type)
+- "Match when a certain field matches a blacklist/whitelist" (``blacklist`` and ``whitelist`` type)
+- "Match on any event matching a given filter" (``any`` type)
+- "Match when a field has two different values within some time" (``change`` type)
+
+Currently, we only have support built in for two alert types:
+
+- Email
+- JIRA
+
+Additional rule types and alerts can be easily imported or written.
+
+In addition to this basic usage, there are many other features that make alerts more useful:
+
+- Alerts link to Kibana dashboards
+- Aggregate counts for arbitrary fields
+- Combine alerts into periodic reports
+- Separate alerts by using a unique key field
+- Intercept and enhance match data
+
+To get started, check out `Running ElastAlert For The First Time` in the [documentation](http://elastalert.readthedocs.org).
 
 ## Running ElastAlert
 
