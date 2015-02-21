@@ -4,24 +4,24 @@
 # {'username': 'bob', 'country_name': 'Russia', '@timestamp': '2014-10-15T05:00:00'}
 # Because the user (query_key) bob logged in from different countries (compare_key) in the same day (timeframe)
 
-# (Required) 
+# (Required)
 # Elasticsearch host
 es_host: elasticsearch.example.com
 
-# (Required) 
+# (Required)
 # Elasticsearch port
 es_port: 14900
 
-# (Required) 
+# (Required)
 # Rule name, must be unique
 name: New country login
 
-# (Required) 
+# (Required)
 # Type of alert.
 # the change rule will alert when a certain field changes in two documents within a timeframe
 type: change
 
-# (Required) 
+# (Required)
 # Index to search, wildcard supported
 index: logstash-*
 
@@ -35,24 +35,24 @@ query_key: username
 
 # (Required, change specific)
 # The value of compare_key must change in two events that are less than timeframe apart to trigger an alert
-timeframe: 
+timeframe:
   days: 1
 
 # (Required)
 # A list of elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
 # For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
-filter: 
+filter:
 - query:
     query_string:
       query: "document_type: login"
 
 # (Required)
 # The alert is use when a match is found
-alert: 
+alert:
 - "email"
 
 # (required, email specific)
 # a list of email addresses to send alerts to
-email: 
+email:
 - "elastalert@example.com"

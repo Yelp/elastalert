@@ -4,9 +4,9 @@ import json
 
 import mock
 
+from elastalert.alerts import basic_match_string
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
-from elastalert.alerts import basic_match_string
 from elastalert.util import ts_add
 
 

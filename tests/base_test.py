@@ -2,19 +2,19 @@
 import copy
 import datetime
 import json
-import mock
-import pytest
 
 import elasticsearch
+import mock
+import pytest
+from elasticsearch.exceptions import ElasticsearchException
+
 from elastalert.enhancements import BaseEnhancement
+from elastalert.kibana import dashboard_temp
 from elastalert.util import dt_to_ts
+from elastalert.util import EAException
 from elastalert.util import ts_add
 from elastalert.util import ts_delta
 from elastalert.util import ts_to_dt
-from elastalert.util import EAException
-from elastalert.kibana import dashboard_temp
-
-from elasticsearch.exceptions import ElasticsearchException
 
 
 START = '2014-09-26T12:34:45'

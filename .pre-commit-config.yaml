@@ -1,23 +1,16 @@
--   repo: git@git.yelpcorp.com:mirrors/pre-commit/pre-commit-hooks
-    sha: d8a44784fcf4920ac11d10b9c12549a6f73de67a
+-   repo: git://github.com/pre-commit/pre-commit-hooks
+    sha: 5fe82b3a37983b3270b7afa2ed80b90b158f3a7c
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
     -   id: autopep8-wrapper
         args: ['-i', '--ignore=E265,E309,E501']
-    -   id: check-json
-        files: \.(bowerrc|jshintrc|json)$
+    -   id: flake8
     -   id: check-yaml
     -   id: debug-statements
+    -   id: requirements-txt-fixer
     -   id: name-tests-test
-        files: ^yelp/tests/.+\.py$
-    -   id: flake8
--   repo: git@git.yelpcorp.com:yelp_pre_commit_hooks
-    sha: 8887ad5b7665179c5e6721ebc36ec8f41ee20f60
+-   repo: git://github.com/asottile/reorder_python_imports
+    sha: a46fdf085aaa9afc4ab68015f903ac6c824a5b42
     hooks:
-    -   id: httplib-https-connection
-    -   id: use-except-as
-    -   id: check-imports
-    -   id: byte_order_mark
-    -   id: fix-encoding-pragma
-    -   id: check-added-large-files
+    -   id: reorder-python-imports

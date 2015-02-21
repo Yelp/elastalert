@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 import logging
 from email.mime.text import MIMEText
-from smtplib import SMTP, SMTPException
+from smtplib import SMTP
+from smtplib import SMTPException
 from socket import error
 
-from staticconf.loader import yaml_loader
-
-from util import EAException
-from util import pretty_ts
 from jira.client import JIRA
 from jira.exceptions import JIRAError
+from staticconf.loader import yaml_loader
+from util import EAException
+from util import pretty_ts
 
 
 def get_counts_string(match):

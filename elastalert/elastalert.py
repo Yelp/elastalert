@@ -9,22 +9,21 @@ import time
 import traceback
 
 import argparse
-
 import kibana
 from alerts import DebugAlerter
-from config import load_rules
 from config import get_rule_hashes
 from config import load_configuration
+from config import load_rules
+from elasticsearch.client import Elasticsearch
+from elasticsearch.exceptions import ElasticsearchException
 from util import dt_to_ts
 from util import EAException
+from util import format_index
 from util import pretty_ts
 from util import ts_add
 from util import ts_delta
 from util import ts_now
 from util import ts_to_dt
-from util import format_index
-from elasticsearch.client import Elasticsearch
-from elasticsearch.exceptions import ElasticsearchException
 
 
 class ElastAlerter():

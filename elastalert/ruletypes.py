@@ -4,8 +4,8 @@ from collections import deque
 
 from util import dt_to_ts
 from util import EAException
-from util import lookup_es_key
 from util import hashable
+from util import lookup_es_key
 from util import pretty_ts
 from util import ts_delta
 from util import ts_to_dt

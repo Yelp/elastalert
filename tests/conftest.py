@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+import elasticsearch
 import mock
 import pytest
 
-import elasticsearch
 from elastalert.elastalert import ElastAlerter
 
 
