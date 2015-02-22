@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Yelp/elastalert.svg)](https://travis-ci.org/Yelp/elastalert)
+
 ## ElastAlert - [Read the Docs](http://elastalert.readthedocs.org).
 ### Easy & Flexible Alerting With ElasticSearch
 ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
