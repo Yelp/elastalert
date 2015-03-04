@@ -78,6 +78,29 @@ class Alerter(object):
         """ Returns a dictionary of data related to this alert. """
         raise NotImplementedError()
 
+    def create_title(self, matches):
+        """ Creates custom alert title to be used, e.g. as an e-mail subject or JIRA issue summary.
+
+        :param matches: A list of dictionaries of relevant information to the alert.
+        """
+        if 'alert_subject' in self.rule:
+            return self.create_custom_title(matches)
+
+        return self.create_default_title(matches)
+
+    def create_custom_title(self, matches):
+        alert_subject = self.rule['alert_subject']
+
+        if 'alert_subject_args' in self.rule:
+            alert_subject_args = self.rule['alert_subject_args']
+            alert_subject_values = [matches[0][arg] for arg in alert_subject_args]
+            return alert_subject.format(*alert_subject_values)
+
+        return alert_subject
+
+    def create_default_title(self, matches):
+        raise NotImplementedError()
+
 
 class DebugAlerter(Alerter):
     """ The debug alerter uses a Python logger (by default, alerting to terminal). """
@@ -109,13 +132,6 @@ class EmailAlerter(Alerter):
             self.rule['email'] = [self.rule['email']]
 
     def alert(self, matches):
-        subject = 'ElastAlert: %s' % (self.rule['name'])
-
-        # If the rule has a query_key, add that value plus timestamp to subject
-        if 'query_key' in self.rule:
-            qk = matches[0].get(self.rule['query_key'])
-            if qk:
-                subject += ' - %s' % (qk)
         body = ''
 
         for match in matches:
@@ -126,7 +142,7 @@ class EmailAlerter(Alerter):
                 body += '\n----------------------------------------\n'
 
         email_msg = MIMEText(body)
-        email_msg['Subject'] = subject
+        email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
         email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
 
@@ -138,6 +154,17 @@ class EmailAlerter(Alerter):
         self.smtp.close()
 
         logging.info("Sent email to %s" % (self.rule['email']))
+
+    def create_default_title(self, matches):
+        subject = 'ElastAlert: %s' % (self.rule['name'])
+
+        # If the rule has a query_key, add that value plus timestamp to subject
+        if 'query_key' in self.rule:
+            qk = matches[0].get(self.rule['query_key'])
+            if qk:
+                subject += ' - %s' % (qk)
+
+        return subject
 
     def get_info(self):
         return {'type': 'email',
@@ -209,22 +236,6 @@ class JiraAlerter(Alerter):
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket: %s" % (e))
         logging.info("Opened Jira ticket: %s" % (self.issue))
-
-    def create_title(self, matches):
-        if 'alert_subject' in self.rule:
-            return self.create_custom_title(matches)
-
-        return self.create_default_title(matches)
-
-    def create_custom_title(self, matches):
-        alert_subject = self.rule['alert_subject']
-
-        if 'alert_subject_args' in self.rule:
-            alert_subject_args = self.rule['alert_subject_args']
-            alert_subject_values = [matches[0][arg] for arg in alert_subject_args]
-            return alert_subject.format(*alert_subject_values)
-
-        return alert_subject
 
     def create_default_title(self, matches):
         # If there is a query_key, use that in the title
