@@ -86,7 +86,8 @@ def test_jira():
     rule = {'name': 'test alert', 'jira_account_file': 'jirafile', 'type': mock_rule(),
             'jira_project': 'testproject', 'jira_issuetype': 'testtype', 'jira_server': 'jiraserver',
             'jira_label': 'testlabel', 'jira_component': 'testcomponent',
-            'timestamp_field': '@timestamp'}
+            'timestamp_field': '@timestamp', 'alert_subject': 'Issue {0} occured at {1}',
+            'alert_subject_args': ['test_term', '@timestamp']}
     with mock.patch('elastalert.alerts.JIRA') as mock_jira:
         with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
             mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
@@ -101,7 +102,7 @@ def test_jira():
                                                  labels=['testlabel'],
                                                  components=[{'name': 'testcomponent'}],
                                                  description=mock.ANY,
-                                                 summary=mock.ANY)]
+                                                 summary='Issue test_value occured at 2014-10-31T00:00:00')]
             assert mock_jira.mock_calls == expected
 
 

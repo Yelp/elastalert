@@ -193,17 +193,7 @@ class JiraAlerter(Alerter):
         self.password = account_conf['password']
 
     def alert(self, matches):
-        # If there is a query_key, use that in the title
-        if 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
-            title = 'ElastAlert: %s matched %s' % (matches[0][self.rule['query_key']], self.rule['name'])
-        else:
-            title = 'ElastAlert: %s' % (self.rule['name'])
-        title += ' - %s' % (pretty_ts(matches[0][self.rule['timestamp_field']], self.rule.get('use_local_time')))
-
-        # Add count for spikes
-        count = matches[0].get('spike_count')
-        if count:
-            title += ' - %s+ events' % (count)
+        title = self.create_title(matches)
 
         description = ''
         for match in matches:
@@ -219,6 +209,37 @@ class JiraAlerter(Alerter):
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket: %s" % (e))
         logging.info("Opened Jira ticket: %s" % (self.issue))
+
+    def create_title(self, matches):
+        if 'alert_subject' in self.rule:
+            return self.create_custom_title(matches)
+
+        return self.create_default_title(matches)
+
+    def create_custom_title(self, matches):
+        alert_subject = self.rule['alert_subject']
+
+        if 'alert_subject_args' in self.rule:
+            alert_subject_args = self.rule['alert_subject_args']
+            alert_subject_values = [matches[0][arg] for arg in alert_subject_args]
+            return alert_subject.format(*alert_subject_values)
+
+        return alert_subject
+
+    def create_default_title(self, matches):
+        # If there is a query_key, use that in the title
+        if 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
+            title = 'ElastAlert: %s matched %s' % (matches[0][self.rule['query_key']], self.rule['name'])
+        else:
+            title = 'ElastAlert: %s' % (self.rule['name'])
+        title += ' - %s' % (pretty_ts(matches[0][self.rule['timestamp_field']], self.rule.get('use_local_time')))
+
+        # Add count for spikes
+        count = matches[0].get('spike_count')
+        if count:
+            title += ' - %s+ events' % (count)
+
+        return title
 
     def get_info(self):
         return {'type': 'jira'}
