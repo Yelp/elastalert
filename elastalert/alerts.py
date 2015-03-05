@@ -93,7 +93,7 @@ class Alerter(object):
 
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
-            alert_subject_values = [matches[0][arg] for arg in alert_subject_args]
+            alert_subject_values = [matches[0].get(arg, '<MISSING VALUE>') for arg in alert_subject_args]
             return alert_subject.format(*alert_subject_values)
 
         return alert_subject
