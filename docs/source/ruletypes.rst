@@ -383,6 +383,21 @@ or
     - email
     - jira
 
+E-mail subject or JIRA issue summary can also be customized by adding an ``alert_subject`` that contains a custom summary.
+It can be further formatted using standard Python formatting syntax::
+
+    alert_subject: Issue {0} occurred at {1}
+
+The arguments for the formatter will be fed from the matched objects related to the alert.
+The field names which values will be used as the arguments can be passed with ``alert_subject_args``::
+
+
+    alert_subject_args:
+    - issue.name
+    - @timestamp
+
+In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter.
+
 Alert Content
 ~~~~~~~~~~~~~~~
 
