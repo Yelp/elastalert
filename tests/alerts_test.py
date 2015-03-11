@@ -21,7 +21,7 @@ def test_alert_text(ea):
     alert_text = basic_match_string(ea.rules[0], match)
     assert 'anytest' in alert_text
     assert 'some stuff happened' in alert_text
-    assert 'by username' in alert_text
+    assert 'username' in alert_text
     assert 'bob: 10' in alert_text
     assert 'field: value' in alert_text
 

@@ -161,9 +161,6 @@ class FrequencyRule(RuleType):
         super(FrequencyRule, self).__init__(*args)
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
         self.get_ts = lambda event: event[0][self.ts_field]
-        if self.rules.get('use_count_query') and any((self.rules.get('query_key'),
-                                                      self.rules.get('top_count_keys'))):
-            raise EAException("use_count_query cannot be used with query_key or top_count_keys")
 
     def add_count_data(self, data):
         """ Add count data to the rule. Data should be of the form {ts: count}. """
@@ -215,21 +212,6 @@ class FrequencyRule(RuleType):
             if ts_delta(window.data[-1][0][self.ts_field], timestamp) > self.rules['timeframe']:
                 stale_keys.append(key)
         map(self.occurrences.pop, stale_keys)
-
-    def add_match(self, event):
-        """ Adds time of first event in timeframe and the number of events """
-        # If no query_key, we use the key 'all' for everything
-        if 'query_key' in self.rules:
-            key = hashable(lookup_es_key(event, self.rules['query_key']))
-        else:
-            key = 'all'
-
-        extra = {}
-        top_count_keys = self.rules.get('top_count_keys')
-        if top_count_keys:
-            number = self.rules.get('top_count_number', 5)
-            extra = get_top_counts(map(lambda e: e[0], self.occurrences[key].data), top_count_keys, number)
-        self.matches.append(dict(event.items() + extra.items()))
 
     def get_match_str(self, match):
         lt = self.rules.get('use_local_time')
@@ -383,12 +365,6 @@ class SpikeRule(RuleType):
         extra_info = {'spike_count': spike_count,
                       'reference_count': reference_count}
 
-        # If we have a top_count_keys, use that to build counts based on the spike data
-        top_count_keys = self.rules.get('top_count_keys')
-        if top_count_keys:
-            number = self.rules.get('top_count_number', 5)
-            extra_info.update(get_top_counts(map(lambda e: e[0], self.cur_windows[qk].data), top_count_keys, number))
-
         match = dict(match.items() + extra_info.items())
 
         super(SpikeRule, self).add_match(match)
@@ -470,19 +446,3 @@ class FlatlineRule(FrequencyRule):
         # This is a placeholder to accurately size windows in the absence of events
         self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({self.ts_field: ts}, 0))
         self.check_for_match()
-
-
-def get_top_counts(events, keys, number=5):
-    """ Counts the number of events for each unique value for each key field.
-    Returns a dictionary with top_events_<key> mapped to the top 5 counts for each key. """
-    all_counts = {}
-    for key in keys:
-        terms = {}
-        for event in events:
-            value = hashable(lookup_es_key(event, key))
-            terms[value] = terms.get(value, 0) + 1
-        counts = terms.items()
-        counts.sort(key=lambda x: x[1], reverse=True)
-        # Save a dict with the top 5 events by key
-        all_counts['top_events_%s' % (key)] = dict(counts[:number])
-    return all_counts

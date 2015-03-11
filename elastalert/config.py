@@ -169,10 +169,10 @@ def load_configuration(filename):
                     raise EAException('generate_kibana_link is incompatible with filters other than term, query_string and range. '
                                       'Consider creating a dashboard and using use_kibana_dashboard instead.')
 
-    # Check that doc_type is provided if use_count_query
-    if rule.get('use_count_query'):
+    # Check that doc_type is provided if use_count/terms_query
+    if rule.get('use_count_query') or rule.get('use_terms_query'):
         if 'doc_type' not in rule:
-            raise EAException('doc_type must be specified with use_count_query')
+            raise EAException('doc_type must be specified.')
 
     # Check that query_key is set if use_terms_query
     if rule.get('use_terms_query'):

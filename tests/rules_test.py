@@ -7,7 +7,6 @@ from elastalert.ruletypes import ChangeRule
 from elastalert.ruletypes import EventWindow
 from elastalert.ruletypes import FlatlineRule
 from elastalert.ruletypes import FrequencyRule
-from elastalert.ruletypes import get_top_counts
 from elastalert.ruletypes import SpikeRule
 from elastalert.ruletypes import WhitelistRule
 from elastalert.util import dt_to_ts
@@ -296,28 +295,6 @@ def test_spike_query_key():
     assert len(rule.matches) == 1
 
 
-def test_spike_top_keys():
-    events = hits(100, username='bob')
-    # Double the rate of events after [50:]
-    events2 = events[:50]
-    for event in events[50:]:
-        events2.append(event)
-        events2.append({'@timestamp': dt_to_ts(ts_to_dt(event['@timestamp']) + datetime.timedelta(milliseconds=1)),
-                        'username': 'alice'})
-    for x in range(55, 60):
-        events2[x]['username'] = 'mallory'
-
-    rules = {'threshold_ref': 10,
-             'spike_height': 2,
-             'spike_type': 'up',
-             'timeframe': datetime.timedelta(seconds=10),
-             'top_count_keys': ['username'],
-             'timestamp_field': '@timestamp'}
-    rule = SpikeRule(rules)
-    rule.add_data(events2)
-    assert not any([name not in rule.matches[0]['top_events_username'] for name in ('alice', 'mallory', 'bob')])
-
-
 def test_spike_terms():
     rules = {'threshold_ref': 5,
              'spike_height': 2,
@@ -475,22 +452,3 @@ def test_flatline_count():
     assert len(rule.matches) == 0
     rule.add_count_data({'2014-10-11T00:00:35': 0})
     assert len(rule.matches) == 1
-
-
-def test_top_events():
-    matches = [{'field1': 'a', 'field2': 1},
-               {'field1': 'b', 'field2': 2},
-               {'field1': 'c', 'field2': 4},
-               {'field1': 'b', 'field2': 2},
-               {'field1': 'b', 'field2': 4},
-               {'field1': 'a', 'field2': 5},
-               {'field1': 'b', 'field2': 2}]
-    counts = get_top_counts(matches, ['field1', 'field2'])
-    assert counts['top_events_field1']['a'] == 2
-    assert counts['top_events_field1']['b'] == 4
-    assert counts['top_events_field1']['c'] == 1
-
-    assert counts['top_events_field2'][1] == 1
-    assert counts['top_events_field2'][2] == 3
-    assert counts['top_events_field2'][4] == 2
-    assert counts['top_events_field2'][5] == 1

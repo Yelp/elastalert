@@ -72,6 +72,14 @@ For more information writing filters, see :ref:`Writing Filters <writingfilters>
 ``include``: A list of terms that should be included in query results and passed to rule types and alerts. '@timestamp', ``query_key``,
 ``compare_key``, and ``top_count_keys``  are automatically included, if present. (Optional, list of strings)
 
+``top_count_keys``: A list of fields. ElastAlert will perform a terms query for the top X most common values for each of the fields,
+where X is 5 by default, or ``top_count_number`` if it exists.
+For example, if ``num_events`` is 100, and ``top_count_keys`` is ``- "username"``, the alert will say how many of the 100 events
+have each username, for the top 5 usernames. When this is computed, the time range used is from ``timeframe`` before the most recent event
+to 10 minutes past the most recent event.
+
+``top_count_number``: The number of terms to list if ``top_count_keys`` is set.
+
 ``generate_kibana_link``: If true, ElastAlert will generate a temporary Kibana dashboard and include a link to it in alerts. The dashboard
 consists of an events over time graph and a table with ``include`` fields selected in the table. If the rule uses ``query_key``, the
 dashboard will also contain a filter for the ``query_key`` of the alert. The dashboard schema will
@@ -217,15 +225,18 @@ This rule requires two additional options:
 
 Optional:
 
+``use_count_query``: If true, ElastAlert will poll elasticsearch using the count api, and not download all of the matching documents. This is
+useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
+of tens of thousands or more. ``doc_type`` must be set to use this.
+
+``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
+
+``use_terms_query``: If true, ElastAlert will make an aggregation query against Elasticsearch to get counts of documents matching
+each unique value of ``query_key``. This be used with ``query_key`` and ``doc_type``.
+
 ``query_key``: The number of events is remembered separately for each unique ``query_key`` field. If this option
 is set, the field must be present for all events.
 
-``top_count_keys``: A list of fields. ElastAlert will tell you the count for the top X most common values for each of the fields,
-where X is 5 by default, or ``top_count_number`` if it exists.
-For example, if ``num_events`` is 100, and ``top_count_keys`` is ``- "username"``, the alert will say how many of the 100 events
-have each username, for the top 5 usernames.
-
-``top_count_number``: The number of terms to list if ``top_count_keys`` is set.
 
 Spike
 ~~~~~~
@@ -337,30 +348,33 @@ is set, the field must be present for all events.
 trigger an immediate alert. When set to false, baseline must be established for each new ``query_key`` value, and then subsequent spikes may
 cause alerts. Baseline is established after ``timeframe`` has elapsed twice since first occurrence.
 
-``top_count_keys``: A list of fields. ElastAlert will tell you the count for the top 5 most common values for each of the fields.
-For example, if there are 100 events in a spike, and ``top_count_keys`` is ``["username"]``, the alert will say how many of the 100 events
-have each username, for the top 5 usernames.
-
-``top_count_number``: The number of terms to list if ``top_count_keys`` is set.
-
 ``use_count_query``: If true, ElastAlert will poll elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
-of tens of thousands or more. It cannot be used with ``top_count_keys``. If ``top_count_keys`` is absent, it is turned on by default.
+of tens of thousands or more. ``doc_type`` must be set to use this.
+
+``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
 
 ``use_terms_query``: If true, ElastAlert will make an aggregation query against Elasticsearch to get counts of documents matching
-each unique value of ``query_key``.
-Similarly to ``use_count_query``, this cannot be used with ``top_count_keys``, but MUST be used with ``query_key``.
+each unique value of ``query_key``. This be used with ``query_key``. ``doc_type`` must be set to use this.
 
 Flatline
 ~~~~~~~~
 
 ``flatline``: This rule matches when the total number of events is under a given ``threshold`` for a time period.
 
-This rule requires two additional options:
+This rule requires two required options:
 
 ``threshold``: The minimum number of events for an alert not to be triggered.
 
 ``timeframe``: The time period that must contain less than ``threshold`` events.
+
+Optional:
+
+``use_count_query``: If true, ElastAlert will poll elasticsearch using the count api, and not download all of the matching documents. This is
+useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
+of tens of thousands or more. ``doc_type`` must be set to use this.
+
+``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
 
 .. _alerts:
 
@@ -406,7 +420,7 @@ There are several ways to format the body text of the various types of events. I
     rule_name           = name
     alert_text          = alert_text
     ruletype_text       = Depends on type
-    top_counts_header   = "The following are the top event counts by ", top_count_key
+    top_counts_header   = top_count_key, ":"
     top_counts_value    = Value, ": ", Count
     top_counts          = top_counts_header, LF, top_counts_value
     field_values        = Field, ": ", Value

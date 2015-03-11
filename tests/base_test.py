@@ -480,3 +480,19 @@ def test_strf_index(ea):
     assert ea.get_index(ea.rules[0]) == 'logstash-*'
     ea.rules[0]['index'] = 'logstash-%Y.%m-stuff'
     assert ea.get_index(ea.rules[0]) == 'logstash-*-stuff'
+
+
+def test_count_keys(ea):
+    ea.rules[0]['timeframe'] = datetime.timedelta(minutes=60)
+    ea.rules[0]['top_count_keys'] = ['this', 'that']
+    ea.rules[0]['type'].matches = {'@timestamp': END}
+    ea.rules[0]['doc_type'] = 'blah'
+    buckets = [{'aggregations': {'filtered': {'counts': {'buckets': [{'key': 'a', 'doc_count': 10}, {'key': 'b', 'doc_count': 5}]}}}},
+               {'aggregations': {'filtered': {'counts': {'buckets': [{'key': 'd', 'doc_count': 10}, {'key': 'c', 'doc_count': 12}]}}}}]
+    ea.current_es.search.side_effect = buckets
+    counts = ea.get_top_counts(ea.rules[0], START, END, ['this', 'that'])
+    calls = ea.current_es.search.call_args_list
+    assert calls[0][1]['search_type'] == 'count'
+    assert calls[0][1]['body']['aggs']['filtered']['aggs']['counts']['terms'] == {'field': 'this', 'size': 5}
+    assert counts['top_events_this'] == {'a': 10, 'b': 5}
+    assert counts['top_events_that'] == {'d': 10, 'c': 12}

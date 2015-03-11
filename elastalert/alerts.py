@@ -18,7 +18,7 @@ def get_counts_string(match):
     message = ''
     for key, counts in match.items():
         if key.startswith('top_events_'):
-            message += 'The following are the top %s event counts, by %s:\n' % (len(counts), key[11:])
+            message += '%s:\n' % (key[11:])
             top_events = counts.items()
             top_events.sort(key=lambda x: x[1], reverse=True)
             for term, count in top_events:
