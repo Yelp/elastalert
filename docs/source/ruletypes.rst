@@ -362,7 +362,7 @@ Flatline
 
 ``flatline``: This rule matches when the total number of events is under a given ``threshold`` for a time period.
 
-This rule requires two required options:
+This rule requires two additional options:
 
 ``threshold``: The minimum number of events for an alert not to be triggered.
 
