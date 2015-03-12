@@ -204,9 +204,12 @@ class ElastAlerter():
         logging.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), res['count']))
         return {endtime: res['count']}
 
-    def get_hits_terms(self, rule, starttime, endtime, index):
-        base_query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)
-        query = self.get_terms_query(base_query, rule['terms_size'], rule['query_key'])
+    def get_hits_terms(self, rule, starttime, endtime, index, key, qk=None):
+        rule_filter = copy.copy(rule['filter'])
+        if qk:
+            rule_filter.extend([{'term': {rule['query_key']: qk}}])
+        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)
+        query = self.get_terms_query(base_query, rule.get('terms_size', 5), key)
 
         try:
             res = self.current_es.search(index=index, doc_type=rule['doc_type'], body=query, search_type='count')
@@ -265,7 +268,7 @@ class ElastAlerter():
         if rule.get('use_count_query'):
             data = self.get_hits_count(rule, start, end, index)
         elif rule.get('use_terms_query'):
-            data = self.get_hits_terms(rule, start, end, index)
+            data = self.get_hits_terms(rule, start, end, index, rule['query_key'])
         else:
             data = self.get_hits(rule, start, end, index)
             if data:
@@ -660,6 +663,19 @@ class ElastAlerter():
         if alert_time is None:
             alert_time = ts_now()
 
+        # Compute top count keys
+        if rule.get('top_count_keys'):
+            for match in matches:
+                if 'query_key' in rule and rule['query_key'] in match:
+                    qk = match[rule['query_key']]
+                else:
+                    qk = None
+                start = ts_add(match[rule['timestamp_field']], -rule.get('timeframe', datetime.timedelta(minutes=10)))
+                end = ts_add(match[rule['timestamp_field']], datetime.timedelta(minutes=10))
+                keys = rule.get('top_count_keys')
+                counts = self.get_top_counts(rule, start, end, keys, rule.get('top_count_number'), qk)
+                match.update(counts)
+
         # Generate a kibana dashboard for the first match
         if rule.get('generate_kibana_link') or rule.get('use_kibana_dashboard'):
             try:
@@ -926,6 +942,24 @@ class ElastAlerter():
         if data:
             body['data'] = data
         self.writeback('elastalert_error', body)
+
+    def get_top_counts(self, rule, starttime, endtime, keys, number=5, qk=None):
+        """ Counts the number of events for each unique value for each key field.
+        Returns a dictionary with top_events_<key> mapped to the top 5 counts for each key. """
+        all_counts = {}
+        for key in keys:
+            index = self.get_index(rule, starttime, endtime)
+            buckets = self.get_hits_terms(rule, starttime, endtime, index, key, qk).values()[0]
+            # get_hits_terms adds to num_hits, but we don't want to count these
+            self.num_hits -= len(buckets)
+            terms = {}
+            for bucket in buckets:
+                terms[bucket['key']] = bucket['doc_count']
+            counts = terms.items()
+            counts.sort(key=lambda x: x[1], reverse=True)
+            # Save a dict with the top 5 events by key
+            all_counts['top_events_%s' % (key)] = dict(counts[:number])
+        return all_counts
 
 
 if __name__ == '__main__':
