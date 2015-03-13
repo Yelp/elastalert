@@ -21,7 +21,6 @@ from util import EAException
 from util import format_index
 from util import pretty_ts
 from util import ts_add
-from util import ts_delta
 from util import ts_now
 from util import ts_to_dt
 
@@ -115,6 +114,8 @@ class ElastAlerter():
         :param sort: If true, sort results by timestamp. (Default True)
         :return: A query dictionary to pass to elasticsearch.
         """
+        starttime = dt_to_ts(starttime)
+        endtime = dt_to_ts(endtime)
         filters = copy.copy(filters)
         query = {'filter': {'bool': {'must': filters}}}
         if starttime and endtime:
@@ -173,8 +174,12 @@ class ElastAlerter():
         self.num_hits += len(hits)
         lt = rule.get('use_local_time')
         logging.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits)))
-
+        self.replace_ts(hits, rule)
         return hits
+
+    def replace_ts(self, hits, rule):
+        for hit in hits:
+            hit['_source'][rule['timestamp_field']] = ts_to_dt(hit['_source'][rule['timestamp_field']])
 
     def get_hits_count(self, rule, starttime, endtime, index):
         """ Query elasticsearch for the count of results and returns a list of timestamps
@@ -206,7 +211,7 @@ class ElastAlerter():
 
     def get_hits_terms(self, rule, starttime, endtime, index):
         base_query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)
-        query = self.get_terms_query(base_query, rule['terms_size'], rule['query_key'])
+        query = self.get_terms_query(base_query, rule.get('terms_size', 5), rule['query_key'])
 
         try:
             res = self.current_es.search(index=index, doc_type=rule['doc_type'], body=query, search_type='count')
@@ -240,7 +245,7 @@ class ElastAlerter():
         remove = []
         buffer_time = rule.get('buffer_time', self.buffer_time)
         for _id, timestamp in rule['processed_hits'].iteritems():
-            if ts_delta(timestamp, now) > buffer_time:
+            if now - timestamp > buffer_time:
                 remove.append(_id)
         map(rule['processed_hits'].pop, remove)
 
@@ -301,9 +306,9 @@ class ElastAlerter():
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert_status',
                                                size=1, body=query, _source_include=['endtime', 'rule_name'])
                 if res['hits']['hits']:
-                    endtime = res['hits']['hits'][0]['_source']['endtime']
+                    endtime = ts_to_dt(res['hits']['hits'][0]['_source']['endtime'])
 
-                    if ts_delta(endtime, ts_now()) < self.old_query_limit:
+                    if ts_now() - endtime < self.old_query_limit:
                         return endtime
                     else:
                         logging.info("Found expired previous run for %s at %s" % (rule['name'], endtime))
@@ -328,9 +333,9 @@ class ElastAlerter():
         # Use buffer for normal queries, or run_every increments otherwise
         buffer_time = rule.get('buffer_time', self.buffer_time)
         if not rule.get('use_count_query') and not rule.get('use_terms_query'):
-            rule['starttime'] = ts_add(endtime, -buffer_time)
+            rule['starttime'] = endtime - buffer_time
         else:
-            rule['starttime'] = ts_add(endtime, -self.run_every)
+            rule['starttime'] = endtime - self.run_every
 
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
@@ -357,7 +362,7 @@ class ElastAlerter():
         rule['original_starttime'] = rule['starttime']
 
         # Don't run if starttime was set to the future
-        if ts_delta(rule['starttime'], ts_now()) <= datetime.timedelta(0):
+        if ts_now() <= rule['starttime']:
             logging.warning("Attempted to use query start time in the future (%s), sleeping instead" % (starttime))
             return 0
 
@@ -366,8 +371,8 @@ class ElastAlerter():
         self.num_hits = 0
         tmp_endtime = endtime
         buffer_time = rule.get('buffer_time', self.buffer_time)
-        while ts_delta(rule['starttime'], endtime) > buffer_time:
-            tmp_endtime = ts_add(rule['starttime'], self.run_every)
+        while endtime - rule['starttime'] > buffer_time:
+            tmp_endtime = rule['starttime'] + self.run_every
             if not self.run_query(rule, rule['starttime'], tmp_endtime):
                 return 0
             rule['starttime'] = tmp_endtime
@@ -500,7 +505,7 @@ class ElastAlerter():
         starttime = self.args.start
         if starttime:
             try:
-                ts_to_dt(starttime)
+                starttime = ts_to_dt(starttime)
             except (TypeError, ValueError):
                 self.handle_error("%s is not a valid ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (starttime))
                 exit(1)
@@ -517,9 +522,9 @@ class ElastAlerter():
                 # Set endtime based on the rule's delay
                 delay = rule.get('query_delay')
                 if hasattr(self.args, 'end') and self.args.end:
-                    endtime = dt_to_ts(ts_to_dt(self.args.end))
+                    endtime = ts_to_dt(self.args.end)
                 elif delay:
-                    endtime = dt_to_ts(datetime.datetime.utcnow() - delay)
+                    endtime = ts_now() - delay
                 else:
                     endtime = ts_now()
 
@@ -724,12 +729,16 @@ class ElastAlerter():
         return body
 
     def writeback(self, doc_type, body):
+        # Convert any datetime objects to timestamps
+        for key in body.keys():
+            if isinstance(body[key], datetime.datetime):
+                body[key] = dt_to_ts(body[key])
         if self.debug:
             logging.info("Skipping writing to ES: %s" % (body))
             return None
 
         if '@timestamp' not in body:
-            body['@timestamp'] = ts_now()
+            body['@timestamp'] = dt_to_ts(ts_now())
         if self.writeback_es:
             try:
                 res = self.writeback_es.create(index=self.writeback_index,
@@ -744,8 +753,8 @@ class ElastAlerter():
         """ Queries writeback_es to find alerts that did not send
         and are newer than time_limit """
         query = {'query': {'query_string': {'query': 'alert_sent:false'}},
-                 'filter': {'range': {'alert_time': {'from': ts_add(ts_now(), -time_limit),
-                                                     'to': ts_now()}}}}
+                 'filter': {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
+                                                     'to': dt_to_ts(ts_now())}}}}
         if self.writeback_es:
             try:
                 res = self.writeback_es.search(index=self.writeback_index,
@@ -785,7 +794,7 @@ class ElastAlerter():
                 continue
 
             # Retry the alert unless it's a future alert
-            if ts_delta(alert_time, ts_now()) > datetime.timedelta(0):
+            if ts_now() > ts_to_dt(alert_time):
                 aggregated_matches = self.get_aggregated_matches(_id)
                 if aggregated_matches:
                     matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
@@ -805,7 +814,7 @@ class ElastAlerter():
         # Send in memory aggregated alerts
         for rule in self.rules:
             if rule['agg_matches']:
-                if ts_delta(rule['aggregate_alert_time'], ts_now()) > datetime.timedelta(0):
+                if ts_now() > rule['aggregate_alert_time']:
                     self.alert(rule['agg_matches'], rule)
                     rule['agg_matches'] = []
 
@@ -890,7 +899,7 @@ class ElastAlerter():
     def is_silenced(self, rule_name):
         """ Checks if rule_name is currently silenced. Returns false on exception. """
         if rule_name in self.silence_cache:
-            if ts_delta(self.silence_cache[rule_name], ts_now()) < datetime.timedelta(0):
+            if ts_now() < ts_to_dt(self.silence_cache[rule_name]):
                 return True
             else:
                 self.silence_cache.pop(rule_name)
@@ -910,7 +919,7 @@ class ElastAlerter():
 
             if res['hits']['hits']:
                 until_ts = res['hits']['hits'][0]['_source']['until']
-                if ts_delta(until_ts, ts_now()) < datetime.timedelta(0):
+                if ts_now() < ts_to_dt(until_ts):
                     self.silence_cache[rule_name] = until_ts
                     return True
         return False
