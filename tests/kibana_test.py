@@ -50,5 +50,5 @@ test_dashboard = json.loads(test_dashboard)
 
 def test_filters_from_dashboard():
     filters = filters_from_dashboard(test_dashboard)
-    expected_filters = [{'term': {'_log_type': '"active_directory"'}}, {'query': {'query_string': {'query': 'ad.security_auditing_code:4740'}}}]
-    assert filters == expected_filters
+    assert {'term': {'_log_type': '"active_directory"'}} in filters
+    assert {'query': {'query_string': {'query': 'ad.security_auditing_code:4740'}}} in filters
