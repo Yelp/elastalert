@@ -9,14 +9,13 @@ from elastalert.ruletypes import FlatlineRule
 from elastalert.ruletypes import FrequencyRule
 from elastalert.ruletypes import SpikeRule
 from elastalert.ruletypes import WhitelistRule
-from elastalert.util import dt_to_ts
 from elastalert.util import ts_to_dt
 
 
 def hits(x, timestamp='@timestamp', **kwargs):
     ret = []
     for n in range(x):
-        ts = '2014-09-26T12:%s:%sZ' % (n / 60, n % 60)
+        ts = ts_to_dt('2014-09-26T12:%s:%sZ' % (n / 60, n % 60))
         n += 1
         event = {timestamp: ts}
         event.update(**kwargs)
@@ -62,7 +61,7 @@ def test_freq():
 
     # garbage collection
     assert 'qlo' in rule.occurrences
-    rule.garbage_collect('2014-09-28T12:0:0')
+    rule.garbage_collect(ts_to_dt('2014-09-28T12:0:0'))
     assert rule.occurrences == {}
 
 
@@ -72,26 +71,26 @@ def test_freq_count():
              'use_count_query': True}
     # Normal match
     rule = FrequencyRule(rules)
-    rule.add_count_data({'2014-10-10T00:00:00': 75})
+    rule.add_count_data({ts_to_dt('2014-10-10T00:00:00'): 75})
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-10-10T00:15:00': 10})
+    rule.add_count_data({ts_to_dt('2014-10-10T00:15:00'): 10})
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-10-10T00:25:00': 10})
+    rule.add_count_data({ts_to_dt('2014-10-10T00:25:00'): 10})
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-10-10T00:45:00': 6})
+    rule.add_count_data({ts_to_dt('2014-10-10T00:45:00'): 6})
     assert len(rule.matches) == 1
 
     # First data goes out of timeframe first
     rule = FrequencyRule(rules)
-    rule.add_count_data({'2014-10-10T00:00:00': 75})
+    rule.add_count_data({ts_to_dt('2014-10-10T00:00:00'): 75})
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-10-10T00:45:00': 10})
+    rule.add_count_data({ts_to_dt('2014-10-10T00:45:00'): 10})
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-10-10T00:55:00': 10})
+    rule.add_count_data({ts_to_dt('2014-10-10T00:55:00'): 10})
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-10-10T01:05:00': 6})
+    rule.add_count_data({ts_to_dt('2014-10-10T01:05:00'): 6})
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-10-10T01:00:00': 75})
+    rule.add_count_data({ts_to_dt('2014-10-10T01:00:00'): 75})
     assert len(rule.matches) == 1
 
 
@@ -105,7 +104,7 @@ def test_freq_out_of_order():
     assert len(rule.matches) == 0
 
     # Try to add events from before the first occurrence
-    rule.add_data([{'blah': '2014-09-26T11:00:00', 'username': 'qlo'}] * 50)
+    rule.add_data([{'blah': ts_to_dt('2014-09-26T11:00:00'), 'username': 'qlo'}] * 50)
     assert len(rule.matches) == 0
 
     rule.add_data(events[15:20])
@@ -125,12 +124,12 @@ def test_freq_terms():
              'query_key': 'username'}
     rule = FrequencyRule(rules)
 
-    terms1 = {'2014-01-01T00:01:00Z': [{'key': 'userA', 'doc_count': 1},
-                                       {'key': 'userB', 'doc_count': 5}]}
-    terms2 = {'2014-01-01T00:10:00Z': [{'key': 'userA', 'doc_count': 8},
-                                       {'key': 'userB', 'doc_count': 5}]}
-    terms3 = {'2014-01-01T00:25:00Z': [{'key': 'userA', 'doc_count': 3},
-                                       {'key': 'userB', 'doc_count': 0}]}
+    terms1 = {ts_to_dt('2014-01-01T00:01:00Z'): [{'key': 'userA', 'doc_count': 1},
+                                                 {'key': 'userB', 'doc_count': 5}]}
+    terms2 = {ts_to_dt('2014-01-01T00:10:00Z'): [{'key': 'userA', 'doc_count': 8},
+                                                 {'key': 'userB', 'doc_count': 5}]}
+    terms3 = {ts_to_dt('2014-01-01T00:25:00Z'): [{'key': 'userA', 'doc_count': 3},
+                                                 {'key': 'userB', 'doc_count': 0}]}
     # Initial data
     rule.add_terms_data(terms1)
     assert len(rule.matches) == 0
@@ -149,11 +148,11 @@ def test_freq_terms():
 def test_eventwindow():
     timeframe = datetime.timedelta(minutes=10)
     window = EventWindow(timeframe, getTimestamp=lambda e: e['@timestamp'])
-    timestamps = ['2014-01-01T10:00:00',
-                  '2014-01-01T10:05:00',
-                  '2014-01-01T10:03:00',
-                  '2014-01-01T09:55:00',
-                  '2014-01-01T10:09:00']
+    timestamps = [ts_to_dt(x) for x in ['2014-01-01T10:00:00',
+                                        '2014-01-01T10:05:00',
+                                        '2014-01-01T10:03:00',
+                                        '2014-01-01T09:55:00',
+                                        '2014-01-01T10:09:00']]
     for ts in timestamps:
         window.append({'@timestamp': ts})
 
@@ -161,8 +160,8 @@ def test_eventwindow():
     for exp, actual in zip(timestamps[1:], window.data):
         assert actual['@timestamp'] == exp
 
-    window.append({'@timestamp': '2014-01-01T10:14:00'})
-    timestamps.append('2014-01-01T10:14:00')
+    window.append({'@timestamp': ts_to_dt('2014-01-01T10:14:00')})
+    timestamps.append(ts_to_dt('2014-01-01T10:14:00'))
     for exp, actual in zip(timestamps[3:], window.data):
         assert actual['@timestamp'] == exp
 
@@ -176,20 +175,20 @@ def test_spike_count():
     rule = SpikeRule(rules)
 
     # Double rate of events at 20 seconds
-    rule.add_count_data({'2014-09-26T00:00:00': 10})
+    rule.add_count_data({ts_to_dt('2014-09-26T00:00:00'): 10})
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-09-26T00:00:10': 10})
+    rule.add_count_data({ts_to_dt('2014-09-26T00:00:10'): 10})
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-09-26T00:00:20': 20})
+    rule.add_count_data({ts_to_dt('2014-09-26T00:00:20'): 20})
     assert len(rule.matches) == 1
 
     # Downward spike
     rule = SpikeRule(rules)
-    rule.add_count_data({'2014-09-26T00:00:00': 10})
+    rule.add_count_data({ts_to_dt('2014-09-26T00:00:00'): 10})
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-09-26T00:00:10': 10})
+    rule.add_count_data({ts_to_dt('2014-09-26T00:00:10'): 10})
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-09-26T00:00:20': 0})
+    rule.add_count_data({ts_to_dt('2014-09-26T00:00:20'): 0})
     assert len(rule.matches) == 1
 
 
@@ -212,7 +211,7 @@ def test_spike():
     events2 = events[:50]
     for event in events[50:]:
         events2.append(event)
-        events2.append({'ts': dt_to_ts(ts_to_dt(event['ts']) + datetime.timedelta(milliseconds=1))})
+        events2.append({'ts': event['ts'] + datetime.timedelta(milliseconds=1)})
     rules['spike_type'] = 'up'
     rule = SpikeRule(rules)
     rule.add_data(events2)
@@ -304,15 +303,15 @@ def test_spike_terms():
              'timestamp_field': 'ts',
              'query_key': 'username',
              'use_term_query': True}
-    terms1 = {'2014-01-01T00:01:00Z': [{'key': 'userA', 'doc_count': 10},
-                                       {'key': 'userB', 'doc_count': 5}]}
-    terms2 = {'2014-01-01T00:10:00Z': [{'key': 'userA', 'doc_count': 22},
-                                       {'key': 'userB', 'doc_count': 5}]}
-    terms3 = {'2014-01-01T00:25:00Z': [{'key': 'userA', 'doc_count': 25},
-                                       {'key': 'userB', 'doc_count': 27}]}
-    terms4 = {'2014-01-01T00:27:00Z': [{'key': 'userA', 'doc_count': 10},
-                                       {'key': 'userB', 'doc_count': 12},
-                                       {'key': 'userC', 'doc_count': 100}]}
+    terms1 = {ts_to_dt('2014-01-01T00:01:00Z'): [{'key': 'userA', 'doc_count': 10},
+                                                 {'key': 'userB', 'doc_count': 5}]}
+    terms2 = {ts_to_dt('2014-01-01T00:10:00Z'): [{'key': 'userA', 'doc_count': 22},
+                                                 {'key': 'userB', 'doc_count': 5}]}
+    terms3 = {ts_to_dt('2014-01-01T00:25:00Z'): [{'key': 'userA', 'doc_count': 25},
+                                                 {'key': 'userB', 'doc_count': 27}]}
+    terms4 = {ts_to_dt('2014-01-01T00:27:00Z'): [{'key': 'userA', 'doc_count': 10},
+                                                 {'key': 'userB', 'doc_count': 12},
+                                                 {'key': 'userC', 'doc_count': 100}]}
     rule = SpikeRule(rules)
 
     # Initial input
@@ -349,11 +348,11 @@ def test_spike_terms():
 
 
 def test_blacklist():
-    events = [{'@timestamp': '2014-09-26T12:34:56Z', 'term': 'good'},
-              {'@timestamp': '2014-09-26T12:34:57Z', 'term': 'bad'},
-              {'@timestamp': '2014-09-26T12:34:58Z', 'term': 'also good'},
-              {'@timestamp': '2014-09-26T12:34:59Z', 'term': 'really bad'},
-              {'@timestamp': '2014-09-26T12:35:00Z', 'no_term': 'bad'}]
+    events = [{'@timestamp': ts_to_dt('2014-09-26T12:34:56Z'), 'term': 'good'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:34:57Z'), 'term': 'bad'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:34:58Z'), 'term': 'also good'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:34:59Z'), 'term': 'really bad'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:35:00Z'), 'no_term': 'bad'}]
     rules = {'blacklist': ['bad', 'really bad'],
              'compare_key': 'term',
              'timestamp_field': '@timestamp'}
@@ -363,11 +362,11 @@ def test_blacklist():
 
 
 def test_whitelist():
-    events = [{'@timestamp': '2014-09-26T12:34:56Z', 'term': 'good'},
-              {'@timestamp': '2014-09-26T12:34:57Z', 'term': 'bad'},
-              {'@timestamp': '2014-09-26T12:34:58Z', 'term': 'also good'},
-              {'@timestamp': '2014-09-26T12:34:59Z', 'term': 'really bad'},
-              {'@timestamp': '2014-09-26T12:35:00Z', 'no_term': 'bad'}]
+    events = [{'@timestamp': ts_to_dt('2014-09-26T12:34:56Z'), 'term': 'good'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:34:57Z'), 'term': 'bad'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:34:58Z'), 'term': 'also good'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:34:59Z'), 'term': 'really bad'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:35:00Z'), 'no_term': 'bad'}]
     rules = {'whitelist': ['good', 'also good'],
              'compare_key': 'term',
              'ignore_null': True,
@@ -431,11 +430,11 @@ def test_flatline():
     rule.add_data(events)
 
     # This will be run at the end of the hits
-    rule.garbage_collect('2014-09-26T12:00:11Z')
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:00:11Z'))
     assert rule.matches == []
 
     # This would be run if the query returned nothing for a future timestamp
-    rule.garbage_collect('2014-09-26T12:00:45Z')
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:00:45Z'))
     assert len(rule.matches) == 1
 
 
@@ -444,11 +443,11 @@ def test_flatline_count():
              'threshold': 1,
              'timestamp_field': '@timestamp'}
     rule = FlatlineRule(rules)
-    rule.add_count_data({'2014-10-11T00:00:00': 1})
-    rule.garbage_collect('2014-10-11T00:00:10')
+    rule.add_count_data({ts_to_dt('2014-10-11T00:00:00'): 1})
+    rule.garbage_collect(ts_to_dt('2014-10-11T00:00:10'))
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-10-11T00:00:15': 0})
-    rule.garbage_collect('2014-10-11T00:00:20')
+    rule.add_count_data({ts_to_dt('2014-10-11T00:00:15'): 0})
+    rule.garbage_collect(ts_to_dt('2014-10-11T00:00:20'))
     assert len(rule.matches) == 0
-    rule.add_count_data({'2014-10-11T00:00:35': 0})
+    rule.add_count_data({ts_to_dt('2014-10-11T00:00:35'): 0})
     assert len(rule.matches) == 1

@@ -78,11 +78,11 @@ def dt_to_ts(dt):
         return ts + 'Z'
     # isoformat() uses microsecond accuracy and timezone offsets
     # but we should try to use millisecond accuracy and Z to indicate UTC
-    return ts.replace('000+00:00', 'Z')
+    return ts.replace('000+00:00', 'Z').replace('+00:00', 'Z')
 
 
 def ts_now():
-    return datetime.datetime.utcnow().replace(tzinfo=dateutil.tz.tzutc()).isoformat()
+    return datetime.datetime.utcnow().replace(tzinfo=dateutil.tz.tzutc())
 
 
 def inc_ts(timestamp, milliseconds=1):
@@ -92,18 +92,13 @@ def inc_ts(timestamp, milliseconds=1):
     return dt_to_ts(dt)
 
 
-def ts_delta(start, end):
-    """Take two timestamps and returns a timedelta object."""
-    start_dt = ts_to_dt(start)
-    end_dt = ts_to_dt(end)
-    return end_dt - start_dt
-
-
 def pretty_ts(timestamp, tz=True):
     """Pretty-format the given timestamp (to be printed or logged hereafter).
     If tz, the timestamp will be converted to local time.
     Format: MM-DD HH:MM TZ"""
-    dt = ts_to_dt(timestamp)
+    dt = timestamp
+    if not isinstance(timestamp, datetime.datetime):
+        dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
     padding = ''
@@ -127,12 +122,9 @@ def hashable(obj):
     return obj
 
 
-def format_index(index, starttime, endtime):
+def format_index(index, start, end):
     """ Takes an index, specified using strftime format, start and end time timestamps,
     and outputs a wildcard based index string to match all possible timestamps. """
-    start = ts_to_dt(starttime)
-    end = ts_to_dt(endtime)
-
     # Convert to UTC
     start -= start.utcoffset()
     end -= end.utcoffset()

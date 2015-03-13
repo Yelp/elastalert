@@ -34,8 +34,8 @@ option, this will be automatically converted to a ``datetime.timedelta`` object 
 ``self.matches``: This is where ElastAlert checks for matches from the rule. Whatever information is relevant to the match
 (generally comming from the fields in Elasticsearch) should be put into a dictionary object and
 added to ``self.matches``. ElastAlert will pop items out periodically and send alerts based on these objects. It is
-recommended that you use ``self.add_match(match)`` to add matches. By default, this simply appends to ``self.matches``,
-but some other rule types use it to add additional information to the match.
+recommended that you use ``self.add_match(match)`` to add matches. In addition to appending to ``self.matches``,
+``self.add_match`` will convert the datetime ``@timestamp`` back into an ISO 8601 timestamp.
 
 ``self.required_options``: This is a set of options that must exist in the configuration file. ElastAlert will
 ensure that all of these fields exist before trying to instantiate a ``RuleType`` instance.
@@ -45,7 +45,7 @@ add_data(self, data):
 
 When ElastAlert queries Elasticsearch, it will pass all of the hits to the rule type by calling ``add_data``.
 ``data`` is a list of dictionary objects which contain all of the fields in ``include``, ``query_key`` and ``compare_key``
-if they exist, and '@timestamp'. They will always come in chronological order sorted by '@timestamp'. 
+if they exist, and ``@timestamp`` as a datetime object. They will always come in chronological order sorted by '@timestamp'. 
 
 get_match_str(self, match):
 ------------------------------
@@ -59,7 +59,7 @@ garbage_collect(self, timestamp):
 ---------------------------------
 
 This will be called after ElastAlert has run over a time period ending in ``timestamp`` and should be used
-to clear any state that may be obsolete as of ``timestamp``. ``timestamp`` is an ISO8601 timestamp.
+to clear any state that may be obsolete as of ``timestamp``. ``timestamp`` is an datetime object.
 
 
 Tutorial
@@ -78,6 +78,8 @@ and alert if a login occurs in the time range. First, lets create a modules fold
 Now, in a file named ``my_rules.py``, add
 
 .. code-block:: python
+
+    import dateutil.parser
 
     from elastalert.ruletypes import RuleType
 
@@ -102,14 +104,15 @@ Now, in a file named ``my_rules.py``, add
                 # To access config options, use self.rule
                 if document['username'] in self.rule['usernames']:
 
-                    # Convert the timestamp to a datetime object
-                    login_time = ts_to_dt(document['@timestamp'])
+                    # Convert the timestamp to a time object
+                    login_time = document['@timestamp'].time()
 
-                    # Convert the datetime object to a time string
-                    str_time = login_time.time().isoformat()
-
+                    # Convert time_start and time_end to time objects
+                    time_start = dateutil.parser.parse(self.rule['time_start']).time()
+                    time_end = dateutil.parser.parse(self.rule['time_end']).time()
+                    
                     # If the time falls between start and end
-                    if str_time > self.rule['time_start'] and str_time < self.rule['time_end']:
+                    if str_time > time_start and str_time < time_end:
                         
                         # To add a match, use self.add_match
                         self.add_match(document)

@@ -12,13 +12,13 @@ from elastalert.enhancements import BaseEnhancement
 from elastalert.kibana import dashboard_temp
 from elastalert.util import dt_to_ts
 from elastalert.util import EAException
-from elastalert.util import ts_add
-from elastalert.util import ts_delta
 from elastalert.util import ts_to_dt
 
 
-START = '2014-09-26T12:34:45'
-END = '2014-09-27T12:34:45'
+START_TIMESTAMP = '2014-09-26T12:34:45Z'
+END_TIMESTAMP = '2014-09-27T12:34:45Z'
+START = ts_to_dt(START_TIMESTAMP)
+END = ts_to_dt(END_TIMESTAMP)
 
 
 def _set_hits(ea_inst, hits):
@@ -76,7 +76,7 @@ def test_init_rule(ea):
 def test_query(ea):
     ea.current_es.search.return_value = {'hits': {'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END, 'from': START}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], size=100000)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], size=100000)
 
 
 def test_no_hits(ea):
@@ -86,7 +86,7 @@ def test_no_hits(ea):
 
 
 def test_some_hits(ea):
-    hits = generate_hits([START, END])
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP])
     ea.current_es.search.return_value = hits
     ea.run_query(ea.rules[0], START, END)
 
@@ -95,7 +95,7 @@ def test_some_hits(ea):
 
 
 def test_duplicate_timestamps(ea):
-    hits = generate_hits([START] * 3, blah='duplicate')
+    hits = generate_hits([START_TIMESTAMP] * 3, blah='duplicate')
     ea.current_es.search.return_value = hits
     ea.run_query(ea.rules[0], START, '2014-01-01T00:00:00Z')
 
@@ -109,13 +109,13 @@ def test_duplicate_timestamps(ea):
 
 
 def test_match(ea):
-    hits = generate_hits([START, END])
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP])
     ea.current_es.search.return_value = hits
     ea.rules[0]['type'].matches = [{'@timestamp': END}]
     with mock.patch('elastalert.elastalert.Elasticsearch'):
         ea.run_rule(ea.rules[0], END, START)
 
-    ea.rules[0]['alert'][0].alert.called_with({'@timestamp': END})
+    ea.rules[0]['alert'][0].alert.called_with({'@timestamp': END_TIMESTAMP})
     assert ea.rules[0]['alert'][0].alert.call_count == 1
 
 
@@ -156,7 +156,7 @@ def test_match_with_module(ea):
 
 def test_agg(ea):
     hit1, hit2, hit3 = '2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:47:45'
-    alerttime1 = ts_to_dt(hit1) + datetime.timedelta(minutes=10)
+    alerttime1 = dt_to_ts(ts_to_dt(hit1) + datetime.timedelta(minutes=10))
     hits = generate_hits([hit1, hit2, hit3])
     ea.current_es.search.return_value = hits
     with mock.patch('elastalert.elastalert.Elasticsearch'):
@@ -194,7 +194,7 @@ def test_agg(ea):
                                           {'hits': {'hits': [{'_id': 'BCDE', '_source': call2}]}},
                                           {'hits': {'hits': []}}]
     ea.send_pending_alerts()
-    assert_alerts(ea, [[hit1, hit2], [hit3]])
+    assert_alerts(ea, [[dt_to_ts(hit1), dt_to_ts(hit2)], [dt_to_ts(hit3)]])
 
     call1 = ea.writeback_es.search.call_args_list[6][1]['body']
     call2 = ea.writeback_es.search.call_args_list[7][1]['body']
@@ -252,7 +252,8 @@ def test_silence(ea):
     ea.rules[0]['type'].matches = match
     with mock.patch('elastalert.elastalert.ts_now') as mock_ts:
         with mock.patch('elastalert.elastalert.Elasticsearch'):
-            mock_ts.return_value = dt_to_ts(datetime.datetime.utcnow() + datetime.timedelta(hours=5))
+            # Converted twice to add tzinfo
+            mock_ts.return_value = ts_to_dt(dt_to_ts(datetime.datetime.utcnow() + datetime.timedelta(hours=5)))
             ea.run_rule(ea.rules[0], END, START)
     assert ea.rules[0]['alert'][0].alert.call_count == 1
 
@@ -276,7 +277,8 @@ def test_silence_query_key(ea):
     ea.rules[0]['type'].matches = match
     with mock.patch('elastalert.elastalert.ts_now') as mock_ts:
         with mock.patch('elastalert.elastalert.Elasticsearch'):
-            mock_ts.return_value = dt_to_ts(datetime.datetime.utcnow() + datetime.timedelta(hours=5))
+            # Converted twice to add tzinfo
+            mock_ts.return_value = ts_to_dt(dt_to_ts(datetime.datetime.utcnow() + datetime.timedelta(hours=5)))
             ea.run_rule(ea.rules[0], END, START)
     assert ea.rules[0]['alert'][0].alert.call_count == 1
 
@@ -302,7 +304,8 @@ def test_realert(ea):
     matches = [{'@timestamp': hits[0]}]
     with mock.patch('elastalert.elastalert.ts_now') as mock_ts:
         with mock.patch('elastalert.elastalert.Elasticsearch'):
-            mock_ts.return_value = dt_to_ts(datetime.datetime.utcnow() + datetime.timedelta(minutes=10))
+            # mock_ts is converted twice to add tzinfo
+            mock_ts.return_value = ts_to_dt(dt_to_ts(datetime.datetime.utcnow() + datetime.timedelta(minutes=10)))
             ea.rules[0]['type'].matches = matches
             ea.run_rule(ea.rules[0], END, START)
             assert ea.rules[0]['alert'][0].alert.call_count == 2
@@ -315,20 +318,19 @@ def test_count(ea):
         ea.run_rule(ea.rules[0], END, START)
 
     # Assert that es.count is run against every run_every timeframe between START and END
-    end = END
     start = START
-    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': end, 'from': START}}}]}}}}}
-    while ts_delta(start, END) > ea.buffer_time:
-        end = ts_add(start, ea.run_every)
-        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['to'] = end
-        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['from'] = start
-        start = ts_add(start, ea.run_every)
+    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}}}}
+    while END - start > ea.buffer_time:
+        end = start + ea.run_every
+        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
+        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['from'] = dt_to_ts(start)
+        start = start + ea.run_every
         ea.current_es.count.assert_any_call(body=query, doc_type='doctype', index='idx')
 
 
 def test_queries_with_rule_buffertime(ea):
     ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=53)
-    hits = generate_hits([START])
+    hits = generate_hits([START_TIMESTAMP])
     mock_es = mock.Mock()
     mock_es.search.return_value = hits
     with mock.patch('elastalert.elastalert.Elasticsearch') as mock_es_init:
@@ -336,15 +338,15 @@ def test_queries_with_rule_buffertime(ea):
         ea.run_rule(ea.rules[0], END, START)
 
     # Assert that es.search is run against every run_every timeframe between START and END
-    end = END
+    end = END_TIMESTAMP
     start = START
-    query = {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': end, 'from': START}}}]}},
+    query = {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}},
              'sort': [{'@timestamp': {'order': 'asc'}}]}
-    while ts_delta(start, END) > ea.rules[0]['buffer_time']:
-        end = ts_add(start, ea.run_every)
-        query['filter']['bool']['must'][0]['range']['@timestamp']['to'] = end
-        query['filter']['bool']['must'][0]['range']['@timestamp']['from'] = start
-        start = ts_add(start, ea.run_every)
+    while END - start > ea.rules[0]['buffer_time']:
+        end = start + ea.run_every
+        query['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
+        query['filter']['bool']['must'][0]['range']['@timestamp']['from'] = dt_to_ts(start)
+        start = start + ea.run_every
         ea.current_es.search.assert_any_call(body=query, size=ea.max_query_size, index='idx', _source_include=['@timestamp'])
 
     # Assert that num_hits correctly summed every result
@@ -359,23 +361,23 @@ def test_get_starttime(ea):
 
     # 4 days old, will return endtime
     with mock.patch('elastalert.elastalert.ts_now') as mock_ts:
-        mock_ts.return_value = '2015-01-05T00:00:00Z'  # 4 days ahead of the endtime
-        assert ea.get_starttime(ea.rules[0]) == endtime
+        mock_ts.return_value = ts_to_dt('2015-01-05T00:00:00Z')  # 4 days ahead of the endtime
+        assert ea.get_starttime(ea.rules[0]) == ts_to_dt(endtime)
 
     # 10 days old, will return None
     with mock.patch('elastalert.elastalert.ts_now') as mock_ts:
-        mock_ts.return_value = '2015-01-11T00:00:00Z'  # 10 days ahead of the endtime
+        mock_ts.return_value = ts_to_dt('2015-01-11T00:00:00Z')  # 10 days ahead of the endtime
         assert ea.get_starttime(ea.rules[0]) is None
 
 
 def test_set_starttime(ea):
     # standard query, no starttime, no last run
-    end = '2014-10-10T10:10:10'
+    end = ts_to_dt('2014-10-10T10:10:10')
     with mock.patch.object(ea, 'get_starttime') as mock_gs:
         mock_gs.return_value = None
         ea.set_starttime(ea.rules[0], end)
         assert mock_gs.call_count == 1
-    assert ea.rules[0]['starttime'] == ts_add(end, -ea.buffer_time)
+    assert ea.rules[0]['starttime'] == end - ea.buffer_time
 
     # Standard query, no starttime, rule specific buffer_time
     ea.rules[0].pop('starttime')
@@ -384,23 +386,23 @@ def test_set_starttime(ea):
         mock_gs.return_value = None
         ea.set_starttime(ea.rules[0], end)
         assert mock_gs.call_count == 1
-    assert ea.rules[0]['starttime'] == ts_add(end, -datetime.timedelta(minutes=37))
+    assert ea.rules[0]['starttime'] == end - datetime.timedelta(minutes=37)
     ea.rules[0].pop('buffer_time')
 
     # Standard query, no starttime, last run
     ea.rules[0].pop('starttime')
     with mock.patch.object(ea, 'get_starttime') as mock_gs:
-        mock_gs.return_value = '2014-10-10T00:00:00'
+        mock_gs.return_value = ts_to_dt('2014-10-10T00:00:00')
         ea.set_starttime(ea.rules[0], end)
         assert mock_gs.call_count == 1
-    assert ea.rules[0]['starttime'] == '2014-10-10T00:00:00'
+    assert ea.rules[0]['starttime'] == ts_to_dt('2014-10-10T00:00:00')
 
     # Standard query, starttime
     with mock.patch.object(ea, 'get_starttime') as mock_gs:
         mock_gs.return_value = None
         ea.set_starttime(ea.rules[0], end)
         assert mock_gs.call_count == 0
-    assert ea.rules[0]['starttime'] == ts_add(end, -ea.buffer_time)
+    assert ea.rules[0]['starttime'] == end - ea.buffer_time
 
     # Count query, starttime
     ea.rules[0]['use_count_query'] = True
@@ -408,7 +410,7 @@ def test_set_starttime(ea):
         mock_gs.return_value = None
         ea.set_starttime(ea.rules[0], end)
         assert mock_gs.call_count == 0
-    assert ea.rules[0]['starttime'] == ts_add(end, -ea.run_every)
+    assert ea.rules[0]['starttime'] == end - ea.run_every
 
 
 def test_kibana_dashboard(ea):
@@ -468,10 +470,10 @@ def test_strf_index(ea):
     ea.rules[0]['use_strftime_index'] = True
 
     # Test formatting with times
-    start = '2015-01-02T12:34:45Z'
-    end = '2015-01-02T16:15:14Z'
+    start = ts_to_dt('2015-01-02T12:34:45Z')
+    end = ts_to_dt('2015-01-02T16:15:14Z')
     assert ea.get_index(ea.rules[0], start, end) == 'logstash-2015.01.02'
-    end = '2015-01-03T01:02:03Z'
+    end = ts_to_dt('2015-01-03T01:02:03Z')
     assert ea.get_index(ea.rules[0], start, end) == 'logstash-2015.01.02,logstash-2015.01.03'
 
     # Test formatting for wildcard

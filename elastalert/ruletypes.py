@@ -7,7 +7,6 @@ from util import EAException
 from util import hashable
 from util import lookup_es_key
 from util import pretty_ts
-from util import ts_delta
 from util import ts_to_dt
 
 
@@ -40,6 +39,8 @@ class RuleType(object):
 
         :param event: The matching event, a dictionary of terms.
         """
+        if '@timestamp' in event:
+            event['@timestamp'] = dt_to_ts(event['@timestamp'])
         self.matches.append(event)
 
     def get_match_str(self, match):
@@ -132,7 +133,7 @@ class ChangeRule(CompareRule):
 
                 # If using timeframe, only return true if the time delta is < timeframe
                 if key in self.occurrence_time:
-                    changed = ts_delta(self.occurrence_time[key], event[self.rules['timestamp_field']]) <= self.rules['timeframe']
+                    changed = event[self.rules['timestamp_field']] - self.occurrence_time[key] <= self.rules['timeframe']
 
         # Update the current value and time
         self.occurrences[key] = val
@@ -150,7 +151,7 @@ class ChangeRule(CompareRule):
         if change:
             extra = {'old_value': change[0],
                      'new_value': change[1]}
-        self.matches.append(dict(match.items() + extra.items()))
+        super(ChangeRule, self).add_match(dict(match.items() + extra.items()))
 
 
 class FrequencyRule(RuleType):
@@ -209,7 +210,7 @@ class FrequencyRule(RuleType):
         """ Remove all occurrence data that is beyond the timeframe away """
         stale_keys = []
         for key, window in self.occurrences.iteritems():
-            if ts_delta(window.data[-1][0][self.ts_field], timestamp) > self.rules['timeframe']:
+            if timestamp - window.data[-1][0][self.ts_field] > self.rules['timeframe']:
                 stale_keys.append(key)
         map(self.occurrences.pop, stale_keys)
 
@@ -244,7 +245,7 @@ class EventWindow(object):
         This will also pop the oldest events and call onRemoved on them until the
         window size is less than timeframe. """
         # If the event occurred before our 'latest' event
-        if len(self.data) and ts_delta(self.get_ts(event), self.get_ts(self.data[-1])) > datetime.timedelta(0):
+        if len(self.data) and self.get_ts(self.data[-1]) > self.get_ts(event):
             self.append_middle(event)
         else:
             self.data.append(event)
@@ -257,7 +258,7 @@ class EventWindow(object):
         """ Get the size in timedelta of the window. """
         if not self.data:
             return datetime.timedelta(0)
-        return ts_delta(self.get_ts(self.data[0]), self.get_ts(self.data[-1]))
+        return self.get_ts(self.data[-1]) - self.get_ts(self.data[0])
 
     def count(self):
         """ Count the number of events in the window. """
@@ -273,12 +274,12 @@ class EventWindow(object):
         ts = self.get_ts(event)
 
         # Append left if ts is earlier than first event
-        if ts_delta(ts, self.get_ts(self.data[0])) > datetime.timedelta(0):
+        if self.get_ts(self.data[0]) > ts:
             self.data.appendleft(event)
             return
 
         # Rotate window until we can insert event
-        while ts_delta(ts, self.get_ts(self.data[-1])) > datetime.timedelta(0):
+        while self.get_ts(self.data[-1]) > ts:
             self.data.rotate(1)
             rotation += 1
             if rotation == len(self.data):
@@ -346,7 +347,7 @@ class SpikeRule(RuleType):
         self.cur_windows[qk].append((event, count))
 
         # Don't alert if ref window has not yet been filled
-        if ts_delta(self.first_event[qk][self.ts_field], event[self.ts_field]) < self.rules['timeframe'] * 2:
+        if event[self.ts_field] - self.first_event[qk][self.ts_field] < self.rules['timeframe'] * 2:
             # Unless query_key and alert_on_new_data are both set and the ref window has been filled once
             if not (self.rules.get('query_key') and self.rules.get('alert_on_new_data')) or not self.ref_window_filled_once:
                 return
@@ -398,6 +399,11 @@ class SpikeRule(RuleType):
         # Windows are sized according to their newest event
         # This is a placeholder to accurately size windows in the absence of events
         for qk in self.cur_windows.keys():
+            # If we havn't seen this key in a long time, forget it
+            if qk != 'all' and self.ref_windows[qk].count() == 0 and self.cur_windows[qk].count() == 0:
+                self.cur_windows.pop(qk)
+                self.ref_windows.pop(qk)
+                continue
             placeholder = {self.ts_field: ts}
             # The placeholder may trigger an alert, in which case, qk will be expected
             if qk != 'all':
@@ -422,7 +428,7 @@ class FlatlineRule(FrequencyRule):
             self.first_event = most_recent_ts
 
         # Don't check for matches until timeframe has elapsed
-        if ts_delta(self.first_event, most_recent_ts) < self.rules['timeframe']:
+        if most_recent_ts - self.first_event < self.rules['timeframe']:
             return
 
         # Match if, after removing old events, we hit num_events
