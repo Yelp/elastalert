@@ -15,10 +15,10 @@ from elastalert.util import EAException
 from elastalert.util import ts_to_dt
 
 
-START_TS = '2014-09-26T12:34:45Z'
-END_TS = '2014-09-27T12:34:45Z'
-START = ts_to_dt(START_TS)
-END = ts_to_dt(END_TS)
+START_TIMESTAMP = '2014-09-26T12:34:45Z'
+END_TIMESTAMP = '2014-09-27T12:34:45Z'
+START = ts_to_dt(START_TIMESTAMP)
+END = ts_to_dt(END_TIMESTAMP)
 
 
 def _set_hits(ea_inst, hits):
@@ -76,7 +76,7 @@ def test_init_rule(ea):
 def test_query(ea):
     ea.current_es.search.return_value = {'hits': {'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TS, 'from': START_TS}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], size=100000)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], size=100000)
 
 
 def test_no_hits(ea):
@@ -86,7 +86,7 @@ def test_no_hits(ea):
 
 
 def test_some_hits(ea):
-    hits = generate_hits([START_TS, END_TS])
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP])
     ea.current_es.search.return_value = hits
     ea.run_query(ea.rules[0], START, END)
 
@@ -95,7 +95,7 @@ def test_some_hits(ea):
 
 
 def test_duplicate_timestamps(ea):
-    hits = generate_hits([START_TS] * 3, blah='duplicate')
+    hits = generate_hits([START_TIMESTAMP] * 3, blah='duplicate')
     ea.current_es.search.return_value = hits
     ea.run_query(ea.rules[0], START, '2014-01-01T00:00:00Z')
 
@@ -109,13 +109,13 @@ def test_duplicate_timestamps(ea):
 
 
 def test_match(ea):
-    hits = generate_hits([START_TS, END_TS])
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP])
     ea.current_es.search.return_value = hits
     ea.rules[0]['type'].matches = [{'@timestamp': END}]
     with mock.patch('elastalert.elastalert.Elasticsearch'):
         ea.run_rule(ea.rules[0], END, START)
 
-    ea.rules[0]['alert'][0].alert.called_with({'@timestamp': END_TS})
+    ea.rules[0]['alert'][0].alert.called_with({'@timestamp': END_TIMESTAMP})
     assert ea.rules[0]['alert'][0].alert.call_count == 1
 
 
@@ -319,7 +319,7 @@ def test_count(ea):
 
     # Assert that es.count is run against every run_every timeframe between START and END
     start = START
-    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TS, 'from': START_TS}}}]}}}}}
+    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}}}}
     while END - start > ea.buffer_time:
         end = start + ea.run_every
         query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
@@ -330,7 +330,7 @@ def test_count(ea):
 
 def test_queries_with_rule_buffertime(ea):
     ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=53)
-    hits = generate_hits([START_TS])
+    hits = generate_hits([START_TIMESTAMP])
     mock_es = mock.Mock()
     mock_es.search.return_value = hits
     with mock.patch('elastalert.elastalert.Elasticsearch') as mock_es_init:
@@ -338,9 +338,9 @@ def test_queries_with_rule_buffertime(ea):
         ea.run_rule(ea.rules[0], END, START)
 
     # Assert that es.search is run against every run_every timeframe between START and END
-    end = END_TS
+    end = END_TIMESTAMP
     start = START
-    query = {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TS, 'from': START_TS}}}]}},
+    query = {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}},
              'sort': [{'@timestamp': {'order': 'asc'}}]}
     while END - start > ea.rules[0]['buffer_time']:
         end = start + ea.run_every
