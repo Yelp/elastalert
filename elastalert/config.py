@@ -157,6 +157,11 @@ def load_configuration(filename):
     include.append(rule['timestamp_field'])
     rule['include'] = list(set(include))
 
+    # Change top_count_keys to .raw
+    if 'top_count_keys' in rule and rule.get('raw_count_keys', True):
+        keys = rule.get('top_count_keys')
+        rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in keys]
+
     # Check that generate_kibana_url is compatible with the filters
     if rule.get('generate_kibana_link'):
         for es_filter in rule.get('filter'):
