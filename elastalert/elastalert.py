@@ -675,8 +675,8 @@ class ElastAlerter():
                     qk = match[rule['query_key']]
                 else:
                     qk = None
-                start = ts_add(match[rule['timestamp_field']], -rule.get('timeframe', datetime.timedelta(minutes=10)))
-                end = ts_add(match[rule['timestamp_field']], datetime.timedelta(minutes=10))
+                start = ts_to_dt(match[rule['timestamp_field']]) - rule.get('timeframe', datetime.timedelta(minutes=10))
+                end = ts_to_dt(match[rule['timestamp_field']]) + datetime.timedelta(minutes=10)
                 keys = rule.get('top_count_keys')
                 counts = self.get_top_counts(rule, start, end, keys, rule.get('top_count_number'), qk)
                 match.update(counts)
