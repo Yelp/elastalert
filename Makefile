@@ -11,7 +11,7 @@ docs:
 dev: $(LOCAL_CONFIG_DIR) $(LOGS_DIR) install-hooks
 
 install-hooks:
-	@tox -e pre-commit -- install -f --install-hooks
+	pre-commit install -f --install-hooks
 
 test:
 	tox
