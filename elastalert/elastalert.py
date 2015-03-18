@@ -176,9 +176,9 @@ class ElastAlerter():
         logging.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits)))
         self.replace_ts(hits, rule)
 
-	# Record doc_type for use in get_top_counts
-	if 'doc_type' not in rule and len(hits):
-		rule['doc_type'] = hits[0]['_type']
+        # Record doc_type for use in get_top_counts
+        if 'doc_type' not in rule and len(hits):
+            rule['doc_type'] = hits[0]['_type']
         return hits
 
     def replace_ts(self, hits, rule):
@@ -216,9 +216,9 @@ class ElastAlerter():
     def get_hits_terms(self, rule, starttime, endtime, index, key, qk=None):
         rule_filter = copy.copy(rule['filter'])
         if qk:
-	    filter_key = rule['query_key']
-	    if rule.get('raw_count_terms', True) and not rule['query_key'].endswith('.raw'):
-	        filter_key += '.raw'
+            filter_key = rule['query_key']
+            if rule.get('raw_count_terms', True) and not rule['query_key'].endswith('.raw'):
+                filter_key += '.raw'
             rule_filter.extend([{'term': {filter_key: qk}}])
         base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)
         query = self.get_terms_query(base_query, rule.get('terms_size', 5), key)
