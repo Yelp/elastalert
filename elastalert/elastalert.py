@@ -217,7 +217,7 @@ class ElastAlerter():
         rule_filter = copy.copy(rule['filter'])
         if qk:
             filter_key = rule['query_key']
-            if rule.get('raw_count_terms', True) and not rule['query_key'].endswith('.raw'):
+            if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
                 filter_key += '.raw'
             rule_filter.extend([{'term': {filter_key: qk}}])
         base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)

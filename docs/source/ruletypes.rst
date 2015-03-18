@@ -77,11 +77,11 @@ where X is 5 by default, or ``top_count_number`` if it exists.
 For example, if ``num_events`` is 100, and ``top_count_keys`` is ``- "username"``, the alert will say how many of the 100 events
 have each username, for the top 5 usernames. When this is computed, the time range used is from ``timeframe`` before the most recent event
 to 10 minutes past the most recent event. Because ElastAlert uses an aggregation query to compute this, it will attempt to use the
-field name plus ".raw" to count unanalyzed terms. To turn this off, set ``count_raw_keys`` to false.
+field name plus ".raw" to count unanalyzed terms. To turn this off, set ``raw_count_keys`` to false.
 
 ``top_count_number``: The number of terms to list if ``top_count_keys`` is set. (Optional, integer, default 5)
 
-``count_raw_keys``: If true, all fields in ``top_count_keys`` will have ``.raw`` appended to them. (Optional, boolean, default true)
+``raw_count_keys``: If true, all fields in ``top_count_keys`` will have ``.raw`` appended to them. (Optional, boolean, default true)
 
 ``generate_kibana_link``: If true, ElastAlert will generate a temporary Kibana dashboard and include a link to it in alerts. The dashboard
 consists of an events over time graph and a table with ``include`` fields selected in the table. If the rule uses ``query_key``, the
