@@ -159,7 +159,8 @@ def load_configuration(filename):
 
     # Change top_count_keys to .raw
     if 'top_count_keys' in rule and rule.get('raw_count_keys', True):
-        rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in rule.get('top_count_keys')]
+        keys = rule.get('top_count_keys')
+        rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in keys]
 
     # Check that generate_kibana_url is compatible with the filters
     if rule.get('generate_kibana_link'):
