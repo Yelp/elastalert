@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import logging
 from email.mime.text import MIMEText
 from smtplib import SMTP
@@ -99,7 +100,7 @@ class Alerter(object):
         return alert_subject
 
     def create_default_title(self, matches):
-        raise NotImplementedError()
+        return self.rule['name']
 
 
 class DebugAlerter(Alerter):
@@ -184,6 +185,8 @@ class JiraAlerter(Alerter):
         self.component = self.rule.get('jira_component')
         self.label = self.rule.get('jira_label')
         self.assignee = self.rule.get('jira_assignee')
+        self.max_age = self.rule.get('jira_max_age', 30)
+        self.bump_tickets = self.rule.get('jira_bump_tickets', False)
 
         self.jira_args = {'project': {'key': self.project},
                           'issuetype': {'name': self.issue_type}}
@@ -219,8 +222,39 @@ class JiraAlerter(Alerter):
         self.user = account_conf['user']
         self.password = account_conf['password']
 
+    def find_existing_ticket(self, matches):
+        # Default title, get stripped search version
+        if 'alert_subject' not in self.rule:
+            title = self.create_default_title(matches, True)
+        else:
+            title = self.create_title(matches)
+
+        # This is necessary for search for work. Other special characters and dashes
+        # directly adjacent to words appear to be ok
+        title = title.replace(' - ', ' ')
+
+        date = (datetime.datetime.now() - datetime.timedelta(days=self.max_age)).strftime('%Y/%m/%d')
+        jql = 'project=%s AND summary~"%s" and created >= "%s"' % (self.project, title, date)
+        issues = self.client.search_issues(jql)
+        if len(issues):
+            return issues[0]
+
+    def comment_on_ticket(self, ticket, match):
+        text = basic_match_string(self.rule, match)
+        timestamp = pretty_ts(match[self.rule['timestamp_field']])
+        comment = "This alert was triggered again at %s\n%s" % (timestamp, text)
+        self.client.add_comment(ticket, comment)
+
     def alert(self, matches):
         title = self.create_title(matches)
+
+        if self.bump_tickets:
+            ticket = self.find_existing_ticket(matches)
+            if ticket:
+                logging.info('Commenting on existing ticket %s' % (ticket.key))
+                for match in matches:
+                    self.comment_on_ticket(ticket, match)
+            return
 
         description = ''
         for match in matches:
@@ -237,12 +271,16 @@ class JiraAlerter(Alerter):
             raise EAException("Error creating JIRA ticket: %s" % (e))
         logging.info("Opened Jira ticket: %s" % (self.issue))
 
-    def create_default_title(self, matches):
+    def create_default_title(self, matches, for_search=False):
         # If there is a query_key, use that in the title
         if 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
             title = 'ElastAlert: %s matched %s' % (matches[0][self.rule['query_key']], self.rule['name'])
         else:
             title = 'ElastAlert: %s' % (self.rule['name'])
+
+        if for_search:
+            return title
+
         title += ' - %s' % (pretty_ts(matches[0][self.rule['timestamp_field']], self.rule.get('use_local_time')))
 
         # Add count for spikes

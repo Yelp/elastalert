@@ -506,6 +506,14 @@ Optional:
 
 ``jira_label``: The label to add to the JIRA ticket.
 
+``jira_bump_tickets``: If true, ElastAlert search for existing tickets newer than ``jira_max_age`` and comment on the ticket with
+information about the alert instead of opening another ticket. ElastAlert finds the existing ticket by searching by summary. If the
+summary has changed or contains special characters, it may fail to find the ticket. If you are using a custom ``alert_subject``,
+the two summaries must be exact matches. Defaults to false.
+
+``jira_max_age``: If ``jira_bump_tickets`` is true, the maximum age of a ticket, in days, such that ElastAlert will comment on the ticket
+instead of opening a new one. Default is 30 days.
+
 Debug
 ~~~~~~
 
