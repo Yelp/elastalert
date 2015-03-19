@@ -141,7 +141,7 @@ class ElastAlerter():
         """
         query = {'sort': {timestamp_field: {'order': 'asc'}}}
         try:
-            res = self.current_es.search(index=index, size=1, body=query, _source_include=[timestamp_field])
+            res = self.current_es.search(index=index, size=1, body=query, _source_include=[timestamp_field], ignore_unavailable=True)
         except ElasticsearchException as e:
             self.handle_error("Elasticsearch query error: %s" % (e), {'index': index})
             return '1969-12-30T00:00:00Z'
@@ -161,7 +161,7 @@ class ElastAlerter():
         """
         query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'])
         try:
-            res = self.current_es.search(index=index, size=self.max_query_size, body=query, _source_include=rule['include'])
+            res = self.current_es.search(index=index, size=self.max_query_size, body=query, _source_include=rule['include'], ignore_unavailable=True)
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
             # (so big that they will fill the entire terminal buffer)
@@ -199,7 +199,7 @@ class ElastAlerter():
         query = {'query': {'filtered': query}}
 
         try:
-            res = self.current_es.count(index=index, doc_type=rule['doc_type'], body=query)
+            res = self.current_es.count(index=index, doc_type=rule['doc_type'], body=query, ignore_unavailable=True)
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
             # (so big that they will fill the entire terminal buffer)
@@ -224,7 +224,7 @@ class ElastAlerter():
         query = self.get_terms_query(base_query, rule.get('terms_size', 5), key)
 
         try:
-            res = self.current_es.search(index=index, doc_type=rule['doc_type'], body=query, search_type='count')
+            res = self.current_es.search(index=index, doc_type=rule['doc_type'], body=query, search_type='count', ignore_unavailable=True)
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
             # (so big that they will fill the entire terminal buffer)

@@ -76,7 +76,7 @@ def test_init_rule(ea):
 def test_query(ea):
     ea.current_es.search.return_value = {'hits': {'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], size=100000)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
 
 
 def test_no_hits(ea):
@@ -325,7 +325,7 @@ def test_count(ea):
         query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
         query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['from'] = dt_to_ts(start)
         start = start + ea.run_every
-        ea.current_es.count.assert_any_call(body=query, doc_type='doctype', index='idx')
+        ea.current_es.count.assert_any_call(body=query, doc_type='doctype', index='idx', ignore_unavailable=True)
 
 
 def test_queries_with_rule_buffertime(ea):
@@ -347,7 +347,7 @@ def test_queries_with_rule_buffertime(ea):
         query['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
         query['filter']['bool']['must'][0]['range']['@timestamp']['from'] = dt_to_ts(start)
         start = start + ea.run_every
-        ea.current_es.search.assert_any_call(body=query, size=ea.max_query_size, index='idx', _source_include=['@timestamp'])
+        ea.current_es.search.assert_any_call(body=query, size=ea.max_query_size, index='idx', ignore_unavailable=True, _source_include=['@timestamp'])
 
     # Assert that num_hits correctly summed every result
     assert ea.num_hits == ea.current_es.search.call_count
