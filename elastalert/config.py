@@ -61,7 +61,13 @@ def load_configuration(filename):
         raise EAException('Could not parse file %s: %s' % (filename, e))
 
     rule['rule_file'] = os.path.split(filename)[-1]
+    load_options(rule)
+    load_modules(rule)
+    return rule
 
+
+def load_options(rule):
+    """ Converts time objects, sets defaults, and validates some settings. """
     try:
         # Set all time based parameters
         if 'timeframe' in rule:
@@ -87,61 +93,9 @@ def load_configuration(filename):
     rule.setdefault('filter', [])
     rule.setdefault('use_local_time', True)
 
-    # Set match enhancements
-    match_enhancements = []
-    for enhancement_name in rule.get('match_enhancements', []):
-        if enhancement_name in dir(enhancements):
-            enhancement = getattr(enhancements, enhancement_name)
-        else:
-            enhancement = get_module(enhancement_name)
-        if not issubclass(enhancement, enhancements.BaseEnhancement):
-            raise EAException("Enhancement module %s not a subclass of BaseEnhancement" % (enhancement_name))
-        match_enhancements.append(enhancement(rule))
-    rule['match_enhancements'] = match_enhancements
-
     # Make sure we have required options
     if required_locals - frozenset(rule.keys()):
         raise EAException('Missing required option(s): %s' % (', '.join(required_locals - frozenset(rule.keys()))))
-
-    # Convert all alerts into Alerter objects
-    rule_alerts = []
-    if type(rule['alert']) != list:
-        rule['alert'] = [rule['alert']]
-    for alert in rule['alert']:
-        if alert in alerts_mapping:
-            rule_alerts.append(alerts_mapping[alert])
-        else:
-            rule_alerts.append(get_module(alert))
-            if not issubclass(rule_alerts[-1], alerts.Alerter):
-                raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
-    rule['alert'] = rule_alerts
-
-    # Convert rule type into RuleType object
-    if rule['type'] in rules_mapping:
-        rule['type'] = rules_mapping[rule['type']]
-    else:
-        rule['type'] = get_module(rule['type'])
-        if not issubclass(rule['type'], ruletypes.RuleType):
-            raise EAException('Rule module %s is not a subclass of RuleType' % (rule['type']))
-
-    # Make sure we have required alert and type options
-    reqs = rule['type'].required_options
-    for alert in rule['alert']:
-        reqs = reqs.union(alert.required_options)
-    if reqs - frozenset(rule.keys()):
-        raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(rule.keys()))))
-
-    # Instantiate alert
-    try:
-        rule['alert'] = [alert(rule) for alert in rule['alert']]
-    except (KeyError, EAException) as e:
-        raise EAException('Error initiating alert %s: %s' % (rule['alert'], e))
-
-    # Instantiate rule
-    try:
-        rule['type'] = rule['type'](rule)
-    except (KeyError, EAException) as e:
-        raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
 
     if 'include' in rule and type(rule['include']) != list:
         raise EAException('include option must be a list')
@@ -193,7 +147,60 @@ def load_configuration(filename):
                                 'The index will be formatted like %s' % (token,
                                                                          datetime.datetime.now().strftime(rule.get('index'))))
 
-    return rule
+
+def load_modules(rule):
+    """ Loads things that could be modules. Enhancements, alerts and rule type. """
+    # Set match enhancements
+    match_enhancements = []
+    for enhancement_name in rule.get('match_enhancements', []):
+        if enhancement_name in dir(enhancements):
+            enhancement = getattr(enhancements, enhancement_name)
+        else:
+            enhancement = get_module(enhancement_name)
+        if not issubclass(enhancement, enhancements.BaseEnhancement):
+            raise EAException("Enhancement module %s not a subclass of BaseEnhancement" % (enhancement_name))
+        match_enhancements.append(enhancement(rule))
+    rule['match_enhancements'] = match_enhancements
+
+    # Convert all alerts into Alerter objects
+    rule_alerts = []
+    if type(rule['alert']) != list:
+        rule['alert'] = [rule['alert']]
+    for alert in rule['alert']:
+        if alert in alerts_mapping:
+            rule_alerts.append(alerts_mapping[alert])
+        else:
+            rule_alerts.append(get_module(alert))
+            if not issubclass(rule_alerts[-1], alerts.Alerter):
+                raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
+        rule['alert'] = rule_alerts
+
+    # Convert rule type into RuleType object
+    if rule['type'] in rules_mapping:
+        rule['type'] = rules_mapping[rule['type']]
+    else:
+        rule['type'] = get_module(rule['type'])
+        if not issubclass(rule['type'], ruletypes.RuleType):
+            raise EAException('Rule module %s is not a subclass of RuleType' % (rule['type']))
+
+    # Make sure we have required alert and type options
+    reqs = rule['type'].required_options
+    for alert in rule['alert']:
+        reqs = reqs.union(alert.required_options)
+    if reqs - frozenset(rule.keys()):
+        raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(rule.keys()))))
+
+    # Instantiate alert
+    try:
+        rule['alert'] = [alert(rule) for alert in rule['alert']]
+    except (KeyError, EAException) as e:
+        raise EAException('Error initiating alert %s: %s' % (rule['alert'], e))
+
+    # Instantiate rule
+    try:
+        rule['type'] = rule['type'](rule)
+    except (KeyError, EAException) as e:
+        raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
 
 
 def load_rules(filename, use_rule=None):
