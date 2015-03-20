@@ -49,7 +49,7 @@ def get_module(module_name):
     return module
 
 
-def load_configuration(filename, testing=False):
+def load_configuration(filename):
     """ Load a yaml rule file and fill in the relevant fields with objects.
 
     :param filename: The name of a rule configuration file.
@@ -61,7 +61,13 @@ def load_configuration(filename, testing=False):
         raise EAException('Could not parse file %s: %s' % (filename, e))
 
     rule['rule_file'] = os.path.split(filename)[-1]
+    load_options(rule)
+    load_modules(rule)
+    return rule
 
+
+def load_options(rule):
+    """ Converts time objects, sets defaults, and validates some settings. """
     try:
         # Set all time based parameters
         if 'timeframe' in rule:
@@ -141,20 +147,19 @@ def load_configuration(filename, testing=False):
                                 'The index will be formatted like %s' % (token,
                                                                          datetime.datetime.now().strftime(rule.get('index'))))
 
-    if testing:
-        return rule
 
+def load_modules(rule):
+    """ Loads things that could be modules. Enhancements, alerts and rule type. """
     # Set match enhancements
     match_enhancements = []
-    if not testing:
-        for enhancement_name in rule.get('match_enhancements', []):
-            if enhancement_name in dir(enhancements):
-                enhancement = getattr(enhancements, enhancement_name)
-            else:
-                enhancement = get_module(enhancement_name)
-            if not issubclass(enhancement, enhancements.BaseEnhancement):
-                raise EAException("Enhancement module %s not a subclass of BaseEnhancement" % (enhancement_name))
-            match_enhancements.append(enhancement(rule))
+    for enhancement_name in rule.get('match_enhancements', []):
+        if enhancement_name in dir(enhancements):
+            enhancement = getattr(enhancements, enhancement_name)
+        else:
+            enhancement = get_module(enhancement_name)
+        if not issubclass(enhancement, enhancements.BaseEnhancement):
+            raise EAException("Enhancement module %s not a subclass of BaseEnhancement" % (enhancement_name))
+        match_enhancements.append(enhancement(rule))
     rule['match_enhancements'] = match_enhancements
 
     # Convert all alerts into Alerter objects
@@ -196,8 +201,6 @@ def load_configuration(filename, testing=False):
         rule['type'] = rule['type'](rule)
     except (KeyError, EAException) as e:
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
-
-    return rule
 
 
 def load_rules(filename, use_rule=None):
