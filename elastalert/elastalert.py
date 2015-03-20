@@ -86,7 +86,8 @@ class ElastAlerter():
         if self.args.silence:
             self.silence()
 
-    def get_index(self, rule, starttime=None, endtime=None):
+    @staticmethod
+    def get_index(rule, starttime=None, endtime=None):
         """ Gets the index for a rule. If strftime is set and starttime and endtime
         are provided, it will return a comma seperated list of indices. If strftime
         is set but starttime and endtime are not provided, it will replace all format

@@ -10,7 +10,6 @@ import argparse
 from elastalert.config import load_configuration
 from elastalert.elastalert import ElastAlerter
 from elastalert.elastalert import Elasticsearch
-from elastalert.util import dt_to_ts
 from elastalert.util import lookup_es_key
 from elastalert.util import ts_now
 
@@ -30,24 +29,24 @@ def check_files():
     args = parser.parse_args()
 
     for filename in args.files:
-        conf = load_configuration(filename)
+        conf = load_configuration(filename, True)
         print("Loaded %s" % (conf['name']))
 
         es_client = Elasticsearch(host=conf['es_host'], port=conf['es_port'])
-        start_time = datetime.datetime.utcnow() - datetime.timedelta(days=args.days)
-        start_ts = dt_to_ts(start_time)
-        end_ts = ts_now()
+        start_time = ts_now() - datetime.timedelta(days=args.days)
+        end_time = ts_now()
         ts = conf.get('timestamp_field', '@timestamp')
-        query = ElastAlerter.get_query(conf['filter'], starttime=start_ts, endtime=end_ts, timestamp_field=ts)
+        query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts)
+        index = ElastAlerter.get_index(conf, start_time, end_time)
         try:
-            res = es_client.search(index=conf['index'], size=100, body=query)
+            res = es_client.search(index, size=1000, body=query)
         except Exception as e:
             print("Error running your filter:")
             print(repr(e)[:2048])
             exit(1)
 
         num_hits = len(res['hits']['hits'])
-        print("Got %s hits from the last %s days" % (num_hits if num_hits != 100 else '100+', args.days))
+        print("Got %s hits from the last %s day(s)" % (num_hits if num_hits != 1000 else '1000+', args.days))
 
         if num_hits:
             print("Available terms in first hit:")
