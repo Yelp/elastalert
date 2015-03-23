@@ -254,7 +254,7 @@ class JiraAlerter(Alerter):
                 logging.info('Commenting on existing ticket %s' % (ticket.key))
                 for match in matches:
                     self.comment_on_ticket(ticket, match)
-            return
+                return
 
         description = ''
         for match in matches:
