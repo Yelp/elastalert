@@ -37,7 +37,6 @@ def main():
         username = raw_input("Enter optional basic-auth username: ")
         password = raw_input("Enter optional basic-auth password: ")
 
-
     if username and password:
         http_auth = username + ':' + password
 

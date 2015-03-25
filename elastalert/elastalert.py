@@ -1,4 +1,4 @@
-    # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import copy
 import datetime
 import json
@@ -76,14 +76,14 @@ class ElastAlerter():
         self.http_auth = None
         self.es_username = None
         self.es_password = None
-        if self.conf.has_key('es_username'):
+        if 'es_username' in self.conf:
             self.es_username = self.conf['es_username']
             self.es_password = self.conf['es_password']
 
         if self.es_username and self.es_password:
             self.http_auth = self.es_username + ':' + self.es_password
 
-        if self.conf.has_key('use_ssl'):
+        if 'use_ssl' in self.conf:
             self.use_ssl = self.conf['use_ssl']
 
         self.writeback_es = Elasticsearch(host=self.es_host, port=self.es_port,
