@@ -966,7 +966,7 @@ class ElastAlerter():
     def handle_error(self, message, data=None):
         ''' Logs message at error level and writes message, data and traceback to Elasticsearch. '''
         if not self.writeback_es:
-            self.writeback_es = Elasticsearch(host=self.es_host, port=self.es_port)
+            self.writeback_es = Elasticsearch(host=self.es_host, port=self.es_port, use_ssl=self.use_ssl, http_auth=self.http_auth)
         logging.error(message)
         body = {'message': message}
         tb = traceback.format_exc()
