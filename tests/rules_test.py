@@ -312,6 +312,9 @@ def test_spike_terms():
     terms4 = {ts_to_dt('2014-01-01T00:27:00Z'): [{'key': 'userA', 'doc_count': 10},
                                                  {'key': 'userB', 'doc_count': 12},
                                                  {'key': 'userC', 'doc_count': 100}]}
+    terms5 = {ts_to_dt('2014-01-01T00:30:00Z'): [{'key': 'userD', 'doc_count': 100},
+                                                 {'key': 'userC', 'doc_count': 100}]}
+
     rule = SpikeRule(rules)
 
     # Initial input
@@ -345,6 +348,12 @@ def test_spike_terms():
     rule.add_terms_data(terms3)
     rule.add_terms_data(terms4)
     assert len(rule.matches) == 1
+
+    # Test that another alert doesn't fire immediately for userC but it does for userD
+    rule.matches = []
+    rule.add_terms_data(terms5)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['username'] == 'userD'
 
 
 def test_blacklist():
