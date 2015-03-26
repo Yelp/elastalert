@@ -20,6 +20,7 @@ from util import dt_to_ts
 from util import EAException
 from util import format_index
 from util import pretty_ts
+from util import seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
@@ -416,7 +417,8 @@ class ElastAlerter():
                 continue
 
             if rule['realert']:
-                self.set_realert(rule['name'] + key, dt_to_ts(datetime.datetime.utcnow() + rule['realert']))
+                next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
+                self.set_realert(rule['name'] + key, next_alert, exponent)
 
             # If no aggregation, alert immediately
             if not rule['aggregation']:
@@ -901,32 +903,33 @@ class ElastAlerter():
         try:
             unit, num = self.args.silence.split('=')
             silence_time = datetime.timedelta(**{unit: int(num)})
-            silence_ts = dt_to_ts(silence_time + datetime.datetime.utcnow())
+            # Double conversion to add tzinfo
+            silence_ts = ts_to_dt(dt_to_ts(silence_time + datetime.datetime.utcnow()))
         except (ValueError, TypeError):
             logging.error('%s is not a valid time period' % (self.args.silence))
             exit(1)
 
-        if not self.set_realert(rule_name, silence_ts):
+        if not self.set_realert(rule_name, silence_ts, 0):
             logging.error('Failed to save silence command to elasticsearch')
             exit(1)
 
         logging.info('Success. %s will be silenced until %s' % (rule_name, silence_ts))
 
-    def set_realert(self, rule_name, timestamp):
+    def set_realert(self, rule_name, timestamp, exponent):
         """ Write a silence to elasticsearch for rule_name until timestamp. """
-        body = {'rule_name': rule_name,
+        body = {'exponent': exponent,
+                'rule_name': rule_name,
                 '@timestamp': ts_now(),
                 'until': timestamp}
-        self.silence_cache[rule_name] = timestamp
+        self.silence_cache[rule_name] = (timestamp, exponent)
         return self.writeback('silence', body)
 
     def is_silenced(self, rule_name):
         """ Checks if rule_name is currently silenced. Returns false on exception. """
         if rule_name in self.silence_cache:
-            if ts_now() < ts_to_dt(self.silence_cache[rule_name]):
+            if ts_now() < self.silence_cache[rule_name][0]:
                 return True
             else:
-                self.silence_cache.pop(rule_name)
                 return False
 
         query = {'filter': {'term': {'rule_name': rule_name}},
@@ -935,7 +938,7 @@ class ElastAlerter():
         if self.writeback_es:
             try:
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='silence',
-                                               size=1, body=query, _source_include=['until'])
+                                               size=1, body=query, _source_include=['until', 'exponent'])
             except ElasticsearchException as e:
                 self.handle_error("Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
 
@@ -943,8 +946,9 @@ class ElastAlerter():
 
             if res['hits']['hits']:
                 until_ts = res['hits']['hits'][0]['_source']['until']
+                exponent = res['hits']['hits'][0]['_source'].get('exponent', 0)
+                self.silence_cache[rule_name] = (ts_to_dt(until_ts), exponent)
                 if ts_now() < ts_to_dt(until_ts):
-                    self.silence_cache[rule_name] = until_ts
                     return True
         return False
 
@@ -977,6 +981,33 @@ class ElastAlerter():
             # Save a dict with the top 5 events by key
             all_counts['top_events_%s' % (key)] = dict(counts[:number])
         return all_counts
+
+    def next_alert_time(self, rule, name, timestamp):
+        """ Calculate an 'until' time and exponent based on how much past the last 'until' we are. """
+        if name in self.silence_cache:
+            last_until, exponent = self.silence_cache[name]
+        else:
+            # If for some reason this isn't cached, pretend it was a week ago
+            last_until = timestamp - datetime.timedelta(weeks=1)
+            exponent = 0
+
+        if not rule.get('exponential_realert'):
+            return timestamp + rule['realert'], 0
+
+        diff = seconds(timestamp - last_until)
+        # If it's been less than twice the alert time, increase exponent
+        if diff < seconds(rule['realert']) * 2 ** exponent:
+            exponent += 1
+        else:
+            # If it's been longer, recursively decrease exponent and compare the remaining time difference
+            while diff > seconds(rule['realert']) * 2 ** exponent and exponent > 0:
+                diff -= seconds(rule['realert']) * 2 ** exponent
+                exponent -= 1
+
+        wait = datetime.timedelta(seconds=seconds(rule['realert']) * 2 ** exponent)
+        if wait >= rule['exponential_realert']:
+            return timestamp + rule['exponential_realert'], exponent - 1
+        return timestamp + wait, exponent
 
 
 if __name__ == '__main__':
