@@ -70,9 +70,9 @@ class ElastAlerter():
         self.silence_cache = {}
         self.rule_hashes = get_rule_hashes(self.conf)
 
-        self.es_conn_config = build_es_conn_config(self.conf)
+        self.es_conn_config = self.build_es_conn_config(self.conf)
 
-        self.writeback_es = new_elasticsearch(self.es_conn_config)
+        self.writeback_es = self.new_elasticsearch(self.es_conn_config)
 
         if self.debug:
             self.verbose = True
@@ -392,8 +392,8 @@ class ElastAlerter():
         """
         run_start = time.time()
 
-        rule_es_conn_config = build_es_conn_config(rule)
-        self.current_es = new_elasticsearch(rule_es_conn_config)
+        rule_es_conn_config = self.build_es_conn_config(rule)
+        self.current_es = self.new_elasticsearch(rule_es_conn_config)
         self.current_es_addr = (rule['es_host'], rule['es_port'])
 
         # If there are pending aggregate matches, try processing them
@@ -559,7 +559,7 @@ class ElastAlerter():
         while True:
             # If writeback_es errored, it's disabled until the next query cycle
             if not self.writeback_es:
-                self.writeback_es = new_elasticsearch(self.es_conn_config)
+                self.writeback_es = self.new_elasticsearch(self.es_conn_config)
 
             self.send_pending_alerts()
 
@@ -649,8 +649,8 @@ class ElastAlerter():
                    'dashboard': db_js}
 
         # Upload
-        rule_es_conn_config = build_es_conn_config(rule)
-        es = new_elasticsearch(rule_es_conn_config)
+        rule_es_conn_config = self.build_es_conn_config(rule)
+        es = self.new_elasticsearch(rule_es_conn_config)
 
         res = es.create(index='kibana-int',
                         doc_type='temp',
@@ -665,8 +665,8 @@ class ElastAlerter():
 
     def get_dashboard(self, rule, db_name):
         """ Download dashboard which matches use_kibana_dashboard from elasticsearch. """
-        rule_es_conn_config = build_es_conn_config(rule)
-        es = new_elasticsearch(rule_es_conn_config)
+        rule_es_conn_config = self.build_es_conn_config(rule)
+        es = self.new_elasticsearch(rule_es_conn_config)
         if not db_name:
             raise EAException("use_kibana_dashboard undefined")
         query = {'query': {'term': {'_id': db_name}}}
@@ -990,7 +990,7 @@ class ElastAlerter():
     def handle_error(self, message, data=None):
         ''' Logs message at error level and writes message, data and traceback to Elasticsearch. '''
         if not self.writeback_es:
-            self.writeback_es = new_elasticsearch(self.es_conn_config)
+            self.writeback_es = self.new_elasticsearch(self.es_conn_config)
 
         logging.error(message)
         body = {'message': message}
