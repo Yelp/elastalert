@@ -72,7 +72,22 @@ class ElastAlerter():
         self.silence_cache = {}
         self.rule_hashes = get_rule_hashes(self.conf)
 
-        self.writeback_es = Elasticsearch(host=self.es_host, port=self.es_port)
+        self.use_ssl = False
+        self.http_auth = None
+        self.es_username = None
+        self.es_password = None
+        if 'es_username' in self.conf:
+            self.es_username = self.conf['es_username']
+            self.es_password = self.conf['es_password']
+
+        if self.es_username and self.es_password:
+            self.http_auth = self.es_username + ':' + self.es_password
+
+        if 'use_ssl' in self.conf:
+            self.use_ssl = self.conf['use_ssl']
+
+        self.writeback_es = Elasticsearch(host=self.es_host, port=self.es_port,
+                                          use_ssl=self.use_ssl, http_auth=self.http_auth)
 
         if self.debug:
             self.verbose = True

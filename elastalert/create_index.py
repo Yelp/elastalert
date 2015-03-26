@@ -17,16 +17,30 @@ def main():
     else:
         filename = ''
 
+    username = None
+    password = None
+    use_ssl = False
+    http_auth = None
+
     if filename:
         with open(filename) as config_file:
             data = yaml.load(config_file)
         host = data.get('es_host')
         port = data.get('es_port')
+        username = data.get('es_username')
+        password = data.get('es_password')
+        use_ssl = data.get('use_ssl')
     else:
         host = raw_input("Enter elasticsearch host: ")
         port = int(raw_input("Enter elasticsearch port: "))
+        use_ssl = bool(raw_input("Use SSL? True|False: "))
+        username = raw_input("Enter optional basic-auth username: ")
+        password = raw_input("Enter optional basic-auth password: ")
 
-    es = Elasticsearch(host=host, port=port)
+    if username and password:
+        http_auth = username + ':' + password
+
+    es = Elasticsearch(host=host, port=port, use_ssl=use_ssl, http_auth=http_auth)
 
     silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'}}}}
     ess_mapping = {'elastalert_status': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
