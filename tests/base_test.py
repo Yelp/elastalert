@@ -498,3 +498,31 @@ def test_count_keys(ea):
     assert calls[0][1]['body']['aggs']['filtered']['aggs']['counts']['terms'] == {'field': 'this', 'size': 5}
     assert counts['top_events_this'] == {'a': 10, 'b': 5}
     assert counts['top_events_that'] == {'d': 10, 'c': 12}
+
+
+def test_expontential_realert(ea):
+    ea.rules[0]['exponential_realert'] = datetime.timedelta(days=1)  # 1 day ~ 10 * 2**13 seconds
+    ea.rules[0]['realert'] = datetime.timedelta(seconds=10)
+
+    until = ts_to_dt('2015-03-24T00:00:00')
+    ts5s = until + datetime.timedelta(seconds=5)
+    ts15s = until + datetime.timedelta(seconds=15)
+    ts1m = until + datetime.timedelta(minutes=1)
+    ts5m = until + datetime.timedelta(minutes=5)
+    ts4h = until + datetime.timedelta(hours=4)
+
+    test_values = [(ts5s, until, 0),   # Exp will increase to 1, 10*2**0 = 10s
+                   (ts15s, until, 0),  # Exp will stay at 0, 10*2**0 = 10s
+                   (ts15s, until, 1),  # Exp will increase to 2, 10*2**1 = 20s
+                   (ts1m, until, 2),   # Exp will decrease to 1, 10*2**2 = 40s
+                   (ts1m, until, 3),   # Exp will increase to 4, 10*2**3 = 1m20s
+                   (ts5m, until, 1),   # Exp will lower back to 0, 10*2**1 = 20s
+                   (ts4h, until, 9),   # Exp will lower back to 0, 10*2**9 = 1h25m
+                   (ts4h, until, 10),  # Exp will lower back to 9, 10*2**10 = 2h50m
+                   (ts4h, until, 11)]  # Exp will increase to 12, 10*2**11 = 5h
+    results = (1, 0, 2, 1, 4, 0, 0, 9, 12)
+    next_res = iter(results)
+    for args in test_values:
+        ea.silence_cache[ea.rules[0]['name']] = (args[1], args[2])
+        next_alert, exponent = ea.next_alert_time(ea.rules[0], ea.rules[0]['name'], args[0])
+        assert exponent == next_res.next()

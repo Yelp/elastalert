@@ -63,6 +63,8 @@ an alert with ``realert`` is triggered, a ``silence`` record will be written wit
 - ``@timestamp``: The time when the document was uploaded to Elasticsearch.
 - ``rule_name``: The name of the corresponding rule.
 - ``until``: The timestamp when alerts will begin being sent again.
+- ``exponent``: The exponential factor which multiplies ``realert``. The length of this silence is equal to ``realert`` * 2**exponent. This will
+be 0 unless ``exponential_realert`` is set.
 
 Whenever an alert is triggered, ElastAlert will check for a matching ``silence`` document, and if the ``until`` timestamp is in the future, it will ignore
 the alert completely. See the :ref:`Running Elastalert <runningelastalert>` section for information on how to silence an alert.

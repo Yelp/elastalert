@@ -57,6 +57,13 @@ the given time. This is applied to the time the alert is sent, not to the time o
 that if ElastAlert is run over a large time period which triggers many matches, only the first alert will be sent by default. If you want
 every alert, set realert to 0 minutes. (Optional, time, default 1 minute)
 
+``exponential_realert``: This option causes the value of ``realert`` to exponentially increase while alerts continue to fire. If set,
+the value of ``exponential_realert`` is the maximum ``realert`` will increase to. If the time between alerts is less than twice ``realert``,
+``realert`` will double. For example, if ``realert: minutes: 10`` and ``exponential_realert: hours: 1``, an alerts fires at 1:00 and another
+at 1:15, the next alert will not be until at least 1:35. If another alert fires between 1:35 and 2:15, ``realert`` will increase to the
+1 hour maximum. If more than 2 hours elapses before the next alert, ``realert`` will go back down. Note that alerts that are ignored, eg,
+one that occured at 1:05, would not change ``realert``. (Optional, time, no default)
+
 ``buffer_time``: This options allows the rule to override the ``buffer_time`` global setting defined in config.yaml. (Optional, time)
 
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. If you

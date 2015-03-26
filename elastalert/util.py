@@ -139,3 +139,7 @@ def format_index(index, start, end):
 
 class EAException(Exception):
     pass
+
+
+def seconds(td):
+    return td.seconds + td.days * 24 * 3600
