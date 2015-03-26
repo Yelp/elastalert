@@ -82,6 +82,8 @@ def load_options(rule):
             rule['query_delay'] = datetime.timedelta(**rule['query_delay'])
         if 'buffer_time' in rule:
             rule['buffer_time'] = datetime.timedelta(**rule['buffer_time'])
+        if 'exponential_realert' in rule:
+            rule['exponential_realert'] = datetime.timedelta(**rule['exponential_realert'])
     except (KeyError, TypeError) as e:
         raise EAException('Invalid time format used: %s' % (e))
 
