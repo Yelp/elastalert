@@ -8,6 +8,13 @@ es_host: elasticsearch.example.com
 # Elasticsearch port
 es_port: 14900
 
+# (OptionaL) Connect with SSL to elasticsearch
+#use_ssl: True
+
+# (Optional) basic-auth username and password for elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
 # (Required)
 # Rule name, must be unique
 name: Event spike

@@ -59,8 +59,6 @@ class ElastAlerter():
         self.debug = self.args.debug
         self.verbose = self.args.verbose
         self.writeback_index = self.conf['writeback_index']
-        self.es_host = self.conf['es_host']
-        self.es_port = self.conf['es_port']
         self.run_every = self.conf['run_every']
         self.alert_time_limit = self.conf['alert_time_limit']
         self.old_query_limit = self.conf['old_query_limit']
@@ -72,22 +70,9 @@ class ElastAlerter():
         self.silence_cache = {}
         self.rule_hashes = get_rule_hashes(self.conf)
 
-        self.use_ssl = False
-        self.http_auth = None
-        self.es_username = None
-        self.es_password = None
-        if 'es_username' in self.conf:
-            self.es_username = self.conf['es_username']
-            self.es_password = self.conf['es_password']
+        self.es_conn_config = self.build_es_conn_config(self.conf)
 
-        if self.es_username and self.es_password:
-            self.http_auth = self.es_username + ':' + self.es_password
-
-        if 'use_ssl' in self.conf:
-            self.use_ssl = self.conf['use_ssl']
-
-        self.writeback_es = Elasticsearch(host=self.es_host, port=self.es_port,
-                                          use_ssl=self.use_ssl, http_auth=self.http_auth)
+        self.writeback_es = self.new_elasticsearch(self.es_conn_config)
 
         if self.debug:
             self.verbose = True
@@ -100,6 +85,40 @@ class ElastAlerter():
 
         if self.args.silence:
             self.silence()
+
+    @staticmethod
+    def new_elasticsearch(es_conn_conf):
+        """ returns an Elasticsearch instance configured using an es_conn_config """
+        return Elasticsearch(host=es_conn_conf['es_host'],
+                             port=es_conn_conf['es_port'],
+                             use_ssl=es_conn_conf['use_ssl'],
+                             http_auth=es_conn_conf['http_auth'])
+
+    @staticmethod
+    def build_es_conn_config(conf):
+        """ Given a conf dictionary w/ raw config properties 'use_ssl', 'es_host', 'es_port'
+        'es_username' and 'es_password', this will return a new dictionary
+        with properly initialized values for 'es_host', 'es_port', 'use_ssl' and 'http_auth' which
+        will be a basicauth username:password formatted string """
+        parsed_conf = {}
+        parsed_conf['use_ssl'] = False
+        parsed_conf['http_auth'] = None
+        parsed_conf['es_username'] = None
+        parsed_conf['es_password'] = None
+        parsed_conf['es_host'] = conf['es_host']
+        parsed_conf['es_port'] = conf['es_port']
+
+        if 'es_username' in conf:
+            parsed_conf['es_username'] = conf['es_username']
+            parsed_conf['es_password'] = conf['es_password']
+
+        if parsed_conf['es_username'] and parsed_conf['es_password']:
+            parsed_conf['http_auth'] = parsed_conf['es_username'] + ':' + parsed_conf['es_password']
+
+        if 'use_ssl' in conf:
+            parsed_conf['use_ssl'] = conf['use_ssl']
+
+        return parsed_conf
 
     @staticmethod
     def get_index(rule, starttime=None, endtime=None):
@@ -372,7 +391,9 @@ class ElastAlerter():
         :return: The number of matches that the rule produced.
         """
         run_start = time.time()
-        self.current_es = Elasticsearch(host=rule['es_host'], port=rule['es_port'])
+
+        rule_es_conn_config = self.build_es_conn_config(rule)
+        self.current_es = self.new_elasticsearch(rule_es_conn_config)
         self.current_es_addr = (rule['es_host'], rule['es_port'])
 
         # If there are pending aggregate matches, try processing them
@@ -538,7 +559,7 @@ class ElastAlerter():
         while True:
             # If writeback_es errored, it's disabled until the next query cycle
             if not self.writeback_es:
-                self.writeback_es = Elasticsearch(host=self.es_host, port=self.es_port)
+                self.writeback_es = self.new_elasticsearch(self.es_conn_config)
 
             self.send_pending_alerts()
 
@@ -628,7 +649,9 @@ class ElastAlerter():
                    'dashboard': db_js}
 
         # Upload
-        es = Elasticsearch(host=rule['es_host'], port=rule['es_port'])
+        rule_es_conn_config = self.build_es_conn_config(rule)
+        es = self.new_elasticsearch(rule_es_conn_config)
+
         res = es.create(index='kibana-int',
                         doc_type='temp',
                         body=db_body)
@@ -642,7 +665,8 @@ class ElastAlerter():
 
     def get_dashboard(self, rule, db_name):
         """ Download dashboard which matches use_kibana_dashboard from elasticsearch. """
-        es = Elasticsearch(host=rule['es_host'], port=rule['es_port'])
+        rule_es_conn_config = self.build_es_conn_config(rule)
+        es = self.new_elasticsearch(rule_es_conn_config)
         if not db_name:
             raise EAException("use_kibana_dashboard undefined")
         query = {'query': {'term': {'_id': db_name}}}
@@ -966,7 +990,8 @@ class ElastAlerter():
     def handle_error(self, message, data=None):
         ''' Logs message at error level and writes message, data and traceback to Elasticsearch. '''
         if not self.writeback_es:
-            self.writeback_es = Elasticsearch(host=self.es_host, port=self.es_port)
+            self.writeback_es = self.new_elasticsearch(self.es_conn_config)
+
         logging.error(message)
         body = {'message': message}
         tb = traceback.format_exc()
