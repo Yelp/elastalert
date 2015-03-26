@@ -987,19 +987,18 @@ class ElastAlerter():
         if name in self.silence_cache:
             last_until, exponent = self.silence_cache[name]
         else:
-            # If for some reason this isn't cached, pretend it was a week ago
-            last_until = timestamp - datetime.timedelta(weeks=1)
-            exponent = 0
+            # If this isn't cached, this is the first alert or writeback_es is down, normal realert
+            return timestamp + rule['realert'], 0
 
         if not rule.get('exponential_realert'):
             return timestamp + rule['realert'], 0
 
         diff = seconds(timestamp - last_until)
-        # If it's been less than twice the alert time, increase exponent
+        # Increase exponent if we've alerted recently
         if diff < seconds(rule['realert']) * 2 ** exponent:
             exponent += 1
         else:
-            # If it's been longer, recursively decrease exponent and compare the remaining time difference
+            # Continue decreasing exponent the longer it's been since the last alert
             while diff > seconds(rule['realert']) * 2 ** exponent and exponent > 0:
                 diff -= seconds(rule['realert']) * 2 ** exponent
                 exponent -= 1

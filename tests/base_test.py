@@ -511,13 +511,13 @@ def test_expontential_realert(ea):
     ts5m = until + datetime.timedelta(minutes=5)
     ts4h = until + datetime.timedelta(hours=4)
 
-    test_values = [(ts5s, until, 0),  # Exp will increase to 1, 10*2**0 = 10s
+    test_values = [(ts5s, until, 0),   # Exp will increase to 1, 10*2**0 = 10s
                    (ts15s, until, 0),  # Exp will stay at 0, 10*2**0 = 10s
                    (ts15s, until, 1),  # Exp will increase to 2, 10*2**1 = 20s
-                   (ts1m, until, 2),  # Exp will decrease to 1, 10*2**2 = 40s
-                   (ts1m, until, 3),  # Exp will increase to 4, 10*2**3 = 1m20s
-                   (ts5m, until, 1),  # Exp will lower back to 0, 10*2**1 = 20s
-                   (ts4h, until, 9),  # Exp will lower back to 0, 10*2**9 = 1h25m
+                   (ts1m, until, 2),   # Exp will decrease to 1, 10*2**2 = 40s
+                   (ts1m, until, 3),   # Exp will increase to 4, 10*2**3 = 1m20s
+                   (ts5m, until, 1),   # Exp will lower back to 0, 10*2**1 = 20s
+                   (ts4h, until, 9),   # Exp will lower back to 0, 10*2**9 = 1h25m
                    (ts4h, until, 10),  # Exp will lower back to 9, 10*2**10 = 2h50m
                    (ts4h, until, 11)]  # Exp will increase to 12, 10*2**11 = 5h
     results = (1, 0, 2, 1, 4, 0, 0, 9, 12)
