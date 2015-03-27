@@ -14,7 +14,7 @@ Overview
 
 We designed ElastAlert to be :ref:`reliable <reliability>`, highly :ref:`modular <modularity>`, and easy to :ref:`set up <tutorial>` and :ref:`configure <configuration>`.
 
-It works by combining Elasticsearch with two types of components, rule types and alerts. 
+It works by combining Elasticsearch with two types of components, rule types and alerts.
 Elasticsearch is periodically queried and the data is passed to the rule type, which determines when
 a match is found. When a match occurs, it is given to one or more alerts, which take action based on the match.
 
@@ -81,7 +81,7 @@ Enhancements
 ------------
 
 Enhancements are a way of intercepting an alert and modifying or enhancing it in some way. They are passed the match dictionary before it is given
-to the alerter. See :ref:`Enhancements` for more information. 
+to the alerter. See :ref:`Enhancements` for more information.
 
 .. _configuration:
 
@@ -96,10 +96,16 @@ may be overridden by individual rules. Note that back filled data may not always
 as if it was queried in real time.
 
 ``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about it's searches.
-When ElastAlert is started, it will query for information about the time that it was last run. This way, 
+When ElastAlert is started, it will query for information about the time that it was last run. This way,
 even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice.
 
 ``es_port``: The port corresponding to ``es_host``.
+
+``use_ssl``: Optional; whether or not to connect to ``es_host`` using SSL; set to ``True`` or ``False``.
+
+``es_username``: Optional; basic-auth username for connecting to ``es_host``.
+
+``es_password``: Optional; basic-auth password for connecting to ``es_host``.
 
 ``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all
 files in this folder that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
@@ -147,7 +153,7 @@ will periodically query until the present indefinitely.
 ``--rule <rule.yaml>`` will only run the given rule. The rule file must still be in the ``rules_folder``.
 
 ``--silence <unit>=<number>`` will silence the alerts for a given rule for a period of time. The rule must be specified using
-``--rule``. <unit> is one of days, weeks, hours, minutes or seconds. <number> is an integer. For example, 
+``--rule``. <unit> is one of days, weeks, hours, minutes or seconds. <number> is an integer. For example,
 ``--rule noisy_rule.yaml --silence hours=4`` will stop noisy_rule from generating any alerts for 4 hours.
 
 ``--verbose`` will increase the logging verboseness, which allows you to see information about the state
