@@ -66,6 +66,9 @@ one that occured at 1:05, would not change ``realert``. (Optional, time, no defa
 
 ``buffer_time``: This options allows the rule to override the ``buffer_time`` global setting defined in config.yaml. (Optional, time)
 
+``query_delay``: This option will cause ElastAlert to subtract a time delta from every query, causing the rule ot run with a delay.
+This is useful is the data is Elasticsearch doesn't get indexed immediately. (Optional, time)
+
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. If you
 expect a large number of results, consider using ``use_count_query`` for the rule. If this
 limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting will
