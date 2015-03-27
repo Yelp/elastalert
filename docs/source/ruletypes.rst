@@ -18,7 +18,13 @@ Required Settings
 
 ``es_port``: The port of the Elasticsearch cluster. (Required, number, no default)
 
-``index``: The name of the index that will be searched. Wildcards can be used here, such as: 
+``use_ssl``: Optional; whether or not to connect to ``es_host`` using SSL; set to ``True`` or ``False``.
+
+``es_username``: Optional; basic-auth username for connecting to ``es_host``.
+
+``es_password``: Optional; basic-auth password for connecting to ``es_host``.
+
+``index``: The name of the index that will be searched. Wildcards can be used here, such as:
 ``index: my-index-*`` which will match ``my-index-2014-10-05``. You can also use a format string containing
 ``%Y`` for year, ``%m`` for month, and ``%d`` for day. To use this, you must also set ``use_strftime_index`` to true. (Required, string, no default)
 
@@ -42,8 +48,8 @@ Optional Settings
 ~~~~~~~~~~~~~~~~~
 
 ``aggregation``: This option allows you to aggregate multiple matches together into one alert. Every time a match is found,
-ElastAlert will wait for the ``aggregation`` period, and send all of the matches that have occurred in that time for a particular 
-rule together. For example, 
+ElastAlert will wait for the ``aggregation`` period, and send all of the matches that have occurred in that time for a particular
+rule together. For example,
 
 ``aggregation: hours: 2``
 
@@ -65,8 +71,8 @@ limit is reached, a warning will be logged but ElastAlert will continue without 
 override a global ``max_query_size``. (Optional, int, default 100,000)
 
 ``filter``: A list of Elasticsearch query DSL filters that is used to query Elasticsearch. ElastAlert will query Elasticsearch using the format
-``{'filtered': {'and': [config.filter]}}`` with an additional timestamp range filter. 
-All of the results of querying with these filters are passed to the ``RuleType`` for analysis. 
+``{'filtered': {'and': [config.filter]}}`` with an additional timestamp range filter.
+All of the results of querying with these filters are passed to the ``RuleType`` for analysis.
 For more information writing filters, see :ref:`Writing Filters <writingfilters>`. (Required, Elasticsearch query DSL, no default)
 
 ``include``: A list of terms that should be included in query results and passed to rule types and alerts. '@timestamp', ``query_key``,
@@ -88,10 +94,10 @@ consists of an events over time graph and a table with ``include`` fields select
 dashboard will also contain a filter for the ``query_key`` of the alert. The dashboard schema will
 be uploaded to the kibana-int index as a temporary dashboard. (Optional, boolean, default False)
 
-``kibana_url``: The url to access the kibana plugin. This will be used if ``generate_kibana_link`` is true. 
+``kibana_url``: The url to access the kibana plugin. This will be used if ``generate_kibana_link`` is true.
 (Optional, string, default ``http://<es_host>:<es_port>/_plugin/kibana/``)
 
-``use_kibana_dashboard``: The name of a dashboard to link to. Instead of generating a dashboard from a template, 
+``use_kibana_dashboard``: The name of a dashboard to link to. Instead of generating a dashboard from a template,
 ElastAlert can use an existing dashboard. It will set the time range on the dashboard to around the match time,
 upload it as a temporary dashboard, add a filter to the ``query_key`` of the alert if applicable,
 and put the url to the dashboard in the alert. (Optional, string, no default)
@@ -100,7 +106,7 @@ and put the url to the dashboard in the alert. (Optional, string, no default)
 be converted to UTC, which is what ElastAlert uses internally. (Optional, boolean, default true)
 
 ``match_enhancements``: A list of enhancement modules to use with this rule. An enhancement module is a subclass of enhancements.BaseEnhancement
-that will be given the match dictionary and can modify it before it is passed to the alerter. The enhancements should be specified as 
+that will be given the match dictionary and can modify it before it is passed to the alerter. The enhancements should be specified as
 ``module.file.EnhancementName``. See :ref:`Enhancements` for more information. (Optional, list of strings, no default)
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
@@ -168,7 +174,7 @@ Any
 Blacklist
 ~~~~~~~~~
 
-``blacklist``: The blacklist rule will check a certain field against a blacklist, and match if it is in the blacklist. 
+``blacklist``: The blacklist rule will check a certain field against a blacklist, and match if it is in the blacklist.
 
 This rule requires two additional options:
 
@@ -180,7 +186,7 @@ Whitelist
 ~~~~~~~~~
 
 ``whitelist``: Similar to ``blacklist``, this rule will compare a certain field to a whitelist, and match if the list does not contain
-the term. 
+the term.
 
 This rule requires three additional options:
 
@@ -195,8 +201,8 @@ Change
 
 For an example configuration file using this rule type, look at ``example_rules/example_change.yaml``.
 
-``change``: This rule will monitor a certain field and match if that field changes. The field 
-must change with respect to the last event with the same ``query_key``. 
+``change``: This rule will monitor a certain field and match if that field changes. The field
+must change with respect to the last event with the same ``query_key``.
 
 This rule requires three additional options:
 
@@ -390,7 +396,7 @@ in the rule configuration file similarly to rule types.
 
 To set the alerts for a rule, set the ``alert`` option to the name of the alert, or a list of the names of alerts:
 
-``alert: email`` 
+``alert: email``
 
 or
 
@@ -427,33 +433,33 @@ There are several ways to format the body text of the various types of events. I
     top_counts_value    = Value, ": ", Count
     top_counts          = top_counts_header, LF, top_counts_value
     field_values        = Field, ": ", Value
-    
+
 By default::
-    
+
     body                = rule_name
-                          
-                          [alert_text] 
-                          
+
+                          [alert_text]
+
                           ruletype_text
-                          
-                          {top_counts} 
-                          
+
+                          {top_counts}
+
                           {field_values}
 
 With ``alert_text_type: alert_text_only``::
 
     body                = rule_name
-                          
+
                           alert_text
 
 With ``alert_text_type: exclude_fields``::
-    
+
     body                = rule_name
-    
-                          [alert_text] 
-                          
+
+                          [alert_text]
+
                           ruletype_text
-                          
+
                           {top_counts}
 
 ruletype_text is the string returned by RuleType.get_match_str.
@@ -518,4 +524,3 @@ Debug
 ~~~~~~
 
 The debug alerter will log the alert information using the Python logger at the info level.
-

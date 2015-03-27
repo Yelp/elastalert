@@ -34,6 +34,12 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``es_port`` is the port corresponding to ``es_host``.
 
+``use_ssl``: Optional; whether or not to connect to ``es_host`` using SSL; set to ``True`` or ``False``.
+
+``es_username``: Optional; basic-auth username for connecting to ``es_host``.
+
+``es_password``: Optional; basic-auth password for connecting to ``es_host``.
+
 ``writeback_index`` is the name of the index in which ElastAlert will store data. We will create this index later.
 
 ``alert_time_limit`` is the retry window for failed alerts.
@@ -67,27 +73,27 @@ Each rule defines a query to perform, parameters on what triggers a match, and a
     type: frequency
     index: logstash-*
     num_events: 50
-    timeframe: 
+    timeframe:
         hours: 4
-    filter: 
+    filter:
     - term:
         some_field: "some_value"
-    alert: 
+    alert:
     - "email"
-    email: 
+    email:
     - "elastalert@example.com"
 
 ``es_host`` and ``es_port`` should point to the Elasticsearch cluster we want to query.
 
 ``name`` is the unique name for this rule. ElastAlert will not start if two rules share the same name.
 
-``type``: Each rule has a different type which may take different parameters. The ``frequency`` type means "Alert when more than ``num_events`` occur within ``timeframe``." For information other types, see :ref:`Rule types <ruletypes>`. 
+``type``: Each rule has a different type which may take different parameters. The ``frequency`` type means "Alert when more than ``num_events`` occur within ``timeframe``." For information other types, see :ref:`Rule types <ruletypes>`.
 
 ``index``: The name of the index(es) to query. If you are using Logstash, by default the indexes will match "logstash-*".
 
 ``num_events``: This parameter is specific to ``frequency`` type and is the threshold for when an alert is triggered.
 
-``timeframe`` is the time period in which ``num_events`` must occur. 
+``timeframe`` is the time period in which ``num_events`` must occur.
 
 ``filter`` is a list of Elasticsearch filters that are used to filter results. Here we have a single term filter for documents with ``some_field`` matching ``some_value``. See :ref:`Writing Filters For Rules <writingfilters>` for more information. If no filters are desired, it should be specified as an empty list: ``filter: []``
 
@@ -135,7 +141,7 @@ Let's break down the response to see what's happening.
 
 ElastAlert periodically queries the most recent ``buffer_time`` (default 45 minutes) for data matching the filters. Here we see that it matched 5 hits.
 
-``POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]`` 
+``POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]``
 
 This line showing that ElastAlert uploaded a document to the elastalert_status index with information about the query it just made.
 
