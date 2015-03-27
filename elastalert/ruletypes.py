@@ -303,6 +303,7 @@ class SpikeRule(RuleType):
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
         self.get_ts = lambda e: e[0][self.ts_field]
         self.first_event = {}
+        self.skip_checks = {}
 
         self.ref_window_filled_once = False
 
@@ -332,11 +333,11 @@ class SpikeRule(RuleType):
             self.handle_event(event, 1, qk)
 
     def clear_windows(self, qk, event):
+        # Reset the state and prevent alerts until windows filled again
         self.cur_windows[qk].data = deque()
         self.ref_windows[qk].data = deque()
-
-        # Mark this alert time as the new starting time, to prevent alerting again immediately
-        self.first_event[qk] = event
+        self.first_event.pop(qk)
+        self.skip_checks[qk] = event[self.ts_field] + self.rules['timeframe'] * 2
 
     def handle_event(self, event, count, qk='all'):
         self.first_event.setdefault(qk, event)
@@ -346,10 +347,16 @@ class SpikeRule(RuleType):
 
         self.cur_windows[qk].append((event, count))
 
-        # Don't alert if ref window has not yet been filled
+        # Don't alert if ref window has not yet been filled for this key AND
         if event[self.ts_field] - self.first_event[qk][self.ts_field] < self.rules['timeframe'] * 2:
-            # Unless query_key and alert_on_new_data are both set and the ref window has been filled once
-            if not (self.rules.get('query_key') and self.rules.get('alert_on_new_data')) or not self.ref_window_filled_once:
+            # ElastAlert has not been running long enough for any alerts OR
+            if not self.ref_window_filled_once:
+                return
+            # This rule is not using alert_on_new_data (with query_key) OR
+            if not (self.rules.get('query_key') and self.rules.get('alert_on_new_data')):
+                return
+            # An alert for this qk has recently fired
+            if qk in self.skip_checks and event[self.ts_field] < self.skip_checks[qk]:
                 return
         else:
             self.ref_window_filled_once = True
