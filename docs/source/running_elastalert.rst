@@ -120,7 +120,7 @@ Running ElastAlert
 
 There are two ways of invoking ElastAlert. As a daemon, through Supervisor (http://supervisord.org/), or directly with Python. For easier debugging purposes in this tutorial, we will invoke it directly::
 
-    $ python elastalert/elastalert.py --verbose --rule example_frequency.yaml
+    $ python -m elastalert.elastalert --verbose --rule example_frequency.yaml
     No handlers could be found for logger "elasticsearch"
     INFO:root:Queried rule Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 hits
     INFO:elasticsearch:POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]

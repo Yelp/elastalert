@@ -44,8 +44,8 @@ def get_module(module_name):
         module_path, module_class = module_name.rsplit('.', 1)
         base_module = __import__(module_path, globals(), locals(), [module_class])
         module = getattr(base_module, module_class)
-    except (ImportError, AttributeError, ValueError):
-        raise EAException("Could not import match module %s" % (module_name))
+    except (ImportError, AttributeError, ValueError) as e:
+        raise EAException("Could not import module %s: %s" % (module_name, e))
     return module
 
 

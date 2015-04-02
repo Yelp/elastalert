@@ -36,6 +36,10 @@ index: logstash-*
 # The field to look for changes in
 compare_key: country_name
 
+# (Required, change specific)
+# Ignore documents without the compare_key (country_name) field
+ignore_null: true
+
 # (Optional, change specific)
 # The change must occur in two documents with the same query_key
 query_key: username

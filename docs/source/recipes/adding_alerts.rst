@@ -86,7 +86,7 @@ Now, in a file named ``my_alerts.py``, add
                     
                     # basic_match_string will transform the match into the default
                     # human readable string format
-                    match_string = basic_match_string(match)
+                    match_string = basic_match_string(self.rule, match)
                     
                     output_file.write(match_string)
 
@@ -95,7 +95,7 @@ Now, in a file named ``my_alerts.py``, add
         # It should return a dict of information relevant to what the alert does
         def get_info(self):
             return {'type': 'Awesome Alerter',
-                    'output_file': self.rule['output_file_path'}
+                    'output_file': self.rule['output_file_path']}
 
 
 In the rule configuration file, we are going to specify the alert by writing
