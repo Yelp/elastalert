@@ -85,6 +85,15 @@ def test_no_hits(ea):
     assert ea.rules[0]['type'].add_data.call_count == 0
 
 
+def test_no_terms_hits(ea):
+    ea.rules[0]['use_terms_query'] = True
+    ea.rules[0]['query_key'] = 'QWERTY'
+    ea.rules[0]['doc_type'] = 'uiop'
+    ea.current_es.search.return_value = {'hits': {'hits': []}}
+    ea.run_query(ea.rules[0], START, END)
+    assert ea.rules[0]['type'].add_terms_data.call_count == 0
+
+
 def test_some_hits(ea):
     hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP])
     ea.current_es.search.return_value = hits
