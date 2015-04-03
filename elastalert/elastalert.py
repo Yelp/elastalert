@@ -269,6 +269,8 @@ class ElastAlerter():
             self.handle_error('Error running query: %s' % (e), {'rule': rule['name']})
             return None
 
+        if 'aggregations' not in res:
+            return {}
         buckets = res['aggregations']['filtered']['counts']['buckets']
         self.num_hits += len(buckets)
         lt = rule.get('use_local_time')

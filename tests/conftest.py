@@ -22,6 +22,7 @@ class mock_ruletype(object):
     def __init__(self):
         self.add_data = mock.Mock()
         self.add_count_data = mock.Mock()
+        self.add_terms_data = mock.Mock()
         self.matches = []
         self.get_match_data = lambda x: x
         self.get_match_str = lambda x: "some stuff happened"
