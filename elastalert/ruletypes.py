@@ -39,8 +39,14 @@ class RuleType(object):
 
         :param event: The matching event, a dictionary of terms.
         """
-        if '@timestamp' in event:
-            event['@timestamp'] = dt_to_ts(event['@timestamp'])
+        # Convert datetime's back to timestamps
+        ts = self.rules.get('timestamp_field')
+        if ts in event:
+            event[ts] = dt_to_ts(event[ts])
+        # Convert unhashable query_key values to strings
+        qk = self.rules.get('query_key')
+        if qk and qk in event:
+            event[qk] = hashable(event[qk])
         self.matches.append(event)
 
     def get_match_str(self, match):
@@ -228,7 +234,8 @@ class AnyRule(RuleType):
     """ A rule that will match on any input data """
 
     def add_data(self, data):
-        self.matches += data
+        for datum in data:
+            self.add_match(datum)
 
 
 class EventWindow(object):
