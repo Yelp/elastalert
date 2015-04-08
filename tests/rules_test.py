@@ -403,6 +403,13 @@ def test_change():
     rule.add_data(events)
     assert_matches_have(rule.matches, [('term', 'bad')])
 
+    # Unhashable QK
+    events2 = hits(10, username=['qlo'], term='good')
+    events2[9]['term'] = 'bad'
+    rule = ChangeRule(rules)
+    rule.add_data(events2)
+    assert_matches_have(rule.matches, [('term', 'bad')])
+
     # Don't ignore nulls
     rules['ignore_null'] = False
     rule = ChangeRule(rules)
