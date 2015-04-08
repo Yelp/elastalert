@@ -146,7 +146,7 @@ class ChangeRule(CompareRule):
         # TODO this is not technically correct
         # if the term changes multiple times before an alert is sent
         # this data will be overwritten with the most recent change
-        change = self.change_map.get(match[self.rules['query_key']])
+        change = self.change_map.get(hashable(lookup_es_key(match, self.rules['query_key'])))
         extra = {}
         if change:
             extra = {'old_value': change[0],
