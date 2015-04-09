@@ -1,5 +1,8 @@
+import copy
 import json
 
+from elastalert.kibana import add_filter
+from elastalert.kibana import dashboard_temp
 from elastalert.kibana import filters_from_dashboard
 
 
@@ -52,3 +55,15 @@ def test_filters_from_dashboard():
     filters = filters_from_dashboard(test_dashboard)
     assert {'term': {'_log_type': '"active_directory"'}} in filters
     assert {'query': {'query_string': {'query': 'ad.security_auditing_code:4740'}}} in filters
+
+
+def test_add_filter():
+    basic_filter = {"term": {"this": "that"}}
+    db = copy.deepcopy(dashboard_temp)
+    add_filter(db, basic_filter)
+    assert db['services']['filter']['list']['1'] == {'field': 'this', 'alias': '', 'mandate': 'must', 'active': True, 'query': '"that"', 'type': 'field', 'id': 1}
+
+    list_filter = {"term": {"this": ["that", "those"]}}
+    db = copy.deepcopy(dashboard_temp)
+    add_filter(db, list_filter)
+    assert db['services']['filter']['list']['1'] == {'field': 'this', 'alias': '', 'mandate': 'must', 'active': True, 'query': '("that" AND "those")', 'type': 'field', 'id': 1}

@@ -47,6 +47,7 @@ def test_freq():
     assert len(rule.matches) == 1
 
     # Test wit query_key
+    events = hits(60, 'blah', username='qlo')
     rules['query_key'] = 'username'
     rule = FrequencyRule(rules)
     rule.add_data(events)

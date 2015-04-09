@@ -443,7 +443,7 @@ class ElastAlerter():
             # concatenate query_key (or none) with rule_name to form silence_cache key
             if 'query_key' in rule:
                 try:
-                    key = '.' + match[rule['query_key']]
+                    key = '.' + str(match[rule['query_key']])
                 except KeyError:
                     # Some matches may not have a query key
                     key = ''
