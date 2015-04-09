@@ -200,7 +200,12 @@ def add_filter(dashboard, es_filter):
         if isinstance(f_query, basestring):
             f_query = '"%s"' % (f_query.replace('"', '\\"'))
         if isinstance(f_query, list):
-            f_query = '(%s)' % (' AND '.join(['"%s"' % (item.replace('"', '\\"')) for item in f_query]))
+            # Escape quotes
+            f_query = [item.replace('"', '\\"') for item in f_query]
+            # Wrap in quotes
+            f_query = ['"%s"' % (item) for item in f_query]
+            # Convert into joined query
+            f_query = '(%s)' % (' AND '.join(f_query))
         kibana_filter['field'] = f_field
         kibana_filter['query'] = f_query
     elif 'range' in es_filter:
