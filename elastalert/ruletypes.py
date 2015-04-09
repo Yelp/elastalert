@@ -43,10 +43,6 @@ class RuleType(object):
         ts = self.rules.get('timestamp_field')
         if ts in event:
             event[ts] = dt_to_ts(event[ts])
-        # Convert unhashable query_key values to strings
-        qk = self.rules.get('query_key')
-        if qk and qk in event:
-            event[qk] = hashable(event[qk])
         self.matches.append(event)
 
     def get_match_str(self, match):
