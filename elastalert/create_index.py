@@ -19,7 +19,7 @@ def main():
 
     username = None
     password = None
-    use_ssl = False
+    use_ssl = None
     http_auth = None
 
     if filename:
@@ -33,7 +33,9 @@ def main():
     else:
         host = raw_input("Enter elasticsearch host: ")
         port = int(raw_input("Enter elasticsearch port: "))
-        use_ssl = bool(raw_input("Use SSL? True|False: "))
+        while use_ssl is None:
+            resp = raw_input("Use SSL? t/f: ").lower()
+            use_ssl = True if resp in ('t', 'true') else (False if resp in ('f', 'false') else None)
         username = raw_input("Enter optional basic-auth username: ")
         password = raw_input("Enter optional basic-auth password: ")
 
