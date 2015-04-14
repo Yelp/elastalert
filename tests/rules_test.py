@@ -12,15 +12,20 @@ from elastalert.ruletypes import WhitelistRule
 from elastalert.util import ts_to_dt
 
 
-def hits(x, timestamp='@timestamp', **kwargs):
+def hits(size, **kwargs):
     ret = []
-    for n in range(x):
+    for n in range(size):
         ts = ts_to_dt('2014-09-26T12:%s:%sZ' % (n / 60, n % 60))
         n += 1
-        event = {timestamp: ts}
-        event.update(**kwargs)
+        event = create_event(ts, **kwargs)
         ret.append(event)
     return ret
+
+
+def create_event(timestamp, timestamp_field='@timestamp', **kwargs):
+    event = {timestamp_field: timestamp}
+    event.update(**kwargs)
+    return event
 
 
 def assert_matches_have(matches, terms):
@@ -38,7 +43,7 @@ def test_any():
 
 
 def test_freq():
-    events = hits(60, 'blah', username='qlo')
+    events = hits(60, timestamp_field='blah', username='qlo')
     rules = {'num_events': 59,
              'timeframe': datetime.timedelta(hours=1),
              'timestamp_field': 'blah'}
@@ -47,14 +52,14 @@ def test_freq():
     assert len(rule.matches) == 1
 
     # Test wit query_key
-    events = hits(60, 'blah', username='qlo')
+    events = hits(60, timestamp_field='blah', username='qlo')
     rules['query_key'] = 'username'
     rule = FrequencyRule(rules)
     rule.add_data(events)
     assert len(rule.matches) == 1
 
     # Doesn't match
-    events = hits(60, 'blah', username='qlo')
+    events = hits(60, timestamp_field='blah', username='qlo')
     rules['num_events'] = 61
     rule = FrequencyRule(rules)
     rule.add_data(events)
@@ -96,7 +101,7 @@ def test_freq_count():
 
 
 def test_freq_out_of_order():
-    events = hits(60, 'blah', username='qlo')
+    events = hits(60, timestamp_field='blah', username='qlo')
     rules = {'num_events': 59,
              'timeframe': datetime.timedelta(hours=1),
              'timestamp_field': 'blah'}
@@ -195,7 +200,7 @@ def test_spike_count():
 
 def test_spike():
     # Events are 1 per second
-    events = hits(100, 'ts')
+    events = hits(100, timestamp_field='ts')
 
     # Constant rate, doesn't match
     rules = {'threshold_ref': 10,
@@ -261,7 +266,7 @@ def test_spike():
 
 
 def test_spike_query_key():
-    events = hits(100, 'ts', username='qlo')
+    events = hits(100, timestamp_field='ts', username='qlo')
     # Constant rate, doesn't match
     rules = {'threshold_ref': 10,
              'spike_height': 2,
@@ -275,7 +280,7 @@ def test_spike_query_key():
     assert len(rule.matches) == 0
 
     # Double the rate of events, but with a different usename
-    events_bob = hits(100, 'ts', username='bob')
+    events_bob = hits(100, timestamp_field='ts', username='bob')
     events2 = events[:50]
     for num in range(50, 99):
         events2.append(events_bob[num])
@@ -468,3 +473,38 @@ def test_flatline_count():
     assert len(rule.matches) == 0
     rule.add_count_data({ts_to_dt('2014-10-11T00:00:35'): 0})
     assert len(rule.matches) == 1
+
+
+def test_flatline_query_key():
+    rules = {'timeframe': datetime.timedelta(seconds=30),
+             'threshold': 1,
+             'use_query_key': True,
+             'query_key': 'qk',
+             'timestamp_field': '@timestamp'}
+
+    rule = FlatlineRule(rules)
+
+    # Adding two separate query keys, the flatline rule should trigger for both
+    rule.add_data(hits(1, qk='key1'))
+    rule.add_data(hits(1, qk='key2'))
+    rule.add_data(hits(1, qk='key3'))
+    assert rule.matches == []
+
+    # This will be run at the end of the hits
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:00:11Z'))
+    assert rule.matches == []
+
+    # Add new data from key3. It will not immediately cause an alert
+    rule.add_data([create_event(ts_to_dt('2014-09-26T12:00:20Z'), qk='key3')])
+
+    # key1 and key2 have not had any new data, so they will trigger the flatline alert
+    timestamp = '2014-09-26T12:00:45Z'
+    rule.garbage_collect(ts_to_dt(timestamp))
+    assert len(rule.matches) == 2
+    assert set(['key1', 'key2']) == set([m['key'] for m in rule.matches if m['@timestamp'] == timestamp])
+
+    # Next time the rule runs, the key1 and key2 will have been forgotten. Now key3 will cause an alert
+    timestamp = '2014-09-26T12:01:20Z'
+    rule.garbage_collect(ts_to_dt(timestamp))
+    assert len(rule.matches) == 3
+    assert set(['key3']) == set([m['key'] for m in rule.matches if m['@timestamp'] == timestamp])
