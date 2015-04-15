@@ -172,7 +172,7 @@ class FrequencyRule(RuleType):
         for ts, count in data.iteritems():
             event = ({self.ts_field: ts}, count)
             self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
-            self.check_for_match()
+            self.check_for_match('all')
 
     def add_terms_data(self, terms):
         for timestamp, buckets in terms.iteritems():
@@ -181,7 +181,7 @@ class FrequencyRule(RuleType):
                 event = ({self.ts_field: timestamp,
                           self.rules['query_key']: bucket['key']}, count)
                 self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
-                self.check_for_match()
+                self.check_for_match(bucket['key'])
 
     def add_data(self, data):
         if 'query_key' in self.rules:
@@ -198,15 +198,14 @@ class FrequencyRule(RuleType):
 
             # Store the timestamps of recent occurrences, per key
             self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append((event, 1))
-            self.check_for_match()
+            self.check_for_match(key)
 
-    def check_for_match(self):
-        for key in self.occurrences.keys():
-            # Match if, after removing old events, we hit num_events
-            if self.occurrences[key].count() >= self.rules['num_events']:
-                event = self.occurrences[key].data[-1][0]
-                self.add_match(event)
-                self.occurrences.pop(key)
+    def check_for_match(self, key):
+        # Match if, after removing old events, we hit num_events
+        if self.occurrences[key].count() >= self.rules['num_events']:
+            event = self.occurrences[key].data[-1][0]
+            self.add_match(event)
+            self.occurrences.pop(key)
 
     def garbage_collect(self, timestamp):
         """ Remove all occurrence data that is beyond the timeframe away """
@@ -428,25 +427,29 @@ class FlatlineRule(FrequencyRule):
     def __init__(self, *args):
         super(FlatlineRule, self).__init__(*args)
         self.threshold = self.rules['threshold']
-        if self.rules.get('query_key'):
-            raise EAException('Flatline rule cannot use query_key')
-        self.first_event = None
 
-    def check_for_match(self):
-        most_recent_ts = self.get_ts(self.occurrences['all'].data[-1])
-        if not self.first_event:
-            self.first_event = most_recent_ts
+        # Dictionary mapping query keys to the first events
+        self.first_event = {}
+
+    def check_for_match(self, key):
+        most_recent_ts = self.get_ts(self.occurrences[key].data[-1])
+        if self.first_event.get(key) is None:
+            self.first_event[key] = most_recent_ts
 
         # Don't check for matches until timeframe has elapsed
-        if most_recent_ts - self.first_event < self.rules['timeframe']:
+        if most_recent_ts - self.first_event[key] < self.rules['timeframe']:
             return
 
         # Match if, after removing old events, we hit num_events
-        if self.occurrences['all'].count() < self.rules['threshold']:
-            event = self.occurrences['all'].data[-1][0]
+        count = self.occurrences[key].count()
+        if count < self.rules['threshold']:
+            event = self.occurrences[key].data[-1][0]
+            event.update(key=key, count=count)
             self.add_match(event)
-            self.occurrences.pop('all')
-            self.first_event = None
+
+            # we after adding this match, let's remove this key so we don't realert on it
+            self.occurrences.pop(key)
+            del self.first_event[key]
 
     def get_match_str(self, match):
         ts = match[self.rules['timestamp_field']]
@@ -458,7 +461,8 @@ class FlatlineRule(FrequencyRule):
         return message
 
     def garbage_collect(self, ts):
-        # Windows are sized according to their newest event
-        # This is a placeholder to accurately size windows in the absence of events
-        self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({self.ts_field: ts}, 0))
-        self.check_for_match()
+        # We add an event with a count of zero to the EventWindow for each key. This will cause the EventWindow
+        # to remove events that occured more than one `timeframe` ago, and call onRemoved on them.
+        for key in self.occurrences.keys():
+            self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({self.ts_field: ts}, 0))
+            self.check_for_match(key)

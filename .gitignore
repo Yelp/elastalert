@@ -8,3 +8,4 @@ virtualenv_run/
 dist/
 venv/
 docs/build/
+build/
