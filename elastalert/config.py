@@ -60,7 +60,7 @@ def load_configuration(filename):
     except yaml.scanner.ScannerError as e:
         raise EAException('Could not parse file %s: %s' % (filename, e))
 
-    rule['rule_file'] = os.path.split(filename)[-1]
+    rule['rule_file'] = filename
     load_options(rule)
     load_modules(rule)
     return rule
@@ -205,6 +205,18 @@ def load_modules(rule):
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
 
 
+def get_file_paths(conf):
+    rule_folder = conf['rules_folder']
+    if conf.get('scan_subdirectories'):
+        rule_files = []
+        for root, folders, files in os.walk(rule_folder):
+            for filename in files:
+                rule_files.append(os.path.join(root, filename))
+    else:
+        rule_files = [os.path.join(rule_folder, path) for path in os.listdir(rule_folder)]
+    return rule_files
+
+
 def load_rules(filename, use_rule=None):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
     config file and then each rule found in rules_folder.
@@ -238,15 +250,14 @@ def load_rules(filename, use_rule=None):
         raise EAException('Invalid time format used: %s' % (e))
 
     # Load each rule configuration file
-    rule_folder = conf['rules_folder']
-    rule_files = os.listdir(rule_folder)
     rules = []
+    rule_files = get_file_paths(conf)
     for rule_file in rule_files:
         if use_rule and rule_file != use_rule:
             continue
-        if '.yaml' == rule_file[-5:]:
+        if rule_file.endswith('.yaml'):
             try:
-                rule = load_configuration(os.path.join(rule_folder, rule_file))
+                rule = load_configuration(rule_file)
                 if rule['name'] in names:
                     raise EAException('Duplicate rule named %s' % (rule['name']))
             except EAException as e:
@@ -264,12 +275,11 @@ def load_rules(filename, use_rule=None):
 
 
 def get_rule_hashes(conf):
-    rules_folder = conf['rules_folder']
-    rule_files = os.listdir(rules_folder)
+    rule_files = get_file_paths(conf)
     rule_mod_times = {}
     for rule_file in rule_files:
-        if '.yaml' != rule_file[-5:]:
+        if not rule_file.endswith('.yaml'):
             continue
-        with open(os.path.join(rules_folder, rule_file)) as fh:
+        with open(rule_file) as fh:
             rule_mod_times[rule_file] = hashlib.sha1(fh.read()).digest()
     return rule_mod_times
