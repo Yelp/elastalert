@@ -427,6 +427,8 @@ class ElastAlerter():
         if not self.run_query(rule, rule['starttime'], endtime):
             return 0
 
+        rule['type'].garbage_collect(endtime)
+
         # Process any new matches
         num_matches = len(rule['type'].matches)
         while rule['type'].matches:
@@ -968,14 +970,14 @@ class ElastAlerter():
     def is_silenced(self, rule_name):
         """ Checks if rule_name is currently silenced. Returns false on exception. """
 
-        if self.debug:
-            return False
-
         if rule_name in self.silence_cache:
             if ts_now() < self.silence_cache[rule_name][0]:
                 return True
             else:
                 return False
+
+        if self.debug:
+            return False
 
         query = {'filter': {'term': {'rule_name': rule_name}},
                  'sort': {'until': {'order': 'desc'}}}
