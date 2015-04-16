@@ -560,7 +560,8 @@ class ElastAlerter():
             except (TypeError, ValueError):
                 self.handle_error("%s is not a valid ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
                 exit(1)
-        while True:
+        self.running = True
+        while self.running:
             self.run_all_rules()
 
     def run_all_rules(self):
@@ -613,6 +614,10 @@ class ElastAlerter():
         sleep_for = (next_run - datetime.datetime.utcnow()).seconds
         logging.info("Sleeping for %s seconds" % (sleep_for))
         time.sleep(sleep_for)
+
+    def stop(self):
+        """ Stop an elastalert runner that's been started """
+        self.running = False
 
     def generate_kibana_db(self, rule, match):
         ''' Uses a template dashboard to upload a temp dashboard showing the match.
