@@ -69,7 +69,7 @@ class ElastAlerter():
         self.current_es_addr = None
         self.buffer_time = self.conf['buffer_time']
         self.silence_cache = {}
-        self.rule_hashes = get_rule_hashes(self.conf)
+        self.rule_hashes = get_rule_hashes(self.conf, self.args.rule)
 
         self.es_conn_config = self.build_es_conn_config(self.conf)
 
@@ -517,7 +517,7 @@ class ElastAlerter():
     def load_rule_changes(self):
         ''' Using the modification times of rule config files, syncs the running rules
         to match the files in rules_folder by removing, adding or reloading rules. '''
-        rule_hashes = get_rule_hashes(self.conf)
+        rule_hashes = get_rule_hashes(self.conf, self.args.rule)
 
         # Check each current rule for changes
         for rule_file, hash_value in self.rule_hashes.iteritems():

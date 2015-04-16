@@ -108,11 +108,8 @@ even if ElastAlert is stopped and restarted, it will never miss data or look at 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
 
 ``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all
-files in this folder that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
+files in this folder, and all subdirectories, that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
 or remove rules based on their respective config files.
-
-``scan_subdirectories``: If true, ElastAlert will recursively scan ``rules_folder`` for yaml files to load as rules.
-If false, only the files in that directory will be loaded. This defaults to false.
 
 ``run_every``: How often ElastAlert should query Elasticsearch. ElastAlert will remember the last time
 it ran the query for a given rule, and periodically query from that time until the present. The format of
@@ -153,7 +150,8 @@ sent until that rule has finished querying over the entire time period.
 ``--end <timestamp>`` will cause ElastAlert to stop querying at the specified timestamp. By default, ElastAlert
 will periodically query until the present indefinitely.
 
-``--rule <rule.yaml>`` will only run the given rule. The rule file must still be in the ``rules_folder``.
+``--rule <rule.yaml>`` will only run the given rule. The rule file may be a complete file path or a filename in ``rules_folder``
+or it's subdirectories.
 
 ``--silence <unit>=<number>`` will silence the alerts for a given rule for a period of time. The rule must be specified using
 ``--rule``. <unit> is one of days, weeks, hours, minutes or seconds. <number> is an integer. For example,

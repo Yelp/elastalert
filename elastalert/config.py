@@ -205,15 +205,18 @@ def load_modules(rule):
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
 
 
-def get_file_paths(conf):
+def get_file_paths(conf, use_rule=None):
+    # Passing a filename directly can bypass rules_folder and .yaml checks
+    if use_rule and os.path.isfile(use_rule):
+        return [use_rule]
     rule_folder = conf['rules_folder']
-    if conf.get('scan_subdirectories'):
-        rule_files = []
-        for root, folders, files in os.walk(rule_folder):
-            for filename in files:
+    rule_files = []
+    for root, folders, files in os.walk(rule_folder):
+        for filename in files:
+            if use_rule and use_rule != filename:
+                continue
+            if filename.endswith('.yaml'):
                 rule_files.append(os.path.join(root, filename))
-    else:
-        rule_files = [os.path.join(rule_folder, path) for path in os.listdir(rule_folder)]
     return rule_files
 
 
@@ -251,20 +254,17 @@ def load_rules(filename, use_rule=None):
 
     # Load each rule configuration file
     rules = []
-    rule_files = get_file_paths(conf)
+    rule_files = get_file_paths(conf, use_rule)
     for rule_file in rule_files:
-        if use_rule and rule_file != use_rule:
-            continue
-        if rule_file.endswith('.yaml'):
-            try:
-                rule = load_configuration(rule_file)
-                if rule['name'] in names:
-                    raise EAException('Duplicate rule named %s' % (rule['name']))
-            except EAException as e:
-                raise EAException('Error loading file %s: %s' % (rule_file, e))
+        try:
+            rule = load_configuration(rule_file)
+            if rule['name'] in names:
+                raise EAException('Duplicate rule named %s' % (rule['name']))
+        except EAException as e:
+            raise EAException('Error loading file %s: %s' % (rule_file, e))
 
-            rules.append(rule)
-            names.append(rule['name'])
+        rules.append(rule)
+        names.append(rule['name'])
 
     if not rules:
         logging.exception('No rules loaded. Exiting')
@@ -274,12 +274,10 @@ def load_rules(filename, use_rule=None):
     return conf
 
 
-def get_rule_hashes(conf):
-    rule_files = get_file_paths(conf)
+def get_rule_hashes(conf, use_rule=None):
+    rule_files = get_file_paths(conf, use_rule)
     rule_mod_times = {}
     for rule_file in rule_files:
-        if not rule_file.endswith('.yaml'):
-            continue
         with open(rule_file) as fh:
             rule_mod_times[rule_file] = hashlib.sha1(fh.read()).digest()
     return rule_mod_times
