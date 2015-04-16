@@ -56,6 +56,13 @@ def lookup_es_key(lookup_dict, term):
         return go_deeper
 
 
+def replace_hits_ts(hits, rule):
+    """Iterate through a hits dictionary from ElasticSearch, and convert string timestamps to datetime objects
+    """
+    for hit in hits:
+        hit['_source'][rule['timestamp_field']] = ts_to_dt(hit['_source'][rule['timestamp_field']])
+
+
 def ts_to_dt(timestamp):
     if isinstance(timestamp, datetime.datetime):
         logging.warning('Expected str timestamp, got datetime')
