@@ -390,7 +390,17 @@ def test_whitelist():
     rule.add_data(events)
     assert_matches_have(rule.matches, [('term', 'bad'), ('term', 'really bad')])
 
-    # Don't ignore nulls
+
+def test_whitelist_dont_ignore_nulls():
+    events = [{'@timestamp': ts_to_dt('2014-09-26T12:34:56Z'), 'term': 'good'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:34:57Z'), 'term': 'bad'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:34:58Z'), 'term': 'also good'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:34:59Z'), 'term': 'really bad'},
+              {'@timestamp': ts_to_dt('2014-09-26T12:35:00Z'), 'no_term': 'bad'}]
+    rules = {'whitelist': ['good', 'also good'],
+             'compare_key': 'term',
+             'ignore_null': True,
+             'timestamp_field': '@timestamp'}
     rules['ignore_null'] = False
     rule = WhitelistRule(rules)
     rule.add_data(events)

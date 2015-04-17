@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import argparse
 import copy
 import datetime
 import json
@@ -8,7 +9,6 @@ import sys
 import time
 import traceback
 
-import argparse
 import kibana
 from alerts import DebugAlerter
 from config import get_rule_hashes
@@ -20,6 +20,7 @@ from util import dt_to_ts
 from util import EAException
 from util import format_index
 from util import pretty_ts
+from util import replace_hits_ts
 from util import seconds
 from util import ts_add
 from util import ts_now
@@ -210,16 +211,12 @@ class ElastAlerter():
         self.num_hits += len(hits)
         lt = rule.get('use_local_time')
         logging.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits)))
-        self.replace_ts(hits, rule)
+        replace_hits_ts(hits, rule)
 
         # Record doc_type for use in get_top_counts
         if 'doc_type' not in rule and len(hits):
             rule['doc_type'] = hits[0]['_type']
         return hits
-
-    def replace_ts(self, hits, rule):
-        for hit in hits:
-            hit['_source'][rule['timestamp_field']] = ts_to_dt(hit['_source'][rule['timestamp_field']])
 
     def get_hits_count(self, rule, starttime, endtime, index):
         """ Query elasticsearch for the count of results and returns a list of timestamps
@@ -419,13 +416,13 @@ class ElastAlerter():
         # Run the rule
         # If querying over a large time period, split it up into chunks
         self.num_hits = 0
-        tmp_endtime = endtime
         buffer_time = rule.get('buffer_time', self.buffer_time)
         while endtime - rule['starttime'] > buffer_time:
             tmp_endtime = rule['starttime'] + self.run_every
             if not self.run_query(rule, rule['starttime'], tmp_endtime):
                 return 0
             rule['starttime'] = tmp_endtime
+            rule['type'].garbage_collect(tmp_endtime)
         if not self.run_query(rule, rule['starttime'], endtime):
             return 0
 
@@ -934,6 +931,10 @@ class ElastAlerter():
 
     def silence(self):
         """ Silence an alert for a period of time. --silence and --rule must be passed as args. """
+        if self.debug:
+            logging.error('--silence not compatible with --debug')
+            exit(1)
+
         if not self.args.rule:
             logging.error('--silence must be used with --rule')
             exit(1)
@@ -967,11 +968,15 @@ class ElastAlerter():
 
     def is_silenced(self, rule_name):
         """ Checks if rule_name is currently silenced. Returns false on exception. """
+
         if rule_name in self.silence_cache:
             if ts_now() < self.silence_cache[rule_name][0]:
                 return True
             else:
                 return False
+
+        if self.debug:
+            return False
 
         query = {'filter': {'term': {'rule_name': rule_name}},
                  'sort': {'until': {'order': 'desc'}}}
