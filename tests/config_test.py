@@ -7,6 +7,7 @@ import pytest
 
 import elastalert.alerts
 import elastalert.ruletypes
+from elastalert.config import get_file_paths
 from elastalert.config import load_configuration
 from elastalert.config import load_rules
 from elastalert.util import EAException
@@ -128,3 +129,19 @@ def test_raises_on_bad_generate_kibana_filters():
                 test_rule_copy['filter'] = good + bad
                 with pytest.raises(EAException):
                     load_configuration('blah')
+
+
+def test_get_file_paths():
+    conf = {'scan_subdirectories': True, 'rules_folder': 'root'}
+    walk_paths = (('root', ('folder_a', 'folder_b'), ('rule.yaml',)),
+                  ('root/folder_a', (), ('a.yaml', 'ab.yaml')),
+                  ('root/folder_b', (), ('b.yaml',)))
+    with mock.patch('os.walk') as mock_walk:
+        mock_walk.return_value = walk_paths
+        paths = get_file_paths(conf)
+
+    assert 'root/rule.yaml' in paths
+    assert 'root/folder_a/a.yaml' in paths
+    assert 'root/folder_a/ab.yaml' in paths
+    assert 'root/folder_b/b.yaml' in paths
+    assert len(paths) == 4

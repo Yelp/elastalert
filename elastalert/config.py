@@ -60,7 +60,7 @@ def load_configuration(filename):
     except yaml.scanner.ScannerError as e:
         raise EAException('Could not parse file %s: %s' % (filename, e))
 
-    rule['rule_file'] = os.path.split(filename)[-1]
+    rule['rule_file'] = filename
     load_options(rule)
     load_modules(rule)
     return rule
@@ -205,6 +205,21 @@ def load_modules(rule):
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
 
 
+def get_file_paths(conf, use_rule=None):
+    # Passing a filename directly can bypass rules_folder and .yaml checks
+    if use_rule and os.path.isfile(use_rule):
+        return [use_rule]
+    rule_folder = conf['rules_folder']
+    rule_files = []
+    for root, folders, files in os.walk(rule_folder):
+        for filename in files:
+            if use_rule and use_rule != filename:
+                continue
+            if filename.endswith('.yaml'):
+                rule_files.append(os.path.join(root, filename))
+    return rule_files
+
+
 def load_rules(filename, use_rule=None):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
     config file and then each rule found in rules_folder.
@@ -238,22 +253,18 @@ def load_rules(filename, use_rule=None):
         raise EAException('Invalid time format used: %s' % (e))
 
     # Load each rule configuration file
-    rule_folder = conf['rules_folder']
-    rule_files = os.listdir(rule_folder)
     rules = []
+    rule_files = get_file_paths(conf, use_rule)
     for rule_file in rule_files:
-        if use_rule and rule_file != use_rule:
-            continue
-        if '.yaml' == rule_file[-5:]:
-            try:
-                rule = load_configuration(os.path.join(rule_folder, rule_file))
-                if rule['name'] in names:
-                    raise EAException('Duplicate rule named %s' % (rule['name']))
-            except EAException as e:
-                raise EAException('Error loading file %s: %s' % (rule_file, e))
+        try:
+            rule = load_configuration(rule_file)
+            if rule['name'] in names:
+                raise EAException('Duplicate rule named %s' % (rule['name']))
+        except EAException as e:
+            raise EAException('Error loading file %s: %s' % (rule_file, e))
 
-            rules.append(rule)
-            names.append(rule['name'])
+        rules.append(rule)
+        names.append(rule['name'])
 
     if not rules:
         logging.exception('No rules loaded. Exiting')
@@ -263,13 +274,10 @@ def load_rules(filename, use_rule=None):
     return conf
 
 
-def get_rule_hashes(conf):
-    rules_folder = conf['rules_folder']
-    rule_files = os.listdir(rules_folder)
+def get_rule_hashes(conf, use_rule=None):
+    rule_files = get_file_paths(conf, use_rule)
     rule_mod_times = {}
     for rule_file in rule_files:
-        if '.yaml' != rule_file[-5:]:
-            continue
-        with open(os.path.join(rules_folder, rule_file)) as fh:
+        with open(rule_file) as fh:
             rule_mod_times[rule_file] = hashlib.sha1(fh.read()).digest()
     return rule_mod_times
