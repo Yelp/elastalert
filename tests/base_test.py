@@ -149,6 +149,11 @@ def test_run_rule_calls_garbage_collect(ea):
     # Running elastalert every hour for 12 hours, we should see self.garbage_collect called 12 times.
     assert mock_gc.call_count == 12
 
+    # The calls should be spaced 1 hour apart
+    expected_calls = [ts_to_dt(start_time) + datetime.timedelta(hours=i) for i in range(1, 13)]
+    for e in expected_calls:
+        mock_gc.assert_any_call(e)
+
 
 def run_rule_query_exception(ea, mock_es):
     with mock.patch('elastalert.elastalert.Elasticsearch') as mock_es_init:
@@ -182,7 +187,7 @@ def test_match_with_module(ea):
     mod.process = mock.Mock()
     ea.rules[0]['match_enhancements'] = [mod]
     test_match(ea)
-    assert mod.process.called_with({'@timestamp': END})
+    mod.process.assert_called_with({'@timestamp': END})
 
 
 def test_agg(ea):
@@ -488,8 +493,8 @@ def test_rule_changes(ea):
 
     # Assert 2 and 3 were reloaded
     assert mock_load.call_count == 2
-    assert mock_load.called_with('rules/rule2.yaml')
-    assert mock_load.called_with('rules/rule3.yaml')
+    mock_load.assert_any_call('rules/rule2.yaml')
+    mock_load.assert_any_call('rules/rule3.yaml')
 
 
 def test_strf_index(ea):
