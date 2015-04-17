@@ -3,6 +3,7 @@ import contextlib
 import copy
 import datetime
 import json
+import threading
 
 import elasticsearch
 import mock
@@ -533,7 +534,7 @@ def test_count_keys(ea):
     assert counts['top_events_that'] == {'d': 10, 'c': 12}
 
 
-def test_expontential_realert(ea):
+def test_exponential_realert(ea):
     ea.rules[0]['exponential_realert'] = datetime.timedelta(days=1)  # 1 day ~ 10 * 2**13 seconds
     ea.rules[0]['realert'] = datetime.timedelta(seconds=10)
 
@@ -559,3 +560,17 @@ def test_expontential_realert(ea):
         ea.silence_cache[ea.rules[0]['name']] = (args[1], args[2])
         next_alert, exponent = ea.next_alert_time(ea.rules[0], ea.rules[0]['name'], args[0])
         assert exponent == next_res.next()
+
+
+def test_stop(ea):
+    with mock.patch.object(ea, 'sleep_for', return_value=None):
+        with mock.patch.object(ea, 'run_all_rules'):
+            start_thread = threading.Thread(target=ea.start)
+            start_thread.start()
+            assert ea.running
+
+            ea.stop()
+            start_thread.join()
+
+            assert not ea.running
+            assert not start_thread.is_alive()

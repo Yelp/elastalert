@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import argparse
 import copy
 import datetime
 import json
@@ -9,6 +8,7 @@ import sys
 import time
 import traceback
 
+import argparse
 import kibana
 from alerts import DebugAlerter
 from config import get_rule_hashes
@@ -71,6 +71,7 @@ class ElastAlerter():
         self.buffer_time = self.conf['buffer_time']
         self.silence_cache = {}
         self.rule_hashes = get_rule_hashes(self.conf, self.args.rule)
+        self.starttime = self.args.start
 
         self.es_conn_config = self.build_es_conn_config(self.conf)
 
@@ -550,62 +551,77 @@ class ElastAlerter():
 
     def start(self):
         """ Periodically go through each rule and run it """
-        starttime = self.args.start
-        if starttime:
+        if self.starttime:
             try:
-                starttime = ts_to_dt(starttime)
+                self.starttime = ts_to_dt(self.starttime)
             except (TypeError, ValueError):
-                self.handle_error("%s is not a valid ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (starttime))
+                self.handle_error("%s is not a valid ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
                 exit(1)
-        while True:
-            # If writeback_es errored, it's disabled until the next query cycle
-            if not self.writeback_es:
-                self.writeback_es = self.new_elasticsearch(self.es_conn_config)
-
-            self.send_pending_alerts()
-
+        self.running = True
+        while self.running:
             next_run = datetime.datetime.utcnow() + self.run_every
-
-            for rule in self.rules:
-                # Set endtime based on the rule's delay
-                delay = rule.get('query_delay')
-                if hasattr(self.args, 'end') and self.args.end:
-                    endtime = ts_to_dt(self.args.end)
-                elif delay:
-                    endtime = ts_now() - delay
-                else:
-                    endtime = ts_now()
-
-                try:
-                    num_matches = self.run_rule(rule, endtime, starttime)
-                except EAException as e:
-                    self.handle_error("Error running rule %s: %s" % (rule['name'], e), {'rule': rule['name']})
-                else:
-                    old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
-                    logging.info("Ran %s from %s to %s: %s query hits, %s matches,"
-                                 " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                      self.num_hits, num_matches, self.alerts_sent))
-                    self.alerts_sent = 0
-
-                self.remove_old_events(rule)
+            self.run_all_rules()
 
             if next_run < datetime.datetime.utcnow():
-                # We were processing for longer than our refresh interval
-                # This can happen if --start was specified with a large time period
-                # or if we are running too slow to process events in real time.
-                logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, endtime, self.run_every))
                 continue
 
-            # Only force starttime once
-            starttime = None
-
-            if not self.args.pin_rules:
-                self.load_rule_changes()
-
             # Wait before querying again
-            sleep_for = (next_run - datetime.datetime.utcnow()).seconds
-            logging.info("Sleeping for %s seconds" % (sleep_for))
-            time.sleep(sleep_for)
+            sleep_duration = (next_run - datetime.datetime.utcnow()).seconds
+            self.sleep_for(sleep_duration)
+
+    def run_all_rules(self):
+        """ Run each rule one time """
+        # If writeback_es errored, it's disabled until the next query cycle
+        if not self.writeback_es:
+            self.writeback_es = self.new_elasticsearch(self.es_conn_config)
+
+        self.send_pending_alerts()
+
+        next_run = datetime.datetime.utcnow() + self.run_every
+
+        for rule in self.rules:
+            # Set endtime based on the rule's delay
+            delay = rule.get('query_delay')
+            if hasattr(self.args, 'end') and self.args.end:
+                endtime = ts_to_dt(self.args.end)
+            elif delay:
+                endtime = ts_now() - delay
+            else:
+                endtime = ts_now()
+
+            try:
+                num_matches = self.run_rule(rule, endtime, self.starttime)
+            except EAException as e:
+                self.handle_error("Error running rule %s: %s" % (rule['name'], e), {'rule': rule['name']})
+            else:
+                old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
+                logging.info("Ran %s from %s to %s: %s query hits, %s matches,"
+                             " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
+                                                  self.num_hits, num_matches, self.alerts_sent))
+                self.alerts_sent = 0
+
+            self.remove_old_events(rule)
+
+        if next_run < datetime.datetime.utcnow():
+            # We were processing for longer than our refresh interval
+            # This can happen if --start was specified with a large time period
+            # or if we are running too slow to process events in real time.
+            logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, endtime, self.run_every))
+
+        # Only force starttime once
+        self.starttime = None
+
+        if not self.args.pin_rules:
+            self.load_rule_changes()
+
+    def stop(self):
+        """ Stop an elastalert runner that's been started """
+        self.running = False
+
+    def sleep_for(self, duration):
+        """ Sleep for a set duration """
+        logging.info("Sleeping for %s seconds" % (duration))
+        time.sleep(duration)
 
     def generate_kibana_db(self, rule, match):
         ''' Uses a template dashboard to upload a temp dashboard showing the match.
