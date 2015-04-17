@@ -562,10 +562,18 @@ class ElastAlerter():
                 exit(1)
         self.running = True
         while self.running:
+            next_run = datetime.datetime.utcnow() + self.run_every
             self.run_all_rules()
 
+            if next_run < datetime.datetime.utcnow():
+                continue
+
+            # Wait before querying again
+            sleep_duration = (next_run - datetime.datetime.utcnow()).seconds
+            self.sleep_for(sleep_duration)
+
     def run_all_rules(self):
-        """ Run each rule one time, then sleep """
+        """ Run each rule one time """
         # If writeback_es errored, it's disabled until the next query cycle
         if not self.writeback_es:
             self.writeback_es = self.new_elasticsearch(self.es_conn_config)
@@ -602,7 +610,6 @@ class ElastAlerter():
             # This can happen if --start was specified with a large time period
             # or if we are running too slow to process events in real time.
             logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, endtime, self.run_every))
-            return
 
         # Only force starttime once
         self.starttime = None
@@ -610,14 +617,14 @@ class ElastAlerter():
         if not self.args.pin_rules:
             self.load_rule_changes()
 
-        # Wait before querying again
-        sleep_for = (next_run - datetime.datetime.utcnow()).seconds
-        logging.info("Sleeping for %s seconds" % (sleep_for))
-        time.sleep(sleep_for)
-
     def stop(self):
         """ Stop an elastalert runner that's been started """
         self.running = False
+
+    def sleep_for(self, duration):
+        """ Sleep for a set duration """
+        logging.info("Sleeping for %s seconds" % (duration))
+        time.sleep(duration)
 
     def generate_kibana_db(self, rule, match):
         ''' Uses a template dashboard to upload a temp dashboard showing the match.
