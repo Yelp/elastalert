@@ -4,6 +4,7 @@ import copy
 import datetime
 import json
 import threading
+import time
 
 import elasticsearch
 import mock
@@ -567,6 +568,7 @@ def test_stop(ea):
         with mock.patch.object(ea, 'run_all_rules'):
             start_thread = threading.Thread(target=ea.start)
             start_thread.start()
+            time.sleep(1)
             assert ea.running
 
             ea.stop()
