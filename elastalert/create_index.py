@@ -44,7 +44,8 @@ def main():
 
     es = Elasticsearch(host=host, port=port, use_ssl=use_ssl, http_auth=http_auth)
 
-    silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'}}}}
+    silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
+                                                  'until': {'type': 'date', 'format': 'dateOptionalTime'}}}}
     ess_mapping = {'elastalert_status': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
     es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
