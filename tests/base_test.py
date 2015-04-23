@@ -4,7 +4,6 @@ import copy
 import datetime
 import json
 import threading
-import time
 
 import elasticsearch
 import mock
@@ -564,15 +563,26 @@ def test_exponential_realert(ea):
 
 
 def test_stop(ea):
-    with mock.patch.object(ea, 'sleep_for', return_value=None):
-        with mock.patch.object(ea, 'run_all_rules'):
-            start_thread = threading.Thread(target=ea.start)
-            start_thread.start()
-            time.sleep(1)
-            assert ea.running
+    loops = []
 
+    # Exit the thread on the fourth iteration
+    def mock_loop(loops=loops):
+        loops.append(1)
+        assert ea.running
+        if len(loops) > 3:
             ea.stop()
-            start_thread.join()
+
+    with mock.patch.object(ea, 'sleep_for', return_value=None):
+        with mock.patch.object(ea, 'run_all_rules') as mock_run:
+            mock_run.side_effect = mock_loop
+            start_thread = threading.Thread(target=ea.start)
+            # Set as daemon to prevent a failed test from blocking exit
+            start_thread.daemon = True
+            start_thread.start()
+
+            # Give it a few seconds to run the loop
+            start_thread.join(5)
 
             assert not ea.running
             assert not start_thread.is_alive()
+            assert mock_run.call_count == 4
