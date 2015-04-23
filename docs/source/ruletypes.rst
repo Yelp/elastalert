@@ -478,6 +478,36 @@ field_values will contain every key value pair included in the results from Elas
 every key in ``included``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
 come from an individual event, usually the one which triggers the alert.
 
+Command
+~~~~~~~
+
+The command alert allows you to execute an arbitrary command and pass arguments or stdin from the match. Arguments to the command can use
+Python format string syntax to access parts of the match. The alerter will open a subprocess and optionally pass the match, as JSON, to 
+the stdin of the process.
+
+This alert requires one option:
+
+``command``: A list of arguments to execute or a string to execute. If in list format, the first argument is the name of the program to execute. If passing a
+string, the command will be executed through the shell. The command string or args will be formatted using Python's % string format syntax with the
+match passed the format argument. This means that a field can be accessed with ``%(field_name)s``.
+
+Optional:
+
+``pipe_match_json``: If true, the match will be converted to JSON and passed to stdin of the command. Note that this will cause ElastAlert to block
+until the command exits or sends an EOF to stdout.
+
+Example usage::
+
+    alert:
+      - command
+    command: ["/bin/send_alert", "--username", "%(username)s"]
+
+.. warning::
+
+    Executing commmands with untrusted data can make it vulnerable to shell injection! If you use formatted data in 
+    your command, it is highly recommended that you use a args list format instead of a shell string.
+
+
 Email
 ~~~~~
 

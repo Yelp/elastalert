@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime
+import json
 import logging
+import subprocess
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
@@ -76,8 +78,9 @@ class Alerter(object):
         raise NotImplementedError()
 
     def get_info(self):
-        """ Returns a dictionary of data related to this alert. """
-        raise NotImplementedError()
+        """ Returns a dictionary of data related to this alert. At minimum, this should contain
+        a field type corresponding to the type of Alerter. """
+        return {'type': 'Unknown'}
 
     def create_title(self, matches):
         """ Creates custom alert title to be used, e.g. as an e-mail subject or JIRA issue summary.
@@ -292,3 +295,36 @@ class JiraAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'jira'}
+
+
+class CommandAlerter(Alerter):
+    required_options = set(['command'])
+
+    def __init__(self, *args):
+        super(CommandAlerter, self).__init__(*args)
+        if isinstance(self.rule['command'], basestring) and '%' in self.rule['command']:
+            logging.warning('Warning! You could be vulnerable to shell injection!')
+            self.rule['command'] = [self.rule['command']]
+
+    def alert(self, matches):
+        for match in matches:
+            # Format the command and arguments
+            try:
+                command = [command_arg % match for command_arg in self.rule['command']]
+                self.last_command = command
+            except KeyError as e:
+                raise EAException("Error formatting command: %s" % (e))
+
+            # Run command and pipe data
+            try:
+                subp = subprocess.Popen(command, stdin=subprocess.PIPE)
+
+                if self.rule.get('pipe_match_json'):
+                    match_json = json.dumps(match)
+                    stdout, stderr = subp.communicate(input=match_json)
+            except OSError as e:
+                raise EAException("Error while running command %s: %s" % (' '.join(command), e))
+
+    def get_info(self):
+        return {'type': 'command',
+                'command': ' '.join(self.last_command)}

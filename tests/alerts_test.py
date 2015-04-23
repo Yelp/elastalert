@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
+import subprocess
 
 import mock
 
 from elastalert.alerts import basic_match_string
+from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.util import ts_add
@@ -142,3 +144,35 @@ def test_kibana(ea):
 
     # Included fields active in table
     assert dashboard['rows'][1]['panels'][0]['fields'] == ['@timestamp']
+
+
+def test_command():
+    # Test command as list with a formatted arg
+    rule = {'command': ['/bin/test/', '--arg', '%(somefield)s']}
+    alert = CommandAlerter(rule)
+    match = {'@timestamp': '2014-01-01T00:00:00',
+             'somefield': 'foobarbaz'}
+    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+        alert.alert([match])
+    assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE)
+
+    # Test command as string with formatted arg
+    rule = {'command': '/bin/test/ --arg %(somefield)s'}
+    alert = CommandAlerter(rule)
+    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+        alert.alert([match])
+    assert mock_popen.called_with('/bin/test --arg foobarbaz', stdin=subprocess.PIPE)
+
+    # Test command with pipe_match_json
+    rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],
+            'pipe_match_json': True}
+    alert = CommandAlerter(rule)
+    match = {'@timestamp': '2014-01-01T00:00:00',
+             'somefield': 'foobarbaz'}
+    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+        mock_subprocess = mock.Mock()
+        mock_popen.return_value = mock_subprocess
+        mock_subprocess.communicate.return_value = (None, None)
+        alert.alert([match])
+    assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE)
+    assert mock_subprocess.communicate.called_with(input=json.dumps(match))
