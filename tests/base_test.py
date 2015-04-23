@@ -566,19 +566,18 @@ def test_stop(ea):
     """ The purpose of this test is to make sure that calling ElastAlerter.stop() will break it
     out of a ElastAlerter.start() loop. This method exists to provide a mechanism for running
     ElastAlert with threads and thus must be tested with threads. mock_loop verifies the loop
-    is running, saves it's state via loops, and will call stop after several iterations. """
-    loops = []
+    is running and will call stop after several iterations. """
 
     # Exit the thread on the fourth iteration
-    def mock_loop(loops=loops):
-        loops.append(1)
-        assert ea.running
-        if len(loops) > 3:
-            ea.stop()
+    def mock_loop():
+        for i in range(3):
+            assert ea.running
+            yield
+        ea.stop()
 
     with mock.patch.object(ea, 'sleep_for', return_value=None):
         with mock.patch.object(ea, 'run_all_rules') as mock_run:
-            mock_run.side_effect = mock_loop
+            mock_run.side_effect = mock_loop()
             start_thread = threading.Thread(target=ea.start)
             # Set as daemon to prevent a failed test from blocking exit
             start_thread.daemon = True
