@@ -498,7 +498,7 @@ until the command exits or sends an EOF to stdout.
 
 Example usage::
 
-    alerts:
+    alert:
       - command
     command: ["/bin/send_alert", "--username", "%(username)s"]
 

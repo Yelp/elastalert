@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import copy
 import datetime
 import json
 import logging
@@ -310,9 +309,8 @@ class CommandAlerter(Alerter):
     def alert(self, matches):
         for match in matches:
             # Format the command and arguments
-            command = copy.copy(self.rule['command'])
             try:
-                command = [command_arg % match for command_arg in command]
+                command = [command_arg % match for command_arg in self.rule['command']]
                 self.last_command = command
             except KeyError as e:
                 raise EAException("Error formatting command: %s" % (e))
