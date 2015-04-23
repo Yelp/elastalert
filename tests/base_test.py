@@ -563,6 +563,10 @@ def test_exponential_realert(ea):
 
 
 def test_stop(ea):
+    """ The purpose of this test is to make sure that calling ElastAlerter.stop() will break it
+    out of a ElastAlerter.start() loop. This method exists to provide a mechanism for running
+    ElastAlert with threads and thus must be tested with threads. mock_loop verifies the loop
+    is running, saves it's state via loops, and will call stop after several iterations. """
     loops = []
 
     # Exit the thread on the fourth iteration
