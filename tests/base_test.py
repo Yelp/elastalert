@@ -563,14 +563,29 @@ def test_exponential_realert(ea):
 
 
 def test_stop(ea):
-    with mock.patch.object(ea, 'sleep_for', return_value=None):
-        with mock.patch.object(ea, 'run_all_rules'):
-            start_thread = threading.Thread(target=ea.start)
-            start_thread.start()
-            assert ea.running
+    """ The purpose of this test is to make sure that calling ElastAlerter.stop() will break it
+    out of a ElastAlerter.start() loop. This method exists to provide a mechanism for running
+    ElastAlert with threads and thus must be tested with threads. mock_loop verifies the loop
+    is running and will call stop after several iterations. """
 
-            ea.stop()
-            start_thread.join()
+    # Exit the thread on the fourth iteration
+    def mock_loop():
+        for i in range(3):
+            assert ea.running
+            yield
+        ea.stop()
+
+    with mock.patch.object(ea, 'sleep_for', return_value=None):
+        with mock.patch.object(ea, 'run_all_rules') as mock_run:
+            mock_run.side_effect = mock_loop()
+            start_thread = threading.Thread(target=ea.start)
+            # Set as daemon to prevent a failed test from blocking exit
+            start_thread.daemon = True
+            start_thread.start()
+
+            # Give it a few seconds to run the loop
+            start_thread.join(5)
 
             assert not ea.running
             assert not start_thread.is_alive()
+            assert mock_run.call_count == 4
