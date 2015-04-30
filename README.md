@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/Yelp/elastalert.png?label=ready&title=Ready)](https://waffle.io/Yelp/elastalert)
 [![Build Status](https://travis-ci.org/Yelp/elastalert.svg)](https://travis-ci.org/Yelp/elastalert)
 
 ## ElastAlert - [Read the Docs](http://elastalert.readthedocs.org).
