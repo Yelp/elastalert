@@ -251,7 +251,7 @@ of tens of thousands or more. ``doc_type`` must be set to use this.
 ``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
 
 ``use_terms_query``: If true, ElastAlert will make an aggregation query against Elasticsearch to get counts of documents matching
-each unique value of ``query_key``. This be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
+each unique value of ``query_key``. This must be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
 default 50, unique terms.
 
 ``terms_size``: When used with ``use_terms_query``, this is the maximum number of terms returned per query. Default is 50.
@@ -377,7 +377,7 @@ of tens of thousands or more. ``doc_type`` must be set to use this.
 ``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
 
 ``use_terms_query``: If true, ElastAlert will make an aggregation query against Elasticsearch to get counts of documents matching
-each unique value of ``query_key``. This be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
+each unique value of ``query_key``. This must be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
 default 50, unique terms.
 
 ``terms_size``: When used with ``use_terms_query``, this is the maximum number of terms returned per query. Default is 50.
