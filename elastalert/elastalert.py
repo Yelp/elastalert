@@ -247,7 +247,7 @@ class ElastAlerter():
         logging.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), res['count']))
         return {endtime: res['count']}
 
-    def get_hits_terms(self, rule, starttime, endtime, index, key, qk=None):
+    def get_hits_terms(self, rule, starttime, endtime, index, key, qk=None, size=None):
         rule_filter = copy.copy(rule['filter'])
         if qk:
             filter_key = rule['query_key']
@@ -255,7 +255,9 @@ class ElastAlerter():
                 filter_key += '.raw'
             rule_filter.extend([{'term': {filter_key: qk}}])
         base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)
-        query = self.get_terms_query(base_query, rule.get('terms_size', 5), key)
+        if size is None:
+            size = rule.get('terms_size', 50)
+        query = self.get_terms_query(base_query, size, key)
 
         try:
             res = self.current_es.search(index=index, doc_type=rule['doc_type'], body=query, search_type='count', ignore_unavailable=True)
@@ -1033,7 +1035,7 @@ class ElastAlerter():
         all_counts = {}
         for key in keys:
             index = self.get_index(rule, starttime, endtime)
-            buckets = self.get_hits_terms(rule, starttime, endtime, index, key, qk).values()[0]
+            buckets = self.get_hits_terms(rule, starttime, endtime, index, key, qk, number).values()[0]
             # get_hits_terms adds to num_hits, but we don't want to count these
             self.num_hits -= len(buckets)
             terms = {}
