@@ -4,6 +4,7 @@ import json
 import subprocess
 
 import mock
+from jira.exceptions import JIRAError
 
 from elastalert.alerts import basic_match_string
 from elastalert.alerts import CommandAlerter
@@ -107,6 +108,32 @@ def test_jira():
                                                  components=[{'name': 'testcomponent'}],
                                                  description=mock.ANY,
                                                  summary='Issue test_value occured at 2014-10-31T00:00:00')]
+            assert mock_jira.mock_calls == expected
+
+    # Search called if jira_bump_tickets
+    rule['jira_bump_tickets'] = True
+    with mock.patch('elastalert.alerts.JIRA') as mock_jira:
+        with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+            mock_jira.return_value = mock.Mock()
+            mock_jira.return_value.search_issues.return_value = []
+
+            alert = JiraAlerter(rule)
+            alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+
+            expected.insert(1, mock.call().search_issues(mock.ANY))
+            assert mock_jira.mock_calls == expected
+
+    # Issue is still created if search_issues throws an exception
+    with mock.patch('elastalert.alerts.JIRA') as mock_jira:
+        with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+            mock_jira.return_value = mock.Mock()
+            mock_jira.return_value.search_issues.side_effect = JIRAError
+
+            alert = JiraAlerter(rule)
+            alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+
             assert mock_jira.mock_calls == expected
 
 
