@@ -2,11 +2,14 @@
 import datetime
 from collections import deque
 
+from elasticsearch.client import Elasticsearch
 from util import dt_to_ts
 from util import EAException
+from util import format_index
 from util import hashable
 from util import lookup_es_key
 from util import pretty_ts
+from util import ts_now
 from util import ts_to_dt
 
 
@@ -466,3 +469,71 @@ class FlatlineRule(FrequencyRule):
         for key in self.occurrences.keys():
             self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({self.ts_field: ts}, 0))
             self.check_for_match(key)
+
+
+class NewTermsRule(RuleType):
+    """ Alerts on a new value in a list of fields. """
+
+    def __init__(self, *args):
+        super(NewTermsRule, self).__init__(*args)
+        self.seen_values = {}
+        # Allow the use of query_key or fields
+        if 'fields' not in self.rules:
+            if 'query_key' not in self.rules:
+                raise EAException("fields or query_key must be specified")
+            self.fields = self.rules['query_key']
+        else:
+            self.fields = self.rules['fields']
+        if not self.fields:
+            raise EAException("fields must not be an empty list")
+        if type(self.fields) != list:
+            self.fields = [self.fields]
+        if self.rules.get('use_terms_query') and len(self.fields) != 1:
+            raise EAException("use_terms_query can only be used with one field at a time")
+        self.get_all_terms()
+
+    def get_all_terms(self):
+        """ Performs a terms aggregation for each field to get every existing term. """
+        self.es = Elasticsearch(host=self.rules['es_host'], port=self.rules['es_port'])
+        window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
+
+        field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
+        query_template = {"aggs": {"values": {"terms": field_name}}}
+        if self.rules.get('use_strftime_index'):
+            end = ts_now()
+            start = end - window_size
+            index = format_index(self.rules['index'], start, end)
+        else:
+            index = self.rules['index']
+
+        for field in self.fields:
+            field_name['field'] = field
+            res = self.es.search(body=query_template, index=index, ignore_unavailable=True, timeout=50)
+            buckets = res['aggregations']['values']['buckets']
+            keys = [bucket['key'] for bucket in buckets]
+            self.seen_values[field] = keys
+
+    def add_data(self, data):
+        for document in data:
+            for field in self.fields:
+                value = document.get(field)
+                if not value and self.rules.get('alert_on_missing_field'):
+                    document['missing_field'] = field
+                    self.add_match(document)
+                elif value:
+                    if value not in self.seen_values[field]:
+                        document['new_field'] = field
+                        self.add_match(document)
+                        self.seen_values[field].append(value)
+
+    def add_terms_data(self, terms):
+        # With terms query, len(self.fields) is always 1
+        field = self.fields[0]
+        for timestamp, buckets in terms.iteritems():
+            for bucket in buckets:
+                if bucket['doc_count']:
+                    if bucket['key'] not in self.seen_values[field]:
+                        match = {field: bucket['key'],
+                                 self.rules['timestamp_field']: timestamp,
+                                 'new_field': field}
+                        self.add_match(match)

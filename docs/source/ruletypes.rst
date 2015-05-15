@@ -401,6 +401,29 @@ of tens of thousands or more. ``doc_type`` must be set to use this.
 
 ``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
 
+New Term
+~~~~~~~~
+
+``new_term``: This rule matches when a new value appears in a field that has never been seen before. When ElastAlert starts, it will
+use an aggregation query to gather all known terms for a list of fields.
+
+This rule requires one additional option:
+
+``fields``: A list of fields to monitor for new terms. 
+
+Optional:
+
+``terms_window_size``: The amount of the used for the initial query to find existing terms. No term that has occured within this time frame
+will trigger an alert. The default is 30 days.
+
+``alert_on_missing_field``: Whether or not to alert when a field is missing from a document. The default is false.
+
+``use_terms_query``: If true, ElastAlert will use aggregation queries to get terms instead of regular search queries. This is faster
+than regular searching if there is a large number of documents. If this is used, you may only specify a single field, and must also set
+``query_key`` to that field. Also, note that by default, ``terms_size``, the number of buckets returned per query, defaults to 50. This means
+that if a new term appears but there are at least 50 terms which appear more frequently, it will not be found.
+
+
 .. _alerts:
 
 Alerts
