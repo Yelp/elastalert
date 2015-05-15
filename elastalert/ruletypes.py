@@ -484,6 +484,8 @@ class NewTermsRule(RuleType):
             self.fields = self.rules['query_key']
         else:
             self.fields = self.rules['fields']
+        if not self.fields:
+            raise EAException("fields must not be an empty list")
         if type(self.fields) != list:
             self.fields = [self.fields]
         if self.rules.get('use_terms_query') and len(self.fields) != 1:
@@ -495,7 +497,7 @@ class NewTermsRule(RuleType):
         self.es = Elasticsearch(host=self.rules['es_host'], port=self.rules['es_port'])
         window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
 
-        field_name = {"field": "", "size": 999999}
+        field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
         query_template = {"aggs": {"values": {"terms": field_name}}}
         if self.rules.get('use_strftime_index'):
             end = ts_now()
@@ -535,6 +537,3 @@ class NewTermsRule(RuleType):
                                  self.rules['timestamp_field']: timestamp,
                                  'new_field': field}
                         self.add_match(match)
-
-    def garbage_collect(self, ts):
-        pass
