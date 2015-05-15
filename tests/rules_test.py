@@ -451,7 +451,7 @@ def test_change():
     assert rule.matches == []
 
 
-def test_new_terms():
+def test_new_term():
     rules = {'fields': ['a', 'b'],
              'timestamp_field': '@timestamp',
              'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}

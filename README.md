@@ -30,11 +30,13 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 - "Match when a certain field matches a blacklist/whitelist" (``blacklist`` and ``whitelist`` type)
 - "Match on any event matching a given filter" (``any`` type)
 - "Match when a field has two different values within some time" (``change`` type)
+- "Match when a never before seen term appears in a field" (``new_term`` type)
 
-Currently, we have support built in for two alert types:
+Currently, we have support built in for three alert types:
 
 - Email
 - JIRA
+- Commands
 
 Additional rule types and alerts can be easily imported or written.
 
