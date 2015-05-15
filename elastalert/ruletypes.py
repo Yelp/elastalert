@@ -486,7 +486,7 @@ class NewTermsRule(RuleType):
             self.fields = self.rules['fields']
         if type(self.fields) != list:
             self.fields = [self.fields]
-        if self.rules.get('use_terms_query') and len(self.fields) > 1:
+        if self.rules.get('use_terms_query') and len(self.fields) != 1:
             raise EAException("use_terms_query can only be used with one field at a time")
         self.get_all_terms()
 
@@ -523,6 +523,18 @@ class NewTermsRule(RuleType):
                         document['new_field'] = field
                         self.add_match(document)
                         self.seen_values[field].append(value)
+
+    def add_terms_data(self, terms):
+        # With terms query, len(self.fields) is always 1
+        field = self.fields[0]
+        for timestamp, buckets in terms.iteritems():
+            for bucket in buckets:
+                if bucket['doc_count']:
+                    if bucket['key'] not in self.seen_values[field]:
+                        match = {field: bucket['key'],
+                                 self.rules['timestamp_field']: timestamp,
+                                 'new_field': field}
+                        self.add_match(match)
 
     def garbage_collect(self, ts):
         pass

@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+import mock
+
 from elastalert.ruletypes import AnyRule
 from elastalert.ruletypes import BlacklistRule
 from elastalert.ruletypes import ChangeRule
 from elastalert.ruletypes import EventWindow
 from elastalert.ruletypes import FlatlineRule
 from elastalert.ruletypes import FrequencyRule
+from elastalert.ruletypes import NewTermsRule
 from elastalert.ruletypes import SpikeRule
 from elastalert.ruletypes import WhitelistRule
+from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
 
 
@@ -445,6 +449,50 @@ def test_change():
     rule = ChangeRule(rules)
     rule.add_data(events)
     assert rule.matches == []
+
+
+def test_new_terms():
+    rules = {'fields': ['a', 'b'],
+             'timestamp_field': '@timestamp',
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+    mock_res = {'aggregations': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
+                                                        {'key': 'key2', 'doc_count': 5}]}}}
+
+    with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.search.return_value = mock_res
+        rule = NewTermsRule(rules)
+
+        assert rule.es.search.call_count == 2
+
+    # Key1 and key2 shouldn't cause a match
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key1', 'b': 'key2'}])
+    assert rule.matches == []
+
+    # Neither will missing values
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key2'}])
+    assert rule.matches == []
+
+    # Key3 causes an alert for field b
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key2', 'b': 'key3'}])
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['new_field'] == 'b'
+    assert rule.matches[0]['b'] == 'key3'
+    rule.matches = []
+
+    # Key3 doesn't cause another alert for field b
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key2', 'b': 'key3'}])
+    assert rule.matches == []
+
+    # Missing_field
+    rules['alert_on_missing_field'] = True
+    with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.search.return_value = mock_res
+        rule = NewTermsRule(rules)
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key2'}])
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['missing_field'] == 'b'
 
 
 def test_flatline():
