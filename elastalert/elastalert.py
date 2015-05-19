@@ -776,7 +776,9 @@ class ElastAlerter():
         # Run the alerts
         alert_sent = False
         alert_exception = None
+        alert_pipeline = {}
         for alert in rule['alert']:
+            alert.pipeline = alert_pipeline
             try:
                 alert.alert(matches)
             except EAException as e:
