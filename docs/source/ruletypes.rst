@@ -639,7 +639,8 @@ Jira
 ~~~~~
 
 The JIRA alerter will open a ticket on jira whenever an alert is triggered. You must have a service account for ElastAlert to connect with.
-The credentials of the service account are loaded from a separate file.
+The credentials of the service account are loaded from a separate file. The ticket number will be written to the alert pipeline, and if it
+is followed by an email alerter, a link will be included in the email.
 
 This alert requires four additional options:
 
