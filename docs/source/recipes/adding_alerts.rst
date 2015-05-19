@@ -34,7 +34,7 @@ should be in the rule configuration file and can be accessed here.
 
 ``self.pipeline``: This is a dictionary object that serves to transfer information between alerts. When an alert is triggered,
 a new empty pipeline object will be created and each alerter can add or receive information from it. Note that alerters
-are called in the order they are defined in the rule file. For example, the JIRA alerter will add it's ticket number
+are called in the order they are defined in the rule file. For example, the JIRA alerter will add its ticket number
 to the pipeline and the email alerter will add that link if it's present in the pipeline.
 
 alert(self, match):
