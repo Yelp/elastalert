@@ -69,6 +69,7 @@ class Alerter(object):
     def __init__(self, rule):
         self.rule = rule
         self.from_addr = 'ElastAlert'
+        self.pipeline = None
 
     def alert(self, match):
         """ Send an alert. Match is a dictionary of information about the alert.
@@ -144,6 +145,11 @@ class EmailAlerter(Alerter):
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
+
+        # Add JIRA ticket if it exists
+        if self.pipeline is not None and 'jira_ticket' in self.pipeline:
+            url = '%s/browse/%s' % (self.rule['jira_server'], self.pipeline['jira_ticket'])
+            body += '\nJIRA ticket: %s' % (url)
 
         email_msg = MIMEText(body)
         email_msg['Subject'] = self.create_title(matches)
@@ -278,6 +284,9 @@ class JiraAlerter(Alerter):
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket: %s" % (e))
         logging.info("Opened Jira ticket: %s" % (self.issue))
+
+        if self.pipeline is not None:
+            self.pipeline['jira_ticket'] = self.issue
 
     def create_default_title(self, matches, for_search=False):
         # If there is a query_key, use that in the title

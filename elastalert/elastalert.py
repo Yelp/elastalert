@@ -776,7 +776,11 @@ class ElastAlerter():
         # Run the alerts
         alert_sent = False
         alert_exception = None
+        alert_pipeline = {}
         for alert in rule['alert']:
+            # Alert.pipeline is a single object shared between every alerter
+            # This allows alerters to pass objects and data between themselves
+            alert.pipeline = alert_pipeline
             try:
                 alert.alert(matches)
             except EAException as e:
