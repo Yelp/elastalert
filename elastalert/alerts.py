@@ -68,7 +68,6 @@ class Alerter(object):
 
     def __init__(self, rule):
         self.rule = rule
-        self.from_addr = 'ElastAlert'
         self.pipeline = None
 
     def alert(self, match):
@@ -132,6 +131,7 @@ class EmailAlerter(Alerter):
         super(EmailAlerter, self).__init__(*args)
 
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
+        self.from_addr = self.rule.get('from_addr', 'ElastAlert')
         # Convert email to a list if it isn't already
         if isinstance(self.rule['email'], str):
             self.rule['email'] = [self.rule['email']]
@@ -154,6 +154,7 @@ class EmailAlerter(Alerter):
         email_msg = MIMEText(body)
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
+        email_msg['From'] = self.from_addr
         email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
 
         try:
