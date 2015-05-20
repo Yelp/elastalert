@@ -48,7 +48,7 @@ def test_alert_text(ea):
 
 
 def test_email():
-    rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'],
+    rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
             'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term']}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
@@ -62,8 +62,10 @@ def test_email():
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[1][1][2]
+
         assert 'Reply-To: test@example.com' in body
         assert 'To: testing@test.test' in body
+        assert 'From: testfrom@test.test' in body
         assert 'Subject: Test alert for test_value' in body
 
 
