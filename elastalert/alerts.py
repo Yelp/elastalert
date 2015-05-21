@@ -36,6 +36,10 @@ def basic_match_string(rule, match):
 
     # Add custom alert text
     alert_text = rule.get('alert_text', '')
+    if 'alert_text_args' in rule:
+        alert_text_args = rule.get('alert_text_args')
+        alert_text_values = [match.get(arg, '<MISSING VALUE>') for arg in alert_text_args]
+        alert_text = alert_text.format(*alert_text_values)
     text += alert_text
     while text[-2:] != '\n\n':
         text += '\n'
