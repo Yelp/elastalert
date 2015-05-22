@@ -166,6 +166,8 @@ dashboard_temp = {'editable': True,
                   u'style': u'dark',
                   u'title': u'ElastAlert Alert Dashboard'}
 
+kibana4_time_temp = "(refreshInterval:(display:Off,section:0,value:0),time:(from:'%s',mode:absolute,to:'%s'))"
+
 
 def set_time(dashboard, start, end):
     dashboard['services']['filter']['list']['0']['from'] = start
@@ -258,3 +260,10 @@ def filters_from_dashboard(db):
         config_filters.append({'or': or_filters})
 
     return config_filters
+
+
+def kibana4_dashboard_link(base_url, dashboard, starttime, endtime):
+    time_settings = kibana4_time_temp % (starttime, endtime)
+    if not base_url.endswith('/'):
+        base_url += '/'
+    return "%s#/dashboard/%s?_g=%s" % (base_url, dashboard, time_settings)

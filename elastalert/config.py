@@ -151,6 +151,10 @@ def load_options(rule):
                                 'The index will be formatted like %s' % (token,
                                                                          datetime.datetime.now().strftime(rule.get('index'))))
 
+    # Kibana4 urls can't be generated based on host:port
+    if rule.get('use_kibana4_dashboard') and not rule.get('kibana_url'):
+        raise EAException('kibana_url must be specified with use_kibana4_dashboard')
+
 
 def load_modules(rule):
     """ Loads things that could be modules. Enhancements, alerts and rule type. """
