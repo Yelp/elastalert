@@ -10,6 +10,8 @@ import mock
 import pytest
 from elasticsearch.exceptions import ElasticsearchException
 
+from alerts_test import mock_rule
+from elastalert.alerts import EmailAlerter
 from elastalert.enhancements import BaseEnhancement
 from elastalert.kibana import dashboard_temp
 from elastalert.util import dt_to_ts
@@ -589,3 +591,23 @@ def test_stop(ea):
             assert not ea.running
             assert not start_thread.is_alive()
             assert mock_run.call_count == 4
+
+
+def test_list_for_email_reply_to(ea):
+    """ Tests that if a list is used in the "email_reply_to" field, ElastAlert successfully handles the Exception
+    thrown by smtplib.SMTP
+    """
+    ea.handle_error = mock.MagicMock()
+    matches = [{'@timestamp': END}]
+    rule = {
+        'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
+        'type': mock_rule(), 'timestamp_field': '@timestamp', 'match_enhancements': [],
+        'email_reply_to': ['list_test1@example.com', 'list_test2@example.com'],
+        'alert_subject': 'Test alert', 'alert_subject_args': ['test_term']
+    }
+    alert = EmailAlerter(rule)
+    rule['alert'] = [alert]
+    ea.alert(matches, rule)
+    expected = ("Unexpected Error while running alert email: 'list' object has no attribute 'lstrip'",
+                {'rule': 'test alert'})
+    ea.handle_error.assert_called_once_with(*expected)

@@ -784,7 +784,10 @@ class ElastAlerter():
             try:
                 alert.alert(matches)
             except EAException as e:
-                self.handle_error('Error while running alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
+                self.handle_error('ElastAlert Error while running alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
+                alert_exception = str(e)
+            except Exception as e:
+                self.handle_error('Unexpected Error while running alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
                 alert_exception = str(e)
             else:
                 self.alerts_sent += 1
