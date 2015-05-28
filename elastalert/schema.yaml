@@ -18,27 +18,26 @@ definitions:
     type: object
     additionalProperties: false
     properties:
-      gte: {}
-      gt: {}
-      lte: {}
-      lt: {}
-      to: {}
+      gte:  {}
+      gt:   {}
+      lte:  {}
+      lt:   {}
+      to:   {}
       from: {}
 
   filter: &filter
       additionalProperties: false
       properties:
-        terms: 
-          # elastalert_rules/prod/service_errors/service_errors_seo_remote_indexer.yaml fails this check
-          # additionalProperties: {type: array, items: {type: [string, number, integer, boolean]}}
+        terms:
+          additionalProperties: {type: array, items: {type: [string, number, integer, boolean]}}
           type: object
-        term: 
+        term:
           # term should be scalar values... but for some reason it's often a singleton array
-          # additionalProperties: {type: [string, number, integer, boolean]}
+          additionalProperties: {type: [string, number, integer, boolean]}
           type: object
         not: {'$ref': '#/definitions/filter'}
         range: {type: object, additionalProperties: *range }
-        exists: 
+        exists:
           type: object
           additionalProperties: false
           properties:
@@ -154,4 +153,4 @@ required:
   - es_port
   - es_host
 type: object
-additionalProperties: false
+# additionalProperties: false

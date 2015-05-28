@@ -14,6 +14,9 @@ from staticconf.loader import yaml_loader
 from util import EAException
 
 
+# schema for rule yaml
+rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
+
 # Required global (config.yaml) and local (rule.yaml)  configuration options
 required_globals = frozenset(['run_every', 'rules_folder', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
 required_locals = frozenset(['alert', 'type', 'name', 'es_host', 'es_port', 'index'])
@@ -72,8 +75,10 @@ def load_configuration(filename):
 def load_options(rule):
     """ Converts time objects, sets defaults, and validates some settings. """
 
-    validator = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
-    validator.validate(rule)
+    try:
+        rule_schema.validate(rule)
+    except jsonschema.ValidationError as e:
+        raise EAException("Invalid Rule: %s\n%s" % (rule.get('name'), e))
 
     try:
         # Set all time based parameters

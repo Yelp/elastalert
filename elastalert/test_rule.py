@@ -27,6 +27,7 @@ def check_files():
     print("Note: This tool is for testing filters and config syntax. It will not process data or alert.\n")
     parser = argparse.ArgumentParser(description='Validate a rule configuration')
     parser.add_argument('files', metavar='file', type=str, nargs='+', help='rule configuration filename')
+    parser.add_argument('--schema-only', action='store_true', help='Show only schema errors; do not run query')
     parser.add_argument('--days', type=int, default=[1, 7], nargs='+', help='Query the previous N days with this rule')
     args = parser.parse_args()
 
@@ -35,6 +36,9 @@ def check_files():
             conf = yaml.load(fh)
         load_options(conf)
         print("Successfully loaded %s\n" % (conf['name']))
+
+        if args.schema_only:
+            continue
 
         es_client = Elasticsearch(host=conf['es_host'], port=conf['es_port'])
         for days in args.days:
