@@ -607,7 +607,8 @@ def test_list_for_email_reply_to(ea):
     }
     alert = EmailAlerter(rule)
     rule['alert'] = [alert]
+    alert.alert = mock.MagicMock(side_effect=Exception('test_exception'))
     ea.alert(matches, rule)
-    expected = ("Unexpected Error while running alert email: 'list' object has no attribute 'lstrip'",
+    expected = ("Unexpected Error while running alert email: test_exception",
                 {'rule': 'test alert'})
     ea.handle_error.assert_called_once_with(*expected)
