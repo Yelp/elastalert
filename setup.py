@@ -19,6 +19,7 @@ setup(
                             'elastalert-test-rule=elastalert.test_rule:check_files',
                             'elastalert-rule-from-kibana=elastalert.rule_from_kibana:main']},
     packages=find_packages(),
+    package_data={'elastalert': ['schema.yaml']},
     install_requires=[
         'elasticsearch',
         'jira==0.32',  # jira.exceptions is missing from later versions

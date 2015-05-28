@@ -1,0 +1,157 @@
+o$schema: http://json-schema.org/draft-04/schema#
+definitions:
+
+  arrayOfStrings: &arrayOfString
+    type: [string, array]
+    items: {type: string}
+
+  timeFrame: &timeframe
+    type: object
+    additionalProperties: false
+    properties:
+      days: {type: number}
+      hours: {type: number}
+      minutes: {type: number}
+      seconds: {type: number}
+
+  range: &range
+    type: object
+    additionalProperties: false
+    properties:
+      gte: {}
+      gt: {}
+      lte: {}
+      lt: {}
+      to: {}
+      from: {}
+
+  filter: &filter
+      additionalProperties: false
+      properties:
+        terms: 
+          # elastalert_rules/prod/service_errors/service_errors_seo_remote_indexer.yaml fails this check
+          # additionalProperties: {type: array, items: {type: [string, number, integer, boolean]}}
+          type: object
+        term: 
+          # term should be scalar values... but for some reason it's often a singleton array
+          # additionalProperties: {type: [string, number, integer, boolean]}
+          type: object
+        not: {'$ref': '#/definitions/filter'}
+        range: {type: object, additionalProperties: *range }
+        exists: 
+          type: object
+          additionalProperties: false
+          properties:
+            field: {type: string}
+        and: {type: array, items: {'$ref': '#/definitions/filter'}}
+        or: {type: array, items: {'$ref': '#/definitions/filter'}}
+        query:
+          additionalProperties: false
+          properties:
+            terms: {type: object}
+            wildcard: {type: object}
+            query_string:
+              additionalProperties: false
+              properties:
+                query: {type: string}
+              type: object
+          type: object
+      type: ['object', 'null']
+
+properties:
+  alert: *arrayOfString
+  alert_text: {type: string}
+  alert_text_args: {type: array, items: {type: string}}
+  alert_subject_args: {}
+  alert_text_type: {}
+  alert_on_new_data: {}
+  alert_subject: {}
+
+  timestamp_field: {}
+  field: {}
+
+  email: *arrayOfString
+  email_reply_to: {type: string}
+  es_host: {type: string}
+  es_port: {type: integer}
+
+  query_key: {type: string}
+  doc_type:  {type: string}
+  doc_type:  {type: string}
+  use_count_query:  {type: boolean}
+  query_delay: *timeframe
+  include: {type: array, items: {type: string}}
+  count_field: {type: string}
+  count_fields: {type: array, items: { type: string }}
+  top_count_number: {type: integer}
+
+  jira_label: {}
+  jira_bump_tickets: {}
+  jira_account_file: {}
+  jira_server: {}
+  jira_issuetype: {}
+  jira_project: {}
+
+  threshold: {}
+
+  spike_height: {}
+  threshold_cur: {}
+  spike_type: {}
+  threshold_ref: {}
+
+  use_terms_query: {}
+  terms_size: {}
+  raw_count_keys: {}
+  exponential_realert: {}
+
+  jira_component: {}
+  jira_max_age: {}
+  kibana_dashboard: {}
+  use_kibana_dashboard: {}
+  buffer_time: {}
+  generate_kibana_link: {}
+
+  whitelist: {}
+  aggregation: {}
+  match_enhancements: {}
+  ignore_null: {}
+  compare_key: {}
+
+  filter:
+    type: array
+    items: *filter
+
+  index: {type: string}
+  name: {type: string}
+  num_events: {type: integer}
+  realert: *timeframe
+  sensu:
+    properties:
+      irc_channels: {type: string}
+      notification_email: {type: string}
+      page: {type: boolean}
+      runbook: {type: string}
+      status: {type: integer}
+      team: {type: string}
+      tip: {type: string}
+      source: {type: string}
+      output: {type: string}
+    type: object
+    additionalProperties: false
+  timeframe: *timeframe
+  top_count_keys:
+    items:
+    - {type: string}
+    - {type: string}
+    type: array
+  type: {type: string}
+  use_strftime_index: {type: boolean}
+required:
+  - name
+  - type
+  - index
+  - alert
+  - es_port
+  - es_host
+type: object
+additionalProperties: false

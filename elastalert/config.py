@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import hashlib
+import jsonschema
 import logging
 import os
 
@@ -70,6 +71,10 @@ def load_configuration(filename):
 
 def load_options(rule):
     """ Converts time objects, sets defaults, and validates some settings. """
+
+    validator = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
+    validator.validate(rule)
+
     try:
         # Set all time based parameters
         if 'timeframe' in rule:
