@@ -1,10 +1,6 @@
 .$schema: http://json-schema.org/draft-04/schema#
 definitions:
 
-  # A single value field. Not a list, not a mapping
-  scalar: &scalar
-    type: [string, number, integer, boolean]
-
   # Either a single string OR an array of strings
   arrayOfStrings: &arrayOfString
     type: [string, array]
@@ -20,17 +16,6 @@ definitions:
       minutes: {type: number}
       seconds: {type: number}
       milliseconds: {type: number}
-
-  range: &range
-    type: object
-    additionalProperties: false
-    properties:
-      gte:  *scalar
-      gt:   *scalar
-      lte:  *scalar
-      lt:   *scalar
-      to:   *scalar
-      from: *scalar
 
   filter: &filter {}
 
