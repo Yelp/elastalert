@@ -1,4 +1,4 @@
-.$schema: http://json-schema.org/draft-04/schema#
+$schema: http://json-schema.org/draft-04/schema#
 definitions:
 
   # Either a single string OR an array of strings
