@@ -1,6 +1,11 @@
-o$schema: http://json-schema.org/draft-04/schema#
+.$schema: http://json-schema.org/draft-04/schema#
 definitions:
 
+  # A single value field. Not a list, not a mapping
+  scalar: &scalar
+    type: [string, number, integer, boolean]
+
+  # Either a single string OR an array of strings
   arrayOfStrings: &arrayOfString
     type: [string, array]
     items: {type: string}
@@ -10,147 +15,173 @@ definitions:
     additionalProperties: false
     properties:
       days: {type: number}
+      weeks: {type: number}
       hours: {type: number}
       minutes: {type: number}
       seconds: {type: number}
+      milliseconds: {type: number}
 
   range: &range
     type: object
     additionalProperties: false
     properties:
-      gte:  {}
-      gt:   {}
-      lte:  {}
-      lt:   {}
-      to:   {}
-      from: {}
+      gte:  *scalar
+      gt:   *scalar
+      lte:  *scalar
+      lt:   *scalar
+      to:   *scalar
+      from: *scalar
 
   filter: &filter
       additionalProperties: false
       properties:
+        # not / and / or are recursively defined
+        not: {'$ref': '#/definitions/filter'}
+        and: {type: array, items: {'$ref': '#/definitions/filter'}}
+        or: {type: array, items: {'$ref': '#/definitions/filter'}}
+
         terms:
-          additionalProperties: {type: array, items: {type: [string, number, integer, boolean]}}
+          additionalProperties: {type: array, items: *scalar}
           type: object
         term:
-          # term should be scalar values... but for some reason it's often a singleton array
-          additionalProperties: {type: [string, number, integer, boolean]}
+          additionalProperties: *scalar
           type: object
-        not: {'$ref': '#/definitions/filter'}
         range: {type: object, additionalProperties: *range }
         exists:
           type: object
           additionalProperties: false
           properties:
             field: {type: string}
-        and: {type: array, items: {'$ref': '#/definitions/filter'}}
-        or: {type: array, items: {'$ref': '#/definitions/filter'}}
         query:
           additionalProperties: false
           properties:
             terms: {type: object}
             wildcard: {type: object}
             query_string:
-              additionalProperties: false
+              additionalProperties: true
               properties:
                 query: {type: string}
               type: object
           type: object
+      # 'null' type is for backward-compatibility with existing examples
       type: ['object', 'null']
 
+required: [name, type, index, alert, es_port, es_host]
+type: object
 properties:
-  alert: *arrayOfString
-  alert_text: {type: string}
-  alert_text_args: {type: array, items: {type: string}}
-  alert_subject_args: {}
-  alert_text_type: {}
-  alert_on_new_data: {}
-  alert_subject: {}
 
-  timestamp_field: {}
-  field: {}
-
-  email: *arrayOfString
-  email_reply_to: {type: string}
+  # Common Settings
   es_host: {type: string}
   es_port: {type: integer}
+  index: {type: string}
+  name: {type: string}
+  type: {type: string}
+  alert: {type: string}
 
-  query_key: {type: string}
-  doc_type:  {type: string}
-  doc_type:  {type: string}
-  use_count_query:  {type: boolean}
+  use_ssl: {type: boolean}
+  es_username: {type: string}
+  es_password: {type: string}
+  use_strftime_index: {type: boolean}
+
+  # Optional Settings
+  aggregation: *timeframe
+  realert: *timeframe
+  exponential_realert: *timeframe
+
+  buffer_time: *timeframe
   query_delay: *timeframe
-  include: {type: array, items: {type: string}}
-  count_field: {type: string}
-  count_fields: {type: array, items: { type: string }}
-  top_count_number: {type: integer}
+  max_query_size: {type: integer}
 
-  jira_label: {}
-  jira_bump_tickets: {}
-  jira_account_file: {}
-  jira_server: {}
-  jira_issuetype: {}
-  jira_project: {}
-
-  threshold: {}
-
-  spike_height: {}
-  threshold_cur: {}
-  spike_type: {}
-  threshold_ref: {}
-
-  use_terms_query: {}
-  terms_size: {}
-  raw_count_keys: {}
-  exponential_realert: {}
-
-  jira_component: {}
-  jira_max_age: {}
-  kibana_dashboard: {}
-  use_kibana_dashboard: {}
-  buffer_time: {}
-  generate_kibana_link: {}
-
-  whitelist: {}
-  aggregation: {}
-  match_enhancements: {}
-  ignore_null: {}
-  compare_key: {}
-
-  filter:
+  filter :
     type: array
     items: *filter
 
-  index: {type: string}
-  name: {type: string}
-  num_events: {type: integer}
-  realert: *timeframe
-  sensu:
-    properties:
-      irc_channels: {type: string}
-      notification_email: {type: string}
-      page: {type: boolean}
-      runbook: {type: string}
-      status: {type: integer}
-      team: {type: string}
-      tip: {type: string}
-      source: {type: string}
-      output: {type: string}
-    type: object
-    additionalProperties: false
+  include: {type: array, items: {type: string}}
+  top_count_keys: {type: array, items: {type: string}}
+  top_count_number: {type: integer}
+  raw_count_keys: {type: boolean}
+  generate_kibana_link: {type: boolean}
+  kibana_dashboard: {type: string}
+  use_kibana_dashboard: {type: string}
+  use_local_time: {type: boolean}
+  match_enhancements: {type: array, items: {type: string}}
+
+  ### Blacklist Rule
+  compare_key: {type: string}
+  blacklist: {type: array, items: {type: string}}
+
+  ### Whitelist Rule
+  # compare_key
+  whitelist: {type: array, items: {type: string}}
+  ignore_null: {type: boolean}
+
+  ### Change Rule
+  # ignore_null required
+  query_key: {type: string}
   timeframe: *timeframe
-  top_count_keys:
-    items:
-    - {type: string}
-    - {type: string}
-    type: array
-  type: {type: string}
-  use_strftime_index: {type: boolean}
-required:
-  - name
-  - type
-  - index
-  - alert
-  - es_port
-  - es_host
-type: object
-# additionalProperties: false
+
+  ### Frequency Rule
+  num_events: {type: integer}
+  # timeframe
+  use_count_query: {type: boolean}
+  doc_type: {type: string}
+  use_terms_query: {type: boolean}
+  terms_size: {type: integer}
+  query_key: {type: string}
+
+  ### Spike Rule
+  spike_height: {type: number}
+  spike_type: {enum: ["up", "down", "both"]}
+  # timeframe
+  # query_key
+  # use_count_query
+  # doc_type
+  # use_terms_query
+  # terms_size
+  alert_on_new_data: {type: boolean}
+  threshold_ref: {type: integer}
+  threshold_cur: {type: integer}
+
+  ### Flatline
+  threshold: {type: integer}
+  # Use_count_query
+  # doc_type
+
+  ### New Term
+  fields: {type: string}
+  terms_window_size: *timeframe
+  alert_on_missing_field: {type: boolean}
+  # use_terms_query
+
+  # Alerts
+  alert: *arrayOfString
+  alert_subject: {type: string} # Python format string
+  alert_subject_args: {type: array, items: {type: string}}
+
+  # Alert Content
+  alert_text: {type: string} # Python format string
+  alert_text_args: {type: array, items: {type: string}}
+  alert_text_type: {enum: [alert_text_only, exclude_fields]}
+  timestamp_field: {type: string}
+  field: {}
+
+  ### Commands
+  command: *arrayOfString
+  pipe_match_json: {type: boolean}
+
+  ### Email
+  email: *arrayOfString
+  email_reply_to: {type: string}
+  smtp_host: {type: string}
+  from_addr: {type: string}
+
+  ### JIRA
+  jira_server: {type: string}
+  jira_project: {type: string}
+  jira_issuetype: {type: string}
+  jira_account_file: {type: string} # a Yaml file that includes the keys {user:, password:}
+
+  jira_component: {type: string}
+  jira_label: {type: string}
+  jira_bump_tickets: {type: boolean}
+  jira_max_age: {type: number}

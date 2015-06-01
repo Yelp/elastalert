@@ -9,35 +9,35 @@ Rule Configuration Cheat Sheet
 ==============================
 
 
-+--------------------------------------------------------------------------------------------------------------------+
-|              FOR ALL RULES                                                                                         |
-+==========================================+===========+=================================================+===========+
-| ``es_host`` (string)                     |           | ``buffer_time`` (time)                          | Optional  |
-+------------------------------------------+           +-------------------------------------------------+           +
-| ``es_port`` (number)                     | Required  | ``query_delay`` (time)                          |           |
-+------------------------------------------+-----------+-------------------------------------------------+           +
-| ``use_ssl`` (boolean, no default)        | Optional  | ``max_query_size`` (int, default 100k)          |           |
-+------------------------------------------+           +-------------------------------------------------+           +
-| ``es_username`` (string, no default)     |           | ``filter`` (DSL filter, empty default)          |           |
-+------------------------------------------+           +-------------------------------------------------+           +
-| ``es_password`` (string, no default)     |           | ``include`` (list of strs)                      |           |
-+------------------------------------------+-----------+-------------------------------------------------+           +
-| ``index`` (string)                       | Required  | ``top_count_keys`` (list of strs)               |           |
-+------------------------------------------+-----------+-------------------------------------------------+           +
-| ``use_strftime_index`` (boolean)         | Optional  | ``top_count_number`` (int, default 5)           |           |
-+------------------------------------------+-----------+-------------------------------------------------+           +
-| ``name`` (string)                        | Required  |``raw_count_keys`` (boolean, default T)          |           |
-+------------------------------------------+           +-------------------------------------------------+           +
-| ``type`` (string)                        |           |``generate_kibana_link`` (boolean, default F)    |           |
-+------------------------------------------+           +-------------------------------------------------+           +
-| ``alert`` (string)                       |           |``kibana_url`` (string, default from es_host)    |           |
-+------------------------------------------+-----------+-------------------------------------------------+           +
-|``aggregation`` (time, no default)        | Optional  |``use_kibana_dashboard`` (string, no default)    |           |
-+------------------------------------------+           +-------------------------------------------------+           +
-| ``realert`` (time, default: 1 min)       |           |``use_local_time`` (boolean, default T)          |           |
-+------------------------------------------+           +-------------------------------------------------+           +
-|``exponential_realert`` (time, no default)|           |``match_enhancements`` (list of strs, no default)|           |    
-+------------------------------------------+-----------+-------------------------------------------------+-----------+
++-----------------------------------------------------------------------------------------------------------------------+
+|              FOR ALL RULES                                                                                            |
++==========================================+===========+====================================================+===========+
+| ``es_host`` (string)                     |           | ``buffer_time`` (time)                             | Optional  |
++------------------------------------------+           +----------------------------------------------------+           +
+| ``es_port`` (number)                     | Required  | ``query_delay`` (time)                             |           |
++------------------------------------------+-----------+----------------------------------------------------+           +
+| ``use_ssl`` (boolean, no default)        | Optional  | ``max_query_size`` (int, default 100k)             |           |
++------------------------------------------+           +----------------------------------------------------+           +
+| ``es_username`` (string, no default)     |           | ``filter`` (DSL filter, empty default)             |           |
++------------------------------------------+           +----------------------------------------------------+           +
+| ``es_password`` (string, no default)     |           | ``include`` (list of strs)                         |           |
++------------------------------------------+-----------+----------------------------------------------------+           +
+| ``index`` (string)                       | Required  | ``top_count_keys`` (list of strs)                  |           |
++------------------------------------------+-----------+----------------------------------------------------+           +
+| ``use_strftime_index`` (boolean)         | Optional  | ``top_count_number`` (int, default 5)              |           |
++------------------------------------------+-----------+----------------------------------------------------+           +
+| ``name`` (string)                        | Required  |``raw_count_keys`` (boolean, default T)             |           |
++------------------------------------------+           +----------------------------------------------------+           +
+| ``type`` (string)                        |           |``generate_kibana_link`` (boolean, default F)       |           |
++------------------------------------------+           +----------------------------------------------------+           +
+| ``alert`` (string)                       |           |``kibana_dashboard`` (string, default from es_host) |           |
++------------------------------------------+-----------+----------------------------------------------------+           +
+|``aggregation`` (time, no default)        | Optional  |``use_kibana_dashboard`` (string, no default)       |           |
++------------------------------------------+           +----------------------------------------------------+           +
+| ``realert`` (time, default: 1 min)       |           |``use_local_time`` (boolean, default T)             |           |
++------------------------------------------+           +----------------------------------------------------+           +
+|``exponential_realert`` (time, no default)|           |``match_enhancements`` (list of strs, no default)   |           |
++------------------------------------------+-----------+----------------------------------------------------+-----------+
 
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
 |      RULE TYPE                                 | Any | Blacklist | Whitelist | Change | Frequency | Spike | Flatline |New_term|
@@ -72,7 +72,7 @@ Rule Configuration Cheat Sheet
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
 |``spike_type`` ([up|down|both], no default)     |     |           |           |        |           |   Req |          |        |
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``alert_on_new_events`` (boolean, default F)    |     |           |           |        |           |   Opt |          |        |
+|``alert_on_new_data`` (boolean, default F)      |     |           |           |        |           |   Opt |          |        |
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
 |``threshold_ref`` (int, no default)             |     |           |           |        |           |   Opt |          |        |
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
@@ -186,7 +186,7 @@ consists of an events over time graph and a table with ``include`` fields select
 dashboard will also contain a filter for the ``query_key`` of the alert. The dashboard schema will
 be uploaded to the kibana-int index as a temporary dashboard. (Optional, boolean, default False)
 
-``kibana_url``: The url to access the kibana plugin. This will be used if ``generate_kibana_link`` is true.
+``kibana_dashboard``: The url to access the kibana plugin. This will be used if ``generate_kibana_link`` is true.
 (Optional, string, default ``http://<es_host>:<es_port>/_plugin/kibana/``)
 
 ``use_kibana_dashboard``: The name of a dashboard to link to. Instead of generating a dashboard from a template,
@@ -360,7 +360,7 @@ higher. 'Down' meaning the reference number is ``spike_height`` higher than the 
 ``timeframe``: The rule will average out the rate of events over this time period. For example, ``hours: 1`` means that the 'current'
 window will span from present to one hour ago, and the 'reference' window will span from one hour ago to two hours ago. The rule
 will not be active until the time elapsed from the first event is at least two timeframes. This is to prevent an alert being triggered
-before a baseline rate has been established. This can be overridden using ``alert_on_new_events``.
+before a baseline rate has been established. This can be overridden using ``alert_on_new_data``.
 
 
 Optional:
@@ -373,7 +373,7 @@ least three times that for an alert to be triggered.
 ``spike_height: 3`` and ``threshold_cur: 60``, then an alert will occur if the current window has more than 60 events and
 the reference window has less than a third as many.
 
-To illustrate the use of ``threshold_ref``, ``threshold_cur``, ``alert_on_new_events``, ``timeframe`` and ``spike_height`` together,
+To illustrate the use of ``threshold_ref``, ``threshold_cur``, ``alert_on_new_data``, ``timeframe`` and ``spike_height`` together,
 consider the following examples::
 
     " Alert if at least 15 events occur within two hours and less than a quarter of that number occured within the previous two hours. "
@@ -448,7 +448,7 @@ consider the following examples::
 ``query_key``: The number of events is counted separately for each unique ``query_key`` field. If this option
 is set, the field must be present for all events.
 
-``alert_on_new_events``: This option is only used if ``query_key`` is set. When this is set to true, any new ``query_key`` encountered may
+``alert_on_new_data``: This option is only used if ``query_key`` is set. When this is set to true, any new ``query_key`` encountered may
 trigger an immediate alert. When set to false, baseline must be established for each new ``query_key`` value, and then subsequent spikes may
 cause alerts. Baseline is established after ``timeframe`` has elapsed twice since first occurrence.
 
