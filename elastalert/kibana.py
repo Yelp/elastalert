@@ -262,8 +262,6 @@ def filters_from_dashboard(db):
     return config_filters
 
 
-def kibana4_dashboard_link(base_url, dashboard, starttime, endtime):
+def kibana4_dashboard_link(dashboard, starttime, endtime):
     time_settings = kibana4_time_temp % (starttime, endtime)
-    if not base_url.endswith('/'):
-        base_url += '/'
-    return "%s#/dashboard/%s?_g=%s" % (base_url, dashboard, time_settings)
+    return "%s?_g=%s" % (dashboard, time_settings)

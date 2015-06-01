@@ -196,9 +196,9 @@ ElastAlert can use an existing dashboard. It will set the time range on the dash
 upload it as a temporary dashboard, add a filter to the ``query_key`` of the alert if applicable,
 and put the url to the dashboard in the alert. (Optional, string, no default)
 
-``use_kibana4_dashboard``: The name of a Kibana 4 dashboard to link to. This will set the time setting on the dashboard
-from the match time minus the timeframe, to 10 minutes after the match time. Note that this does not support filtering
-by ``query_key`` like Kibana 3.
+``use_kibana4_dashboard``: A link to a Kibana 4 dashboard. For example, "https://kibana.example.com/#/dashboard/My-Dashboard". 
+This will set the time setting on the dashboard from the match time minus the timeframe, to 10 minutes after the match time. 
+Note that this does not support filtering by ``query_key`` like Kibana 3.
 
 ``use_local_time``: Whether to convert timestamps to the local time zone in alerts. If false, timestamps will
 be converted to UTC, which is what ElastAlert uses internally. (Optional, boolean, default true)

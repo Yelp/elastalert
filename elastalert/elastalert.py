@@ -628,10 +628,9 @@ class ElastAlerter():
     def generate_kibana4_db(self, rule, match):
         ''' Creates a link for a kibana4 dashboard which has time set to the match. '''
         db_name = rule.get('use_kibana4_dashboard')
-        url = rule.get('kibana_url')
         start = ts_add(match[rule['timestamp_field']], -rule.get('timeframe', datetime.timedelta(minutes=10)))
         end = ts_add(match[rule['timestamp_field']], datetime.timedelta(minutes=10))
-        link = kibana.kibana4_dashboard_link(url, db_name, start, end)
+        link = kibana.kibana4_dashboard_link(db_name, start, end)
         return link
 
     def generate_kibana_db(self, rule, match):
