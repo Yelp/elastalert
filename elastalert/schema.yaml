@@ -32,39 +32,7 @@ definitions:
       to:   *scalar
       from: *scalar
 
-  filter: &filter
-      additionalProperties: false
-      properties:
-        # not / and / or are recursively defined
-        not: {'$ref': '#/definitions/filter'}
-        and: {type: array, items: {'$ref': '#/definitions/filter'}}
-        or: {type: array, items: {'$ref': '#/definitions/filter'}}
-
-        terms:
-          additionalProperties: {type: array, items: *scalar}
-          type: object
-        term:
-          additionalProperties: *scalar
-          type: object
-        range: {type: object, additionalProperties: *range }
-        exists:
-          type: object
-          additionalProperties: false
-          properties:
-            field: {type: string}
-        query:
-          additionalProperties: false
-          properties:
-            terms: {type: object}
-            wildcard: {type: object}
-            query_string:
-              additionalProperties: true
-              properties:
-                query: {type: string}
-              type: object
-          type: object
-      # 'null' type is for backward-compatibility with existing examples
-      type: ['object', 'null']
+  filter: &filter {}
 
 required: [name, type, index, alert, es_port, es_host]
 type: object
