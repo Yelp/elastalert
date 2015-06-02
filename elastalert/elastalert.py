@@ -684,7 +684,7 @@ class ElastAlerter():
                         body=db_body)
 
         # Return dashboard URL
-        kibana_url = rule.get('kibana_dashboard')
+        kibana_url = rule.get('kibana_url')
         if not kibana_url:
             kibana_url = 'http://%s:%s/_plugin/kibana/' % (rule['es_host'],
                                                            rule['es_port'])
