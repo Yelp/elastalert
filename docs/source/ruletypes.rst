@@ -188,7 +188,7 @@ dashboard will also contain a filter for the ``query_key`` of the alert. The das
 be uploaded to the kibana-int index as a temporary dashboard. (Optional, boolean, default False)
 
 ``kibana_url``: The url to access Kibana. This will be used if ``generate_kibana_link`` or
-``use_kibana[4]_dashboard`` is true. This must be specified with ``use_kibana4_dashboard``.
+``use_kibana_dashboard`` is true. If not specified, a URL will be constructed using ``es_host`` and ``es_port``.
 (Optional, string, default ``http://<es_host>:<es_port>/_plugin/kibana/``)
 
 ``use_kibana_dashboard``: The name of a Kibana 3 dashboard to link to. Instead of generating a dashboard from a template,
