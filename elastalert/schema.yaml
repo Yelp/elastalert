@@ -21,6 +21,88 @@ definitions:
 
 required: [name, type, index, alert, es_port, es_host]
 type: object
+
+### Rule Types section
+oneOf:
+  - title: Any
+    properties:
+      type: {enum: [any]}
+
+  - title: Blacklist
+    required: [blacklist, compare_key]
+    properties:
+      type: {enum: [blacklist]}
+      compare_key: {type: string}
+      blacklist: {type: array, items: {type: string}}
+
+  - title: Whitelist
+    required: [whitelist, compare_key, ignore_null]
+    properties:
+      type: {enum: [whitelist]}
+      compare_key: {type: string}
+      whitelist: {type: array, items: {type: string}}
+      ignore_null: {type: boolean}
+
+  - title: Change
+    required: [query_key, compare_key, ignore_null]
+    properties:
+      type: {enum: [change]}
+      compare_key: {type: string}
+      ignore_null: {type: boolean}
+      query_key: {type: string}
+      timeframe: *timeframe
+
+  - title: Frequency
+    required: [num_events, timeframe]
+    properties:
+      type: {enum: [frequency]}
+      num_events: {type: integer}
+      timeframe: *timeframe
+      use_count_query: {type: boolean}
+      doc_type: {type: string}
+      use_terms_query: {type: boolean}
+      terms_size: {type: integer}
+      query_key: {type: string}
+
+  - title: Spike
+    required: [spike_height, spike_type, timeframe]
+    properties:
+      type: {enum: [spike]}
+      spike_height: {type: number}
+      spike_type: {enum: ["up", "down", "both"]}
+      timeframe: *timeframe
+      use_count_query: {type: boolean}
+      doc_type: {type: string}
+      use_terms_query: {type: boolean}
+      terms_size: {type: integer}
+      alert_on_new_data: {type: boolean}
+      threshold_ref: {type: integer}
+      threshold_cur: {type: integer}
+
+  - title: Flatline
+    required: [threshold, timeframe]
+    properties:
+      type: {enum: [flatline]}
+      timeframe: *timeframe
+      threshold: {type: integer}
+      use_count_query: {type: boolean}
+      doc_type: {type: string}
+
+  - title: New Term
+    required: [fields]
+    properties:
+      type: {enum: [new_term]}
+      fields: {type: string}
+      terms_window_size: *timeframe
+      alert_on_missing_field: {type: boolean}
+      use_terms_query: {type: boolean}
+      terms_size: {type: integer}
+
+  - title: Custom Rule from Module
+    properties:
+      # custom rules include a period in the rule type
+      type: {pattern: "[.]"}
+
 properties:
 
   # Common Settings
@@ -28,7 +110,6 @@ properties:
   es_port: {type: integer}
   index: {type: string}
   name: {type: string}
-  type: {type: string}
   alert: {type: string}
 
   use_ssl: {type: boolean}
@@ -58,53 +139,6 @@ properties:
   use_kibana_dashboard: {type: string}
   use_local_time: {type: boolean}
   match_enhancements: {type: array, items: {type: string}}
-
-  ### Blacklist Rule
-  compare_key: {type: string}
-  blacklist: {type: array, items: {type: string}}
-
-  ### Whitelist Rule
-  # compare_key
-  whitelist: {type: array, items: {type: string}}
-  ignore_null: {type: boolean}
-
-  ### Change Rule
-  # ignore_null required
-  query_key: {type: string}
-  timeframe: *timeframe
-
-  ### Frequency Rule
-  num_events: {type: integer}
-  # timeframe
-  use_count_query: {type: boolean}
-  doc_type: {type: string}
-  use_terms_query: {type: boolean}
-  terms_size: {type: integer}
-  query_key: {type: string}
-
-  ### Spike Rule
-  spike_height: {type: number}
-  spike_type: {enum: ["up", "down", "both"]}
-  # timeframe
-  # query_key
-  # use_count_query
-  # doc_type
-  # use_terms_query
-  # terms_size
-  alert_on_new_data: {type: boolean}
-  threshold_ref: {type: integer}
-  threshold_cur: {type: integer}
-
-  ### Flatline
-  threshold: {type: integer}
-  # Use_count_query
-  # doc_type
-
-  ### New Term
-  fields: {type: string}
-  terms_window_size: *timeframe
-  alert_on_missing_field: {type: boolean}
-  # use_terms_query
 
   # Alerts
   alert: *arrayOfString
