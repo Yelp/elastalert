@@ -27,5 +27,6 @@ setup(
         'python-dateutil',
         'PyStaticConfiguration',
         'pyyaml',
+        'jsonschema',
     ]
 )
