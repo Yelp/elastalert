@@ -181,18 +181,24 @@ field name plus ".raw" to count unanalyzed terms. To turn this off, set ``raw_co
 
 ``raw_count_keys``: If true, all fields in ``top_count_keys`` will have ``.raw`` appended to them. (Optional, boolean, default true)
 
-``generate_kibana_link``: If true, ElastAlert will generate a temporary Kibana dashboard and include a link to it in alerts. The dashboard
+``generate_kibana_link``: This option is for Kibana 3 only.
+If true, ElastAlert will generate a temporary Kibana dashboard and include a link to it in alerts. The dashboard
 consists of an events over time graph and a table with ``include`` fields selected in the table. If the rule uses ``query_key``, the
 dashboard will also contain a filter for the ``query_key`` of the alert. The dashboard schema will
 be uploaded to the kibana-int index as a temporary dashboard. (Optional, boolean, default False)
 
-``kibana_dashboard``: The url to access the kibana plugin. This will be used if ``generate_kibana_link`` is true.
+``kibana_url``: The url to access Kibana. This will be used if ``generate_kibana_link`` or
+``use_kibana_dashboard`` is true. If not specified, a URL will be constructed using ``es_host`` and ``es_port``.
 (Optional, string, default ``http://<es_host>:<es_port>/_plugin/kibana/``)
 
-``use_kibana_dashboard``: The name of a dashboard to link to. Instead of generating a dashboard from a template,
+``use_kibana_dashboard``: The name of a Kibana 3 dashboard to link to. Instead of generating a dashboard from a template,
 ElastAlert can use an existing dashboard. It will set the time range on the dashboard to around the match time,
 upload it as a temporary dashboard, add a filter to the ``query_key`` of the alert if applicable,
 and put the url to the dashboard in the alert. (Optional, string, no default)
+
+``use_kibana4_dashboard``: A link to a Kibana 4 dashboard. For example, "https://kibana.example.com/#/dashboard/My-Dashboard". 
+This will set the time setting on the dashboard from the match time minus the timeframe, to 10 minutes after the match time. 
+Note that this does not support filtering by ``query_key`` like Kibana 3.
 
 ``use_local_time``: Whether to convert timestamps to the local time zone in alerts. If false, timestamps will
 be converted to UTC, which is what ElastAlert uses internally. (Optional, boolean, default true)
