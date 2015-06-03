@@ -273,6 +273,8 @@ class JiraAlerter(Alerter):
                 logging.info('Commenting on existing ticket %s' % (ticket.key))
                 for match in matches:
                     self.comment_on_ticket(ticket, match)
+                if self.pipeline is not None:
+                    self.pipeline['jira_ticket'] = ticket
                 return
 
         description = ''
