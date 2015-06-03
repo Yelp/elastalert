@@ -107,6 +107,8 @@ even if ElastAlert is stopped and restarted, it will never miss data or look at 
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
 
+``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``10``.
+
 ``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all
 files in this folder, and all subdirectories, that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
 or remove rules based on their respective config files.

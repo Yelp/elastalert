@@ -95,7 +95,8 @@ class ElastAlerter():
         return Elasticsearch(host=es_conn_conf['es_host'],
                              port=es_conn_conf['es_port'],
                              use_ssl=es_conn_conf['use_ssl'],
-                             http_auth=es_conn_conf['http_auth'])
+                             http_auth=es_conn_conf['http_auth'],
+                             timeout=es_conn_conf['es_conn_timeout'])
 
     @staticmethod
     def build_es_conn_config(conf):
@@ -110,6 +111,7 @@ class ElastAlerter():
         parsed_conf['es_password'] = None
         parsed_conf['es_host'] = conf['es_host']
         parsed_conf['es_port'] = conf['es_port']
+        parsed_conf['es_conn_timeout'] = 10
 
         if 'es_username' in conf:
             parsed_conf['es_username'] = conf['es_username']
@@ -120,6 +122,9 @@ class ElastAlerter():
 
         if 'use_ssl' in conf:
             parsed_conf['use_ssl'] = conf['use_ssl']
+
+        if 'es_conn_timeout' in conf:
+            parsed_conf['es_conn_timeout'] = conf['es_conn_timeout']
 
         return parsed_conf
 
