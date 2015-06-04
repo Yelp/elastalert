@@ -59,6 +59,7 @@ def load_configuration(filename, conf=None):
     """ Load a yaml rule file and fill in the relevant fields with objects.
 
     :param filename: The name of a rule configuration file.
+    :param conf: The global configuration dictionary, used for populating defaults.
     :return: The rule configuration, a dictionary.
     """
     try:
@@ -73,7 +74,11 @@ def load_configuration(filename, conf=None):
 
 
 def load_options(rule, conf=None):
-    """ Converts time objects, sets defaults, and validates some settings. """
+    """ Converts time objects, sets defaults, and validates some settings.
+
+    :param rule: A dictionary of parsed YAML from a rule config file.
+    :param conf: The global configuration dictionary, used for populating defaults.
+    """
 
     try:
         rule_schema.validate(rule)
