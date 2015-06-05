@@ -460,7 +460,8 @@ class ElastAlerter():
                     key = '.' + str(match[rule['query_key']])
                 except KeyError:
                     # Some matches may not have a query key
-                    key = ''
+                    # Use a special token for these to not clobber all alerts
+                    key = '._missing'
             else:
                 key = ''
 
