@@ -141,7 +141,8 @@ occurring before 4:30. This can be very useful if you expect a large number of m
 
 ``realert``: This option allows you to ignore repeat alerts for a period of time. If the rule uses a ``query_key``, this option
 will be applied on a per key basis. All matches for a given rule, or for matches with the same ``query_key``, will be ignored for
-the given time. This is applied to the time the alert is sent, not to the time of the event. It defaults to one minute, which means
+the given time. All matches with a missing ``query_key`` will be grouped together using a value of ``_missing``.
+This is applied to the time the alert is sent, not to the time of the event. It defaults to one minute, which means
 that if ElastAlert is run over a large time period which triggers many matches, only the first alert will be sent by default. If you want
 every alert, set realert to 0 minutes. (Optional, time, default 1 minute)
 
