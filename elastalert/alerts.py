@@ -62,17 +62,14 @@ def basic_match_string(rule, match):
             for key, value in match.items():
                 if key.startswith('top_events_'):
                     continue
-                text += key + ': '
-                # Attempt to pretty-print primative objects as JSON
+                value_str = str(value)
                 if type(value) in [list, dict]:
                     try:
-                        text += simplejson.dumps(value, sort_keys=True, indent=4) + '\n'
+                        value_str = simplejson.dumps(value, sort_keys=True, indent=4)
                     except TypeError:
-                        # Non serializable object, revert to str
-                        text += str(value) + '\n'
-                else:
-                    text += str(value) + '\n'
-
+                        # Non serializable object, fallback to str
+                        pass
+                text += '%s: %s\n' % (key, value_str)
     return text
 
 
