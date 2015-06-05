@@ -49,7 +49,8 @@ def main():
     ess_mapping = {'elastalert_status': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
     es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
-                                                'match_body': {'enabled': False, 'type': 'object'}}}}
+                                                'match_body': {'enabled': False, 'type': 'object'},
+                                                'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
     error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False}}}}
 
     index = raw_input('New index name? (Default elastalert_status) ')
