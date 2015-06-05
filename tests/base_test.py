@@ -497,6 +497,17 @@ def test_rule_changes(ea):
     mock_load.assert_any_call('rules/rule2.yaml')
     mock_load.assert_any_call('rules/rule3.yaml')
 
+    # A new rule with a conflicting name wont load
+    new_hashes = copy.copy(new_hashes)
+    new_hashes.update({'rule4.yaml': 'asdf'})
+    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
+        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+            mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff'}
+            mock_hashes.return_value = new_hashes
+            ea.load_rule_changes()
+    assert len(ea.rules) == 3
+    assert not any(['new' in rule for rule in ea.rules])
+
 
 def test_strf_index(ea):
     """ Test that the get_index function properly generates indexes spanning days """
