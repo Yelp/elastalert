@@ -28,6 +28,16 @@ def test_alert_text(ea):
     assert 'bob: 10' in alert_text
     assert 'field: value' in alert_text
 
+    # Non serializable objects don't cause errors
+    match['non-serializable'] = {open: 10}
+    alert_text = basic_match_string(ea.rules[0], match)
+
+    # Pretty printed objects
+    match.pop('non-serializable')
+    match['object'] = {'this': {'that': [1, 2, "3"]}}
+    alert_text = basic_match_string(ea.rules[0], match)
+    assert '"this": {\n        "that": [\n            1,\n            2,\n            "3"\n        ]\n    }' in alert_text
+
     ea.rules[0]['alert_text'] = 'custom text'
     alert_text = basic_match_string(ea.rules[0], match)
     assert 'custom text' in alert_text

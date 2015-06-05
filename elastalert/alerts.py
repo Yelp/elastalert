@@ -8,6 +8,7 @@ from smtplib import SMTP
 from smtplib import SMTPException
 from socket import error
 
+import simplejson
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 from staticconf.loader import yaml_loader
@@ -58,7 +59,19 @@ def basic_match_string(rule, match):
             # Add match items
             match_items = match.items()
             match_items.sort(key=lambda x: x[0])
-            text += '\n'.join(['%s: %s' % (key, val) for key, val in match.items() if not key.startswith('top_events_')])
+            for key, value in match.items():
+                if key.startswith('top_events_'):
+                    continue
+                text += key + ': '
+                # Attempt to pretty-print primative objects as JSON
+                if type(value) in [list, dict]:
+                    try:
+                        text += simplejson.dumps(value, sort_keys=True, indent=4) + '\n'
+                    except TypeError:
+                        # Non serializable object, revert to str
+                        text += str(value) + '\n'
+                else:
+                    text += str(value) + '\n'
 
     return text
 
