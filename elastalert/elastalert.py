@@ -7,6 +7,10 @@ import os
 import sys
 import time
 import traceback
+from email.mime.text import MIMEText
+from smtplib import SMTP
+from smtplib import SMTPException
+from socket import error
 
 import argparse
 import kibana
@@ -64,6 +68,10 @@ class ElastAlerter():
         self.run_every = self.conf['run_every']
         self.alert_time_limit = self.conf['alert_time_limit']
         self.old_query_limit = self.conf['old_query_limit']
+        self.disable_rules_on_error = self.conf['disable_rules_on_error']
+        self.notify_email = self.conf.get('notify_email')
+        self.from_addr = self.conf.get('from_addr', 'ElastAlert')
+        self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.alerts_sent = 0
         self.num_hits = 0
         self.current_es = None
@@ -72,6 +80,7 @@ class ElastAlerter():
         self.silence_cache = {}
         self.rule_hashes = get_rule_hashes(self.conf, self.args.rule)
         self.starttime = self.args.start
+        self.disabled_rules = []
 
         self.es_conn_config = self.build_es_conn_config(self.conf)
 
@@ -540,6 +549,13 @@ class ElastAlerter():
                     continue
                 logging.info("Reloading configuration for rule %s" % (rule_file))
 
+                # Re-enable if rule had been disabled
+                for disabled_rule in self.disabled_rules:
+                    if disabled_rule['name'] == new_rule['name']:
+                        self.rules.append(disabled_rule)
+                        self.disabled_rules.remove(disabled_rule)
+                        break
+
                 # Initialize the rule that matches rule_file
                 self.rules = [rule if rule['rule_file'] != rule_file else self.init_rule(new_rule, False) for rule in self.rules]
 
@@ -600,6 +616,8 @@ class ElastAlerter():
                 num_matches = self.run_rule(rule, endtime, self.starttime)
             except EAException as e:
                 self.handle_error("Error running rule %s: %s" % (rule['name'], e), {'rule': rule['name']})
+            except Exception as e:
+                self.handle_uncaught_exception(e, rule)
             else:
                 old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
                 logging.info("Ran %s from %s to %s: %s query hits, %s matches,"
@@ -739,6 +757,13 @@ class ElastAlerter():
         return filters
 
     def alert(self, matches, rule, alert_time=None):
+        """ Wraps alerting, kibana linking and enhancements in an exception handler """
+        try:
+            return self.send_alert(matches, rule, alert_time=None)
+        except Exception as e:
+            self.handle_uncaught_exception(e, rule)
+
+    def send_alert(self, matches, rule, alert_time=None):
         """ Send out an alert.
 
         :param matches: A list of matches.
@@ -1050,6 +1075,42 @@ class ElastAlerter():
         if data:
             body['data'] = data
         self.writeback('elastalert_error', body)
+
+    def handle_uncaught_exception(self, exception, rule):
+        """ Disables a rule and sends a notifcation. """
+        self.handle_error('Uncaught exception running rule %s: %s' % (rule['name'], exception), {'rule': rule['name']})
+        if self.disable_rules_on_error:
+            self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
+            self.disabled_rules.append(rule)
+        if self.notify_email:
+            self.send_notification_email(exception=exception, rule=rule)
+
+    def send_notification_email(self, text='', exception=None, rule=None, subject=None):
+        email_body = text
+        if exception and rule:
+            if not subject:
+                subject = 'Uncaught exception in ElastAlert - %s' % (rule['name'])
+            email_body += '\n\n'
+            email_body += 'The rule %s has raised an uncaught exception.\n\n' % (rule['name'])
+            if self.disable_rules_on_error:
+                modified = ' or if the rule config file has been modified' if not self.args.pin_rules else ''
+                email_body += 'It has been disabled and will be re-enabled when ElastAlert restarts%s.\n\n' % (modified)
+            tb = traceback.format_exc()
+            email_body += tb
+
+        if isinstance(self.notify_email, basestring):
+            self.notify_email = [self.notify_email]
+        email = MIMEText(email_body)
+        email['Subject'] = subject if subject else 'ElastAlert notification'
+        email['To'] = ', '.join(self.notify_email)
+        email['From'] = self.from_addr
+        email['Reply-To'] = self.conf.get('email_reply_to', email['To'])
+
+        try:
+            smtp = SMTP(self.smtp_host)
+            smtp.sendmail(self.from_addr, self.notify_email, email.as_string())
+        except (SMTPException, error) as e:
+            self.handle_error('Error connecting to SMTP host: %s' % (e), {'email_body': email_body})
 
     def get_top_counts(self, rule, starttime, endtime, keys, number=5, qk=None):
         """ Counts the number of events for each unique value for each key field.

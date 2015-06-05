@@ -589,3 +589,36 @@ def test_stop(ea):
             assert not ea.running
             assert not start_thread.is_alive()
             assert mock_run.call_count == 4
+
+
+def test_uncaught_exceptions(ea):
+    e = Exception("Errors yo!")
+
+    # With disabling set to false
+    ea.disable_rules_on_error = False
+    ea.handle_uncaught_exception(e, ea.rules[0])
+    assert len(ea.rules) == 1
+    assert len(ea.disabled_rules) == 0
+
+    # With disabling set to true
+    ea.disable_rules_on_error = True
+    ea.handle_uncaught_exception(e, ea.rules[0])
+    assert len(ea.rules) == 0
+    assert len(ea.disabled_rules) == 1
+
+    # Changing the file should re-enable it
+    ea.rule_hashes = {'rule1': 'abc'}
+    new_hashes = {'rule1': 'def'}
+    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
+        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+            mock_load.side_effect = [ea.disabled_rules[0]]
+            mock_hashes.return_value = new_hashes
+            ea.load_rule_changes()
+    assert len(ea.rules) == 1
+    assert len(ea.disabled_rules) == 0
+
+    # Notify email is sent
+    ea.notify_email = 'qlo@example.com'
+    with mock.patch.object(ea, 'send_notification_email') as mock_email:
+        ea.handle_uncaught_exception(e, ea.rules[0])
+    assert mock_email.call_args_list[0][1] == {'exception': e, 'rule': ea.disabled_rules[0]}

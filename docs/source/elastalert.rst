@@ -129,6 +129,23 @@ can be overridden by any individual rule.
 When ElastAlert starts, for each rule, it will search ``elastalert_metadata`` for the most recently run query and start
 from that time, unless it is older than ``old_query_limit``, in which case it will start from the present time. The default is one week.
 
+``disable_rules_on_error``: If true, ElastAlert will disable rules which throw uncaught (not EAException) exceptions. It
+will upload a traceback message to ``elastalert_metadata`` and if ``notify_email`` is set, send an email notification. The
+rule will no longer be run until either ElastAlert restarts or the rule file has been modified. This defaults to True.
+
+``notify_email``: An email address, or list of email addresses, to which notification emails will be sent. Currently,
+only an uncaught exception will send a notification email. The from address, SMTP host, and reply-to header can be set
+using ``from_addr``, ``smtp_host``, and ``email_reply_to`` options, respectively. By default, no emails will be sent.
+
+``from_addr``: The address to use as the from header in email notifications.
+This value will be used for email alerts as well, unless overwritten in the rule config. The default value
+is "ElastAlert".
+
+``smtp_host``: The SMTP host used to send email notifications. This value will be used for email alerts as well,
+unless overwritten in the rule config. The default is "localhost".
+
+``email_reply_to``: This sets the Reply-To header in emails. The default is the recipient address.
+
 .. _runningelastalert:
 
 Running ElastAlert

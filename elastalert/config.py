@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import datetime
 import hashlib
-import jsonschema
 import logging
 import os
 
 import alerts
 import enhancements
+import jsonschema
 import ruletypes
 import yaml
 import yaml.scanner
@@ -55,10 +55,11 @@ def get_module(module_name):
     return module
 
 
-def load_configuration(filename):
+def load_configuration(filename, conf=None):
     """ Load a yaml rule file and fill in the relevant fields with objects.
 
     :param filename: The name of a rule configuration file.
+    :param conf: The global configuration dictionary, used for populating defaults.
     :return: The rule configuration, a dictionary.
     """
     try:
@@ -67,13 +68,17 @@ def load_configuration(filename):
         raise EAException('Could not parse file %s: %s' % (filename, e))
 
     rule['rule_file'] = filename
-    load_options(rule)
+    load_options(rule, conf)
     load_modules(rule)
     return rule
 
 
-def load_options(rule):
-    """ Converts time objects, sets defaults, and validates some settings. """
+def load_options(rule, conf=None):
+    """ Converts time objects, sets defaults, and validates some settings.
+
+    :param rule: A dictionary of parsed YAML from a rule config file.
+    :param conf: The global configuration dictionary, used for populating defaults.
+    """
 
     try:
         rule_schema.validate(rule)
@@ -106,6 +111,13 @@ def load_options(rule):
     rule.setdefault('timestamp_field', '@timestamp')
     rule.setdefault('filter', [])
     rule.setdefault('use_local_time', True)
+
+    # Set email options from global config
+    if conf:
+        rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
+        rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
+        if 'email_reply_to' in conf:
+            rule.setdefault('email_reply_to', conf['email_reply_to'])
 
     # Make sure we have required options
     if required_locals - frozenset(rule.keys()):
@@ -248,6 +260,7 @@ def load_rules(filename, use_rule=None):
         raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(conf.keys()))))
 
     conf.setdefault('max_query_size', 100000)
+    conf.setdefault('disable_rules_on_error', True)
 
     # Convert run_every, buffer_time into a timedelta object
     try:
@@ -269,7 +282,7 @@ def load_rules(filename, use_rule=None):
     rule_files = get_file_paths(conf, use_rule)
     for rule_file in rule_files:
         try:
-            rule = load_configuration(rule_file)
+            rule = load_configuration(rule_file, conf)
             if rule['name'] in names:
                 raise EAException('Duplicate rule named %s' % (rule['name']))
         except EAException as e:
