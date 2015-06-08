@@ -58,11 +58,14 @@ class BasicMatchString(object):
             value_str = str(value)
             if type(value) in [list, dict]:
                 try:
-                    value_str = simplejson.dumps(value, sort_keys=True, indent=4)
+                    value_str = self._pretty_print_as_json(value)
                 except TypeError:
                     # Non serializable object, fallback to str
                     pass
             self.text += '%s: %s\n' % (key, value_str)
+
+    def _pretty_print_as_json(self, blob):
+         return simplejson.dumps(blob, sort_keys=True, indent=4)
 
     def __str__(self):
         self.text = self.rule['name'] + '\n\n'
@@ -80,7 +83,11 @@ class BasicMatchString(object):
 
 class JiraFormattedMatchString(BasicMatchString):
 
-    pass
+    def _add_match_items(self):
+        match_items = dict([(x, y) for x, y in self.match.items() if not x.startswith('top_events_')])
+        json_blob = self._pretty_print_as_json(match_items)
+        preformatted_text = '{{code:json}}{0}{{code}}'.format(json_blob)
+        self.text += preformatted_text
 
 
 class Alerter(object):

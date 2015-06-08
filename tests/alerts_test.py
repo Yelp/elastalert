@@ -7,6 +7,7 @@ import mock
 from jira.exceptions import JIRAError
 
 from elastalert.alerts import BasicMatchString
+from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
@@ -18,7 +19,7 @@ class mock_rule:
         return str(event)
 
 
-def test_alert_text(ea):
+def test_basic_match_string(ea):
     ea.rules[0]['top_count_keys'] = ['username']
     match = {'@timestamp': '1918-01-17', 'field': 'value', 'top_events_username': {'bob': 10, 'mallory': 5}}
     alert_text = str(BasicMatchString(ea.rules[0], match))
@@ -55,6 +56,23 @@ def test_alert_text(ea):
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
     assert 'field: value' not in alert_text
+
+
+def test_jira_formatted_match_string(ea):
+    match = {'foo': {'bar': ['one', 2, 'three']}, 'top_events_poof': 'phew'}
+    alert_text = str(JiraFormattedMatchString(ea.rules[0], match))
+    print alert_text
+    tab = 4 * ' '
+    expected_alert_text_snippet = '{code:json}{\n' \
+        + tab + '"foo": {\n' \
+        + 2 * tab + '"bar": [\n' \
+        + 3 * tab + '"one",\n' \
+        + 3 * tab + '2,\n' \
+        + 3 * tab + '"three"\n' \
+        + 2 * tab + ']\n' \
+        + tab + '}\n' \
+        + '}{code}'
+    assert expected_alert_text_snippet in alert_text
 
 
 def test_email():
