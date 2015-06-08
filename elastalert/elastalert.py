@@ -785,7 +785,7 @@ class ElastAlerter():
                 start = ts_to_dt(match[rule['timestamp_field']]) - rule.get('timeframe', datetime.timedelta(minutes=10))
                 end = ts_to_dt(match[rule['timestamp_field']]) + datetime.timedelta(minutes=10)
                 keys = rule.get('top_count_keys')
-                counts = self.get_top_counts(rule, start, end, keys, rule.get('top_count_number'), qk)
+                counts = self.get_top_counts(rule, start, end, keys, qk=qk)
                 match.update(counts)
 
         # Generate a kibana3 dashboard for the first match
@@ -1115,10 +1115,12 @@ class ElastAlerter():
         except (SMTPException, error) as e:
             self.handle_error('Error connecting to SMTP host: %s' % (e), {'email_body': email_body})
 
-    def get_top_counts(self, rule, starttime, endtime, keys, number=5, qk=None):
+    def get_top_counts(self, rule, starttime, endtime, keys, number=None, qk=None):
         """ Counts the number of events for each unique value for each key field.
         Returns a dictionary with top_events_<key> mapped to the top 5 counts for each key. """
         all_counts = {}
+        if not number:
+            number = rule.get('top_count_number', 5)
         for key in keys:
             index = self.get_index(rule, starttime, endtime)
             buckets = self.get_hits_terms(rule, starttime, endtime, index, key, qk, number).values()[0]
