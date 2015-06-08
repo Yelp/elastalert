@@ -6,7 +6,7 @@ import subprocess
 import mock
 from jira.exceptions import JIRAError
 
-from elastalert.alerts import basic_match_string
+from elastalert.alerts import BasicMatchString
 from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
@@ -21,7 +21,7 @@ class mock_rule:
 def test_alert_text(ea):
     ea.rules[0]['top_count_keys'] = ['username']
     match = {'@timestamp': '1918-01-17', 'field': 'value', 'top_events_username': {'bob': 10, 'mallory': 5}}
-    alert_text = basic_match_string(ea.rules[0], match)
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'anytest' in alert_text
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
@@ -30,27 +30,27 @@ def test_alert_text(ea):
 
     # Non serializable objects don't cause errors
     match['non-serializable'] = {open: 10}
-    alert_text = basic_match_string(ea.rules[0], match)
+    alert_text = str(BasicMatchString(ea.rules[0], match))
 
     # Pretty printed objects
     match.pop('non-serializable')
     match['object'] = {'this': {'that': [1, 2, "3"]}}
-    alert_text = basic_match_string(ea.rules[0], match)
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert '"this": {\n        "that": [\n            1,\n            2,\n            "3"\n        ]\n    }' in alert_text
 
     ea.rules[0]['alert_text'] = 'custom text'
-    alert_text = basic_match_string(ea.rules[0], match)
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
 
     ea.rules[0]['alert_text_type'] = 'alert_text_only'
-    alert_text = basic_match_string(ea.rules[0], match)
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'some stuff happened' not in alert_text
     assert 'username' not in alert_text
     assert 'field: value' not in alert_text
 
     ea.rules[0]['alert_text_type'] = 'exclude_fields'
-    alert_text = basic_match_string(ea.rules[0], match)
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
