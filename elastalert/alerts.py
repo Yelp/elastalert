@@ -166,6 +166,14 @@ class EmailAlerter(Alerter):
         # Convert email to a list if it isn't already
         if isinstance(self.rule['email'], str):
             self.rule['email'] = [self.rule['email']]
+        # If there is a cc then also convert it a list if it isn't
+        cc = self.rule.get('cc')
+        if cc and isinstance(cc, str):
+            self.rule['cc'] = [self.rule['cc']]
+        # If there is a bcc then also convert it to a list if it isn't
+        bcc = self.rule.get('bcc')
+        if bcc and isinstance(bcc, str):
+            self.rule['bcc'] = [self.rule['bcc']]
 
     def alert(self, matches):
         body = ''
@@ -182,17 +190,24 @@ class EmailAlerter(Alerter):
             url = '%s/browse/%s' % (self.rule['jira_server'], self.pipeline['jira_ticket'])
             body += '\nJIRA ticket: %s' % (url)
 
+        to_addr = self.rule['email']
+
         email_msg = MIMEText(body)
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
         email_msg['From'] = self.from_addr
         email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
+        if self.rule.get('cc'):
+            email_msg['CC'] = ','.join(self.rule['cc'])
+            to_addr = to_addr + self.rule['cc']
+        if self.rule.get('bcc'):
+            to_addr = to_addr + self.rule['bcc']
 
         try:
             self.smtp = SMTP(self.smtp_host)
         except (SMTPException, error) as e:
             raise EAException("Error connecting to SMTP host: %s" % (e))
-        self.smtp.sendmail(self.from_addr, self.rule['email'], email_msg.as_string())
+        self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
         self.smtp.close()
 
         logging.info("Sent email to %s" % (self.rule['email']))
