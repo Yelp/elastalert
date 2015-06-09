@@ -5,6 +5,7 @@ import logging
 import subprocess
 from email.mime.text import MIMEText
 from smtplib import SMTP
+from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
 
@@ -136,6 +137,17 @@ class Alerter(object):
     def create_default_title(self, matches):
         return self.rule['name']
 
+    def get_account(self, account_file):
+        """ Gets the username and password from an account file.
+
+        :param account_file: Name of the file which contains user and password information.
+        """
+        account_conf = yaml_loader(account_file)
+        if 'user' not in account_conf or 'password' not in account_conf:
+            raise EAException('Account file must have user and password fields')
+        self.user = account_conf['user']
+        self.password = account_conf['password']
+
 
 class DebugAlerter(Alerter):
     """ The debug alerter uses a Python logger (by default, alerting to terminal). """
@@ -163,6 +175,8 @@ class EmailAlerter(Alerter):
 
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
+        if self.rule.get('smtp_auth_file'):
+            self.get_account(self.rule['smtp_auth_file'])
         # Convert email to a list if it isn't already
         if isinstance(self.rule['email'], str):
             self.rule['email'] = [self.rule['email']]
@@ -205,8 +219,12 @@ class EmailAlerter(Alerter):
 
         try:
             self.smtp = SMTP(self.smtp_host)
+            if 'smtp_auth_file' in self.rule:
+                self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:
             raise EAException("Error connecting to SMTP host: %s" % (e))
+        except SMTPAuthenticationError:
+            raise EAException("SMTP username/password rejected: %s" % (e))
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
         self.smtp.close()
 
@@ -235,7 +253,7 @@ class JiraAlerter(Alerter):
     def __init__(self, rule):
         super(JiraAlerter, self).__init__(rule)
         self.server = self.rule['jira_server']
-        self.get_jira_account(self.rule['jira_account_file'])
+        self.get_account(self.rule['jira_account_file'])
         self.project = self.rule['jira_project']
         self.issue_type = self.rule['jira_issuetype']
         self.component = self.rule.get('jira_component')
@@ -266,17 +284,6 @@ class JiraAlerter(Alerter):
             self.jira_args['assignee'] = {'name': assignee}
         elif 'assignee' in self.jira_args:
             self.jira_args.pop('assignee')
-
-    def get_jira_account(self, account_file):
-        """ Gets the username and password from a jira account file.
-
-        :param account_file: Name of the file which contains user and password information.
-        """
-        account_conf = yaml_loader(account_file)
-        if 'user' not in account_conf or 'password' not in account_conf:
-            raise EAException('Jira account file must have user and password fields')
-        self.user = account_conf['user']
-        self.password = account_conf['password']
 
     def find_existing_ticket(self, matches):
         # Default title, get stripped search version
