@@ -96,6 +96,74 @@ def test_email():
         assert 'Subject: Test alert for test_value' in body
 
 
+def test_email_with_cc():
+    rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
+            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
+            'cc': 'tester@testing.testing'}
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+
+        alert = EmailAlerter(rule)
+        alert.alert([{'test_term': 'test_value'}])
+        expected = [mock.call('localhost'),
+                    mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
+                    mock.call().close()]
+        assert mock_smtp.mock_calls == expected
+
+        body = mock_smtp.mock_calls[1][1][2]
+
+        assert 'Reply-To: test@example.com' in body
+        assert 'To: testing@test.test' in body
+        assert 'CC: tester@testing.testing' in body
+        assert 'From: testfrom@test.test' in body
+
+
+def test_email_with_bcc():
+    rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
+            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
+            'bcc': 'tester@testing.testing'}
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+
+        alert = EmailAlerter(rule)
+        alert.alert([{'test_term': 'test_value'}])
+        expected = [mock.call('localhost'),
+                    mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
+                    mock.call().close()]
+        assert mock_smtp.mock_calls == expected
+
+        body = mock_smtp.mock_calls[1][1][2]
+
+        assert 'Reply-To: test@example.com' in body
+        assert 'To: testing@test.test' in body
+        assert 'CC: tester@testing.testing' not in body
+        assert 'From: testfrom@test.test' in body
+
+
+def test_email_with_cc_and_bcc():
+    rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
+            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
+            'cc': ['test1@test.com', 'test2@test.com'], 'bcc': 'tester@testing.testing'}
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+
+        alert = EmailAlerter(rule)
+        alert.alert([{'test_term': 'test_value'}])
+        expected = [mock.call('localhost'),
+                    mock.call().sendmail(mock.ANY,
+                                         ['testing@test.test', 'test@test.test', 'test1@test.com', 'test2@test.com', 'tester@testing.testing'],
+                                         mock.ANY),
+                    mock.call().close()]
+        assert mock_smtp.mock_calls == expected
+
+        body = mock_smtp.mock_calls[1][1][2]
+
+        assert 'Reply-To: test@example.com' in body
+        assert 'To: testing@test.test' in body
+        assert 'CC: test1@test.com,test2@test.com' in body
+        assert 'From: testfrom@test.test' in body
+
+
 def test_email_with_args():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',

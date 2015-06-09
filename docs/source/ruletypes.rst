@@ -648,6 +648,10 @@ by the smtp server.
 ``from_addr``: This sets the From header in the email. By default, the from address is ElastAlert@ and the domain will be set
 by the smtp server.
 
+``cc``: This sets the CC header in the email. By default, this is left empty.
+
+``bcc``: This sets the BCC header in the email. By default, this is left empty.
+
 Jira
 ~~~~~
 
