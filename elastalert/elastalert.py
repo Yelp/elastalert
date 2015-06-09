@@ -389,15 +389,21 @@ class ElastAlerter():
             # Try to get the last run from elasticsearch
             last_run_end = self.get_starttime(rule)
             if last_run_end:
+                rule['minimum_starttime'] = last_run_end
                 rule['starttime'] = last_run_end
                 return
 
         # Use buffer for normal queries, or run_every increments otherwise
         buffer_time = rule.get('buffer_time', self.buffer_time)
         if not rule.get('use_count_query') and not rule.get('use_terms_query'):
-            rule['starttime'] = endtime - buffer_time
+            # If we started using a previous run, don't go past that
+            if 'minimum_starttime' in rule and rule['minimum_starttime'] > endtime - buffer_time:
+                rule['starttime'] = rule['minimum_starttime']
+            else:
+                rule['starttime'] = endtime - buffer_time
         else:
-            rule['starttime'] = endtime - self.run_every
+            # Query from the end of the last run, if it exists, otherwise a run_every sized window
+            rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
 
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
@@ -480,6 +486,9 @@ class ElastAlerter():
 
             # Add it as an aggregated match
             self.add_aggregated_alert(match, rule)
+
+        # Mark this endtime for next run's start
+        rule['previous_endtime'] = endtime
 
         time_taken = time.time() - run_start
         # Write to ES that we've run this rule against this time period
