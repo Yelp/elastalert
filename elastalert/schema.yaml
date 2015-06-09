@@ -1,0 +1,174 @@
+$schema: http://json-schema.org/draft-04/schema#
+definitions:
+
+  # Either a single string OR an array of strings
+  arrayOfStrings: &arrayOfString
+    type: [string, array]
+    items: {type: string}
+
+  timeFrame: &timeframe
+    type: object
+    additionalProperties: false
+    properties:
+      days: {type: number}
+      weeks: {type: number}
+      hours: {type: number}
+      minutes: {type: number}
+      seconds: {type: number}
+      milliseconds: {type: number}
+
+  filter: &filter {}
+
+required: [name, type, index, alert, es_port, es_host]
+type: object
+
+### Rule Types section
+oneOf:
+  - title: Any
+    properties:
+      type: {enum: [any]}
+
+  - title: Blacklist
+    required: [blacklist, compare_key]
+    properties:
+      type: {enum: [blacklist]}
+      compare_key: {type: string}
+      blacklist: {type: array, items: {type: string}}
+
+  - title: Whitelist
+    required: [whitelist, compare_key, ignore_null]
+    properties:
+      type: {enum: [whitelist]}
+      compare_key: {type: string}
+      whitelist: {type: array, items: {type: string}}
+      ignore_null: {type: boolean}
+
+  - title: Change
+    required: [query_key, compare_key, ignore_null]
+    properties:
+      type: {enum: [change]}
+      compare_key: {type: string}
+      ignore_null: {type: boolean}
+      query_key: {type: string}
+      timeframe: *timeframe
+
+  - title: Frequency
+    required: [num_events, timeframe]
+    properties:
+      type: {enum: [frequency]}
+      num_events: {type: integer}
+      timeframe: *timeframe
+      use_count_query: {type: boolean}
+      doc_type: {type: string}
+      use_terms_query: {type: boolean}
+      terms_size: {type: integer}
+      query_key: {type: string}
+
+  - title: Spike
+    required: [spike_height, spike_type, timeframe]
+    properties:
+      type: {enum: [spike]}
+      spike_height: {type: number}
+      spike_type: {enum: ["up", "down", "both"]}
+      timeframe: *timeframe
+      use_count_query: {type: boolean}
+      doc_type: {type: string}
+      use_terms_query: {type: boolean}
+      terms_size: {type: integer}
+      alert_on_new_data: {type: boolean}
+      threshold_ref: {type: integer}
+      threshold_cur: {type: integer}
+
+  - title: Flatline
+    required: [threshold, timeframe]
+    properties:
+      type: {enum: [flatline]}
+      timeframe: *timeframe
+      threshold: {type: integer}
+      use_count_query: {type: boolean}
+      doc_type: {type: string}
+
+  - title: New Term
+    required: [fields]
+    properties:
+      type: {enum: [new_term]}
+      fields: {type: string}
+      terms_window_size: *timeframe
+      alert_on_missing_field: {type: boolean}
+      use_terms_query: {type: boolean}
+      terms_size: {type: integer}
+
+  - title: Custom Rule from Module
+    properties:
+      # custom rules include a period in the rule type
+      type: {pattern: "[.]"}
+
+properties:
+
+  # Common Settings
+  es_host: {type: string}
+  es_port: {type: integer}
+  index: {type: string}
+  name: {type: string}
+  alert: {type: string}
+
+  use_ssl: {type: boolean}
+  es_username: {type: string}
+  es_password: {type: string}
+  use_strftime_index: {type: boolean}
+
+  # Optional Settings
+  aggregation: *timeframe
+  realert: *timeframe
+  exponential_realert: *timeframe
+
+  buffer_time: *timeframe
+  query_delay: *timeframe
+  max_query_size: {type: integer}
+
+  filter :
+    type: array
+    items: *filter
+
+  include: {type: array, items: {type: string}}
+  top_count_keys: {type: array, items: {type: string}}
+  top_count_number: {type: integer}
+  raw_count_keys: {type: boolean}
+  generate_kibana_link: {type: boolean}
+  kibana_dashboard: {type: string}
+  use_kibana_dashboard: {type: string}
+  use_local_time: {type: boolean}
+  match_enhancements: {type: array, items: {type: string}}
+
+  # Alerts
+  alert: *arrayOfString
+  alert_subject: {type: string} # Python format string
+  alert_subject_args: {type: array, items: {type: string}}
+
+  # Alert Content
+  alert_text: {type: string} # Python format string
+  alert_text_args: {type: array, items: {type: string}}
+  alert_text_type: {enum: [alert_text_only, exclude_fields]}
+  timestamp_field: {type: string}
+  field: {}
+
+  ### Commands
+  command: *arrayOfString
+  pipe_match_json: {type: boolean}
+
+  ### Email
+  email: *arrayOfString
+  email_reply_to: {type: string}
+  smtp_host: {type: string}
+  from_addr: {type: string}
+
+  ### JIRA
+  jira_server: {type: string}
+  jira_project: {type: string}
+  jira_issuetype: {type: string}
+  jira_account_file: {type: string} # a Yaml file that includes the keys {user:, password:}
+
+  jira_component: {type: string}
+  jira_label: {type: string}
+  jira_bump_tickets: {type: boolean}
+  jira_max_age: {type: number}

@@ -8,7 +8,7 @@ from setuptools import setup
 base_dir = os.path.dirname(__file__)
 setup(
     name='elastalert',
-    version='0.0.36',
+    version='0.0.42',
     description='Runs custom filters on Elasticsearch and alerts on matches',
     author='Quentin Long',
     author_email='qlo@yelp.com',
@@ -19,6 +19,7 @@ setup(
                             'elastalert-test-rule=elastalert.test_rule:check_files',
                             'elastalert-rule-from-kibana=elastalert.rule_from_kibana:main']},
     packages=find_packages(),
+    package_data={'elastalert': ['schema.yaml']},
     install_requires=[
         'elasticsearch',
         'jira==0.32',  # jira.exceptions is missing from later versions
@@ -26,5 +27,6 @@ setup(
         'python-dateutil',
         'PyStaticConfiguration',
         'pyyaml',
+        'jsonschema',
     ]
 )

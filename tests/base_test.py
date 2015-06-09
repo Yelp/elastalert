@@ -346,6 +346,46 @@ def test_realert(ea):
             assert ea.rules[0]['alert'][0].alert.call_count == 2
 
 
+def test_realert_with_query_key(ea):
+    ea.rules[0]['query_key'] = 'username'
+    ea.rules[0]['realert'] = datetime.timedelta(minutes=10)
+
+    # Alert and silence username: qlo
+    match = [{'@timestamp': '2014-11-17T00:00:00', 'username': 'qlo'}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 1
+
+    # Dont alert again for same username
+    match = [{'@timestamp': '2014-11-17T00:05:00', 'username': 'qlo'}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 1
+
+    # Do alert with a different value
+    match = [{'@timestamp': '2014-11-17T00:05:00', 'username': ''}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 2
+
+    # Alert with query_key missing
+    match = [{'@timestamp': '2014-11-17T00:05:00'}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 3
+
+    # Still alert with a different value
+    match = [{'@timestamp': '2014-11-17T00:05:00', 'username': 'ghengis_khan'}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 4
+
+
 def test_count(ea):
     ea.rules[0]['use_count_query'] = True
     ea.rules[0]['doc_type'] = 'doctype'
@@ -497,6 +537,17 @@ def test_rule_changes(ea):
     mock_load.assert_any_call('rules/rule2.yaml')
     mock_load.assert_any_call('rules/rule3.yaml')
 
+    # A new rule with a conflicting name wont load
+    new_hashes = copy.copy(new_hashes)
+    new_hashes.update({'rule4.yaml': 'asdf'})
+    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
+        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+            mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff'}
+            mock_hashes.return_value = new_hashes
+            ea.load_rule_changes()
+    assert len(ea.rules) == 3
+    assert not any(['new' in rule for rule in ea.rules])
+
 
 def test_strf_index(ea):
     """ Test that the get_index function properly generates indexes spanning days """
@@ -589,3 +640,36 @@ def test_stop(ea):
             assert not ea.running
             assert not start_thread.is_alive()
             assert mock_run.call_count == 4
+
+
+def test_uncaught_exceptions(ea):
+    e = Exception("Errors yo!")
+
+    # With disabling set to false
+    ea.disable_rules_on_error = False
+    ea.handle_uncaught_exception(e, ea.rules[0])
+    assert len(ea.rules) == 1
+    assert len(ea.disabled_rules) == 0
+
+    # With disabling set to true
+    ea.disable_rules_on_error = True
+    ea.handle_uncaught_exception(e, ea.rules[0])
+    assert len(ea.rules) == 0
+    assert len(ea.disabled_rules) == 1
+
+    # Changing the file should re-enable it
+    ea.rule_hashes = {'rule1': 'abc'}
+    new_hashes = {'rule1': 'def'}
+    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
+        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+            mock_load.side_effect = [ea.disabled_rules[0]]
+            mock_hashes.return_value = new_hashes
+            ea.load_rule_changes()
+    assert len(ea.rules) == 1
+    assert len(ea.disabled_rules) == 0
+
+    # Notify email is sent
+    ea.notify_email = 'qlo@example.com'
+    with mock.patch.object(ea, 'send_notification_email') as mock_email:
+        ea.handle_uncaught_exception(e, ea.rules[0])
+    assert mock_email.call_args_list[0][1] == {'exception': e, 'rule': ea.disabled_rules[0]}

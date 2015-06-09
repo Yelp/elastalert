@@ -49,7 +49,8 @@ def ea():
               'realert': datetime.timedelta(0),
               'processed_hits': {},
               'timestamp_field': '@timestamp',
-              'match_enhancements': []}]
+              'match_enhancements': [],
+              'rule_file': 'blah.yaml'}]
     conf = {'rules_folder': 'rules',
             'run_every': datetime.timedelta(minutes=10),
             'buffer_time': datetime.timedelta(minutes=5),
@@ -59,7 +60,8 @@ def ea():
             'writeback_index': 'wb',
             'rules': rules,
             'max_query_size': 100000,
-            'old_query_limit': datetime.timedelta(weeks=1)}
+            'old_query_limit': datetime.timedelta(weeks=1),
+            'disable_rules_on_error': False}
     elasticsearch.client.Elasticsearch = mock_es_client
     with mock.patch('elastalert.elastalert.get_rule_hashes'):
         with mock.patch('elastalert.elastalert.load_rules') as load_conf:
