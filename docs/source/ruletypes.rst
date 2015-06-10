@@ -645,6 +645,8 @@ Optional:
 ``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. It should be YAML formatted and contain
 two fields, ``user`` and ``password``. If this is not present, no authentication will be attempted.
 
+``smtp_ssl``: Set it True if SSL is used for authentication.
+
 ``email_reply_to``: This sets the Reply-To header in the email. By default, the from address is ElastAlert@ and the domain will be set
 by the smtp server.
 

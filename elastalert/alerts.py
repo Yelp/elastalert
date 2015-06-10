@@ -7,6 +7,7 @@ from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
+from smtplib import SMTP_SSL
 from socket import error
 
 import simplejson
@@ -218,7 +219,10 @@ class EmailAlerter(Alerter):
             to_addr = to_addr + self.rule['bcc']
 
         try:
-            self.smtp = SMTP(self.smtp_host)
+            if self.rule['smtp_ssl']:
+                self.smtp = SMTP_SSL(self.smtp_host)
+            else:
+                self.smtp = SMTP(self.smtp_host)
             if 'smtp_auth_file' in self.rule:
                 self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:
