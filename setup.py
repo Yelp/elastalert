@@ -29,5 +29,6 @@ setup(
         'pyyaml',
         'jsonschema',
         'simplejson',
+        'functools32',
     ]
 )
