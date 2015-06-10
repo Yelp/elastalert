@@ -6,8 +6,9 @@ jira==0.32
 jsonschema==2.2.0
 oauthlib==0.7.2
 python-dateutil==2.4.0
-requests-oauthlib==0.4.2
 requests==2.5.1
+requests-oauthlib==0.4.2
+simplejson==3.6.5
 six==1.9.0
 supervisor==3.1.2
 tlslite==0.4.8
