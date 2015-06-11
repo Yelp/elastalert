@@ -439,8 +439,7 @@ class ElastAlerter():
         # Run the rule
         # If querying over a large time period, split it up into chunks
         self.num_hits = 0
-        buffer_time = rule.get('buffer_time', self.buffer_time)
-        while endtime - rule['starttime'] > buffer_time:
+        while endtime - rule['starttime'] > self.run_every:
             tmp_endtime = rule['starttime'] + self.run_every
             if not self.run_query(rule, rule['starttime'], tmp_endtime):
                 return 0
