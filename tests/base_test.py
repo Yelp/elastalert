@@ -395,7 +395,7 @@ def test_count(ea):
     # Assert that es.count is run against every run_every timeframe between START and END
     start = START
     query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}}}}
-    while END - start > ea.buffer_time:
+    while END - start > ea.run_every:
         end = start + ea.run_every
         query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
         query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['from'] = dt_to_ts(start)
