@@ -77,7 +77,8 @@ def check_files():
                         print("Included term %s may be missing or null" % (term))
 
             for term in conf.get('top_count_keys', []):
-                if term not in terms:
+                # If the index starts with 'logstash', fields with .raw will be available but won't in _source
+                if term not in terms and not (term.endswith('.raw') and term[:-4] in terms and index.startswith('logstash')):
                     print("top_count_key %s may be missing" % (term))
         print('')
 
