@@ -179,6 +179,8 @@ or it's subdirectories.
 ``--verbose`` will increase the logging verboseness, which allows you to see information about the state
 of queries.
 
+``--es_debug`` will enable logging for all queries made to Elasticsearch. 
+
 ``--end <timestamp>`` will force ElastAlert to stop querying after the given time, instead of the default,
 querying to the present time. This really only makes sense when running standalone. The timestamp is formatted
 as ``YYYY-MM-DDTHH:MM:SS`` (UTC) or with timezone ``YYYY-MM-DDTHH:MM:SS-XX:00`` (UTC-XX).
