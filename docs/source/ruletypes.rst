@@ -692,6 +692,25 @@ the two summaries must be exact matches. Defaults to false.
 ``jira_max_age``: If ``jira_bump_tickets`` is true, the maximum age of a ticket, in days, such that ElastAlert will comment on the ticket
 instead of opening a new one. Default is 30 days.
 
+``jira_bump_not_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket must **not** be in for ElastAlert to comment on 
+the ticket instead of opening a new one. For example, to prevent comments being added to resolved or closed tickets, set this to 'Resolved' 
+and 'Closed'. This option should not be set if the ``jira_bump_in_statuses`` option is set.
+
+Example usage::
+
+    jira_bump_not_in_statuses:
+      - Resolved
+      - Closed
+
+``jira_bump_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket *must be in* for ElastAlert to comment on 
+the ticket instead of opening a new one. For example, to only comment on 'Open' tickets  -- and thus not 'In Progress', 'Analyzing', 
+'Resolved', etc. tickets -- set this to 'Open'. This option should not be set if the ``jira_bump_not_in_statuses`` option is set.
+
+Example usage::
+
+    jira_bump_in_statuses:
+      - Open
+
 Debug
 ~~~~~~
 
