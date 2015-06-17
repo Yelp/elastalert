@@ -830,6 +830,8 @@ class ElastAlerter():
                 except EAException as e:
                     self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
             matches = valid_matches
+            if not matches:
+                return
 
         # Don't send real alerts in debug mode
         if self.debug:
