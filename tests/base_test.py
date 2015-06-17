@@ -411,20 +411,33 @@ def test_queries_with_rule_buffertime(ea):
         mock_es_init.return_value = mock_es
         ea.run_rule(ea.rules[0], END, START)
 
-    # Assert that es.search is run against every run_every timeframe between START and END
+    # Assert that es.search is run against every buffer_time timeframe between START and END
     end = END_TIMESTAMP
     start = START
     query = {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}},
              'sort': [{'@timestamp': {'order': 'asc'}}]}
     while END - start > ea.rules[0]['buffer_time']:
-        end = start + ea.run_every
+        end = start + ea.rules[0]['buffer_time']
         query['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
         query['filter']['bool']['must'][0]['range']['@timestamp']['from'] = dt_to_ts(start)
-        start = start + ea.run_every
+        start = start + ea.rules[0]['buffer_time']
         ea.current_es.search.assert_any_call(body=query, size=ea.max_query_size, index='idx', ignore_unavailable=True, _source_include=['@timestamp'])
 
     # Assert that num_hits correctly summed every result
     assert ea.num_hits == ea.current_es.search.call_count
+
+
+def test_query_segmenting(ea):
+    # Test that with use_count_query is set, segmenting occurs by run_every instead of buffer_time
+    ea.rules[0]['use_count_query'] = True
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        with mock.patch.object(ea, 'run_query') as mock_run_query:
+            ea.run_rule(ea.rules[0], END, START)
+            start = START
+            for call_args in mock_run_query.call_args_list:
+                end = start + ea.run_every
+                assert call_args[0][1:3] == (start, end)
+                start += ea.run_every
 
 
 def test_get_starttime(ea):
@@ -505,6 +518,11 @@ def test_set_starttime(ea):
         ea.run_rule(ea.rules[0], END, START)
     ea.set_starttime(ea.rules[0], end)
     assert ea.rules[0]['starttime'] == END
+
+    # buffer_time doesn't go past previous endtime
+    ea.rules[0]['previous_endtime'] = end - ea.buffer_time * 2
+    ea.set_starttime(ea.rules[0], end)
+    assert ea.rules[0]['starttime'] == ea.rules[0]['previous_endtime']
 
 
 def test_kibana_dashboard(ea):
