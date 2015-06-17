@@ -261,6 +261,16 @@ class JiraAlerter(Alerter):
         self.assignee = self.rule.get('jira_assignee')
         self.max_age = self.rule.get('jira_max_age', 30)
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
+        self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
+        self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
+        if self.bump_in_statuses and self.bump_not_in_statuses:
+            msg = 'Both jira_bump_in_statuses (%s) and jira_bump_not_in_statuses (%s) are set.' % \
+                  (','.join(self.bump_in_statuses), ','.join(self.bump_not_in_statuses))
+            intersection = list(set(self.bump_in_statuses) & set(self.bump_in_statuses))
+            if intersection:
+                msg = '%s Both have common statuses of (%s). As such, no tickets will ever be found.' % (msg, ','.join(intersection))
+            msg += ' This should be simplified to use only one or the other.'
+            logging.warning(msg)
 
         self.jira_args = {'project': {'key': self.project},
                           'issuetype': {'name': self.issue_type}}
@@ -298,6 +308,10 @@ class JiraAlerter(Alerter):
 
         date = (datetime.datetime.now() - datetime.timedelta(days=self.max_age)).strftime('%Y/%m/%d')
         jql = 'project=%s AND summary~"%s" and created >= "%s"' % (self.project, title, date)
+        if self.bump_in_statuses:
+            jql = '%s and status in (%s)' % (jql, ','.join(self.bump_in_statuses))
+        if self.bump_not_in_statuses:
+            jql = '%s and status not in (%s)' % (jql, ','.join(self.bump_not_in_statuses))
         try:
             issues = self.client.search_issues(jql)
         except JIRAError as e:
