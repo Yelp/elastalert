@@ -12,3 +12,8 @@ class BaseEnhancement(object):
     def process(self, match):
         """ Modify the contents of match, a dictionary, in some way """
         raise NotImplementedError()
+
+
+class DropMatchException(Exception):
+    """ ElastAlert will drop a match if this exception type is raised by an enhancement """
+    pass

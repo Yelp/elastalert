@@ -20,6 +20,7 @@ from config import load_configuration
 from config import load_rules
 from elasticsearch.client import Elasticsearch
 from elasticsearch.exceptions import ElasticsearchException
+from enhancements import DropMatchException
 from util import dt_to_ts
 from util import EAException
 from util import format_index
@@ -819,11 +820,16 @@ class ElastAlerter():
                 matches[0]['kibana_link'] = kb_link
 
         for enhancement in rule['match_enhancements']:
+            valid_matches = []
             for match in matches:
                 try:
                     enhancement.process(match)
+                    valid_matches.append(match)
+                except DropMatchException as e:
+                    pass
                 except EAException as e:
                     self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+            matches = valid_matches
 
         # Don't send real alerts in debug mode
         if self.debug:
