@@ -7,10 +7,10 @@ import mock
 from jira.exceptions import JIRAError
 
 from elastalert.alerts import BasicMatchString
-from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
+from elastalert.alerts import JiraFormattedMatchString
 from elastalert.util import ts_add
 
 
@@ -94,6 +94,24 @@ def test_email():
         assert 'To: testing@test.test' in body
         assert 'From: testfrom@test.test' in body
         assert 'Subject: Test alert for test_value' in body
+
+
+def test_email_with_auth():
+    rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
+            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
+            'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt'}
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock_open.return_value = {'user': 'someone', 'password': 'hunter2'}
+            mock_smtp.return_value = mock.Mock()
+            alert = EmailAlerter(rule)
+
+        alert.alert([{'test_term': 'test_value'}])
+        expected = [mock.call('localhost'),
+                    mock.call().login('someone', 'hunter2'),
+                    mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
+                    mock.call().close()]
+        assert mock_smtp.mock_calls == expected
 
 
 def test_email_with_cc():

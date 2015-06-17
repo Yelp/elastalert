@@ -55,6 +55,7 @@ class ElastAlerter():
         parser.add_argument('--end', dest='end', help='YYYY-MM-DDTHH:MM:SS Query to this timestamp. (Default: present)')
         parser.add_argument('--verbose', action='store_true', dest='verbose', help='Increase verbosity without suppressing alerts')
         parser.add_argument('--pin_rules', action='store_true', dest='pin_rules', help='Stop ElastAlert from monitoring config file changes')
+        parser.add_argument('--es_debug', action='store_true', dest='es_debug', help='Enable verbose logging from Elasticsearch queries')
         self.args = parser.parse_args(args)
 
     def __init__(self, args):
@@ -91,6 +92,9 @@ class ElastAlerter():
 
         if self.verbose:
             logging.getLogger().setLevel(logging.INFO)
+
+        if not self.args.es_debug:
+            logging.getLogger('elasticsearch').setLevel(logging.WARNING)
 
         for rule in self.rules:
             rule = self.init_rule(rule)
@@ -389,15 +393,21 @@ class ElastAlerter():
             # Try to get the last run from elasticsearch
             last_run_end = self.get_starttime(rule)
             if last_run_end:
+                rule['minimum_starttime'] = last_run_end
                 rule['starttime'] = last_run_end
                 return
 
         # Use buffer for normal queries, or run_every increments otherwise
         buffer_time = rule.get('buffer_time', self.buffer_time)
         if not rule.get('use_count_query') and not rule.get('use_terms_query'):
-            rule['starttime'] = endtime - buffer_time
+            # If we started using a previous run, don't go past that
+            if 'minimum_starttime' in rule and rule['minimum_starttime'] > endtime - buffer_time:
+                rule['starttime'] = rule['minimum_starttime']
+            else:
+                rule['starttime'] = endtime - buffer_time
         else:
-            rule['starttime'] = endtime - self.run_every
+            # Query from the end of the last run, if it exists, otherwise a run_every sized window
+            rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
 
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
@@ -433,8 +443,7 @@ class ElastAlerter():
         # Run the rule
         # If querying over a large time period, split it up into chunks
         self.num_hits = 0
-        buffer_time = rule.get('buffer_time', self.buffer_time)
-        while endtime - rule['starttime'] > buffer_time:
+        while endtime - rule['starttime'] > self.run_every:
             tmp_endtime = rule['starttime'] + self.run_every
             if not self.run_query(rule, rule['starttime'], tmp_endtime):
                 return 0
@@ -480,6 +489,9 @@ class ElastAlerter():
 
             # Add it as an aggregated match
             self.add_aggregated_alert(match, rule)
+
+        # Mark this endtime for next run's start
+        rule['previous_endtime'] = endtime
 
         time_taken = time.time() - run_start
         # Write to ES that we've run this rule against this time period

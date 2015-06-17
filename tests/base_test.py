@@ -395,7 +395,7 @@ def test_count(ea):
     # Assert that es.count is run against every run_every timeframe between START and END
     start = START
     query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}}}}
-    while END - start > ea.buffer_time:
+    while END - start > ea.run_every:
         end = start + ea.run_every
         query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
         query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['from'] = dt_to_ts(start)
@@ -471,20 +471,40 @@ def test_set_starttime(ea):
         assert mock_gs.call_count == 1
     assert ea.rules[0]['starttime'] == ts_to_dt('2014-10-10T00:00:00')
 
+    # Standard query, no starttime, last run, assure buffer_time doesn't go past
+    ea.rules[0].pop('starttime')
+    ea.rules[0]['buffer_time'] = datetime.timedelta(weeks=1000)
+    with mock.patch.object(ea, 'get_starttime') as mock_gs:
+        mock_gs.return_value = ts_to_dt('2014-10-09T00:00:00')
+        # First call sets minumum_time
+        ea.set_starttime(ea.rules[0], end)
+    # Second call uses buffer_time, but it goes past minimum
+    ea.set_starttime(ea.rules[0], end)
+    assert ea.rules[0]['starttime'] == ts_to_dt('2014-10-09T00:00:00')
+
     # Standard query, starttime
+    ea.rules[0].pop('buffer_time')
+    ea.rules[0].pop('minimum_starttime')
     with mock.patch.object(ea, 'get_starttime') as mock_gs:
         mock_gs.return_value = None
         ea.set_starttime(ea.rules[0], end)
         assert mock_gs.call_count == 0
     assert ea.rules[0]['starttime'] == end - ea.buffer_time
 
-    # Count query, starttime
+    # Count query, starttime, no previous endtime
     ea.rules[0]['use_count_query'] = True
+    ea.rules[0]['doc_type'] = 'blah'
     with mock.patch.object(ea, 'get_starttime') as mock_gs:
         mock_gs.return_value = None
         ea.set_starttime(ea.rules[0], end)
         assert mock_gs.call_count == 0
     assert ea.rules[0]['starttime'] == end - ea.run_every
+
+    # Count query, with previous endtime
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    ea.set_starttime(ea.rules[0], end)
+    assert ea.rules[0]['starttime'] == END
 
 
 def test_kibana_dashboard(ea):
