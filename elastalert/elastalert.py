@@ -413,6 +413,13 @@ class ElastAlerter():
             # Query from the end of the last run, if it exists, otherwise a run_every sized window
             rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
 
+    def get_segment_size(self, rule):
+        """ The segment size is either buffer_size for normal queries or run_every for
+        count style queries. This mimicks the query size for when ElastAlert is running continuously. """
+        if not rule.get('use_count_query') and not rule.get('use_terms_query'):
+            return rule.get('buffer_time', self.buffer_time)
+        return self.run_every
+
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
 
@@ -445,13 +452,8 @@ class ElastAlerter():
             return 0
 
         # Run the rule. If querying over a large time period, split it up into segments
-        # The segment size is either buffer_size for normal queries or run_every for
-        # count style queries
         self.num_hits = 0
-        if not rule.get('use_count_query') and not rule.get('use_terms_query'):
-            segment_size = rule.get('buffer_time', self.buffer_time)
-        else:
-            segment_size = self.run_every
+        segment_size = self.get_segment_size(rule)
         while endtime - rule['starttime'] > segment_size:
             tmp_endtime = rule['starttime'] + segment_size
             if not self.run_query(rule, rule['starttime'], tmp_endtime):

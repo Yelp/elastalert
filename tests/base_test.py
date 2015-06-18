@@ -403,41 +403,37 @@ def test_count(ea):
         ea.current_es.count.assert_any_call(body=query, doc_type='doctype', index='idx', ignore_unavailable=True)
 
 
-def test_queries_with_rule_buffertime(ea):
+def run_and_assert_segmented_queries(ea, start, end, segment_size):
+    with mock.patch.object(ea, 'run_query') as mock_run_query:
+        ea.run_rule(ea.rules[0], end, start)
+        original_end = end
+        for call_args in mock_run_query.call_args_list:
+            end = min(start + segment_size, original_end)
+            assert call_args[0][1:3] == (start, end)
+            start += segment_size
+
+
+def test_query_segmenting(ea):
+    # buffer_time segments with normal queries
     ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=53)
     mock_es = mock.Mock()
     mock_es.search.side_effect = _duplicate_hits_generator([START_TIMESTAMP])
     with mock.patch('elastalert.elastalert.Elasticsearch') as mock_es_init:
         mock_es_init.return_value = mock_es
-        ea.run_rule(ea.rules[0], END, START)
-
-    # Assert that es.search is run against every buffer_time timeframe between START and END
-    end = END_TIMESTAMP
-    start = START
-    query = {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}},
-             'sort': [{'@timestamp': {'order': 'asc'}}]}
-    while END - start > ea.rules[0]['buffer_time']:
-        end = start + ea.rules[0]['buffer_time']
-        query['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
-        query['filter']['bool']['must'][0]['range']['@timestamp']['from'] = dt_to_ts(start)
-        start = start + ea.rules[0]['buffer_time']
-        ea.current_es.search.assert_any_call(body=query, size=ea.max_query_size, index='idx', ignore_unavailable=True, _source_include=['@timestamp'])
-
-    # Assert that num_hits correctly summed every result
+        run_and_assert_segmented_queries(ea, START, END, ea.rules[0]['buffer_time'])
+    # Assert that num_hits correctly includes the 1 hit per query
     assert ea.num_hits == ea.current_es.search.call_count
 
-
-def test_query_segmenting(ea):
-    # Test that with use_count_query is set, segmenting occurs by run_every instead of buffer_time
+    # run_every segments with count queries
     ea.rules[0]['use_count_query'] = True
     with mock.patch('elastalert.elastalert.Elasticsearch'):
-        with mock.patch.object(ea, 'run_query') as mock_run_query:
-            ea.run_rule(ea.rules[0], END, START)
-            start = START
-            for call_args in mock_run_query.call_args_list:
-                end = start + ea.run_every
-                assert call_args[0][1:3] == (start, end)
-                start += ea.run_every
+        run_and_assert_segmented_queries(ea, START, END, ea.run_every)
+
+    # run_every segments with terms queries
+    ea.rules[0].pop('use_count_query')
+    ea.rules[0]['use_terms_query'] = True
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        run_and_assert_segmented_queries(ea, START, END, ea.run_every)
 
 
 def test_get_starttime(ea):
