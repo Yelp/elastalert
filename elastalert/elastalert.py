@@ -443,8 +443,8 @@ class ElastAlerter():
             logging.warning("Attempted to use query start time in the future (%s), sleeping instead" % (starttime))
             return 0
 
-        # Run the rule. Ff querying over a large time period, split it up into segments
-        # The segment size is either buffer_size for normal queryes or run_every for
+        # Run the rule. If querying over a large time period, split it up into segments
+        # The segment size is either buffer_size for normal queries or run_every for
         # count style queries
         self.num_hits = 0
         if not rule.get('use_count_query') and not rule.get('use_terms_query'):
