@@ -35,3 +35,9 @@ writeback_index: elastalert_status
 # sending the alert until this time period has elapsed
 alert_time_limit:
   days: 2
+
+# A list of terms that should be included in query results.
+# This information will be included in alerts.
+# For more information see: http://elastalert.readthedocs.org/en/latest/ruletypes.html
+#include:
+# - ["*"]
