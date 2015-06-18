@@ -401,14 +401,25 @@ class ElastAlerter():
         # Use buffer for normal queries, or run_every increments otherwise
         buffer_time = rule.get('buffer_time', self.buffer_time)
         if not rule.get('use_count_query') and not rule.get('use_terms_query'):
+            buffer_delta = endtime - buffer_time
             # If we started using a previous run, don't go past that
-            if 'minimum_starttime' in rule and rule['minimum_starttime'] > endtime - buffer_time:
+            if 'minimum_starttime' in rule and rule['minimum_starttime'] > buffer_delta:
                 rule['starttime'] = rule['minimum_starttime']
+            # If buffer_time doesn't bring us past the previous endtime, use that instead
+            elif 'previous_endtime' in rule and rule['previous_endtime'] > buffer_delta:
+                rule['starttime'] = rule['previous_endtime']
             else:
-                rule['starttime'] = endtime - buffer_time
+                rule['starttime'] = buffer_delta
         else:
             # Query from the end of the last run, if it exists, otherwise a run_every sized window
             rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
+
+    def get_segment_size(self, rule):
+        """ The segment size is either buffer_size for normal queries or run_every for
+        count style queries. This mimicks the query size for when ElastAlert is running continuously. """
+        if not rule.get('use_count_query') and not rule.get('use_terms_query'):
+            return rule.get('buffer_time', self.buffer_time)
+        return self.run_every
 
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
@@ -441,11 +452,11 @@ class ElastAlerter():
             logging.warning("Attempted to use query start time in the future (%s), sleeping instead" % (starttime))
             return 0
 
-        # Run the rule
-        # If querying over a large time period, split it up into chunks
+        # Run the rule. If querying over a large time period, split it up into segments
         self.num_hits = 0
-        while endtime - rule['starttime'] > self.run_every:
-            tmp_endtime = rule['starttime'] + self.run_every
+        segment_size = self.get_segment_size(rule)
+        while endtime - rule['starttime'] > segment_size:
+            tmp_endtime = rule['starttime'] + segment_size
             if not self.run_query(rule, rule['starttime'], tmp_endtime):
                 return 0
             rule['starttime'] = tmp_endtime
