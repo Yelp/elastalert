@@ -255,7 +255,6 @@ def run_rule_test():
     parser.add_argument('file', metavar='rule', type=str, help='rule configuration filename')
     parser.add_argument('--schema-only', action='store_true', help='Show only schema errors; do not run query')
     parser.add_argument('--days', type=int, default=1, action='store', help='Query the previous N days with this rule')
-    parser.add_argument('--config', type=str, action='store', dest='config', default='config.yaml')
     parser.add_argument('--data', type=str, metavar='FILENAME', action='store', dest='json', help='A JSON file containing data to run the rule against')
     parser.add_argument('--alert', action='store_true', help='Use actual alerts instead of debug output')
     parser.add_argument('--save-json', type=str, metavar='FILENAME', action='store', dest='save', help='A file to which documents from the last day or --days will be saved')
