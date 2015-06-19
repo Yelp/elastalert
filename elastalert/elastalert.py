@@ -509,7 +509,7 @@ class ElastAlerter():
         # Write to ES that we've run this rule against this time period
         body = {'rule_name': rule['name'],
                 'endtime': endtime,
-                'starttime': rule['starttime'],
+                'starttime': rule['original_starttime'],
                 'matches': num_matches,
                 'hits': self.num_hits,
                 '@timestamp': ts_now(),

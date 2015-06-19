@@ -406,11 +406,15 @@ def test_count(ea):
 def run_and_assert_segmented_queries(ea, start, end, segment_size):
     with mock.patch.object(ea, 'run_query') as mock_run_query:
         ea.run_rule(ea.rules[0], end, start)
-        original_end = end
+        original_end, original_start = end, start
         for call_args in mock_run_query.call_args_list:
             end = min(start + segment_size, original_end)
             assert call_args[0][1:3] == (start, end)
             start += segment_size
+
+        # Assert elastalert_status was created for the entire time range
+        assert ea.writeback_es.create.call_args_list[-1][1]['body']['starttime'] == dt_to_ts(original_start)
+        assert ea.writeback_es.create.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end)
 
 
 def test_query_segmenting(ea):
