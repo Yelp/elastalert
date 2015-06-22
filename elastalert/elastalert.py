@@ -406,7 +406,7 @@ class ElastAlerter():
             if 'minimum_starttime' in rule and rule['minimum_starttime'] > buffer_delta:
                 rule['starttime'] = rule['minimum_starttime']
             # If buffer_time doesn't bring us past the previous endtime, use that instead
-            elif 'previous_endtime' in rule and rule['previous_endtime'] > buffer_delta:
+            elif 'previous_endtime' in rule and rule['previous_endtime'] < buffer_delta:
                 rule['starttime'] = rule['previous_endtime']
             else:
                 rule['starttime'] = buffer_delta
