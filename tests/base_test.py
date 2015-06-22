@@ -516,6 +516,7 @@ def test_set_starttime(ea):
     assert ea.rules[0]['starttime'] == END
 
     # buffer_time doesn't go past previous endtime
+    ea.rules[0].pop('use_count_query')
     ea.rules[0]['previous_endtime'] = end - ea.buffer_time * 2
     ea.set_starttime(ea.rules[0], end)
     assert ea.rules[0]['starttime'] == ea.rules[0]['previous_endtime']
