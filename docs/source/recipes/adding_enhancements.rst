@@ -12,6 +12,16 @@ They can be added to rules using the ``match_enhancements`` option::
 where module is the name of a Python module, or folder containing ``__init__.py``,
 and file is the name of the Python file containing a ``BaseEnhancement`` subclass named ``MyEnhancement``.
 
+A special exception class ```DropMatchException``` can be used in enhancements to drop matches if custom conditions are met. For example:
+
+.. code-block:: python
+
+    class MyEnhancement(BaseEnhancement):
+        def process(self, match):
+            # Drops a match if "field_1" == "field_2"
+            if match['field_1'] == match['field_2']:
+                raise DropMatchException()
+
 Example
 -------
 
