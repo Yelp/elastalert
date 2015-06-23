@@ -126,10 +126,16 @@ def load_options(rule, conf=None):
     if 'include' in rule and type(rule['include']) != list:
         raise EAException('include option must be a list')
 
+    if isinstance(rule.get('query_key'), list):
+        rule['compound_query_key'] = rule['query_key']
+        rule['query_key'] = ','.join(rule['query_key'])
+
     # Add QK, CK and timestamp to include
     include = rule.get('include', [])
     if 'query_key' in rule:
         include.append(rule['query_key'])
+    if 'compound_query_key' in rule:
+        include += rule['compound_query_key']
     if 'compare_key' in rule:
         include.append(rule['compare_key'])
     if 'top_count_keys' in rule:

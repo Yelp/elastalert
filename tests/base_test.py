@@ -293,6 +293,17 @@ def test_silence(ea):
     assert ea.rules[0]['alert'][0].alert.call_count == 1
 
 
+def test_compound_query_key(ea):
+    ea.rules[0]['query_key'] = 'this,that'
+    ea.rules[0]['compound_query_key'] = ['this', 'that']
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP], this='abc', that='def')
+    ea.current_es.search.return_value = hits
+    ea.run_query(ea.rules[0], START, END)
+    call_args = ea.rules[0]['type'].add_data.call_args_list[0]
+    assert 'this,that' in call_args[0][0][0]
+    assert call_args[0][0][0]['this,that'] == 'abc, def'
+
+
 def test_silence_query_key(ea):
     # Silence test rule for 4 hours
     ea.args.rule = 'test_rule.yaml'  # Not a real name, just has to be set

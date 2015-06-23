@@ -208,6 +208,13 @@ be converted to UTC, which is what ElastAlert uses internally. (Optional, boolea
 that will be given the match dictionary and can modify it before it is passed to the alerter. The enhancements should be specified as
 ``module.file.EnhancementName``. See :ref:`Enhancements` for more information. (Optional, list of strings, no default)
 
+``query_key``: Having a query key means that realert time will be counted separately for each unique value of ``query_key``. For rule types which
+count documents, such as spike, frequency and flatline, it also means that these counts will independent for each unique value of ``query_key``.
+For example, if ``query_key`` is set to ``username`` and ``realert`` is set, and an alert triggers on a document with ``{'username': 'bob'}``,
+additional alerts for ``{'username': 'bob'}`` will be ignored while other usernames will trigger alerts. Documents which are missing the
+``query_key`` will be grouped together. A list of fields may also be used, which will create a compound query key. This compound key is
+treated as if it were a single field whose value is the component values, or "None", joined by commas.
+
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
 
 Testing If Your Rule Is Valid
@@ -345,8 +352,8 @@ default 50, unique terms.
 
 ``terms_size``: When used with ``use_terms_query``, this is the maximum number of terms returned per query. Default is 50.
 
-``query_key``: The number of events is remembered separately for each unique ``query_key`` field. If this option
-is set, the field must be present for all events.
+``query_key``: Counts of documents will be stored independently for each value of ``query_key``. Only ``num_events`` documents, 
+all with the same value of ``query_key``, will trigger an alert.
 
 
 Spike
@@ -452,9 +459,6 @@ consider the following examples::
     hour4: 80 events (ref: 30, cur: 120) - No alert because spike_height not met
     hour5: 200 events (ref: 60, cur: 280) - No alert because spike_height not met
 
-``query_key``: The number of events is counted separately for each unique ``query_key`` field. If this option
-is set, the field must be present for all events.
-
 ``alert_on_new_data``: This option is only used if ``query_key`` is set. When this is set to true, any new ``query_key`` encountered may
 trigger an immediate alert. When set to false, baseline must be established for each new ``query_key`` value, and then subsequent spikes may
 cause alerts. Baseline is established after ``timeframe`` has elapsed twice since first occurrence.
@@ -471,6 +475,8 @@ default 50, unique terms.
 
 ``terms_size``: When used with ``use_terms_query``, this is the maximum number of terms returned per query. Default is 50.
 
+``query_key``: Counts of documents will be stored independently for each value of ``query_key``.
+
 Flatline
 ~~~~~~~~
 
@@ -484,11 +490,20 @@ This rule requires two additional options:
 
 Optional:
 
-``use_count_query``: If true, ElastAlert will poll elasticsearch using the count api, and not download all of the matching documents. This is
+``use_count_query``: If true, ElastAlert will poll Elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
 of tens of thousands or more. ``doc_type`` must be set to use this.
 
 ``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
+
+``use_terms_query``: If true, ElastAlert will make an aggregation query against Elasticsearch to get counts of documents matching
+each unique value of ``query_key``. This must be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
+default 50, unique terms.
+
+``terms_size``: When used with ``use_terms_query``, this is the maximum number of terms returned per query. Default is 50.
+
+``query_key``: With flatline rule, ``query_key`` means that an alert will be triggered if any value of ``query_key`` has been seen at least once
+and then falls below the threshold.
 
 New Term
 ~~~~~~~~
