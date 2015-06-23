@@ -11,6 +11,9 @@ from util import lookup_es_key
 from util import pretty_ts
 from util import ts_now
 from util import ts_to_dt
+from util import int_to_ts
+from util import timedelta_to_int
+from util import dt_to_int
 
 
 class RuleType(object):
@@ -166,7 +169,8 @@ class FrequencyRule(RuleType):
     def __init__(self, *args):
         super(FrequencyRule, self).__init__(*args)
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
-        self.get_ts = lambda event: event[0][self.ts_field]
+        self.get_ts = lambda event: event[0]['fields'][self.ts_field]
+
 
     def add_count_data(self, data):
         """ Add count data to the rule. Data should be of the form {ts: count}. """
@@ -220,10 +224,16 @@ class FrequencyRule(RuleType):
 
     def get_match_str(self, match):
         lt = self.rules.get('use_local_time')
-        starttime = pretty_ts(dt_to_ts(ts_to_dt(match[self.ts_field]) - self.rules['timeframe']), lt)
-        endtime = pretty_ts(match[self.ts_field], lt)
+        if self.rules.get('timestamp_type') == 'long':
+            starttime = dt_to_ts(match['fields'][self.ts_field] - self.rules['timeframe'])
+            endtime = dt_to_ts(match['fields'][self.ts_field])
+        else:
+            starttime = pretty_ts(dt_to_ts(ts_to_dt(match[self.ts_field]) - self.rules['timeframe']), lt)
+            endtime = pretty_ts(match[self.ts_field], lt)
+
+        
         message = 'At least %d events occurred between %s and %s\n\n' % (self.rules['num_events'],
-                                                                         starttime,
+                                                                        starttime,
                                                                          endtime)
         return message
 
@@ -239,7 +249,7 @@ class AnyRule(RuleType):
 class EventWindow(object):
     """ A container for hold event counts for rules which need a chronological ordered event window. """
 
-    def __init__(self, timeframe, onRemoved=None, getTimestamp=lambda e: e[0]['@timestamp']):
+    def __init__(self, timeframe, onRemoved=None, getTimestamp=lambda e: e[0]['fields'][self.rules['timestamp_field']]):
         self.timeframe = timeframe
         self.onRemoved = onRemoved
         self.get_ts = getTimestamp
@@ -306,7 +316,7 @@ class SpikeRule(RuleType):
         self.cur_windows = {}
 
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
-        self.get_ts = lambda e: e[0][self.ts_field]
+        self.get_ts = lambda e: e[0]['fields'][self.ts_field] 
         self.first_event = {}
         self.skip_checks = {}
 
@@ -342,7 +352,7 @@ class SpikeRule(RuleType):
         self.cur_windows[qk].data = deque()
         self.ref_windows[qk].data = deque()
         self.first_event.pop(qk)
-        self.skip_checks[qk] = event[self.ts_field] + self.rules['timeframe'] * 2
+        self.skip_checks[qk] = event['fields'][self.ts_field] + self.rules['timeframe'] * 2
 
     def handle_event(self, event, count, qk='all'):
         self.first_event.setdefault(qk, event)
@@ -353,7 +363,7 @@ class SpikeRule(RuleType):
         self.cur_windows[qk].append((event, count))
 
         # Don't alert if ref window has not yet been filled for this key AND
-        if event[self.ts_field] - self.first_event[qk][self.ts_field] < self.rules['timeframe'] * 2:
+        if event['fields'][self.ts_field] - self.first_event[qk]['fields'][self.ts_field] < self.rules['timeframe'] * 2:
             # ElastAlert has not been running long enough for any alerts OR
             if not self.ref_window_filled_once:
                 return
@@ -402,8 +412,10 @@ class SpikeRule(RuleType):
         return False
 
     def get_match_str(self, match):
+        timestamp = dt_to_ts(match['fields'][self.rules['timestamp_field']])
+
         message = 'An abnormal number (%d) of events occurred around %s.\n' % (match['spike_count'],
-                                                                               pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time')))
+                                                                               timestamp)
         message += 'Preceding that time, there were only %d events within %s\n\n' % (match['reference_count'], self.rules['timeframe'])
         return message
 
@@ -416,7 +428,8 @@ class SpikeRule(RuleType):
                 self.cur_windows.pop(qk)
                 self.ref_windows.pop(qk)
                 continue
-            placeholder = {self.ts_field: ts}
+            ts = ts.replace(tzinfo=None)
+            placeholder = {'fields' : {self.ts_field: ts}}
             # The placeholder may trigger an alert, in which case, qk will be expected
             if qk != 'all':
                 placeholder.update({self.rules['query_key']: qk})
@@ -455,12 +468,16 @@ class FlatlineRule(FrequencyRule):
             del self.first_event[key]
 
     def get_match_str(self, match):
-        ts = match[self.rules['timestamp_field']]
-        lt = self.rules.get('use_local_time')
-        message = 'An abnormally low number of events occurred around %s.\n' % (pretty_ts(ts, lt))
-        message += 'Between %s and %s, there were less than %s events.\n\n' % (pretty_ts(dt_to_ts(ts_to_dt(ts) - self.rules['timeframe']), lt),
-                                                                               pretty_ts(ts, lt),
-                                                                               self.rules['threshold'])
+        
+
+        if self.rules.get('timestamp_type') == 'long':
+            starttime = dt_to_ts(match['fields'][self.ts_field] - self.rules['timeframe'])
+            endtime = dt_to_ts(match['fields'][self.ts_field])
+        else:
+            starttime = pretty_ts(dt_to_ts(ts_to_dt(match[self.ts_field]) - self.rules['timeframe']), lt)
+            endtime = pretty_ts(match[self.ts_field], lt)
+        message = 'An abnormally low number of events occurred around %s.\n' % endtime
+        message += 'Between %s and %s, there were less than %s events.\n\n' % starttime,endtime,self.rules['threshold']
         return message
 
     def garbage_collect(self, ts):
