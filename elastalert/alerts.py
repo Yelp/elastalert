@@ -260,6 +260,7 @@ class JiraAlerter(Alerter):
         self.label = self.rule.get('jira_label')
         self.assignee = self.rule.get('jira_assignee')
         self.max_age = self.rule.get('jira_max_age', 30)
+        self.priority = self.rule.get('jira_priority')
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
@@ -284,9 +285,23 @@ class JiraAlerter(Alerter):
 
         try:
             self.client = JIRA(self.server, basic_auth=(self.user, self.password))
+            self.get_priorities()
         except JIRAError as e:
             # JIRAError may contain HTML, pass along only first 1024 chars
             raise EAException("Error connecting to JIRA: %s" % (str(e)[:1024]))
+
+        try:
+            if self.priority is not None:
+                self.jira_args['priority'] = {'id': self.priority_ids[self.priority]}
+        except KeyError:
+            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, self.priority_ids.keys()))
+
+    def get_priorities(self):
+        """ Creates a mapping of priority index to id. """
+        priorities = self.client.priorities()
+        self.priority_ids = {}
+        for x in range(len(priorities)):
+            self.priority_ids[x] = priorities[x].id
 
     def set_assignee(self, assignee):
         self.assignee = assignee

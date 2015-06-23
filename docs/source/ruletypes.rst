@@ -684,6 +684,9 @@ Optional:
 
 ``jira_label``: The label to add to the JIRA ticket.
 
+``jira_priority``: The index of the priority to set the issue to. In the JIRA dropdown for priorities, 0 would represent the first priority,
+1 the 2nd, etc.
+
 ``jira_bump_tickets``: If true, ElastAlert search for existing tickets newer than ``jira_max_age`` and comment on the ticket with
 information about the alert instead of opening another ticket. ElastAlert finds the existing ticket by searching by summary. If the
 summary has changed or contains special characters, it may fail to find the ticket. If you are using a custom ``alert_subject``,
