@@ -93,6 +93,9 @@ within a time period. This example will send an email when 50 documents matching
 the alert email is sent when two documents with the same 'username' field but a different value of the 'country_name' field occur within 24 hours
 of each other.
 
+- ``example_new_term.yaml`` is an example of the "new term" rule type, which alerts when a new value appears in a field or fields. In this example,
+an email is sent when a new value of ("username", "computer") is encountered in example login logs.
+
 ## License
 
 ElastAlert is licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
