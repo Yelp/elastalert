@@ -209,11 +209,12 @@ that will be given the match dictionary and can modify it before it is passed to
 ``module.file.EnhancementName``. See :ref:`Enhancements` for more information. (Optional, list of strings, no default)
 
 ``query_key``: Having a query key means that realert time will be counted separately for each unique value of ``query_key``. For rule types which
-count documents, such as spike, frequency and flatline, it also means that these counts will independent for each unique value of ``query_key``.
+count documents, such as spike, frequency and flatline, it also means that these counts will be independent for each unique value of ``query_key``.
 For example, if ``query_key`` is set to ``username`` and ``realert`` is set, and an alert triggers on a document with ``{'username': 'bob'}``,
 additional alerts for ``{'username': 'bob'}`` will be ignored while other usernames will trigger alerts. Documents which are missing the
 ``query_key`` will be grouped together. A list of fields may also be used, which will create a compound query key. This compound key is
-treated as if it were a single field whose value is the component values, or "None", joined by commas.
+treated as if it were a single field whose value is the component values, or "None", joined by commas. A new field with the key
+"field1,field2,etc" will be created in each document and may conflict with existing fields of the same name.
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
 
