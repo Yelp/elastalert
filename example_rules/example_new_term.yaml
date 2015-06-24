@@ -1,0 +1,67 @@
+# Alert when a login event is detected for a never before seen combination of (username, computer)
+# In this example, "login" logs contain which user has logged into what computer
+
+# (Required)
+# Elasticsearch host
+es_host: elasticsearch.example.com
+
+# (Required)
+# Elasticsearch port
+es_port: 14900
+
+# (OptionaL) Connect with SSL to elasticsearch
+#use_ssl: True
+
+# (Optional) basic-auth username and password for elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# (Required)
+# Rule name, must be unique
+name: Example rule
+
+# (Required)
+# Type of alert.
+# the frequency rule type alerts when num_events events occur with timeframe time
+type: new_term
+
+# (Required)
+# Index to search, wildcard supported
+index: logstash-*
+
+# (Optional)
+# This creates the compound key ("username", "computer") in the document
+query_key:
+ - "username"
+ - "computer"
+
+# (Required, new_term specific)
+# Monitor the compound field ("username", "computer")
+# Note that this field only exists when query_key is ["username", "computer"]
+fields:
+ - "username,computer"
+
+# (Optional, new_term specific)
+# This means that we will query 90 days worth of data when ElastAlert starts to find which values of (username, computer) already exist
+# If they existed in the last 90 days, no alerts will be triggered for them when they appear
+terms_window_size:
+  days: 90
+
+# (Required)
+# A list of elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+# We are filtering for only "login_event" type documents, which we assume contain at least the fields "username", "computer" and "@timestamp"
+filter:
+- term:
+    _type: "login_event"
+
+# (Required)
+# The alert is use when a match is found
+alert:
+- "email"
+
+# (required, email specific)
+# a list of email addresses to send alerts to
+email:
+- "elastalert@example.com"

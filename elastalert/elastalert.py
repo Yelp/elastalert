@@ -25,7 +25,6 @@ from util import dt_to_ts
 from util import EAException
 from util import format_index
 from util import pretty_ts
-from util import replace_hits_ts
 from util import seconds
 from util import ts_add
 from util import ts_now
@@ -215,6 +214,15 @@ class ElastAlerter():
         timestamp = res['hits']['hits'][0]['_source'][timestamp_field]
         return timestamp
 
+    def process_hits(self, rule, hits):
+        """ Process results from Elasticearch. This replaces timestamps with datetime objects
+        and creates compound query_keys. """
+        for hit in hits:
+            hit['_source'][rule['timestamp_field']] = ts_to_dt(hit['_source'][rule['timestamp_field']])
+            if rule.get('compound_query_key'):
+                values = [hit['_source'].get(key, 'None') for key in rule['compound_query_key']]
+                hit['_source'][rule['query_key']] = ', '.join(values)
+
     def get_hits(self, rule, starttime, endtime, index):
         """ Query elasticsearch for the given rule and return the results.
 
@@ -242,7 +250,7 @@ class ElastAlerter():
         self.num_hits += len(hits)
         lt = rule.get('use_local_time')
         logging.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits)))
-        replace_hits_ts(hits, rule)
+        self.process_hits(rule, hits)
 
         # Record doc_type for use in get_top_counts
         if 'doc_type' not in rule and len(hits):

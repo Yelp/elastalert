@@ -49,7 +49,6 @@ oneOf:
       type: {enum: [change]}
       compare_key: {type: string}
       ignore_null: {type: boolean}
-      query_key: {type: string}
       timeframe: *timeframe
 
   - title: Frequency
@@ -62,7 +61,6 @@ oneOf:
       doc_type: {type: string}
       use_terms_query: {type: boolean}
       terms_size: {type: integer}
-      query_key: {type: string}
 
   - title: Spike
     required: [spike_height, spike_type, timeframe]
@@ -139,6 +137,7 @@ properties:
   use_kibana_dashboard: {type: string}
   use_local_time: {type: boolean}
   match_enhancements: {type: array, items: {type: string}}
+  query_key: *arrayOfString
 
   # Alerts
   alert: *arrayOfString

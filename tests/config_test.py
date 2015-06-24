@@ -9,6 +9,7 @@ import elastalert.alerts
 import elastalert.ruletypes
 from elastalert.config import get_file_paths
 from elastalert.config import load_configuration
+from elastalert.config import load_options
 from elastalert.config import load_rules
 from elastalert.util import EAException
 
@@ -82,6 +83,17 @@ def test_load_rules():
             # Assert include doesn't contain duplicates
             assert rules['rules'][0]['include'].count('@timestamp') == 1
             assert rules['rules'][0]['include'].count('comparekey') == 1
+
+
+def test_compound_query_key():
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy.pop('use_count_query')
+    test_rule_copy['query_key'] = ['field1', 'field2']
+    load_options(test_rule_copy)
+    assert 'field1' in test_rule_copy['include']
+    assert 'field2' in test_rule_copy['include']
+    assert test_rule_copy['query_key'] == 'field1,field2'
+    assert test_rule_copy['compound_query_key'] == ['field1', 'field2']
 
 
 def test_raises_on_missing_config():

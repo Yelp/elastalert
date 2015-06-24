@@ -237,19 +237,22 @@ def test_jira():
     with mock.patch('elastalert.alerts.JIRA') as mock_jira:
         with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
             mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-            mock_jira.return_value = mock.Mock()
-
+            mock_priority = mock.Mock()
+            mock_priority.id = '5'
+            mock_jira.return_value.priorities.return_value = [mock_priority]
             alert = JiraAlerter(rule)
             alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
 
             expected = [mock.call('jiraserver', basic_auth=('jirauser', 'jirapassword')),
+                        mock.call().priorities(),
                         mock.call().create_issue(issuetype={'name': 'testtype'},
                                                  project={'key': 'testproject'},
                                                  labels=['testlabel'],
                                                  components=[{'name': 'testcomponent'}],
                                                  description=mock.ANY,
                                                  summary='Issue test_value occured at 2014-10-31T00:00:00')]
-            assert mock_jira.mock_calls == expected
+            # We don't care about additional calls to mock_jira, such as __str__
+            assert mock_jira.mock_calls[:3] == expected
 
     # Search called if jira_bump_tickets
     rule['jira_bump_tickets'] = True
@@ -258,11 +261,12 @@ def test_jira():
             mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
             mock_jira.return_value = mock.Mock()
             mock_jira.return_value.search_issues.return_value = []
+            mock_jira.return_value.priorities.return_value = [mock_priority]
 
             alert = JiraAlerter(rule)
             alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
 
-            expected.insert(1, mock.call().search_issues(mock.ANY))
+            expected.insert(2, mock.call().search_issues(mock.ANY))
             assert mock_jira.mock_calls == expected
 
     # Issue is still created if search_issues throws an exception
@@ -271,6 +275,7 @@ def test_jira():
             mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
             mock_jira.return_value = mock.Mock()
             mock_jira.return_value.search_issues.side_effect = JIRAError
+            mock_jira.return_value.priorities.return_value = [mock_priority]
 
             alert = JiraAlerter(rule)
             alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
