@@ -108,7 +108,7 @@ def load_options(rule, conf=None):
     rule.setdefault('realert', datetime.timedelta(seconds=0))
     rule.setdefault('aggregation', datetime.timedelta(seconds=0))
     rule.setdefault('query_delay', datetime.timedelta(seconds=0))
-    rule.setdefault('timestamp_field' , conf.get('timestamp_field','@timestamp'))
+    rule.setdefault('timestamp_field' , rule.get('timestamp_field' , '@timestamp'))
     rule.setdefault('filter', [])
     rule.setdefault('timestamp_type' , rule.get('timestamp_type' , 'datetime'))
     rule.setdefault('_source_enabled', rule.get('_source_enabled' , True))
@@ -116,6 +116,7 @@ def load_options(rule, conf=None):
 
     # Set email options from global config
     if conf:
+        rule.setdefault('timestamp_field' , conf.get('timestamp_field',rule.get('timestamp_field' , '@timestamp')))
         rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
         rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
         if 'email_reply_to' in conf:

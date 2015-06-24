@@ -34,7 +34,7 @@ def check_files():
     for filename in args.files:
         with open(filename) as fh:
             conf = yaml.load(fh)
-        load_options(conf)
+        load_options(conf,{})
         print("Successfully loaded %s\n" % (conf['name']))
 
         if args.schema_only:
@@ -45,7 +45,8 @@ def check_files():
             start_time = ts_now() - datetime.timedelta(days=days)
             end_time = ts_now()
             ts = conf.get('timestamp_field', '@timestamp')
-            query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts)
+            ts_type = conf.get('timestamp_type' , 'datetime')
+            query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts , timestamp_type = ts_type )
             index = ElastAlerter.get_index(conf, start_time, end_time)
             try:
                 res = es_client.search(index, size=1000, body=query)

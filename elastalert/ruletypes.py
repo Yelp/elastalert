@@ -265,6 +265,7 @@ class EventWindow(object):
         else:
             self.data.append(event)
 
+
         while self.duration() >= self.timeframe:
             oldest = self.data.popleft()
             self.onRemoved and self.onRemoved(oldest)
@@ -428,7 +429,6 @@ class SpikeRule(RuleType):
                 self.cur_windows.pop(qk)
                 self.ref_windows.pop(qk)
                 continue
-            ts = ts.replace(tzinfo=None)
             placeholder = {'fields' : {self.ts_field: ts}}
             # The placeholder may trigger an alert, in which case, qk will be expected
             if qk != 'all':

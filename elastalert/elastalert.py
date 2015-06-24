@@ -31,6 +31,7 @@ from util import ts_now
 from util import ts_to_dt
 from util import dt_to_int
 from util import timedelta_to_int
+from util import int_to_ts
 
 
 class ElastAlerter():
@@ -211,14 +212,17 @@ class ElastAlerter():
         if len(res['hits']['hits']) == 0:
             # Index is completely empty, return a date before the epoch
             return '1969-12-30T00:00:00Z'
-        timestamp = res['hits']['hits'][0]['_source'][timestamp_field]
+        timestamp = res['hits']['hits'][0][timestamp_field]
         return timestamp
 
     def process_hits(self, rule, hits):
         """ Process results from Elasticearch. This replaces timestamps with datetime objects
         and creates compound query_keys. """
         for hit in hits:
-            hit['_source'][rule['timestamp_field']] = ts_to_dt(hit['_source'][rule['timestamp_field']])
+            if rule['timestamp_type'] == 'long':
+                hit['fields'][rule['timestamp_field']] = ts_to_dt(int_to_ts(hit['fields'][rule['timestamp_field']]))
+            else :
+                hit['fields'][rule['timestamp_field']] = ts_to_dt(hit['fields'][rule['timestamp_field']])
             if rule.get('compound_query_key'):
                 values = [hit['_source'].get(key, 'None') for key in rule['compound_query_key']]
                 hit['_source'][rule['query_key']] = ', '.join(values)
@@ -775,7 +779,10 @@ class ElastAlerter():
             raise EAException("Error querying for dashboard: %s" % (e))
 
         if res['hits']['hits']:
-            return json.loads(res['hits']['hits'][0]['_source']['dashboard'])
+            if rule['_source_enabled']:
+                return json.loads(res['hits']['hits'][0]['_source']['dashboard'])
+            else :
+                return json.loads(res['hits']['hits'][0]['_source']['dashboard'])
         else:
             raise EAException("Could not find dashboard named %s" % (db_name))
 
