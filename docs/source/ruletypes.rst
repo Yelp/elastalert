@@ -50,7 +50,7 @@ Rule Configuration Cheat Sheet
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
 | ``ignore_null`` (boolean, no default)          |     |           |   Req     |  Req   |           |       |          |        |
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-| ``query_key`` (string, no default)             |     |           |           |   Req  |           |  Opt  |          |        |
+| ``query_key`` (string, no default)             |     |           |           |   Req  |    Opt    |  Opt  |          |  Req   |
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
 | ``timeframe`` (time, no default)               |     |           |           |   Opt  |    Req    |  Req  |   Req    |        |
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
@@ -218,30 +218,45 @@ treated as if it were a single field whose value is the component values, or "No
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
 
-Testing If Your Rule Is Valid
-==============================
 
-Once you've written a rule configuration, you will want to validate it. To do so, use ``elastalert-test-rule``.
+.. _testing :
 
-This will:
+Testing Your Rule
+====================
+
+Once you've written a rule configuration, you will want to validate it. To do so, you can either run ElastAlert in debug mode,
+or use ``elastalert-test-rule``, which is a script that makes various aspects of testing easier.
+
+It can:
 
 - Check that the configuration file loaded successfully.
 
 - Check that the Elasticsearch filter parses.
 
-- Run against the last day and the show the number of hits that match your filter.
+- Run against the last X day(s) and the show the number of hits that match your filter.
 
 - Show the available terms in one of the results.
 
+- Save documents returned to a JSON file.
+
+- Run ElastAlert using either a JSON file or actual results from Elasticsearch.
+
+- Print out debug alerts or trigger real alerts.
+
 - Check that, if they exist, the primary_key, compare_key and include terms are in the results.
 
-This tool does NOT test whether an alert would be triggered.
+- Show what metadata documents would be written to ``elastalert_status``. 
+
+Without any optional arguments, it will ran ElastAlert over the last 24 hours and print out any alerts that would have occured.
+Here is an example test run which triggered an alert:
 
 .. code-block:: console
 
-    $ elastalert-test-rule my_rules/rule1.yaml my_rules/rule2.yaml
-    Loaded Example rule1
-    Got 100+ hits from the last 1 day
+    $ elastalert-test-rule my_rules/rule1.yaml
+    Successfully Loaded Example rule1
+    
+    Got 105 hits from the last 1 day
+    
     Available terms in first hit:
         @timestamp
         field1
@@ -249,15 +264,56 @@ This tool does NOT test whether an alert would be triggered.
         ...
     Included term this_field_doesnt_exist may be missing or null
 
-    Loaded Other rule2
-    Got 2 hits from the last 1 day
-    Available terms in first hit:
-        @timestamp
-        field1
-        field2
-        ....
+    INFO:root:Queried rule Example rule1 from 6-16 15:21 PDT to 6-17 15:21 PDT: 105 hits
+    INFO:root:Alert for Example rule1 at 2015-06-16T23:53:12Z:
+    INFO:root:Example rule1
 
-Optionally, you may pass --days N to query the last N days, instead of the default 1 day.
+    At least 50 events occured between 6-16 18:30 PDT and 6-16 20:30 PDT
+
+    field1:
+    value1: 25
+    value2: 25
+
+    @timestamp: 2015-06-16T20:30:04-07:00
+    field1: value1
+    field2: something
+
+
+    Would have written the following documents to elastalert_status:
+
+    silence - {'rule_name': 'Example rule1', '@timestamp': datetime.datetime( ... ), 'exponent': 0, 'until': 
+    datetime.datetime( ... )}
+
+    elastalert_status - {'hits': 105, 'matches': 1, '@timestamp': datetime.datetime( ... ), 'rule_name': 'Example rule1',
+    'starttime': datetime.datetime( ... ), 'endtime': datetime.datetime( ... ), 'time_taken': 3.1415926}
+
+Note that everything between "Alert for Example rule1 at ..." and "Would have written the following ..." is the exact text body that an alert would have.
+See the section below on alert content for more details.
+Also note that datetime objects are converted to ISO8601 timestamps when uploaded to Elasticsearch. See :ref:`the section on metadata <metadata>` for more details.
+
+Other options include:
+
+``--schema-only``: Only perform schema validation on the file. It will not load modules or query Elasticsearch. This may catch invalid YAML
+and missing or misconfigured fields.
+
+``--count-only``: Only find the number of matching documents and list available fields. ElastAlert will not be run and documents will not be downloaded.
+
+``--days N``: Instead of the default 1 day, query N days. For selecting more specific time ranges, you must run ElastAlert itself and use ``--start``
+and ``--end``.
+
+``--save-json FILE``: Save all documents downloaded to a file as JSON. This is useful if you wish to modify data while testing or do offline
+testing in conjunction with ``--data FILE``. A maximum of 10,000 documents will be downloaded.
+
+``--data FILE``: Use a JSON file as a data source instead of Elasticsearch. The file should be a single list containing objects, 
+rather than objects on separate lines. Note than this uses mock functions which mimic some Elasticsearch query methods and is not
+guarenteed to have the exact same results as with Elasticsearch. For example, analyzed string fields may behave differently.
+
+``--alert``: Trigger real alerts instead of the debug (logging text) alert.
+
+.. note::
+   Results from running this script may not always be the same as if an actual ElastAlert instance was running. Some rule types, such as spike
+   and flatline require a minimum elapsed time before they begin alerting, based on their timeframe. In addition, use_count_query and
+   use_terms_query rely on run_every to determine their resolution. This script uses a fixed 5 minute window, which is the same as the default.
 
 
 .. _ruletypes:

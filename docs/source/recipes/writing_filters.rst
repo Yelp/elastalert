@@ -114,10 +114,10 @@ Any of the filters can be embedded in not, and, and or::
                   _type: "something"
 
 
-Loading Filters Directly From Kibana
-------------------------------------
+Loading Filters Directly From Kibana 3
+--------------------------------------
 
-There are two ways to load filters directly from a kibana dashboard. You can set your filter to::
+There are two ways to load filters directly from a Kibana 3 dashboard. You can set your filter to::
 
     filter:
       download_dashboard: "My Dashboard Name"

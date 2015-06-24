@@ -110,16 +110,11 @@ As is, this rule means "Send an email to elastalert@example.com when there are m
 Testing Your Rule
 -----------------
 
-Running ``elastalert-test-rule`` tools will test that your config file successfully loads and will query Elasticsearch with its filters. If successful, it should display the number of hits (up to 100) that match your filters from the last 24 hours and the fields available in those documents::
+Running the ``elastalert-test-rule`` tool will test that your config file successfully loads and run it in debug mode over the last 24 hours::
 
     $ elastalert-test-rule example_rules/example_frequency.yaml
-    Loaded Example rule
-    Got 100+ hits from the last 1 days
-    Available terms in first hit:
-      @timestamp
-      type
-      some_field
-      ...
+
+See :ref:`the testing section for more details <testing>`
 
 Running ElastAlert
 ------------------

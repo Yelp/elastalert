@@ -153,13 +153,12 @@ class DebugAlerter(Alerter):
     """ The debug alerter uses a Python logger (by default, alerting to terminal). """
 
     def alert(self, matches):
-        logging.info('%d match(es)' % (len(matches)))
         qk = self.rule.get('query_key', None)
         for match in matches:
             if qk in match:
-                logging.info('%s matched %s at %s' % (match[qk], self.rule['name'], match[self.rule['timestamp_field']]))
+                logging.info('Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
             else:
-                logging.info('%s at %s' % (self.rule['name'], match[self.rule['timestamp_field']]))
+                logging.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
             logging.info(str(BasicMatchString(self.rule, match)))
 
     def get_info(self):
