@@ -157,23 +157,23 @@ def test_freq_terms():
 
 def test_eventwindow():
     timeframe = datetime.timedelta(minutes=10)
-    window = EventWindow(timeframe, getTimestamp=lambda e: e['@timestamp'])
+    window = EventWindow(timeframe, getTimestamp=lambda e: e[0]['@timestamp'])
     timestamps = [ts_to_dt(x) for x in ['2014-01-01T10:00:00',
                                         '2014-01-01T10:05:00',
                                         '2014-01-01T10:03:00',
                                         '2014-01-01T09:55:00',
                                         '2014-01-01T10:09:00']]
     for ts in timestamps:
-        window.append({'@timestamp': ts})
+        window.append([{'@timestamp': ts}, 1])
 
     timestamps.sort()
     for exp, actual in zip(timestamps[1:], window.data):
-        assert actual['@timestamp'] == exp
+        assert actual[0]['@timestamp'] == exp
 
-    window.append({'@timestamp': ts_to_dt('2014-01-01T10:14:00')})
+    window.append([{'@timestamp': ts_to_dt('2014-01-01T10:14:00')}, 1])
     timestamps.append(ts_to_dt('2014-01-01T10:14:00'))
     for exp, actual in zip(timestamps[3:], window.data):
-        assert actual['@timestamp'] == exp
+        assert actual[0]['@timestamp'] == exp
 
 
 def test_spike_count():
