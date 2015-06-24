@@ -722,9 +722,10 @@ class ElastAlerter():
 
         # Add filter for query_key value
         if 'query_key' in rule:
-            if rule['query_key'] in match:
-                term = {'term': {rule['query_key']: match[rule['query_key']]}}
-                kibana.add_filter(db, term)
+            for qk in rule.get('compound_query_key', [rule['query_key']]):
+                if qk in match:
+                    term = {'term': {qk: match[qk]}}
+                    kibana.add_filter(db, term)
 
         # Convert to json
         db_js = json.dumps(db)
