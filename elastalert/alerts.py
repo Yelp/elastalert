@@ -219,9 +219,10 @@ class EmailAlerter(Alerter):
             self.smtp = SMTP(self.smtp_host)
             if(self.smtp_port):
                 self.smtp = SMTP(self.smtp_host,self.smtp_port)
-            if 'smtp_auth_file' in self.rule:
                 self.smtp.ehlo()
                 self.smtp.starttls()
+            if 'smtp_auth_file' in self.rule:
+                
                 self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:
             raise EAException("Error connecting to SMTP host: %s" % (e))

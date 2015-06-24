@@ -268,7 +268,6 @@ def load_rules(filename, use_rule=None):
     try:
         conf['run_every'] = datetime.timedelta(**conf['run_every'])
         conf['buffer_time'] = datetime.timedelta(**conf['buffer_time'])
-        conf['timestamp_field'] = conf['timestamp_field']
         if 'alert_time_limit' in conf:
             conf['alert_time_limit'] = datetime.timedelta(**conf['alert_time_limit'])
         else:
