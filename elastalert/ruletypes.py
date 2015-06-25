@@ -177,7 +177,7 @@ class FrequencyRule(RuleType):
         if len(data) > 1:
             raise EAException('add_count_data can only accept one count at a time')
         for ts, count in data.iteritems():
-            event = ({self.ts_field: ts}, count)
+            event = ({'fields' : {self.ts_field: ts}, self.ts_field: ts}, count)
             self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
             self.check_for_match('all')
 
@@ -185,8 +185,9 @@ class FrequencyRule(RuleType):
         for timestamp, buckets in terms.iteritems():
             for bucket in buckets:
                 count = bucket['doc_count']
-                event = ({self.ts_field: timestamp,
-                          self.rules['query_key']: bucket['key']}, count)
+                event = ({'fields' : {self.ts_field: timestamp},
+                    self.ts_field: timestamp,
+                    self.rules['query_key']: bucket['key']}, count)
                 self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
                 self.check_for_match(bucket['key'])
 
@@ -333,14 +334,15 @@ class SpikeRule(RuleType):
         if len(data) > 1:
             raise EAException('add_count_data can only accept one count at a time')
         for ts, count in data.iteritems():
-            self.handle_event({self.ts_field: ts}, count, 'all')
+            self.handle_event({'fields' : {self.ts_field: ts},self.ts_field: ts}, count, 'all')
 
     def add_terms_data(self, terms):
         for timestamp, buckets in terms.iteritems():
             for bucket in buckets:
                 count = bucket['doc_count']
-                event = {self.ts_field: timestamp,
-                         self.rules['query_key']: bucket['key']}
+                event = {'fields' : {self.ts_field: timestamp},
+                self.ts_field: timestamp,
+                self.rules['query_key']: bucket['key']}
                 key = bucket['key']
                 self.handle_event(event, count, key)
 
@@ -489,7 +491,7 @@ class FlatlineRule(FrequencyRule):
         # We add an event with a count of zero to the EventWindow for each key. This will cause the EventWindow
         # to remove events that occured more than one `timeframe` ago, and call onRemoved on them.
         for key in self.occurrences.keys():
-            self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({self.ts_field: ts}, 0))
+            self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({'fields' : {self.ts_field: ts}, self.ts_field: ts}, 0))
             self.check_for_match(key)
 
 
