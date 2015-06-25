@@ -163,7 +163,7 @@ class ElastAlerter():
             return index
 
     @staticmethod
-    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp' , timestamp_type = 'datetime'):
+    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', timestamp_type = 'datetime'):
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
@@ -272,7 +272,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A dictionary mapping timestamps to number of hits for that time period.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False , timestamp_type = rule.get('timestamp_type','datetime'))
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, timestamp_type = rule.get('timestamp_type','datetime'))
         query = {'query': {'filtered': query}}
 
         try:
@@ -297,7 +297,7 @@ class ElastAlerter():
             if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
                 filter_key += '.raw'
             rule_filter.extend([{'term': {filter_key: qk}}])
-        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False , timestamp_type = rule.get('timestamp_type','datetime'))
+        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, timestamp_type = rule.get('timestamp_type','datetime'))
         if size is None:
             size = rule.get('terms_size', 50)
         query = self.get_terms_query(base_query, size, key)
@@ -775,10 +775,7 @@ class ElastAlerter():
             raise EAException("Error querying for dashboard: %s" % (e))
 
         if res['hits']['hits']:
-            if rule.get('_source_enabled',True):
-                return json.loads(res['hits']['hits'][0]['_source']['dashboard'])
-            else :
-                return json.loads(res['hits']['hits'][0]['_source']['dashboard'])
+            return json.loads(res['hits']['hits'][0]['_source']['dashboard'])
         else:
             raise EAException("Could not find dashboard named %s" % (db_name))
 
@@ -1138,7 +1135,7 @@ class ElastAlerter():
 
     def handle_uncaught_exception(self, exception, rule):
         """ Disables a rule and sends a notifcation. """
-        logging.info(traceback.format_exc())
+        logging.debug(traceback.format_exc())
         self.handle_error('Uncaught exception running rule %s: %s' % (rule['name'], exception), {'rule': rule['name']})
         if self.disable_rules_on_error:
             self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
