@@ -21,13 +21,14 @@ setup(
     packages=find_packages(),
     package_data={'elastalert': ['schema.yaml']},
     install_requires=[
+        'argparse',
         'elasticsearch',
         'jira==0.32',  # jira.exceptions is missing from later versions
-        'argparse',
+        'jsonschema',
+        'mock',
         'python-dateutil',
         'PyStaticConfiguration',
         'pyyaml',
-        'jsonschema',
         'simplejson',
     ]
 )
