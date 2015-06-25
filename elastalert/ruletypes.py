@@ -254,6 +254,7 @@ class EventWindow(object):
         self.onRemoved = onRemoved
         self.get_ts = getTimestamp
         self.data = deque()
+        self.running_count = 0
 
     def append(self, event):
         """ Add an event to the window. Event should be of the form (dict, count).
@@ -264,10 +265,12 @@ class EventWindow(object):
             self.append_middle(event)
         else:
             self.data.append(event)
+            self.running_count += event[1]
 
 
         while self.duration() >= self.timeframe:
             oldest = self.data.popleft()
+            self.running_count -= oldest[1]
             self.onRemoved and self.onRemoved(oldest)
 
     def duration(self):
@@ -278,7 +281,7 @@ class EventWindow(object):
 
     def count(self):
         """ Count the number of events in the window. """
-        return sum(map(lambda e: e[1], self.data))
+        return self.running_count
 
     def __iter__(self):
         return iter(self.data)
@@ -292,6 +295,7 @@ class EventWindow(object):
         # Append left if ts is earlier than first event
         if self.get_ts(self.data[0]) > ts:
             self.data.appendleft(event)
+            self.running_count += event[1]
             return
 
         # Rotate window until we can insert event
@@ -302,6 +306,7 @@ class EventWindow(object):
                 # This should never happen
                 return
         self.data.append(event)
+        self.running_count += event[1]
         self.data.rotate(-rotation)
 
 

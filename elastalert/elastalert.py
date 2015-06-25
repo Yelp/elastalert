@@ -215,7 +215,8 @@ class ElastAlerter():
         timestamp = res['hits']['hits'][0][timestamp_field]
         return timestamp
 
-    def process_hits(self, rule, hits):
+    @staticmethod
+    def process_hits(rule, hits):
         """ Process results from Elasticearch. This replaces timestamps with datetime objects
         and creates compound query_keys. """
         for hit in hits:
