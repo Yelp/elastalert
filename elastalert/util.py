@@ -60,9 +60,9 @@ def replace_hits_ts(hits, rule):
     """Iterate through a hits dictionary from ElasticSearch, and convert string timestamps to datetime objects
     """
     for hit in hits:
-        if rule.get('timestamp_type','datetime') == 'long':
-            hit['fields'][rule['timestamp_field']] = datetime.datetime.fromtimestamp((hit['fields'][rule['timestamp_field']])/1000)
-        if rule.get('timestamp_type','datetime') == 'datetime' :  
+        if rule.get('timestamp_type', 'datetime') == 'long':
+            hit['fields'][rule['timestamp_field']] = datetime.datetime.fromtimestamp((hit['fields'][rule['timestamp_field']]) / 1000)
+        if rule.get('timestamp_type', 'datetime') == 'datetime':
             hit['fields'][rule['timestamp_field']] = ts_to_dt(hit['fields'][rule['timestamp_field']])
 
 
@@ -154,14 +154,17 @@ class EAException(Exception):
 def seconds(td):
     return td.seconds + td.days * 24 * 3600
 
+
 def dt_to_int(dt):
     dt = dt.replace(tzinfo=None)
-    return int((dt - datetime.datetime.utcfromtimestamp(0)).total_seconds()*1000)
+    return int((dt - datetime.datetime.utcfromtimestamp(0)).total_seconds() * 1000)
+
 
 def int_to_ts(time):
-    time = time/1000
+    time = time / 1000
     dt = datetime.datetime.fromtimestamp(time)
     return dt_to_ts(dt)
 
+
 def timedelta_to_int(timedelta):
-    return int(timedelta.total_seconds()*1000)
+    return int(timedelta.total_seconds() * 1000)

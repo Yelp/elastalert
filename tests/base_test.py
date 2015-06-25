@@ -32,7 +32,7 @@ def generate_hits(timestamps, **kwargs):
     hits = []
     id_iter = xrange(len(timestamps)).__iter__()
     for ts in timestamps:
-        data = {'_id': 'id' + str(id_iter.next()), 'fields' : {'@timestamp' : ts }, '_source': {'@timestamp': ts}, '_type': 'logs'}
+        data = {'_id': 'id' + str(id_iter.next()), 'fields': {'@timestamp': ts}, '_source': {'@timestamp': ts}, '_type': 'logs'}
         for key, item in kwargs.iteritems():
             data['_source'][key] = item
         hits.append(data)
@@ -78,7 +78,7 @@ def test_init_rule(ea):
 def test_query(ea):
     ea.current_es.search.return_value = {'hits': {'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}, 'fields' : ['@timestamp'], 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}, 'fields': ['@timestamp'], 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
 
 
 def test_no_hits(ea):
@@ -101,7 +101,7 @@ def test_some_hits(ea):
     ea.current_es.search.return_value = hits
     ea.run_query(ea.rules[0], START, END)
     assert ea.rules[0]['type'].add_data.call_count == 1
-    ea.rules[0]['type'].add_data.assert_called_with( [x for x in hits['hits']['hits']] )
+    ea.rules[0]['type'].add_data.assert_called_with([x for x in hits['hits']['hits']])
 
 
 def _duplicate_hits_generator(timestamps, **kwargs):
@@ -139,12 +139,11 @@ def test_run_rule_calls_garbage_collect(ea):
     end_time = '2014-09-26T12:00:00Z'
     ea.buffer_time = datetime.timedelta(hours=1)
     ea.run_every = datetime.timedelta(hours=1)
-
-    with contextlib.nested(
-        mock.patch.object(ea.rules[0]['type'], 'garbage_collect'),
-        mock.patch.object(ea, 'run_query')
-    ) as (mock_gc, mock_get_hits):
-        ea.run_rule(ea.rules[0], ts_to_dt(end_time), ts_to_dt(start_time))
+    with contextlib.nested(mock.patch.object(ea.rules[0]['type'], 'garbage_collect'),
+                           mock.patch.object(ea, 'run_query')) as (mock_gc, mock_get_hits):
+                           ea.run_rule(ea.rules[0],
+                                       ts_to_dt(end_time),
+                                       ts_to_dt(start_time))
 
     # Running elastalert every hour for 12 hours, we should see self.garbage_collect called 12 times.
     assert mock_gc.call_count == 12
@@ -404,7 +403,7 @@ def test_count(ea):
 
     # Assert that es.count is run against every run_every timeframe between START and END
     start = START
-    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}},'fields' : ['@timestamp']}}}
+    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}, 'fields': ['@timestamp']}}}
     while END - start > ea.run_every:
         end = start + ea.run_every
         query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)

@@ -11,9 +11,6 @@ from util import lookup_es_key
 from util import pretty_ts
 from util import ts_now
 from util import ts_to_dt
-from util import int_to_ts
-from util import timedelta_to_int
-from util import dt_to_int
 
 
 class RuleType(object):
@@ -171,13 +168,12 @@ class FrequencyRule(RuleType):
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
         self.get_ts = lambda event: event[0]['fields'][self.ts_field]
 
-
     def add_count_data(self, data):
         """ Add count data to the rule. Data should be of the form {ts: count}. """
         if len(data) > 1:
             raise EAException('add_count_data can only accept one count at a time')
         for ts, count in data.iteritems():
-            event = ({'fields' : {self.ts_field: ts}, self.ts_field: ts}, count)
+            event = ({'fields': {self.ts_field: ts}, self.ts_field: ts}, count)
             self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
             self.check_for_match('all')
 
@@ -185,9 +181,9 @@ class FrequencyRule(RuleType):
         for timestamp, buckets in terms.iteritems():
             for bucket in buckets:
                 count = bucket['doc_count']
-                event = ({'fields' : {self.ts_field: timestamp},
-                    self.ts_field: timestamp,
-                    self.rules['query_key']: bucket['key']}, count)
+                event = ({'fields': {self.ts_field: timestamp},
+                         self.ts_field: timestamp,
+                         self.rules['query_key']: bucket['key']}, count)
                 self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
                 self.check_for_match(bucket['key'])
 
@@ -231,10 +227,8 @@ class FrequencyRule(RuleType):
         else:
             starttime = pretty_ts(dt_to_ts(ts_to_dt(match[self.ts_field]) - self.rules['timeframe']), lt)
             endtime = pretty_ts(match[self.ts_field], lt)
-
-        
         message = 'At least %d events occurred between %s and %s\n\n' % (self.rules['num_events'],
-                                                                        starttime,
+                                                                         starttime,
                                                                          endtime)
         return message
 
@@ -267,8 +261,6 @@ class EventWindow(object):
         else:
             self.data.append(event)
             self.running_count += event[1]
-
-
         while self.duration() >= self.timeframe:
             oldest = self.data.popleft()
             self.running_count -= oldest[1]
@@ -323,7 +315,7 @@ class SpikeRule(RuleType):
         self.cur_windows = {}
 
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
-        self.get_ts = lambda e: e[0]['fields'][self.ts_field] 
+        self.get_ts = lambda e: e[0]['fields'][self.ts_field]
         self.first_event = {}
         self.skip_checks = {}
 
@@ -334,15 +326,15 @@ class SpikeRule(RuleType):
         if len(data) > 1:
             raise EAException('add_count_data can only accept one count at a time')
         for ts, count in data.iteritems():
-            self.handle_event({'fields' : {self.ts_field: ts},self.ts_field: ts}, count, 'all')
+            self.handle_event({'fields': {self.ts_field: ts}, self.ts_field: ts}, count, 'all')
 
     def add_terms_data(self, terms):
         for timestamp, buckets in terms.iteritems():
             for bucket in buckets:
                 count = bucket['doc_count']
-                event = {'fields' : {self.ts_field: timestamp},
-                self.ts_field: timestamp,
-                self.rules['query_key']: bucket['key']}
+                event = {'fields': {self.ts_field: timestamp},
+                         self.ts_field: timestamp,
+                         self.rules['query_key']: bucket['key']}
                 key = bucket['key']
                 self.handle_event(event, count, key)
 
@@ -436,7 +428,7 @@ class SpikeRule(RuleType):
                 self.cur_windows.pop(qk)
                 self.ref_windows.pop(qk)
                 continue
-            placeholder = {'fields' : {self.ts_field: ts}}
+            placeholder = {'fields': {self.ts_field: ts}}
             # The placeholder may trigger an alert, in which case, qk will be expected
             if qk != 'all':
                 placeholder.update({self.rules['query_key']: qk})
@@ -475,23 +467,22 @@ class FlatlineRule(FrequencyRule):
             del self.first_event[key]
 
     def get_match_str(self, match):
-        
-
         if self.rules.get('timestamp_type') == 'long':
             starttime = dt_to_ts(match['fields'][self.ts_field] - self.rules['timeframe'])
             endtime = dt_to_ts(match['fields'][self.ts_field])
         else:
+            lt = self.rules.get('use_local_time')
             starttime = pretty_ts(dt_to_ts(ts_to_dt(match[self.ts_field]) - self.rules['timeframe']), lt)
             endtime = pretty_ts(match[self.ts_field], lt)
         message = 'An abnormally low number of events occurred around %s.\n' % endtime
-        message += 'Between %s and %s, there were less than %s events.\n\n' % starttime,endtime,self.rules['threshold']
+        message += 'Between %s and %s, there were less than %s events.\n\n' % starttime, endtime, self.rules['threshold']
         return message
 
     def garbage_collect(self, ts):
         # We add an event with a count of zero to the EventWindow for each key. This will cause the EventWindow
         # to remove events that occured more than one `timeframe` ago, and call onRemoved on them.
         for key in self.occurrences.keys():
-            self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({'fields' : {self.ts_field: ts}, self.ts_field: ts}, 0))
+            self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({'fields': {self.ts_field: ts}, self.ts_field: ts}, 0))
             self.check_for_match(key)
 
 

@@ -190,7 +190,6 @@ class EmailAlerter(Alerter):
             self.rule['bcc'] = [self.rule['bcc']]
 
     def alert(self, matches):
-        
         body = ''
         for match in matches:
             body += str(BasicMatchString(self.rule, match))
@@ -215,9 +214,8 @@ class EmailAlerter(Alerter):
             to_addr = to_addr + self.rule['bcc']
 
         try:
-            
             if(self.smtp_port):
-                self.smtp = SMTP(self.smtp_host,self.smtp_port)
+                self.smtp = SMTP(self.smtp_host, self.smtp_port)
             else:
                 self.smtp = SMTP(self.smtp_host)
             self.smtp.ehlo()
@@ -233,7 +231,6 @@ class EmailAlerter(Alerter):
         self.smtp.close()
 
         logging.info("Sent email to %s" % (self.rule['email']))
-
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])

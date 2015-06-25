@@ -28,7 +28,7 @@ def hits(size, **kwargs):
 
 
 def create_event(timestamp, timestamp_field='@timestamp', **kwargs):
-    event = {timestamp_field: timestamp , 'fields' : {timestamp_field: timestamp}}
+    event = {timestamp_field: timestamp, 'fields': {timestamp_field: timestamp}}
     event.update(**kwargs)
     return event
 
@@ -222,7 +222,7 @@ def test_spike():
     events2 = events[:50]
     for event in events[50:]:
         events2.append(event)
-        events2.append({'fields' : {'ts': event['ts'] + datetime.timedelta(milliseconds=1)},'ts': event['ts'] + datetime.timedelta(milliseconds=1)})
+        events2.append({'fields': {'ts': event['ts'] + datetime.timedelta(milliseconds=1)}, 'ts': event['ts'] + datetime.timedelta(milliseconds=1)})
     rules['spike_type'] = 'up'
     rule = SpikeRule(rules)
     rule.add_data(events2)

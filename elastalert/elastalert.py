@@ -30,7 +30,6 @@ from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import dt_to_int
-from util import timedelta_to_int
 from util import int_to_ts
 
 
@@ -163,7 +162,7 @@ class ElastAlerter():
             return index
 
     @staticmethod
-    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', timestamp_type = 'datetime'):
+    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', timestamp_type='datetime'):
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
@@ -220,9 +219,9 @@ class ElastAlerter():
         """ Process results from Elasticearch. This replaces timestamps with datetime objects
         and creates compound query_keys. """
         for hit in hits:
-            if rule.get('timestamp_type','datetime') == 'long':
+            if rule.get('timestamp_type', 'datetime') == 'long':
                 hit['fields'][rule['timestamp_field']] = ts_to_dt(int_to_ts(hit['fields'][rule['timestamp_field']]))
-            else :
+            else:
                 hit['fields'][rule['timestamp_field']] = ts_to_dt(hit['fields'][rule['timestamp_field']])
             if rule.get('compound_query_key'):
                 values = [hit['_source'].get(key, 'None') for key in rule['compound_query_key']]
@@ -236,10 +235,10 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A list of hits, bounded by self.max_query_size.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'] , timestamp_type = rule.get('timestamp_type','datetime'))
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], timestamp_type=rule.get('timestamp_type', 'datetime'))
         try:
-            if rule.get('_source_enabled',True):
-                res = self.current_es.search(index=index, size=self.max_query_size, _source_include=rule['include'] , body=query, ignore_unavailable=True)
+            if rule.get('_source_enabled', True):
+                res = self.current_es.search(index=index, size=self.max_query_size, _source_include=rule['include'], body=query, ignore_unavailable=True)
                 logging.debug(res)
             else:
                 res = self.current_es.search(index=index, size=self.max_query_size, body=query, ignore_unavailable=True)
@@ -272,7 +271,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A dictionary mapping timestamps to number of hits for that time period.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, timestamp_type = rule.get('timestamp_type','datetime'))
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, timestamp_type=rule.get('timestamp_type', 'datetime'))
         query = {'query': {'filtered': query}}
 
         try:
@@ -297,7 +296,7 @@ class ElastAlerter():
             if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
                 filter_key += '.raw'
             rule_filter.extend([{'term': {filter_key: qk}}])
-        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, timestamp_type = rule.get('timestamp_type','datetime'))
+        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, timestamp_type=rule.get('timestamp_type', 'datetime'))
         if size is None:
             size = rule.get('terms_size', 50)
         query = self.get_terms_query(base_query, size, key)
@@ -1196,7 +1195,6 @@ class ElastAlerter():
             last_until, exponent = self.silence_cache[name]
         else:
             # If this isn't cached, this is the first alert or writeback_es is down, normal realert
-            
             return timestamp + rule['realert'], 0
 
         if not rule.get('exponential_realert'):
