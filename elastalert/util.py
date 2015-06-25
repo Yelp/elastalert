@@ -60,9 +60,9 @@ def replace_hits_ts(hits, rule):
     """Iterate through a hits dictionary from ElasticSearch, and convert string timestamps to datetime objects
     """
     for hit in hits:
-        if rule['timestamp_type'] == 'long':
+        if rule.get('timestamp_type','datetime') == 'long':
             hit['fields'][rule['timestamp_field']] = datetime.datetime.fromtimestamp((hit['fields'][rule['timestamp_field']])/1000)
-        if rule['timestamp_type'] == 'datetime' :  
+        if rule.get('timestamp_type','datetime') == 'datetime' :  
             hit['fields'][rule['timestamp_field']] = ts_to_dt(hit['fields'][rule['timestamp_field']])
 
 

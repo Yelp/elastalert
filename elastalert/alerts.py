@@ -216,13 +216,15 @@ class EmailAlerter(Alerter):
             to_addr = to_addr + self.rule['bcc']
 
         try:
-            self.smtp = SMTP(self.smtp_host)
+            
             if(self.smtp_port):
                 self.smtp = SMTP(self.smtp_host,self.smtp_port)
-                self.smtp.ehlo()
+            else:
+                self.smtp = SMTP(self.smtp_host)
+            self.smtp.ehlo()
+            if self.smtp.has_extn('STARTTLS'):
                 self.smtp.starttls()
             if 'smtp_auth_file' in self.rule:
-                
                 self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:
             raise EAException("Error connecting to SMTP host: %s" % (e))

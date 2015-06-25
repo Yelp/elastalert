@@ -205,7 +205,7 @@ class ElastAlerter():
         """
         query = {'sort': {timestamp_field: {'order': 'asc'}}}
         try:
-            res = self.current_es.search(index=index, size=1, body=query, _source_include=[timestamp_field] ,ignore_unavailable=True)
+            res = self.current_es.search(index=index, size=1, body=query, _source_include=[timestamp_field], ignore_unavailable=True)
         except ElasticsearchException as e:
             self.handle_error("Elasticsearch query error: %s" % (e), {'index': index})
             return '1969-12-30T00:00:00Z'
@@ -219,7 +219,7 @@ class ElastAlerter():
         """ Process results from Elasticearch. This replaces timestamps with datetime objects
         and creates compound query_keys. """
         for hit in hits:
-            if rule['timestamp_type'] == 'long':
+            if rule.get('timestamp_type','datetime') == 'long':
                 hit['fields'][rule['timestamp_field']] = ts_to_dt(int_to_ts(hit['fields'][rule['timestamp_field']]))
             else :
                 hit['fields'][rule['timestamp_field']] = ts_to_dt(hit['fields'][rule['timestamp_field']])
@@ -235,11 +235,11 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A list of hits, bounded by self.max_query_size.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'] , timestamp_type = rule['timestamp_type'])
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'] , timestamp_type = rule.get('timestamp_type','datetime'))
         try:
-            if rule['_source_enabled']:
+            if rule.get('_source_enabled',True):
                 res = self.current_es.search(index=index, size=self.max_query_size, _source_include=rule['include'] , body=query, ignore_unavailable=True)
-                logging.info(res)
+                logging.debug(res)
             else:
                 res = self.current_es.search(index=index, size=self.max_query_size, body=query, ignore_unavailable=True)
         except ElasticsearchException as e:
@@ -271,7 +271,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A dictionary mapping timestamps to number of hits for that time period.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False , timestamp_type = rule['timestamp_type'])
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False , timestamp_type = rule.get('timestamp_type','datetime'))
         query = {'query': {'filtered': query}}
 
         try:
@@ -296,7 +296,7 @@ class ElastAlerter():
             if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
                 filter_key += '.raw'
             rule_filter.extend([{'term': {filter_key: qk}}])
-        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False , timestamp_type = rule['timestamp_type'])
+        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False , timestamp_type = rule.get('timestamp_type','datetime'))
         if size is None:
             size = rule.get('terms_size', 50)
         query = self.get_terms_query(base_query, size, key)
@@ -333,12 +333,7 @@ class ElastAlerter():
         now = ts_now()
         remove = []
         buffer_time = rule.get('buffer_time', self.buffer_time)
-        if rule.get('timestamp_type','datetime') == 'long':
-            now = dt_to_int(now)
-            buffer_time = timedelta_to_int(buffer_time)
         for _id, timestamp in rule['processed_hits'].iteritems():
-            if rule.get('timestamp_type','datetime') == 'long':
-                timestamp = dt_to_int(timestamp)
             if now - timestamp > buffer_time:
                 remove.append(_id)
         map(rule['processed_hits'].pop, remove)
@@ -779,7 +774,7 @@ class ElastAlerter():
             raise EAException("Error querying for dashboard: %s" % (e))
 
         if res['hits']['hits']:
-            if rule['_source_enabled']:
+            if rule.get('_source_enabled',True):
                 return json.loads(res['hits']['hits'][0]['_source']['dashboard'])
             else :
                 return json.loads(res['hits']['hits'][0]['_source']['dashboard'])
@@ -1142,6 +1137,7 @@ class ElastAlerter():
 
     def handle_uncaught_exception(self, exception, rule):
         """ Disables a rule and sends a notifcation. """
+        logging.info(traceback.format_exc())
         self.handle_error('Uncaught exception running rule %s: %s' % (rule['name'], exception), {'rule': rule['name']})
         if self.disable_rules_on_error:
             self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
