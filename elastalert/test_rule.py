@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+from __future__ import print_function
 
 import datetime
 import logging
 import random
 import re
 import string
+import sys
 
 import argparse
 import mock
@@ -18,19 +20,19 @@ from elastalert.config import load_options
 from elastalert.elastalert import ElastAlerter
 from elastalert.elastalert import Elasticsearch
 from elastalert.util import lookup_es_key
-from elastalert.util import replace_hits_ts
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
 
 logging.getLogger().setLevel(logging.INFO)
+logging.getLogger('elasticsearch').setLevel(logging.WARNING)
 
 
 def print_terms(terms, parent):
     """ Prints a list of flattened dictionary keys """
-    logging.info("\nAvailable terms in first hit:")
+    print("\nAvailable terms in first hit:")
     for term in terms:
         if type(terms[term]) != dict:
-            logging.info('\t', parent + term)
+            print('\t' + parent + term)
         else:
             print_terms(terms[term], parent + term + '.')
 
@@ -46,7 +48,7 @@ class MockElastAlerter(object):
         with open(filename) as fh:
             conf = yaml.load(fh)
         load_options(conf)
-        logging.info("Successfully loaded %s\n" % (conf['name']))
+        print("Successfully loaded %s\n" % (conf['name']))
 
         if args.schema_only:
             return []
@@ -63,8 +65,8 @@ class MockElastAlerter(object):
         try:
             res = es_client.search(index, size=1, body=query, ignore_unavailable=True)
         except Exception as e:
-            logging.info("Error running your filter:")
-            logging.info(repr(e)[:2048])
+            print("Error running your filter:", file=sys.stderr)
+            print(repr(e)[:2048], file=sys.stderr)
             return None
         num_hits = len(res['hits']['hits'])
         if not num_hits:
@@ -79,44 +81,44 @@ class MockElastAlerter(object):
         try:
             res = es_client.count(index, doc_type=doc_type, body=count_query, ignore_unavailable=True)
         except Exception as e:
-            logging.info("Error querying Elasticsearch:")
-            logging.info(repr(e)[:2048])
+            print("Error querying Elasticsearch:", file=sys.stderr)
+            print(repr(e)[:2048], file=sys.stderr)
             return None
 
         num_hits = res['count']
-        logging.info("Got %s hits from the last %s day%s" % (num_hits, args.days, 's' if args.days > 1 else ''))
+        print("Got %s hits from the last %s day%s" % (num_hits, args.days, 's' if args.days > 1 else ''))
         print_terms(terms, '')
 
         # Check for missing keys
         pk = conf.get('primary_key')
         ck = conf.get('compare_key')
         if pk and not lookup_es_key(terms, pk):
-            logging.info("Warning: primary key %s is either missing or null!")
+            print("Warning: primary key %s is either missing or null!", file=sys.stderr)
         if ck and not lookup_es_key(terms, ck):
-            logging.info("Warning: compare key %s is either missing or null!")
+            print("Warning: compare key %s is either missing or null!", file=sys.stderr)
 
         include = conf.get('include')
         if include:
             for term in include:
                 if not lookup_es_key(terms, term) and '*' not in term:
-                    logging.info("Included term %s may be missing or null" % (term))
+                    print("Included term %s may be missing or null" % (term), file=sys.stderr)
 
         for term in conf.get('top_count_keys', []):
             # If the index starts with 'logstash', fields with .raw will be available but won't in _source
             if term not in terms and not (term.endswith('.raw') and term[:-4] in terms and index.startswith('logstash')):
-                logging.info("top_count_key %s may be missing" % (term))
-        logging.info('')
+                print("top_count_key %s may be missing" % (term), file=sys.stderr)
+        print('')  # Newline
 
         # Download up to 10,000 documents to save
         if args.save and not args.count:
             try:
                 res = es_client.search(index, size=10000, body=query, ignore_unavailable=True)
             except Exception as e:
-                logging.info("Error running your filter:")
-                logging.info(repr(e)[:2048])
+                print("Error running your filter:", file=sys.stderr)
+                print(repr(e)[:2048], file=sys.stderr)
                 return None
             num_hits = len(res['hits']['hits'])
-            logging.info("Downloaded %s documents to save" % (num_hits))
+            print("Downloaded %s documents to save" % (num_hits))
             return res['hits']['hits']
 
         return None
@@ -147,7 +149,7 @@ class MockElastAlerter(object):
         resp = [{'_source': doc, '_id': doc['_id']} for doc in docs]
         for doc in resp:
             doc['_source'].pop('_id')
-        replace_hits_ts(resp, rule)
+        ElastAlerter.process_hits(rule, resp)
         return resp
 
     def mock_terms(self, rule, start, end, index, key, qk=None, size=None):
@@ -181,7 +183,7 @@ class MockElastAlerter(object):
         # Mock configuration. Nothing here is used except run_every
         conf = {'rules_folder': 'rules',
                 'run_every': datetime.timedelta(minutes=5),
-                'buffer_time': datetime.timedelta(minutes=10),
+                'buffer_time': datetime.timedelta(minutes=45),
                 'alert_time_limit': datetime.timedelta(hours=24),
                 'es_host': 'es',
                 'es_port': 14900,
@@ -208,7 +210,7 @@ class MockElastAlerter(object):
                 endtime = self.data[-1][timestamp_field]
                 endtime = ts_to_dt(endtime) + datetime.timedelta(seconds=1)
             except KeyError as e:
-                logging.info("All documents must have a timestamp and _id", e)
+                print("All documents must have a timestamp and _id: %s" % (e), file=sys.stderr)
                 return
 
             # Create mock _id for documents if it's missing
@@ -251,9 +253,9 @@ class MockElastAlerter(object):
             client.run_rule(rule, endtime, starttime)
 
             if mock_writeback.call_count:
-                logging.info("\nWould have written the following documents to elastalert_status:\n")
+                print("\nWould have written the following documents to elastalert_status:\n")
                 for call in mock_writeback.call_args_list:
-                    logging.info(call[0][0], '-', call[0][1], '\n')
+                    print("%s - %s\n" % (call[0][0], call[0][1]))
 
     def run_rule_test(self):
         """ Uses args to run the various components of MockElastAlerter such as loading the file, saving data, loading data, and running. """
