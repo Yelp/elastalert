@@ -84,11 +84,14 @@ def test_email():
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value'}])
         expected = [mock.call('localhost'),
+                    mock.call().ehlo(),
+                    mock.call().has_extn('STARTTLS'),
+                    mock.call().starttls(),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
 
-        body = mock_smtp.mock_calls[1][1][2]
+        body = mock_smtp.mock_calls[4][1][2]
 
         assert 'Reply-To: test@example.com' in body
         assert 'To: testing@test.test' in body
@@ -108,6 +111,9 @@ def test_email_with_auth():
 
         alert.alert([{'test_term': 'test_value'}])
         expected = [mock.call('localhost'),
+                    mock.call().ehlo(),
+                    mock.call().has_extn('STARTTLS'),
+                    mock.call().starttls(),
                     mock.call().login('someone', 'hunter2'),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
                     mock.call().close()]
@@ -124,11 +130,14 @@ def test_email_with_cc():
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value'}])
         expected = [mock.call('localhost'),
+                    mock.call().ehlo(),
+                    mock.call().has_extn('STARTTLS'),
+                    mock.call().starttls(),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
 
-        body = mock_smtp.mock_calls[1][1][2]
+        body = mock_smtp.mock_calls[4][1][2]
 
         assert 'Reply-To: test@example.com' in body
         assert 'To: testing@test.test' in body
@@ -146,11 +155,14 @@ def test_email_with_bcc():
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value'}])
         expected = [mock.call('localhost'),
+                    mock.call().ehlo(),
+                    mock.call().has_extn('STARTTLS'),
+                    mock.call().starttls(),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
 
-        body = mock_smtp.mock_calls[1][1][2]
+        body = mock_smtp.mock_calls[4][1][2]
 
         assert 'Reply-To: test@example.com' in body
         assert 'To: testing@test.test' in body
@@ -168,13 +180,16 @@ def test_email_with_cc_and_bcc():
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value'}])
         expected = [mock.call('localhost'),
+                    mock.call().ehlo(),
+                    mock.call().has_extn('STARTTLS'),
+                    mock.call().starttls(),
                     mock.call().sendmail(mock.ANY,
                                          ['testing@test.test', 'test@test.test', 'test1@test.com', 'test2@test.com', 'tester@testing.testing'],
                                          mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
 
-        body = mock_smtp.mock_calls[1][1][2]
+        body = mock_smtp.mock_calls[4][1][2]
 
         assert 'Reply-To: test@example.com' in body
         assert 'To: testing@test.test' in body
@@ -193,11 +208,14 @@ def test_email_with_args():
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value', 'test_arg1': 'testing'}])
         expected = [mock.call('localhost'),
+                    mock.call().ehlo(),
+                    mock.call().has_extn('STARTTLS'),
+                    mock.call().starttls(),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
 
-        body = mock_smtp.mock_calls[1][1][2]
+        body = mock_smtp.mock_calls[4][1][2]
 
         assert 'testing' in body
         assert '<MISSING VALUE>' in body
@@ -218,7 +236,7 @@ def test_email_query_key_in_subject():
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value', 'username': 'werbenjagermanjensen'}])
 
-        body = mock_smtp.mock_calls[1][1][2]
+        body = mock_smtp.mock_calls[4][1][2]
         lines = body.split('\n')
         found_subject = False
         for line in lines:
