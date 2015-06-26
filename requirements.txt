@@ -4,6 +4,7 @@ argparse==1.3.0
 elasticsearch==1.3.0
 jira==0.32
 jsonschema==2.2.0
+mock==1.0.0
 oauthlib==0.7.2
 python-dateutil==2.4.0
 requests==2.5.1

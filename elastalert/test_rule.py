@@ -282,6 +282,10 @@ class MockElastAlerter(object):
         if not args.schema_only and not args.count:
             self.run_elastalert(args)
 
-if __name__ == '__main__':
+
+def main():
     test_instance = MockElastAlerter()
     test_instance.run_rule_test()
+
+if __name__ == '__main__':
+    main()
