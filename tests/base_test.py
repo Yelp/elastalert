@@ -559,6 +559,30 @@ def test_kibana_dashboard(ea):
         db = json.loads(mock_es.create.call_args_list[0][1]['body']['dashboard'])
         assert 'anytest' in db['title']
 
+        # Query key filtering added
+        ea.rules[0]['query_key'] = 'foobar'
+        match['foobar'] = 'baz'
+        url = ea.use_kibana_link(ea.rules[0], match)
+        db = json.loads(mock_es.create.call_args_list[-1][1]['body']['dashboard'])
+        assert db['services']['filter']['list']['1']['field'] == 'foobar'
+        assert db['services']['filter']['list']['1']['query'] == '"baz"'
+
+        # Compound query key
+        ea.rules[0]['query_key'] = 'foo,bar'
+        ea.rules[0]['compound_query_key'] = ['foo', 'bar']
+        match['foo'] = 'cat'
+        match['bar'] = 'dog'
+        match['foo,bar'] = 'cat, dog'
+        url = ea.use_kibana_link(ea.rules[0], match)
+        db = json.loads(mock_es.create.call_args_list[-1][1]['body']['dashboard'])
+        found_filters = 0
+        for filter_id, filter_dict in db['services']['filter']['list'].items():
+            if (filter_dict['field'] == 'foo' and filter_dict['query'] == '"cat"') or \
+               (filter_dict['field'] == 'bar' and filter_dict['query'] == '"dog"'):
+                found_filters += 1
+                continue
+        assert found_filters == 2
+
 
 def test_rule_changes(ea):
     ea.rule_hashes = {'rule1.yaml': 'ABC',
