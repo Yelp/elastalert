@@ -214,7 +214,7 @@ class EmailAlerter(Alerter):
             to_addr = to_addr + self.rule['bcc']
 
         try:
-            if(self.smtp_port):
+            if self.smtp_port:
                 self.smtp = SMTP(self.smtp_host, self.smtp_port)
             else:
                 self.smtp = SMTP(self.smtp_host)

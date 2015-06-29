@@ -23,12 +23,11 @@ def hits(size, **kwargs):
         n += 1
         event = create_event(ts, **kwargs)
         ret.append(event)
-        print event
     return ret
 
 
 def create_event(timestamp, timestamp_field='@timestamp', **kwargs):
-    event = {timestamp_field: timestamp, 'fields': {timestamp_field: timestamp}}
+    event = {timestamp_field: timestamp}
     event.update(**kwargs)
     return event
 
@@ -115,7 +114,7 @@ def test_freq_out_of_order():
     assert len(rule.matches) == 0
 
     # Try to add events from before the first occurrence
-    rule.add_data([{'fields': {'blah': ts_to_dt('2014-09-26T11:00:00')}, 'blah': ts_to_dt('2014-09-26T11:00:00'), 'username': 'qlo'}] * 50)
+    rule.add_data([{'blah': ts_to_dt('2014-09-26T11:00:00'), 'username': 'qlo'}] * 50)
     assert len(rule.matches) == 0
 
     rule.add_data(events[15:20])
@@ -222,7 +221,7 @@ def test_spike():
     events2 = events[:50]
     for event in events[50:]:
         events2.append(event)
-        events2.append({'fields': {'ts': event['ts'] + datetime.timedelta(milliseconds=1)}, 'ts': event['ts'] + datetime.timedelta(milliseconds=1)})
+        events2.append({'ts': event['ts'] + datetime.timedelta(milliseconds=1)})
     rules['spike_type'] = 'up'
     rule = SpikeRule(rules)
     rule.add_data(events2)

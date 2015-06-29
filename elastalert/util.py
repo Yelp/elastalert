@@ -56,16 +56,6 @@ def lookup_es_key(lookup_dict, term):
         return go_deeper
 
 
-def replace_hits_ts(hits, rule):
-    """Iterate through a hits dictionary from ElasticSearch, and convert string timestamps to datetime objects
-    """
-    for hit in hits:
-        if rule.get('timestamp_type', 'datetime') == 'long':
-            hit['fields'][rule['timestamp_field']] = datetime.datetime.fromtimestamp((hit['fields'][rule['timestamp_field']]) / 1000)
-        if rule.get('timestamp_type', 'datetime') == 'datetime':
-            hit['fields'][rule['timestamp_field']] = ts_to_dt(hit['fields'][rule['timestamp_field']])
-
-
 def ts_to_dt(timestamp):
     if isinstance(timestamp, datetime.datetime):
         logging.warning('Expected str timestamp, got datetime')
@@ -155,16 +145,29 @@ def seconds(td):
     return td.seconds + td.days * 24 * 3600
 
 
+def total_seconds(td):
+    # For python 2.6 compatability
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+
+
 def dt_to_int(dt):
     dt = dt.replace(tzinfo=None)
-    return int((dt - datetime.datetime.utcfromtimestamp(0)).total_seconds() * 1000)
+    return int(total_seconds((dt - datetime.datetime.utcfromtimestamp(0))) * 1000)
 
 
-def int_to_ts(time):
-    time = time / 1000
-    dt = datetime.datetime.fromtimestamp(time)
-    return dt_to_ts(dt)
+def unixms_to_dt(ts):
+    return unix_to_dt(ts / 1000)
 
 
-def timedelta_to_int(timedelta):
-    return int(timedelta.total_seconds() * 1000)
+def unix_to_dt(ts):
+    dt = datetime.datetime.utcfromtimestamp(ts)
+    dt = dt.replace(tzinfo=dateutil.tz.tzutc())
+    return dt
+
+
+def dt_to_unix(dt):
+    return total_seconds(dt - datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzutc()))
+
+
+def dt_to_unixms(dt):
+    return dt_to_unix(dt) * 1000

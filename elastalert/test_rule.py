@@ -47,7 +47,7 @@ class MockElastAlerter(object):
         filename = args.file
         with open(filename) as fh:
             conf = yaml.load(fh)
-        load_options(conf, {})
+        load_options(conf)
         print("Successfully loaded %s\n" % (conf['name']))
 
         if args.schema_only:

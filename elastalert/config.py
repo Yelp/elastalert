@@ -11,7 +11,13 @@ import ruletypes
 import yaml
 import yaml.scanner
 from staticconf.loader import yaml_loader
+from util import dt_to_ts
+from util import dt_to_unix
+from util import dt_to_unixms
 from util import EAException
+from util import ts_to_dt
+from util import unix_to_dt
+from util import unixms_to_dt
 
 
 # schema for rule yaml
@@ -110,13 +116,29 @@ def load_options(rule, conf=None):
     rule.setdefault('query_delay', datetime.timedelta(seconds=0))
     rule.setdefault('timestamp_field', '@timestamp')
     rule.setdefault('filter', [])
-    rule.setdefault('timestamp_type', rule.get('timestamp_type', 'datetime'))
-    rule.setdefault('_source_enabled', rule.get('_source_enabled', True))
+    rule.setdefault('timestamp_type', 'iso')
+    rule.setdefault('_source_enabled', True)
     rule.setdefault('use_local_time', True)
+
+    # Set timestamp_type conversion function, used when generating queries and processing hits
+    rule['timestamp_type'] = rule['timestamp_type'].strip().lower()
+    if rule['timestamp_type'] == 'iso':
+        rule['ts_to_dt'] = ts_to_dt
+        rule['dt_to_ts'] = dt_to_ts
+    elif rule['timestamp_type'] == 'unix':
+        rule['ts_to_dt'] = unix_to_dt
+        rule['dt_to_ts'] = dt_to_unix
+    elif rule['timestamp_type'] == 'unix_ms':
+        rule['ts_to_dt'] = unixms_to_dt
+        rule['dt_to_ts'] = dt_to_unixms
+    else:
+        raise EAException('timestamp_type must be one of iso, unix, or unix_ms')
 
     # Set email options from global config
     if conf:
         rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
+        if 'smtp_host' in conf:
+            rule.setdefault('smtp_host', conf.get['smtp_port'])
         rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
         if 'email_reply_to' in conf:
             rule.setdefault('email_reply_to', conf['email_reply_to'])
