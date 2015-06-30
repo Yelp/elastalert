@@ -135,15 +135,16 @@ class MockElastAlerter(object):
         """ Mocks the effects of get_hits using global data instead of Elasticsearch. """
         docs = []
         for doc in self.data:
+            # Match docs in our time period of interest
             if start <= ts_to_dt(doc[rule['timestamp_field']]) < end:
-                docs.append(doc)
-
-        # Remove all fields which don't match 'include'
-        for doc in docs:
-            for field in doc:
-                if field != '_id':
-                    if not any([re.match(incl.replace('*', '.*'), field) for incl in rule['include']]):
-                        doc.pop(field)
+                # Remove all fields which don't match 'include'
+                filtered_doc = {}
+                for field in doc:
+                    if field != '_id':
+                        if not any([re.match(incl.replace('*', '.*'), field) for incl in rule['include']]):
+                            continue
+                    filtered_doc[field] = doc[field]
+                docs.append(filtered_doc)
 
         # Separate _source and _id, convert timestamps
         resp = [{'_source': doc, '_id': doc['_id']} for doc in docs]
