@@ -140,12 +140,12 @@ class MockElastAlerter(object):
 
         # Remove all fields which don't match 'include'
         for doc in docs:
-            remove = []
+            fields_to_remove = []
             for field in doc:
                 if field != '_id':
                     if not any([re.match(incl.replace('*', '.*'), field) for incl in rule['include']]):
-                        remove.append(field)
-            map(doc.pop, remove)
+                        fields_to_remove.append(field)
+            map(doc.pop, fields_to_remove)
 
         # Separate _source and _id, convert timestamps
         resp = [{'_source': doc, '_id': doc['_id']} for doc in docs]
