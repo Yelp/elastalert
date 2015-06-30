@@ -29,7 +29,6 @@ logging.getLogger('elasticsearch').setLevel(logging.WARNING)
 
 def print_terms(terms, parent):
     """ Prints a list of flattened dictionary keys """
-    print("\nAvailable terms in first hit:")
     for term in terms:
         if type(terms[term]) != dict:
             print('\t' + parent + term)
@@ -87,6 +86,7 @@ class MockElastAlerter(object):
 
         num_hits = res['count']
         print("Got %s hits from the last %s day%s" % (num_hits, args.days, 's' if args.days > 1 else ''))
+        print("\nAvailable terms in first hit:")
         print_terms(terms, '')
 
         # Check for missing keys
