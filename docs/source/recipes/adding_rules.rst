@@ -35,7 +35,7 @@ option, this will be automatically converted to a ``datetime.timedelta`` object 
 (generally coming from the fields in Elasticsearch) should be put into a dictionary object and
 added to ``self.matches``. ElastAlert will pop items out periodically and send alerts based on these objects. It is
 recommended that you use ``self.add_match(match)`` to add matches. In addition to appending to ``self.matches``,
-``self.add_match`` will convert the datetime ``@timestamp`` back into an ISO 8601 timestamp.
+``self.add_match`` will convert the datetime ``@timestamp`` back into an ISO8601 timestamp.
 
 ``self.required_options``: This is a set of options that must exist in the configuration file. ElastAlert will
 ensure that all of these fields exist before trying to instantiate a ``RuleType`` instance.
