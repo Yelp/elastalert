@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+import logging
 from collections import deque
 
 from elasticsearch.client import Elasticsearch
@@ -21,7 +22,7 @@ class RuleType(object):
     """
     required_options = frozenset()
 
-    def __init__(self, rules):
+    def __init__(self, rules, args=None):
         self.matches = []
         self.rules = rules
         self.occurrences = {}
@@ -479,8 +480,8 @@ class FlatlineRule(FrequencyRule):
 class NewTermsRule(RuleType):
     """ Alerts on a new value in a list of fields. """
 
-    def __init__(self, *args):
-        super(NewTermsRule, self).__init__(*args)
+    def __init__(self, rule, args=None):
+        super(NewTermsRule, self).__init__(rule, args)
         self.seen_values = {}
         # Allow the use of query_key or fields
         if 'fields' not in self.rules:
@@ -495,28 +496,42 @@ class NewTermsRule(RuleType):
             self.fields = [self.fields]
         if self.rules.get('use_terms_query') and len(self.fields) != 1:
             raise EAException("use_terms_query can only be used with one field at a time")
-        self.get_all_terms()
+        try:
+            self.get_all_terms(args)
+        except Exception as e:
+            # Refuse to start if we cannot get existing terms
+            raise EAException('Error searching for existing terms: %s' % (e))
 
-    def get_all_terms(self):
+    def get_all_terms(self, args):
         """ Performs a terms aggregation for each field to get every existing term. """
         self.es = Elasticsearch(host=self.rules['es_host'], port=self.rules['es_port'])
         window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
-
         field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
         query_template = {"aggs": {"values": {"terms": field_name}}}
-        if self.rules.get('use_strftime_index'):
+        if args and args.start:
+            end = ts_to_dt(args.start)
+        else:
             end = ts_now()
-            start = end - window_size
+        start = end - window_size
+        if self.rules.get('use_strftime_index'):
             index = format_index(self.rules['index'], start, end)
         else:
             index = self.rules['index']
+        time_filter = {self.rules['timestamp_field']: {'lte': dt_to_ts(end), 'gte': dt_to_ts(start)}}
+        query_template['filter'] = {'bool': {'must': [{'range': time_filter}]}}
+        query = {'aggs': {'filtered': query_template}}
 
         for field in self.fields:
             field_name['field'] = field
-            res = self.es.search(body=query_template, index=index, ignore_unavailable=True, timeout=50)
-            buckets = res['aggregations']['values']['buckets']
-            keys = [bucket['key'] for bucket in buckets]
-            self.seen_values[field] = keys
+            res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout=50)
+            if 'aggregations' in res:
+                buckets = res['aggregations']['filtered']['values']['buckets']
+                keys = [bucket['key'] for bucket in buckets]
+                self.seen_values[field] = keys
+                logging.info('Found %s unique values for %s' % (len(keys), field))
+            else:
+                self.seen_values[field] = []
+                logging.info('Found no values for %s' % (field))
 
     def add_data(self, data):
         for document in data:

@@ -60,11 +60,21 @@ class ElastAlerter():
 
     def __init__(self, args):
         self.parse_args(args)
-        self.conf = load_rules(self.args.config, use_rule=self.args.rule)
-        self.max_query_size = self.conf['max_query_size']
-        self.rules = self.conf['rules']
         self.debug = self.args.debug
         self.verbose = self.args.verbose
+
+        if self.debug:
+            self.verbose = True
+
+        if self.verbose:
+            logging.getLogger().setLevel(logging.INFO)
+
+        if not self.args.es_debug:
+            logging.getLogger('elasticsearch').setLevel(logging.WARNING)
+
+        self.conf = load_rules(self.args)
+        self.max_query_size = self.conf['max_query_size']
+        self.rules = self.conf['rules']
         self.writeback_index = self.conf['writeback_index']
         self.run_every = self.conf['run_every']
         self.alert_time_limit = self.conf['alert_time_limit']
@@ -86,15 +96,6 @@ class ElastAlerter():
         self.es_conn_config = self.build_es_conn_config(self.conf)
 
         self.writeback_es = self.new_elasticsearch(self.es_conn_config)
-
-        if self.debug:
-            self.verbose = True
-
-        if self.verbose:
-            logging.getLogger().setLevel(logging.INFO)
-
-        if not self.args.es_debug:
-            logging.getLogger('elasticsearch').setLevel(logging.WARNING)
 
         for rule in self.rules:
             rule = self.init_rule(rule)
