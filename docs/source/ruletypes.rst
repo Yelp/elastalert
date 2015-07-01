@@ -450,69 +450,72 @@ consider the following examples::
     " Alert if at least 15 events occur within two hours and less than a quarter of that number occurred within the previous two hours. "
     timeframe: hours: 2
     spike_height: 4
+    spike_type: up
     threshold_cur: 15
 
-    hour1: 5 events (ref: 0, cur: 5) - No alert because threshold_cur not met
-    hour2: 5 events (ref: 0, cur: 10) - No alert because threshold_cur not met
-    hour3: 10 events (ref: 5, cur: 15) - No alert because spike_height not met
-    hour4: 35 events (ref: 10, cur: 45) - Alert because spike_height and threshold_cur met
+    hour1: 5 events (ref: 0, cur: 5) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour2: 5 events (ref: 0, cur: 10) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour3: 10 events (ref: 5, cur: 15) - No alert because (a) spike_height not met, (b) ref window not filled
+    hour4: 35 events (ref: 10, cur: 45) - Alert because (a) spike_height met, (b) threshold_cur met, (c) ref window filled
 
     hour1: 20 events (ref: 0, cur: 20) - No alert because ref window not filled
     hour2: 21 events (ref: 0, cur: 41) - No alert because ref window not filled
-    hour3: 19 events (ref: 20, cur: 40) - No alert because spike_height not met
+    hour3: 19 events (ref: 20, cur: 40) - No alert because (a) spike_height not met, (b) ref window not filled
     hour4: 23 events (ref: 41, cur: 42) - No alert because spike_height not met
 
-    hour1: 10 events (ref: 0, cur: 10) - No alert because threshold_cur not met
-    hour2: 0 events (ref: 0, cur: 10) - No alert because threshold_cur not met
-    hour3: 0 events (ref: 10, cur: 0) - No alert because spike_height not met
+    hour1: 10 events (ref: 0, cur: 10) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour2: 0 events (ref: 0, cur: 10) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour3: 0 events (ref: 10, cur: 0) - No alert because (a) threshold_cur not met, (b) ref window not filled, (c) spike_height not met
     hour4: 30 events (ref: 10, cur: 30) - No alert because spike_height not met
-    hour5: 5 events (ref: 0, cur: 35) - Alert because threshold_cur and spike_height met
+    hour5: 5 events (ref: 0, cur: 35) - Alert because (a) spike_height met, (b) threshold_cur met, (c) ref window filled
 
     " Alert if at least 5 events occur within two hours, and twice as many events occur within the next two hours. "
     timeframe: hours: 2
     spike_height: 2
+    spike_type: up
     threshold_ref: 5
 
-    hour1: 20 events (ref: 0, cur: 20) - No alert because threshold_ref not met
-    hour2: 100 events (ref: 0, cur: 120) - No alert because threshold_ref not met
+    hour1: 20 events (ref: 0, cur: 20) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour2: 100 events (ref: 0, cur: 120) - No alert because (a) threshold_ref not met, (b) ref window not filled
     hour3: 100 events (ref: 20, cur: 200) - No alert because ref window not filled
     hour4: 100 events (ref: 120, cur: 200) - No alert because spike_height not met
 
-    hour1: 0 events (ref: 0, cur: 0) - No alert because threshold_ref not met
-    hour1: 20 events (ref: 0, cur: 20) - No alert because threshold_ref not met
-    hour2: 100 events (ref: 0, cur: 120) - No alert because threshold_ref not met
-    hour3: 100 events (ref: 20, cur: 200) - Alert because threshold_ref and spike_height met
+    hour1: 0 events (ref: 0, cur: 0) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour1: 20 events (ref: 0, cur: 20) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour2: 100 events (ref: 0, cur: 120) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour3: 100 events (ref: 20, cur: 200) - Alert because (a) spike_height met, (b) threshold_ref met, (c) ref window filled
 
-    hour1: 1 events (ref: 0, cur: 1) - No alert because threshold_ref not met
-    hour2: 2 events (ref: 0, cur: 3) - No alert because threshold_ref not met
-    hour3: 2 events (ref: 1, cur: 15) - No alert because threshold_ref not met
+    hour1: 1 events (ref: 0, cur: 1) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour2: 2 events (ref: 0, cur: 3) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour3: 2 events (ref: 1, cur: 4) - No alert because (a) threshold_ref not met, (b) ref window not filled
     hour4: 1000 events (ref: 3, cur: 1002) - No alert because threshold_ref not met
     hour5: 2 events (ref: 4, cur: 1002) - No alert because threshold_ref not met
-    hour6: 4 events: ref(1002, cur: 6) - No alert because spike_height not met
+    hour6: 4 events: (ref: 1002, cur: 6) - No alert because spike_height not met
 
-    hour1: 1000 events (ref: 0, cur: 1000) - No alert because threshold_ref not met
-    hour2: 0 events (ref: 0, cur: 1000) - No alert because threshold_ref not met
-    hour3: 0 events (ref: 1000, cur: 0) - No alert because spike_height not met
+    hour1: 1000 events (ref: 0, cur: 1000) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour2: 0 events (ref: 0, cur: 1000) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour3: 0 events (ref: 1000, cur: 0) - No alert because (a) spike_height not met, (b) ref window not filled
     hour4: 0 events (ref: 1000, cur: 0) - No alert because spike_height not met
     hour5: 1000 events (ref: 0, cur: 1000) - No alert because threshold_ref not met
     hour6: 1050 events (ref: 0, cur: 2050)- No alert because threshold_ref not met
-    hour7: 1075 events (ref: 1000, cur: 2125) Alert because threshold_ref and spike_height met
+    hour7: 1075 events (ref: 1000, cur: 2125) Alert because (a) spike_height met, (b) threshold_ref met, (c) ref window filled
 
     " Alert if at least 100 events occur within two hours and less than a fifth of that number occurred in the previous two hours. "
     timeframe: hours: 2
     spike_height: 5
+    spike_type: up
     threshold_cur: 100
 
     hour1: 1000 events (ref: 0, cur: 1000) - No alert because ref window not filled
 
-    hour1: 2 events (ref: 0, cur: 2) - No alert because threshold_cur not met
-    hour2: 1 events (ref: 0, cur: 3) - No alert because threshold_cur not met
-    hour3: 20 events (ref: 2, cur: 21) - No alert because threshold_cur not met
-    hour4: 81 events (ref: 3, cur: 101) - Alert because threshold_cur and spie_height met
+    hour1: 2 events (ref: 0, cur: 2) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour2: 1 events (ref: 0, cur: 3) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour3: 20 events (ref: 2, cur: 21) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour4: 81 events (ref: 3, cur: 101) - Alert because (a) spike_height met, (b) threshold_cur met, (c) ref window filled
 
-    hour1: 10 events (ref: 0, cur: 10) - No alert because ref window not filled
-    hour2: 20 events (ref: 0, cur: 30) - No alert because ref window not filled
-    hour3: 40 events (ref: 10, cur: 60) - No alert because threshold_cur not met
+    hour1: 10 events (ref: 0, cur: 10) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour2: 20 events (ref: 0, cur: 30) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour3: 40 events (ref: 10, cur: 60) - No alert because (a) threshold_cur not met, (b) ref window not filled
     hour4: 80 events (ref: 30, cur: 120) - No alert because spike_height not met
     hour5: 200 events (ref: 60, cur: 280) - No alert because spike_height not met
 
