@@ -112,7 +112,7 @@ Now, in a file named ``my_rules.py``, add
                     time_end = dateutil.parser.parse(self.rule['time_end']).time()
                     
                     # If the time falls between start and end
-                    if str_time > time_start and str_time < time_end:
+                    if login_time > time_start and login_time < time_end:
                         
                         # To add a match, use self.add_match
                         self.add_match(document)
