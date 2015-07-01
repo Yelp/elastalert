@@ -139,7 +139,7 @@ means that if one match occurred at 12:00, another at 1:00, and a third at 2:30,
 alert would be sent at 2:00, containing the first two matches, and another at 4:30, containing the third match plus any additional matches
 occurring before 4:30. This can be very useful if you expect a large number of matches and only want a periodic report. (Optional, time, default none)
 
-``realert``: This option allows you to ignore repeat alerts for a period of time. If the rule uses a ``query_key``, this option
+``realert``: This option allows you to ignore repeating alerts for a period of time. If the rule uses a ``query_key``, this option
 will be applied on a per key basis. All matches for a given rule, or for matches with the same ``query_key``, will be ignored for
 the given time. All matches with a missing ``query_key`` will be grouped together using a value of ``_missing``.
 This is applied to the time the alert is sent, not to the time of the event. It defaults to one minute, which means
@@ -150,8 +150,8 @@ every alert, set realert to 0 minutes. (Optional, time, default 1 minute)
 the value of ``exponential_realert`` is the maximum ``realert`` will increase to. If the time between alerts is less than twice ``realert``,
 ``realert`` will double. For example, if ``realert: minutes: 10`` and ``exponential_realert: hours: 1``, an alerts fires at 1:00 and another
 at 1:15, the next alert will not be until at least 1:35. If another alert fires between 1:35 and 2:15, ``realert`` will increase to the
-1 hour maximum. If more than 2 hours elapses before the next alert, ``realert`` will go back down. Note that alerts that are ignored, eg,
-one that occured at 1:05, would not change ``realert``. (Optional, time, no default)
+1 hour maximum. If more than 2 hours elapse before the next alert, ``realert`` will go back down. Note that alerts that are ignored (e.g.
+one that occurred at 1:05) would not change ``realert``. (Optional, time, no default)
 
 ``buffer_time``: This options allows the rule to override the ``buffer_time`` global setting defined in config.yaml. (Optional, time)
 
@@ -247,7 +247,7 @@ It can:
 
 - Show what metadata documents would be written to ``elastalert_status``. 
 
-Without any optional arguments, it will ran ElastAlert over the last 24 hours and print out any alerts that would have occured.
+Without any optional arguments, it will run ElastAlert over the last 24 hours and print out any alerts that would have occurred.
 Here is an example test run which triggered an alert:
 
 .. code-block:: console
@@ -268,7 +268,7 @@ Here is an example test run which triggered an alert:
     INFO:root:Alert for Example rule1 at 2015-06-16T23:53:12Z:
     INFO:root:Example rule1
 
-    At least 50 events occured between 6-16 18:30 PDT and 6-16 20:30 PDT
+    At least 50 events occurred between 6-16 18:30 PDT and 6-16 20:30 PDT
 
     field1:
     value1: 25
@@ -447,7 +447,7 @@ the reference window has less than a third as many.
 To illustrate the use of ``threshold_ref``, ``threshold_cur``, ``alert_on_new_data``, ``timeframe`` and ``spike_height`` together,
 consider the following examples::
 
-    " Alert if at least 15 events occur within two hours and less than a quarter of that number occured within the previous two hours. "
+    " Alert if at least 15 events occur within two hours and less than a quarter of that number occurred within the previous two hours. "
     timeframe: hours: 2
     spike_height: 4
     threshold_cur: 15
@@ -498,7 +498,7 @@ consider the following examples::
     hour6: 1050 events (ref: 0, cur: 2050)- No alert because threshold_ref not met
     hour7: 1075 events (ref: 1000, cur: 2125) Alert because threshold_ref and spike_height met
 
-    " Alert if at least 100 events occur within two hours and less than a fifth of that number occured in the previous two hours. "
+    " Alert if at least 100 events occur within two hours and less than a fifth of that number occurred in the previous two hours. "
     timeframe: hours: 2
     spike_height: 5
     threshold_cur: 100
@@ -574,14 +574,14 @@ This rule requires one additional option:
 
 Optional:
 
-``terms_window_size``: The amount of the used for the initial query to find existing terms. No term that has occured within this time frame
+``terms_window_size``: The amount of time used for the initial query to find existing terms. No term that has occurred within this time frame
 will trigger an alert. The default is 30 days.
 
 ``alert_on_missing_field``: Whether or not to alert when a field is missing from a document. The default is false.
 
 ``use_terms_query``: If true, ElastAlert will use aggregation queries to get terms instead of regular search queries. This is faster
 than regular searching if there is a large number of documents. If this is used, you may only specify a single field, and must also set
-``query_key`` to that field. Also, note that by default, ``terms_size``, the number of buckets returned per query, defaults to 50. This means
+``query_key`` to that field. Also, note that ``terms_size`` (the number of buckets returned per query) defaults to 50. This means
 that if a new term appears but there are at least 50 terms which appear more frequently, it will not be found.
 
 
@@ -612,7 +612,7 @@ It can be further formatted using standard Python formatting syntax::
     alert_subject: Issue {0} occurred at {1}
 
 The arguments for the formatter will be fed from the matched objects related to the alert.
-The field names which values will be used as the arguments can be passed with ``alert_subject_args``::
+The field names whose values will be used as the arguments can be passed with ``alert_subject_args``::
 
 
     alert_subject_args:
@@ -635,7 +635,7 @@ There are several ways to format the body text of the various types of events. I
     field_values        = Field, ": ", Value
 
 Similarly to ``alert_subject``, ``alert_text`` can be further formatted using standard Python formatting syntax.
-The field names which values will be used as the arguments can be passed with ``alert_text_args``.
+The field names whose values will be used as the arguments can be passed with ``alert_text_args``.
 
 By default::
 

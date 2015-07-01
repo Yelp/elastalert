@@ -32,7 +32,7 @@ and generates matches. Several important member properties are created in the ``
 option, this will be automatically converted to a ``datetime.timedelta`` object when the rules are loaded.
 
 ``self.matches``: This is where ElastAlert checks for matches from the rule. Whatever information is relevant to the match
-(generally comming from the fields in Elasticsearch) should be put into a dictionary object and
+(generally coming from the fields in Elasticsearch) should be put into a dictionary object and
 added to ``self.matches``. ElastAlert will pop items out periodically and send alerts based on these objects. It is
 recommended that you use ``self.add_match(match)`` to add matches. In addition to appending to ``self.matches``,
 ``self.add_match`` will convert the datetime ``@timestamp`` back into an ISO 8601 timestamp.
@@ -52,22 +52,22 @@ get_match_str(self, match):
 
 Alerts will call this function to get a human readable string about a match for an alert. Match will be the same
 object that was added to ``self.matches``, and ``rules`` the same as ``self.rules``. The ``RuleType`` base implementation
-will return an empty string. Note that by default, the alert text will already contain the key value pairs from match. This
+will return an empty string. Note that by default, the alert text will already contain the key-value pairs from the match. This
 should return a string that gives some information about the match in the context of this specific RuleType.
 
 garbage_collect(self, timestamp):
 ---------------------------------
 
 This will be called after ElastAlert has run over a time period ending in ``timestamp`` and should be used
-to clear any state that may be obsolete as of ``timestamp``. ``timestamp`` is an datetime object.
+to clear any state that may be obsolete as of ``timestamp``. ``timestamp`` is a datetime object.
 
 
 Tutorial
 --------
 
-As an example, we are going to create a rule type for detecting suspicious logins. Lets imagine the data we are querying is login
+As an example, we are going to create a rule type for detecting suspicious logins. Let's imagine the data we are querying is login
 events that contains IP address, username and a timestamp. Our configuration will take a list of usernames and a time range
-and alert if a login occurs in the time range. First, lets create a modules folder in the base ElastAlert folder:
+and alert if a login occurs in the time range. First, let's create a modules folder in the base ElastAlert folder:
 
 .. code-block:: console
 

@@ -232,7 +232,7 @@ def test_jira():
     rule = {'name': 'test alert', 'jira_account_file': 'jirafile', 'type': mock_rule(),
             'jira_project': 'testproject', 'jira_issuetype': 'testtype', 'jira_server': 'jiraserver',
             'jira_label': 'testlabel', 'jira_component': 'testcomponent',
-            'timestamp_field': '@timestamp', 'alert_subject': 'Issue {0} occured at {1}',
+            'timestamp_field': '@timestamp', 'alert_subject': 'Issue {0} occurred at {1}',
             'alert_subject_args': ['test_term', '@timestamp']}
     with mock.patch('elastalert.alerts.JIRA') as mock_jira:
         with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
@@ -250,7 +250,7 @@ def test_jira():
                                                  labels=['testlabel'],
                                                  components=[{'name': 'testcomponent'}],
                                                  description=mock.ANY,
-                                                 summary='Issue test_value occured at 2014-10-31T00:00:00')]
+                                                 summary='Issue test_value occurred at 2014-10-31T00:00:00')]
             # We don't care about additional calls to mock_jira, such as __str__
             assert mock_jira.mock_calls[:3] == expected
 

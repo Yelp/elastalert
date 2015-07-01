@@ -53,7 +53,7 @@ Reliability
 
 ElastAlert has several features to make it more reliable in the event of restarts or Elasticsearch unavailability:
 
-- ElastAlert :ref:`saves it's state to Elasticsearch <metadata>` and, when started, will resume where previously stopped
+- ElastAlert :ref:`saves its state to Elasticsearch <metadata>` and, when started, will resume where previously stopped
 - If Elasticsearch is unresponsive, ElastAlert will wait until it recovers before continuing
 - Alerts which throw errors may be automatically retried for a period of time
 
@@ -95,7 +95,7 @@ This way, logs can be back filled up to a certain extent and ElastAlert will sti
 may be overridden by individual rules. Note that back filled data may not always trigger count based alerts
 as if it was queried in real time.
 
-``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about it's searches.
+``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about its searches.
 When ElastAlert is started, it will query for information about the time that it was last run. This way,
 even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice.
 
@@ -170,7 +170,7 @@ sent until that rule has finished querying over the entire time period.
 will periodically query until the present indefinitely.
 
 ``--rule <rule.yaml>`` will only run the given rule. The rule file may be a complete file path or a filename in ``rules_folder``
-or it's subdirectories.
+or its subdirectories.
 
 ``--silence <unit>=<number>`` will silence the alerts for a given rule for a period of time. The rule must be specified using
 ``--rule``. <unit> is one of days, weeks, hours, minutes or seconds. <number> is an integer. For example,
