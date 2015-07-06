@@ -30,7 +30,7 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``buffer_time`` is the size of the query window, stretching backwards from the time each query is run.
 
-``es_host`` is the address of an Elasticsearch cluster where ElastAlert will store data about it's state, queries run, alerts, and errors. Each rule may also use a different Elasticsearch host to query against.
+``es_host`` is the address of an Elasticsearch cluster where ElastAlert will store data about its state, queries run, alerts, and errors. Each rule may also use a different Elasticsearch host to query against.
 
 ``es_port`` is the port corresponding to ``es_host``.
 

@@ -139,7 +139,7 @@ means that if one match occurred at 12:00, another at 1:00, and a third at 2:30,
 alert would be sent at 2:00, containing the first two matches, and another at 4:30, containing the third match plus any additional matches
 occurring before 4:30. This can be very useful if you expect a large number of matches and only want a periodic report. (Optional, time, default none)
 
-``realert``: This option allows you to ignore repeat alerts for a period of time. If the rule uses a ``query_key``, this option
+``realert``: This option allows you to ignore repeating alerts for a period of time. If the rule uses a ``query_key``, this option
 will be applied on a per key basis. All matches for a given rule, or for matches with the same ``query_key``, will be ignored for
 the given time. All matches with a missing ``query_key`` will be grouped together using a value of ``_missing``.
 This is applied to the time the alert is sent, not to the time of the event. It defaults to one minute, which means
@@ -150,8 +150,8 @@ every alert, set realert to 0 minutes. (Optional, time, default 1 minute)
 the value of ``exponential_realert`` is the maximum ``realert`` will increase to. If the time between alerts is less than twice ``realert``,
 ``realert`` will double. For example, if ``realert: minutes: 10`` and ``exponential_realert: hours: 1``, an alerts fires at 1:00 and another
 at 1:15, the next alert will not be until at least 1:35. If another alert fires between 1:35 and 2:15, ``realert`` will increase to the
-1 hour maximum. If more than 2 hours elapses before the next alert, ``realert`` will go back down. Note that alerts that are ignored, eg,
-one that occured at 1:05, would not change ``realert``. (Optional, time, no default)
+1 hour maximum. If more than 2 hours elapse before the next alert, ``realert`` will go back down. Note that alerts that are ignored (e.g.
+one that occurred at 1:05) would not change ``realert``. (Optional, time, no default)
 
 ``buffer_time``: This options allows the rule to override the ``buffer_time`` global setting defined in config.yaml. (Optional, time)
 
@@ -247,7 +247,7 @@ It can:
 
 - Show what metadata documents would be written to ``elastalert_status``. 
 
-Without any optional arguments, it will ran ElastAlert over the last 24 hours and print out any alerts that would have occured.
+Without any optional arguments, it will run ElastAlert over the last 24 hours and print out any alerts that would have occurred.
 Here is an example test run which triggered an alert:
 
 .. code-block:: console
@@ -268,7 +268,7 @@ Here is an example test run which triggered an alert:
     INFO:root:Alert for Example rule1 at 2015-06-16T23:53:12Z:
     INFO:root:Example rule1
 
-    At least 50 events occured between 6-16 18:30 PDT and 6-16 20:30 PDT
+    At least 50 events occurred between 6-16 18:30 PDT and 6-16 20:30 PDT
 
     field1:
     value1: 25
@@ -447,72 +447,75 @@ the reference window has less than a third as many.
 To illustrate the use of ``threshold_ref``, ``threshold_cur``, ``alert_on_new_data``, ``timeframe`` and ``spike_height`` together,
 consider the following examples::
 
-    " Alert if at least 15 events occur within two hours and less than a quarter of that number occured within the previous two hours. "
+    " Alert if at least 15 events occur within two hours and less than a quarter of that number occurred within the previous two hours. "
     timeframe: hours: 2
     spike_height: 4
+    spike_type: up
     threshold_cur: 15
 
-    hour1: 5 events (ref: 0, cur: 5) - No alert because threshold_cur not met
-    hour2: 5 events (ref: 0, cur: 10) - No alert because threshold_cur not met
-    hour3: 10 events (ref: 5, cur: 15) - No alert because spike_height not met
-    hour4: 35 events (ref: 10, cur: 45) - Alert because spike_height and threshold_cur met
+    hour1: 5 events (ref: 0, cur: 5) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour2: 5 events (ref: 0, cur: 10) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour3: 10 events (ref: 5, cur: 15) - No alert because (a) spike_height not met, (b) ref window not filled
+    hour4: 35 events (ref: 10, cur: 45) - Alert because (a) spike_height met, (b) threshold_cur met, (c) ref window filled
 
     hour1: 20 events (ref: 0, cur: 20) - No alert because ref window not filled
     hour2: 21 events (ref: 0, cur: 41) - No alert because ref window not filled
-    hour3: 19 events (ref: 20, cur: 40) - No alert because spike_height not met
+    hour3: 19 events (ref: 20, cur: 40) - No alert because (a) spike_height not met, (b) ref window not filled
     hour4: 23 events (ref: 41, cur: 42) - No alert because spike_height not met
 
-    hour1: 10 events (ref: 0, cur: 10) - No alert because threshold_cur not met
-    hour2: 0 events (ref: 0, cur: 10) - No alert because threshold_cur not met
-    hour3: 0 events (ref: 10, cur: 0) - No alert because spike_height not met
+    hour1: 10 events (ref: 0, cur: 10) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour2: 0 events (ref: 0, cur: 10) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour3: 0 events (ref: 10, cur: 0) - No alert because (a) threshold_cur not met, (b) ref window not filled, (c) spike_height not met
     hour4: 30 events (ref: 10, cur: 30) - No alert because spike_height not met
-    hour5: 5 events (ref: 0, cur: 35) - Alert because threshold_cur and spike_height met
+    hour5: 5 events (ref: 0, cur: 35) - Alert because (a) spike_height met, (b) threshold_cur met, (c) ref window filled
 
     " Alert if at least 5 events occur within two hours, and twice as many events occur within the next two hours. "
     timeframe: hours: 2
     spike_height: 2
+    spike_type: up
     threshold_ref: 5
 
-    hour1: 20 events (ref: 0, cur: 20) - No alert because threshold_ref not met
-    hour2: 100 events (ref: 0, cur: 120) - No alert because threshold_ref not met
+    hour1: 20 events (ref: 0, cur: 20) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour2: 100 events (ref: 0, cur: 120) - No alert because (a) threshold_ref not met, (b) ref window not filled
     hour3: 100 events (ref: 20, cur: 200) - No alert because ref window not filled
     hour4: 100 events (ref: 120, cur: 200) - No alert because spike_height not met
 
-    hour1: 0 events (ref: 0, cur: 0) - No alert because threshold_ref not met
-    hour1: 20 events (ref: 0, cur: 20) - No alert because threshold_ref not met
-    hour2: 100 events (ref: 0, cur: 120) - No alert because threshold_ref not met
-    hour3: 100 events (ref: 20, cur: 200) - Alert because threshold_ref and spike_height met
+    hour1: 0 events (ref: 0, cur: 0) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour1: 20 events (ref: 0, cur: 20) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour2: 100 events (ref: 0, cur: 120) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour3: 100 events (ref: 20, cur: 200) - Alert because (a) spike_height met, (b) threshold_ref met, (c) ref window filled
 
-    hour1: 1 events (ref: 0, cur: 1) - No alert because threshold_ref not met
-    hour2: 2 events (ref: 0, cur: 3) - No alert because threshold_ref not met
-    hour3: 2 events (ref: 1, cur: 15) - No alert because threshold_ref not met
+    hour1: 1 events (ref: 0, cur: 1) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour2: 2 events (ref: 0, cur: 3) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour3: 2 events (ref: 1, cur: 4) - No alert because (a) threshold_ref not met, (b) ref window not filled
     hour4: 1000 events (ref: 3, cur: 1002) - No alert because threshold_ref not met
     hour5: 2 events (ref: 4, cur: 1002) - No alert because threshold_ref not met
-    hour6: 4 events: ref(1002, cur: 6) - No alert because spike_height not met
+    hour6: 4 events: (ref: 1002, cur: 6) - No alert because spike_height not met
 
-    hour1: 1000 events (ref: 0, cur: 1000) - No alert because threshold_ref not met
-    hour2: 0 events (ref: 0, cur: 1000) - No alert because threshold_ref not met
-    hour3: 0 events (ref: 1000, cur: 0) - No alert because spike_height not met
+    hour1: 1000 events (ref: 0, cur: 1000) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour2: 0 events (ref: 0, cur: 1000) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour3: 0 events (ref: 1000, cur: 0) - No alert because (a) spike_height not met, (b) ref window not filled
     hour4: 0 events (ref: 1000, cur: 0) - No alert because spike_height not met
     hour5: 1000 events (ref: 0, cur: 1000) - No alert because threshold_ref not met
     hour6: 1050 events (ref: 0, cur: 2050)- No alert because threshold_ref not met
-    hour7: 1075 events (ref: 1000, cur: 2125) Alert because threshold_ref and spike_height met
+    hour7: 1075 events (ref: 1000, cur: 2125) Alert because (a) spike_height met, (b) threshold_ref met, (c) ref window filled
 
-    " Alert if at least 100 events occur within two hours and less than a fifth of that number occured in the previous two hours. "
+    " Alert if at least 100 events occur within two hours and less than a fifth of that number occurred in the previous two hours. "
     timeframe: hours: 2
     spike_height: 5
+    spike_type: up
     threshold_cur: 100
 
     hour1: 1000 events (ref: 0, cur: 1000) - No alert because ref window not filled
 
-    hour1: 2 events (ref: 0, cur: 2) - No alert because threshold_cur not met
-    hour2: 1 events (ref: 0, cur: 3) - No alert because threshold_cur not met
-    hour3: 20 events (ref: 2, cur: 21) - No alert because threshold_cur not met
-    hour4: 81 events (ref: 3, cur: 101) - Alert because threshold_cur and spie_height met
+    hour1: 2 events (ref: 0, cur: 2) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour2: 1 events (ref: 0, cur: 3) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour3: 20 events (ref: 2, cur: 21) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour4: 81 events (ref: 3, cur: 101) - Alert because (a) spike_height met, (b) threshold_cur met, (c) ref window filled
 
-    hour1: 10 events (ref: 0, cur: 10) - No alert because ref window not filled
-    hour2: 20 events (ref: 0, cur: 30) - No alert because ref window not filled
-    hour3: 40 events (ref: 10, cur: 60) - No alert because threshold_cur not met
+    hour1: 10 events (ref: 0, cur: 10) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour2: 20 events (ref: 0, cur: 30) - No alert because (a) threshold_cur not met, (b) ref window not filled
+    hour3: 40 events (ref: 10, cur: 60) - No alert because (a) threshold_cur not met, (b) ref window not filled
     hour4: 80 events (ref: 30, cur: 120) - No alert because spike_height not met
     hour5: 200 events (ref: 60, cur: 280) - No alert because spike_height not met
 
@@ -574,14 +577,14 @@ This rule requires one additional option:
 
 Optional:
 
-``terms_window_size``: The amount of the used for the initial query to find existing terms. No term that has occured within this time frame
+``terms_window_size``: The amount of time used for the initial query to find existing terms. No term that has occurred within this time frame
 will trigger an alert. The default is 30 days.
 
 ``alert_on_missing_field``: Whether or not to alert when a field is missing from a document. The default is false.
 
 ``use_terms_query``: If true, ElastAlert will use aggregation queries to get terms instead of regular search queries. This is faster
 than regular searching if there is a large number of documents. If this is used, you may only specify a single field, and must also set
-``query_key`` to that field. Also, note that by default, ``terms_size``, the number of buckets returned per query, defaults to 50. This means
+``query_key`` to that field. Also, note that ``terms_size`` (the number of buckets returned per query) defaults to 50. This means
 that if a new term appears but there are at least 50 terms which appear more frequently, it will not be found.
 
 
@@ -612,7 +615,7 @@ It can be further formatted using standard Python formatting syntax::
     alert_subject: Issue {0} occurred at {1}
 
 The arguments for the formatter will be fed from the matched objects related to the alert.
-The field names which values will be used as the arguments can be passed with ``alert_subject_args``::
+The field names whose values will be used as the arguments can be passed with ``alert_subject_args``::
 
 
     alert_subject_args:
@@ -635,7 +638,7 @@ There are several ways to format the body text of the various types of events. I
     field_values        = Field, ": ", Value
 
 Similarly to ``alert_subject``, ``alert_text`` can be further formatted using standard Python formatting syntax.
-The field names which values will be used as the arguments can be passed with ``alert_text_args``.
+The field names whose values will be used as the arguments can be passed with ``alert_text_args``.
 
 By default::
 

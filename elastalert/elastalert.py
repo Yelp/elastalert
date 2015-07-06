@@ -614,7 +614,7 @@ class ElastAlerter():
             try:
                 self.starttime = ts_to_dt(self.starttime)
             except (TypeError, ValueError):
-                self.handle_error("%s is not a valid ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
+                self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
                 exit(1)
         self.running = True
         while self.running:

@@ -23,7 +23,7 @@ elastalert_status
 - ``starttime``: The beginning of the timestamp range the query searched.
 - ``endtime``: The end of the timestamp range the query searched.
 - ``hits``: The number of results from the query.
-- ``matches``: The number of matches that the rule returned after processing the hits. Note that this is not necessarily mean alerts were triggered.
+- ``matches``: The number of matches that the rule returned after processing the hits. Note that this does not necessarily mean that alerts were triggered.
 - ``time_taken``: The number of seconds it took for this query to run.
 
 ``elastalert_status`` is what ElastAlert will use to determine what time range to query when it first starts to avoid duplicating queries. 
