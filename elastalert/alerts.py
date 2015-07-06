@@ -4,7 +4,7 @@ import json
 import logging
 import subprocess
 from email.mime.text import MIMEText
-from smtplib import SMTP
+from smtplib import SMTP, SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
@@ -173,6 +173,7 @@ class EmailAlerter(Alerter):
         super(EmailAlerter, self).__init__(*args)
 
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
+        self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
@@ -217,7 +218,10 @@ class EmailAlerter(Alerter):
             to_addr = to_addr + self.rule['bcc']
 
         try:
-            self.smtp = SMTP(self.smtp_host)
+            if self.smtp_ssl:
+                self.smtp = SMTP_SSL(self.smtp_host)
+            else:
+                self.smtp = SMTP(self.smtp_host)
             if 'smtp_auth_file' in self.rule:
                 self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:
