@@ -115,6 +115,8 @@ def load_options(rule, conf=None, args=None):
     # Set email options from global config
     if conf:
         rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
+        rule.setdefault('smtp_auth_file', conf.get('smtp_auth_file', None))
+        rule.setdefault('smtp_ssl', conf.get('smtp_ssl', False))
         rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
         if 'email_reply_to' in conf:
             rule.setdefault('email_reply_to', conf['email_reply_to'])
