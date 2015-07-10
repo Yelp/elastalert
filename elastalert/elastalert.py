@@ -578,7 +578,7 @@ class ElastAlerter():
             if hash_value != rule_hashes[rule_file]:
                 # Rule file was changed, reload rule
                 try:
-                    new_rule = load_configuration(os.path.join(self.conf['rules_folder'], rule_file))
+                    new_rule = load_configuration(rule_file)
                 except EAException as e:
                     self.handle_error('Could not load rule %s: %s' % (rule_file, e))
                     continue
