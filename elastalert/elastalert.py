@@ -3,7 +3,6 @@ import copy
 import datetime
 import json
 import logging
-import os
 import sys
 import time
 import traceback
@@ -598,7 +597,7 @@ class ElastAlerter():
         if not self.args.rule:
             for rule_file in set(rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
-                    new_rule = load_configuration(os.path.join(self.conf['rules_folder'], rule_file))
+                    new_rule = load_configuration(rule_file)
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
                         raise EAException("A rule with the name %s already exists" % (new_rule['name']))
                 except EAException as e:

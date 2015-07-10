@@ -585,14 +585,14 @@ def test_kibana_dashboard(ea):
 
 
 def test_rule_changes(ea):
-    ea.rule_hashes = {'rule1.yaml': 'ABC',
-                      'rule2.yaml': 'DEF'}
-    ea.rules = [ea.init_rule(rule, True) for rule in [{'rule_file': 'rule1.yaml', 'name': 'rule1', 'filter': []},
-                                                      {'rule_file': 'rule2.yaml', 'name': 'rule2', 'filter': []}]]
+    ea.rule_hashes = {'rules/rule1.yaml': 'ABC',
+                      'rules/rule2.yaml': 'DEF'}
+    ea.rules = [ea.init_rule(rule, True) for rule in [{'rule_file': 'rules/rule1.yaml', 'name': 'rule1', 'filter': []},
+                                                      {'rule_file': 'rules/rule2.yaml', 'name': 'rule2', 'filter': []}]]
     ea.rules[1]['processed_hits'] = ['save me']
-    new_hashes = {'rule1.yaml': 'ABC',
-                  'rule3.yaml': 'XXX',
-                  'rule2.yaml': '!@#$'}
+    new_hashes = {'rules/rule1.yaml': 'ABC',
+                  'rules/rule3.yaml': 'XXX',
+                  'rules/rule2.yaml': '!@#$'}
 
     with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
         with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
