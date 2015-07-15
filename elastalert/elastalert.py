@@ -216,7 +216,8 @@ class ElastAlerter():
             hit.setdefault('_source', {})
             for key, value in hit.get('fields', {}).items():
                 # Fields are returned as lists, assume any with length 1 are not arrays in _source
-                hit['_source'].setdefault(key, value[0] if len(value) == 1 else value)
+                # Except sometimes they aren't lists. This is dependent on ES version
+                hit['_source'].setdefault(key, value[0] if type(value) is list and len(value) == 1 else value)
             hit['_source'][rule['timestamp_field']] = rule['ts_to_dt'](hit['_source'][rule['timestamp_field']])
             if rule.get('compound_query_key'):
                 values = [hit['_source'].get(key, 'None') for key in rule['compound_query_key']]
@@ -231,10 +232,12 @@ class ElastAlerter():
         :return: A list of hits, bounded by self.max_query_size.
         """
         query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], ts_func=rule['dt_to_ts'])
+        extra_args = {'_source_include': rule['include']}
         if not rule.get('_source_enabled'):
             query['fields'] = rule['include']
+            extra_args = {}
         try:
-            res = self.current_es.search(index=index, size=self.max_query_size, _source_include=rule['include'], body=query, ignore_unavailable=True)
+            res = self.current_es.search(index=index, size=self.max_query_size, body=query, ignore_unavailable=True, **extra_args)
             logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
@@ -1127,8 +1130,8 @@ class ElastAlerter():
         self.writeback('elastalert_error', body)
 
     def handle_uncaught_exception(self, exception, rule):
-        """ Disables a rule and sends a notifcation. """
-        logging.debug(traceback.format_exc())
+        """ Disables a rule and sends a notification. """
+        logging.error(traceback.format_exc())
         self.handle_error('Uncaught exception running rule %s: %s' % (rule['name'], exception), {'rule': rule['name']})
         if self.disable_rules_on_error:
             self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
