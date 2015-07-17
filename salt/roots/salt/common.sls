@@ -1,0 +1,2 @@
+cowsay:
+  pkg.installed
