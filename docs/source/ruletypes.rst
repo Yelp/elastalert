@@ -9,35 +9,37 @@ Rule Configuration Cheat Sheet
 ==============================
 
 
-+-----------------------------------------------------------------------------------------------------------------------+
-|              FOR ALL RULES                                                                                            |
-+==========================================+===========+====================================================+===========+
-| ``es_host`` (string)                     |           | ``buffer_time`` (time)                             | Optional  |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``es_port`` (number)                     | Required  | ``query_delay`` (time)                             |           |
-+------------------------------------------+-----------+----------------------------------------------------+           +
-| ``use_ssl`` (boolean, no default)        | Optional  | ``max_query_size`` (int, default 100k)             |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``es_username`` (string, no default)     |           | ``filter`` (DSL filter, empty default)             |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``es_password`` (string, no default)     |           | ``include`` (list of strs)                         |           |
-+------------------------------------------+-----------+----------------------------------------------------+           +
-| ``index`` (string)                       | Required  | ``top_count_keys`` (list of strs)                  |           |
-+------------------------------------------+-----------+----------------------------------------------------+           +
-| ``use_strftime_index`` (boolean)         | Optional  | ``top_count_number`` (int, default 5)              |           |
-+------------------------------------------+-----------+----------------------------------------------------+           +
-| ``name`` (string)                        | Required  |``raw_count_keys`` (boolean, default T)             |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``type`` (string)                        |           |``generate_kibana_link`` (boolean, default F)       |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``alert`` (string)                       |           |``kibana_dashboard`` (string, default from es_host) |           |
-+------------------------------------------+-----------+----------------------------------------------------+           +
-|``aggregation`` (time, no default)        | Optional  |``use_kibana_dashboard`` (string, no default)       |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``realert`` (time, default: 1 min)       |           |``use_local_time`` (boolean, default T)             |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-|``exponential_realert`` (time, no default)|           |``match_enhancements`` (list of strs, no default)   |           |
-+------------------------------------------+-----------+----------------------------------------------------+-----------+
++--------------------------------------------------------------------------------------------------------------------------------+
+|              FOR ALL RULES                                                                                                     |
++===================================================+===========+====================================================+===========+
+| ``es_host`` (string)                              |           | ``buffer_time`` (time)                             | Optional  |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``es_port`` (number)                              | Required  | ``query_delay`` (time)                             |           |
++---------------------------------------------------+-----------+----------------------------------------------------+           +
+| ``use_ssl`` (boolean, no default)                 | Optional  | ``max_query_size`` (int, default 100k)             |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``es_username`` (string, no default)              |           | ``filter`` (DSL filter, empty default)             |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``es_password`` (string, no default)              |           | ``include`` (list of strs)                         |           |
++---------------------------------------------------+-----------+----------------------------------------------------+           +
+| ``index`` (string)                                | Required  | ``top_count_keys`` (list of strs)                  |           |
++---------------------------------------------------+-----------+----------------------------------------------------+           +
+| ``use_strftime_index`` (boolean)                  | Optional  | ``top_count_number`` (int, default 5)              |           |
++---------------------------------------------------+-----------+----------------------------------------------------+           +
+| ``name`` (string)                                 | Required  |``raw_count_keys`` (boolean, default T)             |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``type`` (string)                                 |           |``generate_kibana_link`` (boolean, default F)       |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``alert`` (string)                                |           |``kibana_dashboard`` (string, default from es_host) |           |
++---------------------------------------------------+-----------+----------------------------------------------------+           +
+|``aggregation`` (time, no default)                 | Optional  |``use_kibana_dashboard`` (string, no default)       |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``realert`` (time, default: 1 min)                |           |``use_local_time`` (boolean, default T)             |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+|``exponential_realert`` (time, no default)         |           |``match_enhancements`` (list of strs, no default)   |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+|``kibana4_start_timedelta`` (time, default: 10 min)|           |``kibana4_end_timedelta`` (time, default: 10 min)   |           |                                           |           |
++---------------------------------------------------+-----------+----------------------------------------------------+-----------+
 
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
 |      RULE TYPE                                 | Any | Blacklist | Whitelist | Change | Frequency | Spike | Flatline |New_term|
@@ -62,7 +64,7 @@ Rule Configuration Cheat Sheet
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
 |``use_terms_query`` (boolean, no default)       |     |           |           |        |     Opt   | Opt   |          | Opt    |
 |                                                |     |           |           |        |           |       |          |        |
-|``doc_type`` (string, no default)               |     |           |           |        |           |       |          |        | 
+|``doc_type`` (string, no default)               |     |           |           |        |           |       |          |        |
 |                                                |     |           |           |        |           |       |          |        |
 |``query_key`` (string, no default)              |     |           |           |        |           |       |          |        |
 |                                                |     |           |           |        |           |       |          |        |
@@ -197,9 +199,19 @@ ElastAlert can use an existing dashboard. It will set the time range on the dash
 upload it as a temporary dashboard, add a filter to the ``query_key`` of the alert if applicable,
 and put the url to the dashboard in the alert. (Optional, string, no default)
 
-``use_kibana4_dashboard``: A link to a Kibana 4 dashboard. For example, "https://kibana.example.com/#/dashboard/My-Dashboard". 
-This will set the time setting on the dashboard from the match time minus the timeframe, to 10 minutes after the match time. 
+``use_kibana4_dashboard``: A link to a Kibana 4 dashboard. For example, "https://kibana.example.com/#/dashboard/My-Dashboard".
+This will set the time setting on the dashboard from the match time minus the timeframe, to 10 minutes after the match time.
 Note that this does not support filtering by ``query_key`` like Kibana 3.
+
+``kibana4_start_timedelta``: Defaults to 10 minutes. This option allows you to specify the start time for the generated kibana4 dashboard.
+This value is added in front of the event. For example,
+
+``kibana4_start_timedelta: minutes: 2``
+
+``kibana4_end_timedelta``: Defaults to 10 minutes. This option allows you to specify the end time for the generated kibana4 dashboard.
+This value is added in back of the event. For example,
+
+``kibana4_end_timedelta: minutes: 2``
 
 ``use_local_time``: Whether to convert timestamps to the local time zone in alerts. If false, timestamps will
 be converted to UTC, which is what ElastAlert uses internally. (Optional, boolean, default true)
@@ -245,7 +257,7 @@ It can:
 
 - Check that, if they exist, the primary_key, compare_key and include terms are in the results.
 
-- Show what metadata documents would be written to ``elastalert_status``. 
+- Show what metadata documents would be written to ``elastalert_status``.
 
 Without any optional arguments, it will run ElastAlert over the last 24 hours and print out any alerts that would have occurred.
 Here is an example test run which triggered an alert:
@@ -254,9 +266,9 @@ Here is an example test run which triggered an alert:
 
     $ elastalert-test-rule my_rules/rule1.yaml
     Successfully Loaded Example rule1
-    
+
     Got 105 hits from the last 1 day
-    
+
     Available terms in first hit:
         @timestamp
         field1
@@ -281,7 +293,7 @@ Here is an example test run which triggered an alert:
 
     Would have written the following documents to elastalert_status:
 
-    silence - {'rule_name': 'Example rule1', '@timestamp': datetime.datetime( ... ), 'exponent': 0, 'until': 
+    silence - {'rule_name': 'Example rule1', '@timestamp': datetime.datetime( ... ), 'exponent': 0, 'until':
     datetime.datetime( ... )}
 
     elastalert_status - {'hits': 105, 'matches': 1, '@timestamp': datetime.datetime( ... ), 'rule_name': 'Example rule1',
@@ -304,7 +316,7 @@ and ``--end``.
 ``--save-json FILE``: Save all documents downloaded to a file as JSON. This is useful if you wish to modify data while testing or do offline
 testing in conjunction with ``--data FILE``. A maximum of 10,000 documents will be downloaded.
 
-``--data FILE``: Use a JSON file as a data source instead of Elasticsearch. The file should be a single list containing objects, 
+``--data FILE``: Use a JSON file as a data source instead of Elasticsearch. The file should be a single list containing objects,
 rather than objects on separate lines. Note than this uses mock functions which mimic some Elasticsearch query methods and is not
 guarenteed to have the exact same results as with Elasticsearch. For example, analyzed string fields may behave differently.
 
@@ -409,7 +421,7 @@ default 50, unique terms.
 
 ``terms_size``: When used with ``use_terms_query``, this is the maximum number of terms returned per query. Default is 50.
 
-``query_key``: Counts of documents will be stored independently for each value of ``query_key``. Only ``num_events`` documents, 
+``query_key``: Counts of documents will be stored independently for each value of ``query_key``. Only ``num_events`` documents,
 all with the same value of ``query_key``, will trigger an alert.
 
 
@@ -573,7 +585,7 @@ use an aggregation query to gather all known terms for a list of fields.
 
 This rule requires one additional option:
 
-``fields``: A list of fields to monitor for new terms. 
+``fields``: A list of fields to monitor for new terms.
 
 Optional:
 
@@ -678,7 +690,7 @@ Command
 ~~~~~~~
 
 The command alert allows you to execute an arbitrary command and pass arguments or stdin from the match. Arguments to the command can use
-Python format string syntax to access parts of the match. The alerter will open a subprocess and optionally pass the match, as JSON, to 
+Python format string syntax to access parts of the match. The alerter will open a subprocess and optionally pass the match, as JSON, to
 the stdin of the process.
 
 This alert requires one option:
@@ -700,7 +712,7 @@ Example usage::
 
 .. warning::
 
-    Executing commmands with untrusted data can make it vulnerable to shell injection! If you use formatted data in 
+    Executing commmands with untrusted data can make it vulnerable to shell injection! If you use formatted data in
     your command, it is highly recommended that you use a args list format instead of a shell string.
 
 
@@ -772,8 +784,8 @@ the two summaries must be exact matches. Defaults to false.
 ``jira_max_age``: If ``jira_bump_tickets`` is true, the maximum age of a ticket, in days, such that ElastAlert will comment on the ticket
 instead of opening a new one. Default is 30 days.
 
-``jira_bump_not_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket must **not** be in for ElastAlert to comment on 
-the ticket instead of opening a new one. For example, to prevent comments being added to resolved or closed tickets, set this to 'Resolved' 
+``jira_bump_not_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket must **not** be in for ElastAlert to comment on
+the ticket instead of opening a new one. For example, to prevent comments being added to resolved or closed tickets, set this to 'Resolved'
 and 'Closed'. This option should not be set if the ``jira_bump_in_statuses`` option is set.
 
 Example usage::
@@ -782,8 +794,8 @@ Example usage::
       - Resolved
       - Closed
 
-``jira_bump_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket *must be in* for ElastAlert to comment on 
-the ticket instead of opening a new one. For example, to only comment on 'Open' tickets  -- and thus not 'In Progress', 'Analyzing', 
+``jira_bump_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket *must be in* for ElastAlert to comment on
+the ticket instead of opening a new one. For example, to only comment on 'Open' tickets  -- and thus not 'In Progress', 'Analyzing',
 'Resolved', etc. tickets -- set this to 'Open'. This option should not be set if the ``jira_bump_not_in_statuses`` option is set.
 
 Example usage::
