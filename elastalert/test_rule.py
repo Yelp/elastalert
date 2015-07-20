@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import copy
 import datetime
 import logging
 import random
@@ -40,12 +41,9 @@ class MockElastAlerter(object):
     def __init__(self):
         self.data = []
 
-    def test_file(self, args):
+    def test_file(self, conf, args):
         """ Loads a rule config file, performs a query over the last day (args.days), lists available keys
         and prints the number of results. """
-        filename = args.file
-        with open(filename) as fh:
-            conf = yaml.load(fh)
         load_options(conf)
         print("Successfully loaded %s\n" % (conf['name']))
 
@@ -180,7 +178,7 @@ class MockElastAlerter(object):
         elastalert.get_hits = self.mock_hits
         elastalert.new_elasticsearch = mock.Mock()
 
-    def run_elastalert(self, args):
+    def run_elastalert(self, rule, args):
         """ Creates an ElastAlert instance and run's over for a specific rule using either real or mock data. """
         # Mock configuration. Nothing here is used except run_every
         conf = {'rules_folder': 'rules',
@@ -195,8 +193,6 @@ class MockElastAlerter(object):
                 'disable_rules_on_error': False}
 
         # Load and instantiate rule
-        with open(args.file) as fh:
-            rule = yaml.load(fh)
         load_options(rule)
         load_modules(rule)
         conf['rules'] = [rule]
@@ -271,18 +267,21 @@ class MockElastAlerter(object):
         parser.add_argument('--count-only', action='store_true', dest='count', help='Only display the number of documents matching the filter')
         args = parser.parse_args()
 
+        with open(args.file) as fh:
+            rule_yaml = yaml.load(fh)
+
         if args.json:
             with open(args.json, 'r') as data_file:
                 self.data = simplejson.loads(data_file.read())
         else:
-            hits = self.test_file(args)
+            hits = self.test_file(copy.deepcopy(rule_yaml), args)
             if hits and args.save:
                 with open(args.save, 'wb') as data_file:
                     # Add _id to _source for dump
                     [doc['_source'].update({'_id': doc['_id']}) for doc in hits]
                     data_file.write(simplejson.dumps([doc['_source'] for doc in hits], indent='    '))
         if not args.schema_only and not args.count:
-            self.run_elastalert(args)
+            self.run_elastalert(rule_yaml, args)
 
 
 def main():
