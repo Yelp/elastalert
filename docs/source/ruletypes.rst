@@ -9,6 +9,7 @@ Rule Configuration Cheat Sheet
 ==============================
 
 
+<<<<<<< HEAD
 +--------------------------------------------------------------------------------------------------------------------------------+
 |              FOR ALL RULES                                                                                                     |
 +===================================================+===========+====================================================+===========+
@@ -38,7 +39,7 @@ Rule Configuration Cheat Sheet
 +---------------------------------------------------+           +----------------------------------------------------+           +
 |``exponential_realert`` (time, no default)         |           |``match_enhancements`` (list of strs, no default)   |           |
 +---------------------------------------------------+           +----------------------------------------------------+           +
-|``kibana4_start_timedelta`` (time, default: 10 min)|           |``kibana4_end_timedelta`` (time, default: 10 min)   |           |                                           |           |
+|``kibana4_start_timedelta`` (time, default: 10 min)|           |``kibana4_end_timedelta`` (time, default: 10 min)   |           |
 +---------------------------------------------------+-----------+----------------------------------------------------+-----------+
 
 +------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
@@ -107,6 +108,8 @@ Required Settings
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``.
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
+
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
 
 ``index``: The name of the index that will be searched. Wildcards can be used here, such as:
 ``index: my-index-*`` which will match ``my-index-2014-10-05``. You can also use a format string containing
@@ -636,9 +639,9 @@ The field names whose values will be used as the arguments can be passed with ``
 
 It is mandatory to enclose the ``@timestamp`` field in quotes since in YAML format a token cannot begin with the ``@`` character. Not using the quotation marks will trigger a YAML parse error.
 
-In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter. 
+In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter.
 
-If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``<MISSING VALUE>`` in place of its expected value. 
+If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``<MISSING VALUE>`` in place of its expected value.
 
 Alert Content
 ~~~~~~~~~~~~~~~

@@ -107,6 +107,8 @@ even if ElastAlert is stopped and restarted, it will never miss data or look at 
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
 
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
+
 ``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``10``.
 
 ``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all
@@ -179,7 +181,7 @@ or its subdirectories.
 ``--verbose`` will increase the logging verboseness, which allows you to see information about the state
 of queries.
 
-``--es_debug`` will enable logging for all queries made to Elasticsearch. 
+``--es_debug`` will enable logging for all queries made to Elasticsearch.
 
 ``--es_debug_trace`` will enable logging curl commands for all queries made to Elasticsearch.
 

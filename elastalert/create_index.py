@@ -15,6 +15,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', help='Elasticsearch host')
     parser.add_argument('--port', type=int, help='Elasticsearch port')
+    parser.add_argument('--url-prefix', help='Elasticsearch URL prefix')
     parser.add_argument('--no-auth', action='store_const', const=True, help='Suppress prompt for basic auth')
     parser.add_argument('--ssl', action='store_const', const=True, help='Use SSL')
     parser.add_argument('--no-ssl', action='store_const', const=True, help='Do not use SSL')
@@ -32,6 +33,7 @@ def main():
     username = None
     password = None
     use_ssl = None
+    url_prefix = None
     http_auth = None
 
     if filename:
@@ -41,6 +43,7 @@ def main():
         port = data.get('es_port')
         username = data.get('es_username')
         password = data.get('es_password')
+        url_prefix = data.get('es_url_prefix', '')
         use_ssl = data.get('use_ssl')
     else:
         host = args.host if args.host else raw_input('Enter elasticsearch host: ')
@@ -51,11 +54,13 @@ def main():
         if args.no_auth is None:
             username = raw_input('Enter optional basic-auth username: ')
             password = getpass.getpass('Enter optional basic-auth password: ')
+        url_prefix = (args.url_prefix if args.url_prefix is not None
+                      else raw_input('Enter optional Elasticsearch URL prefix: '))
 
     if username and password:
         http_auth = username + ':' + password
 
-    es = Elasticsearch(host=host, port=port, use_ssl=use_ssl, http_auth=http_auth)
+    es = Elasticsearch(host=host, port=port, use_ssl=use_ssl, http_auth=http_auth, url_prefix=url_prefix)
 
     silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                   'until': {'type': 'date', 'format': 'dateOptionalTime'}}}}
