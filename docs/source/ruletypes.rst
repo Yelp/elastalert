@@ -612,7 +612,7 @@ or
 E-mail subject or JIRA issue summary can also be customized by adding an ``alert_subject`` that contains a custom summary.
 It can be further formatted using standard Python formatting syntax::
 
-    alert_subject: Issue {0} occurred at {1}
+    alert_subject: "Issue {0} occurred at {1}"
 
 The arguments for the formatter will be fed from the matched objects related to the alert.
 The field names whose values will be used as the arguments can be passed with ``alert_subject_args``::
@@ -620,9 +620,13 @@ The field names whose values will be used as the arguments can be passed with ``
 
     alert_subject_args:
     - issue.name
-    - @timestamp
+    - "@timestamp"
 
-In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter.
+It is mandatory to enclose the ``@timestamp`` field in quotes since in YAML format a token cannot begin with the ``@`` character. Not using the quotation marks will trigger a YAML parse error.
+
+In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter. 
+
+If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``<MISSING VALUE>`` in place of its expected value. 
 
 Alert Content
 ~~~~~~~~~~~~~~~
