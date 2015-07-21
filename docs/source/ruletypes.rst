@@ -622,11 +622,11 @@ The field names whose values will be used as the arguments can be passed with ``
     - issue.name
     - "@timestamp"
 
-It is mandatory to enclose the `@timestamp` field in quotes since in YAML format a token cannot begin with the `@` character. Not using the quotation marks will trigger a YAML parse error.
+It is mandatory to enclose the ``@timestamp`` field in quotes since in YAML format a token cannot begin with the ``@`` character. Not using the quotation marks will trigger a YAML parse error.
 
 In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter. 
 
-If the field(s) mentioned in the arguments list are missing, the email alert will have the text \<MISSING VALUE\> in place of its expected value. 
+If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``\<MISSING VALUE\>`` in place of its expected value. 
 
 Alert Content
 ~~~~~~~~~~~~~~~
