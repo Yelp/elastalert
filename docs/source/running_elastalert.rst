@@ -40,6 +40,8 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
 
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
+
 ``writeback_index`` is the name of the index in which ElastAlert will store data. We will create this index later.
 
 ``alert_time_limit`` is the retry window for failed alerts.

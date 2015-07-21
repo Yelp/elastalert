@@ -113,6 +113,7 @@ class ElastAlerter():
         """ returns an Elasticsearch instance configured using an es_conn_config """
         return Elasticsearch(host=es_conn_conf['es_host'],
                              port=es_conn_conf['es_port'],
+                             url_prefix=es_conn_conf['es_url_prefix'],
                              use_ssl=es_conn_conf['use_ssl'],
                              http_auth=es_conn_conf['http_auth'],
                              timeout=es_conn_conf['es_conn_timeout'])
@@ -130,6 +131,7 @@ class ElastAlerter():
         parsed_conf['es_password'] = None
         parsed_conf['es_host'] = conf['es_host']
         parsed_conf['es_port'] = conf['es_port']
+        parsed_conf['es_url_prefix'] = ''
         parsed_conf['es_conn_timeout'] = 10
 
         if 'es_username' in conf:
@@ -144,6 +146,9 @@ class ElastAlerter():
 
         if 'es_conn_timeout' in conf:
             parsed_conf['es_conn_timeout'] = conf['es_conn_timeout']
+
+        if 'es_url_prefix' in conf:
+            parsed_conf['es_url_prefix'] = conf['es_url_prefix']
 
         return parsed_conf
 
