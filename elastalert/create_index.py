@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
+import argparse
+import getpass
 import json
 import os
 
@@ -10,6 +12,16 @@ from elasticsearch.client import Elasticsearch
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--host', help='Elasticsearch host')
+    parser.add_argument('--port', type=int, help='Elasticsearch port')
+    parser.add_argument('--no-auth', action='store_const', const=True, help='Suppress prompt for basic auth')
+    parser.add_argument('--ssl', action='store_const', const=True, help='Use SSL')
+    parser.add_argument('--no-ssl', action='store_const', const=True, help='Do not use SSL')
+    parser.add_argument('--index', help='Index name to create')
+    parser.add_argument('--old-index', help='Old index name to copy')
+    args = parser.parse_args()
+
     if os.path.isfile('../config.yaml'):
         filename = '../config.yaml'
     elif os.path.isfile('config.yaml'):
@@ -31,13 +43,14 @@ def main():
         password = data.get('es_password')
         use_ssl = data.get('use_ssl')
     else:
-        host = raw_input("Enter elasticsearch host: ")
-        port = int(raw_input("Enter elasticsearch port: "))
-        while use_ssl is None:
-            resp = raw_input("Use SSL? t/f: ").lower()
-            use_ssl = True if resp in ('t', 'true') else (False if resp in ('f', 'false') else None)
-        username = raw_input("Enter optional basic-auth username: ")
-        password = raw_input("Enter optional basic-auth password: ")
+        host = args.host if args.host else raw_input('Enter elasticsearch host: ')
+        port = args.port if args.port else int(raw_input('Enter elasticsearch port: '))
+        use_ssl = (args.ssl if args.ssl is not None
+                   else args.no_ssl if args.no_ssl is not None
+                   else raw_input('Use SSL? t/f: ').lower() in ('t', 'true'))
+        if args.no_auth is None:
+            username = raw_input('Enter optional basic-auth username: ')
+            password = getpass.getpass('Enter optional basic-auth password: ')
 
     if username and password:
         http_auth = username + ':' + password
@@ -53,30 +66,33 @@ def main():
                                                 'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
     error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False}}}}
 
-    index = raw_input('New index name? (Default elastalert_status) ')
-    index = index if index else 'elastalert_status'
-    old_index = raw_input('Name of existing index to copy? (Default None) ')
+    index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
+    if not index:
+        index = 'elastalert_status'
+
+    old_index = (args.old_index if args.old_index is not None
+                 else raw_input('Name of existing index to copy? (Default None) '))
 
     res = None
     if old_index:
-        print("Downloading existing data...")
+        print('Downloading existing data...')
         res = es.search(index=old_index, body={}, size=500000)
-        print("Got %s documents" % (len(res['hits']['hits'])))
+        print('Got %s documents' % (len(res['hits']['hits'])))
 
     es.indices.create(index)
     es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
     es.indices.put_mapping(index=index, doc_type='elastalert_status', body=ess_mapping)
     es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)
     es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping)
-    print("New index %s created" % (index))
+    print('New index %s created' % (index))
 
     if res:
         bulk = ''.join(['%s\n%s\n' % (json.dumps({'create': {'_type': doc['_type'], '_index': index}}),
                                       json.dumps(doc['_source'])) for doc in res['hits']['hits']])
-        print("Uploading data...")
+        print('Uploading data...')
         es.bulk(body=bulk, index=index)
 
-    print("Done!")
+    print('Done!')
 
 if __name__ == '__main__':
     main()
