@@ -626,7 +626,7 @@ It is mandatory to enclose the ``@timestamp`` field in quotes since in YAML form
 
 In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter. 
 
-If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``\<MISSING VALUE\>`` in place of its expected value. 
+If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``<MISSING VALUE>`` in place of its expected value. 
 
 Alert Content
 ~~~~~~~~~~~~~~~
