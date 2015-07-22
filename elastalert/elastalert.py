@@ -186,8 +186,8 @@ class ElastAlerter():
         filters = copy.copy(filters)
         query = {'filter': {'bool': {'must': filters}}}
         if starttime and endtime:
-            query['filter']['bool']['must'].append({'range': {timestamp_field: {'from': starttime,
-                                                                                'to': endtime}}})
+            query['filter']['bool']['must'].append({'range': {timestamp_field: {'gt': starttime,
+                                                                                'lte': endtime}}})
         if sort:
             query['sort'] = [{timestamp_field: {'order': 'asc'}}]
         return query
