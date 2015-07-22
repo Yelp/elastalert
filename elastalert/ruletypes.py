@@ -247,6 +247,10 @@ class EventWindow(object):
         self.data = deque()
         self.running_count = 0
 
+    def clear(self):
+        self.data = deque()
+        self.running_count = 0
+
     def append(self, event):
         """ Add an event to the window. Event should be of the form (dict, count).
         This will also pop the oldest events and call onRemoved on them until the
@@ -345,8 +349,8 @@ class SpikeRule(RuleType):
 
     def clear_windows(self, qk, event):
         # Reset the state and prevent alerts until windows filled again
-        self.cur_windows[qk].data = deque()
-        self.ref_windows[qk].data = deque()
+        self.cur_windows[qk].clear()
+        self.ref_windows[qk].clear()
         self.first_event.pop(qk)
         self.skip_checks[qk] = event[self.ts_field] + self.rules['timeframe'] * 2
 
