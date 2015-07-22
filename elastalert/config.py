@@ -138,7 +138,7 @@ def load_options(rule, conf=None):
     if conf:
         rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
         if 'smtp_host' in conf:
-            rule.setdefault('smtp_host', conf.get['smtp_port'])
+            rule.setdefault('smtp_host', conf.get('smtp_port'))
         rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
         if 'email_reply_to' in conf:
             rule.setdefault('email_reply_to', conf['email_reply_to'])

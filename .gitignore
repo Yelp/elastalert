@@ -9,7 +9,5 @@ dist/
 venv/
 docs/build/
 build/
-config.yaml
-example_rules/example_frequency.yaml
 
 my_rules

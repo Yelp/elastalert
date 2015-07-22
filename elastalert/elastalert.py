@@ -160,7 +160,7 @@ class ElastAlerter():
             return index
 
     @staticmethod
-    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', ts_func=dt_to_ts):
+    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts):
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
@@ -170,8 +170,8 @@ class ElastAlerter():
         :param sort: If true, sort results by timestamp. (Default True)
         :return: A query dictionary to pass to elasticsearch.
         """
-        starttime = ts_func(starttime)
-        endtime = ts_func(endtime)
+        starttime = to_ts_func(starttime)
+        endtime = to_ts_func(endtime)
         filters = copy.copy(filters)
         query = {'filter': {'bool': {'must': filters}}}
         if starttime and endtime:
@@ -231,7 +231,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A list of hits, bounded by self.max_query_size.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], ts_func=rule['dt_to_ts'])
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], to_ts_func=rule['dt_to_ts'])
         extra_args = {'_source_include': rule['include']}
         if not rule.get('_source_enabled'):
             query['fields'] = rule['include']
@@ -268,7 +268,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A dictionary mapping timestamps to number of hits for that time period.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, ts_func=rule['dt_to_ts'])
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
         query = {'query': {'filtered': query}}
 
         try:
@@ -293,7 +293,7 @@ class ElastAlerter():
             if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
                 filter_key += '.raw'
             rule_filter.extend([{'term': {filter_key: qk}}])
-        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, ts_func=rule['dt_to_ts'])
+        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
         if size is None:
             size = rule.get('terms_size', 50)
         query = self.get_terms_query(base_query, size, key)
