@@ -105,7 +105,7 @@ Each rule defines a query to perform, parameters on what triggers a match, and a
 
 There are many other optional configuration options, see :ref:`Common configuration options <commonconfig>`.
 
-All documents must have a timestamp field. ElastAlert will try to use ``@timestamp`` by default, but this can be changed with the ``timestamp_field`` option.
+All documents must have a timestamp field. ElastAlert will try to use ``@timestamp`` by default, but this can be changed with the ``timestamp_field`` option. By default, ElastAlert uses ISO8601 timestamps, though unix timestamps are supported by setting ``timestamp_type``.
 
 As is, this rule means "Send an email to elastalert@example.com when there are more than 50 documents with ``some_field == some_value`` within a 4 hour period."
 

@@ -230,6 +230,16 @@ additional alerts for ``{'username': 'bob'}`` will be ignored while other userna
 treated as if it were a single field whose value is the component values, or "None", joined by commas. A new field with the key
 "field1,field2,etc" will be created in each document and may conflict with existing fields of the same name.
 
+``timestamp_type``: One of ``iso``, ``unix``, or ``unix_ms``. This option will set the type of ``@timestamp`` (or ``timestamp_field``) used
+to query Elasticsearch. ``iso`` will use ISO8601 timestamps, which will work with any Elasticsearch date type field. ``unix`` will
+query using an integer unix (seconds since 1/1/1970) timestamp. ``unix_ms`` will use milliseconds unix timestamp. The default is ``iso``.
+(Optional, string enum, default iso).
+
+``_source_enabled``: If true, ElastAlert will use ``_source_include`` to retrieve fields from documents in Elasticsearch. If false,
+ElastAlert will use ``fields`` to retrieve stored fields. Both of these are represented internally as if they came from ``_source``.
+See https://www.elastic.co/guide/en/elasticsearch/reference/1.3/mapping-fields.html for more details. The fields used come from ``include``,
+see above for more details. (Optional, boolean, default True)
+
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
 
 
@@ -726,6 +736,7 @@ Email
 ~~~~~
 
 This alert will send an email. It connects to an smtp server located at ``smtp_host``, or localhost by default.
+If available, it will use STARTTLS.
 
 This alert requires one additional option:
 
@@ -735,7 +746,10 @@ Optional:
 
 ``smtp_host``: The SMTP host to use, defaults to localhost.
 
-``smtp_ssl``: Connect the SMTP host using SSL, defaults to ``false``.
+``smtp_port``: The port to use. Default is 25.
+
+``smtp_ssl``: Connect the SMTP host using SSL, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
+STARTTLS.
 
 ``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. It should be YAML formatted and contain
 two fields, ``user`` and ``password``. If this is not present, no authentication will be attempted.

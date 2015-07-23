@@ -4,7 +4,8 @@ import json
 import logging
 import subprocess
 from email.mime.text import MIMEText
-from smtplib import SMTP, SMTP_SSL
+from smtplib import SMTP
+from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
@@ -175,6 +176,7 @@ class EmailAlerter(Alerter):
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
         self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
+        self.smtp_port = self.rule.get('smtp_port')
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
         # Convert email to a list if it isn't already
@@ -191,21 +193,17 @@ class EmailAlerter(Alerter):
 
     def alert(self, matches):
         body = ''
-
         for match in matches:
-
             body += str(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
-
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
             url = '%s/browse/%s' % (self.rule['jira_server'], self.pipeline['jira_ticket'])
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
-
         email_msg = MIMEText(body)
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
@@ -219,9 +217,18 @@ class EmailAlerter(Alerter):
 
         try:
             if self.smtp_ssl:
-                self.smtp = SMTP_SSL(self.smtp_host)
+                if self.smtp_port:
+                    self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port)
+                else:
+                    self.smtp = SMTP_SSL(self.smtp_host)
             else:
-                self.smtp = SMTP(self.smtp_host)
+                if self.smtp_port:
+                    self.smtp = SMTP(self.smtp_host, self.smtp_port)
+                else:
+                    self.smtp = SMTP(self.smtp_host)
+                self.smtp.ehlo()
+                if self.smtp.has_extn('STARTTLS'):
+                    self.smtp.starttls()
             if 'smtp_auth_file' in self.rule:
                 self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:

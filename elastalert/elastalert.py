@@ -171,7 +171,7 @@ class ElastAlerter():
             return index
 
     @staticmethod
-    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp'):
+    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts):
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
@@ -181,8 +181,8 @@ class ElastAlerter():
         :param sort: If true, sort results by timestamp. (Default True)
         :return: A query dictionary to pass to elasticsearch.
         """
-        starttime = dt_to_ts(starttime)
-        endtime = dt_to_ts(endtime)
+        starttime = to_ts_func(starttime)
+        endtime = to_ts_func(endtime)
         filters = copy.copy(filters)
         query = {'filter': {'bool': {'must': filters}}}
         if starttime and endtime:
@@ -215,7 +215,7 @@ class ElastAlerter():
         if len(res['hits']['hits']) == 0:
             # Index is completely empty, return a date before the epoch
             return '1969-12-30T00:00:00Z'
-        timestamp = res['hits']['hits'][0]['_source'][timestamp_field]
+        timestamp = res['hits']['hits'][0][timestamp_field]
         return timestamp
 
     @staticmethod
@@ -223,7 +223,13 @@ class ElastAlerter():
         """ Process results from Elasticearch. This replaces timestamps with datetime objects
         and creates compound query_keys. """
         for hit in hits:
-            hit['_source'][rule['timestamp_field']] = ts_to_dt(hit['_source'][rule['timestamp_field']])
+            # Merge fields and _source
+            hit.setdefault('_source', {})
+            for key, value in hit.get('fields', {}).items():
+                # Fields are returned as lists, assume any with length 1 are not arrays in _source
+                # Except sometimes they aren't lists. This is dependent on ES version
+                hit['_source'].setdefault(key, value[0] if type(value) is list and len(value) == 1 else value)
+            hit['_source'][rule['timestamp_field']] = rule['ts_to_dt'](hit['_source'][rule['timestamp_field']])
             if rule.get('compound_query_key'):
                 values = [hit['_source'].get(key, 'None') for key in rule['compound_query_key']]
                 hit['_source'][rule['query_key']] = ', '.join(values)
@@ -236,9 +242,14 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A list of hits, bounded by self.max_query_size.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'])
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], to_ts_func=rule['dt_to_ts'])
+        extra_args = {'_source_include': rule['include']}
+        if not rule.get('_source_enabled'):
+            query['fields'] = rule['include']
+            extra_args = {}
         try:
-            res = self.current_es.search(index=index, size=self.max_query_size, body=query, _source_include=rule['include'], ignore_unavailable=True)
+            res = self.current_es.search(index=index, size=self.max_query_size, body=query, ignore_unavailable=True, **extra_args)
+            logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
             # (so big that they will fill the entire terminal buffer)
@@ -268,7 +279,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A dictionary mapping timestamps to number of hits for that time period.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
         query = {'query': {'filtered': query}}
 
         try:
@@ -293,7 +304,7 @@ class ElastAlerter():
             if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
                 filter_key += '.raw'
             rule_filter.extend([{'term': {filter_key: qk}}])
-        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)
+        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
         if size is None:
             size = rule.get('terms_size', 50)
         query = self.get_terms_query(base_query, size, key)
@@ -323,7 +334,6 @@ class ElastAlerter():
         # Remember the new data's IDs
         for event in data:
             rule['processed_hits'][event['_id']] = event['_source'][rule['timestamp_field']]
-
         return [event['_source'] for event in data]
 
     def remove_old_events(self, rule):
@@ -373,7 +383,6 @@ class ElastAlerter():
                 rule_inst.add_terms_data(data)
             else:
                 rule_inst.add_data(data)
-
         # Warn if we hit max_query_size
         if self.num_hits - prev_num_hits == max_size and not rule.get('use_count_query'):
             logging.warning("Hit max_query_size (%s) while querying for %s" % (max_size, rule['name']))
@@ -475,6 +484,7 @@ class ElastAlerter():
         # Run the rule. If querying over a large time period, split it up into segments
         self.num_hits = 0
         segment_size = self.get_segment_size(rule)
+
         while endtime - rule['starttime'] > segment_size:
             tmp_endtime = rule['starttime'] + segment_size
             if not self.run_query(rule, rule['starttime'], tmp_endtime):
@@ -483,7 +493,6 @@ class ElastAlerter():
             rule['type'].garbage_collect(tmp_endtime)
         if not self.run_query(rule, rule['starttime'], endtime):
             return 0
-
         rule['type'].garbage_collect(endtime)
 
         # Process any new matches
@@ -1083,12 +1092,12 @@ class ElastAlerter():
                 'rule_name': rule_name,
                 '@timestamp': ts_now(),
                 'until': timestamp}
+
         self.silence_cache[rule_name] = (timestamp, exponent)
         return self.writeback('silence', body)
 
     def is_silenced(self, rule_name):
         """ Checks if rule_name is currently silenced. Returns false on exception. """
-
         if rule_name in self.silence_cache:
             if ts_now() < self.silence_cache[rule_name][0]:
                 return True
@@ -1113,6 +1122,7 @@ class ElastAlerter():
             if res['hits']['hits']:
                 until_ts = res['hits']['hits'][0]['_source']['until']
                 exponent = res['hits']['hits'][0]['_source'].get('exponent', 0)
+
                 self.silence_cache[rule_name] = (ts_to_dt(until_ts), exponent)
                 if ts_now() < ts_to_dt(until_ts):
                     return True
@@ -1132,7 +1142,8 @@ class ElastAlerter():
         self.writeback('elastalert_error', body)
 
     def handle_uncaught_exception(self, exception, rule):
-        """ Disables a rule and sends a notifcation. """
+        """ Disables a rule and sends a notification. """
+        logging.error(traceback.format_exc())
         self.handle_error('Uncaught exception running rule %s: %s' % (rule['name'], exception), {'rule': rule['name']})
         if self.disable_rules_on_error:
             self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
@@ -1197,7 +1208,6 @@ class ElastAlerter():
 
         if not rule.get('exponential_realert'):
             return timestamp + rule['realert'], 0
-
         diff = seconds(timestamp - last_until)
         # Increase exponent if we've alerted recently
         if diff < seconds(rule['realert']) * 2 ** exponent:
