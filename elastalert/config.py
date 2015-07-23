@@ -61,7 +61,7 @@ def get_module(module_name):
     return module
 
 
-def load_configuration(filename, conf=None):
+def load_configuration(filename, conf=None, args=None):
     """ Load a yaml rule file and fill in the relevant fields with objects.
 
     :param filename: The name of a rule configuration file.
@@ -74,12 +74,12 @@ def load_configuration(filename, conf=None):
         raise EAException('Could not parse file %s: %s' % (filename, e))
 
     rule['rule_file'] = filename
-    load_options(rule, conf)
-    load_modules(rule)
+    load_options(rule, conf, args)
+    load_modules(rule, args)
     return rule
 
 
-def load_options(rule, conf=None):
+def load_options(rule, conf=None, args=None):
     """ Converts time objects, sets defaults, and validates some settings.
 
     :param rule: A dictionary of parsed YAML from a rule config file.
@@ -204,7 +204,7 @@ def load_options(rule, conf=None):
                                                                          datetime.datetime.now().strftime(rule.get('index'))))
 
 
-def load_modules(rule):
+def load_modules(rule, args=None):
     """ Loads things that could be modules. Enhancements, alerts and rule type. """
     # Set match enhancements
     match_enhancements = []
@@ -254,7 +254,7 @@ def load_modules(rule):
 
     # Instantiate rule
     try:
-        rule['type'] = rule['type'](rule)
+        rule['type'] = rule['type'](rule, args)
     except (KeyError, EAException) as e:
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
 
@@ -274,16 +274,17 @@ def get_file_paths(conf, use_rule=None):
     return rule_files
 
 
-def load_rules(filename, use_rule=None):
+def load_rules(args):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
     config file and then each rule found in rules_folder.
 
-    :param filename: Name of the global configuration file.
-    :param use_rule: Only load the rule which has this filename.
+    :param args: The parsed arguments to ElastAlert
     :return: The global configuration, a dictionary.
     """
     names = []
+    filename = args.config
     conf = yaml_loader(filename)
+    use_rule = args.rule
 
     # Make sure we have all required globals
     if required_globals - frozenset(conf.keys()):
@@ -312,7 +313,7 @@ def load_rules(filename, use_rule=None):
     rule_files = get_file_paths(conf, use_rule)
     for rule_file in rule_files:
         try:
-            rule = load_configuration(rule_file, conf)
+            rule = load_configuration(rule_file, conf, args)
             if rule['name'] in names:
                 raise EAException('Duplicate rule named %s' % (rule['name']))
         except EAException as e:

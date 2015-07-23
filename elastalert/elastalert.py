@@ -3,7 +3,6 @@ import copy
 import datetime
 import json
 import logging
-import os
 import sys
 import time
 import traceback
@@ -56,15 +55,31 @@ class ElastAlerter():
         parser.add_argument('--verbose', action='store_true', dest='verbose', help='Increase verbosity without suppressing alerts')
         parser.add_argument('--pin_rules', action='store_true', dest='pin_rules', help='Stop ElastAlert from monitoring config file changes')
         parser.add_argument('--es_debug', action='store_true', dest='es_debug', help='Enable verbose logging from Elasticsearch queries')
+        parser.add_argument('--es_debug_trace', action='store', dest='es_debug_trace', default="/tmp/es_trace.log", help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file (default: /tmp/es_trace.log)')
         self.args = parser.parse_args(args)
 
     def __init__(self, args):
         self.parse_args(args)
-        self.conf = load_rules(self.args.config, use_rule=self.args.rule)
-        self.max_query_size = self.conf['max_query_size']
-        self.rules = self.conf['rules']
         self.debug = self.args.debug
         self.verbose = self.args.verbose
+
+        if self.debug:
+            self.verbose = True
+
+        if self.verbose:
+            logging.getLogger().setLevel(logging.INFO)
+
+        if not self.args.es_debug:
+            logging.getLogger('elasticsearch').setLevel(logging.WARNING)
+
+        if self.args.es_debug_trace:
+            tracer = logging.getLogger('elasticsearch.trace')
+            tracer.setLevel(logging.INFO)
+            tracer.addHandler(logging.FileHandler(self.args.es_debug_trace))
+
+        self.conf = load_rules(self.args)
+        self.max_query_size = self.conf['max_query_size']
+        self.rules = self.conf['rules']
         self.writeback_index = self.conf['writeback_index']
         self.run_every = self.conf['run_every']
         self.alert_time_limit = self.conf['alert_time_limit']
@@ -87,15 +102,6 @@ class ElastAlerter():
 
         self.writeback_es = self.new_elasticsearch(self.es_conn_config)
 
-        if self.debug:
-            self.verbose = True
-
-        if self.verbose:
-            logging.getLogger().setLevel(logging.INFO)
-
-        if not self.args.es_debug:
-            logging.getLogger('elasticsearch').setLevel(logging.WARNING)
-
         for rule in self.rules:
             rule = self.init_rule(rule)
 
@@ -107,6 +113,7 @@ class ElastAlerter():
         """ returns an Elasticsearch instance configured using an es_conn_config """
         return Elasticsearch(host=es_conn_conf['es_host'],
                              port=es_conn_conf['es_port'],
+                             url_prefix=es_conn_conf['es_url_prefix'],
                              use_ssl=es_conn_conf['use_ssl'],
                              http_auth=es_conn_conf['http_auth'],
                              timeout=es_conn_conf['es_conn_timeout'])
@@ -124,6 +131,7 @@ class ElastAlerter():
         parsed_conf['es_password'] = None
         parsed_conf['es_host'] = conf['es_host']
         parsed_conf['es_port'] = conf['es_port']
+        parsed_conf['es_url_prefix'] = ''
         parsed_conf['es_conn_timeout'] = 10
 
         if 'es_username' in conf:
@@ -138,6 +146,9 @@ class ElastAlerter():
 
         if 'es_conn_timeout' in conf:
             parsed_conf['es_conn_timeout'] = conf['es_conn_timeout']
+
+        if 'es_url_prefix' in conf:
+            parsed_conf['es_url_prefix'] = conf['es_url_prefix']
 
         return parsed_conf
 
@@ -586,7 +597,7 @@ class ElastAlerter():
             if hash_value != rule_hashes[rule_file]:
                 # Rule file was changed, reload rule
                 try:
-                    new_rule = load_configuration(os.path.join(self.conf['rules_folder'], rule_file))
+                    new_rule = load_configuration(rule_file)
                 except EAException as e:
                     self.handle_error('Could not load rule %s: %s' % (rule_file, e))
                     continue
@@ -606,7 +617,7 @@ class ElastAlerter():
         if not self.args.rule:
             for rule_file in set(rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
-                    new_rule = load_configuration(os.path.join(self.conf['rules_folder'], rule_file))
+                    new_rule = load_configuration(rule_file)
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
                         raise EAException("A rule with the name %s already exists" % (new_rule['name']))
                 except EAException as e:
@@ -623,7 +634,7 @@ class ElastAlerter():
             try:
                 self.starttime = ts_to_dt(self.starttime)
             except (TypeError, ValueError):
-                self.handle_error("%s is not a valid ISO 8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
+                self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
                 exit(1)
         self.running = True
         while self.running:
@@ -696,8 +707,8 @@ class ElastAlerter():
     def generate_kibana4_db(self, rule, match):
         ''' Creates a link for a kibana4 dashboard which has time set to the match. '''
         db_name = rule.get('use_kibana4_dashboard')
-        start = ts_add(match[rule['timestamp_field']], -rule.get('timeframe', datetime.timedelta(minutes=10)))
-        end = ts_add(match[rule['timestamp_field']], datetime.timedelta(minutes=10))
+        start = ts_add(match[rule['timestamp_field']], -rule.get('kibana4_start_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10))))
+        end = ts_add(match[rule['timestamp_field']], rule.get('kibana4_end_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10))))
         link = kibana.kibana4_dashboard_link(db_name, start, end)
         return link
 
@@ -732,9 +743,10 @@ class ElastAlerter():
 
         # Add filter for query_key value
         if 'query_key' in rule:
-            if rule['query_key'] in match:
-                term = {'term': {rule['query_key']: match[rule['query_key']]}}
-                kibana.add_filter(db, term)
+            for qk in rule.get('compound_query_key', [rule['query_key']]):
+                if qk in match:
+                    term = {'term': {qk: match[qk]}}
+                    kibana.add_filter(db, term)
 
         # Convert to json
         db_js = json.dumps(db)

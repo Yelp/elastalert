@@ -39,6 +39,10 @@ test_rule = {'es_host': 'test_host',
              'aggregation': {'hours': 2},
              'include': ['comparekey', '@timestamp']}
 
+test_args = mock.Mock()
+test_args.config = 'test_config'
+test_args.rule = None
+
 
 def test_import_rules():
     test_rule_copy = copy.deepcopy(test_rule)
@@ -72,7 +76,7 @@ def test_load_rules():
 
         with mock.patch('os.listdir') as mock_ls:
             mock_ls.return_value = ['testrule.yaml']
-            rules = load_rules('test_config')
+            rules = load_rules(test_args)
             assert isinstance(rules['rules'][0]['type'], elastalert.ruletypes.RuleType)
             assert isinstance(rules['rules'][0]['alert'][0], elastalert.alerts.Alerter)
             assert isinstance(rules['rules'][0]['timeframe'], datetime.timedelta)
@@ -113,7 +117,7 @@ def test_raises_on_missing_config():
             with mock.patch('os.listdir') as mock_ls:
                 mock_ls.return_value = ['testrule.yaml']
                 with pytest.raises(EAException):
-                    load_rules('test_config')
+                    load_rules(test_args)
 
 
 def test_raises_on_bad_generate_kibana_filters():

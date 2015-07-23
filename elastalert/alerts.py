@@ -5,6 +5,7 @@ import logging
 import subprocess
 from email.mime.text import MIMEText
 from smtplib import SMTP
+from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
@@ -173,6 +174,7 @@ class EmailAlerter(Alerter):
         super(EmailAlerter, self).__init__(*args)
 
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
+        self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
         self.smtp_port = self.rule.get('smtp_port')
         if self.rule.get('smtp_auth_file'):
@@ -214,13 +216,19 @@ class EmailAlerter(Alerter):
             to_addr = to_addr + self.rule['bcc']
 
         try:
-            if self.smtp_port:
-                self.smtp = SMTP(self.smtp_host, self.smtp_port)
+            if self.smtp_ssl:
+                if self.smtp_port:
+                    self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port)
+                else:
+                    self.smtp = SMTP_SSL(self.smtp_host)
             else:
-                self.smtp = SMTP(self.smtp_host)
-            self.smtp.ehlo()
-            if self.smtp.has_extn('STARTTLS'):
-                self.smtp.starttls()
+                if self.smtp_port:
+                    self.smtp = SMTP(self.smtp_host, self.smtp_port)
+                else:
+                    self.smtp = SMTP(self.smtp_host)
+                self.smtp.ehlo()
+                if self.smtp.has_extn('STARTTLS'):
+                    self.smtp.starttls()
             if 'smtp_auth_file' in self.rule:
                 self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:
@@ -403,6 +411,7 @@ class CommandAlerter(Alerter):
 
     def __init__(self, *args):
         super(CommandAlerter, self).__init__(*args)
+        self.last_command = []
         if isinstance(self.rule['command'], basestring) and '%' in self.rule['command']:
             logging.warning('Warning! You could be vulnerable to shell injection!')
             self.rule['command'] = [self.rule['command']]

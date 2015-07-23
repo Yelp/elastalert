@@ -97,7 +97,7 @@ For ranges on fields::
 Negation, and, or
 *****************
 
-Any of the filters can be embedded in not, and, and or::
+Any of the filters can be embedded in ``not``, ``and``, and ``or``::
 
     filter:
     - or:

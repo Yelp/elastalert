@@ -30,7 +30,7 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``buffer_time`` is the size of the query window, stretching backwards from the time each query is run.
 
-``es_host`` is the address of an Elasticsearch cluster where ElastAlert will store data about it's state, queries run, alerts, and errors. Each rule may also use a different Elasticsearch host to query against.
+``es_host`` is the address of an Elasticsearch cluster where ElastAlert will store data about its state, queries run, alerts, and errors. Each rule may also use a different Elasticsearch host to query against.
 
 ``es_port`` is the port corresponding to ``es_host``.
 
@@ -39,6 +39,8 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``.
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
+
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
 
 ``writeback_index`` is the name of the index in which ElastAlert will store data. We will create this index later.
 

@@ -455,8 +455,8 @@ def test_new_term():
     rules = {'fields': ['a', 'b'],
              'timestamp_field': '@timestamp',
              'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
-    mock_res = {'aggregations': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
-                                                        {'key': 'key2', 'doc_count': 5}]}}}
+    mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
+                                                                     {'key': 'key2', 'doc_count': 5}]}}}}
 
     with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
         mock_es.return_value = mock.Mock()
