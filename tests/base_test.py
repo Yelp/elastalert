@@ -78,7 +78,7 @@ def test_init_rule(ea):
 def test_query(ea):
     ea.current_es.search.return_value = {'hits': {'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
 
 
 def test_no_hits(ea):
@@ -405,11 +405,11 @@ def test_count(ea):
 
     # Assert that es.count is run against every run_every timeframe between START and END
     start = START
-    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}}}}
+    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}}}
     while END - start > ea.run_every:
         end = start + ea.run_every
-        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
-        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['from'] = dt_to_ts(start)
+        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['lte'] = dt_to_ts(end)
+        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['gt'] = dt_to_ts(start)
         start = start + ea.run_every
         ea.current_es.count.assert_any_call(body=query, doc_type='doctype', index='idx', ignore_unavailable=True)
 
