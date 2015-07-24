@@ -225,7 +225,7 @@ class MockElastAlerter(object):
                 doc.update({'_id': doc.get('_id', get_id())})
         else:
             endtime = ts_now()
-            starttime = endtime - datetime.timedelta(days=1)
+            starttime = endtime - datetime.timedelta(days=args.days)
 
         # Set run_every to cover the entire time range unless use_count_query or use_terms_query is set
         # This is to prevent query segmenting which unnecessarily slows down tests
