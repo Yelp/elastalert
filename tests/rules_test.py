@@ -202,6 +202,18 @@ def test_spike_count():
     assert len(rule.matches) == 1
 
 
+def test_spike_deep_key():
+    rules = {'threshold_ref': 10,
+             'spike_height': 2,
+             'timeframe': datetime.timedelta(seconds=10),
+             'spike_type': 'both',
+             'timestamp_field': '@timestamp',
+             'query_key': 'foo.bar.baz'}
+    rule = SpikeRule(rules)
+    rule.add_data([{'@timestamp': ts_to_dt('2015'), 'foo': {'bar': {'baz': 'LOL'}}}])
+    assert 'LOL' in rule.cur_windows
+
+
 def test_spike():
     # Events are 1 per second
     events = hits(100, timestamp_field='ts')
