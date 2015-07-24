@@ -25,12 +25,13 @@ class CardinalityRule(RuleType):
                 # If no query_key, we use the key 'all' for all events
                 key = 'all'
             self.cardinality_cache.setdefault(key,{})
-            if event[self.cardinality_term] not in self.cardinality_cache[key].keys():
-                # Store the timestamps of recent occurrences, per key
-                self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append((event, 1))
-                self.check_for_match(key)                
-            # update timestamp of that key as the timestamp of lastest occurrence 
-            self.cardinality_cache[key][event[self.cardinality_term]]=event[self.ts_field]
+            if self.cardinality_term in event.keys():
+                if event[self.cardinality_term] not in self.cardinality_cache[key].keys():
+                    # Store the timestamps of recent occurrences, per key
+                    self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append((event, 1))
+                    self.check_for_match(key)                
+                # update timestamp of that key as the timestamp of lastest occurrence 
+                self.cardinality_cache[key][event[self.cardinality_term]]=event[self.ts_field]
 
     def check_for_match(self, key):
         # Match if, after removing old events, we hit num_events
