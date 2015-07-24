@@ -1,0 +1,62 @@
+# Alert when the rate of events exceeds a threshold
+
+# (Required)
+# Elasticsearch host
+es_host: elasticsearch.example.com
+
+# (Required)
+# Elasticsearch port
+es_port: 14900
+
+# (OptionaL) Connect with SSL to elasticsearch
+#use_ssl: True
+
+# (Optional) basic-auth username and password for elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# (Required)
+# Rule name, must be unique
+name: Example rule
+
+# (Required)
+# Type of alert.
+# the CardinalityRule rule type alerts when num_events events occur with timeframe time
+type: customrules.CardinalityRule
+
+# (Required)
+# Index to search, wildcard supported
+index: logstash-*
+
+# (Required, CardinalityRule specific)
+# Alert when this many documents matching the query occur within a timeframe
+max_cardinality: 50
+
+# (Required, CardinalityRule specific)
+# Alert when this many documents matching the query occur within a timeframe
+cardinality_term: "some_field_name"
+
+# (Required, CardinalityRule specific)
+# num_events must occur within this amount of time to trigger an alert
+timeframe:
+  hours: 4
+
+# (Required)
+# A list of elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter:
+- term:
+    some_field: "some_value"
+
+query_key: "some_other_field_name" # if set, it will bucket results together for each different value of event[query_key] before calculating cardinality
+
+# (Required)
+# The alert is use when a match is found
+alert:
+- "email"
+
+# (required, email specific)
+# a list of email addresses to send alerts to
+email:
+- "elastalert@example.com"
