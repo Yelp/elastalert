@@ -26,6 +26,10 @@ description: Number of document creations exceeded the threshold for some users 
 type: customrules.CardinalityRule
 
 # (Required, CardinalityRule specific)
+# CardinalityRule will perform necessary caching itself
+no_cache: True
+
+# (Required, CardinalityRule specific)
 # Alert when this many documents matching the query occur within a timeframe, this must also appear in query_key
 cardinality_term: "document_id"
 

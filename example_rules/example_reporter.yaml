@@ -21,9 +21,12 @@ name: Half-day Report
 description: Half-day report on new user (pre)-registration(s) and new user subscription(s).
 
 # (Required)
-# Type of alert.
-# the frequency rule type alerts when num_events events occur with timeframe time
+# the PeriodicReporter rule reports aggregated activities periodicly
 type: customrules.PeriodicReporter
+
+# (Required, PeriodicReporter specific)
+# PeriodicReporter will perform necessary caching itself
+no_cache: True
 
 # (Required)
 # Index to search, wildcard supported

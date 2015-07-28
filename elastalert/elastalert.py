@@ -498,10 +498,11 @@ class ElastAlerter():
 
         # Process any new matches
         num_matches = len(rule['type'].matches)
-        if 'max_cardinality' in rule.keys():
-            if rule['type'].matches:
-                self.alert(rule['type'].matches,rule)
-                rule['type'].matches=[]
+        if 'no_cache' in rule.keys():
+        	if rule['no_cache']:
+	            if rule['type'].matches:
+	                self.alert(rule['type'].matches,rule)
+	                rule['type'].matches=[]
         else:
             while rule['type'].matches:
                 match = rule['type'].matches.pop(0)
