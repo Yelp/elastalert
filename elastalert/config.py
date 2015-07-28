@@ -36,7 +36,8 @@ rules_mapping = {
     'whitelist': ruletypes.WhitelistRule,
     'change': ruletypes.ChangeRule,
     'flatline': ruletypes.FlatlineRule,
-    'new_term': ruletypes.NewTermsRule
+    'new_term': ruletypes.NewTermsRule,
+    'cardinality': ruletypes.CardinalityRule
 }
 
 # Used to map names of alerts to their classes
