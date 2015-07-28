@@ -17,17 +17,13 @@ es_port: 9505
 
 # (Required)
 # Rule name, must be unique
-name: Excessive Document Creations Alert
-description: Number of document creations exceeded the threshold for some users during the pre-set period.
+name: Half-day Report
+description: Half-day report on new user (pre)-registration(s) and new user subscription(s).
 
 # (Required)
 # Type of alert.
 # the frequency rule type alerts when num_events events occur with timeframe time
-type: customrules.CardinalityRule
-
-# (Required, CardinalityRule specific)
-# Alert when this many documents matching the query occur within a timeframe, this must also appear in query_key
-cardinality_term: "document_id"
+type: customrules.PeriodicReporter
 
 # (Required)
 # Index to search, wildcard supported
@@ -36,13 +32,9 @@ index: dldm-prod-server
 timestamp_field: "@timestamp"
 
 # (Required, frequency specific)
-# Alert when this many documents matching the query occur within a timeframe
-max_cardinality: 15
-
-# (Required, frequency specific)
 # num_events must occur within this amount of time to trigger an alert
 timeframe:
-  hours: 24
+  hours: 12
 
 # (Required)
 # A list of elasticsearch filters used for find events
@@ -51,18 +43,19 @@ timeframe:
 filter:
 - query:
     query_string:
-      query: '(action:CREATE)'
+      query: '(msg:"Successful user registration" or msg:"Successful user pre-registration" or msg:"Entitlement payment complete. Enqueued payment receipt email to purchaser")'
 
 doc_type: prod-server
 query_key: 
 - "user"
-- "document_id"
+- "purchased_by"
+- "item"
+- "msg"
 - "time"
 
 # this must be one of query_key
-bucket_key: user
 time_field: time
-storage: "/tmp/dldm/elastalertConfig/tmp/docCreations.json" # folder must exist, file doesn't have to
+storage: "/tmp/dldm/elastalertConfig/tmp/report.json"
 
 # (Required)
 # The alert is use when a match is found
@@ -83,4 +76,4 @@ smtp_port: # optional
 smtp_ssl: True
 smtp_auth_file: "/path/to/your/credentials.yaml" 
 
-alert_subject: "Excessive Document Creations Alert!"
+alert_subject: "Half-day Registration Report"

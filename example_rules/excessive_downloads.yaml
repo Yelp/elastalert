@@ -17,8 +17,8 @@ es_port: 9505
 
 # (Required)
 # Rule name, must be unique
-name: Excessive Document Creations Alert
-description: Number of document creations exceeded the threshold for some users during the pre-set period.
+name: Excessive Document Downloads Alert
+description: Number of document downloads exceeded the threshold for some users during the pre-set period.
 
 # (Required)
 # Type of alert.
@@ -37,7 +37,7 @@ timestamp_field: "@timestamp"
 
 # (Required, frequency specific)
 # Alert when this many documents matching the query occur within a timeframe
-max_cardinality: 15
+max_cardinality: 5
 
 # (Required, frequency specific)
 # num_events must occur within this amount of time to trigger an alert
@@ -51,7 +51,7 @@ timeframe:
 filter:
 - query:
     query_string:
-      query: '(action:CREATE)'
+      query: '(msg.analyzed:"Serving document request in docx format" OR msg.analyzed:"Serving document request in pdf format") AND (NOT user:*dragonlaw.com*) AND (NOT doctype_title:"Confidentiality Agreement") AND (NOT doctype_title:"Website Privacy Policy Statement")'
 
 doc_type: prod-server
 query_key: 
@@ -62,7 +62,7 @@ query_key:
 # this must be one of query_key
 bucket_key: user
 time_field: time
-storage: "/tmp/dldm/elastalertConfig/tmp/docCreations.json" # folder must exist, file doesn't have to
+storage: "/tmp/dldm/elastalertConfig/tmp/docDownloads.json"
 
 # (Required)
 # The alert is use when a match is found
@@ -70,17 +70,19 @@ alert:
 - "email"
 
 # (required, email specific)
-from_addr: "admin"
+from_addr: "admin@dragonlaw.com.hk"
 # a list of email addresses to send alerts to
 email:
-- "example@email.com"
+- "terry.wong@dragonlaw.com.hk"
+- "oliver.boote@dragonlaw.com.hk"
+- "chris.sykes@dragonlaw.com.hk"
 
 bcc:
-- "yourown@email.com"
+- "lingxiao.xia@dragonlaw.com.hk"
 
-smtp_host: example.com
-smtp_port: # optional
+smtp_host: smtp.mandrillapp.com
+smtp_port: 587
 smtp_ssl: True
-smtp_auth_file: "/path/to/your/credentials.yaml" 
+smtp_auth_file: "/tmp/dldm/elastalertConfig/smtp_auth.yaml"
 
-alert_subject: "Excessive Document Creations Alert!"
+alert_subject: "Excessive Document Downloads Alert!"
