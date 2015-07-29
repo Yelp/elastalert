@@ -376,6 +376,7 @@ class ElastAlerter():
         # There was an exception while querying
         if data is None:
             return False
+        # Add the data to rule_inst otherwise because reports needs to check for match even if there isn't hits in this round, add_data() would invoke check_for_match().
         else:
             if rule.get('use_count_query'):
                 rule_inst.add_count_data(data)

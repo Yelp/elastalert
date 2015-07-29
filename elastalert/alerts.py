@@ -175,7 +175,7 @@ class EmailAlerter(Alerter):
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
         self.smtp_port = self.rule.get('smtp_port', 465)
         self.smtp_ssl = self.rule.get('smtp_ssl', False)
-        self.from_addr = self.rule.get('from_addr', 'Dragon Law Alert System')
+        self.from_addr = self.rule.get('from_addr', 'ElastAlert')
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
         # Convert email to a list if it isn't already
