@@ -90,7 +90,7 @@ oneOf:
     required: [fields]
     properties:
       type: {enum: [new_term]}
-      fields: {type: string}
+      fields: *arrayOfString
       terms_window_size: *timeframe
       alert_on_missing_field: {type: boolean}
       use_terms_query: {type: boolean}
