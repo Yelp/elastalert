@@ -375,9 +375,8 @@ class ElastAlerter():
 
         # There was an exception while querying
         if data is None:
-            rule_inst.add_data([])
             return False
-        elif data:
+        else:
             if rule.get('use_count_query'):
                 rule_inst.add_count_data(data)
             elif rule.get('use_terms_query'):
