@@ -572,7 +572,7 @@ class CardinalityRule(RuleType):
         if 'max_cardinality' not in self.rules and 'min_cardinality' not in self.rules:
             raise EAException("CardinalityRule must have one of either max_cardinality or min_cardinality")
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
-        self.cardinality_term = self.rules['cardinality_term']
+        self.cardinality_field = self.rules['cardinality_field']
         self.cardinality_cache = {}
         self.first_event = {}
         self.timeframe = self.rules['timeframe']
@@ -591,9 +591,9 @@ class CardinalityRule(RuleType):
                 key = 'all'
             self.cardinality_cache.setdefault(key, {})
             self.first_event.setdefault(key, event[self.ts_field])
-            if self.cardinality_term in event:
+            if self.cardinality_field in event:
                 # Store this timestamp as most recent occurence of the term
-                self.cardinality_cache[key][event[self.cardinality_term]] = event[self.ts_field]
+                self.cardinality_cache[key][event[self.cardinality_field]] = event[self.ts_field]
                 self.check_for_match(key, event)
 
     def check_for_match(self, key, event, gc=True):
@@ -631,6 +631,6 @@ class CardinalityRule(RuleType):
         endtime = pretty_ts(match[self.ts_field], lt)
         message = ('A maximum of %d unique %s(s) occurred since last alert or '
                    'between %s and %s\n\n' % (self.rules['max_cardinality'],
-                                              self.rules['cardinality_term'],
+                                              self.rules['cardinality_field'],
                                               starttime, endtime))
         return message

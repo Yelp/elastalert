@@ -572,7 +572,7 @@ def test_flatline_query_key():
 def test_cardinality_max():
     rules = {'max_cardinality': 4,
              'timeframe': datetime.timedelta(minutes=10),
-             'cardinality_term': 'user',
+             'cardinality_field': 'user',
              'timestamp_field': '@timestamp'}
     rule = CardinalityRule(rules)
 
@@ -608,7 +608,7 @@ def test_cardinality_max():
 def test_cardinality_min():
     rules = {'min_cardinality': 4,
              'timeframe': datetime.timedelta(minutes=10),
-             'cardinality_term': 'user',
+             'cardinality_field': 'user',
              'timestamp_field': '@timestamp'}
     rule = CardinalityRule(rules)
 
@@ -639,7 +639,7 @@ def test_cardinality_min():
 def test_cardinality_qk():
     rules = {'max_cardinality': 2,
              'timeframe': datetime.timedelta(minutes=10),
-             'cardinality_term': 'foo',
+             'cardinality_field': 'foo',
              'timestamp_field': '@timestamp',
              'query_key': 'user'}
     rule = CardinalityRule(rules)
