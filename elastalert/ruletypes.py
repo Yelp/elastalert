@@ -578,11 +578,7 @@ class CardinalityRule(RuleType):
         self.timeframe = self.rules['timeframe']
 
     def add_data(self, data):
-        if 'query_key' in self.rules:
-            qk = self.rules['query_key']
-        else:
-            qk = None
-
+        qk = self.rules.get('query_key')
         for event in data:
             if qk:
                 key = hashable(lookup_es_key(event, qk))
@@ -599,16 +595,15 @@ class CardinalityRule(RuleType):
     def check_for_match(self, key, event, gc=True):
         # Check to see if we are past max/min_cardinality for a given key
         timeframe_elapsed = event[self.ts_field] - self.first_event.get(key, event[self.ts_field]) > self.timeframe
-        if (len(self.cardinality_cache[key].keys()) > self.rules.get('max_cardinality', float('inf')) or
-                (len(self.cardinality_cache[key].keys()) < self.rules.get('min_cardinality', float('-inf')) and timeframe_elapsed)):
+        if (len(self.cardinality_cache[key]) > self.rules.get('max_cardinality', float('inf')) or
+                (len(self.cardinality_cache[key]) < self.rules.get('min_cardinality', float('-inf')) and timeframe_elapsed)):
             # If there might be a match, run garbage collect first, as outdated terms are only removed in GC
             # Only run it if there might be a match so it doesn't impact performance
             if gc:
                 self.garbage_collect(event[self.ts_field])
                 self.check_for_match(key, event, False)
             else:
-                if key in self.first_event:
-                    self.first_event.pop(key)
+                self.first_event.pop(key, None)
                 self.add_match(event)
 
     def garbage_collect(self, timestamp):
