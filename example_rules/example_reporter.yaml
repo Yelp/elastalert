@@ -1,0 +1,82 @@
+# Alert when the rate of events exceeds a threshold
+
+# (Required)
+# Elasticsearch host
+es_host: 127.0.0.1
+
+# (Required)
+# Elasticsearch port
+es_port: 9505
+
+# (OptionaL) Connect with SSL to elasticsearch
+#use_ssl: True
+
+# (Optional) basic-auth username and password for elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# (Required)
+# Rule name, must be unique
+name: Half-day Report
+description: Half-day report on new user (pre)-registration(s) and new user subscription(s).
+
+# (Required)
+# the PeriodicReporter rule reports aggregated activities periodicly
+type: customrules.PeriodicReporter
+
+# (Required, PeriodicReporter specific)
+# PeriodicReporter will perform necessary caching itself
+no_cache: True
+
+# (Required)
+# Index to search, wildcard supported
+index: dldm-prod-server
+
+timestamp_field: "@timestamp"
+
+# (Required, frequency specific)
+# num_events must occur within this amount of time to trigger an alert
+timeframe:
+  hours: 12
+
+# (Required)
+# A list of elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter:
+- query:
+    query_string:
+      query: '(msg:"Successful user registration" or msg:"Successful user pre-registration" or msg:"Entitlement payment complete. Enqueued payment receipt email to purchaser")'
+
+doc_type: prod-server
+query_key: 
+- "user"
+- "purchased_by"
+- "item"
+- "msg"
+- "time"
+
+# this must be one of query_key
+time_field: time
+storage: "/tmp/dldm/elastalertConfig/tmp/report.json"
+
+# (Required)
+# The alert is use when a match is found
+alert:
+- "email"
+
+# (required, email specific)
+from_addr: "admin"
+# a list of email addresses to send alerts to
+email:
+- "example@email.com"
+
+bcc:
+- "yourown@email.com"
+
+smtp_host: example.com
+smtp_port: # optional
+smtp_ssl: True
+smtp_auth_file: "/path/to/your/credentials.yaml" 
+
+alert_subject: "Half-day Registration Report"

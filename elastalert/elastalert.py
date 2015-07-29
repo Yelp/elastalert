@@ -376,7 +376,8 @@ class ElastAlerter():
         # There was an exception while querying
         if data is None:
             return False
-        elif data:
+        # Add the data to rule_inst otherwise because reports needs to check for match even if there isn't hits in this round, add_data() would invoke check_for_match().
+        else:
             if rule.get('use_count_query'):
                 rule_inst.add_count_data(data)
             elif rule.get('use_terms_query'):
@@ -497,39 +498,45 @@ class ElastAlerter():
 
         # Process any new matches
         num_matches = len(rule['type'].matches)
-        while rule['type'].matches:
-            match = rule['type'].matches.pop(0)
+        if 'no_cache' in rule.keys():
+        	if rule['no_cache']:
+	            if rule['type'].matches:
+	                self.alert(rule['type'].matches,rule)
+	                rule['type'].matches=[]
+        else:
+            while rule['type'].matches:
+                match = rule['type'].matches.pop(0)
 
-            # If realert is set, silence the rule for that duration
-            # Silence is cached by query_key, if it exists
-            # Default realert time is 0 seconds
+                # If realert is set, silence the rule for that duration
+                # Silence is cached by query_key, if it exists
+                # Default realert time is 0 seconds
 
-            # concatenate query_key (or none) with rule_name to form silence_cache key
-            if 'query_key' in rule:
-                try:
-                    key = '.' + str(match[rule['query_key']])
-                except KeyError:
-                    # Some matches may not have a query key
-                    # Use a special token for these to not clobber all alerts
-                    key = '._missing'
-            else:
-                key = ''
+                # concatenate query_key (or none) with rule_name to form silence_cache key
+                if 'query_key' in rule:
+                    try:
+                        key = '.' + str(match[rule['query_key']])
+                    except KeyError:
+                        # Some matches may not have a query key
+                        # Use a special token for these to not clobber all alerts
+                        key = '._missing'
+                else:
+                    key = ''
 
-            if self.is_silenced(rule['name'] + key) or self.is_silenced(rule['name']):
-                logging.info('Ignoring match for silenced rule %s%s' % (rule['name'], key))
-                continue
+                if self.is_silenced(rule['name'] + key) or self.is_silenced(rule['name']):
+                    logging.info('Ignoring match for silenced rule %s%s' % (rule['name'], key))
+                    continue
 
-            if rule['realert']:
-                next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
-                self.set_realert(rule['name'] + key, next_alert, exponent)
+                if rule['realert']:
+                    next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
+                    self.set_realert(rule['name'] + key, next_alert, exponent)
 
-            # If no aggregation, alert immediately
-            if not rule['aggregation']:
-                self.alert([match], rule)
-                continue
+                # If no aggregation, alert immediately
+                if not rule['aggregation']:
+                    self.alert([match], rule)
+                    continue
 
-            # Add it as an aggregated match
-            self.add_aggregated_alert(match, rule)
+                # Add it as an aggregated match
+                self.add_aggregated_alert(match, rule)
 
         # Mark this endtime for next run's start
         rule['previous_endtime'] = endtime

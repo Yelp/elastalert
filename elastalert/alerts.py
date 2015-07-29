@@ -4,8 +4,7 @@ import json
 import logging
 import subprocess
 from email.mime.text import MIMEText
-from smtplib import SMTP
-from smtplib import SMTP_SSL
+from smtplib import SMTP, SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
@@ -72,7 +71,7 @@ class BasicMatchString(object):
         return simplejson.dumps(blob, sort_keys=True, indent=4)
 
     def __str__(self):
-        self.text = self.rule['name'] + '\n\n'
+        self.text=''
         self._add_custom_alert_text()
         self._ensure_new_line()
         if self.rule.get('alert_text_type') != 'alert_text_only':
@@ -177,9 +176,9 @@ class EmailAlerter(Alerter):
         super(EmailAlerter, self).__init__(*args)
 
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
+        self.smtp_port = self.rule.get('smtp_port', 465)
         self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
-        self.smtp_port = self.rule.get('smtp_port')
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
         # Convert email to a list if it isn't already
@@ -195,18 +194,24 @@ class EmailAlerter(Alerter):
             self.rule['bcc'] = [self.rule['bcc']]
 
     def alert(self, matches):
-        body = ''
+        if self.rule['description']:
+            body = self.rule['description']+'\n\n========================================'
+        else:
+            body = self.rule['name']+'\n\n========================================'
+
         for match in matches:
             body += str(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+            body += '\n----------------------------------------'
+
+
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
             url = '%s/browse/%s' % (self.rule['jira_server'], self.pipeline['jira_ticket'])
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
+
         email_msg = MIMEText(body)
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
@@ -219,19 +224,13 @@ class EmailAlerter(Alerter):
             to_addr = to_addr + self.rule['bcc']
 
         try:
-            if self.smtp_ssl:
-                if self.smtp_port:
-                    self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port)
-                else:
-                    self.smtp = SMTP_SSL(self.smtp_host)
+            if self.smtp_port:
+                self.smtp = SMTP(self.smtp_host,int(self.smtp_port))
             else:
-                if self.smtp_port:
-                    self.smtp = SMTP(self.smtp_host, self.smtp_port)
-                else:
-                    self.smtp = SMTP(self.smtp_host)
-                self.smtp.ehlo()
-                if self.smtp.has_extn('STARTTLS'):
-                    self.smtp.starttls()
+                self.smtp = SMTP(self.smtp_host)
+            self.smtp.ehlo()
+            if self.smtp_ssl:
+                self.smtp.starttls()
             if 'smtp_auth_file' in self.rule:
                 self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:
@@ -239,7 +238,7 @@ class EmailAlerter(Alerter):
         except SMTPAuthenticationError:
             raise EAException("SMTP username/password rejected: %s" % (e))
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
-        self.smtp.close()
+        self.smtp.quit()
 
         logging.info("Sent email to %s" % (self.rule['email']))
 
