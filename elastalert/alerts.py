@@ -15,6 +15,7 @@ from jira.client import JIRA
 from jira.exceptions import JIRAError
 from staticconf.loader import yaml_loader
 from util import EAException
+from util import lookup_es_key
 from util import pretty_ts
 
 
@@ -34,7 +35,8 @@ class BasicMatchString(object):
         alert_text = self.rule.get('alert_text', '')
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
-            alert_text_values = [self.match.get(arg, '<MISSING VALUE>') for arg in alert_text_args]
+            alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
+            alert_text_values = ['<MISSING VALUE>' if val is None else val for val in alert_text_values]
             alert_text = alert_text.format(*alert_text_values)
         self.text += alert_text
 
@@ -130,7 +132,8 @@ class Alerter(object):
 
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
-            alert_subject_values = [matches[0].get(arg, '<MISSING VALUE>') for arg in alert_subject_args]
+            alert_subject_values = [lookup_es_key(matches[0], arg) for arg in alert_subject_args]
+            alert_subject_values = ['<MISSING VALUE>' if val is None else val for val in alert_subject_values]
             return alert_subject.format(*alert_subject_values)
 
         return alert_subject

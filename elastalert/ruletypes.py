@@ -342,7 +342,7 @@ class SpikeRule(RuleType):
         for event in data:
             qk = self.rules.get('query_key', 'all')
             if qk != 'all':
-                qk = event.get(qk, 'other')
+                qk = hashable(lookup_es_key(event, qk))
                 if qk is None:
                     qk = 'other'
             self.handle_event(event, 1, qk)
