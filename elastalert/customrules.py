@@ -131,7 +131,7 @@ class PeriodicReporter(RuleType):
             if 'msg' in event.keys():
                 if str(event['msg'])=='Successful user registration':
                     new_user = {}
-                    new_user['User']=self.stripeDomain(event['user'])
+                    new_user['User']=event['user']
                     new_user['Registration Time']=dt_to_ts(self.get_ts(event))
                     new_user['Reported']=''
                     self.recordWindow.content.setdefault('New User Registration(s)',[])
@@ -143,7 +143,7 @@ class PeriodicReporter(RuleType):
                         self.recordWindow.content['New User Registration(s)'].append(new_user)
                 elif str(event['msg'])=='Successful user pre-registration':
                     new_user = {}
-                    new_user['User']=self.stripeDomain(event['user'])
+                    new_user['User']=event['user']
                     new_user['Registration Time']=dt_to_ts(self.get_ts(event))
                     new_user['Reported']=''
                     self.recordWindow.content.setdefault('New User Registration(s) by Admin',[])
@@ -155,7 +155,7 @@ class PeriodicReporter(RuleType):
                         self.recordWindow.content['New User Registration(s) by Admin'].append(new_user)
                 elif str(event['msg'])=='Entitlement payment complete. Enqueued payment receipt email to purchaser':
                     new_user = {}
-                    new_user['User']=self.stripeDomain(event['purchased_by'])
+                    new_user['User']=event['purchased_by']
                     new_user['Subscription Time']=dt_to_ts(self.get_ts(event))
                     new_user['Subscription Package']=event['item']
                     new_user['Reported']=''
