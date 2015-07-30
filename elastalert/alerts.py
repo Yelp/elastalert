@@ -15,6 +15,7 @@ from jira.exceptions import JIRAError
 from staticconf.loader import yaml_loader
 from util import EAException
 from util import pretty_ts
+import re
 
 
 class BasicMatchString(object):
@@ -60,6 +61,7 @@ class BasicMatchString(object):
             if type(value) in [list, dict]:
                 try:
                     value_str = self._pretty_print_as_json(value)
+                    value_str = re.sub(r'( |\t)*\n(( |\t)*\n)+((( |\t)*)$)*',r'\n\n',re.sub(r'({)|(},)|(\[)|(\])|}|(\],),',r'',value_str,re.DOTALL),re.DOTALL).rstrip()+'\n'
                 except TypeError:
                     # Non serializable object, fallback to str
                     pass
@@ -80,7 +82,6 @@ class BasicMatchString(object):
             if self.rule.get('alert_text_type') != 'exclude_fields':
                 self._add_match_items()
         return self.text
-
 
 class JiraFormattedMatchString(BasicMatchString):
 
