@@ -185,7 +185,7 @@ class ElastAlerter():
         starttime = to_ts_func(starttime)
         endtime = to_ts_func(endtime)
         filters = copy.copy(filters)
-        query = {'filter': {'bool': {'must': filters ,'must_not' : not_filters}}}
+        query = {'filter': {'bool': {'must': filters, 'must_not': not_filters}}}
         if starttime and endtime:
             query['filter']['bool']['must'].append({'range': {timestamp_field: {'gt': starttime,
                                                                                 'lte': endtime}}})
