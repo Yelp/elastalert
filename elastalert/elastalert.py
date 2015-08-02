@@ -160,7 +160,7 @@ class ElastAlerter():
             return index
 
     @staticmethod
-    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp'):
+    def get_query(filters, not_filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp'):
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
@@ -173,7 +173,7 @@ class ElastAlerter():
         starttime = dt_to_ts(starttime)
         endtime = dt_to_ts(endtime)
         filters = copy.copy(filters)
-        query = {'filter': {'bool': {'must': filters}}}
+        query = {'filter': {'bool': {'must': filters ,'must_not' : not_filters}}}
         if starttime and endtime:
             query['filter']['bool']['must'].append({'range': {timestamp_field: {'from': starttime,
                                                                                 'to': endtime}}})
@@ -225,7 +225,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A list of hits, bounded by self.max_query_size.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'])
+        query = self.get_query(rule['filter'], rule['not_filter'] starttime, endtime, timestamp_field=rule['timestamp_field'])
         try:
             res = self.current_es.search(index=index, size=self.max_query_size, body=query, _source_include=rule['include'], ignore_unavailable=True)
         except ElasticsearchException as e:
@@ -257,7 +257,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A dictionary mapping timestamps to number of hits for that time period.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)
+        query = self.get_query(rule['filter'], rule['not_filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)
         query = {'query': {'filtered': query}}
 
         try:
@@ -277,12 +277,13 @@ class ElastAlerter():
 
     def get_hits_terms(self, rule, starttime, endtime, index, key, qk=None, size=None):
         rule_filter = copy.copy(rule['filter'])
+        rule_not_filter = copy.copy(rule['not_filter'])
         if qk:
             filter_key = rule['query_key']
             if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
                 filter_key += '.raw'
             rule_filter.extend([{'term': {filter_key: qk}}])
-        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)
+        base_query = self.get_query(rule_filter, rule_not_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False)
         if size is None:
             size = rule.get('terms_size', 50)
         query = self.get_terms_query(base_query, size, key)
