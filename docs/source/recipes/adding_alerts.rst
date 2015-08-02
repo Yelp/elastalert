@@ -24,7 +24,7 @@ Basics
 
 The alerter class will be instantiated when ElastAlert starts, and be periodically passed
 matches through the ``alert`` method. ElastAlert also writes back info about the alert into
-Elasticsearch that is obtains through ``get_info``. Several important member properties:
+Elasticsearch that it obtains through ``get_info``. Several important member properties:
 
 ``self.required_options``: This is a set containing names of configuration options that must be
 present. ElastAlert will not instantiate the alert if any are missing.
@@ -95,7 +95,7 @@ Now, in a file named ``my_alerts.py``, add
                     
                     output_file.write(match_string)
 
-        # Get info is called after an alert is sent to get data that is written back
+        # get_info is called after an alert is sent to get data that is written back
         # to Elasticsearch in the field "alert_info"
         # It should return a dict of information relevant to what the alert does
         def get_info(self):

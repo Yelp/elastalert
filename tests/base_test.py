@@ -13,8 +13,11 @@ from elasticsearch.exceptions import ElasticsearchException
 from elastalert.enhancements import BaseEnhancement
 from elastalert.kibana import dashboard_temp
 from elastalert.util import dt_to_ts
+from elastalert.util import dt_to_unix
+from elastalert.util import dt_to_unixms
 from elastalert.util import EAException
 from elastalert.util import ts_to_dt
+from elastalert.util import unix_to_dt
 
 
 START_TIMESTAMP = '2014-09-26T12:34:45Z'
@@ -78,7 +81,34 @@ def test_init_rule(ea):
 def test_query(ea):
     ea.current_es.search.return_value = {'hits': {'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
+
+
+def test_query_with_fields(ea):
+    ea.rules[0]['_source_enabled'] = False
+    ea.current_es.search.return_value = {'hits': {'hits': []}}
+    ea.run_query(ea.rules[0], START, END)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True, size=100000)
+
+
+def test_query_with_unix(ea):
+    ea.rules[0]['timestamp_type'] = 'unix'
+    ea.rules[0]['dt_to_ts'] = dt_to_unix
+    ea.current_es.search.return_value = {'hits': {'hits': []}}
+    ea.run_query(ea.rules[0], START, END)
+    start_unix = dt_to_unix(START)
+    end_unix = dt_to_unix(END)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
+
+
+def test_query_with_unixms(ea):
+    ea.rules[0]['timestamp_type'] = 'unixms'
+    ea.rules[0]['dt_to_ts'] = dt_to_unixms
+    ea.current_es.search.return_value = {'hits': {'hits': []}}
+    ea.run_query(ea.rules[0], START, END)
+    start_unix = dt_to_unixms(START)
+    end_unix = dt_to_unixms(END)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
 
 
 def test_no_hits(ea):
@@ -98,11 +128,23 @@ def test_no_terms_hits(ea):
 
 def test_some_hits(ea):
     hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP])
+    hits_dt = generate_hits([START, END])
     ea.current_es.search.return_value = hits
     ea.run_query(ea.rules[0], START, END)
-
     assert ea.rules[0]['type'].add_data.call_count == 1
-    ea.rules[0]['type'].add_data.assert_called_with([x['_source'] for x in hits['hits']['hits']])
+    ea.rules[0]['type'].add_data.assert_called_with([x['_source'] for x in hits_dt['hits']['hits']])
+
+
+def test_some_hits_unix(ea):
+    ea.rules[0]['timestamp_type'] = 'unix'
+    ea.rules[0]['dt_to_ts'] = dt_to_unix
+    ea.rules[0]['ts_to_dt'] = unix_to_dt
+    hits = generate_hits([dt_to_unix(START), dt_to_unix(END)])
+    hits_dt = generate_hits([START, END])
+    ea.current_es.search.return_value = copy.deepcopy(hits)
+    ea.run_query(ea.rules[0], START, END)
+    assert ea.rules[0]['type'].add_data.call_count == 1
+    ea.rules[0]['type'].add_data.assert_called_with([x['_source'] for x in hits_dt['hits']['hits']])
 
 
 def _duplicate_hits_generator(timestamps, **kwargs):
@@ -140,11 +182,8 @@ def test_run_rule_calls_garbage_collect(ea):
     end_time = '2014-09-26T12:00:00Z'
     ea.buffer_time = datetime.timedelta(hours=1)
     ea.run_every = datetime.timedelta(hours=1)
-
-    with contextlib.nested(
-        mock.patch.object(ea.rules[0]['type'], 'garbage_collect'),
-        mock.patch.object(ea, 'run_query')
-    ) as (mock_gc, mock_get_hits):
+    with contextlib.nested(mock.patch.object(ea.rules[0]['type'], 'garbage_collect'),
+                           mock.patch.object(ea, 'run_query')) as (mock_gc, mock_get_hits):
         ea.run_rule(ea.rules[0], ts_to_dt(end_time), ts_to_dt(start_time))
 
     # Running elastalert every hour for 12 hours, we should see self.garbage_collect called 12 times.
@@ -405,11 +444,11 @@ def test_count(ea):
 
     # Assert that es.count is run against every run_every timeframe between START and END
     start = START
-    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}}}}
+    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}}}
     while END - start > ea.run_every:
         end = start + ea.run_every
-        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
-        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['from'] = dt_to_ts(start)
+        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['lte'] = dt_to_ts(end)
+        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['gt'] = dt_to_ts(start)
         start = start + ea.run_every
         ea.current_es.count.assert_any_call(body=query, doc_type='doctype', index='idx', ignore_unavailable=True)
 
@@ -559,16 +598,40 @@ def test_kibana_dashboard(ea):
         db = json.loads(mock_es.create.call_args_list[0][1]['body']['dashboard'])
         assert 'anytest' in db['title']
 
+        # Query key filtering added
+        ea.rules[0]['query_key'] = 'foobar'
+        match['foobar'] = 'baz'
+        url = ea.use_kibana_link(ea.rules[0], match)
+        db = json.loads(mock_es.create.call_args_list[-1][1]['body']['dashboard'])
+        assert db['services']['filter']['list']['1']['field'] == 'foobar'
+        assert db['services']['filter']['list']['1']['query'] == '"baz"'
+
+        # Compound query key
+        ea.rules[0]['query_key'] = 'foo,bar'
+        ea.rules[0]['compound_query_key'] = ['foo', 'bar']
+        match['foo'] = 'cat'
+        match['bar'] = 'dog'
+        match['foo,bar'] = 'cat, dog'
+        url = ea.use_kibana_link(ea.rules[0], match)
+        db = json.loads(mock_es.create.call_args_list[-1][1]['body']['dashboard'])
+        found_filters = 0
+        for filter_id, filter_dict in db['services']['filter']['list'].items():
+            if (filter_dict['field'] == 'foo' and filter_dict['query'] == '"cat"') or \
+               (filter_dict['field'] == 'bar' and filter_dict['query'] == '"dog"'):
+                found_filters += 1
+                continue
+        assert found_filters == 2
+
 
 def test_rule_changes(ea):
-    ea.rule_hashes = {'rule1.yaml': 'ABC',
-                      'rule2.yaml': 'DEF'}
-    ea.rules = [ea.init_rule(rule, True) for rule in [{'rule_file': 'rule1.yaml', 'name': 'rule1', 'filter': []},
-                                                      {'rule_file': 'rule2.yaml', 'name': 'rule2', 'filter': []}]]
+    ea.rule_hashes = {'rules/rule1.yaml': 'ABC',
+                      'rules/rule2.yaml': 'DEF'}
+    ea.rules = [ea.init_rule(rule, True) for rule in [{'rule_file': 'rules/rule1.yaml', 'name': 'rule1', 'filter': []},
+                                                      {'rule_file': 'rules/rule2.yaml', 'name': 'rule2', 'filter': []}]]
     ea.rules[1]['processed_hits'] = ['save me']
-    new_hashes = {'rule1.yaml': 'ABC',
-                  'rule3.yaml': 'XXX',
-                  'rule2.yaml': '!@#$'}
+    new_hashes = {'rules/rule1.yaml': 'ABC',
+                  'rules/rule3.yaml': 'XXX',
+                  'rules/rule2.yaml': '!@#$'}
 
     with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
         with mock.patch('elastalert.elastalert.load_configuration') as mock_load:

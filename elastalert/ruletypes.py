@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+import logging
 from collections import deque
 
 from elasticsearch.client import Elasticsearch
@@ -21,7 +22,7 @@ class RuleType(object):
     """
     required_options = frozenset()
 
-    def __init__(self, rules):
+    def __init__(self, rules, args=None):
         self.matches = []
         self.rules = rules
         self.occurrences = {}
@@ -246,6 +247,10 @@ class EventWindow(object):
         self.data = deque()
         self.running_count = 0
 
+    def clear(self):
+        self.data = deque()
+        self.running_count = 0
+
     def append(self, event):
         """ Add an event to the window. Event should be of the form (dict, count).
         This will also pop the oldest events and call onRemoved on them until the
@@ -337,15 +342,15 @@ class SpikeRule(RuleType):
         for event in data:
             qk = self.rules.get('query_key', 'all')
             if qk != 'all':
-                qk = event.get(qk, 'other')
+                qk = hashable(lookup_es_key(event, qk))
                 if qk is None:
                     qk = 'other'
             self.handle_event(event, 1, qk)
 
     def clear_windows(self, qk, event):
         # Reset the state and prevent alerts until windows filled again
-        self.cur_windows[qk].data = deque()
-        self.ref_windows[qk].data = deque()
+        self.cur_windows[qk].clear()
+        self.ref_windows[qk].clear()
         self.first_event.pop(qk)
         self.skip_checks[qk] = event[self.ts_field] + self.rules['timeframe'] * 2
 
@@ -470,7 +475,7 @@ class FlatlineRule(FrequencyRule):
 
     def garbage_collect(self, ts):
         # We add an event with a count of zero to the EventWindow for each key. This will cause the EventWindow
-        # to remove events that occured more than one `timeframe` ago, and call onRemoved on them.
+        # to remove events that occurred more than one `timeframe` ago, and call onRemoved on them.
         for key in self.occurrences.keys():
             self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({self.ts_field: ts}, 0))
             self.check_for_match(key)
@@ -479,8 +484,8 @@ class FlatlineRule(FrequencyRule):
 class NewTermsRule(RuleType):
     """ Alerts on a new value in a list of fields. """
 
-    def __init__(self, *args):
-        super(NewTermsRule, self).__init__(*args)
+    def __init__(self, rule, args=None):
+        super(NewTermsRule, self).__init__(rule, args)
         self.seen_values = {}
         # Allow the use of query_key or fields
         if 'fields' not in self.rules:
@@ -495,28 +500,42 @@ class NewTermsRule(RuleType):
             self.fields = [self.fields]
         if self.rules.get('use_terms_query') and len(self.fields) != 1:
             raise EAException("use_terms_query can only be used with one field at a time")
-        self.get_all_terms()
+        try:
+            self.get_all_terms(args)
+        except Exception as e:
+            # Refuse to start if we cannot get existing terms
+            raise EAException('Error searching for existing terms: %s' % (e))
 
-    def get_all_terms(self):
+    def get_all_terms(self, args):
         """ Performs a terms aggregation for each field to get every existing term. """
         self.es = Elasticsearch(host=self.rules['es_host'], port=self.rules['es_port'])
         window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
-
         field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
         query_template = {"aggs": {"values": {"terms": field_name}}}
-        if self.rules.get('use_strftime_index'):
+        if args and args.start:
+            end = ts_to_dt(args.start)
+        else:
             end = ts_now()
-            start = end - window_size
+        start = end - window_size
+        if self.rules.get('use_strftime_index'):
             index = format_index(self.rules['index'], start, end)
         else:
             index = self.rules['index']
+        time_filter = {self.rules['timestamp_field']: {'lte': dt_to_ts(end), 'gte': dt_to_ts(start)}}
+        query_template['filter'] = {'bool': {'must': [{'range': time_filter}]}}
+        query = {'aggs': {'filtered': query_template}}
 
         for field in self.fields:
             field_name['field'] = field
-            res = self.es.search(body=query_template, index=index, ignore_unavailable=True, timeout=50)
-            buckets = res['aggregations']['values']['buckets']
-            keys = [bucket['key'] for bucket in buckets]
-            self.seen_values[field] = keys
+            res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout=50)
+            if 'aggregations' in res:
+                buckets = res['aggregations']['filtered']['values']['buckets']
+                keys = [bucket['key'] for bucket in buckets]
+                self.seen_values[field] = keys
+                logging.info('Found %s unique values for %s' % (len(keys), field))
+            else:
+                self.seen_values[field] = []
+                logging.info('Found no values for %s' % (field))
 
     def add_data(self, data):
         for document in data:
@@ -542,3 +561,71 @@ class NewTermsRule(RuleType):
                                  self.rules['timestamp_field']: timestamp,
                                  'new_field': field}
                         self.add_match(match)
+
+
+class CardinalityRule(RuleType):
+    """ A rule that matches if cardinality of a field is above or below a threshold within a timeframe """
+    required_options = frozenset(['timeframe', 'cardinality_field'])
+
+    def __init__(self, *args):
+        super(CardinalityRule, self).__init__(*args)
+        if 'max_cardinality' not in self.rules and 'min_cardinality' not in self.rules:
+            raise EAException("CardinalityRule must have one of either max_cardinality or min_cardinality")
+        self.ts_field = self.rules.get('timestamp_field', '@timestamp')
+        self.cardinality_field = self.rules['cardinality_field']
+        self.cardinality_cache = {}
+        self.first_event = {}
+        self.timeframe = self.rules['timeframe']
+
+    def add_data(self, data):
+        qk = self.rules.get('query_key')
+        for event in data:
+            if qk:
+                key = hashable(lookup_es_key(event, qk))
+            else:
+                # If no query_key, we use the key 'all' for all events
+                key = 'all'
+            self.cardinality_cache.setdefault(key, {})
+            self.first_event.setdefault(key, event[self.ts_field])
+            if self.cardinality_field in event:
+                # Store this timestamp as most recent occurence of the term
+                self.cardinality_cache[key][event[self.cardinality_field]] = event[self.ts_field]
+                self.check_for_match(key, event)
+
+    def check_for_match(self, key, event, gc=True):
+        # Check to see if we are past max/min_cardinality for a given key
+        timeframe_elapsed = event[self.ts_field] - self.first_event.get(key, event[self.ts_field]) > self.timeframe
+        if (len(self.cardinality_cache[key]) > self.rules.get('max_cardinality', float('inf')) or
+                (len(self.cardinality_cache[key]) < self.rules.get('min_cardinality', float('-inf')) and timeframe_elapsed)):
+            # If there might be a match, run garbage collect first, as outdated terms are only removed in GC
+            # Only run it if there might be a match so it doesn't impact performance
+            if gc:
+                self.garbage_collect(event[self.ts_field])
+                self.check_for_match(key, event, False)
+            else:
+                self.first_event.pop(key, None)
+                self.add_match(event)
+
+    def garbage_collect(self, timestamp):
+        """ Remove all occurrence data that is beyond the timeframe away """
+        for qk, terms in self.cardinality_cache.items():
+            for term, last_occurence in terms.items():
+                if timestamp - last_occurence > self.rules['timeframe']:
+                    self.cardinality_cache[qk].pop(term)
+
+            # Create a placeholder event for if a min_cardinality match occured
+            if 'min_cardinality' in self.rules:
+                event = {self.ts_field: timestamp}
+                if 'query_key' in self.rules:
+                    event.update({self.rules['query_key']: qk})
+                self.check_for_match(qk, event, False)
+
+    def get_match_str(self, match):
+        lt = self.rules.get('use_local_time')
+        starttime = pretty_ts(dt_to_ts(ts_to_dt(match[self.ts_field]) - self.rules['timeframe']), lt)
+        endtime = pretty_ts(match[self.ts_field], lt)
+        message = ('A maximum of %d unique %s(s) occurred since last alert or '
+                   'between %s and %s\n\n' % (self.rules['max_cardinality'],
+                                              self.rules['cardinality_field'],
+                                              starttime, endtime))
+        return message
