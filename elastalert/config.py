@@ -101,6 +101,10 @@ def load_options(rule, conf=None, args=None):
             rule['buffer_time'] = datetime.timedelta(**rule['buffer_time'])
         if 'exponential_realert' in rule:
             rule['exponential_realert'] = datetime.timedelta(**rule['exponential_realert'])
+        if 'kibana4_start_timedelta' in rule:
+            rule['kibana4_start_timedelta'] = datetime.timedelta(**rule['kibana4_start_timedelta'])
+        if 'kibana4_end_timedelta' in rule:
+            rule['kibana4_end_timedelta'] = datetime.timedelta(**rule['kibana4_end_timedelta'])
     except (KeyError, TypeError) as e:
         raise EAException('Invalid time format used: %s' % (e))
 
