@@ -333,14 +333,14 @@ def test_silence(ea):
 
 
 def test_compound_query_key(ea):
-    ea.rules[0]['query_key'] = 'this,that'
-    ea.rules[0]['compound_query_key'] = ['this', 'that']
-    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP], this='abc', that='def')
+    ea.rules[0]['query_key'] = 'this,that,those'
+    ea.rules[0]['compound_query_key'] = ['this', 'that', 'those']
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP], this='abc', that='def', those=4)
     ea.current_es.search.return_value = hits
     ea.run_query(ea.rules[0], START, END)
     call_args = ea.rules[0]['type'].add_data.call_args_list[0]
-    assert 'this,that' in call_args[0][0][0]
-    assert call_args[0][0][0]['this,that'] == 'abc, def'
+    assert 'this,that,those' in call_args[0][0][0]
+    assert call_args[0][0][0]['this,that,those'] == 'abc, def, 4'
 
 
 def test_silence_query_key(ea):
