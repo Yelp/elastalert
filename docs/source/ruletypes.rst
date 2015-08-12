@@ -9,83 +9,91 @@ Rule Configuration Cheat Sheet
 ==============================
 
 
-+-----------------------------------------------------------------------------------------------------------------------+
-|              FOR ALL RULES                                                                                            |
-+==========================================+===========+====================================================+===========+
-| ``es_host`` (string)                     |           | ``buffer_time`` (time)                             | Optional  |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``es_port`` (number)                     | Required  | ``query_delay`` (time)                             |           |
-+------------------------------------------+-----------+----------------------------------------------------+           +
-| ``use_ssl`` (boolean, no default)        | Optional  | ``max_query_size`` (int, default 100k)             |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``es_username`` (string, no default)     |           | ``filter`` (DSL filter, empty default)             |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``es_password`` (string, no default)     |           | ``include`` (list of strs)                         |           |
-+------------------------------------------+-----------+----------------------------------------------------+           +
-| ``index`` (string)                       | Required  | ``top_count_keys`` (list of strs)                  |           |
-+------------------------------------------+-----------+----------------------------------------------------+           +
-| ``use_strftime_index`` (boolean)         | Optional  | ``top_count_number`` (int, default 5)              |           |
-+------------------------------------------+-----------+----------------------------------------------------+           +
-| ``name`` (string)                        | Required  |``raw_count_keys`` (boolean, default T)             |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``type`` (string)                        |           |``generate_kibana_link`` (boolean, default F)       |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``alert`` (string)                       |           |``kibana_dashboard`` (string, default from es_host) |           |
-+------------------------------------------+-----------+----------------------------------------------------+           +
-|``aggregation`` (time, no default)        | Optional  |``use_kibana_dashboard`` (string, no default)       |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-| ``realert`` (time, default: 1 min)       |           |``use_local_time`` (boolean, default T)             |           |
-+------------------------------------------+           +----------------------------------------------------+           +
-|``exponential_realert`` (time, no default)|           |``match_enhancements`` (list of strs, no default)   |           |
-+------------------------------------------+-----------+----------------------------------------------------+-----------+
++--------------------------------------------------------------------------------------------------------------------------------+
+|              FOR ALL RULES                                                                                                     |
++===================================================+===========+====================================================+===========+
+| ``es_host`` (string)                              |           | ``buffer_time`` (time)                             | Optional  |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``es_port`` (number)                              | Required  | ``query_delay`` (time)                             |           |
++---------------------------------------------------+-----------+----------------------------------------------------+           +
+| ``use_ssl`` (boolean, no default)                 | Optional  | ``max_query_size`` (int, default 100k)             |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``es_username`` (string, no default)              |           | ``filter`` (DSL filter, empty default)             |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``es_password`` (string, no default)              |           | ``include`` (list of strs)                         |           |
++---------------------------------------------------+-----------+----------------------------------------------------+           +
+| ``index`` (string)                                | Required  | ``top_count_keys`` (list of strs)                  |           |
++---------------------------------------------------+-----------+----------------------------------------------------+           +
+| ``use_strftime_index`` (boolean)                  | Optional  | ``top_count_number`` (int, default 5)              |           |
++---------------------------------------------------+-----------+----------------------------------------------------+           +
+| ``name`` (string)                                 | Required  |``raw_count_keys`` (boolean, default T)             |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``type`` (string)                                 |           |``generate_kibana_link`` (boolean, default F)       |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``alert`` (string)                                |           |``kibana_dashboard`` (string, default from es_host) |           |
++---------------------------------------------------+-----------+----------------------------------------------------+           +
+|``aggregation`` (time, no default)                 | Optional  |``use_kibana_dashboard`` (string, no default)       |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+| ``realert`` (time, default: 1 min)                |           |``use_local_time`` (boolean, default T)             |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+|``exponential_realert`` (time, no default)         |           |``match_enhancements`` (list of strs, no default)   |           |
++---------------------------------------------------+           +----------------------------------------------------+           +
+|``kibana4_start_timedelta`` (time, default: 10 min)|           |``kibana4_end_timedelta`` (time, default: 10 min)   |           |
++---------------------------------------------------+-----------+----------------------------------------------------+-----------+
 
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|      RULE TYPE                                 | Any | Blacklist | Whitelist | Change | Frequency | Spike | Flatline |New_term|
-+================================================+=====+===========+===========+========+===========+=======+==========+========+
-| ``compare_key`` (string, no default)           |     |    Req    |  Req      |    Req |           |       |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``blacklist`` (list of strs, no default)        |     |   Req     |           |        |           |       |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``whitelist`` (list of strs, no default)        |     |           |   Req     |        |           |       |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-| ``ignore_null`` (boolean, no default)          |     |           |   Req     |  Req   |           |       |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-| ``query_key`` (string, no default)             |     |           |           |   Req  |    Opt    |  Opt  |          |  Req   |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-| ``timeframe`` (time, no default)               |     |           |           |   Opt  |    Req    |  Req  |   Req    |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-| ``num_events`` (int, no default)               |     |           |           |        |    Req    |       |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``use_count_query`` (boolean, no default)       |     |           |           |        |     Opt   | Opt   | Opt      |        |
-|                                                |     |           |           |        |           |       |          |        |
-|``doc_type`` (string, no default)               |     |           |           |        |           |       |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``use_terms_query`` (boolean, no default)       |     |           |           |        |     Opt   | Opt   |          | Opt    |
-|                                                |     |           |           |        |           |       |          |        |
-|``doc_type`` (string, no default)               |     |           |           |        |           |       |          |        | 
-|                                                |     |           |           |        |           |       |          |        |
-|``query_key`` (string, no default)              |     |           |           |        |           |       |          |        |
-|                                                |     |           |           |        |           |       |          |        |
-|``terms_size`` (int, default 50)                |     |           |           |        |           |       |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-| ``spike_height`` (int, no default)             |     |           |           |        |           |   Req |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``spike_type`` ([up|down|both], no default)     |     |           |           |        |           |   Req |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``alert_on_new_data`` (boolean, default F)      |     |           |           |        |           |   Opt |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``threshold_ref`` (int, no default)             |     |           |           |        |           |   Opt |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``threshold_cur`` (int, no default)             |     |           |           |        |           |   Opt |          |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``threshold`` (int, no default)                 |     |           |           |        |           |       |    Req   |        |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``fields`` (string, no default)                 |     |           |           |        |           |       |          | Req    |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``terms_window_size`` (time, default 30 days)   |     |           |           |        |           |       |          | Opt    |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
-|``alert_on_missing_fields`` (boolean, default F)|     |           |           |        |           |       |          | Opt    |
-+------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|      RULE TYPE                                 | Any | Blacklist | Whitelist | Change | Frequency | Spike | Flatline |New_term|Cardinality|
++================================================+=====+===========+===========+========+===========+=======+==========+========+===========+
+| ``compare_key`` (string, no default)           |     |    Req    |  Req      |    Req |           |       |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``blacklist`` (list of strs, no default)        |     |   Req     |           |        |           |       |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``whitelist`` (list of strs, no default)        |     |           |   Req     |        |           |       |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``ignore_null`` (boolean, no default)          |     |           |   Req     |  Req   |           |       |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``query_key`` (string, no default)             |     |           |           |   Req  |    Opt    |  Opt  |   Opt    |  Req   |  Opt      |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``timeframe`` (time, no default)               |     |           |           |   Opt  |    Req    |  Req  |   Req    |        |  Req      |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``num_events`` (int, no default)               |     |           |           |        |    Req    |       |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``use_count_query`` (boolean, no default)       |     |           |           |        |     Opt   | Opt   | Opt      |        |           |
+|                                                |     |           |           |        |           |       |          |        |           |
+|``doc_type`` (string, no default)               |     |           |           |        |           |       |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``use_terms_query`` (boolean, no default)       |     |           |           |        |     Opt   | Opt   |          | Opt    |           |
+|                                                |     |           |           |        |           |       |          |        |           |
+|``doc_type`` (string, no default)               |     |           |           |        |           |       |          |        |           |
+|                                                |     |           |           |        |           |       |          |        |           |
+|``query_key`` (string, no default)              |     |           |           |        |           |       |          |        |           |
+|                                                |     |           |           |        |           |       |          |        |           |
+|``terms_size`` (int, default 50)                |     |           |           |        |           |       |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``spike_height`` (int, no default)             |     |           |           |        |           |   Req |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``spike_type`` ([up|down|both], no default)     |     |           |           |        |           |   Req |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``alert_on_new_data`` (boolean, default F)      |     |           |           |        |           |   Opt |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``threshold_ref`` (int, no default)             |     |           |           |        |           |   Opt |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``threshold_cur`` (int, no default)             |     |           |           |        |           |   Opt |          |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``threshold`` (int, no default)                 |     |           |           |        |           |       |    Req   |        |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``fields`` (string, no default)                 |     |           |           |        |           |       |          | Req    |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``terms_window_size`` (time, default 30 days)   |     |           |           |        |           |       |          | Opt    |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``alert_on_missing_fields`` (boolean, default F)|     |           |           |        |           |       |          | Opt    |           |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``cardinality_field`` (string, no default)      |     |           |           |        |           |       |          |        |  Req      |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``max_cardinality`` (boolean, no default)       |     |           |           |        |           |       |          |        |  Opt      |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``min_cardinality`` (boolean, no default)       |     |           |           |        |           |       |          |        |  Opt      |
++------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 
 Common Configuration Options
 ============================
@@ -105,6 +113,8 @@ Required Settings
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``.
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
+
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
 
 ``index``: The name of the index that will be searched. Wildcards can be used here, such as:
 ``index: my-index-*`` which will match ``my-index-2014-10-05``. You can also use a format string containing
@@ -197,9 +207,19 @@ ElastAlert can use an existing dashboard. It will set the time range on the dash
 upload it as a temporary dashboard, add a filter to the ``query_key`` of the alert if applicable,
 and put the url to the dashboard in the alert. (Optional, string, no default)
 
-``use_kibana4_dashboard``: A link to a Kibana 4 dashboard. For example, "https://kibana.example.com/#/dashboard/My-Dashboard". 
-This will set the time setting on the dashboard from the match time minus the timeframe, to 10 minutes after the match time. 
+``use_kibana4_dashboard``: A link to a Kibana 4 dashboard. For example, "https://kibana.example.com/#/dashboard/My-Dashboard".
+This will set the time setting on the dashboard from the match time minus the timeframe, to 10 minutes after the match time.
 Note that this does not support filtering by ``query_key`` like Kibana 3.
+
+``kibana4_start_timedelta``: Defaults to 10 minutes. This option allows you to specify the start time for the generated kibana4 dashboard.
+This value is added in front of the event. For example,
+
+``kibana4_start_timedelta: minutes: 2``
+
+``kibana4_end_timedelta``: Defaults to 10 minutes. This option allows you to specify the end time for the generated kibana4 dashboard.
+This value is added in back of the event. For example,
+
+``kibana4_end_timedelta: minutes: 2``
 
 ``use_local_time``: Whether to convert timestamps to the local time zone in alerts. If false, timestamps will
 be converted to UTC, which is what ElastAlert uses internally. (Optional, boolean, default true)
@@ -215,6 +235,16 @@ additional alerts for ``{'username': 'bob'}`` will be ignored while other userna
 ``query_key`` will be grouped together. A list of fields may also be used, which will create a compound query key. This compound key is
 treated as if it were a single field whose value is the component values, or "None", joined by commas. A new field with the key
 "field1,field2,etc" will be created in each document and may conflict with existing fields of the same name.
+
+``timestamp_type``: One of ``iso``, ``unix``, or ``unix_ms``. This option will set the type of ``@timestamp`` (or ``timestamp_field``) used
+to query Elasticsearch. ``iso`` will use ISO8601 timestamps, which will work with any Elasticsearch date type field. ``unix`` will
+query using an integer unix (seconds since 1/1/1970) timestamp. ``unix_ms`` will use milliseconds unix timestamp. The default is ``iso``.
+(Optional, string enum, default iso).
+
+``_source_enabled``: If true, ElastAlert will use ``_source_include`` to retrieve fields from documents in Elasticsearch. If false,
+ElastAlert will use ``fields`` to retrieve stored fields. Both of these are represented internally as if they came from ``_source``.
+See https://www.elastic.co/guide/en/elasticsearch/reference/1.3/mapping-fields.html for more details. The fields used come from ``include``,
+see above for more details. (Optional, boolean, default True)
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
 
@@ -245,7 +275,7 @@ It can:
 
 - Check that, if they exist, the primary_key, compare_key and include terms are in the results.
 
-- Show what metadata documents would be written to ``elastalert_status``. 
+- Show what metadata documents would be written to ``elastalert_status``.
 
 Without any optional arguments, it will run ElastAlert over the last 24 hours and print out any alerts that would have occurred.
 Here is an example test run which triggered an alert:
@@ -254,9 +284,9 @@ Here is an example test run which triggered an alert:
 
     $ elastalert-test-rule my_rules/rule1.yaml
     Successfully Loaded Example rule1
-    
+
     Got 105 hits from the last 1 day
-    
+
     Available terms in first hit:
         @timestamp
         field1
@@ -281,7 +311,7 @@ Here is an example test run which triggered an alert:
 
     Would have written the following documents to elastalert_status:
 
-    silence - {'rule_name': 'Example rule1', '@timestamp': datetime.datetime( ... ), 'exponent': 0, 'until': 
+    silence - {'rule_name': 'Example rule1', '@timestamp': datetime.datetime( ... ), 'exponent': 0, 'until':
     datetime.datetime( ... )}
 
     elastalert_status - {'hits': 105, 'matches': 1, '@timestamp': datetime.datetime( ... ), 'rule_name': 'Example rule1',
@@ -304,7 +334,7 @@ and ``--end``.
 ``--save-json FILE``: Save all documents downloaded to a file as JSON. This is useful if you wish to modify data while testing or do offline
 testing in conjunction with ``--data FILE``. A maximum of 10,000 documents will be downloaded.
 
-``--data FILE``: Use a JSON file as a data source instead of Elasticsearch. The file should be a single list containing objects, 
+``--data FILE``: Use a JSON file as a data source instead of Elasticsearch. The file should be a single list containing objects,
 rather than objects on separate lines. Note than this uses mock functions which mimic some Elasticsearch query methods and is not
 guarenteed to have the exact same results as with Elasticsearch. For example, analyzed string fields may behave differently.
 
@@ -409,7 +439,7 @@ default 50, unique terms.
 
 ``terms_size``: When used with ``use_terms_query``, this is the maximum number of terms returned per query. Default is 50.
 
-``query_key``: Counts of documents will be stored independently for each value of ``query_key``. Only ``num_events`` documents, 
+``query_key``: Counts of documents will be stored independently for each value of ``query_key``. Only ``num_events`` documents,
 all with the same value of ``query_key``, will trigger an alert.
 
 
@@ -573,7 +603,7 @@ use an aggregation query to gather all known terms for a list of fields.
 
 This rule requires one additional option:
 
-``fields``: A list of fields to monitor for new terms. 
+``fields``: A list of fields to monitor for new terms.
 
 Optional:
 
@@ -586,6 +616,31 @@ will trigger an alert. The default is 30 days.
 than regular searching if there is a large number of documents. If this is used, you may only specify a single field, and must also set
 ``query_key`` to that field. Also, note that ``terms_size`` (the number of buckets returned per query) defaults to 50. This means
 that if a new term appears but there are at least 50 terms which appear more frequently, it will not be found.
+
+Cardinality
+~~~~~~~~
+
+``cardinality``: This rule matches when a the total number of unique values for a certain field within a time frame is higher or lower
+than a threshold. 
+
+This rule requires:
+
+``timeframe``: The time period in which the number of unique values will be counted.
+
+``cardinality_field``: Which field to count the cardinality for.
+
+This rule requires one of the two following options:
+
+``max_cardinality``: If the cardinality of the data is greater than this number, an alert will be triggered. Each new event that
+raises the cardinality will trigger an alert.
+
+``min_cardinality``: If the cardinality of the data is lower than this number, an alert will be triggered. The ``timeframe`` must
+have elapsed since the first event before any alerts will be sent. When a match occurs, the ``timeframe`` will be reset and must elapse
+again before additional alerts.
+
+Optional:
+
+``query_key``: Group cardinality counts by this field. For each unique value of the ``query_key`` field, cardinality will be counted separately.
 
 
 .. _alerts:
@@ -624,9 +679,9 @@ The field names whose values will be used as the arguments can be passed with ``
 
 It is mandatory to enclose the ``@timestamp`` field in quotes since in YAML format a token cannot begin with the ``@`` character. Not using the quotation marks will trigger a YAML parse error.
 
-In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter. 
+In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter.
 
-If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``<MISSING VALUE>`` in place of its expected value. 
+If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``<MISSING VALUE>`` in place of its expected value.
 
 Alert Content
 ~~~~~~~~~~~~~~~
@@ -682,7 +737,7 @@ Command
 ~~~~~~~
 
 The command alert allows you to execute an arbitrary command and pass arguments or stdin from the match. Arguments to the command can use
-Python format string syntax to access parts of the match. The alerter will open a subprocess and optionally pass the match, as JSON, to 
+Python format string syntax to access parts of the match. The alerter will open a subprocess and optionally pass the match, as JSON, to
 the stdin of the process.
 
 This alert requires one option:
@@ -704,7 +759,7 @@ Example usage::
 
 .. warning::
 
-    Executing commmands with untrusted data can make it vulnerable to shell injection! If you use formatted data in 
+    Executing commmands with untrusted data can make it vulnerable to shell injection! If you use formatted data in
     your command, it is highly recommended that you use a args list format instead of a shell string.
 
 
@@ -712,6 +767,7 @@ Email
 ~~~~~
 
 This alert will send an email. It connects to an smtp server located at ``smtp_host``, or localhost by default.
+If available, it will use STARTTLS.
 
 This alert requires one additional option:
 
@@ -721,7 +777,10 @@ Optional:
 
 ``smtp_host``: The SMTP host to use, defaults to localhost.
 
-``smtp_ssl``: Connect the SMTP host using SSL, defaults to ``false``.
+``smtp_port``: The port to use. Default is 25.
+
+``smtp_ssl``: Connect the SMTP host using SSL, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
+STARTTLS.
 
 ``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. It should be YAML formatted and contain
 two fields, ``user`` and ``password``. If this is not present, no authentication will be attempted.
@@ -776,8 +835,8 @@ the two summaries must be exact matches. Defaults to false.
 ``jira_max_age``: If ``jira_bump_tickets`` is true, the maximum age of a ticket, in days, such that ElastAlert will comment on the ticket
 instead of opening a new one. Default is 30 days.
 
-``jira_bump_not_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket must **not** be in for ElastAlert to comment on 
-the ticket instead of opening a new one. For example, to prevent comments being added to resolved or closed tickets, set this to 'Resolved' 
+``jira_bump_not_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket must **not** be in for ElastAlert to comment on
+the ticket instead of opening a new one. For example, to prevent comments being added to resolved or closed tickets, set this to 'Resolved'
 and 'Closed'. This option should not be set if the ``jira_bump_in_statuses`` option is set.
 
 Example usage::
@@ -786,8 +845,8 @@ Example usage::
       - Resolved
       - Closed
 
-``jira_bump_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket *must be in* for ElastAlert to comment on 
-the ticket instead of opening a new one. For example, to only comment on 'Open' tickets  -- and thus not 'In Progress', 'Analyzing', 
+``jira_bump_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket *must be in* for ElastAlert to comment on
+the ticket instead of opening a new one. For example, to only comment on 'Open' tickets  -- and thus not 'In Progress', 'Analyzing',
 'Resolved', etc. tickets -- set this to 'Open'. This option should not be set if the ``jira_bump_not_in_statuses`` option is set.
 
 Example usage::

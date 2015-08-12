@@ -4,7 +4,8 @@ import json
 import logging
 import subprocess
 from email.mime.text import MIMEText
-from smtplib import SMTP, SMTP_SSL
+from smtplib import SMTP
+from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
@@ -14,6 +15,7 @@ from jira.client import JIRA
 from jira.exceptions import JIRAError
 from staticconf.loader import yaml_loader
 from util import EAException
+from util import lookup_es_key
 from util import pretty_ts
 
 
@@ -33,7 +35,8 @@ class BasicMatchString(object):
         alert_text = self.rule.get('alert_text', '')
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
-            alert_text_values = [self.match.get(arg, '<MISSING VALUE>') for arg in alert_text_args]
+            alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
+            alert_text_values = ['<MISSING VALUE>' if val is None else val for val in alert_text_values]
             alert_text = alert_text.format(*alert_text_values)
         self.text += alert_text
 
@@ -129,7 +132,8 @@ class Alerter(object):
 
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
-            alert_subject_values = [matches[0].get(arg, '<MISSING VALUE>') for arg in alert_subject_args]
+            alert_subject_values = [lookup_es_key(matches[0], arg) for arg in alert_subject_args]
+            alert_subject_values = ['<MISSING VALUE>' if val is None else val for val in alert_subject_values]
             return alert_subject.format(*alert_subject_values)
 
         return alert_subject
@@ -175,6 +179,7 @@ class EmailAlerter(Alerter):
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
         self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
+        self.smtp_port = self.rule.get('smtp_port')
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
         # Convert email to a list if it isn't already
@@ -191,21 +196,17 @@ class EmailAlerter(Alerter):
 
     def alert(self, matches):
         body = ''
-
         for match in matches:
-
             body += str(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
-
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
             url = '%s/browse/%s' % (self.rule['jira_server'], self.pipeline['jira_ticket'])
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
-
         email_msg = MIMEText(body)
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
@@ -219,9 +220,18 @@ class EmailAlerter(Alerter):
 
         try:
             if self.smtp_ssl:
-                self.smtp = SMTP_SSL(self.smtp_host)
+                if self.smtp_port:
+                    self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port)
+                else:
+                    self.smtp = SMTP_SSL(self.smtp_host)
             else:
-                self.smtp = SMTP(self.smtp_host)
+                if self.smtp_port:
+                    self.smtp = SMTP(self.smtp_host, self.smtp_port)
+                else:
+                    self.smtp = SMTP(self.smtp_host)
+                self.smtp.ehlo()
+                if self.smtp.has_extn('STARTTLS'):
+                    self.smtp.starttls()
             if 'smtp_auth_file' in self.rule:
                 self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:

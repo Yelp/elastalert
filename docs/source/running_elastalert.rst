@@ -40,6 +40,8 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
 
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
+
 ``writeback_index`` is the name of the index in which ElastAlert will store data. We will create this index later.
 
 ``alert_time_limit`` is the retry window for failed alerts.
@@ -103,7 +105,7 @@ Each rule defines a query to perform, parameters on what triggers a match, and a
 
 There are many other optional configuration options, see :ref:`Common configuration options <commonconfig>`.
 
-All documents must have a timestamp field. ElastAlert will try to use ``@timestamp`` by default, but this can be changed with the ``timestamp_field`` option.
+All documents must have a timestamp field. ElastAlert will try to use ``@timestamp`` by default, but this can be changed with the ``timestamp_field`` option. By default, ElastAlert uses ISO8601 timestamps, though unix timestamps are supported by setting ``timestamp_type``.
 
 As is, this rule means "Send an email to elastalert@example.com when there are more than 50 documents with ``some_field == some_value`` within a 4 hour period."
 

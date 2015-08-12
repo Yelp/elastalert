@@ -19,7 +19,6 @@ import yaml
 from elastalert.config import load_modules
 from elastalert.config import load_options
 from elastalert.elastalert import ElastAlerter
-from elastalert.elastalert import Elasticsearch
 from elastalert.util import lookup_es_key
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
@@ -51,7 +50,8 @@ class MockElastAlerter(object):
             return []
 
         # Set up elasticsearch client and query
-        es_client = Elasticsearch(host=conf['es_host'], port=conf['es_port'])
+        es_config = ElastAlerter.build_es_conn_config(conf)
+        es_client = ElastAlerter.new_elasticsearch(es_config)
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()
         ts = conf.get('timestamp_field', '@timestamp')
@@ -225,7 +225,7 @@ class MockElastAlerter(object):
                 doc.update({'_id': doc.get('_id', get_id())})
         else:
             endtime = ts_now()
-            starttime = endtime - datetime.timedelta(days=1)
+            starttime = endtime - datetime.timedelta(days=args.days)
 
         # Set run_every to cover the entire time range unless use_count_query or use_terms_query is set
         # This is to prevent query segmenting which unnecessarily slows down tests

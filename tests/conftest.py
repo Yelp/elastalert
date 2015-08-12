@@ -6,6 +6,8 @@ import mock
 import pytest
 
 from elastalert.elastalert import ElastAlerter
+from elastalert.util import dt_to_ts
+from elastalert.util import ts_to_dt
 
 
 class mock_es_client(object):
@@ -50,7 +52,10 @@ def ea():
               'processed_hits': {},
               'timestamp_field': '@timestamp',
               'match_enhancements': [],
-              'rule_file': 'blah.yaml'}]
+              'rule_file': 'blah.yaml',
+              'ts_to_dt': ts_to_dt,
+              'dt_to_ts': dt_to_ts,
+              '_source_enabled': True}]
     conf = {'rules_folder': 'rules',
             'run_every': datetime.timedelta(minutes=10),
             'buffer_time': datetime.timedelta(minutes=5),

@@ -13,8 +13,11 @@ from elasticsearch.exceptions import ElasticsearchException
 from elastalert.enhancements import BaseEnhancement
 from elastalert.kibana import dashboard_temp
 from elastalert.util import dt_to_ts
+from elastalert.util import dt_to_unix
+from elastalert.util import dt_to_unixms
 from elastalert.util import EAException
 from elastalert.util import ts_to_dt
+from elastalert.util import unix_to_dt
 
 
 START_TIMESTAMP = '2014-09-26T12:34:45Z'
@@ -78,7 +81,34 @@ def test_init_rule(ea):
 def test_query(ea):
     ea.current_es.search.return_value = {'hits': {'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
+
+
+def test_query_with_fields(ea):
+    ea.rules[0]['_source_enabled'] = False
+    ea.current_es.search.return_value = {'hits': {'hits': []}}
+    ea.run_query(ea.rules[0], START, END)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True, size=100000)
+
+
+def test_query_with_unix(ea):
+    ea.rules[0]['timestamp_type'] = 'unix'
+    ea.rules[0]['dt_to_ts'] = dt_to_unix
+    ea.current_es.search.return_value = {'hits': {'hits': []}}
+    ea.run_query(ea.rules[0], START, END)
+    start_unix = dt_to_unix(START)
+    end_unix = dt_to_unix(END)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
+
+
+def test_query_with_unixms(ea):
+    ea.rules[0]['timestamp_type'] = 'unixms'
+    ea.rules[0]['dt_to_ts'] = dt_to_unixms
+    ea.current_es.search.return_value = {'hits': {'hits': []}}
+    ea.run_query(ea.rules[0], START, END)
+    start_unix = dt_to_unixms(START)
+    end_unix = dt_to_unixms(END)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
 
 
 def test_no_hits(ea):
@@ -98,11 +128,23 @@ def test_no_terms_hits(ea):
 
 def test_some_hits(ea):
     hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP])
+    hits_dt = generate_hits([START, END])
     ea.current_es.search.return_value = hits
     ea.run_query(ea.rules[0], START, END)
-
     assert ea.rules[0]['type'].add_data.call_count == 1
-    ea.rules[0]['type'].add_data.assert_called_with([x['_source'] for x in hits['hits']['hits']])
+    ea.rules[0]['type'].add_data.assert_called_with([x['_source'] for x in hits_dt['hits']['hits']])
+
+
+def test_some_hits_unix(ea):
+    ea.rules[0]['timestamp_type'] = 'unix'
+    ea.rules[0]['dt_to_ts'] = dt_to_unix
+    ea.rules[0]['ts_to_dt'] = unix_to_dt
+    hits = generate_hits([dt_to_unix(START), dt_to_unix(END)])
+    hits_dt = generate_hits([START, END])
+    ea.current_es.search.return_value = copy.deepcopy(hits)
+    ea.run_query(ea.rules[0], START, END)
+    assert ea.rules[0]['type'].add_data.call_count == 1
+    ea.rules[0]['type'].add_data.assert_called_with([x['_source'] for x in hits_dt['hits']['hits']])
 
 
 def _duplicate_hits_generator(timestamps, **kwargs):
@@ -140,11 +182,8 @@ def test_run_rule_calls_garbage_collect(ea):
     end_time = '2014-09-26T12:00:00Z'
     ea.buffer_time = datetime.timedelta(hours=1)
     ea.run_every = datetime.timedelta(hours=1)
-
-    with contextlib.nested(
-        mock.patch.object(ea.rules[0]['type'], 'garbage_collect'),
-        mock.patch.object(ea, 'run_query')
-    ) as (mock_gc, mock_get_hits):
+    with contextlib.nested(mock.patch.object(ea.rules[0]['type'], 'garbage_collect'),
+                           mock.patch.object(ea, 'run_query')) as (mock_gc, mock_get_hits):
         ea.run_rule(ea.rules[0], ts_to_dt(end_time), ts_to_dt(start_time))
 
     # Running elastalert every hour for 12 hours, we should see self.garbage_collect called 12 times.
@@ -294,14 +333,14 @@ def test_silence(ea):
 
 
 def test_compound_query_key(ea):
-    ea.rules[0]['query_key'] = 'this,that'
-    ea.rules[0]['compound_query_key'] = ['this', 'that']
-    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP], this='abc', that='def')
+    ea.rules[0]['query_key'] = 'this,that,those'
+    ea.rules[0]['compound_query_key'] = ['this', 'that', 'those']
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP], this='abc', that='def', those=4)
     ea.current_es.search.return_value = hits
     ea.run_query(ea.rules[0], START, END)
     call_args = ea.rules[0]['type'].add_data.call_args_list[0]
-    assert 'this,that' in call_args[0][0][0]
-    assert call_args[0][0][0]['this,that'] == 'abc, def'
+    assert 'this,that,those' in call_args[0][0][0]
+    assert call_args[0][0][0]['this,that,those'] == 'abc, def, 4'
 
 
 def test_silence_query_key(ea):
@@ -405,11 +444,11 @@ def test_count(ea):
 
     # Assert that es.count is run against every run_every timeframe between START and END
     start = START
-    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'to': END_TIMESTAMP, 'from': START_TIMESTAMP}}}]}}}}}
+    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}}}
     while END - start > ea.run_every:
         end = start + ea.run_every
-        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['to'] = dt_to_ts(end)
-        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['from'] = dt_to_ts(start)
+        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['lte'] = dt_to_ts(end)
+        query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['gt'] = dt_to_ts(start)
         start = start + ea.run_every
         ea.current_es.count.assert_any_call(body=query, doc_type='doctype', index='idx', ignore_unavailable=True)
 
