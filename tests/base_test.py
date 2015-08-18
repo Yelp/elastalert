@@ -635,7 +635,8 @@ def test_rule_changes(ea):
 
     with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
         with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
-            mock_load.side_effect = [{'filter': [], 'name': 'rule2'}, {'filter': [], 'name': 'rule3'}]
+            mock_load.side_effect = [{'filter': [], 'name': 'rule2', 'rule_file': 'rules/rule2.yaml'},
+                                     {'filter': [], 'name': 'rule3', 'rule_file': 'rules/rule3.yaml'}]
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
 
@@ -652,14 +653,24 @@ def test_rule_changes(ea):
 
     # A new rule with a conflicting name wont load
     new_hashes = copy.copy(new_hashes)
-    new_hashes.update({'rule4.yaml': 'asdf'})
+    new_hashes.update({'rules/rule4.yaml': 'asdf'})
     with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
         with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
-            mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff'}
+            mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
     assert len(ea.rules) == 3
     assert not any(['new' in rule for rule in ea.rules])
+
+    # An old rule which didn't load gets reloaded
+    new_hashes = copy.copy(new_hashes)
+    new_hashes['rules/rule4.yaml'] = 'qwerty'
+    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
+        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
+            mock_hashes.return_value = new_hashes
+            ea.load_rule_changes()
+    assert len(ea.rules) == 4
 
 
 def test_strf_index(ea):

@@ -613,6 +613,10 @@ class ElastAlerter():
                 # Initialize the rule that matches rule_file
                 self.rules = [rule if rule['rule_file'] != rule_file else self.init_rule(new_rule, False) for rule in self.rules]
 
+                # If the rule failed to load previously, it needs to be added to self.rules
+                if new_rule['name'] not in [rule['name'] for rule in self.rules]:
+                    self.rules.append(self.init_rule(new_rule))
+
         # Load new rules
         if not self.args.rule:
             for rule_file in set(rule_hashes.keys()) - set(self.rule_hashes.keys()):
