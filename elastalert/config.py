@@ -121,6 +121,7 @@ def load_options(rule, conf=None, args=None):
     rule.setdefault('query_delay', datetime.timedelta(seconds=0))
     rule.setdefault('timestamp_field', '@timestamp')
     rule.setdefault('filter', [])
+    rule.setdefault('not_filter', [])
     rule.setdefault('timestamp_type', 'iso')
     rule.setdefault('_source_enabled', True)
     rule.setdefault('use_local_time', True)

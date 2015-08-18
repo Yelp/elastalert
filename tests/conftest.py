@@ -46,6 +46,7 @@ def ea():
               'name': 'anytest',
               'index': 'idx',
               'filter': [],
+              'not_filter': [],
               'include': ['@timestamp'],
               'aggregation': datetime.timedelta(0),
               'realert': datetime.timedelta(0),
