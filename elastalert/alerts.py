@@ -207,16 +207,15 @@ class EmailAlerter(Alerter):
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
-        email_msg = MIMEText(body)
-        email_msg['Subject'] = self.create_title(matches)
-        email_msg['To'] = ', '.join(self.rule['email'])
-        email_msg['From'] = self.from_addr
-        email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
         if self.rule.get('cc'):
-            email_msg['CC'] = ','.join(self.rule['cc'])
             to_addr = to_addr + self.rule['cc']
         if self.rule.get('bcc'):
             to_addr = to_addr + self.rule['bcc']
+
+        self.send_email(to_addr, body)
+
+    def send_email(self, to_addr body):
+        email_msg = self.build_email_message(body)
 
         try:
             if self.smtp_ssl:
@@ -242,6 +241,18 @@ class EmailAlerter(Alerter):
         self.smtp.close()
 
         logging.info("Sent email to %s" % (self.rule['email']))
+
+    def build_email_message(self, body):
+        email_msg = MIMEText(body)
+        email_msg['Subject'] = self.create_title(matches)
+        email_msg['To'] = ', '.join(self.rule['email'])
+        email_msg['From'] = self.from_addr
+        email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
+
+        if self.rule.get('cc'):
+            email_msg['CC'] = ','.join(self.rule['cc'])
+
+        return email_msg
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
