@@ -270,6 +270,51 @@ class EmailAlerter(Alerter):
                 'recipients': self.rule['email']}
 
 
+class MandrillEmailAlerter(EmailAlerter):
+    """ An alerter which tries to use the specified SMTP server
+    and fallsback to Mandrill to send the email if it doesn't
+    works
+    """
+    required_options = frozenset(['mandrill_api_key', 'email', 'from_email', 'from_name'])
+
+    def __init__(self, *args):
+        super(MandrillAlerter, self).__init__(*args)
+
+        self.mandrill_api_key = self.rule.get('mandrill_api_key')
+        self.mandrill_client = mandrill.Mandrill(self.mandrill_api_key)
+
+    def send_email(self, to_addr, body):
+        try:
+            super(MandrillEmailAlerter, self).send_email(to_addr, body)
+        except EAException:
+            message['to'] = to_addr
+            status = self.mandrill_client.messages.send(message=message, async=False)
+
+            logging.info("Sent email to %s using Mandrill: %s" % (self.rule['email'], status))
+
+    def build_email_message(self, body):
+        message = {
+            'from_email': self.rule.get('from_email'),
+            'from_name': self.rule.get('from_name'),
+            'text': body
+        }
+
+    def create_default_title(self, matches):
+        subject = 'ElastAlert: %s' % (self.rule['name'])
+
+        # If the rule has a query_key, add that value plus timestamp to subject
+        if 'query_key' in self.rule:
+            qk = matches[0].get(self.rule['query_key'])
+            if qk:
+                subject += ' - %s' % (qk)
+
+        return subject
+
+    def get_info(self):
+        return {'type': 'email',
+                'recipients': self.rule['email']}
+
+
 class JiraAlerter(Alerter):
     """ Creates a Jira ticket for each alert """
     required_options = frozenset(['jira_server', 'jira_account_file', 'jira_project', 'jira_issuetype'])
