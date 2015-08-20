@@ -127,6 +127,9 @@ default is 100,000, and if you expect to get near this number, consider using ``
 limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting
 can be overridden by any individual rule.
 
+``max_aggregation``: The maximum number of alerts to aggregate together. If a rule has ``aggregation`` set, all
+alerts occuring within a timeframe will be sent together. The default is 10,000.
+
 ``old_query_limit``: The maximum time between queries for ElastAlert to start at the most recently run query.
 When ElastAlert starts, for each rule, it will search ``elastalert_metadata`` for the most recently run query and start
 from that time, unless it is older than ``old_query_limit``, in which case it will start from the present time. The default is one week.
