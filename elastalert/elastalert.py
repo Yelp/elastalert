@@ -28,6 +28,7 @@ from util import seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
+from util import lookup_es_key
 
 
 class ElastAlerter():
@@ -231,7 +232,7 @@ class ElastAlerter():
                 hit['_source'].setdefault(key, value[0] if type(value) is list and len(value) == 1 else value)
             hit['_source'][rule['timestamp_field']] = rule['ts_to_dt'](hit['_source'][rule['timestamp_field']])
             if rule.get('compound_query_key'):
-                values = [hit['_source'].get(key, 'None') for key in rule['compound_query_key']]
+                values = [lookup_es_key(hit['_source'], key) for key in rule['compound_query_key']]
                 hit['_source'][rule['query_key']] = ', '.join([str(value) for value in values])
 
     def get_hits(self, rule, starttime, endtime, index):
