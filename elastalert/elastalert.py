@@ -986,6 +986,11 @@ class ElastAlerter():
                 # Original rule is missing, drop alert
                 continue
 
+            # Set current_es for top_count_keys query
+            rule_es_conn_config = self.build_es_conn_config(rule)
+            self.current_es = self.new_elasticsearch(rule_es_conn_config)
+            self.current_es_addr = (rule['es_host'], rule['es_port'])
+
             # Retry the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):
                 aggregated_matches = self.get_aggregated_matches(_id)
