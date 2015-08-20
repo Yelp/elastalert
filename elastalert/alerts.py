@@ -271,12 +271,14 @@ class JiraAlerter(Alerter):
         self.issue_type = self.rule['jira_issuetype']
         self.component = self.rule.get('jira_component')
         self.label = self.rule.get('jira_label')
+        self.description = self.rule.get('jira_description', '')
         self.assignee = self.rule.get('jira_assignee')
         self.max_age = self.rule.get('jira_max_age', 30)
         self.priority = self.rule.get('jira_priority')
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
+
         if self.bump_in_statuses and self.bump_not_in_statuses:
             msg = 'Both jira_bump_in_statuses (%s) and jira_bump_not_in_statuses (%s) are set.' % \
                   (','.join(self.bump_in_statuses), ','.join(self.bump_not_in_statuses))
@@ -368,7 +370,7 @@ class JiraAlerter(Alerter):
                     self.pipeline['jira_ticket'] = ticket
                 return
 
-        description = ''
+        description = self.description + '\n'
         for match in matches:
             description += str(JiraFormattedMatchString(self.rule, match))
             if len(matches) > 1:

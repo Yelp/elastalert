@@ -2,6 +2,7 @@
 import datetime
 import json
 import subprocess
+from contextlib import nested
 
 import mock
 from jira.exceptions import JIRAError
@@ -248,58 +249,80 @@ def test_email_query_key_in_subject():
 
 
 def test_jira():
-    rule = {'name': 'test alert', 'jira_account_file': 'jirafile', 'type': mock_rule(),
-            'jira_project': 'testproject', 'jira_issuetype': 'testtype', 'jira_server': 'jiraserver',
-            'jira_label': 'testlabel', 'jira_component': 'testcomponent',
-            'timestamp_field': '@timestamp', 'alert_subject': 'Issue {0} occurred at {1}',
-            'alert_subject_args': ['test_term', '@timestamp']}
-    with mock.patch('elastalert.alerts.JIRA') as mock_jira:
-        with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
-            mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-            mock_priority = mock.Mock()
-            mock_priority.id = '5'
-            mock_jira.return_value.priorities.return_value = [mock_priority]
-            alert = JiraAlerter(rule)
-            alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+    description_txt = "Description stuff goes here like a runbook link."
+    rule = {
+        'name': 'test alert',
+        'jira_account_file': 'jirafile',
+        'type': mock_rule(),
+        'jira_project': 'testproject',
+        'jira_issuetype': 'testtype',
+        'jira_server': 'jiraserver',
+        'jira_label': 'testlabel',
+        'jira_component': 'testcomponent',
+        'jira_description': description_txt,
+        'timestamp_field': '@timestamp',
+        'alert_subject': 'Issue {0} occurred at {1}',
+        'alert_subject_args': ['test_term', '@timestamp']
+    }
 
-            expected = [mock.call('jiraserver', basic_auth=('jirauser', 'jirapassword')),
-                        mock.call().priorities(),
-                        mock.call().create_issue(issuetype={'name': 'testtype'},
-                                                 project={'key': 'testproject'},
-                                                 labels=['testlabel'],
-                                                 components=[{'name': 'testcomponent'}],
-                                                 description=mock.ANY,
-                                                 summary='Issue test_value occurred at 2014-10-31T00:00:00')]
-            # We don't care about additional calls to mock_jira, such as __str__
-            assert mock_jira.mock_calls[:3] == expected
+    mock_priority = mock.Mock(id='5')
+
+    with nested(
+        mock.patch('elastalert.alerts.JIRA'),
+        mock.patch('elastalert.alerts.yaml_loader')
+    ) as (mock_jira, mock_open):
+        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+        mock_jira.return_value.priorities.return_value = [mock_priority]
+        alert = JiraAlerter(rule)
+        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+
+    expected = [
+        mock.call('jiraserver', basic_auth=('jirauser', 'jirapassword')),
+        mock.call().priorities(),
+        mock.call().create_issue(
+            issuetype={'name': 'testtype'},
+            project={'key': 'testproject'},
+            labels=['testlabel'],
+            components=[{'name': 'testcomponent'}],
+            description=mock.ANY,
+            summary='Issue test_value occurred at 2014-10-31T00:00:00')
+    ]
+
+    # We don't care about additional calls to mock_jira, such as __str__
+    assert mock_jira.mock_calls[:3] == expected
+    assert mock_jira.mock_calls[2][2]['description'].startswith(description_txt)
 
     # Search called if jira_bump_tickets
     rule['jira_bump_tickets'] = True
-    with mock.patch('elastalert.alerts.JIRA') as mock_jira:
-        with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
-            mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-            mock_jira.return_value = mock.Mock()
-            mock_jira.return_value.search_issues.return_value = []
-            mock_jira.return_value.priorities.return_value = [mock_priority]
+    with nested(
+        mock.patch('elastalert.alerts.JIRA'),
+        mock.patch('elastalert.alerts.yaml_loader')
+    ) as (mock_jira, mock_open):
+        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+        mock_jira.return_value = mock.Mock()
+        mock_jira.return_value.search_issues.return_value = []
+        mock_jira.return_value.priorities.return_value = [mock_priority]
 
-            alert = JiraAlerter(rule)
-            alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+        alert = JiraAlerter(rule)
+        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
 
-            expected.insert(2, mock.call().search_issues(mock.ANY))
-            assert mock_jira.mock_calls == expected
+    expected.insert(2, mock.call().search_issues(mock.ANY))
+    assert mock_jira.mock_calls == expected
 
     # Issue is still created if search_issues throws an exception
-    with mock.patch('elastalert.alerts.JIRA') as mock_jira:
-        with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
-            mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-            mock_jira.return_value = mock.Mock()
-            mock_jira.return_value.search_issues.side_effect = JIRAError
-            mock_jira.return_value.priorities.return_value = [mock_priority]
+    with nested(
+        mock.patch('elastalert.alerts.JIRA'),
+        mock.patch('elastalert.alerts.yaml_loader')
+    ) as (mock_jira, mock_open):
+        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+        mock_jira.return_value = mock.Mock()
+        mock_jira.return_value.search_issues.side_effect = JIRAError
+        mock_jira.return_value.priorities.return_value = [mock_priority]
 
-            alert = JiraAlerter(rule)
-            alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+        alert = JiraAlerter(rule)
+        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
 
-            assert mock_jira.mock_calls == expected
+    assert mock_jira.mock_calls == expected
 
 
 def test_kibana(ea):
