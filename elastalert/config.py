@@ -160,7 +160,7 @@ def load_options(rule, conf=None, args=None):
         rule['query_key'] = ','.join(rule['query_key'])
 
     # Add QK, CK and timestamp to include
-    include = rule.get('include', [])
+    include = rule.get('include', ['*'])
     if 'query_key' in rule:
         include.append(rule['query_key'])
     if 'compound_query_key' in rule:
