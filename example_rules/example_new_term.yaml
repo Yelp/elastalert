@@ -1,4 +1,4 @@
-# Alert when a login event is detected for user "admin" never before seen ip
+# Alert when a login event is detected for user "admin" never before seen IP
 # In this example, "login" logs contain which user has logged in from what IP
 
 # (Required)
