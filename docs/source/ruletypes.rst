@@ -737,14 +737,15 @@ Command
 ~~~~~~~
 
 The command alert allows you to execute an arbitrary command and pass arguments or stdin from the match. Arguments to the command can use
-Python format string syntax to access parts of the match. The alerter will open a subprocess and optionally pass the match, as JSON, to
-the stdin of the process.
+Python format string syntax to access parts of the match. The alerter will open a subprocess and optionally pass the match, or matches
+in the case of an aggregated alert, as a JSON array, to the stdin of the process.
 
 This alert requires one option:
 
 ``command``: A list of arguments to execute or a string to execute. If in list format, the first argument is the name of the program to execute. If passing a
 string, the command will be executed through the shell. The command string or args will be formatted using Python's % string format syntax with the
-match passed the format argument. This means that a field can be accessed with ``%(field_name)s``.
+match passed the format argument. This means that a field can be accessed with ``%(field_name)s``. In an aggregated alert, these fields will come
+from the first match.
 
 Optional:
 
