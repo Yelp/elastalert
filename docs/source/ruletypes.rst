@@ -144,21 +144,66 @@ The following configuration settings are common to all types of rules.
 Required Settings
 ~~~~~~~~~~~~~~~~~
 
+es_host
+^^^^^^^
+
 ``es_host``: The hostname of the Elasticsearch cluster the rule will use to query. (Required, string, no default)
+
+es_port
+^^^^^^^
 
 ``es_port``: The port of the Elasticsearch cluster. (Required, number, no default)
 
-``use_ssl``: Optional; whether or not to connect to ``es_host`` using SSL; set to ``True`` or ``False``.
-
-``es_username``: Optional; basic-auth username for connecting to ``es_host``.
-
-``es_password``: Optional; basic-auth password for connecting to ``es_host``.
-
-``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
+index
+^^^^^
 
 ``index``: The name of the index that will be searched. Wildcards can be used here, such as:
 ``index: my-index-*`` which will match ``my-index-2014-10-05``. You can also use a format string containing
 ``%Y`` for year, ``%m`` for month, and ``%d`` for day. To use this, you must also set ``use_strftime_index`` to true. (Required, string, no default)
+
+name
+^^^^
+
+``name``: The name of the rule. This must be unique across all rules. The name will be used in
+alerts and used as a key when writing and reading search metadata back from Elasticsearch. (Required, string, no default)
+
+type
+^^^^
+
+``type``: The ``RuleType`` to use. This may either be one of the built in rule types, see :ref:`Rule Types <ruletypes>` section below for more information,
+or loaded from a module. For loading from a module, the type should be specified as ``module.file.RuleName``. (Required, string, no default)
+
+alert
+^^^^^
+
+``alert``: The ``Alerter`` type to use. This may be one or more of the built in alerts, see :ref:`Alert Types <alerts>` section below for more information,
+or loaded from a module. For loading from a module, the alert should be specified as ``module.file.AlertName``. (Required, string or list, no default)
+
+Optional Settings
+~~~~~~~~~~~~~~~~~
+
+use_ssl
+^^^^^^^
+
+``use_ssl``: Whether or not to connect to ``es_host`` using SSL. (Optional, boolean, default F)
+
+es_username
+^^^^^^^^^^^
+
+``es_username``: basic-auth username for connecting to ``es_host``. (Optional, string, no default)
+
+es_password
+^^^^^^^^^^^
+
+``es_password``: basic-auth password for connecting to ``es_host``. (Optional, string, no default)
+
+es_url_prefix
+^^^^^^^^^^^^^
+
+``es_url_prefix``: URL prefix for the Elasticsearch endpoint. (Optional, string, no default)
+
+use_strftime_index
+^^^^^^^^^^^^^^^^^^
 
 ``use_strftime_index``: If this is true, ElastAlert will format the index using datetime.strftime for each query.
 See https://docs.python.org/2/library/datetime.html#strftime-strptime-behavior for more details.
@@ -166,18 +211,6 @@ If a query spans multiple days, the formatted indexes will be concatenated with 
 as narrowing the number of indexes searched, compared to using a wildcard, may be significantly faster. For example, if ``index`` is
 ``logstash-%Y.%m.%d``, the query url will be similar to ``elasticsearch.example.com/logstash-2015.02.03/...`` or
 ``elasticsearch.example.com/logstash-2015.02.03,logstash-2015.02.04/...``.
-
-``name``: The name of the rule. This must be unique across all rules. The name will be used in
-alerts and used as a key when writing and reading search metadata back from Elasticsearch. (Required, string, no default)
-
-``type``: The ``RuleType`` to use. This may either be one of the built in rule types, see :ref:`Rule Types <ruletypes>` section below for more information,
-or loaded from a module. For loading from a module, the type should be specified as ``module.file.RuleName``. (Required, string, no default)
-
-``alert``: The ``Alerter`` type to use. This may be one of the built in alerts, see :ref:`Alert Types <alerts>` section below for more information,
-or loaded from a module. For loading from a module, the alert should be specified as ``module.file.AlertName``. (Required, string, no default)
-
-Optional Settings
-~~~~~~~~~~~~~~~~~
 
 aggregation
 ^^^^^^^^^^^
