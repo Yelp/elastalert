@@ -249,6 +249,7 @@ def test_email_query_key_in_subject():
 
 
 def test_jira():
+    description_txt = "Description stuff goes here like a runbook link."
     rule = {
         'name': 'test alert',
         'jira_account_file': 'jirafile',
@@ -258,18 +259,19 @@ def test_jira():
         'jira_server': 'jiraserver',
         'jira_label': 'testlabel',
         'jira_component': 'testcomponent',
+        'jira_description': description_txt,
         'timestamp_field': '@timestamp',
         'alert_subject': 'Issue {0} occurred at {1}',
         'alert_subject_args': ['test_term', '@timestamp']
     }
+
+    mock_priority = mock.Mock(id='5')
 
     with nested(
         mock.patch('elastalert.alerts.JIRA'),
         mock.patch('elastalert.alerts.yaml_loader')
     ) as (mock_jira, mock_open):
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-        mock_priority = mock.Mock()
-        mock_priority.id = '5'
         mock_jira.return_value.priorities.return_value = [mock_priority]
         alert = JiraAlerter(rule)
         alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
@@ -288,6 +290,7 @@ def test_jira():
 
     # We don't care about additional calls to mock_jira, such as __str__
     assert mock_jira.mock_calls[:3] == expected
+    assert mock_jira.mock_calls[2][2]['description'].startswith(description_txt)
 
     # Search called if jira_bump_tickets
     rule['jira_bump_tickets'] = True
