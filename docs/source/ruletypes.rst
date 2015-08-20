@@ -966,6 +966,8 @@ Optional:
 
 ``jira_component``: The name of the component to set the ticket to.
 
+``jira_description``: Similar to ``alert_text``, this text is prepended to the JIRA description.
+
 ``jira_label``: The label to add to the JIRA ticket.
 
 ``jira_priority``: The index of the priority to set the issue to. In the JIRA dropdown for priorities, 0 would represent the first priority,
