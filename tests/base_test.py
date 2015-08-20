@@ -267,7 +267,12 @@ def test_agg(ea):
                                                              {'_id': 'CDEF', '_source': call3}]}},
                                           {'hits': {'hits': [{'_id': 'BCDE', '_source': call2}]}},
                                           {'hits': {'hits': []}}]
-    ea.send_pending_alerts()
+
+    with mock.patch('elastalert.elastalert.Elasticsearch') as mock_es:
+        ea.send_pending_alerts()
+        # Assert that current_es was refreshed from the aggregate rules
+        assert mock_es.called_with(host='', port='')
+        assert mock_es.call_count == 2
     assert_alerts(ea, [hits_timestamps[:2], hits_timestamps[2:]])
 
     call1 = ea.writeback_es.search.call_args_list[6][1]['body']
