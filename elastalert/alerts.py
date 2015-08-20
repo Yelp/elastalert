@@ -420,23 +420,22 @@ class CommandAlerter(Alerter):
             self.rule['command'] = [self.rule['command']]
 
     def alert(self, matches):
-        for match in matches:
-            # Format the command and arguments
-            try:
-                command = [command_arg % match for command_arg in self.rule['command']]
-                self.last_command = command
-            except KeyError as e:
-                raise EAException("Error formatting command: %s" % (e))
+        # Format the command and arguments
+        try:
+            command = [command_arg % matches[0] for command_arg in self.rule['command']]
+            self.last_command = command
+        except KeyError as e:
+            raise EAException("Error formatting command: %s" % (e))
 
-            # Run command and pipe data
-            try:
-                subp = subprocess.Popen(command, stdin=subprocess.PIPE)
+        # Run command and pipe data
+        try:
+            subp = subprocess.Popen(command, stdin=subprocess.PIPE)
 
-                if self.rule.get('pipe_match_json'):
-                    match_json = json.dumps(match)
-                    stdout, stderr = subp.communicate(input=match_json)
-            except OSError as e:
-                raise EAException("Error while running command %s: %s" % (' '.join(command), e))
+            if self.rule.get('pipe_match_json'):
+                match_json = json.dumps(matches)
+                stdout, stderr = subp.communicate(input=match_json)
+        except OSError as e:
+            raise EAException("Error while running command %s: %s" % (' '.join(command), e))
 
     def get_info(self):
         return {'type': 'command',
