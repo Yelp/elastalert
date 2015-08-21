@@ -23,12 +23,12 @@ from enhancements import DropMatchException
 from util import dt_to_ts
 from util import EAException
 from util import format_index
+from util import lookup_es_key
 from util import pretty_ts
 from util import seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
-from util import lookup_es_key
 
 
 class ElastAlerter():
@@ -89,6 +89,7 @@ class ElastAlerter():
         self.notify_email = self.conf.get('notify_email')
         self.from_addr = self.conf.get('from_addr', 'ElastAlert')
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
+        self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.alerts_sent = 0
         self.num_hits = 0
         self.current_es = None
@@ -1024,7 +1025,8 @@ class ElastAlerter():
             try:
                 res = self.writeback_es.search(index=self.writeback_index,
                                                doc_type='elastalert',
-                                               body=query)
+                                               body=query,
+                                               size=self.max_aggregation)
                 for match in res['hits']['hits']:
                     matches.append(match['_source'])
                     self.writeback_es.delete(index=self.writeback_index,

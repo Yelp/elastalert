@@ -231,6 +231,7 @@ def test_match_with_module(ea):
 
 
 def test_agg(ea):
+    ea.max_aggregation = 1337
     hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:47:45']
     alerttime1 = dt_to_ts(ts_to_dt(hits_timestamps[0]) + datetime.timedelta(minutes=10))
     hits = generate_hits(hits_timestamps)
@@ -277,6 +278,7 @@ def test_agg(ea):
     assert 'alert_time' in call1['filter']['range']
     assert call2['query']['query_string']['query'] == 'aggregate_id:ABCD'
     assert call3['query']['query_string']['query'] == 'aggregate_id:CDEF'
+    assert ea.writeback_es.search.call_args_list[7][1]['size'] == 1337
 
 
 def test_agg_no_writeback_connectivity(ea):
