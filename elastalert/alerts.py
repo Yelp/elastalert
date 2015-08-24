@@ -212,10 +212,10 @@ class EmailAlerter(Alerter):
         if self.rule.get('bcc'):
             to_addr = to_addr + self.rule['bcc']
 
-        self.send_email(to_addr, body)
+        self.send_email(to_addr, body, matches)
 
-    def send_email(self, to_addr, body):
-        email_msg = self.build_email_message(body)
+    def send_email(self, to_addr, body, matches):
+        email_msg = self.build_email_message(body, matches)
 
         try:
             if self.smtp_ssl:
@@ -242,7 +242,7 @@ class EmailAlerter(Alerter):
 
         logging.info("Sent email to %s" % (self.rule['email']))
 
-    def build_email_message(self, body):
+    def build_email_message(self, body, matches):
         email_msg = MIMEText(body)
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
