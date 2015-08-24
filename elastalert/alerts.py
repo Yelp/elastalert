@@ -214,7 +214,7 @@ class EmailAlerter(Alerter):
 
         self.send_email(to_addr, body)
 
-    def send_email(self, to_addr body):
+    def send_email(self, to_addr, body):
         email_msg = self.build_email_message(body)
 
         try:
