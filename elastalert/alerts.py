@@ -207,16 +207,15 @@ class EmailAlerter(Alerter):
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
-        email_msg = MIMEText(body)
-        email_msg['Subject'] = self.create_title(matches)
-        email_msg['To'] = ', '.join(self.rule['email'])
-        email_msg['From'] = self.from_addr
-        email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
         if self.rule.get('cc'):
-            email_msg['CC'] = ','.join(self.rule['cc'])
             to_addr = to_addr + self.rule['cc']
         if self.rule.get('bcc'):
             to_addr = to_addr + self.rule['bcc']
+
+        self.send_email(to_addr, body, matches)
+
+    def send_email(self, to_addr, body, matches):
+        email_msg = self.build_email_message(body, matches)
 
         try:
             if self.smtp_ssl:
@@ -242,6 +241,63 @@ class EmailAlerter(Alerter):
         self.smtp.close()
 
         logging.info("Sent email to %s" % (self.rule['email']))
+
+    def build_email_message(self, body, matches):
+        email_msg = MIMEText(body)
+        email_msg['Subject'] = self.create_title(matches)
+        email_msg['To'] = ', '.join(self.rule['email'])
+        email_msg['From'] = self.from_addr
+        email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
+
+        if self.rule.get('cc'):
+            email_msg['CC'] = ','.join(self.rule['cc'])
+
+        return email_msg
+
+    def create_default_title(self, matches):
+        subject = 'ElastAlert: %s' % (self.rule['name'])
+
+        # If the rule has a query_key, add that value plus timestamp to subject
+        if 'query_key' in self.rule:
+            qk = matches[0].get(self.rule['query_key'])
+            if qk:
+                subject += ' - %s' % (qk)
+
+        return subject
+
+    def get_info(self):
+        return {'type': 'email',
+                'recipients': self.rule['email']}
+
+
+class MandrillEmailAlerter(EmailAlerter):
+    """ An alerter which tries to use the specified SMTP server
+    and fallsback to Mandrill to send the email if it doesn't
+    works
+    """
+    required_options = frozenset(['mandrill_api_key', 'email', 'from_email', 'from_name'])
+
+    def __init__(self, *args):
+        super(MandrillAlerter, self).__init__(*args)
+
+        self.mandrill_api_key = self.rule.get('mandrill_api_key')
+        self.mandrill_client = mandrill.Mandrill(self.mandrill_api_key)
+
+    def send_email(self, to_addr, body):
+        try:
+            super(MandrillEmailAlerter, self).send_email(to_addr, body)
+        except EAException:
+            message['to'] = to_addr
+            status = self.mandrill_client.messages.send(message=message, async=False)
+
+            logging.info("Sent email to %s using Mandrill: %s" % (self.rule['email'], status))
+
+    def build_email_message(self, body):
+        message = {
+            'from_email': self.rule.get('from_email'),
+            'from_name': self.rule.get('from_name'),
+            'text': body
+        }
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
