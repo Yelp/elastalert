@@ -56,7 +56,7 @@ class ElastAlerter():
         parser.add_argument('--verbose', action='store_true', dest='verbose', help='Increase verbosity without suppressing alerts')
         parser.add_argument('--pin_rules', action='store_true', dest='pin_rules', help='Stop ElastAlert from monitoring config file changes')
         parser.add_argument('--es_debug', action='store_true', dest='es_debug', help='Enable verbose logging from Elasticsearch queries')
-        parser.add_argument('--es_debug_trace', action='store', dest='es_debug_trace', default="/tmp/es_trace.log", help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file (default: /tmp/es_trace.log)')
+        parser.add_argument('--es_debug_trace', action='store', dest='es_debug_trace', help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file')
         self.args = parser.parse_args(args)
 
     def __init__(self, args):
