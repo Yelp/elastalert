@@ -61,14 +61,15 @@ def test_starttime(ea):
 
 def test_init_rule(ea):
     # Simulate state of a rule just loaded from a file
+    ea.rules[0]['minimum_starttime'] = datetime.datetime.now()
     new_rule = copy.copy(ea.rules[0])
-    map(new_rule.pop, ['agg_matches', 'current_aggregate_id', 'processed_hits'])
+    map(new_rule.pop, ['agg_matches', 'current_aggregate_id', 'processed_hits', 'minimum_starttime'])
 
     # Properties are copied from ea.rules[0]
     ea.rules[0]['starttime'] = '2014-01-02T00:11:22'
     ea.rules[0]['processed_hits'] = ['abcdefg']
     new_rule = ea.init_rule(new_rule, False)
-    for prop in ['starttime', 'agg_matches', 'current_aggregate_id', 'processed_hits']:
+    for prop in ['starttime', 'agg_matches', 'current_aggregate_id', 'processed_hits', 'minimum_starttime']:
         assert new_rule[prop] == ea.rules[0][prop]
 
     # Properties are fresh

@@ -576,9 +576,10 @@ class ElastAlerter():
         copy_properties = ['agg_matches',
                            'current_aggregate_id',
                            'processed_hits',
-                           'starttime']
+                           'starttime',
+                           'minimum_starttime']
         for prop in copy_properties:
-            if prop == 'starttime' and 'starttime' not in rule:
+            if prop not in rule:
                 continue
             new_rule[prop] = rule[prop]
 
