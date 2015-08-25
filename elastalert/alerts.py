@@ -434,7 +434,7 @@ class CommandAlerter(Alerter):
             subp = subprocess.Popen(command, stdin=subprocess.PIPE)
 
             if self.rule.get('pipe_match_json'):
-                match_json = json.dumps(matches)
+                match_json = json.dumps(matches) + '\n'
                 stdout, stderr = subp.communicate(input=match_json)
         except OSError as e:
             raise EAException("Error while running command %s: %s" % (' '.join(command), e))
