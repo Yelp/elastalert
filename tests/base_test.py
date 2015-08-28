@@ -656,8 +656,8 @@ def test_rule_changes(ea):
 
     # Assert 2 and 3 were reloaded
     assert mock_load.call_count == 2
-    mock_load.assert_any_call('rules/rule2.yaml')
-    mock_load.assert_any_call('rules/rule3.yaml')
+    mock_load.assert_any_call('rules/rule2.yaml', ea.conf)
+    mock_load.assert_any_call('rules/rule3.yaml', ea.conf)
 
     # A new rule with a conflicting name wont load
     new_hashes = copy.copy(new_hashes)

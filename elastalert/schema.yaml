@@ -19,7 +19,7 @@ definitions:
 
   filter: &filter {}
 
-required: [name, type, index, alert, es_port, es_host]
+required: [name, type, index, alert]
 type: object
 
 ### Rule Types section

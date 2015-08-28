@@ -53,7 +53,7 @@ def test_import_rules():
         # Test that type is imported
         with mock.patch('__builtin__.__import__') as mock_import:
             mock_import.return_value = elastalert.ruletypes
-            load_configuration('test_config')
+            load_configuration('test_config', test_config)
         assert mock_import.call_args_list[0][0][0] == 'testing.test'
         assert mock_import.call_args_list[0][0][3] == ['RuleType']
 
@@ -63,7 +63,7 @@ def test_import_rules():
         test_rule_copy['alert'] = 'testing2.test2.Alerter'
         with mock.patch('__builtin__.__import__') as mock_import:
             mock_import.return_value = elastalert.alerts
-            load_configuration('test_config')
+            load_configuration('test_config', test_config)
         assert mock_import.call_args_list[0][0][0] == 'testing2.test2'
         assert mock_import.call_args_list[0][0][3] == ['Alerter']
 
@@ -89,11 +89,28 @@ def test_load_rules():
             assert rules['rules'][0]['include'].count('comparekey') == 1
 
 
+def test_load_default_host_port():
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy.pop('es_host')
+    test_rule_copy.pop('es_port')
+    test_config_copy = copy.deepcopy(test_config)
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [test_config_copy, test_rule_copy]
+
+        with mock.patch('os.listdir') as mock_ls:
+            mock_ls.return_value = ['testrule.yaml']
+            rules = load_rules(test_args)
+
+            # Assert include doesn't contain duplicates
+            assert rules['es_port'] == 12345
+            assert rules['es_host'] == 'elasticsearch.test'
+
+
 def test_compound_query_key():
     test_rule_copy = copy.deepcopy(test_rule)
     test_rule_copy.pop('use_count_query')
     test_rule_copy['query_key'] = ['field1', 'field2']
-    load_options(test_rule_copy)
+    load_options(test_rule_copy, test_config)
     assert 'field1' in test_rule_copy['include']
     assert 'field2' in test_rule_copy['include']
     assert test_rule_copy['query_key'] == 'field1,field2'
@@ -101,7 +118,7 @@ def test_compound_query_key():
 
 
 def test_raises_on_missing_config():
-    optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include')
+    optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include', 'es_host', 'es_port')
     test_rule_copy = copy.deepcopy(test_rule)
     for key in test_rule_copy.keys():
         test_rule_copy = copy.deepcopy(test_rule)
@@ -140,11 +157,11 @@ def test_raises_on_bad_generate_kibana_filters():
         test_rule_copy['filter'] = good
         with mock.patch('elastalert.config.yaml_loader') as mock_open:
             mock_open.return_value = test_rule_copy
-            load_configuration('blah')
+            load_configuration('blah', test_config)
             for bad in bad_filters:
                 test_rule_copy['filter'] = good + bad
                 with pytest.raises(EAException):
-                    load_configuration('blah')
+                    load_configuration('blah', test_config)
 
 
 def test_get_file_paths():
