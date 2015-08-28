@@ -1,12 +1,12 @@
 # Alert when the rate of events exceeds a threshold
 
-# (Required)
+# (Optional)
 # Elasticsearch host
-es_host: elasticsearch.example.com
+# es_host: elasticsearch.example.com
 
-# (Required)
+# (Optional)
 # Elasticsearch port
-es_port: 14900
+# es_port: 14900
 
 # (Required)
 # Index to search, wildcard supported

@@ -97,7 +97,7 @@ as if it was queried in real time.
 
 ``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about its searches.
 When ElastAlert is started, it will query for information about the time that it was last run. This way,
-even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice.
+even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice. It will also specify the default cluster for each rule to run on.
 
 ``es_port``: The port corresponding to ``es_host``.
 

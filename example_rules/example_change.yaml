@@ -4,15 +4,15 @@
 # {'username': 'bob', 'country_name': 'Russia', '@timestamp': '2014-10-15T05:00:00'}
 # Because the user (query_key) bob logged in from different countries (compare_key) in the same day (timeframe)
 
-# (Required)
+# (Optional)
 # Elasticsearch host
-es_host: elasticsearch.example.com
+# es_host: elasticsearch.example.com
 
-# (Required)
+# (Optional)
 # Elasticsearch port
-es_port: 14900
+# es_port: 14900
 
-# (OptionaL) Connect with SSL to elasticsearch
+# (Optional) Connect with SSL to elasticsearch
 #use_ssl: True
 
 # (Optional) basic-auth username and password for elasticsearch
