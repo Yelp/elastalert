@@ -18,6 +18,8 @@ from util import EAException
 from util import lookup_es_key
 from util import pretty_ts
 
+elastalert_logger = logging.getLogger('elastalert')
+
 
 class BasicMatchString(object):
 
@@ -26,7 +28,6 @@ class BasicMatchString(object):
     def __init__(self, rule, match):
         self.rule = rule
         self.match = match
-        self.elastalert_logger = logging.getLogger('elastalert')
 
     def _ensure_new_line(self):
         while self.text[-2:] != '\n\n':
@@ -161,10 +162,10 @@ class DebugAlerter(Alerter):
         qk = self.rule.get('query_key', None)
         for match in matches:
             if qk in match:
-                self.elastalert_logger.info('Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
+                elastalert_logger.info('Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
             else:
-                self.elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
-            self.elastalert_logger.info(str(BasicMatchString(self.rule, match)))
+                elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
+            elastalert_logger.info(str(BasicMatchString(self.rule, match)))
 
     def get_info(self):
         return {'type': 'debug'}
@@ -242,7 +243,7 @@ class EmailAlerter(Alerter):
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
         self.smtp.close()
 
-        self.elastalert_logger.info("Sent email to %s" % (self.rule['email']))
+        elastalert_logger.info("Sent email to %s" % (self.rule['email']))
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -364,7 +365,7 @@ class JiraAlerter(Alerter):
         if self.bump_tickets:
             ticket = self.find_existing_ticket(matches)
             if ticket:
-                self.elastalert_logger.info('Commenting on existing ticket %s' % (ticket.key))
+                elastalert_logger.info('Commenting on existing ticket %s' % (ticket.key))
                 for match in matches:
                     self.comment_on_ticket(ticket, match)
                 if self.pipeline is not None:
@@ -384,7 +385,7 @@ class JiraAlerter(Alerter):
             self.issue = self.client.create_issue(**self.jira_args)
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket: %s" % (e))
-        self.elastalert_logger.info("Opened Jira ticket: %s" % (self.issue))
+        elastalert_logger.info("Opened Jira ticket: %s" % (self.issue))
 
         if self.pipeline is not None:
             self.pipeline['jira_ticket'] = self.issue

@@ -685,8 +685,8 @@ class ElastAlerter():
             else:
                 old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
                 self.elastalert_logger.info("Ran %s from %s to %s: %s query hits, %s matches,"
-                             " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                  self.num_hits, num_matches, self.alerts_sent))
+                                            " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
+                                                                 self.num_hits, num_matches, self.alerts_sent))
                 self.alerts_sent = 0
 
             self.remove_old_events(rule)
