@@ -23,6 +23,7 @@ class RuleType(object):
     required_options = frozenset()
 
     def __init__(self, rules, args=None):
+        self.elastalert_logger = logging.getLogger('elastalert')
         self.matches = []
         self.rules = rules
         self.occurrences = {}
@@ -532,10 +533,10 @@ class NewTermsRule(RuleType):
                 buckets = res['aggregations']['filtered']['values']['buckets']
                 keys = [bucket['key'] for bucket in buckets]
                 self.seen_values[field] = keys
-                logging.info('Found %s unique values for %s' % (len(keys), field))
+                self.elastalert_logger.info('Found %s unique values for %s' % (len(keys), field))
             else:
                 self.seen_values[field] = []
-                logging.info('Found no values for %s' % (field))
+                self.elastalert_logger.info('Found no values for %s' % (field))
 
     def add_data(self, data):
         for document in data:
