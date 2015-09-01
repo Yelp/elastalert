@@ -167,6 +167,7 @@ properties:
   ### Email
   email: *arrayOfString
   email_reply_to: {type: string}
+  notify_email: {type: string} # if rule is slow or erroring, send to this email
   smtp_host: {type: string}
   from_addr: {type: string}
 
