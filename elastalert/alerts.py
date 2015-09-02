@@ -2,6 +2,7 @@
 import datetime
 import json
 import logging
+import requests
 import subprocess
 from email.mime.text import MIMEText
 from smtplib import SMTP
@@ -244,6 +245,63 @@ class EmailAlerter(Alerter):
         return {'type': 'email',
                 'recipients': self.rule['email']}
 
+class OpsGenieAlerter(Alerter):
+    '''Sends a http request to the OpsGenie API to signal for an alert'''
+    required_options = frozenset(['opsgenie_key', 'opsgenie_account', 'opsgenie_recipients'])
+
+    def __init__(self, *args):
+        super(OpsGenieAlerter, self).__init__(*args)
+
+        self.account = self.rule.get('opsgenie_account', 'genie')
+        self.api_key = self.rule.get('opsgenie_key', 'key')
+        self.recipients = self.rule.get('opsgenie_recipients', ['genies'])
+        self.to_addr = self.rule.get('opsgenie_addr', 'example.opsgenie.net')
+
+
+    def alert(self, matches):
+        body = ''
+        for match in matches:
+            body += str(BasicMatchString(self.rule, match))
+            # Separate text of aggregated alerts with dashes
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        
+        post = {}
+        post['apiKey']      = self.api_key
+        post['notes']       = "ElastAlert message"
+        post['note']        = body
+        post['message']     = body
+        post['teams']       = self.recipients 
+        post['recipients']  = self.recipients
+        post['description'] = 'ElastAlert to OpsGenie'
+        post['source']      = 'ElastAlert'
+        post['tags']        = ['ElastAlert, logs']
+        logging.warning(json.dumps(post))
+        logging.warning('Addr: {}'.format(self.to_addr))
+
+        try:
+            r = requests.post(self.to_addr, json=post)
+            logging.debug('request response: {}'.format(r))
+            if r.status_code != 200:
+                logging.error("Error sending alert request to OpsGenie! {}".format(r.json()))
+                r.raise_for_status()
+        except Exception as err:
+            logging.error("Error sending alert to OpsGenie: {}".format(err))
+
+    def create_default_title(self, matches):
+        subject = 'ElastAlert: %s' % (self.rule['name'])
+
+        # If the rule has a query_key, add that value plus timestamp to subject
+        if 'query_key' in self.rule:
+            qk = matches[0].get(self.rule['query_key'])
+            if qk:
+                subject += ' - %s' % (qk)
+
+        return subject
+
+    def get_info(self):
+        return {'type': 'opsgenie',
+                'recipients': self.rule['opsgenie_addr']}
 
 class JiraAlerter(Alerter):
     """ Creates a Jira ticket for each alert """
