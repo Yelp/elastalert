@@ -29,6 +29,7 @@ from util import seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
+from util import elastalert_logger
 
 
 class ElastAlerter():
@@ -60,7 +61,6 @@ class ElastAlerter():
         self.args = parser.parse_args(args)
 
     def __init__(self, args):
-        self.elastalert_logger = logging.getLogger('elastalert')
         self.parse_args(args)
         self.debug = self.args.debug
         self.verbose = self.args.verbose
@@ -264,7 +264,7 @@ class ElastAlerter():
         hits = res['hits']['hits']
         self.num_hits += len(hits)
         lt = rule.get('use_local_time')
-        self.elastalert_logger.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits)))
+        elastalert_logger.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits)))
         self.process_hits(rule, hits)
 
         # Record doc_type for use in get_top_counts
@@ -297,7 +297,7 @@ class ElastAlerter():
 
         self.num_hits += res['count']
         lt = rule.get('use_local_time')
-        self.elastalert_logger.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), res['count']))
+        elastalert_logger.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), res['count']))
         return {endtime: res['count']}
 
     def get_hits_terms(self, rule, starttime, endtime, index, key, qk=None, size=None):
@@ -327,7 +327,7 @@ class ElastAlerter():
         buckets = res['aggregations']['filtered']['counts']['buckets']
         self.num_hits += len(buckets)
         lt = rule.get('use_local_time')
-        self.elastalert_logger.info('Queried rule %s from %s to %s: %s buckets' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(buckets)))
+        elastalert_logger.info('Queried rule %s from %s to %s: %s buckets' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(buckets)))
         return {endtime: buckets}
 
     def remove_duplicate_events(self, data, rule):
@@ -410,7 +410,7 @@ class ElastAlerter():
                     if ts_now() - endtime < self.old_query_limit:
                         return endtime
                     else:
-                        self.elastalert_logger.info("Found expired previous run for %s at %s" % (rule['name'], endtime))
+                        elastalert_logger.info("Found expired previous run for %s at %s" % (rule['name'], endtime))
                         return None
         except (ElasticsearchException, KeyError) as e:
             self.handle_error('Error querying for last run: %s' % (e), {'rule': rule['name']})
@@ -519,7 +519,7 @@ class ElastAlerter():
                 key = ''
 
             if self.is_silenced(rule['name'] + key) or self.is_silenced(rule['name']):
-                self.elastalert_logger.info('Ignoring match for silenced rule %s%s' % (rule['name'], key))
+                elastalert_logger.info('Ignoring match for silenced rule %s%s' % (rule['name'], key))
                 continue
 
             if rule['realert']:
@@ -595,7 +595,7 @@ class ElastAlerter():
         for rule_file, hash_value in self.rule_hashes.iteritems():
             if rule_file not in rule_hashes:
                 # Rule file was deleted
-                self.elastalert_logger.info('Rule file %s not found, stopping rule execution' % (rule_file))
+                elastalert_logger.info('Rule file %s not found, stopping rule execution' % (rule_file))
                 self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
                 continue
             if hash_value != rule_hashes[rule_file]:
@@ -605,7 +605,7 @@ class ElastAlerter():
                 except EAException as e:
                     self.handle_error('Could not load rule %s: %s' % (rule_file, e))
                     continue
-                self.elastalert_logger.info("Reloading configuration for rule %s" % (rule_file))
+                elastalert_logger.info("Reloading configuration for rule %s" % (rule_file))
 
                 # Re-enable if rule had been disabled
                 for disabled_rule in self.disabled_rules:
@@ -631,7 +631,7 @@ class ElastAlerter():
                 except EAException as e:
                     self.handle_error('Could not load rule %s: %s' % (rule_file, e))
                     continue
-                self.elastalert_logger.info('Loaded new rule %s' % (rule_file))
+                elastalert_logger.info('Loaded new rule %s' % (rule_file))
                 self.rules.append(self.init_rule(new_rule))
 
         self.rule_hashes = rule_hashes
@@ -684,9 +684,9 @@ class ElastAlerter():
                 self.handle_uncaught_exception(e, rule)
             else:
                 old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
-                self.elastalert_logger.info("Ran %s from %s to %s: %s query hits, %s matches,"
-                                            " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                                 self.num_hits, num_matches, self.alerts_sent))
+                elastalert_logger.info("Ran %s from %s to %s: %s query hits, %s matches,"
+                                       " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
+                                                            self.num_hits, num_matches, self.alerts_sent))
                 self.alerts_sent = 0
 
             self.remove_old_events(rule)
@@ -709,7 +709,7 @@ class ElastAlerter():
 
     def sleep_for(self, duration):
         """ Sleep for a set duration """
-        self.elastalert_logger.info("Sleeping for %s seconds" % (duration))
+        elastalert_logger.info("Sleeping for %s seconds" % (duration))
         time.sleep(duration)
 
     def generate_kibana4_db(self, rule, match):
@@ -935,7 +935,7 @@ class ElastAlerter():
             if isinstance(body[key], datetime.datetime):
                 body[key] = dt_to_ts(body[key])
         if self.debug:
-            self.elastalert_logger.info("Skipping writing to ES: %s" % (body))
+            elastalert_logger.info("Skipping writing to ES: %s" % (body))
             return None
 
         if '@timestamp' not in body:
@@ -1055,7 +1055,7 @@ class ElastAlerter():
             # Already pending aggregation, use existing alert_time
             alert_time = rule['aggregate_alert_time']
             agg_id = rule['current_aggregate_id']
-            self.elastalert_logger.info('Adding alert for %s to aggregation, next alert at %s' % (rule['name'], alert_time))
+            elastalert_logger.info('Adding alert for %s to aggregation, next alert at %s' % (rule['name'], alert_time))
 
         alert_body = self.get_alert_body(match, rule, False, alert_time)
         if agg_id:
@@ -1098,7 +1098,7 @@ class ElastAlerter():
             logging.error('Failed to save silence command to elasticsearch')
             exit(1)
 
-        self.elastalert_logger.info('Success. %s will be silenced until %s' % (rule_name, silence_ts))
+        elastalert_logger.info('Success. %s will be silenced until %s' % (rule_name, silence_ts))
 
     def set_realert(self, rule_name, timestamp, exponent):
         """ Write a silence to elasticsearch for rule_name until timestamp. """
