@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import datetime
-import logging
 from collections import deque
 
 from elasticsearch.client import Elasticsearch
@@ -12,6 +11,7 @@ from util import lookup_es_key
 from util import pretty_ts
 from util import ts_now
 from util import ts_to_dt
+from util import elastalert_logger
 
 
 class RuleType(object):
@@ -532,10 +532,10 @@ class NewTermsRule(RuleType):
                 buckets = res['aggregations']['filtered']['values']['buckets']
                 keys = [bucket['key'] for bucket in buckets]
                 self.seen_values[field] = keys
-                logging.info('Found %s unique values for %s' % (len(keys), field))
+                elastalert_logger.info('Found %s unique values for %s' % (len(keys), field))
             else:
                 self.seen_values[field] = []
-                logging.info('Found no values for %s' % (field))
+                elastalert_logger.info('Found no values for %s' % (field))
 
     def add_data(self, data):
         for document in data:

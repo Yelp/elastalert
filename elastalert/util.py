@@ -5,6 +5,8 @@ import logging
 import dateutil.parser
 import dateutil.tz
 
+elastalert_logger = logging.getLogger('elastalert')
+
 
 def lookup_es_key(lookup_dict, term):
     """ Performs iterative dictionary search based upon the following conditions:

@@ -1003,4 +1003,4 @@ Example usage::
 Debug
 ~~~~~~
 
-The debug alerter will log the alert information using the Python logger at the info level.
+The debug alerter will log the alert information using the Python logger at the info level. It is logged into a Python Logger object with the name ``elastalert`` that can be easily accessed using the ``getLogger`` command.
