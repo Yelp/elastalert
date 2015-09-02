@@ -17,8 +17,7 @@ from staticconf.loader import yaml_loader
 from util import EAException
 from util import lookup_es_key
 from util import pretty_ts
-
-elastalert_logger = logging.getLogger('elastalert')
+from util import elastalert_logger
 
 
 class BasicMatchString(object):
