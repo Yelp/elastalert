@@ -43,7 +43,7 @@ class MockElastAlerter(object):
     def test_file(self, conf, args):
         """ Loads a rule config file, performs a query over the last day (args.days), lists available keys
         and prints the number of results. """
-        load_options(conf)
+        load_options(conf, {})
         print("Successfully loaded %s\n" % (conf['name']))
 
         if args.schema_only:
@@ -193,7 +193,7 @@ class MockElastAlerter(object):
                 'disable_rules_on_error': False}
 
         # Load and instantiate rule
-        load_options(rule)
+        load_options(rule, conf)
         load_modules(rule)
         conf['rules'] = [rule]
 
