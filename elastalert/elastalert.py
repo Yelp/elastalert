@@ -640,6 +640,7 @@ class ElastAlerter():
                         raise EAException("A rule with the name %s already exists" % (new_rule['name']))
                 except EAException as e:
                     self.handle_error('Could not load rule %s: %s' % (rule_file, e))
+                    self.send_notification_email(exception=e, rule=new_rule)
                     continue
                 logging.info('Loaded new rule %s' % (rule_file))
                 self.rules.append(self.init_rule(new_rule))
