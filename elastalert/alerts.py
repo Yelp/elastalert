@@ -245,6 +245,7 @@ class EmailAlerter(Alerter):
         return {'type': 'email',
                 'recipients': self.rule['email']}
 
+
 class OpsGenieAlerter(Alerter):
     '''Sends a http request to the OpsGenie API to signal for an alert'''
     required_options = frozenset(['opsgenie_key', 'opsgenie_account', 'opsgenie_recipients'])
@@ -257,7 +258,6 @@ class OpsGenieAlerter(Alerter):
         self.recipients = self.rule.get('opsgenie_recipients', ['genies'])
         self.to_addr = self.rule.get('opsgenie_addr', 'example.opsgenie.net')
 
-
     def alert(self, matches):
         body = ''
         logging.warning(str(matches))
@@ -266,15 +266,15 @@ class OpsGenieAlerter(Alerter):
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
-        
+
         post = {}
-        post['apiKey']      = self.api_key
-        post['message']     = self.create_default_title(matches) 
-        post['recipients']  = self.recipients
+        post['apiKey'] = self.api_key
+        post['message'] = self.create_default_title(matches)
+        post['recipients'] = self.recipients
         post['description'] = body
-        post['source']      = 'ElastAlert'
-        post['tags']        = ['ElastAlert', self.rule['name']]
-        #logging.debug(json.dumps(post))
+        post['source'] = 'ElastAlert'
+        post['tags'] = ['ElastAlert', self.rule['name']]
+        logging.debug(json.dumps(post))
 
         try:
             r = requests.post(self.to_addr, json=post)
@@ -288,7 +288,6 @@ class OpsGenieAlerter(Alerter):
         except Exception as err:
             logging.error("Error sending alert to OpsGenie: {}".format(err))
             return
-        
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -304,6 +303,7 @@ class OpsGenieAlerter(Alerter):
     def get_info(self):
         return {'type': 'opsgenie',
                 'recipients': self.recipients}
+
 
 class JiraAlerter(Alerter):
     """ Creates a Jira ticket for each alert """

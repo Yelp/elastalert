@@ -48,7 +48,6 @@ def get_module(module_name):
     module_name should 'module.file.object'.
     Returns object or raises EAException on error. """
     try:
-        print("ModulePath: {}".format(module_path))
         module_path, module_class = module_name.rsplit('.', 1)
         base_module = __import__(module_path, globals(), locals(), [module_class])
         module = getattr(base_module, module_class)
