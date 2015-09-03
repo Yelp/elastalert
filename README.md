@@ -36,6 +36,7 @@ Currently, we have support built in for three alert types:
 
 - Email
 - JIRA
+- OpsGenie
 - Commands
 
 Additional rule types and alerts can be easily imported or written.

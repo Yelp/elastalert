@@ -786,6 +786,21 @@ Example usage::
     jira_bump_in_statuses:
       - Open
 
+OpsGenie
+~~~~~~~~
+
+OpsGenie alerter will create an alert which can be used to notify Operations people of issues or log information. An OpsGenie ``API`` integration must be created in order to acquire the necessary ``opsgenie_key`` rule variable. Currently the OpsGenieAlerter only creates an alert, however it could be extended to update or close existing alerts.
+
+The alert requires four options:
+
+``opsgenie_key``: The randomly generated API Integration key create by OpsGenie.
+
+``opsgenie_account``: The OpsGenie account to integrate with.
+
+``opsgenie_recipients``: An optional filled list OpsGenie recipients who will be notified by the alerts
+
+``opsgenie_addr``: Potentially unnecessary variable to configure the URL to POST alert requests to. It hasn't changed yet, but if it does not having it hardcoded seems adventageous.
+
 Debug
 ~~~~~~
 
