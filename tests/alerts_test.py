@@ -12,7 +12,7 @@ from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
-from elastalert.alerts import OpsGenieAlerter
+from modules.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
 
 
@@ -261,6 +261,9 @@ def test_opsgenie_frequency():
 
         alert = OpsGenieAlerter(rule)
         alert.alert([{'@timestamp': '2014-10-31T00:00:00'}])
+
+        assert alert.get_info()['recipients'] == rule['opsgenie_recipients']
+
         print("mock_post: {}".format(mock_post._mock_call_args_list))
         mcal = mock_post._mock_call_args_list
         print('mcal: {}'.format(mcal[0]))

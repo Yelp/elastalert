@@ -13,6 +13,7 @@ import yaml.scanner
 from staticconf.loader import yaml_loader
 from util import EAException
 
+from modules.opsgenie import OpsGenieAlerter
 
 # schema for rule yaml
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
@@ -37,7 +38,7 @@ rules_mapping = {
 alerts_mapping = {
     'email': alerts.EmailAlerter,
     'jira': alerts.JiraAlerter,
-    'opsgenie': alerts.OpsGenieAlerter,
+    'opsgenie': OpsGenieAlerter,
     'debug': alerts.DebugAlerter,
     'command': alerts.CommandAlerter
 }
