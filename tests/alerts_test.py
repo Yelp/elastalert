@@ -229,10 +229,34 @@ def test_email_query_key_in_subject():
                 found_subject = True
         assert found_subject
 
+
 def test_opsgenie_basic():
     rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
             'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v1/json/alert',
             'opsgenie_recipients': ['lytics'], 'type': mock_rule()}
+    with mock.patch('requests.post') as mock_post:
+
+        alert = OpsGenieAlerter(rule)
+        alert.alert([{'@timestamp': '2014-10-31T00:00:00'}])
+        print("mock_post: {}".format(mock_post._mock_call_args_list))
+        mcal = mock_post._mock_call_args_list
+        print('mcal: {}'.format(mcal[0]))
+        assert mcal[0][0][0] == ('https://api.opsgenie.com/v1/json/alert')
+
+        assert mock_post.called
+
+        assert mcal[0][1]['json']['apiKey'] == 'ogkey'
+        assert mcal[0][1]['json']['source'] == 'ElastAlert'
+        assert mcal[0][1]['json']['recipients'] == ['lytics']
+        assert mcal[0][1]['json']['source'] == 'ElastAlert'
+
+
+def test_opsgenie_frequency():
+    rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
+            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v1/json/alert',
+            'opsgenie_recipients': ['lytics'], 'type': mock_rule(),
+            'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
+            'alert': 'opsgenie'}
     with mock.patch('requests.post') as mock_post:
 
         alert = OpsGenieAlerter(rule)
