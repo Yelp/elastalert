@@ -260,6 +260,7 @@ class OpsGenieAlerter(Alerter):
 
     def alert(self, matches):
         body = ''
+        logging.warning(str(matches))
         for match in matches:
             body += str(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
@@ -268,25 +269,26 @@ class OpsGenieAlerter(Alerter):
         
         post = {}
         post['apiKey']      = self.api_key
-        post['notes']       = "ElastAlert message"
-        post['note']        = body
-        post['message']     = body
-        post['teams']       = self.recipients 
+        post['message']     = self.create_default_title(matches) 
         post['recipients']  = self.recipients
-        post['description'] = 'ElastAlert to OpsGenie'
+        post['description'] = body
         post['source']      = 'ElastAlert'
-        post['tags']        = ['ElastAlert, logs']
-        logging.warning(json.dumps(post))
-        logging.warning('Addr: {}'.format(self.to_addr))
+        post['tags']        = ['ElastAlert', self.rule['name']]
+        #logging.debug(json.dumps(post))
 
         try:
             r = requests.post(self.to_addr, json=post)
+
+            logging.warning(dir(r))
             logging.debug('request response: {}'.format(r))
             if r.status_code != 200:
                 logging.error("Error sending alert request to OpsGenie! {}".format(r.json()))
                 r.raise_for_status()
+            logging.info("Alert sent to OpsGenie")
         except Exception as err:
             logging.error("Error sending alert to OpsGenie: {}".format(err))
+            return
+        
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -301,7 +303,7 @@ class OpsGenieAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'opsgenie',
-                'recipients': self.rule['opsgenie_addr']}
+                'recipients': self.recipients}
 
 class JiraAlerter(Alerter):
     """ Creates a Jira ticket for each alert """
