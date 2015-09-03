@@ -9,3 +9,5 @@ dist/
 venv/
 docs/build/
 build/
+
+my_rules

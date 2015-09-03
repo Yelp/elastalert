@@ -11,7 +11,13 @@ import ruletypes
 import yaml
 import yaml.scanner
 from staticconf.loader import yaml_loader
+from util import dt_to_ts
+from util import dt_to_unix
+from util import dt_to_unixms
 from util import EAException
+from util import ts_to_dt
+from util import unix_to_dt
+from util import unixms_to_dt
 
 from modules.opsgenie import OpsGenieAlerter
 
@@ -20,7 +26,7 @@ rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dir
 
 # Required global (config.yaml) and local (rule.yaml)  configuration options
 required_globals = frozenset(['run_every', 'rules_folder', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
-required_locals = frozenset(['alert', 'type', 'name', 'es_host', 'es_port', 'index'])
+required_locals = frozenset(['alert', 'type', 'name', 'index'])
 
 # Used to map the names of rules to their classes
 rules_mapping = {
@@ -31,7 +37,8 @@ rules_mapping = {
     'whitelist': ruletypes.WhitelistRule,
     'change': ruletypes.ChangeRule,
     'flatline': ruletypes.FlatlineRule,
-    'new_term': ruletypes.NewTermsRule
+    'new_term': ruletypes.NewTermsRule,
+    'cardinality': ruletypes.CardinalityRule
 }
 
 # Used to map names of alerts to their classes
@@ -57,7 +64,7 @@ def get_module(module_name):
     return module
 
 
-def load_configuration(filename, conf=None):
+def load_configuration(filename, conf, args=None):
     """ Load a yaml rule file and fill in the relevant fields with objects.
 
     :param filename: The name of a rule configuration file.
@@ -70,12 +77,12 @@ def load_configuration(filename, conf=None):
         raise EAException('Could not parse file %s: %s' % (filename, e))
 
     rule['rule_file'] = filename
-    load_options(rule, conf)
-    load_modules(rule)
+    load_options(rule, conf, args)
+    load_modules(rule, args)
     return rule
 
 
-def load_options(rule, conf=None):
+def load_options(rule, conf, args=None):
     """ Converts time objects, sets defaults, and validates some settings.
 
     :param rule: A dictionary of parsed YAML from a rule config file.
@@ -103,6 +110,10 @@ def load_options(rule, conf=None):
             rule['buffer_time'] = datetime.timedelta(**rule['buffer_time'])
         if 'exponential_realert' in rule:
             rule['exponential_realert'] = datetime.timedelta(**rule['exponential_realert'])
+        if 'kibana4_start_timedelta' in rule:
+            rule['kibana4_start_timedelta'] = datetime.timedelta(**rule['kibana4_start_timedelta'])
+        if 'kibana4_end_timedelta' in rule:
+            rule['kibana4_end_timedelta'] = datetime.timedelta(**rule['kibana4_end_timedelta'])
     except (KeyError, TypeError) as e:
         raise EAException('Invalid time format used: %s' % (e))
 
@@ -112,14 +123,33 @@ def load_options(rule, conf=None):
     rule.setdefault('query_delay', datetime.timedelta(seconds=0))
     rule.setdefault('timestamp_field', '@timestamp')
     rule.setdefault('filter', [])
+    rule.setdefault('timestamp_type', 'iso')
+    rule.setdefault('_source_enabled', True)
     rule.setdefault('use_local_time', True)
+    rule.setdefault('es_port', conf.get('es_port'))
+    rule.setdefault('es_host', conf.get('es_host'))
+
+    # Set timestamp_type conversion function, used when generating queries and processing hits
+    rule['timestamp_type'] = rule['timestamp_type'].strip().lower()
+    if rule['timestamp_type'] == 'iso':
+        rule['ts_to_dt'] = ts_to_dt
+        rule['dt_to_ts'] = dt_to_ts
+    elif rule['timestamp_type'] == 'unix':
+        rule['ts_to_dt'] = unix_to_dt
+        rule['dt_to_ts'] = dt_to_unix
+    elif rule['timestamp_type'] == 'unix_ms':
+        rule['ts_to_dt'] = unixms_to_dt
+        rule['dt_to_ts'] = dt_to_unixms
+    else:
+        raise EAException('timestamp_type must be one of iso, unix, or unix_ms')
 
     # Set email options from global config
-    if conf:
-        rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
-        rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
-        if 'email_reply_to' in conf:
-            rule.setdefault('email_reply_to', conf['email_reply_to'])
+    rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
+    if 'smtp_host' in conf:
+        rule.setdefault('smtp_host', conf.get('smtp_port'))
+    rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
+    if 'email_reply_to' in conf:
+        rule.setdefault('email_reply_to', conf['email_reply_to'])
 
     # Make sure we have required options
     if required_locals - frozenset(rule.keys()):
@@ -133,7 +163,7 @@ def load_options(rule, conf=None):
         rule['query_key'] = ','.join(rule['query_key'])
 
     # Add QK, CK and timestamp to include
-    include = rule.get('include', [])
+    include = rule.get('include', ['*'])
     if 'query_key' in rule:
         include.append(rule['query_key'])
     if 'compound_query_key' in rule:
@@ -182,7 +212,7 @@ def load_options(rule, conf=None):
                                                                          datetime.datetime.now().strftime(rule.get('index'))))
 
 
-def load_modules(rule):
+def load_modules(rule, args=None):
     """ Loads things that could be modules. Enhancements, alerts and rule type. """
     # Set match enhancements
     match_enhancements = []
@@ -232,7 +262,7 @@ def load_modules(rule):
 
     # Instantiate rule
     try:
-        rule['type'] = rule['type'](rule)
+        rule['type'] = rule['type'](rule, args)
     except (KeyError, EAException) as e:
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
 
@@ -252,16 +282,17 @@ def get_file_paths(conf, use_rule=None):
     return rule_files
 
 
-def load_rules(filename, use_rule=None):
+def load_rules(args):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
     config file and then each rule found in rules_folder.
 
-    :param filename: Name of the global configuration file.
-    :param use_rule: Only load the rule which has this filename.
+    :param args: The parsed arguments to ElastAlert
     :return: The global configuration, a dictionary.
     """
     names = []
+    filename = args.config
     conf = yaml_loader(filename)
+    use_rule = args.rule
 
     # Make sure we have all required globals
     if required_globals - frozenset(conf.keys()):
@@ -290,7 +321,7 @@ def load_rules(filename, use_rule=None):
     rule_files = get_file_paths(conf, use_rule)
     for rule_file in rule_files:
         try:
-            rule = load_configuration(rule_file, conf)
+            rule = load_configuration(rule_file, conf, args)
             if rule['name'] in names:
                 raise EAException('Duplicate rule named %s' % (rule['name']))
         except EAException as e:

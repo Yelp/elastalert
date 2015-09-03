@@ -5,6 +5,8 @@ import logging
 import dateutil.parser
 import dateutil.tz
 
+elastalert_logger = logging.getLogger('elastalert')
+
 
 def lookup_es_key(lookup_dict, term):
     """ Performs iterative dictionary search based upon the following conditions:
@@ -143,3 +145,31 @@ class EAException(Exception):
 
 def seconds(td):
     return td.seconds + td.days * 24 * 3600
+
+
+def total_seconds(td):
+    # For python 2.6 compatability
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+
+
+def dt_to_int(dt):
+    dt = dt.replace(tzinfo=None)
+    return int(total_seconds((dt - datetime.datetime.utcfromtimestamp(0))) * 1000)
+
+
+def unixms_to_dt(ts):
+    return unix_to_dt(ts / 1000)
+
+
+def unix_to_dt(ts):
+    dt = datetime.datetime.utcfromtimestamp(ts)
+    dt = dt.replace(tzinfo=dateutil.tz.tzutc())
+    return dt
+
+
+def dt_to_unix(dt):
+    return total_seconds(dt - datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzutc()))
+
+
+def dt_to_unixms(dt):
+    return dt_to_unix(dt) * 1000

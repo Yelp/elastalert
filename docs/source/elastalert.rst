@@ -54,7 +54,7 @@ Reliability
 
 ElastAlert has several features to make it more reliable in the event of restarts or Elasticsearch unavailability:
 
-- ElastAlert :ref:`saves it's state to Elasticsearch <metadata>` and, when started, will resume where previously stopped
+- ElastAlert :ref:`saves its state to Elasticsearch <metadata>` and, when started, will resume where previously stopped
 - If Elasticsearch is unresponsive, ElastAlert will wait until it recovers before continuing
 - Alerts which throw errors may be automatically retried for a period of time
 
@@ -96,9 +96,9 @@ This way, logs can be back filled up to a certain extent and ElastAlert will sti
 may be overridden by individual rules. Note that back filled data may not always trigger count based alerts
 as if it was queried in real time.
 
-``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about it's searches.
+``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about its searches.
 When ElastAlert is started, it will query for information about the time that it was last run. This way,
-even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice.
+even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice. It will also specify the default cluster for each rule to run on.
 
 ``es_port``: The port corresponding to ``es_host``.
 
@@ -107,6 +107,8 @@ even if ElastAlert is stopped and restarted, it will never miss data or look at 
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``.
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
+
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
 
 ``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``10``.
 
@@ -125,6 +127,9 @@ configuration.
 default is 100,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
 limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting
 can be overridden by any individual rule.
+
+``max_aggregation``: The maximum number of alerts to aggregate together. If a rule has ``aggregation`` set, all
+alerts occuring within a timeframe will be sent together. The default is 10,000.
 
 ``old_query_limit``: The maximum time between queries for ElastAlert to start at the most recently run query.
 When ElastAlert starts, for each rule, it will search ``elastalert_metadata`` for the most recently run query and start
@@ -171,7 +176,7 @@ sent until that rule has finished querying over the entire time period.
 will periodically query until the present indefinitely.
 
 ``--rule <rule.yaml>`` will only run the given rule. The rule file may be a complete file path or a filename in ``rules_folder``
-or it's subdirectories.
+or its subdirectories.
 
 ``--silence <unit>=<number>`` will silence the alerts for a given rule for a period of time. The rule must be specified using
 ``--rule``. <unit> is one of days, weeks, hours, minutes or seconds. <number> is an integer. For example,
@@ -180,7 +185,9 @@ or it's subdirectories.
 ``--verbose`` will increase the logging verboseness, which allows you to see information about the state
 of queries.
 
-``--es_debug`` will enable logging for all queries made to Elasticsearch. 
+``--es_debug`` will enable logging for all queries made to Elasticsearch.
+
+``--es_debug_trace`` will enable logging curl commands for all queries made to Elasticsearch to a file.
 
 ``--end <timestamp>`` will force ElastAlert to stop querying after the given time, instead of the default,
 querying to the present time. This really only makes sense when running standalone. The timestamp is formatted

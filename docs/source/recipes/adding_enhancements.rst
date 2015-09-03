@@ -26,7 +26,7 @@ Example
 -------
 
 As an example enhancement, let's add a link to a whois website. The match must contain a field named domain and it will 
-add an entry named domain_whois_link. First, create a modules folder for the enhancement in the Elastalert directory.
+add an entry named domain_whois_link. First, create a modules folder for the enhancement in the ElastAlert directory.
 
 .. code-block:: console
 

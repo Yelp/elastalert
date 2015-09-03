@@ -5,6 +5,7 @@ import logging
 import subprocess
 from email.mime.text import MIMEText
 from smtplib import SMTP
+from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
@@ -14,7 +15,9 @@ from jira.client import JIRA
 from jira.exceptions import JIRAError
 from staticconf.loader import yaml_loader
 from util import EAException
+from util import lookup_es_key
 from util import pretty_ts
+from util import elastalert_logger
 
 
 class BasicMatchString(object):
@@ -33,7 +36,8 @@ class BasicMatchString(object):
         alert_text = self.rule.get('alert_text', '')
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
-            alert_text_values = [self.match.get(arg, '<MISSING VALUE>') for arg in alert_text_args]
+            alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
+            alert_text_values = ['<MISSING VALUE>' if val is None else val for val in alert_text_values]
             alert_text = alert_text.format(*alert_text_values)
         self.text += alert_text
 
@@ -129,7 +133,8 @@ class Alerter(object):
 
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
-            alert_subject_values = [matches[0].get(arg, '<MISSING VALUE>') for arg in alert_subject_args]
+            alert_subject_values = [lookup_es_key(matches[0], arg) for arg in alert_subject_args]
+            alert_subject_values = ['<MISSING VALUE>' if val is None else val for val in alert_subject_values]
             return alert_subject.format(*alert_subject_values)
 
         return alert_subject
@@ -156,10 +161,10 @@ class DebugAlerter(Alerter):
         qk = self.rule.get('query_key', None)
         for match in matches:
             if qk in match:
-                logging.info('Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
+                elastalert_logger.info('Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
             else:
-                logging.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
-            logging.info(str(BasicMatchString(self.rule, match)))
+                elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
+            elastalert_logger.info(str(BasicMatchString(self.rule, match)))
 
     def get_info(self):
         return {'type': 'debug'}
@@ -173,7 +178,9 @@ class EmailAlerter(Alerter):
         super(EmailAlerter, self).__init__(*args)
 
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
+        self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
+        self.smtp_port = self.rule.get('smtp_port')
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
         # Convert email to a list if it isn't already
@@ -190,21 +197,17 @@ class EmailAlerter(Alerter):
 
     def alert(self, matches):
         body = ''
-
         for match in matches:
-
             body += str(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
-
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
             url = '%s/browse/%s' % (self.rule['jira_server'], self.pipeline['jira_ticket'])
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
-
         email_msg = MIMEText(body)
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
@@ -217,7 +220,19 @@ class EmailAlerter(Alerter):
             to_addr = to_addr + self.rule['bcc']
 
         try:
-            self.smtp = SMTP(self.smtp_host)
+            if self.smtp_ssl:
+                if self.smtp_port:
+                    self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port)
+                else:
+                    self.smtp = SMTP_SSL(self.smtp_host)
+            else:
+                if self.smtp_port:
+                    self.smtp = SMTP(self.smtp_host, self.smtp_port)
+                else:
+                    self.smtp = SMTP(self.smtp_host)
+                self.smtp.ehlo()
+                if self.smtp.has_extn('STARTTLS'):
+                    self.smtp.starttls()
             if 'smtp_auth_file' in self.rule:
                 self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:
@@ -227,7 +242,7 @@ class EmailAlerter(Alerter):
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
         self.smtp.close()
 
-        logging.info("Sent email to %s" % (self.rule['email']))
+        elastalert_logger.info("Sent email to %s" % (self.rule['email']))
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -257,12 +272,14 @@ class JiraAlerter(Alerter):
         self.issue_type = self.rule['jira_issuetype']
         self.component = self.rule.get('jira_component')
         self.label = self.rule.get('jira_label')
+        self.description = self.rule.get('jira_description', '')
         self.assignee = self.rule.get('jira_assignee')
         self.max_age = self.rule.get('jira_max_age', 30)
         self.priority = self.rule.get('jira_priority')
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
+
         if self.bump_in_statuses and self.bump_not_in_statuses:
             msg = 'Both jira_bump_in_statuses (%s) and jira_bump_not_in_statuses (%s) are set.' % \
                   (','.join(self.bump_in_statuses), ','.join(self.bump_not_in_statuses))
@@ -347,14 +364,14 @@ class JiraAlerter(Alerter):
         if self.bump_tickets:
             ticket = self.find_existing_ticket(matches)
             if ticket:
-                logging.info('Commenting on existing ticket %s' % (ticket.key))
+                elastalert_logger.info('Commenting on existing ticket %s' % (ticket.key))
                 for match in matches:
                     self.comment_on_ticket(ticket, match)
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
                 return
 
-        description = ''
+        description = self.description + '\n'
         for match in matches:
             description += str(JiraFormattedMatchString(self.rule, match))
             if len(matches) > 1:
@@ -367,7 +384,7 @@ class JiraAlerter(Alerter):
             self.issue = self.client.create_issue(**self.jira_args)
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket: %s" % (e))
-        logging.info("Opened Jira ticket: %s" % (self.issue))
+        elastalert_logger.info("Opened Jira ticket: %s" % (self.issue))
 
         if self.pipeline is not None:
             self.pipeline['jira_ticket'] = self.issue
@@ -400,28 +417,28 @@ class CommandAlerter(Alerter):
 
     def __init__(self, *args):
         super(CommandAlerter, self).__init__(*args)
+        self.last_command = []
         if isinstance(self.rule['command'], basestring) and '%' in self.rule['command']:
             logging.warning('Warning! You could be vulnerable to shell injection!')
             self.rule['command'] = [self.rule['command']]
 
     def alert(self, matches):
-        for match in matches:
-            # Format the command and arguments
-            try:
-                command = [command_arg % match for command_arg in self.rule['command']]
-                self.last_command = command
-            except KeyError as e:
-                raise EAException("Error formatting command: %s" % (e))
+        # Format the command and arguments
+        try:
+            command = [command_arg % matches[0] for command_arg in self.rule['command']]
+            self.last_command = command
+        except KeyError as e:
+            raise EAException("Error formatting command: %s" % (e))
 
-            # Run command and pipe data
-            try:
-                subp = subprocess.Popen(command, stdin=subprocess.PIPE)
+        # Run command and pipe data
+        try:
+            subp = subprocess.Popen(command, stdin=subprocess.PIPE)
 
-                if self.rule.get('pipe_match_json'):
-                    match_json = json.dumps(match)
-                    stdout, stderr = subp.communicate(input=match_json)
-            except OSError as e:
-                raise EAException("Error while running command %s: %s" % (' '.join(command), e))
+            if self.rule.get('pipe_match_json'):
+                match_json = json.dumps(matches) + '\n'
+                stdout, stderr = subp.communicate(input=match_json)
+        except OSError as e:
+            raise EAException("Error while running command %s: %s" % (' '.join(command), e))
 
     def get_info(self):
         return {'type': 'command',

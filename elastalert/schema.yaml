@@ -19,7 +19,7 @@ definitions:
 
   filter: &filter {}
 
-required: [name, type, index, alert, es_port, es_host]
+required: [name, type, index, alert]
 type: object
 
 ### Rule Types section
@@ -90,11 +90,20 @@ oneOf:
     required: [fields]
     properties:
       type: {enum: [new_term]}
-      fields: {type: string}
+      fields: *arrayOfString
       terms_window_size: *timeframe
       alert_on_missing_field: {type: boolean}
       use_terms_query: {type: boolean}
       terms_size: {type: integer}
+
+  - title: Cardinality
+    required: [cardinality_field, timeframe]
+    properties:
+      type: {enum: [cardinality]}
+      max_cardinality: {type: integer}
+      min_cardinality: {type: integer}
+      cardinality_field: {type: string}
+      timeframe: *timeframe
 
   - title: Custom Rule from Module
     properties:

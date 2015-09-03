@@ -7,7 +7,7 @@ rules_folder: example_rules
 run_every:
   minutes: 5
 
-# ElastAlert will buffer results from the most recent 
+# ElastAlert will buffer results from the most recent
 # period of time, in case some log sources are not in real time
 buffer_time:
   minutes: 45
@@ -19,6 +19,9 @@ es_host: elasticsearch.example.com
 # The elasticsearch port
 es_port: 14900
 
+# Optional URL prefix for elasticsearch
+#es_url_prefix: elasticsearch
+
 # Connect with SSL to elasticsearch
 #use_ssl: True
 
@@ -27,7 +30,7 @@ es_port: 14900
 #es_password: somepassword
 
 # The index on es_host which is used for metadata storage
-# This can be a unmapped index, but it is reccommended that you run
+# This can be a unmapped index, but it is recommended that you run
 # elastalert-create-index to set a mapping
 writeback_index: elastalert_status
 
