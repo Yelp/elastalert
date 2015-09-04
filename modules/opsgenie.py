@@ -39,13 +39,13 @@ class OpsGenieAlerter(Alerter):
         try:
             r = requests.post(self.to_addr, json=post)
 
-            logging.debug('request response: {}'.format(r))
+            logging.debug('request response: {0}'.format(r))
             if r.status_code != 200:
-                logging.error("Error sending alert request to OpsGenie! {}".format(r.json()))
+                logging.error("Error sending alert request to OpsGenie! {0}".format(r.json()))
                 r.raise_for_status()
             logging.info("Alert sent to OpsGenie")
         except Exception as err:
-            logging.error("Error sending alert to OpsGenie: {}".format(err))
+            logging.error("Error sending alert to OpsGenie: {0}".format(err))
             return
 
     def create_default_title(self, matches):

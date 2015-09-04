@@ -258,9 +258,9 @@ def test_opsgenie_basic():
 
         alert = OpsGenieAlerter(rule)
         alert.alert([{'@timestamp': '2014-10-31T00:00:00'}])
-        print("mock_post: {}".format(mock_post._mock_call_args_list))
+        print("mock_post: {0}".format(mock_post._mock_call_args_list))
         mcal = mock_post._mock_call_args_list
-        print('mcal: {}'.format(mcal[0]))
+        print('mcal: {0}'.format(mcal[0]))
         assert mcal[0][0][0] == ('https://api.opsgenie.com/v1/json/alert')
 
         assert mock_post.called
@@ -284,9 +284,9 @@ def test_opsgenie_frequency():
 
         assert alert.get_info()['recipients'] == rule['opsgenie_recipients']
 
-        print("mock_post: {}".format(mock_post._mock_call_args_list))
+        print("mock_post: {0}".format(mock_post._mock_call_args_list))
         mcal = mock_post._mock_call_args_list
-        print('mcal: {}'.format(mcal[0]))
+        print('mcal: {0}'.format(mcal[0]))
         assert mcal[0][0][0] == ('https://api.opsgenie.com/v1/json/alert')
 
         assert mock_post.called
