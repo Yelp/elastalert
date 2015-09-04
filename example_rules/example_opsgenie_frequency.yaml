@@ -10,7 +10,6 @@ es_port: 9200
 
 opsgenie_key: ogkey
 opsgenie_account: neh
-opsgenie_addr: https://api.opsgenie.com/v1/json/alert
 opsgenie_recipients: 
   - "neh"
 
@@ -59,9 +58,3 @@ filter:
 # The alert is use when a match is found
 alert:
 - "opsgenie"
-
-# (required, email specific)
-# a list of email addresses to send alerts to
-email:
-- "monit-alerts@lytics.opsgenie.net"
-

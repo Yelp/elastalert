@@ -1015,8 +1015,6 @@ The OpsGenie alert requires four options:
 
 ``opsgenie_recipients``: An optional filled list OpsGenie recipients who will be notified by the alerts
 
-``opsgenie_addr``: Potentially unnecessary variable to configure the URL to POST alert requests to. It hasn't changed yet, but if it does not having it hardcoded seems advantageous.
-
 Debug
 ~~~~~~
 

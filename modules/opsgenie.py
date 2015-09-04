@@ -17,7 +17,7 @@ class OpsGenieAlerter(Alerter):
         self.account = self.rule.get('opsgenie_account', 'genie')
         self.api_key = self.rule.get('opsgenie_key', 'key')
         self.recipients = self.rule.get('opsgenie_recipients', ['genies'])
-        self.to_addr = self.rule.get('opsgenie_addr', 'example.opsgenie.net')
+        self.to_addr = self.rule.get('opsgenie_addr', 'https://api.opsgenie.com/v1/json/alert')
 
     def alert(self, matches):
         body = ''
