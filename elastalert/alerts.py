@@ -10,6 +10,7 @@ from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
 
+import requests
 import simplejson
 from jira.client import JIRA
 from jira.exceptions import JIRAError
@@ -443,3 +444,41 @@ class CommandAlerter(Alerter):
     def get_info(self):
         return {'type': 'command',
                 'command': ' '.join(self.last_command)}
+
+
+class HipChatAlerter(Alerter):
+
+    """ Send notfication to a HipChat room. """
+
+    required_options = frozenset(['auth_token', 'room_id'])
+
+    def __init__(self, *args):
+        super(HipChatAlerter, self).__init__(*args)
+        self.auth_token = self.rule['auth_token']
+        self.room_id = self.rule['room_id']
+        self.base_uri = 'https://api.hipchat.com/v2/'
+        self.alert_color = 'purple'
+
+    def _post_message(self, message, room_id):
+        """ post a message in a hipchat room. """
+        uri = '%s/room/%s/notification' % (self.base_uri, room_id)
+        payload = {
+            'color': self.alert_color,
+            'message_format': 'html',
+            'notify': False,
+            'message': str(message),
+        }
+        headers = {'content-type': 'application/json'}
+        requests.post(uri,
+                      params={'auth_token': self.auth_token},
+                      data=payload,
+                      headers=headers)
+
+    def alert(self, matches):
+        """ send the alerts """
+        for match in matches:
+            self._post_message(match, self.room_id)
+
+    def get_info(self):
+        return {'type': 'HipChat',
+                'room_id': self.rule['room_id']}
