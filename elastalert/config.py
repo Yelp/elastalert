@@ -45,7 +45,8 @@ alerts_mapping = {
     'email': alerts.EmailAlerter,
     'jira': alerts.JiraAlerter,
     'debug': alerts.DebugAlerter,
-    'command': alerts.CommandAlerter
+    'command': alerts.CommandAlerter,
+    'hipchat': alerts.HipChatAlerter,
 }
 
 
