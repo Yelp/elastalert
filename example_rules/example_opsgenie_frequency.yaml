@@ -8,11 +8,12 @@ es_host: localhost
 # Elasticsearch port
 es_port: 9200
 
+# (Required)
+# OpsGenie credentials and recipient targeting configuration
 opsgenie_key: ogkey
 opsgenie_account: neh
 opsgenie_recipients: 
   - "neh"
-
 
 # (OptionaL) Connect with SSL to elasticsearch
 #use_ssl: True
