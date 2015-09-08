@@ -19,6 +19,7 @@ from util import ts_to_dt
 from util import unix_to_dt
 from util import unixms_to_dt
 
+from modules.opsgenie import OpsGenieAlerter
 
 # schema for rule yaml
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
@@ -44,6 +45,7 @@ rules_mapping = {
 alerts_mapping = {
     'email': alerts.EmailAlerter,
     'jira': alerts.JiraAlerter,
+    'opsgenie': OpsGenieAlerter,
     'debug': alerts.DebugAlerter,
     'command': alerts.CommandAlerter
 }
