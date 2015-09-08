@@ -1007,7 +1007,7 @@ OpsGenie alerter will create an alert which can be used to notify Operations peo
 integration must be created in order to acquire the necessary ``opsgenie_key`` rule variable. Currently the OpsGenieAlerter only creates 
 an alert, however it could be extended to update or close existing alerts.
 
-It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://app.opsgenie.com/integration> _` in order to create alerts.  
+It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://app.opsgenie.com/integration>`_ in order to create alerts.  
 
 The OpsGenie alert requires three options:
 
