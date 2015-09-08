@@ -1193,15 +1193,16 @@ class ElastAlerter():
             self.notify_email = [self.notify_email]
         email = MIMEText(email_body)
         email['Subject'] = subject if subject else 'ElastAlert notification'
-        email['To'] = ', '.join(self.notify_email)
-        if rule and rule['notify_email']:
-            email['To'] += ', %s' % rule['notify_email']
+        recipients = self.notify_email
+        if rule and rule['notify_email'] and not rule['notify_email'] in self.notify_email:
+            recipients.append(rule['notify_email'])
+        email['To'] = ', '.join(recipients)
         email['From'] = self.from_addr
         email['Reply-To'] = self.conf.get('email_reply_to', email['To'])
 
         try:
             smtp = SMTP(self.smtp_host)
-            smtp.sendmail(self.from_addr, self.notify_email, email.as_string())
+            smtp.sendmail(self.from_addr, recipients, email.as_string())
         except (SMTPException, error) as e:
             self.handle_error('Error connecting to SMTP host: %s' % (e), {'email_body': email_body})
 
