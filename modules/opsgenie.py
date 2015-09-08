@@ -6,6 +6,7 @@ import requests
 from elastalert.util import EAException
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
+from elastalert.util import elastalert_logger
 
 
 class OpsGenieAlerter(Alerter):
@@ -42,11 +43,12 @@ class OpsGenieAlerter(Alerter):
 
             logging.debug('request response: {0}'.format(r))
             if r.status_code != 200:
-                logging.info("Error sending alert request to OpsGenie: {0}".format(r.json()))
+                elastalert_logger.info("Error response from {0}\n API Response: {1}"\
+                                                            .format(self.to_addr, r))
                 r.raise_for_status()
             logging.info("Alert sent to OpsGenie")
         except Exception as err:
-            raise EAException(err)
+            raise EAException("Error sending alert: {0}".format(err))
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
