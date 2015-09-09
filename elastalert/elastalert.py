@@ -6,6 +6,7 @@ import logging
 import sys
 import time
 import traceback
+import yaml
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
@@ -589,21 +590,31 @@ class ElastAlerter():
     def load_rule_changes(self):
         ''' Using the modification times of rule config files, syncs the running rules
         to match the files in rules_folder by removing, adding or reloading rules. '''
-        rule_hashes = get_rule_hashes(self.conf, self.args.rule)
+        new_rule_hashes = get_rule_hashes(self.conf, self.args.rule)
 
         # Check each current rule for changes
         for rule_file, hash_value in self.rule_hashes.iteritems():
-            if rule_file not in rule_hashes:
+            if rule_file not in new_rule_hashes:
                 # Rule file was deleted
                 elastalert_logger.info('Rule file %s not found, stopping rule execution' % (rule_file))
                 self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
                 continue
-            if hash_value != rule_hashes[rule_file]:
+            if hash_value != new_rule_hashes[rule_file]:
                 # Rule file was changed, reload rule
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
                 except EAException as e:
-                    self.handle_error('Could not load rule %s: %s' % (rule_file, e))
+                    message = 'Could not load rule %s: %s' % (rule_file, e)
+                    self.handle_error(message)
+                    # Want to send email to address specified in the rule. Try and load the YAML to find it.
+                    with open(rule_file) as f:
+                        try:
+                            rule_yaml = yaml.load(f)
+                        except yaml.scanner.ScannerError:
+                            self.send_notification_email(exception=e)
+                            continue
+
+                    self.send_notification_email(exception=e, rule=rule_yaml)
                     continue
                 elastalert_logger.info("Reloading configuration for rule %s" % (rule_file))
 
@@ -623,18 +634,19 @@ class ElastAlerter():
 
         # Load new rules
         if not self.args.rule:
-            for rule_file in set(rule_hashes.keys()) - set(self.rule_hashes.keys()):
+            for rule_file in set(new_rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
                         raise EAException("A rule with the name %s already exists" % (new_rule['name']))
                 except EAException as e:
                     self.handle_error('Could not load rule %s: %s' % (rule_file, e))
+                    self.send_notification_email(exception=e, rule=new_rule)
                     continue
                 elastalert_logger.info('Loaded new rule %s' % (rule_file))
                 self.rules.append(self.init_rule(new_rule))
 
-        self.rule_hashes = rule_hashes
+        self.rule_hashes = new_rule_hashes
 
     def start(self):
         """ Periodically go through each rule and run it """
@@ -1182,13 +1194,16 @@ class ElastAlerter():
             self.notify_email = [self.notify_email]
         email = MIMEText(email_body)
         email['Subject'] = subject if subject else 'ElastAlert notification'
-        email['To'] = ', '.join(self.notify_email)
+        recipients = self.notify_email
+        if rule and rule['notify_email'] and not rule['notify_email'] in self.notify_email:
+            recipients.append(rule['notify_email'])
+        email['To'] = ', '.join(recipients)
         email['From'] = self.from_addr
         email['Reply-To'] = self.conf.get('email_reply_to', email['To'])
 
         try:
             smtp = SMTP(self.smtp_host)
-            smtp.sendmail(self.from_addr, self.notify_email, email.as_string())
+            smtp.sendmail(self.from_addr, recipients, email.as_string())
         except (SMTPException, error) as e:
             self.handle_error('Error connecting to SMTP host: %s' % (e), {'email_body': email_body})
 

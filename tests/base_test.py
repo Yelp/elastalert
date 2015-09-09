@@ -664,9 +664,11 @@ def test_rule_changes(ea):
     new_hashes.update({'rules/rule4.yaml': 'asdf'})
     with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
         with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
-            mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
-            mock_hashes.return_value = new_hashes
-            ea.load_rule_changes()
+            with mock.patch.object(ea, 'send_notification_email') as mock_send:
+                mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
+                mock_hashes.return_value = new_hashes
+                ea.load_rule_changes()
+                mock_send.assert_called_once()
     assert len(ea.rules) == 3
     assert not any(['new' in rule for rule in ea.rules])
 
