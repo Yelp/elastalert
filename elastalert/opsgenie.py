@@ -3,11 +3,10 @@ import json
 import logging
 
 import requests
-
-from elastalert.alerts import Alerter
-from elastalert.alerts import BasicMatchString
-from elastalert.util import EAException
-from elastalert.util import elastalert_logger
+from alerts import Alerter
+from alerts import BasicMatchString
+from util import EAException
+from util import elastalert_logger
 
 
 class OpsGenieAlerter(Alerter):
