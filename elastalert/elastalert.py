@@ -6,7 +6,6 @@ import logging
 import sys
 import time
 import traceback
-import yaml
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
@@ -14,6 +13,7 @@ from socket import error
 
 import argparse
 import kibana
+import yaml
 from alerts import DebugAlerter
 from config import get_rule_hashes
 from config import load_configuration
@@ -23,6 +23,7 @@ from elasticsearch.exceptions import ElasticsearchException
 from enhancements import DropMatchException
 from util import dt_to_ts
 from util import EAException
+from util import elastalert_logger
 from util import format_index
 from util import lookup_es_key
 from util import pretty_ts
@@ -30,7 +31,6 @@ from util import seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
-from util import elastalert_logger
 
 
 class ElastAlerter():
@@ -1195,7 +1195,7 @@ class ElastAlerter():
         email = MIMEText(email_body)
         email['Subject'] = subject if subject else 'ElastAlert notification'
         recipients = self.notify_email
-        if rule and rule['notify_email'] and not rule['notify_email'] in self.notify_email:
+        if rule and rule.get('notify_email') and not rule['notify_email'] in self.notify_email:
             recipients.append(rule['notify_email'])
         email['To'] = ', '.join(recipients)
         email['From'] = self.from_addr
