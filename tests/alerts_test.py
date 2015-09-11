@@ -4,7 +4,6 @@ import json
 import subprocess
 from contextlib import nested
 
-
 import mock
 from jira.exceptions import JIRAError
 
@@ -13,7 +12,7 @@ from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
-from modules.opsgenie import OpsGenieAlerter
+from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
 
 
