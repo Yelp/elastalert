@@ -1,0 +1,65 @@
+# Elasticsearch host
+es_host: c3dupcdhne11.premierinc.com
+
+# Elasticsearch port
+es_port: 9200
+
+#use_ssl: True
+
+# Rule name, must be unique
+name: Error Rule
+
+# Type of alert.
+# the spike rule type compares the number of events within two sliding windows to each other
+type: frequency
+
+# Index to search, wildcard supported
+index: elastalert_status
+
+# The minimum number of events to be used as a baseline
+# For example, if there are only 2 eventss between 12:00 and 2:00, and 20 between 2:00 and 4:00
+# This rule will ignore that 'spike', because the reference window did not meet the threshold of 5
+num_events: 1
+
+# The size of the window used to determine average event frequency
+# We use two sliding windows each of size timeframe
+# To measure the 'reference' rate and the current rate
+timeframe:
+  minutes: 5
+
+# The spike rule matches when the current window contains spike_height times more
+# events than the reference window
+#spike_height: 1
+
+# The direction of the spike
+#spike_type: "up"
+
+# A list of elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+#filter:
+#- query:
+#    query_string:
+#      query: " "
+
+alert:
+- "irc"
+
+irc_server:
+- "irc.meddius.com"
+
+irc_port:
+- 22901
+
+irc_channel:
+- "#botTestPlace"
+
+irc_password:
+- "bodos"
+
+irc_realname:
+- "textual"
+
+include:
+- "file"
+- "message"
