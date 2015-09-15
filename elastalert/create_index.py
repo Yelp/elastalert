@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
-import argparse
 import getpass
 import json
 import os
 
+import argparse
 import yaml
 from elasticsearch.client import Elasticsearch
 
@@ -17,8 +17,8 @@ def main():
     parser.add_argument('--port', type=int, help='Elasticsearch port')
     parser.add_argument('--url-prefix', help='Elasticsearch URL prefix')
     parser.add_argument('--no-auth', action='store_const', const=True, help='Suppress prompt for basic auth')
-    parser.add_argument('--ssl', action='store_const', const=True, help='Use SSL')
-    parser.add_argument('--no-ssl', action='store_const', const=True, help='Do not use SSL')
+    parser.add_argument('--ssl', action='store_true', default=None, help='Use SSL')
+    parser.add_argument('--no-ssl', dest='ssl', action='store_false', help='Do not use SSL')
     parser.add_argument('--index', help='Index name to create')
     parser.add_argument('--old-index', help='Old index name to copy')
     args = parser.parse_args()
@@ -49,7 +49,6 @@ def main():
         host = args.host if args.host else raw_input('Enter elasticsearch host: ')
         port = args.port if args.port else int(raw_input('Enter elasticsearch port: '))
         use_ssl = (args.ssl if args.ssl is not None
-                   else args.no_ssl if args.no_ssl is not None
                    else raw_input('Use SSL? t/f: ').lower() in ('t', 'true'))
         if args.no_auth is None:
             username = raw_input('Enter optional basic-auth username: ')

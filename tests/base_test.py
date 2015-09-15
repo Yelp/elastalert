@@ -61,14 +61,15 @@ def test_starttime(ea):
 
 def test_init_rule(ea):
     # Simulate state of a rule just loaded from a file
+    ea.rules[0]['minimum_starttime'] = datetime.datetime.now()
     new_rule = copy.copy(ea.rules[0])
-    map(new_rule.pop, ['agg_matches', 'current_aggregate_id', 'processed_hits'])
+    map(new_rule.pop, ['agg_matches', 'current_aggregate_id', 'processed_hits', 'minimum_starttime'])
 
     # Properties are copied from ea.rules[0]
     ea.rules[0]['starttime'] = '2014-01-02T00:11:22'
     ea.rules[0]['processed_hits'] = ['abcdefg']
     new_rule = ea.init_rule(new_rule, False)
-    for prop in ['starttime', 'agg_matches', 'current_aggregate_id', 'processed_hits']:
+    for prop in ['starttime', 'agg_matches', 'current_aggregate_id', 'processed_hits', 'minimum_starttime']:
         assert new_rule[prop] == ea.rules[0][prop]
 
     # Properties are fresh
@@ -231,6 +232,7 @@ def test_match_with_module(ea):
 
 
 def test_agg(ea):
+    ea.max_aggregation = 1337
     hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:47:45']
     alerttime1 = dt_to_ts(ts_to_dt(hits_timestamps[0]) + datetime.timedelta(minutes=10))
     hits = generate_hits(hits_timestamps)
@@ -267,7 +269,12 @@ def test_agg(ea):
                                                              {'_id': 'CDEF', '_source': call3}]}},
                                           {'hits': {'hits': [{'_id': 'BCDE', '_source': call2}]}},
                                           {'hits': {'hits': []}}]
-    ea.send_pending_alerts()
+
+    with mock.patch('elastalert.elastalert.Elasticsearch') as mock_es:
+        ea.send_pending_alerts()
+        # Assert that current_es was refreshed from the aggregate rules
+        assert mock_es.called_with(host='', port='')
+        assert mock_es.call_count == 2
     assert_alerts(ea, [hits_timestamps[:2], hits_timestamps[2:]])
 
     call1 = ea.writeback_es.search.call_args_list[6][1]['body']
@@ -277,6 +284,7 @@ def test_agg(ea):
     assert 'alert_time' in call1['filter']['range']
     assert call2['query']['query_string']['query'] == 'aggregate_id:ABCD'
     assert call3['query']['query_string']['query'] == 'aggregate_id:CDEF'
+    assert ea.writeback_es.search.call_args_list[7][1]['size'] == 1337
 
 
 def test_agg_no_writeback_connectivity(ea):
@@ -333,14 +341,14 @@ def test_silence(ea):
 
 
 def test_compound_query_key(ea):
-    ea.rules[0]['query_key'] = 'this,that'
-    ea.rules[0]['compound_query_key'] = ['this', 'that']
-    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP], this='abc', that='def')
+    ea.rules[0]['query_key'] = 'this,that,those'
+    ea.rules[0]['compound_query_key'] = ['this', 'that', 'those']
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP], this='abc', that='def', those=4)
     ea.current_es.search.return_value = hits
     ea.run_query(ea.rules[0], START, END)
     call_args = ea.rules[0]['type'].add_data.call_args_list[0]
-    assert 'this,that' in call_args[0][0][0]
-    assert call_args[0][0][0]['this,that'] == 'abc, def'
+    assert 'this,that,those' in call_args[0][0][0]
+    assert call_args[0][0][0]['this,that,those'] == 'abc, def, 4'
 
 
 def test_silence_query_key(ea):
@@ -635,7 +643,8 @@ def test_rule_changes(ea):
 
     with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
         with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
-            mock_load.side_effect = [{'filter': [], 'name': 'rule2'}, {'filter': [], 'name': 'rule3'}]
+            mock_load.side_effect = [{'filter': [], 'name': 'rule2', 'rule_file': 'rules/rule2.yaml'},
+                                     {'filter': [], 'name': 'rule3', 'rule_file': 'rules/rule3.yaml'}]
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
 
@@ -647,19 +656,31 @@ def test_rule_changes(ea):
 
     # Assert 2 and 3 were reloaded
     assert mock_load.call_count == 2
-    mock_load.assert_any_call('rules/rule2.yaml')
-    mock_load.assert_any_call('rules/rule3.yaml')
+    mock_load.assert_any_call('rules/rule2.yaml', ea.conf)
+    mock_load.assert_any_call('rules/rule3.yaml', ea.conf)
 
     # A new rule with a conflicting name wont load
     new_hashes = copy.copy(new_hashes)
-    new_hashes.update({'rule4.yaml': 'asdf'})
+    new_hashes.update({'rules/rule4.yaml': 'asdf'})
     with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
         with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
-            mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff'}
-            mock_hashes.return_value = new_hashes
-            ea.load_rule_changes()
+            with mock.patch.object(ea, 'send_notification_email') as mock_send:
+                mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
+                mock_hashes.return_value = new_hashes
+                ea.load_rule_changes()
+                mock_send.assert_called_once()
     assert len(ea.rules) == 3
     assert not any(['new' in rule for rule in ea.rules])
+
+    # An old rule which didn't load gets reloaded
+    new_hashes = copy.copy(new_hashes)
+    new_hashes['rules/rule4.yaml'] = 'qwerty'
+    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
+        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
+            mock_hashes.return_value = new_hashes
+            ea.load_rule_changes()
+    assert len(ea.rules) == 4
 
 
 def test_strf_index(ea):

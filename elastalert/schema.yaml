@@ -19,7 +19,7 @@ definitions:
 
   filter: &filter {}
 
-required: [name, type, index, alert, es_port, es_host]
+required: [name, type, index, alert]
 type: object
 
 ### Rule Types section
@@ -167,6 +167,7 @@ properties:
   ### Email
   email: *arrayOfString
   email_reply_to: {type: string}
+  notify_email: {type: string} # if rule is slow or erroring, send to this email
   smtp_host: {type: string}
   from_addr: {type: string}
 

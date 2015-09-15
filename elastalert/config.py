@@ -10,6 +10,7 @@ import jsonschema
 import ruletypes
 import yaml
 import yaml.scanner
+from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
 from util import dt_to_ts
 from util import dt_to_unix
@@ -19,13 +20,12 @@ from util import ts_to_dt
 from util import unix_to_dt
 from util import unixms_to_dt
 
-
 # schema for rule yaml
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
 
 # Required global (config.yaml) and local (rule.yaml)  configuration options
 required_globals = frozenset(['run_every', 'rules_folder', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
-required_locals = frozenset(['alert', 'type', 'name', 'es_host', 'es_port', 'index'])
+required_locals = frozenset(['alert', 'type', 'name', 'index'])
 
 # Used to map the names of rules to their classes
 rules_mapping = {
@@ -42,8 +42,10 @@ rules_mapping = {
 
 # Used to map names of alerts to their classes
 alerts_mapping = {
+    'irc': alerts.IRCAlerter,
     'email': alerts.EmailAlerter,
     'jira': alerts.JiraAlerter,
+    'opsgenie': OpsGenieAlerter,
     'debug': alerts.DebugAlerter,
     'command': alerts.CommandAlerter
 }
@@ -62,7 +64,7 @@ def get_module(module_name):
     return module
 
 
-def load_configuration(filename, conf=None, args=None):
+def load_configuration(filename, conf, args=None):
     """ Load a yaml rule file and fill in the relevant fields with objects.
 
     :param filename: The name of a rule configuration file.
@@ -80,7 +82,7 @@ def load_configuration(filename, conf=None, args=None):
     return rule
 
 
-def load_options(rule, conf=None, args=None):
+def load_options(rule, conf, args=None):
     """ Converts time objects, sets defaults, and validates some settings.
 
     :param rule: A dictionary of parsed YAML from a rule config file.
@@ -124,6 +126,8 @@ def load_options(rule, conf=None, args=None):
     rule.setdefault('timestamp_type', 'iso')
     rule.setdefault('_source_enabled', True)
     rule.setdefault('use_local_time', True)
+    rule.setdefault('es_port', conf.get('es_port'))
+    rule.setdefault('es_host', conf.get('es_host'))
 
     # Set timestamp_type conversion function, used when generating queries and processing hits
     rule['timestamp_type'] = rule['timestamp_type'].strip().lower()
@@ -140,13 +144,12 @@ def load_options(rule, conf=None, args=None):
         raise EAException('timestamp_type must be one of iso, unix, or unix_ms')
 
     # Set email options from global config
-    if conf:
-        rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
-        if 'smtp_host' in conf:
-            rule.setdefault('smtp_host', conf.get('smtp_port'))
-        rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
-        if 'email_reply_to' in conf:
-            rule.setdefault('email_reply_to', conf['email_reply_to'])
+    rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
+    if 'smtp_host' in conf:
+        rule.setdefault('smtp_host', conf.get('smtp_port'))
+    rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
+    if 'email_reply_to' in conf:
+        rule.setdefault('email_reply_to', conf['email_reply_to'])
 
     # Make sure we have required options
     if required_locals - frozenset(rule.keys()):
@@ -160,7 +163,7 @@ def load_options(rule, conf=None, args=None):
         rule['query_key'] = ','.join(rule['query_key'])
 
     # Add QK, CK and timestamp to include
-    include = rule.get('include', [])
+    include = rule.get('include', ['*'])
     if 'query_key' in rule:
         include.append(rule['query_key'])
     if 'compound_query_key' in rule:

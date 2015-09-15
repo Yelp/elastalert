@@ -10,12 +10,12 @@ from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
 
+import IRCAlert
 import simplejson
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 from staticconf.loader import yaml_loader
 from util import EAException
-from util import lookup_es_key
 from util import pretty_ts
 
 
@@ -35,8 +35,7 @@ class BasicMatchString(object):
         alert_text = self.rule.get('alert_text', '')
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
-            alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
-            alert_text_values = ['<MISSING VALUE>' if val is None else val for val in alert_text_values]
+            alert_text_values = [self.match.get(arg, '<MISSING VALUE>') for arg in alert_text_args]
             alert_text = alert_text.format(*alert_text_values)
         self.text += alert_text
 
@@ -132,8 +131,7 @@ class Alerter(object):
 
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
-            alert_subject_values = [lookup_es_key(matches[0], arg) for arg in alert_subject_args]
-            alert_subject_values = ['<MISSING VALUE>' if val is None else val for val in alert_subject_values]
+            alert_subject_values = [matches[0].get(arg, '<MISSING VALUE>') for arg in alert_subject_args]
             return alert_subject.format(*alert_subject_values)
 
         return alert_subject
@@ -151,6 +149,56 @@ class Alerter(object):
             raise EAException('Account file must have user and password fields')
         self.user = account_conf['user']
         self.password = account_conf['password']
+
+
+class IRCAlerter(Alerter):
+    required_options = frozenset(['irc_server', 'irc_port', 'irc_channel', 'irc_password', 'irc_realname'])
+
+    def __init__(self, *args):
+        super(IRCAlerter, self).__init__(*args)
+        self.server = self.rule['irc_server']
+        self.port = self.rule['irc_port']
+        self.channel = self.rule['irc_channel']
+        self.password = self.rule['irc_password']
+        self.realname = self.rule['irc_realname']
+
+    def alert(self, matches):
+        msg = ''
+        for match in matches:
+            msg += str(BasicMatchString(self.rule, match))
+
+        if 'includes' in self.rule:
+            msg = self.msg
+            inc = matches[0].get(self.rule['includes'])
+            if inc:
+                msg += '\n %s \n' % (inc)
+                logging.info("Including in message: %s" % msg)
+            return msg
+
+        if self.password is not None and 'irc_password' in self.pipeline:
+            self.rule['irc_password'] = self.password
+        else:
+            password = 'None'
+
+        server = self.server
+        port = self.port
+        channel = self.channel
+        realname = self.realname
+        password = self.password
+
+        try:
+            irc = IRCAlert(server, port, channel, password, realname, msg)
+            logging.info("Attempting to create a new IRC object on %s" % server)
+            if self.pipeline is None and 'irc_alerter' in self.pipeline:
+                reactor = irc.reactor
+                reactor.disconnect_all()
+            logging.info("Disconnected reactor - pipeline is empty")
+        except:
+            print "Something went wrong"
+            logging.warning("Warning: Reactor did not disconnect. Something isn't working.")
+
+    def get_info(self):
+        return {'type': 'irc'}
 
 
 class DebugAlerter(Alerter):

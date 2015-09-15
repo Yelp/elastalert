@@ -29,10 +29,11 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 - "Match on any event matching a given filter" (``any`` type)
 - "Match when a field has two different values within some time" (``change`` type)
 
-Currently, we have support built in for two alert types:
+Currently, we have support built in for three alert types:
 
 - Email
 - JIRA
+- OpsGenie
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
 
@@ -97,7 +98,7 @@ as if it was queried in real time.
 
 ``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about its searches.
 When ElastAlert is started, it will query for information about the time that it was last run. This way,
-even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice.
+even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice. It will also specify the default cluster for each rule to run on.
 
 ``es_port``: The port corresponding to ``es_host``.
 
@@ -126,6 +127,9 @@ configuration.
 default is 100,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
 limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting
 can be overridden by any individual rule.
+
+``max_aggregation``: The maximum number of alerts to aggregate together. If a rule has ``aggregation`` set, all
+alerts occuring within a timeframe will be sent together. The default is 10,000.
 
 ``old_query_limit``: The maximum time between queries for ElastAlert to start at the most recently run query.
 When ElastAlert starts, for each rule, it will search ``elastalert_metadata`` for the most recently run query and start
@@ -183,7 +187,7 @@ of queries.
 
 ``--es_debug`` will enable logging for all queries made to Elasticsearch.
 
-``--es_debug_trace`` will enable logging curl commands for all queries made to Elasticsearch.
+``--es_debug_trace`` will enable logging curl commands for all queries made to Elasticsearch to a file.
 
 ``--end <timestamp>`` will force ElastAlert to stop querying after the given time, instead of the default,
 querying to the present time. This really only makes sense when running standalone. The timestamp is formatted

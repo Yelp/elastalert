@@ -1,74 +1,65 @@
-# Alert when there is a sudden spike in the volume of events
-
-# (Optional)
 # Elasticsearch host
-# es_host: elasticsearch.example.com
+es_host:
 
-# (Optional)
 # Elasticsearch port
-# es_port: 14900
+es_port: 9200
 
-# (Optional) Connect with SSL to elasticsearch
 #use_ssl: True
 
-# (Optional) basic-auth username and password for elasticsearch
-#es_username: someusername
-#es_password: somepassword
-
-# (Required)
 # Rule name, must be unique
-name: Event spike
+name: Error Rule
 
-# (Required)
 # Type of alert.
 # the spike rule type compares the number of events within two sliding windows to each other
-type: spike
+type: frequency
 
-# (Required)
 # Index to search, wildcard supported
-index: logstash-*
+index: elastalert_status
 
-# (Required, spike specific)
 # The minimum number of events to be used as a baseline
 # For example, if there are only 2 eventss between 12:00 and 2:00, and 20 between 2:00 and 4:00
 # This rule will ignore that 'spike', because the reference window did not meet the threshold of 5
-threshold: 5
+num_events: 1
 
-# (Required, spike specific)
 # The size of the window used to determine average event frequency
 # We use two sliding windows each of size timeframe
 # To measure the 'reference' rate and the current rate
 timeframe:
-  hours: 2
+  minutes: 5
 
-# (Required, spike specific)
 # The spike rule matches when the current window contains spike_height times more
 # events than the reference window
-spike_height: 3
+#spike_height: 1
 
-# (Required, spike specific)
 # The direction of the spike
-# 'up' matches only spikes, 'down' matches only troughs
-# 'both' matches both spikes and troughs
-spike_type: "up"
+#spike_type: "up"
 
-# (Required)
 # A list of elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
 # For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
-filter:
-- query:
-    query_string:
-      query: "field: value"
-- type:
-    value: "some_doc_type"
+#filter:
+#- query:
+#    query_string:
+#      query: " "
 
-# (Required)
-# The alert is use when a match is found
 alert:
-- "email"
+- "irc"
 
-# (required, email specific)
-# a list of email addresses to send alerts to
-email:
-- "elastalert@example.com"
+#irc_server:
+#-
+#
+#irc_port:
+#-
+#
+#irc_channel:
+#-
+#
+#irc_password:
+#-
+#
+#irc_realname:
+#- "textual"
+#
+include:
+- "file"
+- "message"

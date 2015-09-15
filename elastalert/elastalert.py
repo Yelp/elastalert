@@ -13,6 +13,7 @@ from socket import error
 
 import argparse
 import kibana
+import yaml
 from alerts import DebugAlerter
 from config import get_rule_hashes
 from config import load_configuration
@@ -22,7 +23,9 @@ from elasticsearch.exceptions import ElasticsearchException
 from enhancements import DropMatchException
 from util import dt_to_ts
 from util import EAException
+from util import elastalert_logger
 from util import format_index
+from util import lookup_es_key
 from util import pretty_ts
 from util import seconds
 from util import ts_add
@@ -55,7 +58,7 @@ class ElastAlerter():
         parser.add_argument('--verbose', action='store_true', dest='verbose', help='Increase verbosity without suppressing alerts')
         parser.add_argument('--pin_rules', action='store_true', dest='pin_rules', help='Stop ElastAlert from monitoring config file changes')
         parser.add_argument('--es_debug', action='store_true', dest='es_debug', help='Enable verbose logging from Elasticsearch queries')
-        parser.add_argument('--es_debug_trace', action='store', dest='es_debug_trace', default="/tmp/es_trace.log", help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file (default: /tmp/es_trace.log)')
+        parser.add_argument('--es_debug_trace', action='store', dest='es_debug_trace', help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file')
         self.args = parser.parse_args(args)
 
     def __init__(self, args):
@@ -88,6 +91,7 @@ class ElastAlerter():
         self.notify_email = self.conf.get('notify_email')
         self.from_addr = self.conf.get('from_addr', 'ElastAlert')
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
+        self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.alerts_sent = 0
         self.num_hits = 0
         self.current_es = None
@@ -231,8 +235,8 @@ class ElastAlerter():
                 hit['_source'].setdefault(key, value[0] if type(value) is list and len(value) == 1 else value)
             hit['_source'][rule['timestamp_field']] = rule['ts_to_dt'](hit['_source'][rule['timestamp_field']])
             if rule.get('compound_query_key'):
-                values = [hit['_source'].get(key, 'None') for key in rule['compound_query_key']]
-                hit['_source'][rule['query_key']] = ', '.join(values)
+                values = [lookup_es_key(hit['_source'], key) for key in rule['compound_query_key']]
+                hit['_source'][rule['query_key']] = ', '.join([str(value) for value in values])
 
     def get_hits(self, rule, starttime, endtime, index):
         """ Query elasticsearch for the given rule and return the results.
@@ -261,7 +265,7 @@ class ElastAlerter():
         hits = res['hits']['hits']
         self.num_hits += len(hits)
         lt = rule.get('use_local_time')
-        logging.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits)))
+        elastalert_logger.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits)))
         self.process_hits(rule, hits)
 
         # Record doc_type for use in get_top_counts
@@ -294,7 +298,7 @@ class ElastAlerter():
 
         self.num_hits += res['count']
         lt = rule.get('use_local_time')
-        logging.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), res['count']))
+        elastalert_logger.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), res['count']))
         return {endtime: res['count']}
 
     def get_hits_terms(self, rule, starttime, endtime, index, key, qk=None, size=None):
@@ -324,7 +328,7 @@ class ElastAlerter():
         buckets = res['aggregations']['filtered']['counts']['buckets']
         self.num_hits += len(buckets)
         lt = rule.get('use_local_time')
-        logging.info('Queried rule %s from %s to %s: %s buckets' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(buckets)))
+        elastalert_logger.info('Queried rule %s from %s to %s: %s buckets' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(buckets)))
         return {endtime: buckets}
 
     def remove_duplicate_events(self, data, rule):
@@ -407,7 +411,7 @@ class ElastAlerter():
                     if ts_now() - endtime < self.old_query_limit:
                         return endtime
                     else:
-                        logging.info("Found expired previous run for %s at %s" % (rule['name'], endtime))
+                        elastalert_logger.info("Found expired previous run for %s at %s" % (rule['name'], endtime))
                         return None
         except (ElasticsearchException, KeyError) as e:
             self.handle_error('Error querying for last run: %s' % (e), {'rule': rule['name']})
@@ -516,7 +520,7 @@ class ElastAlerter():
                 key = ''
 
             if self.is_silenced(rule['name'] + key) or self.is_silenced(rule['name']):
-                logging.info('Ignoring match for silenced rule %s%s' % (rule['name'], key))
+                elastalert_logger.info('Ignoring match for silenced rule %s%s' % (rule['name'], key))
                 continue
 
             if rule['realert']:
@@ -574,9 +578,10 @@ class ElastAlerter():
         copy_properties = ['agg_matches',
                            'current_aggregate_id',
                            'processed_hits',
-                           'starttime']
+                           'starttime',
+                           'minimum_starttime']
         for prop in copy_properties:
-            if prop == 'starttime' and 'starttime' not in rule:
+            if prop not in rule:
                 continue
             new_rule[prop] = rule[prop]
 
@@ -585,23 +590,33 @@ class ElastAlerter():
     def load_rule_changes(self):
         ''' Using the modification times of rule config files, syncs the running rules
         to match the files in rules_folder by removing, adding or reloading rules. '''
-        rule_hashes = get_rule_hashes(self.conf, self.args.rule)
+        new_rule_hashes = get_rule_hashes(self.conf, self.args.rule)
 
         # Check each current rule for changes
         for rule_file, hash_value in self.rule_hashes.iteritems():
-            if rule_file not in rule_hashes:
+            if rule_file not in new_rule_hashes:
                 # Rule file was deleted
-                logging.info('Rule file %s not found, stopping rule execution' % (rule_file))
+                elastalert_logger.info('Rule file %s not found, stopping rule execution' % (rule_file))
                 self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
                 continue
-            if hash_value != rule_hashes[rule_file]:
+            if hash_value != new_rule_hashes[rule_file]:
                 # Rule file was changed, reload rule
                 try:
-                    new_rule = load_configuration(rule_file)
+                    new_rule = load_configuration(rule_file, self.conf)
                 except EAException as e:
-                    self.handle_error('Could not load rule %s: %s' % (rule_file, e))
+                    message = 'Could not load rule %s: %s' % (rule_file, e)
+                    self.handle_error(message)
+                    # Want to send email to address specified in the rule. Try and load the YAML to find it.
+                    with open(rule_file) as f:
+                        try:
+                            rule_yaml = yaml.load(f)
+                        except yaml.scanner.ScannerError:
+                            self.send_notification_email(exception=e)
+                            continue
+
+                    self.send_notification_email(exception=e, rule=rule_yaml)
                     continue
-                logging.info("Reloading configuration for rule %s" % (rule_file))
+                elastalert_logger.info("Reloading configuration for rule %s" % (rule_file))
 
                 # Re-enable if rule had been disabled
                 for disabled_rule in self.disabled_rules:
@@ -613,20 +628,25 @@ class ElastAlerter():
                 # Initialize the rule that matches rule_file
                 self.rules = [rule if rule['rule_file'] != rule_file else self.init_rule(new_rule, False) for rule in self.rules]
 
+                # If the rule failed to load previously, it needs to be added to self.rules
+                if new_rule['name'] not in [rule['name'] for rule in self.rules]:
+                    self.rules.append(self.init_rule(new_rule))
+
         # Load new rules
         if not self.args.rule:
-            for rule_file in set(rule_hashes.keys()) - set(self.rule_hashes.keys()):
+            for rule_file in set(new_rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
-                    new_rule = load_configuration(rule_file)
+                    new_rule = load_configuration(rule_file, self.conf)
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
                         raise EAException("A rule with the name %s already exists" % (new_rule['name']))
                 except EAException as e:
                     self.handle_error('Could not load rule %s: %s' % (rule_file, e))
+                    self.send_notification_email(exception=e, rule=new_rule)
                     continue
-                logging.info('Loaded new rule %s' % (rule_file))
+                elastalert_logger.info('Loaded new rule %s' % (rule_file))
                 self.rules.append(self.init_rule(new_rule))
 
-        self.rule_hashes = rule_hashes
+        self.rule_hashes = new_rule_hashes
 
     def start(self):
         """ Periodically go through each rule and run it """
@@ -676,9 +696,9 @@ class ElastAlerter():
                 self.handle_uncaught_exception(e, rule)
             else:
                 old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
-                logging.info("Ran %s from %s to %s: %s query hits, %s matches,"
-                             " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                  self.num_hits, num_matches, self.alerts_sent))
+                elastalert_logger.info("Ran %s from %s to %s: %s query hits, %s matches,"
+                                       " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
+                                                            self.num_hits, num_matches, self.alerts_sent))
                 self.alerts_sent = 0
 
             self.remove_old_events(rule)
@@ -701,7 +721,7 @@ class ElastAlerter():
 
     def sleep_for(self, duration):
         """ Sleep for a set duration """
-        logging.info("Sleeping for %s seconds" % (duration))
+        elastalert_logger.info("Sleeping for %s seconds" % (duration))
         time.sleep(duration)
 
     def generate_kibana4_db(self, rule, match):
@@ -927,7 +947,7 @@ class ElastAlerter():
             if isinstance(body[key], datetime.datetime):
                 body[key] = dt_to_ts(body[key])
         if self.debug:
-            logging.info("Skipping writing to ES: %s" % (body))
+            elastalert_logger.info("Skipping writing to ES: %s" % (body))
             return None
 
         if '@timestamp' not in body:
@@ -986,6 +1006,11 @@ class ElastAlerter():
                 # Original rule is missing, drop alert
                 continue
 
+            # Set current_es for top_count_keys query
+            rule_es_conn_config = self.build_es_conn_config(rule)
+            self.current_es = self.new_elasticsearch(rule_es_conn_config)
+            self.current_es_addr = (rule['es_host'], rule['es_port'])
+
             # Retry the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):
                 aggregated_matches = self.get_aggregated_matches(_id)
@@ -1019,7 +1044,8 @@ class ElastAlerter():
             try:
                 res = self.writeback_es.search(index=self.writeback_index,
                                                doc_type='elastalert',
-                                               body=query)
+                                               body=query,
+                                               size=self.max_aggregation)
                 for match in res['hits']['hits']:
                     matches.append(match['_source'])
                     self.writeback_es.delete(index=self.writeback_index,
@@ -1041,7 +1067,7 @@ class ElastAlerter():
             # Already pending aggregation, use existing alert_time
             alert_time = rule['aggregate_alert_time']
             agg_id = rule['current_aggregate_id']
-            logging.info('Adding alert for %s to aggregation, next alert at %s' % (rule['name'], alert_time))
+            elastalert_logger.info('Adding alert for %s to aggregation, next alert at %s' % (rule['name'], alert_time))
 
         alert_body = self.get_alert_body(match, rule, False, alert_time)
         if agg_id:
@@ -1084,7 +1110,7 @@ class ElastAlerter():
             logging.error('Failed to save silence command to elasticsearch')
             exit(1)
 
-        logging.info('Success. %s will be silenced until %s' % (rule_name, silence_ts))
+        elastalert_logger.info('Success. %s will be silenced until %s' % (rule_name, silence_ts))
 
     def set_realert(self, rule_name, timestamp, exponent):
         """ Write a silence to elasticsearch for rule_name until timestamp. """
@@ -1168,13 +1194,16 @@ class ElastAlerter():
             self.notify_email = [self.notify_email]
         email = MIMEText(email_body)
         email['Subject'] = subject if subject else 'ElastAlert notification'
-        email['To'] = ', '.join(self.notify_email)
+        recipients = self.notify_email
+        if rule and rule.get('notify_email') and not rule['notify_email'] in self.notify_email:
+            recipients.append(rule['notify_email'])
+        email['To'] = ', '.join(recipients)
         email['From'] = self.from_addr
         email['Reply-To'] = self.conf.get('email_reply_to', email['To'])
 
         try:
             smtp = SMTP(self.smtp_host)
-            smtp.sendmail(self.from_addr, self.notify_email, email.as_string())
+            smtp.sendmail(self.from_addr, recipients, email.as_string())
         except (SMTPException, error) as e:
             self.handle_error('Error connecting to SMTP host: %s' % (e), {'email_body': email_body})
 
