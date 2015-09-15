@@ -172,6 +172,7 @@ class IRCAlerter(Alerter):
             inc = matches[0].get(self.rule['includes'])
             if inc:
                 msg += '\n %s \n' % (inc)
+                logging.info("Including in message: %s" % msg)
             return msg
 
         if self.password is not None and 'irc_password' in self.pipeline:
@@ -187,11 +188,14 @@ class IRCAlerter(Alerter):
 
         try:
             irc = IRCAlert(server, port, channel, password, realname, msg)
-            if self.pipeline is not None and 'irc_alerter' in self.pipeline:
+            logging.info("Attempting to create a new IRC object on %s" % server)
+            if self.pipeline is None and 'irc_alerter' in self.pipeline:
                 reactor = irc.reactor
                 reactor.disconnect_all()
+            logging.info("Disconnected reactor - pipeline is empty")
         except:
             print "Something went wrong"
+            logging.warning("Warning: Reactor did not disconnect. Something isn't working.")
 
     def get_info(self):
         return {'type': 'irc'}
