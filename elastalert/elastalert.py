@@ -70,7 +70,7 @@ class ElastAlerter():
             self.verbose = True
 
         if self.verbose:
-            logging.getLogger().setLevel(logging.INFO)
+            elastalert_logger.setLevel(logging.INFO)
 
         if not self.args.es_debug:
             logging.getLogger('elasticsearch').setLevel(logging.WARNING)
