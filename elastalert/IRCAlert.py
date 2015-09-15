@@ -63,10 +63,17 @@ class IRCAlert(object):
                 )
                 c.add_global_handler("welcome", self.on_connect)
                 c.add_global_handler("join", self.on_join)
+                c.add_global_handler("pong", self.on_pong)
                 status = c.is_connected()
-                print "Connected to IRC: %s" % status
+                if status:
+                    logging.info("Connected to IRC: %s" % status)
+                else:
+                    logging.warning("WARNING: Not connected to IRC")
+                print "Connected to IRC? %s" % status
                 print str(reactor)
                 reactor.process_forever()
+                logging.info("Running process_forever, ending thread")
             except irc.client.ServerConnectionError:
                 print(sys.exc_info()[1])
                 raise SystemExit(1)
+                logging.warning("Raised ServerConnectionError: system exit")
