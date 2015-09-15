@@ -1,6 +1,7 @@
 -r requirements.txt
 coverage
 flake8
+irc
 pre-commit
 pylint<1.4
 pytest
