@@ -4,7 +4,6 @@ from __future__ import absolute_import
 import logging
 import ssl
 import sys
-import threading
 
 import irc
 import irc.bot
@@ -14,21 +13,18 @@ import irc.connection
 
 class IRCAlert(object):
 
-    def __init__(self, server, port, channel, password, realname, msg):
+    def __init__(self, server, port, channel, password, realname):
         super(IRCAlert, self).__init__()
         self.server = server
         self.port = port
         self.channel = channel
         self.password = password
         self.username = realname
-        self.msg = msg
         self.botnick = 'alertbot'
         self.status = 'False'
         self.reactor = irc.client.Reactor()
         self.ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
-        thread = threading.Thread(target=self.start, args=())
-        thread.daemon = True
-        thread.start()
+        self.start()
     getattr(logging, 'DEBUG')
     logging.basicConfig(level=logging.DEBUG)
 
@@ -43,10 +39,6 @@ class IRCAlert(object):
         if irc.client.is_channel(channel):
             connection.privmsg(channel, message)
             print "Alert message sent."
-
-    def on_pong(self, connection, event):
-        reactor = self.reactor
-        reactor.disconnect_all()
 
     def start(self):
         while True:
@@ -63,7 +55,6 @@ class IRCAlert(object):
                 )
                 c.add_global_handler("welcome", self.on_connect)
                 c.add_global_handler("join", self.on_join)
-                c.add_global_handler("pong", self.on_pong)
                 status = c.is_connected()
                 if status:
                     logging.info("Connected to IRC: %s" % status)
@@ -72,8 +63,25 @@ class IRCAlert(object):
                 print "Connected to IRC? %s" % status
                 print str(reactor)
                 reactor.process_forever()
-                logging.info("Running process_forever, ending thread")
+                logging.info("Running process_forever")
             except irc.client.ServerConnectionError:
                 print(sys.exc_info()[1])
                 raise SystemExit(1)
                 logging.warning("Raised ServerConnectionError: system exit")
+
+    def send_message(self, connection, message):
+        if irc.client.is_channel(channel):
+            sent = connection.privmsg(channel, message)
+            if sent:
+                connection.close(self)
+                logging.info("Message %s passed to IRC channel" % message)
+            else:
+                connection.reconnect(self)
+                self.send_message()
+                logging.info("Reconnected; tried to send message again.")
+            reactor.process_forever()
+            print "Alert message sent."
+
+#    def on_pong(self, connection, event):
+#        reactor = self.reactor
+#        connection.close(self)

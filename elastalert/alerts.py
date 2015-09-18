@@ -161,6 +161,22 @@ class IRCAlerter(Alerter):
         self.channel = self.rule['irc_channel']
         self.password = self.rule['irc_password']
         self.realname = self.rule['irc_realname']
+        try:
+            irc = IRCAlert(server, port, channel, password, realname)
+            logging.info("Attempting to create a new IRC object on %s" % server)
+            c = irc.connection
+            status = c.is_connected()
+            if irc:
+                if status:
+                    logging.info("Connected to IRC channel %s" % self.channel)
+                else:
+                    c.reconnect(self)
+                    logging.info("Tried to reconnect; connected = %s" % status)
+            else:
+                c.close(self)
+                logging.warning("Could not connect to IRC")
+        except:
+            logging.warning("Could not connect to IRC")
 
     def alert(self, matches):
         msg = ''
@@ -180,22 +196,12 @@ class IRCAlerter(Alerter):
         else:
             password = 'None'
 
-        server = self.server
-        port = self.port
-        channel = self.channel
-        realname = self.realname
-        password = self.password
-
         try:
-            irc = IRCAlert(server, port, channel, password, realname, msg)
-            logging.info("Attempting to create a new IRC object on %s" % server)
-            if self.pipeline is None and 'irc_alerter' in self.pipeline:
-                reactor = irc.reactor
-                reactor.disconnect_all()
-            logging.info("Disconnected reactor - pipeline is empty")
+            c = irc.connection
+            msg = self.msg
+            send = irc.send_message(c, msg)
         except:
-            print "Something went wrong"
-            logging.warning("Warning: Reactor did not disconnect. Something isn't working.")
+            logging.info("Could not send message, %s" % msg)
 
     def get_info(self):
         return {'type': 'irc'}
