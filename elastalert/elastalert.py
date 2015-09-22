@@ -89,7 +89,7 @@ class ElastAlerter():
         self.alert_time_limit = self.conf['alert_time_limit']
         self.old_query_limit = self.conf['old_query_limit']
         self.disable_rules_on_error = self.conf['disable_rules_on_error']
-        self.notify_email = self.conf.get('notify_email')
+        self.notify_email = self.conf.get('notify_email', [])
         self.from_addr = self.conf.get('from_addr', 'ElastAlert')
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
@@ -1197,7 +1197,9 @@ class ElastAlerter():
         email['Subject'] = subject if subject else 'ElastAlert notification'
         recipients = self.notify_email
         if rule and rule.get('notify_email') and not rule['notify_email'] in self.notify_email:
-            recipients.append(rule['notify_email'])
+            if isinstance(rule['notify_email'], basestring):
+                rule['notify_email'] = [rule['notify_email']]
+            recipients = recipients + rule['notify_email']
         email['To'] = ', '.join(recipients)
         email['From'] = self.from_addr
         email['Reply-To'] = self.conf.get('email_reply_to', email['To'])
