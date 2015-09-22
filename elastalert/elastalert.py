@@ -1196,10 +1196,11 @@ class ElastAlerter():
         email = MIMEText(email_body)
         email['Subject'] = subject if subject else 'ElastAlert notification'
         recipients = self.notify_email
-        if rule and rule.get('notify_email') and not rule['notify_email'] in self.notify_email:
+        if rule and rule.get('notify_email'):
             if isinstance(rule['notify_email'], basestring):
                 rule['notify_email'] = [rule['notify_email']]
             recipients = recipients + rule['notify_email']
+        recipients = list(set(recipients))
         email['To'] = ', '.join(recipients)
         email['From'] = self.from_addr
         email['Reply-To'] = self.conf.get('email_reply_to', email['To'])
