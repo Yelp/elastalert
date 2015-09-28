@@ -578,6 +578,7 @@ class ElastAlerter():
 
         copy_properties = ['agg_matches',
                            'current_aggregate_id',
+                           'aggregate_alert_time',
                            'processed_hits',
                            'starttime',
                            'minimum_starttime']
@@ -1058,7 +1059,8 @@ class ElastAlerter():
 
     def add_aggregated_alert(self, match, rule):
         """ Save a match as a pending aggregate alert to elasticsearch. """
-        if not rule['current_aggregate_id'] or rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]):
+        if (not rule['current_aggregate_id'] or
+                ('aggregate_alert_time' in rule and rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]))):
             # First match, set alert_time
             match_time = ts_to_dt(match[rule['timestamp_field']])
             alert_time = match_time + rule['aggregation']
