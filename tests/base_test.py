@@ -444,6 +444,25 @@ def test_realert_with_query_key(ea):
     assert ea.rules[0]['alert'][0].alert.call_count == 4
 
 
+def test_realert_with_nested_query_key(ea):
+    ea.rules[0]['query_key'] = 'user.name'
+    ea.rules[0]['realert'] = datetime.timedelta(minutes=10)
+
+    # Alert and silence username: qlo
+    match = [{'@timestamp': '2014-11-17T00:00:00', 'user': {'name': 'qlo'}}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 1
+
+    # Dont alert again for same username
+    match = [{'@timestamp': '2014-11-17T00:05:00', 'user': {'name': 'qlo'}}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 1
+
+
 def test_count(ea):
     ea.rules[0]['use_count_query'] = True
     ea.rules[0]['doc_type'] = 'doctype'
