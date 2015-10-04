@@ -448,7 +448,7 @@ class CommandAlerter(Alerter):
 class SnsAlerter(Alerter):
     """send alert using AWS SNS service"""
     required_options = frozenset(['sns_topic_arn'])
-    
+
     def __init__(self, *args):
         super(SnsAlerter, self).__init__(*args)
         self.sns_topic_arn = self.rule.get('sns_topic_arn', '')
