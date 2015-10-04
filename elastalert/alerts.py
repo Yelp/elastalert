@@ -467,7 +467,7 @@ class SnsAlerter(Alerter):
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
-        #use instance role if aws_access_key and aws_secret_key are not specified
+        # use instance role if aws_access_key and aws_secret_key are not specified
         if not self.aws_access_key and not self.aws_secret_key:
             sns_client = sns.connect_to_region(self.aws_region)
         else:
