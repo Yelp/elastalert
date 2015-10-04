@@ -455,7 +455,7 @@ class SnsAlerter(Alerter):
         self.aws_access_key = self.rule.get('aws_access_key', '')
         self.aws_secret_key = self.rule.get('aws_secret_key', '')
         self.aws_region = self.rule.get('aws_region', 'us-east-1')
-    
+
     def create_default_title(self):
         subject = 'ElastAlert: %s' % (self.rule['name'])
         return subject
