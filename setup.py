@@ -30,5 +30,6 @@ setup(
         'PyStaticConfiguration',
         'pyyaml',
         'simplejson',
+        'boto'
     ]
 )
