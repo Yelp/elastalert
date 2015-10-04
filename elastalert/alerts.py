@@ -472,7 +472,7 @@ class SnsAlerter(Alerter):
             sns_client = sns.connect_to_region(self.aws_region)
         else:
             sns_client = sns.connect_to_region(self.aws_region,
-                                           aws_access_key_id=self.aws_access_key,
-                                           aws_secret_access_key=self.aws_secret_key)
+                                               aws_access_key_id=self.aws_access_key,
+                                               aws_secret_access_key=self.aws_secret_key)
         sns_client.publish(self.sns_topic_arn, body, subject=self.create_default_title())
         elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
