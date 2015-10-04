@@ -476,4 +476,3 @@ class SnsAlerter(Alerter):
                                            aws_secret_access_key=self.aws_secret_key)
         sns_client.publish(self.sns_topic_arn, body, subject=self.create_default_title())
         elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
-        
