@@ -445,6 +445,7 @@ class CommandAlerter(Alerter):
         return {'type': 'command',
                 'command': ' '.join(self.last_command)}
 
+
 class SnsAlerter(Alerter):
     """send alert using AWS SNS service"""
     required_options = frozenset(['sns_topic_arn'])
