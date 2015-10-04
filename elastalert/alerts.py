@@ -22,7 +22,6 @@ import boto.sns as sns
 
 
 class BasicMatchString(object):
-
     """ Creates a string containing fields in match for the given rule. """
 
     def __init__(self, rule, match):
@@ -88,7 +87,6 @@ class BasicMatchString(object):
 
 
 class JiraFormattedMatchString(BasicMatchString):
-
     def _add_match_items(self):
         match_items = dict([(x, y) for x, y in self.match.items() if not x.startswith('top_events_')])
         json_blob = self._pretty_print_as_json(match_items)
@@ -162,7 +160,8 @@ class DebugAlerter(Alerter):
         qk = self.rule.get('query_key', None)
         for match in matches:
             if qk in match:
-                elastalert_logger.info('Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
+                elastalert_logger.info(
+                    'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
             else:
                 elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
             elastalert_logger.info(str(BasicMatchString(self.rule, match)))
@@ -286,7 +285,8 @@ class JiraAlerter(Alerter):
                   (','.join(self.bump_in_statuses), ','.join(self.bump_not_in_statuses))
             intersection = list(set(self.bump_in_statuses) & set(self.bump_in_statuses))
             if intersection:
-                msg = '%s Both have common statuses of (%s). As such, no tickets will ever be found.' % (msg, ','.join(intersection))
+                msg = '%s Both have common statuses of (%s). As such, no tickets will ever be found.' % (
+                msg, ','.join(intersection))
             msg += ' This should be simplified to use only one or the other.'
             logging.warning(msg)
 
@@ -445,17 +445,18 @@ class CommandAlerter(Alerter):
         return {'type': 'command',
                 'command': ' '.join(self.last_command)}
 
+
 class SnsAlerter(Alerter):
     """send alert using AWS SNS service"""
     required_options = frozenset(['sns_topic_arn'])
-    
+
     def __init__(self, *args):
         super(SnsAlerter, self).__init__(*args)
         self.sns_topic_arn = self.rule.get('sns_topic_arn', '')
         self.aws_access_key = self.rule.get('aws_access_key', '')
         self.aws_secret_key = self.rule.get('aws_secret_key', '')
         self.aws_region = self.rule.get('aws_region', 'us-east-1')
-    
+
     def create_default_title(self):
         subject = 'ElastAlert: %s' % (self.rule['name'])
         return subject
@@ -467,12 +468,12 @@ class SnsAlerter(Alerter):
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
-        #use instance role if aws_access_key and aws_secret_key are not specified
+        # use instance role if aws_access_key and aws_secret_key are not specified
         if not self.aws_access_key and not self.aws_secret_key:
             sns_client = sns.connect_to_region(self.aws_region)
         else:
             sns_client = sns.connect_to_region(self.aws_region,
-                                           aws_access_key_id=self.aws_access_key,
-                                           aws_secret_access_key=self.aws_secret_key)
+                                               aws_access_key_id=self.aws_access_key,
+                                               aws_secret_access_key=self.aws_secret_key)
         sns_client.publish(self.sns_topic_arn, body, subject=self.create_default_title())
         elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
