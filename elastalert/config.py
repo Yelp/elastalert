@@ -253,7 +253,7 @@ def load_modules(rule, args=None):
         reqs = reqs.union(alert.required_options)
     if reqs - frozenset(rule.keys()):
         raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(rule.keys()))))
-     # Instantiate rule
+    # Instantiate rule
     try:
         rule['type'] = rule['type'](rule, args)
     except (KeyError, EAException) as e:
@@ -263,8 +263,6 @@ def load_modules(rule, args=None):
         rule['alert'] = [alert(rule) for alert in rule['alert']]
     except (KeyError, EAException) as e:
         raise EAException('Error initiating alert %s: %s' % (rule['alert'], e))
-
-
 
 
 def get_file_paths(conf, use_rule=None):
