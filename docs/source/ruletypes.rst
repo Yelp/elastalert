@@ -1017,6 +1017,25 @@ The OpsGenie alert requires three options:
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
 
+SNS
+~~~
+
+The SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters. The SNS alerter
+uses boto and can use credentials in the rule yaml or in a standard [boto credential file.](http://boto.readthedocs.org/en/latest/boto_config_tut.html#details)
+
+SNS requires one option:
+
+``sns_topic_arn``: The SNS topic's ARN. For example, ``arn:aws:sns:us-east-1:123456789:somesnstopic``
+
+Optional:
+
+``aws_access_key``: An access key to connect to SNS with.
+
+``aws_secret_key``: The secret key associated with the access key.
+
+``aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
+
+
 Debug
 ~~~~~~
 
