@@ -1021,7 +1021,8 @@ SNS
 ~~~
 
 The SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters. The SNS alerter
-uses boto and can use credentials in the rule yaml or in a standard [boto credential file.](http://boto.readthedocs.org/en/latest/boto_config_tut.html#details)
+uses boto and can use credentials in the rule yaml or in a standard boto credential file. 
+See http://boto.readthedocs.org/en/latest/boto_config_tut.html#details for details.
 
 SNS requires one option:
 
