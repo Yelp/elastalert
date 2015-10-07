@@ -73,6 +73,7 @@ Rule Configuration Cheat Sheet
 | ``query_delay`` (time, default 0 min)                        |           |
 +--------------------------------------------------------------+           |
 | ``buffer_time`` (time, default from config.yaml)             |           |
+|                                                              |           |
 | IGNORED IF ``use_count_query`` or ``use_terms_query`` is true|           |
 +--------------------------------------------------------------+           +
 | ``timestamp_type`` (string, default iso)                     |           |
