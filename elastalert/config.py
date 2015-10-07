@@ -46,7 +46,8 @@ alerts_mapping = {
     'jira': alerts.JiraAlerter,
     'opsgenie': OpsGenieAlerter,
     'debug': alerts.DebugAlerter,
-    'command': alerts.CommandAlerter
+    'command': alerts.CommandAlerter,
+    'sns': alerts.SnsAlerter
 }
 
 

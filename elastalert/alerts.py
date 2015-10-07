@@ -18,6 +18,7 @@ from util import EAException
 from util import lookup_es_key
 from util import pretty_ts
 from util import elastalert_logger
+import boto.sns as sns
 
 
 class BasicMatchString(object):
@@ -443,3 +444,36 @@ class CommandAlerter(Alerter):
     def get_info(self):
         return {'type': 'command',
                 'command': ' '.join(self.last_command)}
+
+
+class SnsAlerter(Alerter):
+    """send alert using AWS SNS service"""
+    required_options = frozenset(['sns_topic_arn'])
+
+    def __init__(self, *args):
+        super(SnsAlerter, self).__init__(*args)
+        self.sns_topic_arn = self.rule.get('sns_topic_arn', '')
+        self.aws_access_key = self.rule.get('aws_access_key', '')
+        self.aws_secret_key = self.rule.get('aws_secret_key', '')
+        self.aws_region = self.rule.get('aws_region', 'us-east-1')
+
+    def create_default_title(self):
+        subject = 'ElastAlert: %s' % (self.rule['name'])
+        return subject
+
+    def alert(self, matches):
+        body = ''
+        for match in matches:
+            body += str(BasicMatchString(self.rule, match))
+            # Separate text of aggregated alerts with dashes
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        # use instance role if aws_access_key and aws_secret_key are not specified
+        if not self.aws_access_key and not self.aws_secret_key:
+            sns_client = sns.connect_to_region(self.aws_region)
+        else:
+            sns_client = sns.connect_to_region(self.aws_region,
+                                               aws_access_key_id=self.aws_access_key,
+                                               aws_secret_access_key=self.aws_secret_key)
+        sns_client.publish(self.sns_topic_arn, body, subject=self.create_default_title())
+        elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
