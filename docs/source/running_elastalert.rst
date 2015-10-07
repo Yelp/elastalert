@@ -28,7 +28,7 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``run_every`` is how often ElastAlert will query Elasticsearch.
 
-``buffer_time`` is the size of the query window, stretching backwards from the time each query is run.
+``buffer_time`` is the size of the query window, stretching backwards from the time each query is run. This value is ignored for rules where ``use_count_query`` or ``use_terms_query`` is set to true.
 
 ``es_host`` is the address of an Elasticsearch cluster where ElastAlert will store data about its state, queries run, alerts, and errors. Each rule may also use a different Elasticsearch host to query against.
 
