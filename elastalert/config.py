@@ -47,7 +47,9 @@ alerts_mapping = {
     'opsgenie': OpsGenieAlerter,
     'debug': alerts.DebugAlerter,
     'command': alerts.CommandAlerter,
-    'sns': alerts.SnsAlerter
+    'sns': alerts.SnsAlerter,
+    'hipchat': alerts.HipChatAlerter,
+    'slack': alerts.SlackAlerter
 }
 
 
