@@ -1039,6 +1039,38 @@ Optional:
 
 ``aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
 
+HipChat
+~~~~~~~
+
+HipChat alerter will send a notification to a predefined HipChat room. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following two options:
+
+``hipchat_auth_token``: The randomly generated notification token created by HipChat. Go to https://XXXXX.hipchat.com/account/api and use
+'Create new token' section, choosing 'Send notification' in Scopes list.
+
+``hipchat_room_id``: The id associated with the HipChat room you want to send the alert to. Go to https://XXXXX.hipchat.com/rooms and choose
+the room you want to post to. The room ID will be the numeric part of the URL.
+
+Slack
+~~~~~
+
+Slack alerter will send a notification to a predefined Slack channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following option:
+
+``slack_webhook_url``: The webhook URL that includes your auth data and the ID of the channel (room) you want to post to. Go to the Incoming Webhooks
+section in your Slack account https://XXXXX.slack.com/services/new/incoming-webhook , choose the channel, click 'Add Incoming Webhooks Integration'
+and copy the resulting URL.
+
+Optional:
+
+``slack_username_override``: By default Slack will use your username when posting to the channel. Use this option to change it (free text).
+
+``slack_emoji_override``: By default Elastalert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
+Elastalert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
+
+``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
 
 Debug
 ~~~~~~

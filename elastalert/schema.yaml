@@ -181,3 +181,13 @@ properties:
   jira_label: {type: string}
   jira_bump_tickets: {type: boolean}
   jira_max_age: {type: number}
+
+  ### HipChat
+  hipchat_auth_token: {type: string}
+  hipchat_room_id: {type: number}
+
+  ### Slack
+  slack_webhook_url: {type: string}
+  slack_username_override: {type: string}
+  slack_emoji_override: {type: string}
+  slack_msg_color: {enum: [good, warning, danger]}
