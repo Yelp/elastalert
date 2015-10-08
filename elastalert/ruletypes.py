@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 import datetime
-from collections import deque
 
+from blist import sortedlist
 from elasticsearch.client import Elasticsearch
 from util import dt_to_ts
 from util import EAException
+from util import elastalert_logger
 from util import format_index
 from util import hashable
 from util import lookup_es_key
 from util import pretty_ts
 from util import ts_now
 from util import ts_to_dt
-from util import elastalert_logger
 
 
 class RuleType(object):
@@ -244,26 +244,23 @@ class EventWindow(object):
         self.timeframe = timeframe
         self.onRemoved = onRemoved
         self.get_ts = getTimestamp
-        self.data = deque()
+        self.data = sortedlist(key=self.get_ts)
         self.running_count = 0
 
     def clear(self):
-        self.data = deque()
+        self.data = sortedlist(key=self.get_ts)
         self.running_count = 0
 
     def append(self, event):
         """ Add an event to the window. Event should be of the form (dict, count).
         This will also pop the oldest events and call onRemoved on them until the
         window size is less than timeframe. """
-        # If the event occurred before our 'latest' event
-        if len(self.data) and self.get_ts(self.data[-1]) > self.get_ts(event):
-            self.append_middle(event)
-        else:
-            self.data.append(event)
-            self.running_count += event[1]
+        self.data.add(event)
+        self.running_count += event[1]
 
         while self.duration() >= self.timeframe:
-            oldest = self.data.popleft()
+            oldest = self.data[0]
+            self.data.remove(oldest)
             self.running_count -= oldest[1]
             self.onRemoved and self.onRemoved(oldest)
 
