@@ -35,7 +35,7 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 - "Match when a never before seen term appears in a field" (``new_term`` type)
 - "Match when the number of unique values for a field is above or below a threshold (``cardinality`` type)
 
-Currently, we have support built in for six alert types:
+Currently, we have support built in for the following alert types:
 
 - Email
 - JIRA
@@ -43,6 +43,7 @@ Currently, we have support built in for six alert types:
 - Commands
 - HipChat
 - Slack
+- AWS SNS
 
 Additional rule types and alerts can be easily imported or written.
 
