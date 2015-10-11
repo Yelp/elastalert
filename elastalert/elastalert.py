@@ -28,6 +28,7 @@ from util import format_index
 from util import lookup_es_key
 from util import pretty_ts
 from util import seconds
+from util import total_seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
@@ -488,7 +489,7 @@ class ElastAlerter():
 
         # Run the rule. If querying over a large time period, split it up into segments
         self.num_hits = 0
-        segment_size = self.get_segment_size(rule)
+        segment_size = self.get_segment_size(rule) + datetime.timedelta(seconds=1)
 
         while endtime - rule['starttime'] > segment_size:
             tmp_endtime = rule['starttime'] + segment_size
@@ -667,7 +668,7 @@ class ElastAlerter():
                 continue
 
             # Wait before querying again
-            sleep_duration = (next_run - datetime.datetime.utcnow()).seconds
+            sleep_duration = total_seconds(next_run - datetime.datetime.utcnow())
             self.sleep_for(sleep_duration)
 
     def run_all_rules(self):
