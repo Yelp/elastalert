@@ -176,7 +176,7 @@ class ElastAlerter():
             return index
 
     @staticmethod
-    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts):
+    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False):
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
@@ -194,7 +194,7 @@ class ElastAlerter():
             query['filter']['bool']['must'].append({'range': {timestamp_field: {'gt': starttime,
                                                                                 'lte': endtime}}})
         if sort:
-            query['sort'] = [{timestamp_field: {'order': 'asc'}}]
+            query['sort'] = [{timestamp_field: {'order': 'desc' if desc else 'asc'}}]
         return query
 
     def get_terms_query(self, query, size, field):
