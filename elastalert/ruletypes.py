@@ -621,11 +621,11 @@ class CardinalityRule(RuleType):
         lt = self.rules.get('use_local_time')
         starttime = pretty_ts(dt_to_ts(ts_to_dt(match[self.ts_field]) - self.rules['timeframe']), lt)
         endtime = pretty_ts(match[self.ts_field], lt)
-	if 'max_cardinality' in self.rules:
+        if 'max_cardinality' in self.rules:
             message = ('A maximum of %d unique %s(s) occurred since last alert or between %s and %s\n\n' % (self.rules['max_cardinality'],
                                                                                                             self.rules['cardinality_field'],
                                                                                                             starttime, endtime))
-	else:
+        else:
             message = ('Less than %d unique %s(s) occurred since last alert or between %s and %s\n\n' % (self.rules['min_cardinality'],
                                                                                                          self.rules['cardinality_field'],
                                                                                                          starttime, endtime))
