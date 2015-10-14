@@ -3,6 +3,7 @@ import datetime
 import hashlib
 import logging
 import os
+import copy
 
 import alerts
 import enhancements
@@ -233,13 +234,14 @@ def load_modules(rule, args=None):
     if type(rule['alert']) != list:
         rule['alert'] = [rule['alert']]
     for alert in rule['alert']:
-        if alert in alerts_mapping:
+        if type(alert) == str and alert in alerts_mapping:
             rule_alerts.append(alerts_mapping[alert])
+        elif type(alert) == dict and alert.keys()[0] in alerts_mapping:
+            rule_alerts.append(alerts_mapping[alert.keys()[0]])
         else:
             rule_alerts.append(get_module(alert))
             if not issubclass(rule_alerts[-1], alerts.Alerter):
                 raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
-        rule['alert'] = rule_alerts
 
     # Convert rule type into RuleType object
     if rule['type'] in rules_mapping:
@@ -251,7 +253,7 @@ def load_modules(rule, args=None):
 
     # Make sure we have required alert and type options
     reqs = rule['type'].required_options
-    for alert in rule['alert']:
+    for alert in rule_alerts:
         reqs = reqs.union(alert.required_options)
     if reqs - frozenset(rule.keys()):
         raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(rule.keys()))))
@@ -262,7 +264,17 @@ def load_modules(rule, args=None):
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
     # Instantiate alert
     try:
-        rule['alert'] = [alert(rule) for alert in rule['alert']]
+        copied_alerts = copy.copy(rule['alert'])
+        rule['alert'] = []
+        for alert in copied_alerts:
+            if type(alert) == dict:  # For inline alert configs
+                for i, alert_conf in enumerate(alert.items()):
+                    copied_conf = copy.copy(rule)
+                    copied_conf.update(alert_conf[1])
+                    rule['alert'].append(rule_alerts[i](copied_conf))
+            else:
+                rule['alert'] = [alert(rule) for alert in rule_alerts]
+
     except (KeyError, EAException) as e:
         raise EAException('Error initiating alert %s: %s' % (rule['alert'], e))
 
