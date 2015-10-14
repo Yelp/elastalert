@@ -68,14 +68,17 @@ def test_import_rules():
         assert mock_import.call_args_list[0][0][0] == 'testing2.test2'
         assert mock_import.call_args_list[0][0][3] == ['Alerter']
 
+
 def test_load_inline_alert_rule():
     test_rule_copy = copy.deepcopy(test_rule)
     test_rule_copy['alert'] = [
-        {'email': {
+        {
+            'email': {
                 'email': 'foo@bar.baz'
             }
         },
-        {'email': {
+        {
+            'email': {
                 'email': 'baz@foo.bar'
             }
         }
@@ -88,6 +91,7 @@ def test_load_inline_alert_rule():
         assert isinstance(test_rule_copy['alert'][1], elastalert.alerts.EmailAlerter)
         assert 'foo@bar.baz' in test_rule_copy['alert'][0].rule['email']
         assert 'baz@foo.bar' in test_rule_copy['alert'][1].rule['email']
+
 
 def test_load_rules():
     test_rule_copy = copy.deepcopy(test_rule)
