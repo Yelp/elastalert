@@ -68,7 +68,7 @@ Now, in a file named ``my_alerts.py``, add
 
 .. code-block:: python
 
-    from elastalert.alerts import Alerter, basic_match_string
+    from elastalert.alerts import Alerter, BasicMatchString
 
     class AwesomeNewAlerter(Alerter):
 
@@ -91,7 +91,7 @@ Now, in a file named ``my_alerts.py``, add
                     
                     # basic_match_string will transform the match into the default
                     # human readable string format
-                    match_string = basic_match_string(self.rule, match)
+                    match_string = str(BasicMatchString(self.rule, match))
                     
                     output_file.write(match_string)
 
