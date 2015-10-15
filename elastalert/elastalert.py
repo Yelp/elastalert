@@ -1261,11 +1261,10 @@ class ElastAlerter():
         return timestamp + wait, exponent
 
 
-def handle_signal(signal, frame):                                                                                                                                                                             
-    elastalert_logger.info('SIGINT received, stopping ElastAlert...')                                                                                                                                         
-    # use os._exit to exit inmediately and avoid someone catching                                                                                                                                             
-    # SystemExit                                                                                                                                                                                              
-    os._exit(0)   
+def handle_signal(signal, frame):
+    elastalert_logger.info('SIGINT received, stopping ElastAlert...')
+    # use os._exit to exit immediately and avoid someone catching SystemExit
+    os._exit(0)
 
 
 if __name__ == '__main__':
