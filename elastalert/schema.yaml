@@ -117,7 +117,6 @@ properties:
   es_port: {type: integer}
   index: {type: string}
   name: {type: string}
-  alert: {type: string}
 
   use_ssl: {type: boolean}
   es_username: {type: string}
@@ -149,9 +148,7 @@ properties:
   query_key: *arrayOfString
 
   # Alerts
-  alert: *arrayOfString
-  alert_subject: {type: string} # Python format string
-  alert_subject_args: {type: array, items: {type: string}}
+  alert: {type: array, items: {type: object}}
 
   # Alert Content
   alert_text: {type: string} # Python format string
