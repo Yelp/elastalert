@@ -256,15 +256,16 @@ def test_irc():
             'timestamp_field': '@timestamp', 'irc_server': 'test.server.com',
             'irc_port': 1234, 'irc_channel': '#test', 'irc_password': 'password',
             'irc_realname': '~realname'}
-    with mock.patch('elastalert.ircalert.IRCAlert') as mock_irc:
-        mock_irc.return_value = mock.Mock()
+    with mock.patch('irc.client.Reactor.server().connect') as mock_irc:
 
         alert = IRCAlerter(rule)
         alert.alert([{'test_term': 'test_value'}])
         alert.alert([{'@timestamp': '2014-10-31T00:00:00'}])
-        print("mock_post: {0}".format(mock_irc._mock_call_args_list))
+        print("mock_irc: {0}".format(mock_irc._mock_call_args_list))
         mcal = mock_irc._mock_call_args_list
         print('mcal: {0}'.format(mcal[0]))
+
+        assert mock_irc.called
 
         assert mcal[0][1]['irc_server'] == 'test.server.com'
         assert mcal[0][1]['irc_port'] == 1234
@@ -273,8 +274,6 @@ def test_irc():
         assert mcal[0][1]['irc_realname'] == '~realname'
         assert mcal[0][1]['botnick'] == 'alertbot'
         assert mcal[0][1]['irc_channel'] == '#test'
-
-        assert mock_irc.called
 
 
 def test_opsgenie_basic():
