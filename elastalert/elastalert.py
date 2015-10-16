@@ -6,6 +6,8 @@ import logging
 import sys
 import time
 import traceback
+import os
+import signal
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
@@ -1259,7 +1261,14 @@ class ElastAlerter():
         return timestamp + wait, exponent
 
 
+def handle_signal(signal, frame):
+    elastalert_logger.info('SIGINT received, stopping ElastAlert...')
+    # use os._exit to exit immediately and avoid someone catching SystemExit
+    os._exit(0)
+
+
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, handle_signal)
     client = ElastAlerter(sys.argv[1:])
     if not client.args.silence:
         client.start()
