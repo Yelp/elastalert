@@ -10,6 +10,7 @@ import jsonschema
 import ruletypes
 import yaml
 import yaml.scanner
+from ircalert import IRCAlerter
 from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
 from util import dt_to_ts
@@ -42,7 +43,7 @@ rules_mapping = {
 
 # Used to map names of alerts to their classes
 alerts_mapping = {
-    'irc': alerts.IRCAlerter,
+    'irc': IRCAlerter,
     'email': alerts.EmailAlerter,
     'jira': alerts.JiraAlerter,
     'opsgenie': OpsGenieAlerter,

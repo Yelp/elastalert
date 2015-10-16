@@ -10,7 +10,6 @@ from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
 
-import IRCAlert
 import simplejson
 from jira.client import JIRA
 from jira.exceptions import JIRAError
@@ -149,62 +148,6 @@ class Alerter(object):
             raise EAException('Account file must have user and password fields')
         self.user = account_conf['user']
         self.password = account_conf['password']
-
-
-class IRCAlerter(Alerter):
-    required_options = frozenset(['irc_server', 'irc_port', 'irc_channel', 'irc_password', 'irc_realname'])
-
-    def __init__(self, *args):
-        super(IRCAlerter, self).__init__(*args)
-        self.server = self.rule['irc_server']
-        self.port = self.rule['irc_port']
-        self.channel = self.rule['irc_channel']
-        self.password = self.rule['irc_password']
-        self.realname = self.rule['irc_realname']
-        try:
-            irc = IRCAlert(server, port, channel, password, realname)
-            logging.info("Attempting to create a new IRC object on %s" % server)
-            c = irc.connection
-            status = c.is_connected()
-            if irc:
-                if status:
-                    logging.info("Connected to IRC channel %s" % self.channel)
-                else:
-                    c.reconnect(self)
-                    logging.info("Tried to reconnect; connected = %s" % status)
-            else:
-                c.close(self)
-                logging.warning("Could not connect to IRC")
-        except:
-            logging.warning("Could not connect to IRC")
-
-    def alert(self, matches):
-        msg = ''
-        for match in matches:
-            msg += str(BasicMatchString(self.rule, match))
-
-        if 'includes' in self.rule:
-            msg = self.msg
-            inc = matches[0].get(self.rule['includes'])
-            if inc:
-                msg += '\n %s \n' % (inc)
-                logging.info("Including in message: %s" % msg)
-            return msg
-
-        if self.password is not None and 'irc_password' in self.pipeline:
-            self.rule['irc_password'] = self.password
-        else:
-            password = 'None'
-
-        try:
-            c = irc.connection
-            msg = self.msg
-            send = irc.send_message(c, msg)
-        except:
-            logging.info("Could not send message, %s" % msg)
-
-    def get_info(self):
-        return {'type': 'irc'}
 
 
 class DebugAlerter(Alerter):
