@@ -18,26 +18,28 @@ class IRCAlerter(Alerter):
         self.server = self.rule['irc_server']
         self.port = self.rule['irc_port']
         self.channel = self.rule['irc_channel']
-        self.realname = self.rule['irc_realname']
-        if self.password is not None and 'irc_password' in self.pipeline:
-            self.rule['irc_password'] = self.password
-        else:
+        self.username = self.rule['irc_realname']
+        try:
+            self.password = self.rule['irc_password']
+        except:
             self.password = 'None'
         self.botnick = 'alertbot'
+        self.body = ''
         self.reactor = irc.client.Reactor()
         self.ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
-        self.start()
     getattr(logging, 'DEBUG')
     logging.basicConfig(level=logging.DEBUG)
 
     def on_connect(self, connection, event):
+        reactor = self.reactor
         channel = self.channel
         if irc.client.is_channel(channel):
             connection.join(channel)
+            reactor.process_data()
 
     def on_join(self, connection, event):
         channel = self.channel
-        message = self.msg
+        message = self.body
         reactor = self.reactor
         if irc.client.is_channel(channel):
             connection.privmsg(channel, message)
@@ -45,28 +47,25 @@ class IRCAlerter(Alerter):
             logging.info("Message %s passed to IRC channel" % message)
         else:
             connection.reconnect(self)
-            self.send_message()
+            self.alert()
             logging.info("Reconnected; tried to send message again.")
-        reactor.process_forever()
+        reactor.process_data()
+
+    def on_privmsg(self, connection, event):
+        channel = self.channel
+        reactor = self.reactor
+        if irc.client.is_channel(channel):
+            connection.disconnect_all(message="I'm out, good luck!")
+            reactor.process_data()
 
     def alert(self, matches):
-        msg = ''
+        body = self.body
         for match in matches:
-            msg += str(BasicMatchString(self.rule, match))
+            body += str(BasicMatchString(self.rule, match))
             if len(matches) > 1:
-                msg += '\n----------------------------------------\n'
-
-        if 'includes' in self.rule:
-            msg = self.msg
-            inc = matches[0].get(self.rule['includes'])
-            if inc:
-                msg += '\n %s \n' % (inc)
-                logging.info("Including in message: %s" % msg)
-                print msg
-
+                body += '\n----------------------------------------\n'
         while True:
             reactor = self.reactor
-            status = self.status
             try:
                 c = reactor.server().connect(
                     self.server,
@@ -78,19 +77,18 @@ class IRCAlerter(Alerter):
                 )
                 c.add_global_handler("welcome", self.on_connect)
                 c.add_global_handler("join", self.on_join)
+                c.add_global_handler("privmsg", self.on_privmsg)
                 status = c.is_connected()
                 if status is True:
                     logging.info("Connected to IRC: %s" % status)
                 else:
                     logging.warning("WARNING: Not connected to IRC")
                 print "Connected to IRC? %s" % status
-                reactor.process_forever()
-                logging.info("Running process_forever")
             except Exception as err:
                 raise EAException("Error sending alert: {0}".format(err))
                 print(sys.exc_info()[1])
-                raise SystemExit(1)
                 logging.warning("Raised EAException: %s" % err)
+            reactor.process_data()
 
     def get_info(self):
         return {'type': 'irc'}

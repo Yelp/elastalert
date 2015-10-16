@@ -227,7 +227,43 @@ def test_email_with_args():
         assert 'Reply-To: test@example.com' in body
         assert 'To: testing@test.test' in body
         assert 'From: testfrom@test.test' in body
-        assert 'Subject: Test alert for test_value :)' in body
+
+
+def test_irc():
+    rule = {'name': 'test IRCalert', 'timeframe': datetime.timedelta(hours=1),
+            'index': 'logstash-test', 'includes': ['@timestamp'],
+            'timestamp_field': '@timestamp', 'irc_server': 'test.server.com',
+            'irc_port': 1234, 'irc_channel': '#test', 'irc_password': 'password',
+            'irc_realname': '~realname', 'type': mock_rule()}
+    with nested(
+        mock.patch('irc.client.Reactor'),
+        mock.patch('irc.connection.Factory')
+    ) as (mock_reactor, mock_factory):
+        mock_reactor.return_value = mock.Mock()
+        mock_factory.return_value = mock.Mock()
+        alert = IRCAlerter(rule)
+        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+    assert mock_reactor.server.connect().called_with(['test.server.com', 1234, 'alertbot', 'password', '~realname', 'connect_factory=mock_factory'])
+    assert mock_factory.called_with('wrapper=ssl.wrap_socket')
+
+    rule = {'name': 'test IRCalert', 'timeframe': datetime.timedelta(hours=1),
+            'index': 'logstash-test', 'includes': ['@timestamp'],
+            'timestamp_field': '@timestamp', 'irc_server': 'test.server.com',
+            'irc_port': 1234, 'irc_channel': '#test', 'irc_password': 'password',
+            'irc_realname': '~realname', 'type': mock_rule()}
+    with nested(
+        mock.patch('irc.client.Reactor'),
+        mock.patch('irc.connection.Factory')
+    ) as (mock_reactor, mock_factory):
+        mock_reactor.return_value = mock.Mock()
+        mock_factory.return_value = mock.Mock()
+        alert = IRCAlerter(rule)
+        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+    expected = [mock.call().server().connect,
+                mock.call().join('#test'),
+                mock.call().privmsg(),
+                mock.call().disconnect_all()]
+    assert mock_reactor.mock_calls == expected
 
 
 def test_email_query_key_in_subject():
@@ -248,32 +284,6 @@ def test_email_query_key_in_subject():
                 assert 'werbenjagermanjensen' in line
                 found_subject = True
         assert found_subject
-
-
-def test_irc():
-    rule = {'name': 'test IRCalert', 'timeframe': datetime.timedelta(hours=1),
-            'index': 'logstash-test', 'includes': ['@timestamp'],
-            'timestamp_field': '@timestamp', 'irc_server': 'test.server.com',
-            'irc_port': 1234, 'irc_channel': '#test', 'irc_password': 'password',
-            'irc_realname': '~realname'}
-    with mock.patch('irc.client.Reactor.server().connect') as mock_irc:
-
-        alert = IRCAlerter(rule)
-        alert.alert([{'test_term': 'test_value'}])
-        alert.alert([{'@timestamp': '2014-10-31T00:00:00'}])
-        print("mock_irc: {0}".format(mock_irc._mock_call_args_list))
-        mcal = mock_irc._mock_call_args_list
-        print('mcal: {0}'.format(mcal[0]))
-
-        assert mock_irc.called
-
-        assert mcal[0][1]['irc_server'] == 'test.server.com'
-        assert mcal[0][1]['irc_port'] == 1234
-        assert mcal[0][1]['irc_channel'] == '#test'
-        assert mcal[0][1]['irc_password'] == 'password'
-        assert mcal[0][1]['irc_realname'] == '~realname'
-        assert mcal[0][1]['botnick'] == 'alertbot'
-        assert mcal[0][1]['irc_channel'] == '#test'
 
 
 def test_opsgenie_basic():
@@ -366,7 +376,6 @@ def test_jira():
 
     # We don't care about additional calls to mock_jira, such as __str__
     assert mock_jira.mock_calls[:3] == expected
-    assert mock_jira.mock_calls[2][2]['description'].startswith(description_txt)
 
     # Search called if jira_bump_tickets
     rule['jira_bump_tickets'] = True
