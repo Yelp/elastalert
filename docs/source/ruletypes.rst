@@ -13,71 +13,73 @@ Rule Configuration Cheat Sheet
 ==============================
 
 
-+----------------------------------------------------------------+
-|              FOR ALL RULES                                     |
-+====================================================+===========+
-| ``es_host`` (string)                               |  Required |
-+----------------------------------------------------+           |
-| ``es_port`` (number)                               |           |
-+----------------------------------------------------+           |
-| ``index`` (string)                                 |           |
-+----------------------------------------------------+           |
-| ``name`` (string)                                  |           |
-+----------------------------------------------------+           |
-| ``type`` (string)                                  |           |
-+----------------------------------------------------+           |
-| ``alert`` (string or list)                         |           |
-+----------------------------------------------------+-----------+
-| ``use_strftime_index`` (boolean, default False)    |  Optional |
-+----------------------------------------------------+           |
-| ``use_ssl`` (boolean, default False)               |           |
-+----------------------------------------------------+           |
-| ``es_username`` (string, no default)               |           |
-+----------------------------------------------------+           |
-| ``es_password`` (string, no default)               |           |
-+----------------------------------------------------+           |
-| ``aggregation`` (time, no default)                 |           |
-+----------------------------------------------------+           |
-| ``generate_kibana_link`` (boolean, default False)  |           |
-+----------------------------------------------------+           |
-|``use_kibana_dashboard`` (string, no default)       |           |
-+----------------------------------------------------+           |
-|``kibana_url`` (string, default from es_host)       |           |
-+----------------------------------------------------+           |
-|``use_kibana4_dashboard`` (string, no default)      |           |
-+----------------------------------------------------+           |
-|``kibana4_start_timedelta`` (time, default: 10 min) |           |
-+----------------------------------------------------+           |
-|``kibana4_end_timedelta`` (time, default: 10 min)   |           |
-+----------------------------------------------------+           |
-|``use_local_time`` (boolean, default True)          |           |
-+----------------------------------------------------+           |
-| ``realert`` (time, default: 1 min)                 |           |
-+----------------------------------------------------+           |
-|``exponential_realert`` (time, no default)          |           |
-+----------------------------------------------------+           |
-|``match_enhancements`` (list of strs, no default)   |           |
-+----------------------------------------------------+           |
-| ``top_count_number`` (int, default 5)              |           |
-+----------------------------------------------------+           |
-| ``top_count_keys`` (list of strs)                  |           |
-+----------------------------------------------------+           |
-|``raw_count_keys`` (boolean, default True)          |           |
-+----------------------------------------------------+           |
-| ``include`` (list of strs, default ["*"])          |           |
-+----------------------------------------------------+           |
-| ``filter`` (ES filter DSL, no default)             |           |
-+----------------------------------------------------+           |
-| ``max_query_size`` (int, default 100k)             |           |
-+----------------------------------------------------+           |
-| ``query_delay`` (time, default 0 min)              |           |
-+----------------------------------------------------+           |
-| ``buffer_time`` (time, default from config.yaml)   |           |
-+----------------------------------------------------+           +
-| ``timestamp_type`` (string, default iso)           |           |
-+----------------------------------------------------+           |
-| ``_source_enabled`` (boolean, default True)        |           |
-+----------------------------------------------------+-----------+
++--------------------------------------------------------------------------+
+|              FOR ALL RULES                                               |
++==============================================================+===========+
+| ``es_host`` (string)                                         |  Required |
++--------------------------------------------------------------+           |
+| ``es_port`` (number)                                         |           |
++--------------------------------------------------------------+           |
+| ``index`` (string)                                           |           |
++--------------------------------------------------------------+           |
+| ``name`` (string)                                            |           |
++--------------------------------------------------------------+           |
+| ``type`` (string)                                            |           |
++--------------------------------------------------------------+           |
+| ``alert`` (string or list)                                   |           |
++--------------------------------------------------------------+-----------+
+| ``use_strftime_index`` (boolean, default False)              |  Optional |
++--------------------------------------------------------------+           |
+| ``use_ssl`` (boolean, default False)                         |           |
++--------------------------------------------------------------+           |
+| ``es_username`` (string, no default)                         |           |
++--------------------------------------------------------------+           |
+| ``es_password`` (string, no default)                         |           |
++--------------------------------------------------------------+           |
+| ``aggregation`` (time, no default)                           |           |
++--------------------------------------------------------------+           |
+| ``generate_kibana_link`` (boolean, default False)            |           |
++--------------------------------------------------------------+           |
+|``use_kibana_dashboard`` (string, no default)                 |           |
++--------------------------------------------------------------+           |
+|``kibana_url`` (string, default from es_host)                 |           |
++--------------------------------------------------------------+           |
+|``use_kibana4_dashboard`` (string, no default)                |           |
++--------------------------------------------------------------+           |
+|``kibana4_start_timedelta`` (time, default: 10 min)           |           |
++--------------------------------------------------------------+           |
+|``kibana4_end_timedelta`` (time, default: 10 min)             |           |
++--------------------------------------------------------------+           |
+|``use_local_time`` (boolean, default True)                    |           |
++--------------------------------------------------------------+           |
+| ``realert`` (time, default: 1 min)                           |           |
++--------------------------------------------------------------+           |
+|``exponential_realert`` (time, no default)                    |           |
++--------------------------------------------------------------+           |
+|``match_enhancements`` (list of strs, no default)             |           |
++--------------------------------------------------------------+           |
+| ``top_count_number`` (int, default 5)                        |           |
++--------------------------------------------------------------+           |
+| ``top_count_keys`` (list of strs)                            |           |
++--------------------------------------------------------------+           |
+|``raw_count_keys`` (boolean, default True)                    |           |
++--------------------------------------------------------------+           |
+| ``include`` (list of strs, default ["*"])                    |           |
++--------------------------------------------------------------+           |
+| ``filter`` (ES filter DSL, no default)                       |           |
++--------------------------------------------------------------+           |
+| ``max_query_size`` (int, default 100k)                       |           |
++--------------------------------------------------------------+           |
+| ``query_delay`` (time, default 0 min)                        |           |
++--------------------------------------------------------------+           |
+| ``buffer_time`` (time, default from config.yaml)             |           |
+|                                                              |           |
+| IGNORED IF ``use_count_query`` or ``use_terms_query`` is true|           |
++--------------------------------------------------------------+           +
+| ``timestamp_type`` (string, default iso)                     |           |
++--------------------------------------------------------------+           |
+| ``_source_enabled`` (boolean, default True)                  |           |
++--------------------------------------------------------------+-----------+
 
 | 
 
@@ -251,7 +253,8 @@ one that occurred at 1:05) would not change ``realert``. (Optional, time, no def
 buffer_time
 ^^^^^^^^^^^
 
-``buffer_time``: This options allows the rule to override the ``buffer_time`` global setting defined in config.yaml. (Optional, time)
+``buffer_time``: This options allows the rule to override the ``buffer_time`` global setting defined in config.yaml. This value is ignored if
+``use_count_query`` or ``use_terms_query`` is true. (Optional, time)
 
 query_delay
 ^^^^^^^^^^^
@@ -1016,6 +1019,58 @@ The OpsGenie alert requires three options:
 ``opsgenie_account``: The OpsGenie account to integrate with.
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
+
+SNS
+~~~
+
+The SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters. The SNS alerter
+uses boto and can use credentials in the rule yaml or in a standard boto credential file. 
+See http://boto.readthedocs.org/en/latest/boto_config_tut.html#details for details.
+
+SNS requires one option:
+
+``sns_topic_arn``: The SNS topic's ARN. For example, ``arn:aws:sns:us-east-1:123456789:somesnstopic``
+
+Optional:
+
+``aws_access_key``: An access key to connect to SNS with.
+
+``aws_secret_key``: The secret key associated with the access key.
+
+``aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
+
+HipChat
+~~~~~~~
+
+HipChat alerter will send a notification to a predefined HipChat room. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following two options:
+
+``hipchat_auth_token``: The randomly generated notification token created by HipChat. Go to https://XXXXX.hipchat.com/account/api and use
+'Create new token' section, choosing 'Send notification' in Scopes list.
+
+``hipchat_room_id``: The id associated with the HipChat room you want to send the alert to. Go to https://XXXXX.hipchat.com/rooms and choose
+the room you want to post to. The room ID will be the numeric part of the URL.
+
+Slack
+~~~~~
+
+Slack alerter will send a notification to a predefined Slack channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following option:
+
+``slack_webhook_url``: The webhook URL that includes your auth data and the ID of the channel (room) you want to post to. Go to the Incoming Webhooks
+section in your Slack account https://XXXXX.slack.com/services/new/incoming-webhook , choose the channel, click 'Add Incoming Webhooks Integration'
+and copy the resulting URL.
+
+Optional:
+
+``slack_username_override``: By default Slack will use your username when posting to the channel. Use this option to change it (free text).
+
+``slack_emoji_override``: By default Elastalert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
+Elastalert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
+
+``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
 
 Debug
 ~~~~~~

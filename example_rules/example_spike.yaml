@@ -30,7 +30,7 @@ index: logstash-*
 
 # (Required, spike specific)
 # The minimum number of events to be used as a baseline
-# For example, if there are only 2 eventss between 12:00 and 2:00, and 20 between 2:00 and 4:00
+# For example, if there are only 2 events between 12:00 and 2:00, and 20 between 2:00 and 4:00
 # This rule will ignore that 'spike', because the reference window did not meet the threshold of 5
 threshold: 5
 

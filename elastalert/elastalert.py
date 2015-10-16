@@ -70,7 +70,8 @@ class ElastAlerter():
             self.verbose = True
 
         if self.verbose:
-            logging.getLogger().setLevel(logging.INFO)
+            elastalert_logger.setLevel(logging.INFO)
+            elastalert_logger.addHandler(logging.StreamHandler(sys.stdout))
 
         if not self.args.es_debug:
             logging.getLogger('elasticsearch').setLevel(logging.WARNING)
@@ -88,7 +89,7 @@ class ElastAlerter():
         self.alert_time_limit = self.conf['alert_time_limit']
         self.old_query_limit = self.conf['old_query_limit']
         self.disable_rules_on_error = self.conf['disable_rules_on_error']
-        self.notify_email = self.conf.get('notify_email')
+        self.notify_email = self.conf.get('notify_email', [])
         self.from_addr = self.conf.get('from_addr', 'ElastAlert')
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
@@ -175,7 +176,7 @@ class ElastAlerter():
             return index
 
     @staticmethod
-    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts):
+    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False):
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
@@ -193,7 +194,7 @@ class ElastAlerter():
             query['filter']['bool']['must'].append({'range': {timestamp_field: {'gt': starttime,
                                                                                 'lte': endtime}}})
         if sort:
-            query['sort'] = [{timestamp_field: {'order': 'asc'}}]
+            query['sort'] = [{timestamp_field: {'order': 'desc' if desc else 'asc'}}]
         return query
 
     def get_terms_query(self, query, size, field):
@@ -511,7 +512,7 @@ class ElastAlerter():
             # concatenate query_key (or none) with rule_name to form silence_cache key
             if 'query_key' in rule:
                 try:
-                    key = '.' + str(match[rule['query_key']])
+                    key = '.' + str(lookup_es_key(match, rule['query_key']))
                 except KeyError:
                     # Some matches may not have a query key
                     # Use a special token for these to not clobber all alerts
@@ -577,6 +578,7 @@ class ElastAlerter():
 
         copy_properties = ['agg_matches',
                            'current_aggregate_id',
+                           'aggregate_alert_time',
                            'processed_hits',
                            'starttime',
                            'minimum_starttime']
@@ -1057,7 +1059,8 @@ class ElastAlerter():
 
     def add_aggregated_alert(self, match, rule):
         """ Save a match as a pending aggregate alert to elasticsearch. """
-        if not rule['current_aggregate_id'] or rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]):
+        if (not rule['current_aggregate_id'] or
+                ('aggregate_alert_time' in rule and rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]))):
             # First match, set alert_time
             match_time = ts_to_dt(match[rule['timestamp_field']])
             alert_time = match_time + rule['aggregation']
@@ -1195,8 +1198,11 @@ class ElastAlerter():
         email = MIMEText(email_body)
         email['Subject'] = subject if subject else 'ElastAlert notification'
         recipients = self.notify_email
-        if rule and rule.get('notify_email') and not rule['notify_email'] in self.notify_email:
-            recipients.append(rule['notify_email'])
+        if rule and rule.get('notify_email'):
+            if isinstance(rule['notify_email'], basestring):
+                rule['notify_email'] = [rule['notify_email']]
+            recipients = recipients + rule['notify_email']
+        recipients = list(set(recipients))
         email['To'] = ', '.join(recipients)
         email['From'] = self.from_addr
         email['Reply-To'] = self.conf.get('email_reply_to', email['To'])

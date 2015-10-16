@@ -444,6 +444,25 @@ def test_realert_with_query_key(ea):
     assert ea.rules[0]['alert'][0].alert.call_count == 4
 
 
+def test_realert_with_nested_query_key(ea):
+    ea.rules[0]['query_key'] = 'user.name'
+    ea.rules[0]['realert'] = datetime.timedelta(minutes=10)
+
+    # Alert and silence username: qlo
+    match = [{'@timestamp': '2014-11-17T00:00:00', 'user': {'name': 'qlo'}}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 1
+
+    # Dont alert again for same username
+    match = [{'@timestamp': '2014-11-17T00:05:00', 'user': {'name': 'qlo'}}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 1
+
+
 def test_count(ea):
     ea.rules[0]['use_count_query'] = True
     ea.rules[0]['doc_type'] = 'doctype'
@@ -774,6 +793,32 @@ def test_stop(ea):
             assert not ea.running
             assert not start_thread.is_alive()
             assert mock_run.call_count == 4
+
+
+def test_notify_email(ea):
+    mock_smtp = mock.Mock()
+    ea.rules[0]['notify_email'] = ['foo@foo.foo', 'bar@bar.bar']
+    with mock.patch('elastalert.elastalert.SMTP') as mock_smtp_f:
+        mock_smtp_f.return_value = mock_smtp
+
+        # Notify_email from rules, array
+        ea.send_notification_email('omg', rule=ea.rules[0])
+        assert set(mock_smtp.sendmail.call_args_list[0][0][1]) == set(ea.rules[0]['notify_email'])
+
+        # With ea.notify_email
+        ea.notify_email = ['baz@baz.baz']
+        ea.send_notification_email('omg', rule=ea.rules[0])
+        assert set(mock_smtp.sendmail.call_args_list[1][0][1]) == set(['baz@baz.baz'] + ea.rules[0]['notify_email'])
+
+        # With ea.notify email but as single string
+        ea.rules[0]['notify_email'] = 'foo@foo.foo'
+        ea.send_notification_email('omg', rule=ea.rules[0])
+        assert set(mock_smtp.sendmail.call_args_list[2][0][1]) == set(['baz@baz.baz', 'foo@foo.foo'])
+
+        # None from rule
+        ea.rules[0].pop('notify_email')
+        ea.send_notification_email('omg', rule=ea.rules[0])
+        assert set(mock_smtp.sendmail.call_args_list[3][0][1]) == set(['baz@baz.baz'])
 
 
 def test_uncaught_exceptions(ea):

@@ -93,8 +93,8 @@ ElastAlert has a global configuration file, ``config.yaml``, which defines sever
 
 ``buffer_time``: ElastAlert will continuously query against a window from the present to ``buffer_time`` ago.
 This way, logs can be back filled up to a certain extent and ElastAlert will still process the events. This
-may be overridden by individual rules. Note that back filled data may not always trigger count based alerts
-as if it was queried in real time.
+may be overridden by individual rules. This option is ignored for rules where ``use_count_query`` or ``use_terms_query``
+ is set to true. Note that back filled data may not always trigger count based alerts as if it was queried in real time.
 
 ``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about its searches.
 When ElastAlert is started, it will query for information about the time that it was last run. This way,
