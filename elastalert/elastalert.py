@@ -1267,8 +1267,13 @@ def handle_signal(signal, frame):
     os._exit(0)
 
 
-if __name__ == '__main__':
+def main(args=None):
     signal.signal(signal.SIGINT, handle_signal)
-    client = ElastAlerter(sys.argv[1:])
+    if not args:
+        args = sys.argv[1:]
+    client = ElastAlerter(args)
     if not client.args.silence:
         client.start()
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))
