@@ -230,17 +230,22 @@ def load_modules(rule, args=None):
     rule['match_enhancements'] = match_enhancements
 
     # Convert all alerts into Alerter objects
-    rule_alerts = []
+    global_alerts = []
+    inline_alerts = []
     if type(rule['alert']) != list:
         rule['alert'] = [rule['alert']]
     for alert in rule['alert']:
-        if isinstance(alert, basestring) and alert in alerts_mapping:
-            rule_alerts.append(alerts_mapping[alert])
-        elif isinstance(alert, dict) and alert.keys()[0] in alerts_mapping:
-            rule_alerts.append(alerts_mapping[alert.keys()[0]])
-        else:
-            rule_alerts.append(get_module(alert.keys()[0] if isinstance(alert, dict) else alert))
-            if not issubclass(rule_alerts[-1], alerts.Alerter):
+        if isinstance(alert, basestring):
+            global_alerts.append(alerts_mapping[alert] if alert in alerts_mapping else get_module(alert))
+
+            if not issubclass(global_alerts[-1], alerts.Alerter):
+                raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
+
+        elif isinstance(alert, dict):
+            alert_name = alert.keys()[0]
+            inline_alerts.append((alert[alert_name], alerts_mapping[alert_name] if alert_name in alerts_mapping else get_module(alert_name)))
+
+            if not issubclass(inline_alerts[-1][1], alerts.Alerter):
                 raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
 
     # Convert rule type into RuleType object
@@ -265,22 +270,21 @@ def load_modules(rule, args=None):
     try:
         copied_alerts = copy.copy(rule['alert'])
         rule['alert'] = []
-        for alert in copied_alerts:
-            if isinstance(alert, dict):  # For inline alert configs
-                for i, alert_conf in enumerate(alert.items()):
-                    copied_conf = copy.copy(rule)
-                    rule_reqs = rule_alerts[i].required_options
-                    if rule_reqs - frozenset(alert_conf[1].keys()):
-                        raise EAException('Missing required option(s): %s' % (', '.join(rule_reqs - frozenset(rule.keys()))))
+        for (alert_config, alert) in inline_alerts:
+            copied_conf = copy.copy(rule)
+            rule_reqs = alert.required_options
+            if rule_reqs - frozenset(alert_config.keys()):
+                raise EAException('Missing required option(s): %s' % (', '.join(rule_reqs - frozenset(rule.keys()))))
 
-                    copied_conf.update(alert_conf[1])
-                    rule['alert'].append(rule_alerts[i](copied_conf))
+            copied_conf.update(alert_config)
+            rule['alert'].append(alert(copied_conf))
+
+        for alert in global_alerts:
+            reqs = reqs.union(alert.required_options)
+            if reqs - frozenset(rule.keys()):
+                raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(rule.keys()))))
             else:
-                reqs = reqs.union(alert.required_options)
-                if reqs - frozenset(rule.keys()):
-                    raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(rule.keys()))))
-                else:
-                    rule['alert'].append(alert(rule))
+                rule['alert'].append(alert(rule))
 
     except (KeyError, EAException) as e:
         raise EAException('Error initiating alert %s: %s' % (rule['alert'], e))
