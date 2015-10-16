@@ -168,6 +168,7 @@ class FrequencyRule(RuleType):
         super(FrequencyRule, self).__init__(*args)
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
         self.get_ts = lambda event: event[0][self.ts_field]
+        self.attach_all_events = self.rules.get('attach_all_events', False)
 
     def add_count_data(self, data):
         """ Add count data to the rule. Data should be of the form {ts: count}. """
@@ -208,6 +209,8 @@ class FrequencyRule(RuleType):
         # Match if, after removing old events, we hit num_events
         if self.occurrences[key].count() >= self.rules['num_events']:
             event = self.occurrences[key].data[-1][0]
+            if self.attach_all_events:
+                event['related_events'] = [data[0] for data in self.occurrences[key].data[:-1]]
             self.add_match(event)
             self.occurrences.pop(key)
 
