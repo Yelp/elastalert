@@ -268,7 +268,6 @@ def load_modules(rule, args=None):
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
     # Instantiate alert
     try:
-        copied_alerts = copy.copy(rule['alert'])
         rule['alert'] = []
         for (alert_config, alert) in inline_alerts:
             copied_conf = copy.copy(rule)
