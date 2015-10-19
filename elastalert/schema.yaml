@@ -61,6 +61,7 @@ oneOf:
       doc_type: {type: string}
       use_terms_query: {type: boolean}
       terms_size: {type: integer}
+      attach_related: {type: boolean}
 
   - title: Spike
     required: [spike_height, spike_type, timeframe]
