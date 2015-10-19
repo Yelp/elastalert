@@ -243,7 +243,12 @@ def load_modules(rule, args=None):
 
         elif isinstance(alert, dict):
             alert_name = alert.keys()[0]
-            inline_alerts.append((alert[alert_name], alerts_mapping[alert_name] if alert_name in alerts_mapping else get_module(alert_name)))
+
+            # Each Inline Alert is a tuple, in the form (alert_configuration, alert_class_object)
+            if alert_name in alerts_mapping:
+                inline_alerts.append((alert[alert_name], alerts_mapping[alert_name]))
+            else:
+                inline_alerts.append((alert[alert_name], get_module(alert_name)))
 
             if not issubclass(inline_alerts[-1][1], alerts.Alerter):
                 raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
