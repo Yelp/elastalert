@@ -100,6 +100,8 @@ Rule Configuration Cheat Sheet
 +----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``num_events`` (int, no default)                   |     |           |           |        |    Req    |       |          |        |           |
 +----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``attach_related`` (boolean, no default)           |     |           |           |        |    Opt    |       |          |        |           |
++----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 |``use_count_query`` (boolean, no default)           |     |           |           |        |     Opt   | Opt   | Opt      |        |           |
 |                                                    |     |           |           |        |           |       |          |        |           |
 |``doc_type`` (string, no default)                   |     |           |           |        |           |       |          |        |           |
@@ -588,6 +590,9 @@ default 50, unique terms.
 ``query_key``: Counts of documents will be stored independently for each value of ``query_key``. Only ``num_events`` documents,
 all with the same value of ``query_key``, will trigger an alert.
 
+
+``attach_related``: Will attach all the related events to the event that triggered the frequency alert. For example in an alert triggered with ``num_events``: 3,
+the 3rd event will trigger the alert on itself and add the other 2 events in a key named ``related_events`` that can be accessed in the alerter.
 
 Spike
 ~~~~~~
