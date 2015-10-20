@@ -207,7 +207,7 @@ class EmailAlerter(Alerter):
                 body += '\n----------------------------------------\n'
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
-            url = '%s/browse/%s' % (self.rule['jira_server'], self.pipeline['jira_ticket'])
+            url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
@@ -372,6 +372,7 @@ class JiraAlerter(Alerter):
                     self.comment_on_ticket(ticket, match)
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
+                    self.pipeline['jira_server'] = self.server
                 return
 
         description = self.description + '\n'
