@@ -6,10 +6,6 @@ definitions:
     type: [string, array]
     items: {type: string}
 
-  arrayOfObjects: &arrayOfObject
-    type: [string, array]
-    items: {type: object}
-
   timeFrame: &timeframe
     type: object
     additionalProperties: false
@@ -151,9 +147,6 @@ properties:
   use_local_time: {type: boolean}
   match_enhancements: {type: array, items: {type: string}}
   query_key: *arrayOfString
-
-  # Alerts
-  alert: *arrayOfObject
 
   # Alert Content
   alert_text: {type: string} # Python format string
