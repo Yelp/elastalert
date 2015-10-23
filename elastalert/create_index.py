@@ -65,13 +65,14 @@ def main():
                                                   'until': {'type': 'date', 'format': 'dateOptionalTime'}}}}
     ess_mapping = {'elastalert_status': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
-    es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'}, '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
+    es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
+                                                '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'match_body': {'enabled': False, 'type': 'object'},
                                                 'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
-
     past_mapping = {'past_elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
-                                                'match_body': {'enabled': False, 'type': 'object'}, '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
-                                                'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
+                                                       'match_body': {'enabled': False, 'type': 'object'},
+                                                       '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
+                                                       'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
     error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False}}}}
 
     index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
