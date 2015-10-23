@@ -65,8 +65,12 @@ def main():
                                                   'until': {'type': 'date', 'format': 'dateOptionalTime'}}}}
     ess_mapping = {'elastalert_status': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
-    es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
+    es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'}, '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'match_body': {'enabled': False, 'type': 'object'},
+                                                'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
+
+    past_mapping = {'past_elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
+                                                'match_body': {'enabled': False, 'type': 'object'}, '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
     error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False}}}}
 
@@ -88,6 +92,7 @@ def main():
     es.indices.put_mapping(index=index, doc_type='elastalert_status', body=ess_mapping)
     es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)
     es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping)
+    es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping)
     print('New index %s created' % (index))
 
     if res:
