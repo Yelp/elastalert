@@ -29,11 +29,16 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 - "Match on any event matching a given filter" (``any`` type)
 - "Match when a field has two different values within some time" (``change`` type)
 
-Currently, we have support built in for three alert types:
+Currently, we have support built in for these alert types:
 
+- Command
 - Email
 - JIRA
 - OpsGenie
+- SNS
+- HipChat
+- Slack
+- Debug
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
 
