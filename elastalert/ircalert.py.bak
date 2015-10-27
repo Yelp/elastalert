@@ -2,10 +2,14 @@
 import logging
 import socket
 import ssl
+import sys
 
 import irc
+from irc import client
+from irc import connection
 from alerts import Alerter
 from alerts import BasicMatchString
+from util import EAException
 
 
 class IRCAlerter(Alerter):
@@ -25,29 +29,28 @@ class IRCAlerter(Alerter):
         self.botnick = 'alertbot'
         self.body = ''
         self.reactor = irc.client.Reactor()
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket(self.s, ssl_version=ssl.PROTOCOL_SSLv3))
+        self.ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
     getattr(logging, 'DEBUG')
     logging.basicConfig(level=logging.DEBUG)
 
     def on_connect(self, connection, event):
         reactor = self.reactor
-        logging.debug("Recognized reactor object - (on_connect)")
+        logging.debug("Recognized reactor object")
         channel = self.channel
-        logging.debug("Recognized channel object - (on_connect)")
+        logging.debug("Recognized channel object")
         if irc.client.is_channel(channel):
             connection.join(channel)
             logging.debug("Joined channel- connection.join(channel)")
             reactor.process_data(self)
-            logging.debug("Running reactor.process_data() - in on_connect")
+            logging.debug("Running reactor.process_data()")
 
     def on_join(self, connection, event):
         channel = self.channel
-        logging.debug("Recognized channel - in on_join")
+        logging.debug("Recognized channel")
         message = self.body
-        logging.debug("Recognized self.body, renamed as message - in on_join")
+        logging.debug("Recognized self.body, renamed as message")
         reactor = self.reactor
-        logging.debug("Recognized reactor object - in on_join")
+        logging.debug("Recognized reactor object")
         if irc.client.is_channel(channel):
             connection.privmsg(channel, message)
             print "Alert message sent."
@@ -58,18 +61,18 @@ class IRCAlerter(Alerter):
             self.alert()
             logging.info("Reconnected; tried to send message again.")
         reactor.process_data()
-        logging.info("Running reactor.process_data() - in on_join")
+        logging.info("Running reactor.process_data()")
 
     def on_privmsg(self, connection, event):
         channel = self.channel
-        logging.debug("Recognized channel object - in on_privmsg")
+        logging.debug("Recognized channel object")
         reactor = self.reactor
-        logging.debug("Recognized reactor object - in on_privmsg")
+        logging.debug("Recognized reactor object")
         if irc.client.is_channel(channel):
             connection.disconnect_all(message="I'm out, good luck!")
             logging.debug("Disconnected from channel- connection.disconnect_all(message=..)")
             reactor.process_data()
-            logging.debug("Running reactor.process_data() - in on_privmsg")
+            logging.debug("Running reactor.process_data()")
 
     def alert(self, matches):
         body = self.body
@@ -88,7 +91,7 @@ class IRCAlerter(Alerter):
         print str(body)
         while True:
             reactor = self.reactor
-            logging.debug("Recognized reactor object - (alert True loop)")
+            logging.debug("Recognized reactor object")
             try:
                 print self.ssl_factory
                 c = reactor.server().connect(
@@ -110,6 +113,7 @@ class IRCAlerter(Alerter):
                     logging.info("Connected to IRC: %s" % status)
                 else:
                     logging.warning("WARNING: Not connected to IRC")
+                print "Connected to IRC? %s" % status
             except irc.client.ServerConnectionError as x:
                 print(x)
 

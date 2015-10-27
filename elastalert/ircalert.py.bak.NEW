@@ -2,10 +2,17 @@
 import logging
 import socket
 import ssl
+import sys
+import importlib
 
 import irc
+from irc import client
 from alerts import Alerter
 from alerts import BasicMatchString
+from util import EAException
+
+
+identity = lambda x: x
 
 
 class IRCAlerter(Alerter):
@@ -25,10 +32,21 @@ class IRCAlerter(Alerter):
         self.botnick = 'alertbot'
         self.body = ''
         self.reactor = irc.client.Reactor()
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket(self.s, ssl_version=ssl.PROTOCOL_SSLv3))
+        self.ssl_factory = self.connect_fact(wrapper=ssl.wrap_socket)
     getattr(logging, 'DEBUG')
     logging.basicConfig(level=logging.DEBUG)
+
+    def connect_fact(self, wrapper=identity):
+        identity = lambda x: x
+        self.wrapper = wrapper
+        self.family = socket.AF_INET
+        bind_address=('',0)
+        ssl_version=ssl.PROTOCOL_SSLv2
+        sock = wrapper(socket.socket(self.family, socket.SOCK_STREAM))
+        sock.bind(bind_address)
+        sock.connect((self.server, self.port))
+        return sock
+    __call__ = connect_fact
 
     def on_connect(self, connection, event):
         reactor = self.reactor
@@ -91,7 +109,7 @@ class IRCAlerter(Alerter):
             logging.debug("Recognized reactor object - (alert True loop)")
             try:
                 print self.ssl_factory
-                c = reactor.server().connect(
+                c = reactor.server().connect_fact(
                     self.server,
                     self.port,
                     self.botnick,
