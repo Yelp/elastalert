@@ -567,6 +567,7 @@ class SlackAlerter(Alerter):
                 'slack_username_override': self.slack_username_override,
                 'slack_webhook_url': self.slack_webhook_url}
 
+
 class PagerDutyAlerter(Alerter):
     """ Create an incident on PagerDuty for each alert """
     required_options = frozenset(['pagerduty_service_key', 'pagerduty_client_name'])
