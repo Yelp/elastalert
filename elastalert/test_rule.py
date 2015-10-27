@@ -179,7 +179,10 @@ class MockElastAlerter(object):
         elastalert.new_elasticsearch = mock.Mock()
 
     def run_elastalert(self, rule, args):
-        """ Creates an ElastAlert instance and run's over for a specific rule using either real or mock data. """
+        """
+        Creates an ElastAlert instance and run's over for a specific rule using either real or mock data.
+        returns a list of calls arguments for writeback function
+        """
         # Mock configuration. Nothing here is used except run_every
         conf = {'rules_folder': 'rules',
                 'run_every': datetime.timedelta(minutes=5),
@@ -254,6 +257,8 @@ class MockElastAlerter(object):
                 print("\nWould have written the following documents to elastalert_status:\n")
                 for call in mock_writeback.call_args_list:
                     print("%s - %s\n" % (call[0][0], call[0][1]))
+
+            return mock_writeback.call_args_list
 
     def run_rule_test(self):
         """ Uses args to run the various components of MockElastAlerter such as loading the file, saving data, loading data, and running. """
