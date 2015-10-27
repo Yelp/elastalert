@@ -186,3 +186,7 @@ properties:
   slack_username_override: {type: string}
   slack_emoji_override: {type: string}
   slack_msg_color: {enum: [good, warning, danger]}
+
+  ### PagerDuty
+  pagerduty_service_key: {type: string}
+  pagerduty_client_name: {type: string}

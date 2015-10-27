@@ -81,7 +81,7 @@ Rule Configuration Cheat Sheet
 | ``_source_enabled`` (boolean, default True)                  |           |
 +--------------------------------------------------------------+-----------+
 
-| 
+|
 
 +----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 |      RULE TYPE                                     | Any | Blacklist | Whitelist | Change | Frequency | Spike | Flatline |New_term|Cardinality|
@@ -284,7 +284,7 @@ include
 ^^^^^^^
 
 ``include``: A list of terms that should be included in query results and passed to rule types and alerts. When set, only those
-fields, along with '@timestamp', ``query_key``, ``compare_key``, and ``top_count_keys``  are included, if present. 
+fields, along with '@timestamp', ``query_key``, ``compare_key``, and ``top_count_keys``  are included, if present.
 (Optional, list of strings, default all fields)
 
 top_count_keys
@@ -772,7 +772,7 @@ Cardinality
 ~~~~~~~~
 
 ``cardinality``: This rule matches when a the total number of unique values for a certain field within a time frame is higher or lower
-than a threshold. 
+than a threshold.
 
 This rule requires:
 
@@ -1012,10 +1012,10 @@ OpsGenie
 ~~~~~~~~
 
 OpsGenie alerter will create an alert which can be used to notify Operations people of issues or log information. An OpsGenie ``API``
-integration must be created in order to acquire the necessary ``opsgenie_key`` rule variable. Currently the OpsGenieAlerter only creates 
+integration must be created in order to acquire the necessary ``opsgenie_key`` rule variable. Currently the OpsGenieAlerter only creates
 an alert, however it could be extended to update or close existing alerts.
 
-It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://app.opsgenie.com/integration>`_ in order to create alerts.  
+It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://app.opsgenie.com/integration>`_ in order to create alerts.
 
 The OpsGenie alert requires three options:
 
@@ -1029,7 +1029,7 @@ SNS
 ~~~
 
 The SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters. The SNS alerter
-uses boto and can use credentials in the rule yaml or in a standard boto credential file. 
+uses boto and can use credentials in the rule yaml or in a standard boto credential file.
 See http://boto.readthedocs.org/en/latest/boto_config_tut.html#details for details.
 
 SNS requires one option:
@@ -1076,6 +1076,17 @@ Optional:
 Elastalert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
 
 ``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
+
+PagerDuty
+~~~~~~~~~
+
+PagerDuty alerter will trigger an incident to a predefined PagerDuty service. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following option:
+
+``pagerduty_service_key``: Integration Key generated after creating a service with the 'Use our API directly' option at Integration Settings
+
+``pagerduty_client_name``: The name of the monitoring client that is triggering this event.
 
 Debug
 ~~~~~~

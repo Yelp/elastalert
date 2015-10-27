@@ -50,7 +50,8 @@ alerts_mapping = {
     'command': alerts.CommandAlerter,
     'sns': alerts.SnsAlerter,
     'hipchat': alerts.HipChatAlerter,
-    'slack': alerts.SlackAlerter
+    'slack': alerts.SlackAlerter,
+    'pagerduty': alerts.PagerDutyAlerter
 }
 
 
