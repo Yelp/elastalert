@@ -4,6 +4,7 @@ import socket
 import ssl
 
 import irc
+from irc import client
 from alerts import Alerter
 from alerts import BasicMatchString
 
@@ -25,8 +26,7 @@ class IRCAlerter(Alerter):
         self.botnick = 'alertbot'
         self.body = ''
         self.reactor = irc.client.Reactor()
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket(self.s, ssl_version=ssl.PROTOCOL_SSLv3))
+        self.ssl_factory = irc.connection.Factory(wrapper=ssl.wrap_socket)
     getattr(logging, 'DEBUG')
     logging.basicConfig(level=logging.DEBUG)
 
