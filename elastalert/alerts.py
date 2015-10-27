@@ -573,8 +573,8 @@ class PagerDutyAlerter(Alerter):
 
     def __init__(self, rule):
         super(PagerDutyAlerter, self).__init__(rule)
-        self.service_key = self.rule['pagerduty_service_key']
-        self.client_name = self.rule['pagerduty_client_name']
+        self.pagerduty_service_key = self.rule['pagerduty_service_key']
+        self.pagerduty_client_name = self.rule['pagerduty_client_name']
         self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
     def alert(self, matches):
