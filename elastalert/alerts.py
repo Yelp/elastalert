@@ -566,3 +566,46 @@ class SlackAlerter(Alerter):
         return {'type': 'slack',
                 'slack_username_override': self.slack_username_override,
                 'slack_webhook_url': self.slack_webhook_url}
+
+
+class PagerDutyAlerter(Alerter):
+    """ Create an incident on PagerDuty for each alert """
+    required_options = frozenset(['pagerduty_service_key', 'pagerduty_client_name'])
+
+    def __init__(self, rule):
+        super(PagerDutyAlerter, self).__init__(rule)
+        self.pagerduty_service_key = self.rule['pagerduty_service_key']
+        self.pagerduty_client_name = self.rule['pagerduty_client_name']
+        self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
+
+    def alert(self, matches):
+        body = ''
+        for match in matches:
+            body += str(BasicMatchString(self.rule, match))
+            # Separate text of aggregated alerts with dashes
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+
+        # post to pagerduty
+        headers = {'content-type': 'application/json'}
+        payload = {
+            'service_key': self.pagerduty_service_key,
+            'description': self.rule['name'],
+            'event_type': 'trigger',
+            'client': self.pagerduty_client_name,
+            'details': {
+                "information": body,
+            },
+        }
+
+        try:
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to pagerduty: %s" % e)
+        elastalert_logger.info("Trigger sent to PagerDuty")
+
+    def get_info(self):
+        return {'type': 'pagerduty',
+                'pagerduty_service_key': self.pagerduty_service_key,
+                'pagerduty_client_name': self.pagerduty_client_name}
