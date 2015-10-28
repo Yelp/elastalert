@@ -101,15 +101,15 @@ Now, in a file named ``my_rules.py``, add
         def add_data(self, data):
             for document in data:
                 
-                # To access config options, use self.rule
-                if document['username'] in self.rule['usernames']:
+                # To access config options, use self.rules
+                if document['username'] in self.rules['usernames']:
 
                     # Convert the timestamp to a time object
                     login_time = document['@timestamp'].time()
 
                     # Convert time_start and time_end to time objects
-                    time_start = dateutil.parser.parse(self.rule['time_start']).time()
-                    time_end = dateutil.parser.parse(self.rule['time_end']).time()
+                    time_start = dateutil.parser.parse(self.rules['time_start']).time()
+                    time_end = dateutil.parser.parse(self.rules['time_end']).time()
                     
                     # If the time falls between start and end
                     if login_time > time_start and login_time < time_end:
@@ -120,8 +120,8 @@ Now, in a file named ``my_rules.py``, add
         # The results of get_match_str will appear in the alert text
         def get_match_str(self, match):
             return "%s logged in between %s and %s" % (match['username'],
-                                                       self.rule['time_start'],
-                                                       self.rule['time_end'])
+                                                       self.rules['time_start'],
+                                                       self.rules['time_end'])
 
         # garbage_collect is called indicating that ElastAlert has already been run up to timestamp
         # It is useful for knowing that there were no query results from Elasticsearch because
@@ -151,7 +151,7 @@ In the rule configuration file, ``example_rules/example_login_rule.yaml``, we ar
     alert:
     - debug
 
-ElastAlert will attempt to import the alert with ``from elastalert_modules.my_rules import AwesomeNewAlerter``.
+ElastAlert will attempt to import the rule with ``from elastalert_modules.my_rules import AwesomeRule``.
 This means that the folder must be in a location where it can be imported as a Python module.
 
 An alert from this rule will look something like::
