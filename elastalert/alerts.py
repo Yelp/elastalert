@@ -2,7 +2,6 @@
 import datetime
 import json
 import logging
-import requests
 import subprocess
 from email.mime.text import MIMEText
 from smtplib import SMTP
@@ -11,16 +10,17 @@ from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
 
+import boto.sns as sns
+import requests
 import simplejson
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from util import EAException
+from util import elastalert_logger
 from util import lookup_es_key
 from util import pretty_ts
-from util import elastalert_logger
-import boto.sns as sns
 
 
 class BasicMatchString(object):
@@ -392,6 +392,7 @@ class JiraAlerter(Alerter):
 
         if self.pipeline is not None:
             self.pipeline['jira_ticket'] = self.issue
+            self.pipeline['jira_server'] = self.server
 
     def create_default_title(self, matches, for_search=False):
         # If there is a query_key, use that in the title
