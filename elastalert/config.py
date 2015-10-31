@@ -10,7 +10,7 @@ import jsonschema
 import ruletypes
 import yaml
 import yaml.scanner
-from ircalert import IRCAlerter
+from IRCAlert import IRCAlerter
 from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
 from util import dt_to_ts
