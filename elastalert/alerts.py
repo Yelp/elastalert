@@ -557,7 +557,7 @@ class SlackAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.slack_webhook_url, json=payload, headers=headers)
+            response = requests.post(self.slack_webhook_url, data=json.dumps(payload), headers=headers)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to slack: %s" % e)
