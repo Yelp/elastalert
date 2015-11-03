@@ -138,6 +138,20 @@ def format_index(index, start, end):
 
     return ','.join(indexes)
 
+def resolve_indexes(indexFromRule):
+    """ Takes the index defined in the rule and resolves the list of indexes to use when
+    talking to elasticsearch. The index can be a single string -when using one index- or
+    a comma delimited string or a yaml list when defining multiple indexes. """
+    indexes = []
+    if isinstance(indexFromRule, basestring):
+        if indexFromRule.find(',') > -1:
+            indexes = indexFromRule.replace(" ", "").split(',')
+        else:
+            indexes.append(indexFromRule)
+    else:
+        indexes.extend(indexFromRule)
+    
+    return indexes
 
 class EAException(Exception):
     pass
