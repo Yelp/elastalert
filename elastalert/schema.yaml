@@ -116,7 +116,7 @@ properties:
   # Common Settings
   es_host: {type: string}
   es_port: {type: integer}
-  index: {type: string}
+  index: *arrayOfString
   name: {type: string}
 
   use_ssl: {type: boolean}
