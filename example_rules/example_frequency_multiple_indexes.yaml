@@ -62,4 +62,4 @@ alert:
 # (required, email specific)
 # a list of email addresses to send alerts to
 email:
-- "amazon@digitalriver.com"
+- "elastalert@example.com"
