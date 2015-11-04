@@ -73,7 +73,11 @@ class BasicMatchString(object):
             self.text += '%s: %s\n' % (key, value_str)
 
     def _pretty_print_as_json(self, blob):
-        return simplejson.dumps(blob, sort_keys=True, indent=4)
+        try:
+            return simplejson.dumps(blob, sort_keys=True, indent=4)
+        except UnicodeDecodeError:
+            # This blob contains non-unicode, so lets pretend it's Latin-1 to show something
+            return simplejson.dumps(blob, sort_keys=True, indent=4, encoding='Latin-1')
 
     def __str__(self):
         self.text = self.rule['name'] + '\n\n'
