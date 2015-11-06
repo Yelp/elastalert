@@ -16,6 +16,7 @@ definitions:
       minutes: {type: number}
       seconds: {type: number}
       milliseconds: {type: number}
+      schedule: {type: string}
 
   filter: &filter {}
 

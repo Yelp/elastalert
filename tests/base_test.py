@@ -287,6 +287,42 @@ def test_agg(ea):
     assert ea.writeback_es.search.call_args_list[7][1]['size'] == 1337
 
 
+def test_agg_cron(ea):
+    ea.max_aggregation = 1337
+    hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:47:45']
+    hits = generate_hits(hits_timestamps)
+    ea.current_es.search.return_value = hits
+    alerttime1 = dt_to_ts(ts_to_dt('2014-09-26T12:46:00'))
+    alerttime2 = dt_to_ts(ts_to_dt('2014-09-26T13:04:00'))
+
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        with mock.patch('elastalert.elastalert.croniter.get_next') as mock_ts:
+            # Aggregate first two, query over full range
+            mock_ts.side_effect = [dt_to_unix(ts_to_dt('2014-09-26T12:46:00')), dt_to_unix(ts_to_dt('2014-09-26T13:04:00'))]
+            ea.rules[0]['aggregation'] = {'schedule': '*/5 * * * *'}
+            ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
+            ea.run_rule(ea.rules[0], END, START)
+
+    # Assert that the three matches were added to elasticsearch
+    call1 = ea.writeback_es.create.call_args_list[0][1]['body']
+    call2 = ea.writeback_es.create.call_args_list[1][1]['body']
+    call3 = ea.writeback_es.create.call_args_list[2][1]['body']
+
+    assert call1['match_body'] == {'@timestamp': '2014-09-26T12:34:45'}
+    assert not call1['alert_sent']
+    assert 'aggregate_id' not in call1
+    assert call1['alert_time'] == alerttime1
+
+    assert call2['match_body'] == {'@timestamp': '2014-09-26T12:40:45'}
+    assert not call2['alert_sent']
+    assert call2['aggregate_id'] == 'ABCD'
+
+    assert call3['match_body'] == {'@timestamp': '2014-09-26T12:47:45'}
+    assert call3['alert_time'] == alerttime2
+    assert not call3['alert_sent']
+    assert 'aggregate_id' not in call3
+
+
 def test_agg_no_writeback_connectivity(ea):
     """ Tests that if writeback_es throws an exception, the matches will be added to 'agg_matches' and when
     run again, that they will be passed again to add_aggregated_alert """
