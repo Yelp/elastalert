@@ -3,11 +3,11 @@ import copy
 import datetime
 import json
 import logging
+import os
+import signal
 import sys
 import time
 import traceback
-import os
-import signal
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
@@ -239,7 +239,7 @@ class ElastAlerter():
             hit['_source'][rule['timestamp_field']] = rule['ts_to_dt'](hit['_source'][rule['timestamp_field']])
             if rule.get('compound_query_key'):
                 values = [lookup_es_key(hit['_source'], key) for key in rule['compound_query_key']]
-                hit['_source'][rule['query_key']] = ', '.join([str(value) for value in values])
+                hit['_source'][rule['query_key']] = ', '.join([unicode(value) for value in values])
 
     def get_hits(self, rule, starttime, endtime, index):
         """ Query elasticsearch for the given rule and return the results.

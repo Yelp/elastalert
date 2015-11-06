@@ -36,7 +36,7 @@ class BasicMatchString(object):
             self.text += '\n'
 
     def _add_custom_alert_text(self):
-        alert_text = self.rule.get('alert_text', '')
+        alert_text = unicode(self.rule.get('alert_text', ''))
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
             alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
@@ -63,7 +63,7 @@ class BasicMatchString(object):
         for key, value in match_items:
             if key.startswith('top_events_'):
                 continue
-            value_str = str(value)
+            value_str = unicode(value)
             if type(value) in [list, dict]:
                 try:
                     value_str = self._pretty_print_as_json(value)
@@ -74,10 +74,10 @@ class BasicMatchString(object):
 
     def _pretty_print_as_json(self, blob):
         try:
-            return simplejson.dumps(blob, sort_keys=True, indent=4)
+            return simplejson.dumps(blob, sort_keys=True, indent=4, ensure_ascii=False)
         except UnicodeDecodeError:
             # This blob contains non-unicode, so lets pretend it's Latin-1 to show something
-            return simplejson.dumps(blob, sort_keys=True, indent=4, encoding='Latin-1')
+            return simplejson.dumps(blob, sort_keys=True, indent=4, encoding='Latin-1', ensure_ascii=False)
 
     def __str__(self):
         self.text = self.rule['name'] + '\n\n'
@@ -171,7 +171,7 @@ class DebugAlerter(Alerter):
                 elastalert_logger.info('Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
             else:
                 elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
-            elastalert_logger.info(str(BasicMatchString(self.rule, match)))
+            elastalert_logger.info(unicode(BasicMatchString(self.rule, match)))
 
     def get_info(self):
         return {'type': 'debug'}
@@ -205,7 +205,7 @@ class EmailAlerter(Alerter):
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += str(BasicMatchString(self.rule, match))
+            body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
@@ -215,7 +215,7 @@ class EmailAlerter(Alerter):
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
-        email_msg = MIMEText(body)
+        email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
         email_msg['From'] = self.from_addr
@@ -360,7 +360,7 @@ class JiraAlerter(Alerter):
             return issues[0]
 
     def comment_on_ticket(self, ticket, match):
-        text = str(JiraFormattedMatchString(self.rule, match))
+        text = unicode(JiraFormattedMatchString(self.rule, match))
         timestamp = pretty_ts(match[self.rule['timestamp_field']])
         comment = "This alert was triggered again at %s\n%s" % (timestamp, text)
         self.client.add_comment(ticket, comment)
@@ -381,7 +381,7 @@ class JiraAlerter(Alerter):
 
         description = self.description + '\n'
         for match in matches:
-            description += str(JiraFormattedMatchString(self.rule, match))
+            description += unicode(JiraFormattedMatchString(self.rule, match))
             if len(matches) > 1:
                 description += '\n----------------------------------------\n'
 
@@ -472,10 +472,11 @@ class SnsAlerter(Alerter):
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += str(BasicMatchString(self.rule, match))
+            body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
+
         # use instance role if aws_access_key and aws_secret_key are not specified
         if not self.aws_access_key and not self.aws_secret_key:
             sns_client = sns.connect_to_region(self.aws_region)
@@ -500,7 +501,7 @@ class HipChatAlerter(Alerter):
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += str(BasicMatchString(self.rule, match))
+            body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
@@ -537,14 +538,23 @@ class SlackAlerter(Alerter):
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
 
+    def format_body(self, body):
+        # https://api.slack.com/docs/formatting
+        body = body.encode('UTF-8')
+        body = body.replace('&', '&amp;')
+        body = body.replace('<', '&lt;')
+        body = body.replace('>', '&gt;')
+        return body
+
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += str(BasicMatchString(self.rule, match))
+            body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
 
+        body = self.format_body(body)
         # post to slack
         headers = {'content-type': 'application/json'}
         payload = {
@@ -586,7 +596,7 @@ class PagerDutyAlerter(Alerter):
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += str(BasicMatchString(self.rule, match))
+            body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
@@ -599,12 +609,12 @@ class PagerDutyAlerter(Alerter):
             'event_type': 'trigger',
             'client': self.pagerduty_client_name,
             'details': {
-                "information": body,
+                "information": body.encode('UTF-8'),
             },
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            response = requests.post(self.url, data=json.dumps(payload, ensure_ascii=False), headers=headers)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to pagerduty: %s" % e)
