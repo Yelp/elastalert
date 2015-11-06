@@ -71,7 +71,11 @@ class BasicMatchString(object):
             self.text += '%s: %s\n' % (key, value_str)
 
     def _pretty_print_as_json(self, blob):
-        return simplejson.dumps(blob, sort_keys=True, indent=4)
+        try:
+            return simplejson.dumps(blob, sort_keys=True, indent=4)
+        except UnicodeDecodeError:
+            # This blob contains non-unicode, so lets pretend it's Latin-1 to show something
+            return simplejson.dumps(blob, sort_keys=True, indent=4, encoding='Latin-1')
 
     def __str__(self):
         self.text = self.rule['name'] + '\n\n'
@@ -204,7 +208,7 @@ class EmailAlerter(Alerter):
                 body += '\n----------------------------------------\n'
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
-            url = '%s/browse/%s' % (self.rule['jira_server'], self.pipeline['jira_ticket'])
+            url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
@@ -367,6 +371,7 @@ class JiraAlerter(Alerter):
                     self.comment_on_ticket(ticket, match)
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
+                    self.pipeline['jira_server'] = self.server
                 return
 
         description = ''
@@ -386,6 +391,7 @@ class JiraAlerter(Alerter):
 
         if self.pipeline is not None:
             self.pipeline['jira_ticket'] = self.issue
+            self.pipeline['jira_server'] = self.server
 
     def create_default_title(self, matches, for_search=False):
         # If there is a query_key, use that in the title
@@ -551,7 +557,7 @@ class SlackAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.slack_webhook_url, json=payload, headers=headers)
+            response = requests.post(self.slack_webhook_url, data=json.dumps(payload), headers=headers)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to slack: %s" % e)
@@ -561,3 +567,46 @@ class SlackAlerter(Alerter):
         return {'type': 'slack',
                 'slack_username_override': self.slack_username_override,
                 'slack_webhook_url': self.slack_webhook_url}
+
+
+class PagerDutyAlerter(Alerter):
+    """ Create an incident on PagerDuty for each alert """
+    required_options = frozenset(['pagerduty_service_key', 'pagerduty_client_name'])
+
+    def __init__(self, rule):
+        super(PagerDutyAlerter, self).__init__(rule)
+        self.pagerduty_service_key = self.rule['pagerduty_service_key']
+        self.pagerduty_client_name = self.rule['pagerduty_client_name']
+        self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
+
+    def alert(self, matches):
+        body = ''
+        for match in matches:
+            body += str(BasicMatchString(self.rule, match))
+            # Separate text of aggregated alerts with dashes
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+
+        # post to pagerduty
+        headers = {'content-type': 'application/json'}
+        payload = {
+            'service_key': self.pagerduty_service_key,
+            'description': self.rule['name'],
+            'event_type': 'trigger',
+            'client': self.pagerduty_client_name,
+            'details': {
+                "information": body,
+            },
+        }
+
+        try:
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to pagerduty: %s" % e)
+        elastalert_logger.info("Trigger sent to PagerDuty")
+
+    def get_info(self):
+        return {'type': 'pagerduty',
+                'pagerduty_service_key': self.pagerduty_service_key,
+                'pagerduty_client_name': self.pagerduty_client_name}

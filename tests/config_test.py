@@ -9,6 +9,7 @@ import elastalert.alerts
 import elastalert.ruletypes
 from elastalert.config import get_file_paths
 from elastalert.config import load_configuration
+from elastalert.config import load_modules
 from elastalert.config import load_options
 from elastalert.config import load_rules
 from elastalert.util import EAException
@@ -66,6 +67,30 @@ def test_import_rules():
             load_configuration('test_config', test_config)
         assert mock_import.call_args_list[0][0][0] == 'testing2.test2'
         assert mock_import.call_args_list[0][0][3] == ['Alerter']
+
+
+def test_load_inline_alert_rule():
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy['alert'] = [
+        {
+            'email': {
+                'email': 'foo@bar.baz'
+            }
+        },
+        {
+            'email': {
+                'email': 'baz@foo.bar'
+            }
+        }
+    ]
+    test_config_copy = copy.deepcopy(test_config)
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [test_config_copy, test_rule_copy]
+        load_modules(test_rule_copy)
+        assert isinstance(test_rule_copy['alert'][0], elastalert.alerts.EmailAlerter)
+        assert isinstance(test_rule_copy['alert'][1], elastalert.alerts.EmailAlerter)
+        assert 'foo@bar.baz' in test_rule_copy['alert'][0].rule['email']
+        assert 'baz@foo.bar' in test_rule_copy['alert'][1].rule['email']
 
 
 def test_load_rules():

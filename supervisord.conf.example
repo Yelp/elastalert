@@ -16,9 +16,12 @@ supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 serverurl=unix:///var/run/elastalert_supervisor.sock
 
 [program:elastalert]
+# running globally
 command =
         python elastalert.py
                --verbose
+# (alternative) using virtualenv
+# command=/path/to/venv/bin/elastalert --config /path/to/config.yaml --verbose 
 process_name=elastalert
 autorestart=true
 startsecs=15
@@ -27,4 +30,3 @@ stopasgroup=true
 killasgroup=true
 stderr_logfile=/var/log/elastalert_stderr.log
 stderr_logfile_maxbytes=5MB
-

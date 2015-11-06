@@ -8,7 +8,7 @@ from setuptools import setup
 base_dir = os.path.dirname(__file__)
 setup(
     name='elastalert',
-    version='0.0.63',
+    version='0.0.66',
     description='Runs custom filters on Elasticsearch and alerts on matches',
     author='Quentin Long',
     author_email='qlo@yelp.com',
@@ -17,7 +17,8 @@ setup(
     entry_points={
         'console_scripts': ['elastalert-create-index=elastalert.create_index:main',
                             'elastalert-test-rule=elastalert.test_rule:main',
-                            'elastalert-rule-from-kibana=elastalert.rule_from_kibana:main']},
+                            'elastalert-rule-from-kibana=elastalert.rule_from_kibana:main',
+                            'elastalert=elastalert.elastalert:main']},
     packages=find_packages(),
     package_data={'elastalert': ['schema.yaml']},
     install_requires=[
