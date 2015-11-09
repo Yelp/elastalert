@@ -49,10 +49,10 @@ timeframe:
 filter:
 - query:
     query_string:
-        query: "host:devsand*"
+        query: "host:some_host"
 - query:
     query_string:
-        query: "resolvedServiceId.raw:\"testService\""
+        query: "field_name:\"field_value\""
 
 # (Required)
 # The alert is use when a match is found
