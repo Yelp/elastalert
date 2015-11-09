@@ -138,6 +138,7 @@ def format_index(index, start, end):
 
     return ','.join(indexes)
 
+
 def resolve_indexes(indexFromRule):
     """ Takes the index defined in the rule and resolves the list of indexes to use when
     talking to elasticsearch. The index can be a single string -when using one index- or
@@ -150,8 +151,9 @@ def resolve_indexes(indexFromRule):
             indexes.append(indexFromRule)
     else:
         indexes.extend(indexFromRule)
-    
+
     return indexes
+
 
 class EAException(Exception):
     pass

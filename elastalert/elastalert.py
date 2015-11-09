@@ -185,7 +185,7 @@ class ElastAlerter():
                         indexstring += ','
         else:
             indexstring = ",".join(indexes)
-            
+
         return indexstring
 
     @staticmethod
