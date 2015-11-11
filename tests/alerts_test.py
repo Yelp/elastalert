@@ -24,7 +24,7 @@ class mock_rule:
 def test_basic_match_string(ea):
     ea.rules[0]['top_count_keys'] = ['username']
     match = {'@timestamp': '1918-01-17', 'field': 'value', 'top_events_username': {'bob': 10, 'mallory': 5}}
-    alert_text = str(BasicMatchString(ea.rules[0], match))
+    alert_text = unicode(BasicMatchString(ea.rules[0], match))
     assert 'anytest' in alert_text
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
@@ -33,27 +33,31 @@ def test_basic_match_string(ea):
 
     # Non serializable objects don't cause errors
     match['non-serializable'] = {open: 10}
-    alert_text = str(BasicMatchString(ea.rules[0], match))
+    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+
+    # unicode objects dont cause errors
+    match['snowman'] = u'☃'
+    alert_text = unicode(BasicMatchString(ea.rules[0], match))
 
     # Pretty printed objects
     match.pop('non-serializable')
     match['object'] = {'this': {'that': [1, 2, "3"]}}
-    alert_text = str(BasicMatchString(ea.rules[0], match))
+    alert_text = unicode(BasicMatchString(ea.rules[0], match))
     assert '"this": {\n        "that": [\n            1,\n            2,\n            "3"\n        ]\n    }' in alert_text
 
     ea.rules[0]['alert_text'] = 'custom text'
-    alert_text = str(BasicMatchString(ea.rules[0], match))
+    alert_text = unicode(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
 
     ea.rules[0]['alert_text_type'] = 'alert_text_only'
-    alert_text = str(BasicMatchString(ea.rules[0], match))
+    alert_text = unicode(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'some stuff happened' not in alert_text
     assert 'username' not in alert_text
     assert 'field: value' not in alert_text
 
     ea.rules[0]['alert_text_type'] = 'exclude_fields'
-    alert_text = str(BasicMatchString(ea.rules[0], match))
+    alert_text = unicode(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
@@ -79,7 +83,7 @@ def test_jira_formatted_match_string(ea):
 def test_email():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
-            'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term']}
+            'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'snowman': u'☃'}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
@@ -208,7 +212,7 @@ def test_email_with_args():
         mock_smtp.return_value = mock.Mock()
 
         alert = EmailAlerter(rule)
-        alert.alert([{'test_term': 'test_value', 'test_arg1': 'testing', 'test': {'term': ':)', 'arg3': ':('}}])
+        alert.alert([{'test_term': 'test_value', 'test_arg1': 'testing', 'test': {'term': ':)', 'arg3': u'☃'}}])
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
@@ -218,10 +222,12 @@ def test_email_with_args():
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
+        # Extract the MIME encoded message body
+        body_text = body.split('\n\n')[-1][:-1].decode('base64')
 
-        assert 'testing' in body
-        assert '<MISSING VALUE>' in body
-        assert ':(' in body
+        assert 'testing' in body_text
+        assert '<MISSING VALUE>' in body_text
+        assert '☃' in body_text
 
         assert 'Reply-To: test@example.com' in body
         assert 'To: testing@test.test' in body

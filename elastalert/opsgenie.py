@@ -24,7 +24,7 @@ class OpsGenieAlerter(Alerter):
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += str(BasicMatchString(self.rule, match))
+            body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
