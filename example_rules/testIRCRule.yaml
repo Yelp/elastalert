@@ -1,0 +1,21 @@
+# es_host: example.elastalert.com
+# es_port: 14900
+name: testIRC
+type: frequency
+index: logstash-*
+timeframe:
+  seconds: 5
+num_events: 1
+filter:
+- query:
+    query_string:
+      query: "test"
+alert:
+- "irc"
+# irc_server:
+# irc_port:
+# irc_channel: "#bot"
+# irc_password:
+# irc_realname:
+include:
+- "message"
