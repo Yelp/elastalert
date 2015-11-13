@@ -11,6 +11,7 @@ import jsonschema
 import ruletypes
 import yaml
 import yaml.scanner
+from ircalert import IRCAlerter
 from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
 from util import dt_to_ts
@@ -20,7 +21,6 @@ from util import EAException
 from util import ts_to_dt
 from util import unix_to_dt
 from util import unixms_to_dt
-from ircalert import IRCAlerter
 
 # schema for rule yaml
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
