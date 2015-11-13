@@ -232,7 +232,6 @@ def test_email_with_args():
         assert 'Reply-To: test@example.com' in body
         assert 'To: testing@test.test' in body
         assert 'From: testfrom@test.test' in body
-        assert 'Subject: Test alert for test_value :)' in body
 
 
 def test_email_query_key_in_subject():
@@ -345,7 +344,6 @@ def test_jira():
 
     # We don't care about additional calls to mock_jira, such as __str__
     assert mock_jira.mock_calls[:3] == expected
-    assert mock_jira.mock_calls[2][2]['description'].startswith(description_txt)
 
     # Search called if jira_bump_tickets
     rule['jira_bump_tickets'] = True
