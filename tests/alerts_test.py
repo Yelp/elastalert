@@ -12,7 +12,6 @@ from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
-from elastalert.ircalert import IRCAlerter
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
 
@@ -227,43 +226,6 @@ def test_email_with_args():
         assert 'Reply-To: test@example.com' in body
         assert 'To: testing@test.test' in body
         assert 'From: testfrom@test.test' in body
-
-
-def test_irc():
-    rule = {'name': 'test IRCalert', 'timeframe': datetime.timedelta(hours=1),
-            'index': 'logstash-test', 'includes': ['@timestamp'],
-            'timestamp_field': '@timestamp', 'irc_server': 'test.server.com',
-            'irc_port': 1234, 'irc_channel': '#test', 'irc_password': 'password',
-            'irc_realname': '~realname', 'type': mock_rule()}
-    with nested(
-        mock.patch('irc.client.Reactor'),
-        mock.patch('irc.connection.Factory')
-    ) as (mock_reactor, mock_factory):
-        mock_reactor.return_value = mock.Mock()
-        mock_factory.return_value = mock.Mock()
-        alert = IRCAlerter(rule)
-        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
-    assert mock_reactor.server.connect().called_with(['test.server.com', 1234, 'alertbot', 'password', '~realname', 'connect_factory=mock_factory'])
-    assert mock_factory.called_with('wrapper=ssl.wrap_socket')
-
-    rule = {'name': 'test IRCalert', 'timeframe': datetime.timedelta(hours=1),
-            'index': 'logstash-test', 'includes': ['@timestamp'],
-            'timestamp_field': '@timestamp', 'irc_server': 'test.server.com',
-            'irc_port': 1234, 'irc_channel': '#test', 'irc_password': 'password',
-            'irc_realname': '~realname', 'type': mock_rule()}
-    with nested(
-        mock.patch('irc.client.Reactor'),
-        mock.patch('irc.connection.Factory')
-    ) as (mock_reactor, mock_factory):
-        mock_reactor.return_value = mock.Mock()
-        mock_factory.return_value = mock.Mock()
-        alert = IRCAlerter(rule)
-        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
-    expected = [mock.call().server().connect,
-                mock.call().join('#test'),
-                mock.call().privmsg(),
-                mock.call().disconnect_all()]
-    assert mock_reactor.mock_calls == expected
 
 
 def test_email_query_key_in_subject():

@@ -19,6 +19,7 @@ from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from util import EAException
 from util import elastalert_logger
+from util import lookup_es_key
 from util import pretty_ts
 
 
@@ -35,10 +36,11 @@ class BasicMatchString(object):
             self.text += '\n'
 
     def _add_custom_alert_text(self):
-        alert_text = self.rule.get('alert_text', '')
+        alert_text = unicode(self.rule.get('alert_text', ''))
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
-            alert_text_values = [self.match.get(arg, '<MISSING VALUE>') for arg in alert_text_args]
+            alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
+            alert_text_values = ['<MISSING VALUE>' if val is None else val for val in alert_text_values]
             alert_text = alert_text.format(*alert_text_values)
         self.text += alert_text
 
@@ -61,7 +63,7 @@ class BasicMatchString(object):
         for key, value in match_items:
             if key.startswith('top_events_'):
                 continue
-            value_str = str(value)
+            value_str = unicode(value)
             if type(value) in [list, dict]:
                 try:
                     value_str = self._pretty_print_as_json(value)
@@ -72,10 +74,10 @@ class BasicMatchString(object):
 
     def _pretty_print_as_json(self, blob):
         try:
-            return simplejson.dumps(blob, sort_keys=True, indent=4)
+            return simplejson.dumps(blob, sort_keys=True, indent=4, ensure_ascii=False)
         except UnicodeDecodeError:
             # This blob contains non-unicode, so lets pretend it's Latin-1 to show something
-            return simplejson.dumps(blob, sort_keys=True, indent=4, encoding='Latin-1')
+            return simplejson.dumps(blob, sort_keys=True, indent=4, encoding='Latin-1', ensure_ascii=False)
 
     def __str__(self):
         self.text = self.rule['name'] + '\n\n'
@@ -138,7 +140,8 @@ class Alerter(object):
 
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
-            alert_subject_values = [matches[0].get(arg, '<MISSING VALUE>') for arg in alert_subject_args]
+            alert_subject_values = [lookup_es_key(matches[0], arg) for arg in alert_subject_args]
+            alert_subject_values = ['<MISSING VALUE>' if val is None else val for val in alert_subject_values]
             return alert_subject.format(*alert_subject_values)
 
         return alert_subject
@@ -165,10 +168,10 @@ class DebugAlerter(Alerter):
         qk = self.rule.get('query_key', None)
         for match in matches:
             if qk in match:
-                logging.info('Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
+                elastalert_logger.info('Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
             else:
-                logging.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
-            logging.info(str(BasicMatchString(self.rule, match)))
+                elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
+            elastalert_logger.info(unicode(BasicMatchString(self.rule, match)))
 
     def get_info(self):
         return {'type': 'debug'}
@@ -202,7 +205,7 @@ class EmailAlerter(Alerter):
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += str(BasicMatchString(self.rule, match))
+            body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
@@ -212,7 +215,7 @@ class EmailAlerter(Alerter):
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
-        email_msg = MIMEText(body)
+        email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
         email_msg['From'] = self.from_addr
@@ -246,7 +249,7 @@ class EmailAlerter(Alerter):
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
         self.smtp.close()
 
-        logging.info("Sent email to %s" % (self.rule['email']))
+        elastalert_logger.info("Sent email to %s" % (self.rule['email']))
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -276,12 +279,14 @@ class JiraAlerter(Alerter):
         self.issue_type = self.rule['jira_issuetype']
         self.component = self.rule.get('jira_component')
         self.label = self.rule.get('jira_label')
+        self.description = self.rule.get('jira_description', '')
         self.assignee = self.rule.get('jira_assignee')
         self.max_age = self.rule.get('jira_max_age', 30)
         self.priority = self.rule.get('jira_priority')
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
+
         if self.bump_in_statuses and self.bump_not_in_statuses:
             msg = 'Both jira_bump_in_statuses (%s) and jira_bump_not_in_statuses (%s) are set.' % \
                   (','.join(self.bump_in_statuses), ','.join(self.bump_not_in_statuses))
@@ -355,7 +360,7 @@ class JiraAlerter(Alerter):
             return issues[0]
 
     def comment_on_ticket(self, ticket, match):
-        text = str(JiraFormattedMatchString(self.rule, match))
+        text = unicode(JiraFormattedMatchString(self.rule, match))
         timestamp = pretty_ts(match[self.rule['timestamp_field']])
         comment = "This alert was triggered again at %s\n%s" % (timestamp, text)
         self.client.add_comment(ticket, comment)
@@ -366,7 +371,7 @@ class JiraAlerter(Alerter):
         if self.bump_tickets:
             ticket = self.find_existing_ticket(matches)
             if ticket:
-                logging.info('Commenting on existing ticket %s' % (ticket.key))
+                elastalert_logger.info('Commenting on existing ticket %s' % (ticket.key))
                 for match in matches:
                     self.comment_on_ticket(ticket, match)
                 if self.pipeline is not None:
@@ -374,9 +379,9 @@ class JiraAlerter(Alerter):
                     self.pipeline['jira_server'] = self.server
                 return
 
-        description = ''
+        description = self.description + '\n'
         for match in matches:
-            description += str(JiraFormattedMatchString(self.rule, match))
+            description += unicode(JiraFormattedMatchString(self.rule, match))
             if len(matches) > 1:
                 description += '\n----------------------------------------\n'
 
@@ -387,7 +392,7 @@ class JiraAlerter(Alerter):
             self.issue = self.client.create_issue(**self.jira_args)
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket: %s" % (e))
-        logging.info("Opened Jira ticket: %s" % (self.issue))
+        elastalert_logger.info("Opened Jira ticket: %s" % (self.issue))
 
         if self.pipeline is not None:
             self.pipeline['jira_ticket'] = self.issue
@@ -427,23 +432,22 @@ class CommandAlerter(Alerter):
             self.rule['command'] = [self.rule['command']]
 
     def alert(self, matches):
-        for match in matches:
-            # Format the command and arguments
-            try:
-                command = [command_arg % match for command_arg in self.rule['command']]
-                self.last_command = command
-            except KeyError as e:
-                raise EAException("Error formatting command: %s" % (e))
+        # Format the command and arguments
+        try:
+            command = [command_arg % matches[0] for command_arg in self.rule['command']]
+            self.last_command = command
+        except KeyError as e:
+            raise EAException("Error formatting command: %s" % (e))
 
-            # Run command and pipe data
-            try:
-                subp = subprocess.Popen(command, stdin=subprocess.PIPE)
+        # Run command and pipe data
+        try:
+            subp = subprocess.Popen(command, stdin=subprocess.PIPE)
 
-                if self.rule.get('pipe_match_json'):
-                    match_json = json.dumps(match)
-                    stdout, stderr = subp.communicate(input=match_json)
-            except OSError as e:
-                raise EAException("Error while running command %s: %s" % (' '.join(command), e))
+            if self.rule.get('pipe_match_json'):
+                match_json = json.dumps(matches) + '\n'
+                stdout, stderr = subp.communicate(input=match_json)
+        except OSError as e:
+            raise EAException("Error while running command %s: %s" % (' '.join(command), e))
 
     def get_info(self):
         return {'type': 'command',
@@ -468,10 +472,11 @@ class SnsAlerter(Alerter):
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += str(BasicMatchString(self.rule, match))
+            body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
+
         # use instance role if aws_access_key and aws_secret_key are not specified
         if not self.aws_access_key and not self.aws_secret_key:
             sns_client = sns.connect_to_region(self.aws_region)
@@ -496,7 +501,7 @@ class HipChatAlerter(Alerter):
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += str(BasicMatchString(self.rule, match))
+            body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
@@ -533,14 +538,23 @@ class SlackAlerter(Alerter):
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
 
+    def format_body(self, body):
+        # https://api.slack.com/docs/formatting
+        body = body.encode('UTF-8')
+        body = body.replace('&', '&amp;')
+        body = body.replace('<', '&lt;')
+        body = body.replace('>', '&gt;')
+        return body
+
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += str(BasicMatchString(self.rule, match))
+            body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
 
+        body = self.format_body(body)
         # post to slack
         headers = {'content-type': 'application/json'}
         payload = {
@@ -582,7 +596,7 @@ class PagerDutyAlerter(Alerter):
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += str(BasicMatchString(self.rule, match))
+            body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
@@ -595,12 +609,12 @@ class PagerDutyAlerter(Alerter):
             'event_type': 'trigger',
             'client': self.pagerduty_client_name,
             'details': {
-                "information": body,
+                "information": body.encode('UTF-8'),
             },
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            response = requests.post(self.url, data=json.dumps(payload, ensure_ascii=False), headers=headers)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to pagerduty: %s" % e)

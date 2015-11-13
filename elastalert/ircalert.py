@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 import functools
 import logging
-import socket
-import time
 import ssl
+import time
 
 import irc
+import irc.client
 from alerts import Alerter
 from alerts import BasicMatchString
-from irc import client
 
 
 class IRCAlerter(Alerter):
@@ -35,7 +34,6 @@ class IRCAlerter(Alerter):
         self.ssl_factory = irc.connection.Factory(wrapper=wrapper)
 
     def on_connect(self, connection, event):
-        reactor = self.reactor
         channel = self.channel
         self.logger.debug("Recognized channel object - (on_connect)")
         if irc.client.is_channel(channel):
@@ -47,7 +45,6 @@ class IRCAlerter(Alerter):
         # Cannot privmsg newlines, nor longer than some maximum
         message = self.body.replace("\n", " / ")[:200]
         self.logger.debug("Recognized self.body, renamed as message - in on_join")
-        reactor = self.reactor
         self.logger.debug("Recognized reactor object - in on_join")
         if irc.client.is_channel(channel):
             connection.privmsg(channel, message)
@@ -62,7 +59,6 @@ class IRCAlerter(Alerter):
 
     def on_privmsg(self, connection, event):
         channel = self.channel
-        reactor = self.reactor
         self.logger.debug("Recognized reactor object - in on_privmsg")
         if irc.client.is_channel(channel):
             connection.quit(message="I'm out, good luck!")
