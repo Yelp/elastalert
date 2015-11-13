@@ -11,3 +11,5 @@ docs/build/
 build/
 
 my_rules
+*.swp
+*.swo
