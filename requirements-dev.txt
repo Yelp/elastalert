@@ -1,10 +1,9 @@
 -r requirements.txt
-backports.functools_lru_cache
+backports.functools_lru_cache==1.0.1
 coverage
 flake8
 importlib
-irc
-jaraco.functools
+jaraco.util==10.8
 pre-commit
 pylint<1.4
 pytest
