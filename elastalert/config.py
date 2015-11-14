@@ -361,7 +361,7 @@ def load_rules(args):
                 rules.append(rule)
                 names.append(rule['name'])
         except EAException as e:
-            logging.error("Rule file %s skipped due to error loading file: %s", (rule_file, e))
+            logging.error("Rule file %s skipped due to error loading file: %s", rule_file, e)
 
     if not rules:
         logging.exception('No rules loaded. Exiting')
