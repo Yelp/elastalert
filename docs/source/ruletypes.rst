@@ -1088,6 +1088,21 @@ The alerter requires the following option:
 
 ``pagerduty_client_name``: The name of the monitoring client that is triggering this event.
 
+VictorOps  
+~~~~~~~~~
+
+VictorOps alerter will trigger an incident to a predefined VictorOps routing key. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``victorops_api_key``: API key generated under the 'REST Endpoint' in the Integrations settings.
+
+``victorops_routing_key``: VictorOps routing key to route the alert to.
+
+Optional:
+
+``victorops_entity_display_name``: Humna-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle. 
+
 Debug
 ~~~~~~
 
