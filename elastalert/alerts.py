@@ -640,8 +640,8 @@ class VictorOpsAlerter(Alerter):
         body = ''
         for match in matches:
             body += unicode(BasicMatchString(self.rule, match))
-             # Separate text of aggregated alerts with dashes
-             if len(matches) > 1:
+            # Separate text of aggregated alerts with dashes
+            if len(matches) > 1:
                 body += '\n----------------------------------------\n'
         
         # post to victorops
