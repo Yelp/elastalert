@@ -624,3 +624,43 @@ class PagerDutyAlerter(Alerter):
         return {'type': 'pagerduty',
                 'pagerduty_service_key': self.pagerduty_service_key,
                 'pagerduty_client_name': self.pagerduty_client_name}
+
+class VictorOpsAlerter(Alerter):
+    """ Creates a VictorOps Incident for each alert """
+    required_options = frozenset(['victorops_api_key', 'victorops_routing_key'])
+
+    def __init__(self, rule):
+        super(VictorOpsAlerter, self).__init__(rule)
+        self.victorops_api_key = self.rule['victorops_api_key']
+        self.victorops_routing_key = self.rule['victorops_routing_key']
+        self.victorops_entity_id = self.rule['victorops_entity_id']
+        self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (self.victorops_api_key, self.victorops_routing_key)
+
+    def alert(self, matches):
+        body = ''
+        for match in matches:
+            body += unicode(BasicMatchString(self.rule, match))
+             # Separate text of aggregated alerts with dashes
+             if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        
+        # post to victorops
+        headers = {'content-type': 'application/json'}
+        payload = {
+            "message_type": self.victorops_message_type,
+            "monitoring_tool": "Elastalert",
+            "state_message": body
+        }
+
+        try:
+            response = requests.post(self.url, data=json.dump(payload), headers=headers)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to VictorOps: %s" % e)
+        elastalert_logger.info("Trigger sent to VictorOps")
+
+    def get_info(self):
+        return {'type':'victorops',
+                'victorops_api_key': self.victorops_api_key,
+                'victorops_routing_key': self.victorops_routing_key}
+
