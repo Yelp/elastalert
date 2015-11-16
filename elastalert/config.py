@@ -52,6 +52,7 @@ alerts_mapping = {
     'hipchat': alerts.HipChatAlerter,
     'slack': alerts.SlackAlerter,
     'pagerduty': alerts.PagerDutyAlerter
+    'victorops': alerts.VictorOpsAlerter
 }
 
 
