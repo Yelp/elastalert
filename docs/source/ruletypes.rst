@@ -1099,6 +1099,8 @@ The alerter requires the following options:
 
 ``victorops_routing_key``: VictorOps routing key to route the alert to.
 
+``victorops_message_type``: VictorOps field to specify serverity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
+
 Optional:
 
 ``victorops_entity_display_name``: Humna-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle. 

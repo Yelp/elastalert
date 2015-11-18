@@ -628,13 +628,14 @@ class PagerDutyAlerter(Alerter):
 
 class VictorOpsAlerter(Alerter):
     """ Creates a VictorOps Incident for each alert """
-    required_options = frozenset(['victorops_api_key', 'victorops_routing_key'])
+    required_options = frozenset(['victorops_api_key', 'victorops_routing_key', 'victorops_message_type'])
 
     def __init__(self, rule):
         super(VictorOpsAlerter, self).__init__(rule)
         self.victorops_api_key = self.rule['victorops_api_key']
         self.victorops_routing_key = self.rule['victorops_routing_key']
-        self.victorops_entity_id = self.rule['victorops_entity_id']
+        self.victorops_message_type = self.rule['victorops_message_type']
+        self.victorops_entity_display_name = self.rule.get('victorops_entity_display_name', 'no entity display name')
         self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (self.victorops_api_key, self.victorops_routing_key)
 
     def alert(self, matches):
@@ -649,6 +650,7 @@ class VictorOpsAlerter(Alerter):
         headers = {'content-type': 'application/json'}
         payload = {
             "message_type": self.victorops_message_type,
+            "entity_display_name": self.victorops_entity_display_name,
             "monitoring_tool": "Elastalert",
             "state_message": body
         }
