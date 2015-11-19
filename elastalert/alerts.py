@@ -307,7 +307,7 @@ class JiraAlerter(Alerter):
         if self.assignee:
             self.jira_args['assignee'] = {'name': self.assignee}
         if self.custom_text_fields:
-            for key, value in self.custom_text_fields:
+            for key, value in self.custom_text_fields.items():
                 self.jira_args[key] = value
 
 
