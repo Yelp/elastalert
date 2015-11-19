@@ -373,7 +373,10 @@ class JiraAlerter(Alerter):
             if ticket:
                 elastalert_logger.info('Commenting on existing ticket %s' % (ticket.key))
                 for match in matches:
-                    self.comment_on_ticket(ticket, match)
+                    try:
+                        self.comment_on_ticket(ticket, match)
+                    except JIRAError as e:
+                        logging.exception("Error while commenting on ticket %s: %s" % (ticket, e))
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
                     self.pipeline['jira_server'] = self.server
