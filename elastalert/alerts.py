@@ -286,6 +286,7 @@ class JiraAlerter(Alerter):
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
+        self.custom_text_fields = self.rule.get('jira_custom_text_fields')
 
         if self.bump_in_statuses and self.bump_not_in_statuses:
             msg = 'Both jira_bump_in_statuses (%s) and jira_bump_not_in_statuses (%s) are set.' % \
@@ -305,6 +306,10 @@ class JiraAlerter(Alerter):
             self.jira_args['labels'] = [self.label]
         if self.assignee:
             self.jira_args['assignee'] = {'name': self.assignee}
+        if self.custom_text_fields:
+            for key, value in self.custom_text_fields:
+                self.jira_args[key] = value
+
 
         try:
             self.client = JIRA(self.server, basic_auth=(self.user, self.password))
