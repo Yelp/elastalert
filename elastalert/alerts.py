@@ -286,7 +286,7 @@ class JiraAlerter(Alerter):
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
-        self.custom_text_fields = self.rule.get('jira_custom_text_fields')
+        self.custom_group_picker_fields = self.rule.get('jira_custom_group_picker_fields')
 
         if self.bump_in_statuses and self.bump_not_in_statuses:
             msg = 'Both jira_bump_in_statuses (%s) and jira_bump_not_in_statuses (%s) are set.' % \
@@ -306,9 +306,13 @@ class JiraAlerter(Alerter):
             self.jira_args['labels'] = [self.label]
         if self.assignee:
             self.jira_args['assignee'] = {'name': self.assignee}
-        if self.custom_text_fields:
-            for key, value in self.custom_text_fields.items():
-                self.jira_args[key] = value
+        # Note: because of the sometimes strange behavior of JIRA with custom field types, we have
+        # to format this differently than a text field. Would be nice to allow the user to just
+        # specify the field name and field value and we take care of the rest, but that'd be a lot
+        # of work. For now, we support group picker fields only.
+        if self.custom_group_picker_fields:
+            for key, value in self.custom_group_picker_fields.items():
+                self.jira_args[key] = { 'name' : value }
 
 
         try:
