@@ -3,7 +3,7 @@ backports.functools_lru_cache==1.0.1
 coverage
 flake8
 importlib
-jaraco.util==10.8
+jaraco.util==10.6
 pre-commit
 pylint<1.4
 pytest
