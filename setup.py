@@ -24,6 +24,7 @@ setup(
     install_requires=[
         'argparse',
         'elasticsearch',
+        'irc==9.0',
         'jira==0.32',  # jira.exceptions is missing from later versions
         'jsonschema',
         'mock',
