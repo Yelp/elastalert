@@ -1008,11 +1008,12 @@ Example usage::
     jira_bump_in_statuses:
       - Open
 
-``jira_custom_text_fields``: Any number of key:value pairs, where the key is the name of the custom field and value is the text value for entry.
+``jira_custom_group_picker_fields``: Any number of key:value pairs, where the key is the name of the custom field and value is the 
+text value for entry. Note that this only works for JIRA fields of type GroupPicker.
 
 Example usage::
 
-    jira_custom_text_fields:
+    jira_custom_group_picker_fields:
         customfield_20000: "jira-software-users"
 
 OpsGenie
