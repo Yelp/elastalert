@@ -514,7 +514,7 @@ class ElastAlerter():
             # concatenate query_key (or none) with rule_name to form silence_cache key
             if 'query_key' in rule:
                 try:
-                    key = '.' + str(lookup_es_key(match, rule['query_key']))
+                    key = '.' + unicode(lookup_es_key(match, rule['query_key']))
                 except KeyError:
                     # Some matches may not have a query key
                     # Use a special token for these to not clobber all alerts
