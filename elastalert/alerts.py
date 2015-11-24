@@ -312,8 +312,7 @@ class JiraAlerter(Alerter):
         # of work. For now, we support group picker fields only.
         if self.custom_group_picker_fields:
             for key, value in self.custom_group_picker_fields.items():
-                self.jira_args[key] = { 'name' : value }
-
+                self.jira_args[key] = {'name': value}
 
         try:
             self.client = JIRA(self.server, basic_auth=(self.user, self.password))
