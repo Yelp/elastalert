@@ -527,7 +527,7 @@ class NewTermsRule(RuleType):
 
         for field in self.fields:
             field_name['field'] = field
-            res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout=50)
+            res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout='50s')
             if 'aggregations' in res:
                 buckets = res['aggregations']['filtered']['values']['buckets']
                 keys = [bucket['key'] for bucket in buckets]
