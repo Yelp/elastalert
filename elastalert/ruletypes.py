@@ -565,17 +565,38 @@ class NewTermsRule(RuleType):
 
 class CardinalityRule(RuleType):
     """ A rule that matches if cardinality of a field is above or below a threshold within a timeframe """
-    required_options = frozenset(['timeframe', 'cardinality_field'])
+    required_options = frozenset(['timeframe', 'query_key'])
 
     def __init__(self, *args):
         super(CardinalityRule, self).__init__(*args)
         if 'max_cardinality' not in self.rules and 'min_cardinality' not in self.rules:
             raise EAException("CardinalityRule must have one of either max_cardinality or min_cardinality")
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
-        self.cardinality_field = self.rules['cardinality_field']
+        self.query_key = self.rules['query_key']
         self.cardinality_cache = {}
         self.first_event = {}
         self.timeframe = self.rules['timeframe']
+
+    def add_terms_data(self, terms):
+        """ Gets called when a rule has use_terms_query set to True.
+
+        :param terms: A list of buckets with a key, corresponding to query_key, and the count """
+        qk = self.rules.get('query_key')
+        for buckets in terms.itervalues():
+            for bucket in buckets:
+                if qk:
+                    key = hashable(bucket["key"])
+                else:
+                    # If no query_key, we use the key 'all' for all events
+                    key = 'all'
+                self.cardinality_cache.setdefault(key, {})
+                self.first_event.setdefault(key, bucket["max_timestamp"]["value_as_string"])
+                bucket[self.ts_field] = dt_to_ts(bucket["max_timestamp"]["value_as_string"])
+                # Store this timestamp as most recent occurence of the term
+                self.cardinality_cache[key][bucket["key"]] = bucket["max_timestamp"]["value_as_string"]
+                # self.check_for_match(key, event)
+                self.add_match(bucket)
+                #raise NotImplementedError()
 
     def add_data(self, data):
         qk = self.rules.get('query_key')
@@ -587,9 +608,9 @@ class CardinalityRule(RuleType):
                 key = 'all'
             self.cardinality_cache.setdefault(key, {})
             self.first_event.setdefault(key, event[self.ts_field])
-            if self.cardinality_field in event:
+            if self.query_key in event:
                 # Store this timestamp as most recent occurence of the term
-                self.cardinality_cache[key][event[self.cardinality_field]] = event[self.ts_field]
+                self.cardinality_cache[key][event[self.query_key]] = event[self.ts_field]
                 self.check_for_match(key, event)
 
     def check_for_match(self, key, event, gc=True):
