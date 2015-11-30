@@ -580,23 +580,11 @@ class CardinalityRule(RuleType):
     def add_terms_data(self, terms):
         """ Gets called when a rule has use_terms_query set to True.
 
-        :param terms: A list of buckets with a key, corresponding to query_key, and the count """
-        qk = self.rules.get('query_key')
-        for buckets in terms.itervalues():
-            for bucket in buckets:
-                if qk:
-                    key = hashable(bucket["key"])
-                else:
-                    # If no query_key, we use the key 'all' for all events
-                    key = 'all'
-                self.cardinality_cache.setdefault(key, {})
-                self.first_event.setdefault(key, bucket["max_timestamp"]["value_as_string"])
-                bucket[self.ts_field] = dt_to_ts(bucket["max_timestamp"]["value_as_string"])
-                # Store this timestamp as most recent occurence of the term
-                self.cardinality_cache[key][bucket["key"]] = bucket["max_timestamp"]["value_as_string"]
-                # self.check_for_match(key, event)
-                self.add_match(bucket)
-                #raise NotImplementedError()
+        :param terms: A list of buckets with a key, corresponding to query_key """
+
+        for ts, data in terms.iteritems():
+            bucket = {self.ts_field: ts, "values": [x["key"] for x in data]}
+            self.add_match(bucket)
 
     def add_data(self, data):
         qk = self.rules.get('query_key')
@@ -643,14 +631,14 @@ class CardinalityRule(RuleType):
 
     def get_match_str(self, match):
         lt = self.rules.get('use_local_time')
-        starttime = pretty_ts(dt_to_ts(ts_to_dt(match[self.ts_field]) - self.rules['timeframe']), lt)
-        endtime = pretty_ts(match[self.ts_field], lt)
+        starttime = (ts_to_dt(match[self.ts_field]) - self.rules['timeframe']).isoformat()
+        endtime = match[self.ts_field]
         if 'max_cardinality' in self.rules:
             message = ('A maximum of %d unique %s(s) occurred since last alert or between %s and %s\n\n' % (self.rules['max_cardinality'],
-                                                                                                            self.rules['cardinality_field'],
+                                                                                                            self.rules['query_key'],
                                                                                                             starttime, endtime))
         else:
             message = ('Less than %d unique %s(s) occurred since last alert or between %s and %s\n\n' % (self.rules['min_cardinality'],
-                                                                                                         self.rules['cardinality_field'],
+                                                                                                         self.rules['query_key'],
                                                                                                          starttime, endtime))
         return message
