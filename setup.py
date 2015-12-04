@@ -8,7 +8,7 @@ from setuptools import setup
 base_dir = os.path.dirname(__file__)
 setup(
     name='elastalert',
-    version='0.0.66',
+    version='0.0.70',
     description='Runs custom filters on Elasticsearch and alerts on matches',
     author='Quentin Long',
     author_email='qlo@yelp.com',
@@ -25,6 +25,7 @@ setup(
         'argparse',
         'elasticsearch',
         'irc==9.0',
+        'jaraco.util==10.6',
         'jira==0.32',  # jira.exceptions is missing from later versions
         'jsonschema',
         'mock',
