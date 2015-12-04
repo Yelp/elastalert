@@ -29,7 +29,7 @@ class IRCAlerter(Alerter):
             self.password = 'None'
         self.botnick = 'alertbot'
         self.body = ''
-        self.reactor = irc.client.Reactor()
+        self.client = irc.client.IRC()
         wrapper = functools.partial(ssl.wrap_socket, ssl_version=ssl.PROTOCOL_TLSv1, ciphers="AES256-SHA")
         self.ssl_factory = irc.connection.Factory(wrapper=wrapper)
 
@@ -45,7 +45,7 @@ class IRCAlerter(Alerter):
         # Cannot privmsg newlines, nor longer than some maximum
         message = self.body.replace("\n", " / ")[:200]
         self.logger.debug("Recognized self.body, renamed as message - in on_join")
-        self.logger.debug("Recognized reactor object - in on_join")
+        self.logger.debug("Recognized irc client object - in on_join")
         if irc.client.is_channel(channel):
             connection.privmsg(channel, message)
             self.delivered = True
@@ -59,14 +59,15 @@ class IRCAlerter(Alerter):
 
     def on_privmsg(self, connection, event):
         channel = self.channel
-        self.logger.debug("Recognized reactor object - in on_privmsg")
+        self.logger.debug("Recognized irc client object - in on_privmsg")
         if irc.client.is_channel(channel):
             connection.quit(message="I'm out, good luck!")
             self.logger.debug("Disconnected from channel- connection.disconnect_all(message=..)")
             connection.close()
 
     def alert(self, matches):
-        reactor = self.reactor
+        client = self.client
+        server = client.server()
         self.delivered = False
         self.logger.debug("Recognized body of alert")
         for match in matches:
@@ -77,7 +78,7 @@ class IRCAlerter(Alerter):
                 self.logger.debug("More to append to message body")
         self.logger.debug("Body: '%s'" % self.body)
         try:
-            c = reactor.server().connect(
+            c = server.connect(
                 self.server,
                 self.port,
                 self.botnick,
@@ -96,9 +97,9 @@ class IRCAlerter(Alerter):
             if status is True:
                 self.logger.info("Connected to IRC: %s" % status)
                 while not self.delivered:
-                    reactor.process_once(0.2)
-                reactor.disconnect_all("done")
-                reactor.process_once(0.2)
+                    client.process_once(0.2)
+                client.disconnect_all("done")
+                client.process_once(0.2)
                 self.logger.info("Done")
                 time.sleep(1)
             else:
