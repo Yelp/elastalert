@@ -62,7 +62,8 @@ def main():
     es = Elasticsearch(host=host, port=port, use_ssl=use_ssl, http_auth=http_auth, url_prefix=url_prefix)
 
     silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
-                                                  'until': {'type': 'date', 'format': 'dateOptionalTime'}}}}
+                                                  'until': {'type': 'date', 'format': 'dateOptionalTime'},
+                                                  '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
     ess_mapping = {'elastalert_status': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
     es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
@@ -73,7 +74,8 @@ def main():
                                                        'match_body': {'enabled': False, 'type': 'object'},
                                                        '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
                                                        'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
-    error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False}}}}
+    error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False},
+                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
 
     index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
     if not index:
