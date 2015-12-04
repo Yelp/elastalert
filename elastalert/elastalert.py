@@ -999,6 +999,7 @@ class ElastAlerter():
                 match_body = alert.pop('match_body')
             except KeyError:
                 # Malformed alert, drop it
+                elastalert_logger.warning("malformed alert: %s" % (alert))
                 continue
 
             agg_id = alert.get('aggregate_id', None)

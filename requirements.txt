@@ -3,7 +3,7 @@ PyYAML==3.11
 argparse==1.3.0
 blist==1.3.6
 boto==2.34.0
-elasticsearch==1.3.0
+elasticsearch==2.1.0
 jira==0.32
 jsonschema==2.2.0
 mock==1.0.0
