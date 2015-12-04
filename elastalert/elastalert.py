@@ -75,7 +75,9 @@ class ElastAlerter():
             elastalert_logger.setLevel(logging.INFO)
             elastalert_logger.addHandler(logging.StreamHandler(sys.stdout))
 
-        if not self.args.es_debug:
+        if self.args.es_debug:
+            logging.getLogger('elasticsearch').setLevel(logging.DEBUG)
+        else:
             logging.getLogger('elasticsearch').setLevel(logging.WARNING)
 
         if self.args.es_debug_trace:
