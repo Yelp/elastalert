@@ -258,7 +258,8 @@ class ElastAlerter():
             query['fields'] = rule['include']
             extra_args = {}
         try:
-            res = self.current_es.search(index=index, size=self.max_query_size, body=query, ignore_unavailable=True, **extra_args)
+            max_query_size = rule['max_query_size'] if rule.get('max_query_size') else self.max_query_size
+            res = self.current_es.search(index=index, size=max_query_size, body=query, ignore_unavailable=True, **extra_args)
             logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
