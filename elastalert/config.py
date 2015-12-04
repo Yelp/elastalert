@@ -12,6 +12,7 @@ import ruletypes
 import yaml
 import yaml.scanner
 from opsgenie import OpsGenieAlerter
+from emailjinja import EmailJinjaAlerter
 from staticconf.loader import yaml_loader
 from util import dt_to_ts
 from util import dt_to_unix
@@ -51,7 +52,8 @@ alerts_mapping = {
     'sns': alerts.SnsAlerter,
     'hipchat': alerts.HipChatAlerter,
     'slack': alerts.SlackAlerter,
-    'pagerduty': alerts.PagerDutyAlerter
+    'pagerduty': alerts.PagerDutyAlerter,
+    'email-jinja': EmailJinjaAlerter,
 }
 
 
