@@ -526,7 +526,6 @@ class HipChatAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'hipchat',
-                'hipchat_auth_token': self.hipchat_auth_token,
                 'hipchat_room_id': self.hipchat_room_id}
 
 
@@ -625,5 +624,4 @@ class PagerDutyAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'pagerduty',
-                'pagerduty_service_key': self.pagerduty_service_key,
                 'pagerduty_client_name': self.pagerduty_client_name}
