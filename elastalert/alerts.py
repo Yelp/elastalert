@@ -536,6 +536,7 @@ class SlackAlerter(Alerter):
     def __init__(self, rule):
         super(SlackAlerter, self).__init__(rule)
         self.slack_webhook_url = self.rule['slack_webhook_url']
+        self.slack_proxy = self.rule.get('slack_proxy', None)
         self.slack_username_override = self.rule.get('slack_username_override', 'elastalert')
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
@@ -559,6 +560,8 @@ class SlackAlerter(Alerter):
         body = self.format_body(body)
         # post to slack
         headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.slack_proxy} if self.slack_proxy else None
         payload = {
             'username': self.slack_username_override,
             'icon_emoji': self.slack_emoji_override,
@@ -573,7 +576,7 @@ class SlackAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.slack_webhook_url, data=json.dumps(payload), headers=headers)
+            response = requests.post(self.slack_webhook_url, data=json.dumps(payload), headers=headers, proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to slack: %s" % e)
