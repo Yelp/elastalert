@@ -344,7 +344,7 @@ class JiraAlerter(Alerter):
         # directly adjacent to words appear to be ok
         title = title.replace(' - ', ' ')
 
-        date = (datetime.datetime.now() - datetime.timedelta(days=self.max_age)).strftime('%Y/%m/%d')
+        date = (datetime.datetime.now() - datetime.timedelta(days=self.max_age)).strftime('%Y-%m-%d')
         jql = 'project=%s AND summary~"%s" and created >= "%s"' % (self.project, title, date)
         if self.bump_in_statuses:
             jql = '%s and status in (%s)' % (jql, ','.join(self.bump_in_statuses))
