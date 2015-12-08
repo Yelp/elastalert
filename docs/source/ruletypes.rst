@@ -1077,6 +1077,8 @@ Elastalert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
 
 ``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
 
+``slack_proxy``: By default Elastalert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy
+
 PagerDuty
 ~~~~~~~~~
 
