@@ -973,9 +973,16 @@ class ElastAlerter():
     def find_recent_pending_alerts(self, time_limit):
         """ Queries writeback_es to find alerts that did not send
         and are newer than time_limit """
-        query = {'query': {'query_string': {'query': 'alert_sent:false'}},
+
+        # XXX only fetches 1000 results. If limit is reached, next loop will catch them
+        # unless there is constantly more than 1000 alerts to send.
+
+        # Fetch recent, unsent alerts that aren't part of an aggregate, earlier alerts first.
+        query = {'query': {'query_string': {'query': '!_exists_:aggregate_id AND alert_sent:false'}},
                  'filter': {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
-                                                     'to': dt_to_ts(ts_now())}}}}
+                                                     'to': dt_to_ts(ts_now())}}},
+                 'sort': { 'alert_time': {'order': 'asc'}},
+                }
         if self.writeback_es:
             try:
                 res = self.writeback_es.search(index=self.writeback_index,
@@ -999,11 +1006,7 @@ class ElastAlerter():
                 match_body = alert.pop('match_body')
             except KeyError:
                 # Malformed alert, drop it
-                continue
-
-            agg_id = alert.get('aggregate_id', None)
-            if agg_id:
-                # Aggregated alerts will be taken care of by get_aggregated_matches
+                elastalert_logger.warning("malformed alert: %s" % (alert))
                 continue
 
             # Find original rule
@@ -1011,7 +1014,7 @@ class ElastAlerter():
                 if rule['name'] == rule_name:
                     break
             else:
-                # Original rule is missing, drop alert
+                # Original rule is missing, keep alert for later if rule reappears
                 continue
 
             # Set current_es for top_count_keys query
@@ -1019,13 +1022,14 @@ class ElastAlerter():
             self.current_es = self.new_elasticsearch(rule_es_conn_config)
             self.current_es_addr = (rule['es_host'], rule['es_port'])
 
-            # Retry the alert unless it's a future alert
+            # Send the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):
                 aggregated_matches = self.get_aggregated_matches(_id)
                 if aggregated_matches:
                     matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
                     self.alert(matches, rule, alert_time=alert_time)
-                    rule['current_aggregate_id'] = None
+                    if rule['current_aggregate_id'] == _id:
+                        rule['current_aggregate_id'] = None
                 else:
                     self.alert([match_body], rule, alert_time=alert_time)
 
@@ -1046,6 +1050,8 @@ class ElastAlerter():
 
     def get_aggregated_matches(self, _id):
         """ Removes and returns all matches from writeback_es that have aggregate_id == _id """
+
+        # XXX if there are more than self.max_aggregation matches, you have big alerts and we will leave entries in ES.
         query = {'query': {'query_string': {'query': 'aggregate_id:%s' % (_id)}}}
         matches = []
         if self.writeback_es:
@@ -1072,11 +1078,12 @@ class ElastAlerter():
             alert_time = match_time + rule['aggregation']
             rule['aggregate_alert_time'] = alert_time
             agg_id = None
+            elastalert_logger.info('New aggregation for %s. next alert at %s.' % (rule['name'], alert_time))
         else:
             # Already pending aggregation, use existing alert_time
             alert_time = rule['aggregate_alert_time']
             agg_id = rule['current_aggregate_id']
-            elastalert_logger.info('Adding alert for %s to aggregation, next alert at %s' % (rule['name'], alert_time))
+            elastalert_logger.info('Adding alert for %s to aggregation(id: %s), next alert at %s' % (rule['name'], agg_id, alert_time))
 
         alert_body = self.get_alert_body(match, rule, False, alert_time)
         if agg_id:
@@ -1086,6 +1093,7 @@ class ElastAlerter():
         # If new aggregation, save _id
         if res and not agg_id:
             rule['current_aggregate_id'] = res['_id']
+            elastalert_logger.info('New aggregation id for %s: %s' % (rule['name'], rule['current_aggregate_id']))
 
         # Couldn't write the match to ES, save it in memory for now
         if not res:
