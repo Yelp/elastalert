@@ -1093,6 +1093,7 @@ class ElastAlerter():
         # If new aggregation, save _id
         if res and not agg_id:
             rule['current_aggregate_id'] = res['_id']
+            elastalert_logger.info('New aggregation id for %s: %s' % (rule['name'], rule['current_aggregate_id']))
 
         # Couldn't write the match to ES, save it in memory for now
         if not res:
