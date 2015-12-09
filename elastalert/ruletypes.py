@@ -508,7 +508,7 @@ class NewTermsRule(RuleType):
 
     def get_all_terms(self, args):
         """ Performs a terms aggregation for each field to get every existing term. """
-        self.es = Elasticsearch(host=self.rules['es_host'], port=self.rules['es_port'])
+        self.es = Elasticsearch(host=self.rules['es_host'], port=self.rules['es_port'], timeout=self.rules.get('es_conn_timeout', 50))
         window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
         field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
         query_template = {"aggs": {"values": {"terms": field_name}}}
@@ -527,7 +527,7 @@ class NewTermsRule(RuleType):
 
         for field in self.fields:
             field_name['field'] = field
-            res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout=50)
+            res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout='50s')
             if 'aggregations' in res:
                 buckets = res['aggregations']['filtered']['values']['buckets']
                 keys = [bucket['key'] for bucket in buckets]
