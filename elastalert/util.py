@@ -97,13 +97,13 @@ def inc_ts(timestamp, milliseconds=1):
 def pretty_ts(timestamp, tz=True):
     """Pretty-format the given timestamp (to be printed or logged hereafter).
     If tz, the timestamp will be converted to local time.
-    Format: YYYY-MM-DD HH:MM TZ"""
+    Format: YYYY-MM-DD HH:MM:SS TZ"""
     dt = timestamp
     if not isinstance(timestamp, datetime.datetime):
         dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
-    return dt.strftime('%Y-%m-%d %H:%M %Z')
+    return dt.strftime('%Y-%m-%d %H:%M:%S %Z')
 
 
 def ts_add(ts, td):
