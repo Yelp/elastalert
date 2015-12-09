@@ -1028,7 +1028,8 @@ class ElastAlerter():
                 if aggregated_matches:
                     matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
                     self.alert(matches, rule, alert_time=alert_time)
-                    rule['current_aggregate_id'] = None
+                    if rule['current_aggregate_id'] == _id:
+                        rule['current_aggregate_id'] = None
                 else:
                     self.alert([match_body], rule, alert_time=alert_time)
 
