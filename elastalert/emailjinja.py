@@ -208,7 +208,7 @@ class EmailJinjaAlerter(Alerter):
         self.smtp.sendmail(messageRoot['From'], messageRoot['To'], messageRoot.as_string())
         self.smtp.close()
 
-        elastalert_logger.info("Sent email to %s" % (self.rule['email']))
+        elastalert_logger.info("Sent email to %s for rule: %s" % (self.rule['email'], self.rule['name']))
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
