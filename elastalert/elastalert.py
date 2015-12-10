@@ -843,7 +843,7 @@ class ElastAlerter():
     def alert(self, matches, rule, alert_time=None):
         """ Wraps alerting, kibana linking and enhancements in an exception handler """
         try:
-            return self.send_alert(matches, rule, alert_time=None)
+            return self.send_alert(matches, rule, alert_time=alert_time)
         except Exception as e:
             self.handle_uncaught_exception(e, rule)
 
@@ -910,10 +910,10 @@ class ElastAlerter():
         # Run the alerts
         alert_sent = False
         alert_exception = None
-        alert_pipeline = {}
+        # Alert.pipeline is a single object shared between every alerter
+        # This allows alerters to pass objects and data between themselves
+        alert_pipeline = {"alert_time": alert_time}
         for alert in rule['alert']:
-            # Alert.pipeline is a single object shared between every alerter
-            # This allows alerters to pass objects and data between themselves
             alert.pipeline = alert_pipeline
             try:
                 alert.alert(matches)

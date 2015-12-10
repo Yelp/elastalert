@@ -111,6 +111,8 @@ class Alerter(object):
 
     def __init__(self, rule):
         self.rule = rule
+        # pipeline object is created by ElastAlerter.send_alert()
+        # and attached to each alerters used by a rule before calling alert()
         self.pipeline = None
 
     def alert(self, match):
