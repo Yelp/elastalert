@@ -5,6 +5,7 @@ import logging
 import dateutil.parser
 import dateutil.tz
 
+logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
 
 
