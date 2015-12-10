@@ -25,7 +25,7 @@ setup(
         'argparse',
         'elasticsearch',
         'irc==9.0',
-        'jaraco.util==10.6',
+        'jaraco.util==10.1',
         'jira==0.32',  # jira.exceptions is missing from later versions
         'jsonschema',
         'mock',
