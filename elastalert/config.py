@@ -134,6 +134,7 @@ def load_options(rule, conf, args=None):
     rule.setdefault('use_local_time', True)
     rule.setdefault('es_port', conf.get('es_port'))
     rule.setdefault('es_host', conf.get('es_host'))
+    rule.setdefault('max_query_size', conf.get('max_query_size'))
     rule.setdefault('description', "")
 
     # Set timestamp_type conversion function, used when generating queries and processing hits
