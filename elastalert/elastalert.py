@@ -73,7 +73,6 @@ class ElastAlerter():
 
         if self.verbose:
             elastalert_logger.setLevel(logging.INFO)
-            elastalert_logger.addHandler(logging.StreamHandler(sys.stdout))
 
         if self.args.es_debug:
             logging.getLogger('elasticsearch').setLevel(logging.DEBUG)
@@ -664,6 +663,7 @@ class ElastAlerter():
                 self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
                 exit(1)
         self.running = True
+        elastalert_logger.info("Starting up")
         while self.running:
             next_run = datetime.datetime.utcnow() + self.run_every
             self.run_all_rules()
@@ -1190,6 +1190,7 @@ class ElastAlerter():
         if self.disable_rules_on_error:
             self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
             self.disabled_rules.append(rule)
+            elastalert_logger.info('Rule %s disabled', rule['name'])
         if self.notify_email:
             self.send_notification_email(exception=exception, rule=rule)
 
