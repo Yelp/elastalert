@@ -8,6 +8,8 @@ import dateutil.tz
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
 
+PRETTY_TS_FMT='%Y-%m-%d %H:%M:%S %Z'
+
 
 def lookup_es_key(lookup_dict, term):
     """ Performs iterative dictionary search based upon the following conditions:
@@ -95,6 +97,9 @@ def inc_ts(timestamp, milliseconds=1):
     return dt_to_ts(dt)
 
 
+def pretty_ts_to_dt(ts):
+    return datetime.datetime.strptime(ts, PRETTY_TS_FMT)
+    
 def pretty_ts(timestamp, tz=True):
     """Pretty-format the given timestamp (to be printed or logged hereafter).
     If tz, the timestamp will be converted to local time.
@@ -104,7 +109,7 @@ def pretty_ts(timestamp, tz=True):
         dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
-    return dt.strftime('%Y-%m-%d %H:%M:%S %Z')
+    return dt.strftime(PRETTY_TS_FMT)
 
 
 def ts_add(ts, td):
