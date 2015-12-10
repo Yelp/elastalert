@@ -38,6 +38,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``aggregation`` (time, no default)                           |           |
 +--------------------------------------------------------------+           |
+| ``description`` (string, default empty string)               |           |
++--------------------------------------------------------------+           |
 | ``generate_kibana_link`` (boolean, default False)            |           |
 +--------------------------------------------------------------+           |
 |``use_kibana_dashboard`` (string, no default)                 |           |
@@ -306,6 +308,12 @@ raw_count_keys
 ^^^^^^^^^^^^^^
 
 ``raw_count_keys``: If true, all fields in ``top_count_keys`` will have ``.raw`` appended to them. (Optional, boolean, default true)
+
+description
+^^^^^^^^^^^
+
+``description``: text describing the purpose of rule. (Optional, string, default empty string)
+Can be referenced in custom alerters to provide context as to why a rule might trigger.
 
 generate_kibana_link
 ^^^^^^^^^^^^^^^^^^^^
