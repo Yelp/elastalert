@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
+import copy
 import datetime
 import hashlib
 import logging
 import os
-import copy
 
 import alerts
 import enhancements
@@ -333,7 +333,7 @@ def load_rules(args):
     if required_globals - frozenset(conf.keys()):
         raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(conf.keys()))))
 
-    conf.setdefault('max_query_size', 100000)
+    conf.setdefault('max_query_size', 10000)
     conf.setdefault('disable_rules_on_error', True)
 
     # Convert run_every, buffer_time into a timedelta object

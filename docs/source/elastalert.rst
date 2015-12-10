@@ -129,7 +129,7 @@ configuration.
 ``writeback_index``: The index on ``es_host`` to use.
 
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. The
-default is 100,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
+default is 10,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
 limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting
 can be overridden by any individual rule.
 
