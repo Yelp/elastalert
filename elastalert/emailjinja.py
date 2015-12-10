@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+import datetime
+import elastalert
 import json
-import types
 import logging
+import types
+import util
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -17,7 +20,7 @@ from socket import error
 
 from alerts import BasicMatchString, Alerter
 from util import EAException
-from util import elastalert_logger
+from util import elastalert_logger, pretty_ts, ts_to_dt
 
 from elasticsearch.client import Elasticsearch
 from elasticsearch.exceptions import ElasticsearchException
@@ -36,51 +39,6 @@ def _encode_str(s):
     if type(s) == types.UnicodeType:
         return s.encode('utf8')
     return s
-
-# from elastalert
-def new_elasticsearch(es_conn_conf):
-    """ returns an Elasticsearch instance configured using an es_conn_config """
-    return Elasticsearch(host=es_conn_conf['es_host'],
-                         port=es_conn_conf['es_port'],
-                         url_prefix=es_conn_conf['es_url_prefix'],
-                         use_ssl=es_conn_conf['use_ssl'],
-                         http_auth=es_conn_conf['http_auth'],
-                         timeout=es_conn_conf['es_conn_timeout'])
-
-# from elastalert
-def build_es_conn_config(conf):
-    """ Given a conf dictionary w/ raw config properties 'use_ssl', 'es_host', 'es_port'
-    'es_username' and 'es_password', this will return a new dictionary
-    with properly initialized values for 'es_host', 'es_port', 'use_ssl' and 'http_auth' which
-    will be a basicauth username:password formatted string """
-    parsed_conf = {}
-    parsed_conf['use_ssl'] = False
-    parsed_conf['http_auth'] = None
-    parsed_conf['es_username'] = None
-    parsed_conf['es_password'] = None
-    parsed_conf['es_host'] = conf['es_host']
-    parsed_conf['es_port'] = conf['es_port']
-    parsed_conf['es_url_prefix'] = ''
-    parsed_conf['es_conn_timeout'] = 10
-
-    if 'es_username' in conf:
-        parsed_conf['es_username'] = conf['es_username']
-        parsed_conf['es_password'] = conf['es_password']
-
-    if parsed_conf['es_username'] and parsed_conf['es_password']:
-        parsed_conf['http_auth'] = parsed_conf['es_username'] + ':' + parsed_conf['es_password']
-
-    if 'use_ssl' in conf:
-        parsed_conf['use_ssl'] = conf['use_ssl']
-
-    if 'es_conn_timeout' in conf:
-        parsed_conf['es_conn_timeout'] = conf['es_conn_timeout']
-
-    if 'es_url_prefix' in conf:
-        parsed_conf['es_url_prefix'] = conf['es_url_prefix']
-
-    return parsed_conf
-
 
 # Supports:
 #   email*
@@ -152,7 +110,7 @@ class EmailJinjaAlerter(Alerter):
         else:
             html = '{{ matches|length }} items found'
 
-        es_conn_conf = build_es_conn_config(self.rule)
+        es_conn_conf = elastalert.ElastAlerter.build_es_conn_config(self.rule)
 
         env = {
             'rule': self.rule,
@@ -160,8 +118,10 @@ class EmailJinjaAlerter(Alerter):
             'pipeline': self.pipeline,
             'jira_server': self.pipeline['jira_server'] if (self.pipeline and 'jira_server' in self.pipeline) else None,
             'jira_ticket': self.pipeline['jira_ticket'] if (self.pipeline and 'jira_ticket' in self.pipeline) else None,
-            'es': new_elasticsearch(es_conn_conf),
+            'es': elastalert.ElastAlerter.new_elasticsearch(es_conn_conf),
             'json': json,
+            'util': util,
+            'datetime': datetime,
         }
 
         text = Environment().from_string(text).render(**env)
@@ -211,7 +171,9 @@ class EmailJinjaAlerter(Alerter):
         elastalert_logger.info("Sent email to %s for rule: %s" % (self.rule['email'], self.rule['name']))
 
     def create_default_title(self, matches):
-        subject = 'ElastAlert: %s' % (self.rule['name'])
+        subject = '%s: %d matches found - %s' % \
+                      (self.rule['name'], len(matches),
+                      pretty_ts(ts_to_dt(self.pipeline['alert_time'])))
 
         # If the rule has a query_key, add that value plus timestamp to subject
         if 'query_key' in self.rule:
@@ -221,8 +183,25 @@ class EmailJinjaAlerter(Alerter):
 
         return subject
 
+    def create_custom_title(self, matches):
+        # Assume rule['alert_subject'] to be a jinja templated string. See Alerter.create_title()
+        subject = self.rule['alert_subject'] 
+
+        es_conn_conf = elastalert.ElastAlerter.build_es_conn_config(self.rule)
+        env = {
+            'rule': self.rule,
+            'matches': matches,
+            'pipeline': self.pipeline,
+            'jira_server': self.pipeline['jira_server'] if (self.pipeline and 'jira_server' in self.pipeline) else None,
+            'jira_ticket': self.pipeline['jira_ticket'] if (self.pipeline and 'jira_ticket' in self.pipeline) else None,
+            'es': elastalert.ElastAlerter.new_elasticsearch(es_conn_conf),
+            'util': util,
+            'datetime': datetime,
+        }
+
+        return Environment().from_string(subject).render(**env)
+
     def get_info(self):
         return {'type': 'email-jinja',
                 'recipients': self.rule['email']}
-
 

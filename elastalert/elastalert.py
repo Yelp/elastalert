@@ -73,7 +73,6 @@ class ElastAlerter():
 
         if self.verbose:
             elastalert_logger.setLevel(logging.INFO)
-            elastalert_logger.addHandler(logging.StreamHandler(sys.stdout))
 
         if self.args.es_debug:
             logging.getLogger('elasticsearch').setLevel(logging.DEBUG)
@@ -250,7 +249,7 @@ class ElastAlerter():
         :param rule: The rule configuration.
         :param starttime: The earliest time to query.
         :param endtime: The latest time to query.
-        :return: A list of hits, bounded by self.max_query_size.
+        :return: A list of hits, bounded by rule['max_query_size'].
         """
         query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], to_ts_func=rule['dt_to_ts'])
         extra_args = {'_source_include': rule['include']}
@@ -258,8 +257,7 @@ class ElastAlerter():
             query['fields'] = rule['include']
             extra_args = {}
         try:
-            max_query_size = rule['max_query_size'] if rule.get('max_query_size') else self.max_query_size
-            res = self.current_es.search(index=index, size=max_query_size, body=query, ignore_unavailable=True, **extra_args)
+            res = self.current_es.search(index=index, size=rule['max_query_size'], body=query, ignore_unavailable=True, **extra_args)
             logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
@@ -665,6 +663,7 @@ class ElastAlerter():
                 self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
                 exit(1)
         self.running = True
+        elastalert_logger.info("Starting up")
         while self.running:
             next_run = datetime.datetime.utcnow() + self.run_every
             self.run_all_rules()
@@ -844,7 +843,7 @@ class ElastAlerter():
     def alert(self, matches, rule, alert_time=None):
         """ Wraps alerting, kibana linking and enhancements in an exception handler """
         try:
-            return self.send_alert(matches, rule, alert_time=None)
+            return self.send_alert(matches, rule, alert_time=alert_time)
         except Exception as e:
             self.handle_uncaught_exception(e, rule)
 
@@ -911,10 +910,10 @@ class ElastAlerter():
         # Run the alerts
         alert_sent = False
         alert_exception = None
-        alert_pipeline = {}
+        # Alert.pipeline is a single object shared between every alerter
+        # This allows alerters to pass objects and data between themselves
+        alert_pipeline = {"alert_time": alert_time}
         for alert in rule['alert']:
-            # Alert.pipeline is a single object shared between every alerter
-            # This allows alerters to pass objects and data between themselves
             alert.pipeline = alert_pipeline
             try:
                 alert.alert(matches)
@@ -1191,6 +1190,7 @@ class ElastAlerter():
         if self.disable_rules_on_error:
             self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
             self.disabled_rules.append(rule)
+            elastalert_logger.info('Rule %s disabled', rule['name'])
         if self.notify_email:
             self.send_notification_email(exception=exception, rule=rule)
 
