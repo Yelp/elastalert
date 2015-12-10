@@ -68,7 +68,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``filter`` (ES filter DSL, no default)                       |           |
 +--------------------------------------------------------------+           |
-| ``max_query_size`` (int, default 100k)                       |           |
+| ``max_query_size`` (int, default global max_query_size)      |           |
 +--------------------------------------------------------------+           |
 | ``query_delay`` (time, default 0 min)                        |           |
 +--------------------------------------------------------------+           |
@@ -270,7 +270,7 @@ max_query_size
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. If you
 expect a large number of results, consider using ``use_count_query`` for the rule. If this
 limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting will
-override a global ``max_query_size``. (Optional, int, default 100,000)
+override a global ``max_query_size``. (Optional, int, default value of global ``max_query_size``)
 
 filter
 ^^^^^^

@@ -247,7 +247,7 @@ class ElastAlerter():
         :param rule: The rule configuration.
         :param starttime: The earliest time to query.
         :param endtime: The latest time to query.
-        :return: A list of hits, bounded by self.max_query_size.
+        :return: A list of hits, bounded by rule['max_query_size'].
         """
         query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], to_ts_func=rule['dt_to_ts'])
         extra_args = {'_source_include': rule['include']}
@@ -255,8 +255,7 @@ class ElastAlerter():
             query['fields'] = rule['include']
             extra_args = {}
         try:
-            max_query_size = rule['max_query_size'] if rule.get('max_query_size') else self.max_query_size
-            res = self.current_es.search(index=index, size=max_query_size, body=query, ignore_unavailable=True, **extra_args)
+            res = self.current_es.search(index=index, size=rule['max_query_size'], body=query, ignore_unavailable=True, **extra_args)
             logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
