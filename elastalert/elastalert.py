@@ -977,8 +977,7 @@ class ElastAlerter():
         query = {'query': {'query_string': {'query': '!_exists_:aggregate_id AND alert_sent:false'}},
                  'filter': {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
                                                      'to': dt_to_ts(ts_now())}}},
-                 'sort': { 'alert_time': {'order': 'asc'}},
-                }
+                 'sort': {'alert_time': {'order': 'asc'}}}
         if self.writeback_es:
             try:
                 res = self.writeback_es.search(index=self.writeback_index,
