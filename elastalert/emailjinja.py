@@ -80,9 +80,9 @@ class EmailJinjaAlerter(Alerter):
         # in ruletypes.py we seem to test check_for_match
         # and it seems to me like it should not reach this
         # function if there are no matches
-        if len(matches) < self.rule["num_events"]:
-            print "Not enough matches: %d" % (len(matches))
-            return
+##        if len(matches) < self.rule["num_events"]:
+##            print "Not enough matches: %d" % (len(matches))
+##            return
         ## # # # # # # # # # # # # # # # # # # # # # # # ##
 
         if False:
@@ -165,7 +165,7 @@ class EmailJinjaAlerter(Alerter):
         except SMTPAuthenticationError as e:
             raise EAException("SMTP username/password rejected: %s" % (e))
 
-        self.smtp.sendmail(messageRoot['From'], messageRoot['To'], messageRoot.as_string())
+        self.smtp.sendmail(messageRoot['From'], self.rule['email'], messageRoot.as_string())
         self.smtp.close()
 
         elastalert_logger.info("Sent email to %s for rule: %s" % (self.rule['email'], self.rule['name']))
