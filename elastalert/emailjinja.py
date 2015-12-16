@@ -75,16 +75,6 @@ class EmailJinjaAlerter(Alerter):
 
     def alert(self, matches):
 
-        ## # # # # # # # # # # # # # # # # # # # # # # # ##
-        # Marc: I am not sure why I need this
-        # in ruletypes.py we seem to test check_for_match
-        # and it seems to me like it should not reach this
-        # function if there are no matches
-##        if len(matches) < self.rule["num_events"]:
-##            print "Not enough matches: %d" % (len(matches))
-##            return
-        ## # # # # # # # # # # # # # # # # # # # # # # # ##
-
         if False:
             print "*********** STACK ***********"
             import traceback
@@ -174,12 +164,6 @@ class EmailJinjaAlerter(Alerter):
         subject = '%s: %d matches found - %s' % \
                       (self.rule['name'], len(matches),
                       pretty_ts(ts_to_dt(self.pipeline['alert_time'])))
-
-        # If the rule has a query_key, add that value plus timestamp to subject
-        if 'query_key' in self.rule:
-            qk = matches[0].get(self.rule['query_key'])
-            if qk:
-                subject += ' - %s' % (qk)
 
         return subject
 
