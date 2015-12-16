@@ -7,6 +7,7 @@ import types
 import util
 
 from jinja2 import Environment, FileSystemLoader
+from kibana4_context import kibana4_context_args
 
 from email.utils import COMMASPACE
 from email.mime.text import MIMEText
@@ -112,6 +113,7 @@ class EmailJinjaAlerter(Alerter):
             'json': json,
             'util': util,
             'datetime': datetime,
+            'kibana_context_args': kibana4_context_args,
         }
 
         text = Environment().from_string(text).render(**env)
