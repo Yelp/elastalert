@@ -55,7 +55,8 @@ class ElastAlerter():
         parser.add_argument('--rule', dest='rule', help='Run only a specific rule (by filename, must still be in rules folder)')
         parser.add_argument('--silence', dest='silence', help='Silence rule for a time period. Must be used with --rule. Usage: '
                                                               '--silence <units>=<number>, eg. --silence hours=2')
-        parser.add_argument('--start', dest='start', help='YYYY-MM-DDTHH:MM:SS Start querying from this timestamp. (Default: present)')
+        parser.add_argument('--start', dest='start', help='YYYY-MM-DDTHH:MM:SS Start querying from this timestamp.'
+                                                          'Use "NOW" to start from current time. (Default: present)')
         parser.add_argument('--end', dest='end', help='YYYY-MM-DDTHH:MM:SS Query to this timestamp. (Default: present)')
         parser.add_argument('--verbose', action='store_true', dest='verbose', help='Increase verbosity without suppressing alerts')
         parser.add_argument('--pin_rules', action='store_true', dest='pin_rules', help='Stop ElastAlert from monitoring config file changes')
@@ -657,11 +658,14 @@ class ElastAlerter():
     def start(self):
         """ Periodically go through each rule and run it """
         if self.starttime:
-            try:
-                self.starttime = ts_to_dt(self.starttime)
-            except (TypeError, ValueError):
-                self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
-                exit(1)
+            if self.starttime == 'NOW':
+                self.starttime = ts_now()
+            else:
+                try:
+                    self.starttime = ts_to_dt(self.starttime)
+                except (TypeError, ValueError):
+                    self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
+                    exit(1)
         self.running = True
         elastalert_logger.info("Starting up")
         while self.running:
