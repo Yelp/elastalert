@@ -669,8 +669,8 @@ class ElastAlerter():
             self.run_all_rules()
             
             # Quit after end_time has been reached
-            if hasattr(self.args, 'end'):
-                endtime = ts_to_dt(self.args.end)
+            if self.args.end:
+                endtime = ts_to_dt(self.args.end)   
             
                 if next_run.replace(tzinfo=dateutil.tz.tzutc()) > endtime:
                     exit(0)
