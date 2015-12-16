@@ -13,6 +13,7 @@ import yaml
 import yaml.scanner
 from opsgenie import OpsGenieAlerter
 from emailjinja import EmailJinjaAlerter
+from hipchatjinja import HipChatv1Alerter
 from staticconf.loader import yaml_loader
 from util import dt_to_ts
 from util import dt_to_unix
@@ -54,6 +55,7 @@ alerts_mapping = {
     'slack': alerts.SlackAlerter,
     'pagerduty': alerts.PagerDutyAlerter,
     'email-jinja': EmailJinjaAlerter,
+    'hipchat-jinja': HipChatv1Alerter,
 }
 
 

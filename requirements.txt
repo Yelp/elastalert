@@ -9,7 +9,7 @@ jsonschema==2.2.0
 mock==1.0.0
 oauthlib==0.7.2
 python-dateutil==2.4.0
-requests==2.5.1
+requests[security]==2.5.1
 requests-oauthlib==0.4.2
 simplejson==3.6.5
 six==1.9.0
