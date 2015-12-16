@@ -8,6 +8,7 @@ import signal
 import sys
 import time
 import traceback
+import dateutil.tz
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
@@ -664,7 +665,15 @@ class ElastAlerter():
         elastalert_logger.info("Starting up")
         while self.running:
             next_run = datetime.datetime.utcnow() + self.run_every
+
             self.run_all_rules()
+            
+            # Quit after end_time has been reached
+            if hasattr(self.args, 'end'):
+                endtime = ts_to_dt(self.args.end)
+            
+                if next_run.replace(tzinfo=dateutil.tz.tzutc()) > endtime:
+                    exit(0)
 
             if next_run < datetime.datetime.utcnow():
                 continue
