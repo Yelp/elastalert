@@ -668,5 +668,4 @@ class VictorOpsAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'victorops',
-                'victorops_api_key': self.victorops_api_key,
                 'victorops_routing_key': self.victorops_routing_key}
