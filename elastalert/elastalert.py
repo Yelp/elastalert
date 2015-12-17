@@ -73,7 +73,6 @@ class ElastAlerter():
 
         if self.verbose:
             elastalert_logger.setLevel(logging.INFO)
-            elastalert_logger.addHandler(logging.StreamHandler(sys.stdout))
 
         if not self.args.es_debug:
             logging.getLogger('elasticsearch').setLevel(logging.WARNING)
@@ -661,6 +660,7 @@ class ElastAlerter():
                 self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
                 exit(1)
         self.running = True
+        elastalert_logger.info("Starting up")
         while self.running:
             next_run = datetime.datetime.utcnow() + self.run_every
             self.run_all_rules()
@@ -840,7 +840,7 @@ class ElastAlerter():
     def alert(self, matches, rule, alert_time=None):
         """ Wraps alerting, kibana linking and enhancements in an exception handler """
         try:
-            return self.send_alert(matches, rule, alert_time=None)
+            return self.send_alert(matches, rule, alert_time=alert_time)
         except Exception as e:
             self.handle_uncaught_exception(e, rule)
 
@@ -907,10 +907,10 @@ class ElastAlerter():
         # Run the alerts
         alert_sent = False
         alert_exception = None
-        alert_pipeline = {}
+        # Alert.pipeline is a single object shared between every alerter
+        # This allows alerters to pass objects and data between themselves
+        alert_pipeline = {"alert_time": alert_time}
         for alert in rule['alert']:
-            # Alert.pipeline is a single object shared between every alerter
-            # This allows alerters to pass objects and data between themselves
             alert.pipeline = alert_pipeline
             try:
                 alert.alert(matches)
@@ -969,9 +969,15 @@ class ElastAlerter():
     def find_recent_pending_alerts(self, time_limit):
         """ Queries writeback_es to find alerts that did not send
         and are newer than time_limit """
-        query = {'query': {'query_string': {'query': 'alert_sent:false'}},
+
+        # XXX only fetches 1000 results. If limit is reached, next loop will catch them
+        # unless there is constantly more than 1000 alerts to send.
+
+        # Fetch recent, unsent alerts that aren't part of an aggregate, earlier alerts first.
+        query = {'query': {'query_string': {'query': '!_exists_:aggregate_id AND alert_sent:false'}},
                  'filter': {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
-                                                     'to': dt_to_ts(ts_now())}}}}
+                                                     'to': dt_to_ts(ts_now())}}},
+                 'sort': {'alert_time': {'order': 'asc'}}}
         if self.writeback_es:
             try:
                 res = self.writeback_es.search(index=self.writeback_index,
@@ -997,17 +1003,12 @@ class ElastAlerter():
                 # Malformed alert, drop it
                 continue
 
-            agg_id = alert.get('aggregate_id', None)
-            if agg_id:
-                # Aggregated alerts will be taken care of by get_aggregated_matches
-                continue
-
             # Find original rule
             for rule in self.rules:
                 if rule['name'] == rule_name:
                     break
             else:
-                # Original rule is missing, drop alert
+                # Original rule is missing, keep alert for later if rule reappears
                 continue
 
             # Set current_es for top_count_keys query
@@ -1015,7 +1016,7 @@ class ElastAlerter():
             self.current_es = self.new_elasticsearch(rule_es_conn_config)
             self.current_es_addr = (rule['es_host'], rule['es_port'])
 
-            # Retry the alert unless it's a future alert
+            # Send the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):
                 aggregated_matches = self.get_aggregated_matches(_id)
                 if aggregated_matches:
@@ -1043,6 +1044,8 @@ class ElastAlerter():
 
     def get_aggregated_matches(self, _id):
         """ Removes and returns all matches from writeback_es that have aggregate_id == _id """
+
+        # XXX if there are more than self.max_aggregation matches, you have big alerts and we will leave entries in ES.
         query = {'query': {'query_string': {'query': 'aggregate_id:%s' % (_id)}}}
         matches = []
         if self.writeback_es:
@@ -1069,11 +1072,12 @@ class ElastAlerter():
             alert_time = match_time + rule['aggregation']
             rule['aggregate_alert_time'] = alert_time
             agg_id = None
+            elastalert_logger.info('New aggregation for %s. next alert at %s.' % (rule['name'], alert_time))
         else:
             # Already pending aggregation, use existing alert_time
             alert_time = rule['aggregate_alert_time']
             agg_id = rule['current_aggregate_id']
-            elastalert_logger.info('Adding alert for %s to aggregation, next alert at %s' % (rule['name'], alert_time))
+            elastalert_logger.info('Adding alert for %s to aggregation(id: %s), next alert at %s' % (rule['name'], agg_id, alert_time))
 
         alert_body = self.get_alert_body(match, rule, False, alert_time)
         if agg_id:
@@ -1180,6 +1184,7 @@ class ElastAlerter():
         if self.disable_rules_on_error:
             self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
             self.disabled_rules.append(rule)
+            elastalert_logger.info('Rule %s disabled', rule['name'])
         if self.notify_email:
             self.send_notification_email(exception=exception, rule=rule)
 

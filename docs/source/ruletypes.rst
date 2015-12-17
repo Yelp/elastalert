@@ -38,6 +38,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``aggregation`` (time, no default)                           |           |
 +--------------------------------------------------------------+           |
+| ``description`` (string, default empty string)               |           |
++--------------------------------------------------------------+           |
 | ``generate_kibana_link`` (boolean, default False)            |           |
 +--------------------------------------------------------------+           |
 |``use_kibana_dashboard`` (string, no default)                 |           |
@@ -306,6 +308,12 @@ raw_count_keys
 ^^^^^^^^^^^^^^
 
 ``raw_count_keys``: If true, all fields in ``top_count_keys`` will have ``.raw`` appended to them. (Optional, boolean, default true)
+
+description
+^^^^^^^^^^^
+
+``description``: text describing the purpose of rule. (Optional, string, default empty string)
+Can be referenced in custom alerters to provide context as to why a rule might trigger.
 
 generate_kibana_link
 ^^^^^^^^^^^^^^^^^^^^
@@ -1089,6 +1097,23 @@ The alerter requires the following option:
 ``pagerduty_service_key``: Integration Key generated after creating a service with the 'Use our API directly' option at Integration Settings
 
 ``pagerduty_client_name``: The name of the monitoring client that is triggering this event.
+
+VictorOps  
+~~~~~~~~~
+
+VictorOps alerter will trigger an incident to a predefined VictorOps routing key. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``victorops_api_key``: API key generated under the 'REST Endpoint' in the Integrations settings.
+
+``victorops_routing_key``: VictorOps routing key to route the alert to.
+
+``victorops_message_type``: VictorOps field to specify serverity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
+
+Optional:
+
+``victorops_entity_display_name``: Humna-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle. 
 
 Debug
 ~~~~~~

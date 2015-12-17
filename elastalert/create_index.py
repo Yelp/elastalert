@@ -5,6 +5,7 @@ from __future__ import print_function
 import getpass
 import json
 import os
+import time
 
 import argparse
 import yaml
@@ -91,6 +92,8 @@ def main():
         print('Got %s documents' % (len(res['hits']['hits'])))
 
     es.indices.create(index)
+    # To avoid a race condition. TODO: replace this with a real check
+    time.sleep(2)
     es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
     es.indices.put_mapping(index=index, doc_type='elastalert_status', body=ess_mapping)
     es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)
