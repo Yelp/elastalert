@@ -377,7 +377,12 @@ class SpikeRule(RuleType):
             self.ref_window_filled_once = True
 
         if self.find_matches(self.ref_windows[qk].count(), self.cur_windows[qk].count()):
-            match = self.cur_windows[qk].data[-1][0]
+            # If placeholder (with 0 count) triggered alert, use a real event (the first one) instead of the latest (placeholder) event
+            if count == 0:
+                match = self.cur_windows[qk].data[0][0]
+            else:
+                match = self.cur_windows[qk].data[-1][0]
+
             self.add_match(match, qk)
             self.clear_windows(qk, match)
 
