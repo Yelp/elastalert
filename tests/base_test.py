@@ -261,11 +261,10 @@ def test_agg(ea):
     assert not call3['alert_sent']
     assert 'aggregate_id' not in call3
 
-    # First call - Find all pending alerts
+    # First call - Find all pending alerts (only entries without agg_id)
     # Second call - Find matches with agg_id == 'ABCD'
     # Third call - Find matches with agg_id == 'CDEF'
     ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': call1},
-                                                             {'_id': 'BCDE', '_source': call2},
                                                              {'_id': 'CDEF', '_source': call3}]}},
                                           {'hits': {'hits': [{'_id': 'BCDE', '_source': call2}]}},
                                           {'hits': {'hits': []}}]
