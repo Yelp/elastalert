@@ -44,6 +44,7 @@ Currently, we have support built in for the following alert types:
 - HipChat
 - Slack
 - AWS SNS
+- VictorOps
 - PagerDuty
 
 Additional rule types and alerts can be easily imported or written.
