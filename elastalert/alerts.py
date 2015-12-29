@@ -277,7 +277,7 @@ class JiraAlerter(Alerter):
         self.get_account(self.rule['jira_account_file'])
         self.project = self.rule['jira_project']
         self.issue_type = self.rule['jira_issuetype']
-        self.security_level = self.rule['jira_security_level']
+        self.security_level = self.rule.get('jira_security_level')
         self.component = self.rule.get('jira_component')
         self.label = self.rule.get('jira_label')
         self.description = self.rule.get('jira_description', '')
@@ -301,7 +301,7 @@ class JiraAlerter(Alerter):
         self.jira_args = {'project': {'key': self.project},
                           'issuetype': {'name': self.issue_type}}
 
-        if self.security_level != "":
+        if self.security_level:
             self.jira_args['security'] = {'name': self.security_level}
 
         if self.component:
