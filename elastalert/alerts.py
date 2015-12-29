@@ -302,7 +302,7 @@ class JiraAlerter(Alerter):
                           'issuetype': {'name': self.issue_type}}
 
         if self.security_level != "":
-            self.jira_args = ['security'] = {'name': self.security_level}
+            self.jira_args['security'] = {'name': self.security_level}
 
         if self.component:
             self.jira_args['components'] = [{'name': self.component}]
