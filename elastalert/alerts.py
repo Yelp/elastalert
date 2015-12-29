@@ -299,8 +299,10 @@ class JiraAlerter(Alerter):
             logging.warning(msg)
 
         self.jira_args = {'project': {'key': self.project},
-                          'issuetype': {'name': self.issue_type},
-                          'security': {'name': self.security_level}}
+                          'issuetype': {'name': self.issue_type}}
+
+        if self.security_level != "":
+            self.jira_args = ['security'] = {'name': self.security_level}
 
         if self.component:
             self.jira_args['components'] = [{'name': self.component}]
