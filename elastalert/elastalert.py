@@ -227,7 +227,7 @@ class ElastAlerter():
     @staticmethod
     def process_hits(rule, hits):
         """ Update the _source field for each hit received from ES based on the rule configuration.
-        
+
         This replaces timestamps with datetime objects,
         folds important fields into _source and creates compound query_keys.
 
@@ -246,8 +246,8 @@ class ElastAlerter():
 
             # Tack metadata fields into _source
             for field in ['_id', '_index', '_type']:
-              if field in hit:
-                hit['_source'][field] = hit[field]
+                if field in hit:
+                    hit['_source'][field] = hit[field]
 
             if rule.get('compound_query_key'):
                 values = [lookup_es_key(hit['_source'], key) for key in rule['compound_query_key']]
@@ -351,7 +351,6 @@ class ElastAlerter():
         return {endtime: buckets}
 
     def remove_duplicate_events(self, data, rule):
-
         new_events = []
         for event in data:
             if event['_id'] in rule['processed_hits']:
@@ -360,7 +359,7 @@ class ElastAlerter():
             # Remember the new data's IDs
             rule['processed_hits'][event['_id']] = event[rule['timestamp_field']]
             new_events.append(event)
-            
+
         return new_events
 
     def remove_old_events(self, rule):
