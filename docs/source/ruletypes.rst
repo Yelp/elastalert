@@ -1025,13 +1025,19 @@ an alert, however it could be extended to update or close existing alerts.
 
 It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://app.opsgenie.com/integration>`_ in order to create alerts.
 
-The OpsGenie alert requires three options:
+The OpsGenie alert requires one option:
 
 ``opsgenie_key``: The randomly generated API Integration key created by OpsGenie.
+
+Optional:
 
 ``opsgenie_account``: The OpsGenie account to integrate with.
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
+
+``opsgenie_teams``: A list of OpsGenie teams to notify (useful for schedules with escalation).
+
+``opsgenie_tags``: A list of tags for this alert.
 
 SNS
 ~~~
