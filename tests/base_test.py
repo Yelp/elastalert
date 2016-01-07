@@ -35,9 +35,15 @@ def generate_hits(timestamps, **kwargs):
     hits = []
     id_iter = xrange(len(timestamps)).__iter__()
     for ts in timestamps:
-        data = {'_id': 'id' + str(id_iter.next()), '_source': {'@timestamp': ts}, '_type': 'logs'}
+        data = {'_id': 'id' + str(id_iter.next()),
+                '_source': {'@timestamp': ts},
+                '_type': 'logs',
+                '_index': 'idx'}
         for key, item in kwargs.iteritems():
             data['_source'][key] = item
+        # emulate process_hits(), add metadata to _source
+        for field in ['_id', '_type', '_index']:
+            data['_source'][field] = data[field]
         hits.append(data)
     return {'hits': {'hits': hits}}
 

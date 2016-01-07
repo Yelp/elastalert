@@ -227,8 +227,15 @@ class ElastAlerter():
 
     @staticmethod
     def process_hits(rule, hits):
-        """ Process results from Elasticearch. This replaces timestamps with datetime objects
-        and creates compound query_keys. """
+        """ Update the _source field for each hit received from ES based on the rule configuration.
+
+        This replaces timestamps with datetime objects,
+        folds important fields into _source and creates compound query_keys.
+
+        :return: A list of processed _source dictionaries.
+        """
+
+        processed_hits = []
         for hit in hits:
             # Merge fields and _source
             hit.setdefault('_source', {})
@@ -237,9 +244,19 @@ class ElastAlerter():
                 # Except sometimes they aren't lists. This is dependent on ES version
                 hit['_source'].setdefault(key, value[0] if type(value) is list and len(value) == 1 else value)
             hit['_source'][rule['timestamp_field']] = rule['ts_to_dt'](hit['_source'][rule['timestamp_field']])
+
+            # Tack metadata fields into _source
+            for field in ['_id', '_index', '_type']:
+                if field in hit:
+                    hit['_source'][field] = hit[field]
+
             if rule.get('compound_query_key'):
                 values = [lookup_es_key(hit['_source'], key) for key in rule['compound_query_key']]
                 hit['_source'][rule['query_key']] = ', '.join([unicode(value) for value in values])
+
+            processed_hits.append(hit['_source'])
+
+        return processed_hits
 
     def get_hits(self, rule, starttime, endtime, index):
         """ Query elasticsearch for the given rule and return the results.
@@ -269,7 +286,7 @@ class ElastAlerter():
         self.num_hits += len(hits)
         lt = rule.get('use_local_time')
         elastalert_logger.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits)))
-        self.process_hits(rule, hits)
+        hits = self.process_hits(rule, hits)
 
         # Record doc_type for use in get_top_counts
         if 'doc_type' not in rule and len(hits):
@@ -335,13 +352,16 @@ class ElastAlerter():
         return {endtime: buckets}
 
     def remove_duplicate_events(self, data, rule):
-        # Remove data we've processed already
-        data = [event for event in data if event['_id'] not in rule['processed_hits']]
-
-        # Remember the new data's IDs
+        new_events = []
         for event in data:
-            rule['processed_hits'][event['_id']] = event['_source'][rule['timestamp_field']]
-        return [event['_source'] for event in data]
+            if event['_id'] in rule['processed_hits']:
+                continue
+
+            # Remember the new data's IDs
+            rule['processed_hits'][event['_id']] = event[rule['timestamp_field']]
+            new_events.append(event)
+
+        return new_events
 
     def remove_old_events(self, rule):
         # Anything older than the buffer time we can forget
