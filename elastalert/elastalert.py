@@ -34,6 +34,7 @@ from util import seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
+from util import resolve_indexes
 
 
 class ElastAlerter():
@@ -162,21 +163,31 @@ class ElastAlerter():
 
     @staticmethod
     def get_index(rule, starttime=None, endtime=None):
-        """ Gets the index for a rule. If strftime is set and starttime and endtime
+        """ Gets the index(es) for a rule. If strftime is set and starttime and endtime
         are provided, it will return a comma seperated list of indices. If strftime
         is set but starttime and endtime are not provided, it will replace all format
         tokens with a wildcard. """
-        index = rule['index']
+        indexes = resolve_indexes(rule['index'])
+        length = len(indexes)
+        indexstring = ''
         if rule.get('use_strftime_index'):
             if starttime and endtime:
-                return format_index(index, starttime, endtime)
+                for i, item in enumerate(indexes):
+                    indexstring = indexstring + format_index(item, starttime, endtime)
+                    if i < length - 1:
+                        indexstring += ','
             else:
-                # Replace the substring containing format characters with a *
-                format_start = index.find('%')
-                format_end = index.rfind('%') + 2
-                return index[:format_start] + '*' + index[format_end:]
+                for i, item in enumerate(indexes):
+                    # Replace the substring containing format characters with a *
+                    format_start = item.find('%')
+                    format_end = item.rfind('%') + 2
+                    indexstring = indexstring + item[:format_start] + '*' + item[format_end:]
+                    if i < length - 1:
+                        indexstring += ','
         else:
-            return index
+            indexstring = ",".join(indexes)
+
+        return indexstring
 
     @staticmethod
     def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False):
