@@ -300,10 +300,9 @@ def load_alerts(rule, alert_field):
         for (alert_config, alert) in inline_alerts:
             copied_conf = copy.copy(rule)
             rule_reqs = alert.required_options
-            if rule_reqs - frozenset(alert_config.keys()):
-                raise EAException('Missing required option(s): %s' % (', '.join(rule_reqs - frozenset(rule.keys()))))
-
             copied_conf.update(alert_config)
+            if rule_reqs - frozenset(copied_conf.keys()):
+                raise EAException('Missing required option(s): %s' % (', '.join(rule_reqs - frozenset(copied_conf.keys()))))
             alert_field.append(alert(copied_conf))
 
         for alert in global_alerts:
