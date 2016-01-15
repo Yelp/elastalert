@@ -13,6 +13,7 @@ from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
 from socket import error
+from croniter import croniter
 
 import argparse
 import kibana
@@ -34,6 +35,8 @@ from util import seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
+from util import cronite_datetime_to_timestamp
+from util import unix_to_dt
 
 
 class ElastAlerter():
@@ -1102,7 +1105,17 @@ class ElastAlerter():
                 ('aggregate_alert_time' in rule and rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]))):
             # First match, set alert_time
             match_time = ts_to_dt(match[rule['timestamp_field']])
-            alert_time = match_time + rule['aggregation']
+            alert_time = ''
+            if isinstance(rule['aggregation'], dict) and rule['aggregation'].get('schedule'):
+                croniter._datetime_to_timestamp = cronite_datetime_to_timestamp  # For Python 2.6 compatibility
+                try:
+                    iter = croniter(rule['aggregation']['schedule'], ts_now())
+                    alert_time = unix_to_dt(iter.get_next())
+                except Exception as e:
+                    self.handle_error("Error parsing aggregate send time Cron format %s" % (e), rule['aggregation']['schedule'])
+            else:
+                alert_time = match_time + rule['aggregation']
+
             rule['aggregate_alert_time'] = alert_time
             agg_id = None
             elastalert_logger.info('New aggregation for %s. next alert at %s.' % (rule['name'], alert_time))

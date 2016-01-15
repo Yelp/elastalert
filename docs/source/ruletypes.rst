@@ -234,6 +234,15 @@ means that if one match occurred at 12:00, another at 1:00, and a third at 2:30,
 alert would be sent at 2:00, containing the first two matches, and another at 4:30, containing the third match plus any additional matches
 occurring before 4:30. This can be very useful if you expect a large number of matches and only want a periodic report. (Optional, time, default none)
 
+If you wish to aggregate all your alerts and send them on a recurring interval, you can do that using the ``schedule`` field.
+
+For example, if you wish to receive alerts every Monday and Friday::
+
+    aggregation:
+      schedule: '2 4 * * mon,fri'
+
+This uses Cron syntax, which you can read more about `here <http://www.nncron.ru/help/EN/working/cron-format.htm>`_. Make sure to `only` include either a schedule field or standard datetime fields (such as ``hours``, ``minutes``, ``days``), not both.
+
 realert
 ^^^^^^^
 
