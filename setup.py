@@ -32,6 +32,7 @@ setup(
         'pyyaml',
         'simplejson',
         'boto',
-        'blist'
+        'blist',
+        'croniter'
     ]
 )
