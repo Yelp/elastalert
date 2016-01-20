@@ -184,9 +184,8 @@ class FrequencyRule(RuleType):
     def add_terms_data(self, terms):
         for timestamp, buckets in terms.iteritems():
             for bucket in buckets:
-                count = bucket['doc_count']
                 event = ({self.ts_field: timestamp,
-                          self.rules['query_key']: bucket['key']}, count)
+                          self.rules['query_key']: bucket['key']}, bucket['doc_count'])
                 self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
                 self.check_for_match(bucket['key'])
 
