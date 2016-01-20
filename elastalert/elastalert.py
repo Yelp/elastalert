@@ -442,6 +442,7 @@ class ElastAlerter():
             self.handle_error('Error querying for last run: %s' % (e), {'rule': rule['name']})
             self.writeback_es = None
 
+
     def set_starttime(self, rule, endtime):
         """ Given a rule and an endtime, sets the appropriate starttime for it. """
 
@@ -1016,7 +1017,7 @@ class ElastAlerter():
                                                size=1000)
                 if res['hits']['hits']:
                     return res['hits']['hits']
-            except: # TODO: Give this a more relevant exception, try:except: is evil.
+            except:  # TODO: Give this a more relevant exception, try:except: is evil.
                 pass
         return []
 
@@ -1062,7 +1063,7 @@ class ElastAlerter():
                     self.writeback_es.delete(index=self.writeback_index,
                                              doc_type='elastalert',
                                              id=_id)
-                except: # TODO: Give this a more relevant exception, try:except: is evil.
+                except:  # TODO: Give this a more relevant exception, try:except: is evil.
                     self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
 
         # Send in memory aggregated alerts

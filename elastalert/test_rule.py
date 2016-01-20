@@ -119,6 +119,7 @@ class MockElastAlerter(object):
             print("Downloaded %s documents to save" % (num_hits))
             return res['hits']['hits']
 
+
     def mock_count(self, rule, start, end, index):
         """ Mocks the effects of get_hits_count using global data instead of Elasticsearch """
         count = 0
