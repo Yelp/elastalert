@@ -442,8 +442,6 @@ class ElastAlerter():
             self.handle_error('Error querying for last run: %s' % (e), {'rule': rule['name']})
             self.writeback_es = None
 
-        return None
-
     def set_starttime(self, rule, endtime):
         """ Given a rule and an endtime, sets the appropriate starttime for it. """
 
@@ -997,7 +995,6 @@ class ElastAlerter():
             except ElasticsearchException as e:
                 logging.exception("Error writing alert info to elasticsearch: %s" % (e))
                 self.writeback_es = None
-        return None
 
     def find_recent_pending_alerts(self, time_limit):
         """ Queries writeback_es to find alerts that did not send
