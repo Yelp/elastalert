@@ -114,7 +114,7 @@ class ElastAlerter():
         self.writeback_es = self.new_elasticsearch(self.es_conn_config)
 
         for rule in self.rules:
-            rule = self.init_rule(rule)
+            self.init_rule(rule)
 
         if self.args.silence:
             self.silence()
