@@ -382,7 +382,7 @@ class JiraAlerter(Alerter):
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
                     self.pipeline['jira_server'] = self.server
-                return
+                return None
 
         description = self.description + '\n'
         for match in matches:
