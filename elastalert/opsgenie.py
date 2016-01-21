@@ -20,6 +20,7 @@ class OpsGenieAlerter(Alerter):
         self.api_key = self.rule.get('opsgenie_key', 'key')
         self.recipients = self.rule.get('opsgenie_recipients', ['genies'])
         self.to_addr = self.rule.get('opsgenie_addr', 'https://api.opsgenie.com/v1/json/alert')
+        self.custom_message = self.rule.get('opsgenie_message')
 
     def alert(self, matches):
         body = ''
@@ -28,10 +29,15 @@ class OpsGenieAlerter(Alerter):
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
+        
+        if self.custom_message is None:
+            self.message = self.create_default_title(matches)
+        else:
+            self.message = self.custom_message.format(**matches[0])
 
         post = {}
         post['apiKey'] = self.api_key
-        post['message'] = self.create_default_title(matches)
+        post['message'] = self.message
         post['recipients'] = self.recipients
         post['description'] = body
         post['source'] = 'ElastAlert'
