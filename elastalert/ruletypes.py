@@ -565,6 +565,7 @@ class NewTermsRule(RuleType):
                                  self.rules['timestamp_field']: timestamp,
                                  'new_field': field}
                         self.add_match(match)
+                        self.seen_values[field].append(bucket['key'])
 
 
 class CardinalityRule(RuleType):

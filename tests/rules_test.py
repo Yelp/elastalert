@@ -508,6 +508,40 @@ def test_new_term():
     assert rule.matches[0]['missing_field'] == 'b'
 
 
+def test_new_term_with_terms():
+    rules = {'fields': ['a'],
+             'timestamp_field': '@timestamp',
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash', 'query_key': 'a'}
+    mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
+                                                                     {'key': 'key2', 'doc_count': 5}]}}}}
+
+    with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.search.return_value = mock_res
+        rule = NewTermsRule(rules)
+
+        assert rule.es.search.call_count == 1
+
+    # Key1 and key2 shouldn't cause a match
+    terms = {ts_now(): [{'key': 'key1', 'doc_count': 1},
+                        {'key': 'key2', 'doc_count': 1}]}
+    rule.add_terms_data(terms)
+    assert rule.matches == []
+
+    # Key3 causes an alert for field a
+    terms = {ts_now(): [{'key': 'key3', 'doc_count': 1}]}
+    rule.add_terms_data(terms)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['new_field'] == 'a'
+    assert rule.matches[0]['a'] == 'key3'
+    rule.matches = []
+
+    # Key3 doesn't cause another alert
+    terms = {ts_now(): [{'key': 'key3', 'doc_count': 1}]}
+    rule.add_terms_data(terms)
+    assert rule.matches == []
+
+
 def test_flatline():
     events = hits(10)
     rules = {'timeframe': datetime.timedelta(seconds=30),
