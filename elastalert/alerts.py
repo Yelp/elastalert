@@ -656,7 +656,7 @@ class VictorOpsAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dump(payload), headers=headers)
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to VictorOps: %s" % e)
