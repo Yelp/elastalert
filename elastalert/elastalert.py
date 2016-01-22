@@ -442,7 +442,6 @@ class ElastAlerter():
             self.handle_error('Error querying for last run: %s' % (e), {'rule': rule['name']})
             self.writeback_es = None
 
-
     def set_starttime(self, rule, endtime):
         """ Given a rule and an endtime, sets the appropriate starttime for it. """
 
