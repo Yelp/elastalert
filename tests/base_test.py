@@ -35,9 +35,15 @@ def generate_hits(timestamps, **kwargs):
     hits = []
     id_iter = xrange(len(timestamps)).__iter__()
     for ts in timestamps:
-        data = {'_id': 'id' + str(id_iter.next()), '_source': {'@timestamp': ts}, '_type': 'logs'}
+        data = {'_id': 'id' + str(id_iter.next()),
+                '_source': {'@timestamp': ts},
+                '_type': 'logs',
+                '_index': 'idx'}
         for key, item in kwargs.iteritems():
             data['_source'][key] = item
+        # emulate process_hits(), add metadata to _source
+        for field in ['_id', '_type', '_index']:
+            data['_source'][field] = data[field]
         hits.append(data)
     return {'hits': {'hits': hits}}
 
@@ -82,14 +88,14 @@ def test_init_rule(ea):
 def test_query(ea):
     ea.current_es.search.return_value = {'hits': {'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
 
 
 def test_query_with_fields(ea):
     ea.rules[0]['_source_enabled'] = False
     ea.current_es.search.return_value = {'hits': {'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True, size=100000)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
 
 
 def test_query_with_unix(ea):
@@ -99,7 +105,7 @@ def test_query_with_unix(ea):
     ea.run_query(ea.rules[0], START, END)
     start_unix = dt_to_unix(START)
     end_unix = dt_to_unix(END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
 
 
 def test_query_with_unixms(ea):
@@ -109,7 +115,7 @@ def test_query_with_unixms(ea):
     ea.run_query(ea.rules[0], START, END)
     start_unix = dt_to_unixms(START)
     end_unix = dt_to_unixms(END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=100000)
+    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
 
 
 def test_no_hits(ea):
@@ -261,11 +267,10 @@ def test_agg(ea):
     assert not call3['alert_sent']
     assert 'aggregate_id' not in call3
 
-    # First call - Find all pending alerts
+    # First call - Find all pending alerts (only entries without agg_id)
     # Second call - Find matches with agg_id == 'ABCD'
     # Third call - Find matches with agg_id == 'CDEF'
     ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': call1},
-                                                             {'_id': 'BCDE', '_source': call2},
                                                              {'_id': 'CDEF', '_source': call3}]}},
                                           {'hits': {'hits': [{'_id': 'BCDE', '_source': call2}]}},
                                           {'hits': {'hits': []}}]
@@ -285,6 +290,42 @@ def test_agg(ea):
     assert call2['query']['query_string']['query'] == 'aggregate_id:ABCD'
     assert call3['query']['query_string']['query'] == 'aggregate_id:CDEF'
     assert ea.writeback_es.search.call_args_list[7][1]['size'] == 1337
+
+
+def test_agg_cron(ea):
+    ea.max_aggregation = 1337
+    hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:47:45']
+    hits = generate_hits(hits_timestamps)
+    ea.current_es.search.return_value = hits
+    alerttime1 = dt_to_ts(ts_to_dt('2014-09-26T12:46:00'))
+    alerttime2 = dt_to_ts(ts_to_dt('2014-09-26T13:04:00'))
+
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        with mock.patch('elastalert.elastalert.croniter.get_next') as mock_ts:
+            # Aggregate first two, query over full range
+            mock_ts.side_effect = [dt_to_unix(ts_to_dt('2014-09-26T12:46:00')), dt_to_unix(ts_to_dt('2014-09-26T13:04:00'))]
+            ea.rules[0]['aggregation'] = {'schedule': '*/5 * * * *'}
+            ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
+            ea.run_rule(ea.rules[0], END, START)
+
+    # Assert that the three matches were added to elasticsearch
+    call1 = ea.writeback_es.create.call_args_list[0][1]['body']
+    call2 = ea.writeback_es.create.call_args_list[1][1]['body']
+    call3 = ea.writeback_es.create.call_args_list[2][1]['body']
+
+    assert call1['match_body'] == {'@timestamp': '2014-09-26T12:34:45'}
+    assert not call1['alert_sent']
+    assert 'aggregate_id' not in call1
+    assert call1['alert_time'] == alerttime1
+
+    assert call2['match_body'] == {'@timestamp': '2014-09-26T12:40:45'}
+    assert not call2['alert_sent']
+    assert call2['aggregate_id'] == 'ABCD'
+
+    assert call3['match_body'] == {'@timestamp': '2014-09-26T12:47:45'}
+    assert call3['alert_time'] == alerttime2
+    assert not call3['alert_sent']
+    assert 'aggregate_id' not in call3
 
 
 def test_agg_no_writeback_connectivity(ea):

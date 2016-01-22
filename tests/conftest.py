@@ -53,6 +53,7 @@ def ea():
               'timestamp_field': '@timestamp',
               'match_enhancements': [],
               'rule_file': 'blah.yaml',
+              'max_query_size': 10000,
               'ts_to_dt': ts_to_dt,
               'dt_to_ts': dt_to_ts,
               '_source_enabled': True}]
@@ -64,7 +65,7 @@ def ea():
             'es_port': 14900,
             'writeback_index': 'wb',
             'rules': rules,
-            'max_query_size': 100000,
+            'max_query_size': 10000,
             'old_query_limit': datetime.timedelta(weeks=1),
             'disable_rules_on_error': False}
     elasticsearch.client.Elasticsearch = mock_es_client

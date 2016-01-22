@@ -129,7 +129,7 @@ configuration.
 ``writeback_index``: The index on ``es_host`` to use.
 
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. The
-default is 100,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
+default is 10,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
 limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting
 can be overridden by any individual rule.
 
@@ -175,7 +175,7 @@ search and alert metadata back to Elasticsearch.
 ``--start <timestamp>`` will force ElastAlert to begin querying from the given time, instead of the default,
 querying from the present. The timestamp should be ISO8601, e.g.  ``YYYY-MM-DDTHH:MM:SS`` (UTC) or with timezone
 ``YYYY-MM-DDTHH:MM:SS-08:00`` (PST). Note that if querying over a large date range, no alerts will be
-sent until that rule has finished querying over the entire time period.
+sent until that rule has finished querying over the entire time period. To force querying from the current time, use "NOW".
 
 ``--end <timestamp>`` will cause ElastAlert to stop querying at the specified timestamp. By default, ElastAlert
 will periodically query until the present indefinitely.

@@ -16,6 +16,7 @@ definitions:
       minutes: {type: number}
       seconds: {type: number}
       milliseconds: {type: number}
+      schedule: {type: string}
 
   filter: &filter {}
 
@@ -190,3 +191,9 @@ properties:
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
+
+  ### VictorOps
+  victorops_api_key: {type: string}
+  victorops_routing_key: {type: string}
+  victorops_message_type: {enum: [INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY]}
+  victorops_entity_display_name: {type: string}

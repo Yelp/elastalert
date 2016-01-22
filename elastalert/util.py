@@ -5,6 +5,7 @@ import logging
 import dateutil.parser
 import dateutil.tz
 
+logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
 
 
@@ -169,3 +170,13 @@ def dt_to_unix(dt):
 
 def dt_to_unixms(dt):
     return dt_to_unix(dt) * 1000
+
+
+def cronite_datetime_to_timestamp(self, d):
+    """
+    Converts a `datetime` object `d` into a UNIX timestamp.
+    """
+    if d.tzinfo is not None:
+        d = d.replace(tzinfo=None) - d.utcoffset()
+
+    return total_seconds((d - datetime.datetime(1970, 1, 1)))

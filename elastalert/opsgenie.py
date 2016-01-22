@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-
 import requests
 from alerts import Alerter
 from alerts import BasicMatchString
@@ -11,14 +10,16 @@ from util import elastalert_logger
 
 class OpsGenieAlerter(Alerter):
     '''Sends a http request to the OpsGenie API to signal for an alert'''
-    required_options = frozenset(['opsgenie_key', 'opsgenie_account', 'opsgenie_recipients'])
+    required_options = frozenset(['opsgenie_key'])
 
     def __init__(self, *args):
         super(OpsGenieAlerter, self).__init__(*args)
 
-        self.account = self.rule.get('opsgenie_account', 'genie')
+        self.account = self.rule.get('opsgenie_account')
         self.api_key = self.rule.get('opsgenie_key', 'key')
-        self.recipients = self.rule.get('opsgenie_recipients', ['genies'])
+        self.recipients = self.rule.get('opsgenie_recipients')
+        self.teams = self.rule.get('opsgenie_teams')
+        self.tags = self.rule.get('opsgenie_tags', []) + ['ElastAlert', self.rule['name']]
         self.to_addr = self.rule.get('opsgenie_addr', 'https://api.opsgenie.com/v1/json/alert')
         self.custom_message = self.rule.get('opsgenie_message')
         self.alias = self.rule.get('opsgenie_alias')
@@ -39,10 +40,15 @@ class OpsGenieAlerter(Alerter):
         post = {}
         post['apiKey'] = self.api_key
         post['message'] = self.message
-        post['recipients'] = self.recipients
+        if self.account:
+            post['user'] = self.account
+        if self.recipients:
+            post['recipients'] = self.recipients
+        if self.teams:
+            post['teams'] = self.teams
         post['description'] = body
         post['source'] = 'ElastAlert'
-        post['tags'] = ['ElastAlert', self.rule['name']]
+        post['tags'] = self.tags
 
         if self.alias is not None:
             post['alias'] = self.alias.format(**matches[0])
@@ -73,5 +79,12 @@ class OpsGenieAlerter(Alerter):
         return subject
 
     def get_info(self):
-        return {'type': 'opsgenie',
-                'recipients': self.recipients}
+        ret = {'type': 'opsgenie'}
+        if self.recipients:
+            ret['recipients'] = self.recipients
+        if self.account:
+            ret['account'] = self.account
+        if self.teams:
+            ret['teams'] = self.teams
+
+        return ret

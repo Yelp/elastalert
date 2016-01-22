@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
+import copy
 import datetime
 import hashlib
 import logging
 import os
-import copy
 
 import alerts
 import enhancements
@@ -51,7 +51,8 @@ alerts_mapping = {
     'sns': alerts.SnsAlerter,
     'hipchat': alerts.HipChatAlerter,
     'slack': alerts.SlackAlerter,
-    'pagerduty': alerts.PagerDutyAlerter
+    'pagerduty': alerts.PagerDutyAlerter,
+    'victorops': alerts.VictorOpsAlerter
 }
 
 
@@ -106,7 +107,7 @@ def load_options(rule, conf, args=None):
             rule['realert'] = datetime.timedelta(**rule['realert'])
         else:
             rule['realert'] = datetime.timedelta(minutes=1)
-        if 'aggregation' in rule:
+        if 'aggregation' in rule and not rule['aggregation'].get('schedule'):
             rule['aggregation'] = datetime.timedelta(**rule['aggregation'])
         if 'query_delay' in rule:
             rule['query_delay'] = datetime.timedelta(**rule['query_delay'])
@@ -132,6 +133,8 @@ def load_options(rule, conf, args=None):
     rule.setdefault('use_local_time', True)
     rule.setdefault('es_port', conf.get('es_port'))
     rule.setdefault('es_host', conf.get('es_host'))
+    rule.setdefault('max_query_size', conf.get('max_query_size'))
+    rule.setdefault('description', "")
 
     # Set timestamp_type conversion function, used when generating queries and processing hits
     rule['timestamp_type'] = rule['timestamp_type'].strip().lower()
@@ -297,10 +300,9 @@ def load_alerts(rule, alert_field):
         for (alert_config, alert) in inline_alerts:
             copied_conf = copy.copy(rule)
             rule_reqs = alert.required_options
-            if rule_reqs - frozenset(alert_config.keys()):
-                raise EAException('Missing required option(s): %s' % (', '.join(rule_reqs - frozenset(rule.keys()))))
-
             copied_conf.update(alert_config)
+            if rule_reqs - frozenset(copied_conf.keys()):
+                raise EAException('Missing required option(s): %s' % (', '.join(rule_reqs - frozenset(copied_conf.keys()))))
             alert_field.append(alert(copied_conf))
 
         for alert in global_alerts:
@@ -331,7 +333,7 @@ def load_rules(args):
     if required_globals - frozenset(conf.keys()):
         raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(conf.keys()))))
 
-    conf.setdefault('max_query_size', 100000)
+    conf.setdefault('max_query_size', 10000)
     conf.setdefault('disable_rules_on_error', True)
 
     # Convert run_every, buffer_time into a timedelta object

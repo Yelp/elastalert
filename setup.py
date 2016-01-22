@@ -8,7 +8,7 @@ from setuptools import setup
 base_dir = os.path.dirname(__file__)
 setup(
     name='elastalert',
-    version='0.0.71',
+    version='0.0.74',
     description='Runs custom filters on Elasticsearch and alerts on matches',
     author='Quentin Long',
     author_email='qlo@yelp.com',
@@ -32,6 +32,7 @@ setup(
         'pyyaml',
         'simplejson',
         'boto',
-        'blist'
+        'blist',
+        'croniter'
     ]
 )
