@@ -21,7 +21,7 @@ class OpsGenieAlerter(Alerter):
         self.recipients = self.rule.get('opsgenie_recipients', ['genies'])
         self.to_addr = self.rule.get('opsgenie_addr', 'https://api.opsgenie.com/v1/json/alert')
         self.custom_message = self.rule.get('opsgenie_message')
-        self.set_alias = self.rule.get('opsgenie_set_alias', False)
+        self.alias = self.rule.get('opsgenie_alias')
 
     def alert(self, matches):
         body = ''
@@ -35,7 +35,7 @@ class OpsGenieAlerter(Alerter):
             self.message = self.create_default_title(matches)
         else:
             self.message = self.custom_message.format(**matches[0])
-
+        
         post = {}
         post['apiKey'] = self.api_key
         post['message'] = self.message
@@ -44,8 +44,8 @@ class OpsGenieAlerter(Alerter):
         post['source'] = 'ElastAlert'
         post['tags'] = ['ElastAlert', self.rule['name']]
 
-        if self.set_alias:
-            post['alias'] = self.message
+        if self.alias is not None:
+            post['alias'] = self.alias.format(**matches[0])
 
         logging.debug(json.dumps(post))
 
