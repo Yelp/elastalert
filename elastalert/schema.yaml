@@ -181,6 +181,8 @@ properties:
   ### HipChat
   hipchat_auth_token: {type: string}
   hipchat_room_id: {type: number}
+  hipchat_domain: {type: string}
+  hipchat_ignore_ssl_errors: {type: boolean}
 
   ### Slack
   slack_webhook_url: {type: string}

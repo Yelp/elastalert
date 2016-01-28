@@ -21,6 +21,7 @@ from util import EAException
 from util import elastalert_logger
 from util import lookup_es_key
 from util import pretty_ts
+import warnings
 
 
 class BasicMatchString(object):
@@ -501,7 +502,9 @@ class HipChatAlerter(Alerter):
         super(HipChatAlerter, self).__init__(rule)
         self.hipchat_auth_token = self.rule['hipchat_auth_token']
         self.hipchat_room_id = self.rule['hipchat_room_id']
-        self.url = 'https://api.hipchat.com/v2/room/%s/notification?auth_token=%s' % (self.hipchat_room_id, self.hipchat_auth_token)
+        self.hipchat_domain = self.rule.get('hipchat_domain', 'api.hipchat.com')
+        self.hipchat_ignore_ssl_errors = self.rule.get('hipchat_ignore_ssl_errors', False)
+        self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
 
     def alert(self, matches):
         body = ''
@@ -520,7 +523,10 @@ class HipChatAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            if self.hipchat_ignore_ssl_errors:
+                requests.packages.urllib3.disable_warnings()
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers, verify=!self.hipchat_ignore_ssl_errors)
+            warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to hipchat: %s" % e)
