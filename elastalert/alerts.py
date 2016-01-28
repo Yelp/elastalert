@@ -525,7 +525,7 @@ class HipChatAlerter(Alerter):
         try:
             if self.hipchat_ignore_ssl_errors:
                 requests.packages.urllib3.disable_warnings()
-            response = requests.post(self.url, data=json.dumps(payload), headers=headers, verify=!self.hipchat_ignore_ssl_errors)
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers, verify=not self.hipchat_ignore_ssl_errors)
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
