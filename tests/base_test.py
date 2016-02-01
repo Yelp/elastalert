@@ -728,7 +728,7 @@ def test_rule_changes(ea):
                 mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
                 mock_hashes.return_value = new_hashes
                 ea.load_rule_changes()
-                mock_send.assert_called_once()
+                mock_send.assert_called_once_with(exception=mock.ANY, rule_file='rules/rule4.yaml')
     assert len(ea.rules) == 3
     assert not any(['new' in rule for rule in ea.rules])
 
