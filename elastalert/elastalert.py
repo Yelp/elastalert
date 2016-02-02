@@ -8,23 +8,24 @@ import signal
 import sys
 import time
 import traceback
-import dateutil.tz
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
 from socket import error
-from croniter import croniter
 
 import argparse
+import dateutil.tz
 import kibana
 import yaml
 from alerts import DebugAlerter
 from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
+from croniter import croniter
 from elasticsearch.client import Elasticsearch
 from elasticsearch.exceptions import ElasticsearchException
 from enhancements import DropMatchException
+from util import cronite_datetime_to_timestamp
 from util import dt_to_ts
 from util import EAException
 from util import elastalert_logger
@@ -35,7 +36,6 @@ from util import seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
-from util import cronite_datetime_to_timestamp
 from util import unix_to_dt
 
 
@@ -669,7 +669,7 @@ class ElastAlerter():
                         raise EAException("A rule with the name %s already exists" % (new_rule['name']))
                 except EAException as e:
                     self.handle_error('Could not load rule %s: %s' % (rule_file, e))
-                    self.send_notification_email(exception=e, rule=new_rule)
+                    self.send_notification_email(exception=e, rule_file=rule_file)
                     continue
                 elastalert_logger.info('Loaded new rule %s' % (rule_file))
                 self.rules.append(self.init_rule(new_rule))
@@ -1234,13 +1234,18 @@ class ElastAlerter():
         if self.notify_email:
             self.send_notification_email(exception=exception, rule=rule)
 
-    def send_notification_email(self, text='', exception=None, rule=None, subject=None):
+    def send_notification_email(self, text='', exception=None, rule=None, subject=None, rule_file=None):
         email_body = text
-        if exception and rule:
+        rule_name = None
+        if rule:
+            rule_name = rule['name']
+        elif rule_file:
+            rule_name = rule_file
+        if exception and rule_name:
             if not subject:
-                subject = 'Uncaught exception in ElastAlert - %s' % (rule['name'])
+                subject = 'Uncaught exception in ElastAlert - %s' % (rule_name)
             email_body += '\n\n'
-            email_body += 'The rule %s has raised an uncaught exception.\n\n' % (rule['name'])
+            email_body += 'The rule %s has raised an uncaught exception.\n\n' % (rule_name)
             if self.disable_rules_on_error:
                 modified = ' or if the rule config file has been modified' if not self.args.pin_rules else ''
                 email_body += 'It has been disabled and will be re-enabled when ElastAlert restarts%s.\n\n' % (modified)
