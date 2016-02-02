@@ -1080,6 +1080,10 @@ The alerter requires the following two options:
 ``hipchat_room_id``: The id associated with the HipChat room you want to send the alert to. Go to https://XXXXX.hipchat.com/rooms and choose
 the room you want to post to. The room ID will be the numeric part of the URL.
 
+``hipchat_domain``: The custom domain in case you have Hipchat own server deployment. Default is api.hipchat.com.
+
+``hipchat_ignore_ssl_errors``: Ignore SSL errors (self-signed certificates, etc.). Default is false.
+
 Slack
 ~~~~~
 
