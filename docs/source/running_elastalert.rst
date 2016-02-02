@@ -6,10 +6,10 @@ Running ElastAlert for the First Time
 Requirements
 ------------
 
-- pip
-- Elasticsearch > 1.*
-- ISO8601 timestamped data
-- Python 2.6
+- Elasticsearch 1.* or 2.*
+- ISO8601 or Unix timestamped data
+- Python 2.6 or 2.7
+- pip, see requirements.txt
 
 Downloading and Configuring
 ---------------------------
