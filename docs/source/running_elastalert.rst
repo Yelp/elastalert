@@ -7,7 +7,7 @@ Requirements
 ------------
 
 - pip
-- Elasticsearch 1.*
+- Elasticsearch > 1.*
 - ISO8601 timestamped data
 - Python 2.6
 
