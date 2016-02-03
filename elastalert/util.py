@@ -47,7 +47,7 @@ def lookup_es_key(lookup_dict, term):
         subkey = ''
 
         while subkeys:
-            subkey = subkeys.pop(0)
+            subkey += subkeys.pop(0)
             if subkey in go_deeper:
                 go_deeper = go_deeper[subkey]
                 subkey = ''
