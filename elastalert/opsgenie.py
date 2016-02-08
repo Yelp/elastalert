@@ -31,12 +31,12 @@ class OpsGenieAlerter(Alerter):
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
-        
+
         if self.custom_message is None:
             self.message = self.create_default_title(matches)
         else:
             self.message = self.custom_message.format(**matches[0])
-        
+
         post = {}
         post['apiKey'] = self.api_key
         post['message'] = self.message
