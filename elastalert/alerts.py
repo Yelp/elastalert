@@ -514,6 +514,10 @@ class HipChatAlerter(Alerter):
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
 
+        # Hipchat sends 400 bad request on messages longer than 10000 characters
+        if (len(body) > 9980)
+            body = body[:9980] + '..(truncated)'
+
         # post to hipchat
         headers = {'content-type': 'application/json'}
         payload = {
