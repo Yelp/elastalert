@@ -5,6 +5,7 @@ import logging
 import dateutil.parser
 import dateutil.tz
 
+logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
 
 
@@ -97,17 +98,13 @@ def inc_ts(timestamp, milliseconds=1):
 def pretty_ts(timestamp, tz=True):
     """Pretty-format the given timestamp (to be printed or logged hereafter).
     If tz, the timestamp will be converted to local time.
-    Format: MM-DD HH:MM TZ"""
+    Format: YYYY-MM-DD HH:MM TZ"""
     dt = timestamp
     if not isinstance(timestamp, datetime.datetime):
         dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
-    padding = ''
-    if dt.minute < 10:
-        padding = '0'
-    return '%d-%d %d:%s%d %s' % (dt.month, dt.day,
-                                 dt.hour, padding, dt.minute, dt.tzname())
+    return dt.strftime('%Y-%m-%d %H:%M %Z')
 
 
 def ts_add(ts, td):
@@ -173,3 +170,13 @@ def dt_to_unix(dt):
 
 def dt_to_unixms(dt):
     return dt_to_unix(dt) * 1000
+
+
+def cronite_datetime_to_timestamp(self, d):
+    """
+    Converts a `datetime` object `d` into a UNIX timestamp.
+    """
+    if d.tzinfo is not None:
+        d = d.replace(tzinfo=None) - d.utcoffset()
+
+    return total_seconds((d - datetime.datetime(1970, 1, 1)))

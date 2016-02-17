@@ -38,6 +38,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``aggregation`` (time, no default)                           |           |
 +--------------------------------------------------------------+           |
+| ``description`` (string, default empty string)               |           |
++--------------------------------------------------------------+           |
 | ``generate_kibana_link`` (boolean, default False)            |           |
 +--------------------------------------------------------------+           |
 |``use_kibana_dashboard`` (string, no default)                 |           |
@@ -68,7 +70,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``filter`` (ES filter DSL, no default)                       |           |
 +--------------------------------------------------------------+           |
-| ``max_query_size`` (int, default 100k)                       |           |
+| ``max_query_size`` (int, default global max_query_size)      |           |
 +--------------------------------------------------------------+           |
 | ``query_delay`` (time, default 0 min)                        |           |
 +--------------------------------------------------------------+           |
@@ -232,6 +234,15 @@ means that if one match occurred at 12:00, another at 1:00, and a third at 2:30,
 alert would be sent at 2:00, containing the first two matches, and another at 4:30, containing the third match plus any additional matches
 occurring before 4:30. This can be very useful if you expect a large number of matches and only want a periodic report. (Optional, time, default none)
 
+If you wish to aggregate all your alerts and send them on a recurring interval, you can do that using the ``schedule`` field.
+
+For example, if you wish to receive alerts every Monday and Friday::
+
+    aggregation:
+      schedule: '2 4 * * mon,fri'
+
+This uses Cron syntax, which you can read more about `here <http://www.nncron.ru/help/EN/working/cron-format.htm>`_. Make sure to `only` include either a schedule field or standard datetime fields (such as ``hours``, ``minutes``, ``days``), not both.
+
 realert
 ^^^^^^^
 
@@ -270,7 +281,7 @@ max_query_size
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. If you
 expect a large number of results, consider using ``use_count_query`` for the rule. If this
 limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting will
-override a global ``max_query_size``. (Optional, int, default 100,000)
+override a global ``max_query_size``. (Optional, int, default value of global ``max_query_size``)
 
 filter
 ^^^^^^
@@ -306,6 +317,12 @@ raw_count_keys
 ^^^^^^^^^^^^^^
 
 ``raw_count_keys``: If true, all fields in ``top_count_keys`` will have ``.raw`` appended to them. (Optional, boolean, default true)
+
+description
+^^^^^^^^^^^
+
+``description``: text describing the purpose of rule. (Optional, string, default empty string)
+Can be referenced in custom alerters to provide context as to why a rule might trigger.
 
 generate_kibana_link
 ^^^^^^^^^^^^^^^^^^^^
@@ -1025,13 +1042,19 @@ an alert, however it could be extended to update or close existing alerts.
 
 It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://app.opsgenie.com/integration>`_ in order to create alerts.
 
-The OpsGenie alert requires three options:
+The OpsGenie alert requires one option:
 
 ``opsgenie_key``: The randomly generated API Integration key created by OpsGenie.
+
+Optional:
 
 ``opsgenie_account``: The OpsGenie account to integrate with.
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
+
+``opsgenie_teams``: A list of OpsGenie teams to notify (useful for schedules with escalation).
+
+``opsgenie_tags``: A list of tags for this alert.
 
 SNS
 ~~~
@@ -1065,6 +1088,10 @@ The alerter requires the following two options:
 ``hipchat_room_id``: The id associated with the HipChat room you want to send the alert to. Go to https://XXXXX.hipchat.com/rooms and choose
 the room you want to post to. The room ID will be the numeric part of the URL.
 
+``hipchat_domain``: The custom domain in case you have Hipchat own server deployment. Default is api.hipchat.com.
+
+``hipchat_ignore_ssl_errors``: Ignore SSL errors (self-signed certificates, etc.). Default is false.
+
 Slack
 ~~~~~
 
@@ -1085,6 +1112,8 @@ Elastalert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
 
 ``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
 
+``slack_proxy``: By default Elastalert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
+
 PagerDuty
 ~~~~~~~~~
 
@@ -1095,6 +1124,23 @@ The alerter requires the following option:
 ``pagerduty_service_key``: Integration Key generated after creating a service with the 'Use our API directly' option at Integration Settings
 
 ``pagerduty_client_name``: The name of the monitoring client that is triggering this event.
+
+VictorOps  
+~~~~~~~~~
+
+VictorOps alerter will trigger an incident to a predefined VictorOps routing key. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``victorops_api_key``: API key generated under the 'REST Endpoint' in the Integrations settings.
+
+``victorops_routing_key``: VictorOps routing key to route the alert to.
+
+``victorops_message_type``: VictorOps field to specify serverity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
+
+Optional:
+
+``victorops_entity_display_name``: Humna-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle. 
 
 Debug
 ~~~~~~

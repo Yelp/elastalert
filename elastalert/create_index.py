@@ -5,6 +5,7 @@ from __future__ import print_function
 import getpass
 import json
 import os
+import time
 
 import argparse
 import yaml
@@ -62,18 +63,21 @@ def main():
     es = Elasticsearch(host=host, port=port, use_ssl=use_ssl, http_auth=http_auth, url_prefix=url_prefix)
 
     silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
-                                                  'until': {'type': 'date', 'format': 'dateOptionalTime'}}}}
+                                                  'until': {'type': 'date', 'format': 'dateOptionalTime'},
+                                                  '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
     ess_mapping = {'elastalert_status': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
     es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                 '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
+                                                'alert_time': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'match_body': {'enabled': False, 'type': 'object'},
                                                 'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
     past_mapping = {'past_elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                        'match_body': {'enabled': False, 'type': 'object'},
                                                        '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
                                                        'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
-    error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False}}}}
+    error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False},
+                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
 
     index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
     if not index:
@@ -89,6 +93,8 @@ def main():
         print('Got %s documents' % (len(res['hits']['hits'])))
 
     es.indices.create(index)
+    # To avoid a race condition. TODO: replace this with a real check
+    time.sleep(2)
     es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
     es.indices.put_mapping(index=index, doc_type='elastalert_status', body=ess_mapping)
     es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)

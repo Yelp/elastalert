@@ -21,6 +21,7 @@ from util import EAException
 from util import elastalert_logger
 from util import lookup_es_key
 from util import pretty_ts
+import warnings
 
 
 class BasicMatchString(object):
@@ -111,6 +112,8 @@ class Alerter(object):
 
     def __init__(self, rule):
         self.rule = rule
+        # pipeline object is created by ElastAlerter.send_alert()
+        # and attached to each alerters used by a rule before calling alert()
         self.pipeline = None
 
     def alert(self, match):
@@ -356,7 +359,7 @@ class JiraAlerter(Alerter):
         # directly adjacent to words appear to be ok
         title = title.replace(' - ', ' ')
 
-        date = (datetime.datetime.now() - datetime.timedelta(days=self.max_age)).strftime('%Y/%m/%d')
+        date = (datetime.datetime.now() - datetime.timedelta(days=self.max_age)).strftime('%Y-%m-%d')
         jql = 'project=%s AND summary~"%s" and created >= "%s"' % (self.project, title, date)
         if self.bump_in_statuses:
             jql = '%s and status in (%s)' % (jql, ','.join(self.bump_in_statuses))
@@ -511,7 +514,9 @@ class HipChatAlerter(Alerter):
         super(HipChatAlerter, self).__init__(rule)
         self.hipchat_auth_token = self.rule['hipchat_auth_token']
         self.hipchat_room_id = self.rule['hipchat_room_id']
-        self.url = 'https://api.hipchat.com/v2/room/%s/notification?auth_token=%s' % (self.hipchat_room_id, self.hipchat_auth_token)
+        self.hipchat_domain = self.rule.get('hipchat_domain', 'api.hipchat.com')
+        self.hipchat_ignore_ssl_errors = self.rule.get('hipchat_ignore_ssl_errors', False)
+        self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
 
     def alert(self, matches):
         body = ''
@@ -530,7 +535,10 @@ class HipChatAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            if self.hipchat_ignore_ssl_errors:
+                requests.packages.urllib3.disable_warnings()
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers, verify=not self.hipchat_ignore_ssl_errors)
+            warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to hipchat: %s" % e)
@@ -538,7 +546,6 @@ class HipChatAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'hipchat',
-                'hipchat_auth_token': self.hipchat_auth_token,
                 'hipchat_room_id': self.hipchat_room_id}
 
 
@@ -549,6 +556,7 @@ class SlackAlerter(Alerter):
     def __init__(self, rule):
         super(SlackAlerter, self).__init__(rule)
         self.slack_webhook_url = self.rule['slack_webhook_url']
+        self.slack_proxy = self.rule.get('slack_proxy', None)
         self.slack_username_override = self.rule.get('slack_username_override', 'elastalert')
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
@@ -572,6 +580,8 @@ class SlackAlerter(Alerter):
         body = self.format_body(body)
         # post to slack
         headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.slack_proxy} if self.slack_proxy else None
         payload = {
             'username': self.slack_username_override,
             'icon_emoji': self.slack_emoji_override,
@@ -586,7 +596,7 @@ class SlackAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.slack_webhook_url, data=json.dumps(payload), headers=headers)
+            response = requests.post(self.slack_webhook_url, data=json.dumps(payload), headers=headers, proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to slack: %s" % e)
@@ -637,5 +647,45 @@ class PagerDutyAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'pagerduty',
-                'pagerduty_service_key': self.pagerduty_service_key,
                 'pagerduty_client_name': self.pagerduty_client_name}
+
+
+class VictorOpsAlerter(Alerter):
+    """ Creates a VictorOps Incident for each alert """
+    required_options = frozenset(['victorops_api_key', 'victorops_routing_key', 'victorops_message_type'])
+
+    def __init__(self, rule):
+        super(VictorOpsAlerter, self).__init__(rule)
+        self.victorops_api_key = self.rule['victorops_api_key']
+        self.victorops_routing_key = self.rule['victorops_routing_key']
+        self.victorops_message_type = self.rule['victorops_message_type']
+        self.victorops_entity_display_name = self.rule.get('victorops_entity_display_name', 'no entity display name')
+        self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (self.victorops_api_key, self.victorops_routing_key)
+
+    def alert(self, matches):
+        body = ''
+        for match in matches:
+            body += unicode(BasicMatchString(self.rule, match))
+            # Separate text of aggregated alerts with dashes
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+
+        # post to victorops
+        headers = {'content-type': 'application/json'}
+        payload = {
+            "message_type": self.victorops_message_type,
+            "entity_display_name": self.victorops_entity_display_name,
+            "monitoring_tool": "Elastalert",
+            "state_message": body
+        }
+
+        try:
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to VictorOps: %s" % e)
+        elastalert_logger.info("Trigger sent to VictorOps")
+
+    def get_info(self):
+        return {'type': 'victorops',
+                'victorops_routing_key': self.victorops_routing_key}

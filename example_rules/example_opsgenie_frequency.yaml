@@ -9,11 +9,27 @@ es_host: localhost
 es_port: 9200
 
 # (Required)
-# OpsGenie credentials and recipient targeting configuration
+# OpsGenie credentials
 opsgenie_key: ogkey
-opsgenie_account: neh
-opsgenie_recipients: 
-  - "neh"
+
+# (Optional)
+# OpsGenie user account that the alert will show as created by
+#opsgenie_account: neh
+
+# (Optional)
+# OpsGenie recipients of the alert
+#opsgenie_recipients:
+#  - "neh"
+
+# (Optional)
+# OpsGenie teams to notify
+#opsgenie_teams:
+#  - "Infrastructure"
+
+# (Optional)
+# OpsGenie alert tags
+opsgenie_tags:
+  - "Production"
 
 # (OptionaL) Connect with SSL to elasticsearch
 #use_ssl: True

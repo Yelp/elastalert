@@ -188,7 +188,7 @@ class MockElastAlerter(object):
                 'es_host': 'es',
                 'es_port': 14900,
                 'writeback_index': 'wb',
-                'max_query_size': 100000,
+                'max_query_size': 10000,
                 'old_query_limit': datetime.timedelta(weeks=1),
                 'disable_rules_on_error': False}
 

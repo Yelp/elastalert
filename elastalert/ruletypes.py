@@ -377,7 +377,11 @@ class SpikeRule(RuleType):
             self.ref_window_filled_once = True
 
         if self.find_matches(self.ref_windows[qk].count(), self.cur_windows[qk].count()):
-            match = self.cur_windows[qk].data[-1][0]
+            # skip over placeholder events which have count=0
+            for match, count in self.cur_windows[qk].data:
+                if count:
+                    break
+
             self.add_match(match, qk)
             self.clear_windows(qk, match)
 
@@ -508,7 +512,7 @@ class NewTermsRule(RuleType):
 
     def get_all_terms(self, args):
         """ Performs a terms aggregation for each field to get every existing term. """
-        self.es = Elasticsearch(host=self.rules['es_host'], port=self.rules['es_port'])
+        self.es = Elasticsearch(host=self.rules['es_host'], port=self.rules['es_port'], timeout=self.rules.get('es_conn_timeout', 50))
         window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
         field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
         query_template = {"aggs": {"values": {"terms": field_name}}}
@@ -527,7 +531,7 @@ class NewTermsRule(RuleType):
 
         for field in self.fields:
             field_name['field'] = field
-            res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout=50)
+            res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout='50s')
             if 'aggregations' in res:
                 buckets = res['aggregations']['filtered']['values']['buckets']
                 keys = [bucket['key'] for bucket in buckets]
@@ -561,6 +565,7 @@ class NewTermsRule(RuleType):
                                  self.rules['timestamp_field']: timestamp,
                                  'new_field': field}
                         self.add_match(match)
+                        self.seen_values[field].append(bucket['key'])
 
 
 class CardinalityRule(RuleType):

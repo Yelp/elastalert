@@ -16,6 +16,7 @@ definitions:
       minutes: {type: number}
       seconds: {type: number}
       milliseconds: {type: number}
+      schedule: {type: string}
 
   filter: &filter {}
 
@@ -180,6 +181,8 @@ properties:
   ### HipChat
   hipchat_auth_token: {type: string}
   hipchat_room_id: {type: number}
+  hipchat_domain: {type: string}
+  hipchat_ignore_ssl_errors: {type: boolean}
 
   ### Slack
   slack_webhook_url: {type: string}
@@ -190,3 +193,9 @@ properties:
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
+
+  ### VictorOps
+  victorops_api_key: {type: string}
+  victorops_routing_key: {type: string}
+  victorops_message_type: {enum: [INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY]}
+  victorops_entity_display_name: {type: string}
