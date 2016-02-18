@@ -149,6 +149,15 @@ class Alerter(object):
 
         return alert_subject
 
+    def create_alert_body(self, matches):
+        body = ''
+        for match in matches:
+            body += unicode(BasicMatchString(self.rule, match))
+            # Separate text of aggregated alerts with dashes
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        return body
+
     def create_default_title(self, matches):
         return self.rule['name']
 
@@ -206,12 +215,8 @@ class EmailAlerter(Alerter):
             self.rule['bcc'] = [self.rule['bcc']]
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
+
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
             url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
@@ -385,14 +390,8 @@ class JiraAlerter(Alerter):
                     self.pipeline['jira_server'] = self.server
                 return
 
-        description = self.description + '\n'
-        for match in matches:
-            description += unicode(JiraFormattedMatchString(self.rule, match))
-            if len(matches) > 1:
-                description += '\n----------------------------------------\n'
-
         self.jira_args['summary'] = title
-        self.jira_args['description'] = description
+        self.jira_args['description'] = self.create_alert_body(matches)
 
         try:
             self.issue = self.client.create_issue(**self.jira_args)
@@ -403,6 +402,14 @@ class JiraAlerter(Alerter):
         if self.pipeline is not None:
             self.pipeline['jira_ticket'] = self.issue
             self.pipeline['jira_server'] = self.server
+
+    def create_alert_body(self, matches):
+        body = self.description + '\n'
+        for match in matches:
+            body += unicode(JiraFormattedMatchString(self.rule, match))
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        return body
 
     def create_default_title(self, matches, for_search=False):
         # If there is a query_key, use that in the title
@@ -476,12 +483,7 @@ class SnsAlerter(Alerter):
         return subject
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
 
         # use instance role if aws_access_key and aws_secret_key are not specified
         if not self.aws_access_key and not self.aws_secret_key:
@@ -507,12 +509,7 @@ class HipChatAlerter(Alerter):
         self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
 
         # post to hipchat
         headers = {'content-type': 'application/json'}
@@ -558,12 +555,7 @@ class SlackAlerter(Alerter):
         return body
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
 
         body = self.format_body(body)
         # post to slack
@@ -607,12 +599,7 @@ class PagerDutyAlerter(Alerter):
         self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
 
         # post to pagerduty
         headers = {'content-type': 'application/json'}
@@ -651,12 +638,7 @@ class VictorOpsAlerter(Alerter):
         self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (self.victorops_api_key, self.victorops_routing_key)
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
 
         # post to victorops
         headers = {'content-type': 'application/json'}
