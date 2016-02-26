@@ -152,11 +152,18 @@ def load_options(rule, conf, args=None):
 
     # Set email options from global config
     rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
-    if 'smtp_host' in conf:
-        rule.setdefault('smtp_host', conf.get('smtp_port'))
     rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
+    if 'smtp_port' in conf:
+        rule.setdefault('smtp_port', conf.get('smtp_port'))
+    if 'smtp_ssl' in conf:
+        rule.setdefault('smtp_ssl', conf.get('smtp_ssl'))
+    if 'smtp_auth_file' in conf:
+        rule.setdefault('smtp_auth_file', conf.get('smtp_auth_file'))
     if 'email_reply_to' in conf:
         rule.setdefault('email_reply_to', conf['email_reply_to'])
+
+    # Set slack options from global config
+    rule.setdefault('slack_webhook_url', conf.get('slack_webhook_url'))
 
     # Make sure we have required options
     if required_locals - frozenset(rule.keys()):
