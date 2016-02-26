@@ -43,6 +43,7 @@ Currently, we have support built in for the following alert types:
 - Commands
 - HipChat
 - Slack
+- Telegram
 - AWS SNS
 - VictorOps
 - PagerDuty

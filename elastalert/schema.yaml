@@ -199,3 +199,8 @@ properties:
   victorops_routing_key: {type: string}
   victorops_message_type: {enum: [INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY]}
   victorops_entity_display_name: {type: string}
+
+  ### Telegram
+  telegram_bot_token: {type: string}
+  telegram_room_id: {type: string}
+  telegram_api_url: {type: string}
