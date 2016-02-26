@@ -262,7 +262,7 @@ class ElastAlerter():
 
         return processed_hits
 
-    def get_hits(self, rule, starttime, endtime, index):
+    def get_hits(self, rule, starttime, endtime, index, scroll=False):
         """ Query elasticsearch for the given rule and return the results.
 
         :param rule: The rule configuration.
@@ -276,7 +276,12 @@ class ElastAlerter():
             query['fields'] = rule['include']
             extra_args = {}
         try:
-            res = self.current_es.search(index=index, size=rule['max_query_size'], body=query, ignore_unavailable=True, **extra_args)
+            if scroll:
+                res = self.current_es.scroll(scroll_id=self.scroll_id, scroll='1m')
+            else:
+                res = self.current_es.search(
+                    scroll="1m", index=index, size=rule['max_query_size'],
+                    body=query, ignore_unavailable=True, **extra_args)
             logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
@@ -286,10 +291,18 @@ class ElastAlerter():
             self.handle_error('Error running query: %s' % (e), {'rule': rule['name']})
             return None
 
+        max_size = rule.get('max_query_size', self.max_query_size)
+        total_hits = res['hits']['total']
+
         hits = res['hits']['hits']
         self.num_hits += len(hits)
         lt = rule.get('use_local_time')
-        elastalert_logger.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits)))
+        status_log = "Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits))
+        if total_hits > max_size:
+            elastalert_logger.info("%s (scrolling..)" % status_log)
+            self.scroll_id = res['_scroll_id']
+        else:
+            elastalert_logger.info(status_log)
         hits = self.process_hits(rule, hits)
 
         # Record doc_type for use in get_top_counts
@@ -377,7 +390,7 @@ class ElastAlerter():
                 remove.append(_id)
         map(rule['processed_hits'].pop, remove)
 
-    def run_query(self, rule, start=None, end=None):
+    def run_query(self, rule, start=None, end=None, scroll=False):
         """ Query for the rule and pass all of the results to the RuleType instance.
 
         :param rule: The rule configuration.
@@ -400,7 +413,7 @@ class ElastAlerter():
         elif rule.get('use_terms_query'):
             data = self.get_hits_terms(rule, start, end, index, rule['query_key'])
         else:
-            data = self.get_hits(rule, start, end, index)
+            data = self.get_hits(rule, start, end, index, scroll)
             if data:
                 data = self.remove_duplicate_events(data, rule)
 
@@ -416,8 +429,10 @@ class ElastAlerter():
                 rule_inst.add_data(data)
         # Warn if we hit max_query_size
         if self.num_hits - prev_num_hits == max_size and not rule.get('use_count_query'):
-            logging.warning("Hit max_query_size (%s) while querying for %s" % (max_size, rule['name']))
+            elastalert_logger.warning("Hit max_query_size (%s) while querying for %s, scrolling.." % (max_size, rule['name']))
 
+        if hasattr(self, 'scroll_id') and self.num_hits == max_size:
+            self.run_query(rule, start, end, scroll=True)
         return True
 
     def get_starttime(self, rule):
