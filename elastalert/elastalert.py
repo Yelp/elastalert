@@ -282,6 +282,7 @@ class ElastAlerter():
                 res = self.current_es.search(
                     scroll="1m", index=index, size=rule['max_query_size'],
                     body=query, ignore_unavailable=True, **extra_args)
+                self.total_hits = res['hits']['total']
             logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
@@ -291,14 +292,11 @@ class ElastAlerter():
             self.handle_error('Error running query: %s' % (e), {'rule': rule['name']})
             return None
 
-        max_size = rule.get('max_query_size', self.max_query_size)
-        total_hits = res['hits']['total']
-
         hits = res['hits']['hits']
         self.num_hits += len(hits)
         lt = rule.get('use_local_time')
         status_log = "Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits))
-        if total_hits > max_size:
+        if total_hits > rule.get('max_query_size', self.max_query_size):
             elastalert_logger.info("%s (scrolling..)" % status_log)
             self.scroll_id = res['_scroll_id']
         else:
@@ -431,7 +429,7 @@ class ElastAlerter():
         if self.num_hits - prev_num_hits == max_size and not rule.get('use_count_query'):
             elastalert_logger.warning("Hit max_query_size (%s) while querying for %s, scrolling.." % (max_size, rule['name']))
 
-        if hasattr(self, 'scroll_id') and self.num_hits == max_size:
+        if hasattr(self, 'scroll_id') and self.num_hits < self.total_hits:
             self.run_query(rule, start, end, scroll=True)
         return True
 
