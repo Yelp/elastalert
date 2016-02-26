@@ -677,3 +677,46 @@ class VictorOpsAlerter(Alerter):
     def get_info(self):
         return {'type': 'victorops',
                 'victorops_routing_key': self.victorops_routing_key}
+
+
+class TelegramAlerter(Alerter):
+    """ Send a Telegram message via bot api for each alert """
+    required_options = frozenset(['telegram_bot_token', 'telegram_room_id'])
+
+    def __init__(self, rule):
+        super(TelegramAlerter, self).__init__(rule)
+        self.telegram_bot_token = self.rule['telegram_bot_token']
+        self.telegram_room_id = self.rule['telegram_room_id']
+        self.telegram_api_url = self.rule.get('telegram_api_url', 'api.telegram.org')
+        self.url = 'https://%s/bot%s/%s' % (self.telegram_api_url, self.telegram_bot_token, "sendMessage")
+
+    def alert(self, matches):
+        body = u'⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
+        for match in matches:
+            body += unicode(BasicMatchString(self.rule, match))
+            # Separate text of aggregated alerts with dashes
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        body += u' ```'
+
+        headers = {'content-type': 'application/json'}
+        payload = {
+            'chat_id': self.telegram_room_id,
+            'text': body,
+            'parse_mode': 'markdown',
+            'disable_web_page_preview': True
+        }
+
+        try:
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            warnings.resetwarnings()
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Telegram: %s" % e)
+
+        elastalert_logger.info(
+            "Alert sent to Telegram room %s" % self.telegram_room_id)
+
+    def get_info(self):
+        return {'type': 'telegram',
+                'telegram_room_id': self.telegram_room_id}

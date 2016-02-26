@@ -1106,6 +1106,20 @@ Elastalert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
 
 ``slack_proxy``: By default Elastalert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
 
+Telegram
+~~~~~
+Telegram alerter will send a notification to a predefined Telegram username or channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following two options:
+
+``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#botfather
+
+``telegram_room_id``: Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+
+Optional:
+
+``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
+
 PagerDuty
 ~~~~~~~~~
 
@@ -1117,7 +1131,7 @@ The alerter requires the following option:
 
 ``pagerduty_client_name``: The name of the monitoring client that is triggering this event.
 
-VictorOps  
+VictorOps
 ~~~~~~~~~
 
 VictorOps alerter will trigger an incident to a predefined VictorOps routing key. The body of the notification is formatted the same as with other alerters.
@@ -1132,7 +1146,7 @@ The alerter requires the following options:
 
 Optional:
 
-``victorops_entity_display_name``: Humna-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle. 
+``victorops_entity_display_name``: Humna-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
 
 Debug
 ~~~~~~
