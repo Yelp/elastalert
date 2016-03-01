@@ -1067,6 +1067,8 @@ Optional:
 
 ``aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
 
+``boto_profile``: The boto profile to use. If none specified, the default will be used.
+
 HipChat
 ~~~~~~~
 
