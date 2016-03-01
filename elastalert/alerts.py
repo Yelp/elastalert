@@ -25,7 +25,6 @@ import warnings
 
 
 class BasicMatchString(object):
-
     """ Creates a string containing fields in match for the given rule. """
 
     def __init__(self, rule, match):
@@ -95,7 +94,6 @@ class BasicMatchString(object):
 
 
 class JiraFormattedMatchString(BasicMatchString):
-
     def _add_match_items(self):
         match_items = dict([(x, y) for x, y in self.match.items() if not x.startswith('top_events_')])
         json_blob = self._pretty_print_as_json(match_items)
@@ -171,7 +169,8 @@ class DebugAlerter(Alerter):
         qk = self.rule.get('query_key', None)
         for match in matches:
             if qk in match:
-                elastalert_logger.info('Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
+                elastalert_logger.info(
+                    'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
             else:
                 elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
             elastalert_logger.info(unicode(BasicMatchString(self.rule, match)))
@@ -295,7 +294,8 @@ class JiraAlerter(Alerter):
                   (','.join(self.bump_in_statuses), ','.join(self.bump_not_in_statuses))
             intersection = list(set(self.bump_in_statuses) & set(self.bump_in_statuses))
             if intersection:
-                msg = '%s Both have common statuses of (%s). As such, no tickets will ever be found.' % (msg, ','.join(intersection))
+                msg = '%s Both have common statuses of (%s). As such, no tickets will ever be found.' % (
+                    msg, ','.join(intersection))
             msg += ' This should be simplified to use only one or the other.'
             logging.warning(msg)
 
@@ -470,6 +470,7 @@ class SnsAlerter(Alerter):
         self.aws_access_key = self.rule.get('aws_access_key', '')
         self.aws_secret_key = self.rule.get('aws_secret_key', '')
         self.aws_region = self.rule.get('aws_region', 'us-east-1')
+        self.boto_profile = self.rule.get('boto_profile', '')
 
     def create_default_title(self):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -483,9 +484,14 @@ class SnsAlerter(Alerter):
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
 
-        # use instance role if aws_access_key and aws_secret_key are not specified
+        # use aws_access_key and aws_secret_key if specified; then use boto profile if specified;
+        # otherwise use instance role
         if not self.aws_access_key and not self.aws_secret_key:
-            sns_client = sns.connect_to_region(self.aws_region)
+            if not self.boto_profile:
+                sns_client = sns.connect_to_region(self.aws_region)
+            else:
+                sns_client = sns.connect_to_region(self.aws_region,
+                                                   profile_name=self.boto_profile)
         else:
             sns_client = sns.connect_to_region(self.aws_region,
                                                aws_access_key_id=self.aws_access_key,
@@ -504,7 +510,8 @@ class HipChatAlerter(Alerter):
         self.hipchat_room_id = self.rule['hipchat_room_id']
         self.hipchat_domain = self.rule.get('hipchat_domain', 'api.hipchat.com')
         self.hipchat_ignore_ssl_errors = self.rule.get('hipchat_ignore_ssl_errors', False)
-        self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
+        self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (
+            self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
 
     def alert(self, matches):
         body = ''
@@ -525,7 +532,8 @@ class HipChatAlerter(Alerter):
         try:
             if self.hipchat_ignore_ssl_errors:
                 requests.packages.urllib3.disable_warnings()
-            response = requests.post(self.url, data=json.dumps(payload), headers=headers, verify=not self.hipchat_ignore_ssl_errors)
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers,
+                                     verify=not self.hipchat_ignore_ssl_errors)
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -648,7 +656,8 @@ class VictorOpsAlerter(Alerter):
         self.victorops_routing_key = self.rule['victorops_routing_key']
         self.victorops_message_type = self.rule['victorops_message_type']
         self.victorops_entity_display_name = self.rule.get('victorops_entity_display_name', 'no entity display name')
-        self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (self.victorops_api_key, self.victorops_routing_key)
+        self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (
+            self.victorops_api_key, self.victorops_routing_key)
 
     def alert(self, matches):
         body = ''
