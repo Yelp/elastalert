@@ -248,6 +248,7 @@ class ElastAlerter():
                 # Except sometimes they aren't lists. This is dependent on ES version
                 hit['_source'].setdefault(key, value[0] if type(value) is list and len(value) == 1 else value)
             hit['_source'][rule['timestamp_field']] = rule['ts_to_dt'](hit['_source'][rule['timestamp_field']])
+            hit[rule['timestamp_field']] = hit['_source'][rule['timestamp_field']]
 
             # Tack metadata fields into _source
             for field in ['_id', '_index', '_type']:
