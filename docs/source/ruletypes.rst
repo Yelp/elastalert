@@ -1048,6 +1048,10 @@ Optional:
 
 ``opsgenie_tags``: A list of tags for this alert.
 
+``opsgenie_message``: Set the OpsGenie message to something other than the rule name. The message can be formatted with fields from the first match e.g. "Error occurred for {app_name} at {timestamp}.".
+
+``opsgenie_alias``: Set the OpsGenie alias. The alias can be formatted with fields from the first match e.g "{app_name} error".
+
 SNS
 ~~~
 
