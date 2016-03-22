@@ -36,12 +36,20 @@ class BasicMatchString(object):
             self.text += '\n'
 
     def _add_custom_alert_text(self):
+        missing = '<MISSING VALUE>'
         alert_text = unicode(self.rule.get('alert_text', ''))
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
             alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
-            alert_text_values = ['<MISSING VALUE>' if val is None else val for val in alert_text_values]
+            alert_text_values = [missing if val is None else val for val in alert_text_values]
             alert_text = alert_text.format(*alert_text_values)
+        elif 'alert_text_kw' in self.rule:
+            kw = {}
+            for name, kw_name in self.rule.get('alert_text_kw').items():
+                val = lookup_es_key(self.match, name)
+                kw[kw_name] = missing if val is None else val
+            alert_text = alert_text.format(**kw)
+
         self.text += alert_text
 
     def _add_rule_text(self):

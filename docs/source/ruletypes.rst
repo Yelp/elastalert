@@ -865,7 +865,7 @@ There are several ways to format the body text of the various types of events. I
     field_values        = Field, ": ", Value
 
 Similarly to ``alert_subject``, ``alert_text`` can be further formatted using standard Python formatting syntax.
-The field names whose values will be used as the arguments can be passed with ``alert_text_args``.
+The field names whose values will be used as the arguments can be passed with ``alert_text_args`` or ``alert_text_kw``.
 
 By default::
 
