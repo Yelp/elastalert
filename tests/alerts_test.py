@@ -511,3 +511,16 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
         ]
     }
     mock_post_request.assert_called_once_with(rule['slack_webhook_url'], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
+
+
+def test_alert_text_kw(ea):
+    rule = ea.rules[0].copy()
+    rule['alert_text'] = '{field} at {time}'
+    rule['alert_text_kw'] = {
+        '@timestamp': 'time',
+        'field': 'field',
+    }
+    match = {'@timestamp': '1918-01-17', 'field': 'value'}
+    alert_text = unicode(BasicMatchString(rule, match))
+    body = '{field} at {@timestamp}'.format(**match)
+    assert body in alert_text
