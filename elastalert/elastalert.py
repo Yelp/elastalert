@@ -73,11 +73,11 @@ class ElastAlerter():
         self.debug = self.args.debug
         self.verbose = self.args.verbose
 
-        if self.debug:
-            self.verbose = True
-
-        if self.verbose:
+        if self.verbose or self.debug:
             elastalert_logger.setLevel(logging.INFO)
+
+        if self.debug:
+            elastalert_logger.info("Note: In debug mode, alerts will be logged to console but NOT actually sent. To send them, use --verbose.")
 
         if not self.args.es_debug:
             logging.getLogger('elasticsearch').setLevel(logging.WARNING)
