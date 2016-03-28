@@ -40,12 +40,12 @@ def main():
     if filename:
         with open(filename) as config_file:
             data = yaml.load(config_file)
-        host = data.get('es_host')
-        port = data.get('es_port')
+        host = args.host if args.host else data.get('es_host')
+        port = args.port if args.port else data.get('es_port')
         username = data.get('es_username')
         password = data.get('es_password')
-        url_prefix = data.get('es_url_prefix', '')
-        use_ssl = data.get('use_ssl')
+        url_prefix = args.url_prefix if args.url_prefix is not None else data.get('es_url_prefix', '')
+        use_ssl = args.ssl if args.ssl is not None else data.get('use_ssl')
     else:
         host = args.host if args.host else raw_input('Enter elasticsearch host: ')
         port = args.port if args.port else int(raw_input('Enter elasticsearch port: '))
