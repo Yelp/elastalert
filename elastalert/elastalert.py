@@ -209,7 +209,7 @@ class ElastAlerter():
         if 'sort' in query:
             query.pop('sort')
         query.update({'aggs': {'counts': {'terms': {'field': field, 'size': size}}}})
-        return {'aggs': {'filtered': query}}
+        return {'aggs': query['query']}
 
     def get_index_start(self, index, timestamp_field='@timestamp'):
         """ Query for one result sorted by timestamp to find the beginning of the index.
@@ -349,6 +349,7 @@ class ElastAlerter():
 
         if 'aggregations' not in res:
             return {}
+        import pdb;pdb.set_trace()
         buckets = res['aggregations']['filtered']['counts']['buckets']
         self.num_hits += len(buckets)
         lt = rule.get('use_local_time')
