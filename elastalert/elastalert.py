@@ -1281,16 +1281,25 @@ class ElastAlerter():
             number = rule.get('top_count_number', 5)
         for key in keys:
             index = self.get_index(rule, starttime, endtime)
-            buckets = self.get_hits_terms(rule, starttime, endtime, index, key, qk, number).values()[0]
-            # get_hits_terms adds to num_hits, but we don't want to count these
-            self.num_hits -= len(buckets)
-            terms = {}
-            for bucket in buckets:
-                terms[bucket['key']] = bucket['doc_count']
-            counts = terms.items()
-            counts.sort(key=lambda x: x[1], reverse=True)
+
+            hits_terms = self.get_hits_terms(rule, starttime, endtime, index, key, qk, number)
+            if hits_terms is None:
+                top_events_count = {}
+            else:
+                buckets = hits_terms.values()[0]
+
+                # get_hits_terms adds to num_hits, but we don't want to count these
+                self.num_hits -= len(buckets)
+                terms = {}
+                for bucket in buckets:
+                    terms[bucket['key']] = bucket['doc_count']
+                counts = terms.items()
+                counts.sort(key=lambda x: x[1], reverse=True)
+                top_events_count = dict(counts[:number])
+
             # Save a dict with the top 5 events by key
-            all_counts['top_events_%s' % (key)] = dict(counts[:number])
+            all_counts['top_events_%s' % (key)] = top_events_count
+
         return all_counts
 
     def next_alert_time(self, rule, name, timestamp):
