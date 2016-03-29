@@ -60,9 +60,14 @@ class BasicMatchString(object):
             if key.startswith('top_events_'):
                 self.text += '%s:\n' % (key[11:])
                 top_events = counts.items()
-                top_events.sort(key=lambda x: x[1], reverse=True)
-                for term, count in top_events:
-                    self.text += '%s: %s\n' % (term, count)
+
+                if not top_events:
+                    self.text += 'No events found.\n'
+                else:
+                    top_events.sort(key=lambda x: x[1], reverse=True)
+                    for term, count in top_events:
+                        self.text += '%s: %s\n' % (term, count)
+
                 self.text += '\n'
 
     def _add_match_items(self):

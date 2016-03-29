@@ -893,3 +893,16 @@ def test_uncaught_exceptions(ea):
     with mock.patch.object(ea, 'send_notification_email') as mock_email:
         ea.handle_uncaught_exception(e, ea.rules[0])
     assert mock_email.call_args_list[0][1] == {'exception': e, 'rule': ea.disabled_rules[0]}
+
+
+def test_get_top_counts_handles_no_hits_returned(ea):
+    with mock.patch.object(ea, 'get_hits_terms') as mock_hits:
+        mock_hits.return_value = None
+
+        rule = ea.rules[0]
+        starttime = datetime.datetime.now() - datetime.timedelta(minutes=10)
+        endtime = datetime.datetime.now()
+        keys = ['foo']
+
+        all_counts = ea.get_top_counts(rule, starttime, endtime, keys)
+        assert all_counts == {'top_events_foo': {}}
