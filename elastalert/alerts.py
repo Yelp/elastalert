@@ -401,7 +401,7 @@ class JiraAlerter(Alerter):
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
                     self.pipeline['jira_server'] = self.server
-                return
+                return None
 
         self.jira_args['summary'] = title
         self.jira_args['description'] = self.create_alert_body(matches)

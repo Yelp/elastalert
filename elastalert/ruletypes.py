@@ -174,17 +174,18 @@ class FrequencyRule(RuleType):
         """ Add count data to the rule. Data should be of the form {ts: count}. """
         if len(data) > 1:
             raise EAException('add_count_data can only accept one count at a time')
-        for ts, count in data.iteritems():
-            event = ({self.ts_field: ts}, count)
-            self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
-            self.check_for_match('all')
+
+        (ts, count), = data.items()
+
+        event = ({self.ts_field: ts}, count)
+        self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
+        self.check_for_match('all')
 
     def add_terms_data(self, terms):
         for timestamp, buckets in terms.iteritems():
             for bucket in buckets:
-                count = bucket['doc_count']
                 event = ({self.ts_field: timestamp,
-                          self.rules['query_key']: bucket['key']}, count)
+                          self.rules['query_key']: bucket['key']}, bucket['doc_count'])
                 self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
                 self.check_for_match(bucket['key'])
 

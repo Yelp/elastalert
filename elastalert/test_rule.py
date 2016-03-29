@@ -119,8 +119,6 @@ class MockElastAlerter(object):
             print("Downloaded %s documents to save" % (num_hits))
             return res['hits']['hits']
 
-        return None
-
     def mock_count(self, rule, start, end, index):
         """ Mocks the effects of get_hits_count using global data instead of Elasticsearch """
         count = 0
@@ -201,7 +199,7 @@ class MockElastAlerter(object):
         timestamp_field = rule.get('timestamp_field', '@timestamp')
         if args.json:
             if not self.data:
-                return
+                return None
             try:
                 self.data.sort(key=lambda x: x[timestamp_field])
                 starttime = ts_to_dt(self.data[0][timestamp_field])
@@ -209,7 +207,7 @@ class MockElastAlerter(object):
                 endtime = ts_to_dt(endtime) + datetime.timedelta(seconds=1)
             except KeyError as e:
                 print("All documents must have a timestamp and _id: %s" % (e), file=sys.stderr)
-                return
+                return None
 
             # Create mock _id for documents if it's missing
             used_ids = []

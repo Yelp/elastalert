@@ -114,7 +114,7 @@ class ElastAlerter():
         self.writeback_es = self.new_elasticsearch(self.es_conn_config)
 
         for rule in self.rules:
-            rule = self.init_rule(rule)
+            self.init_rule(rule)
 
         if self.args.silence:
             self.silence()
@@ -208,8 +208,7 @@ class ElastAlerter():
         if 'sort' in query:
             query.pop('sort')
         query.update({'aggs': {'counts': {'terms': {'field': field, 'size': size}}}})
-        aggs_query = {'aggs': {'filtered': query}}
-        return aggs_query
+        return {'aggs': {'filtered': query}}
 
     def get_index_start(self, index, timestamp_field='@timestamp'):
         """ Query for one result sorted by timestamp to find the beginning of the index.
@@ -226,8 +225,7 @@ class ElastAlerter():
         if len(res['hits']['hits']) == 0:
             # Index is completely empty, return a date before the epoch
             return '1969-12-30T00:00:00Z'
-        timestamp = res['hits']['hits'][0][timestamp_field]
-        return timestamp
+        return res['hits']['hits'][0][timestamp_field]
 
     @staticmethod
     def process_hits(rule, hits):
@@ -445,8 +443,6 @@ class ElastAlerter():
             self.handle_error('Error querying for last run: %s' % (e), {'rule': rule['name']})
             self.writeback_es = None
 
-        return None
-
     def set_starttime(self, rule, endtime):
         """ Given a rule and an endtime, sets the appropriate starttime for it. """
 
@@ -457,7 +453,7 @@ class ElastAlerter():
             if last_run_end:
                 rule['minimum_starttime'] = last_run_end
                 rule['starttime'] = last_run_end
-                return
+                return None
 
         # Use buffer for normal queries, or run_every increments otherwise
         buffer_time = rule.get('buffer_time', self.buffer_time)
@@ -770,8 +766,7 @@ class ElastAlerter():
         db_name = rule.get('use_kibana4_dashboard')
         start = ts_add(match[rule['timestamp_field']], -rule.get('kibana4_start_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10))))
         end = ts_add(match[rule['timestamp_field']], rule.get('kibana4_end_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10))))
-        link = kibana.kibana4_dashboard_link(db_name, start, end)
-        return link
+        return kibana.kibana4_dashboard_link(db_name, start, end)
 
     def generate_kibana_db(self, rule, match):
         ''' Uses a template dashboard to upload a temp dashboard showing the match.
@@ -933,13 +928,13 @@ class ElastAlerter():
                     self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
             matches = valid_matches
             if not matches:
-                return
+                return None
 
         # Don't send real alerts in debug mode
         if self.debug:
             alerter = DebugAlerter(rule)
             alerter.alert(matches)
-            return
+            return None
 
         # Run the alerts
         alert_sent = False
@@ -1001,7 +996,6 @@ class ElastAlerter():
             except ElasticsearchException as e:
                 logging.exception("Error writing alert info to elasticsearch: %s" % (e))
                 self.writeback_es = None
-        return None
 
     def find_recent_pending_alerts(self, time_limit):
         """ Queries writeback_es to find alerts that did not send
@@ -1023,7 +1017,7 @@ class ElastAlerter():
                                                size=1000)
                 if res['hits']['hits']:
                     return res['hits']['hits']
-            except:
+            except:  # TODO: Give this a more relevant exception, try:except: is evil.
                 pass
         return []
 
@@ -1069,7 +1063,7 @@ class ElastAlerter():
                     self.writeback_es.delete(index=self.writeback_index,
                                              doc_type='elastalert',
                                              id=_id)
-                except:
+                except:  # TODO: Give this a more relevant exception, try:except: is evil.
                     self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
 
         # Send in memory aggregated alerts
