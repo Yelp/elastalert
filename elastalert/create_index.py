@@ -9,7 +9,7 @@ import time
 
 import argparse
 import yaml
-from elasticsearch.client import Elasticsearch
+from elasticsearch.client import Elasticsearch, IndicesClient
 from elasticsearch import RequestsHttpConnection
 from auth import Auth
 
@@ -103,6 +103,11 @@ def main():
         print('Downloading existing data...')
         res = es.search(index=old_index, body={}, size=500000)
         print('Got %s documents' % (len(res['hits']['hits'])))
+
+    es_index = IndicesClient(es)
+    if es_index.exists(index):
+        print('Index ' + index + ' already exists. Skipping index creation.')
+        return None
 
     es.indices.create(index)
     # To avoid a race condition. TODO: replace this with a real check
