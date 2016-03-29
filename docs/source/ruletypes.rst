@@ -70,7 +70,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``filter`` (ES filter DSL, no default)                       |           |
 +--------------------------------------------------------------+           |
-| ``max_query_size`` (int, default 100k)                       |           |
+| ``max_query_size`` (int, default global max_query_size)      |           |
 +--------------------------------------------------------------+           |
 | ``query_delay`` (time, default 0 min)                        |           |
 +--------------------------------------------------------------+           |
@@ -85,61 +85,61 @@ Rule Configuration Cheat Sheet
 
 |
 
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|      RULE TYPE                                     | Any | Blacklist | Whitelist | Change | Frequency | Spike | Flatline |New_term|Cardinality|
-+====================================================+=====+===========+===========+========+===========+=======+==========+========+===========+
-| ``compare_key`` (string, no default)               |     |    Req    |  Req      |    Req |           |       |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``blacklist`` (list of strs, no default)            |     |   Req     |           |        |           |       |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``whitelist`` (list of strs, no default)            |     |           |   Req     |        |           |       |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``ignore_null`` (boolean, no default)              |     |           |   Req     |  Req   |           |       |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``query_key`` (string, no default)                 |     |           |           |   Req  |    Opt    |  Opt  |   Opt    |  Req   |  Opt      |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``timeframe`` (time, no default)                   |     |           |           |   Opt  |    Req    |  Req  |   Req    |        |  Req      |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``num_events`` (int, no default)                   |     |           |           |        |    Req    |       |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``attach_related`` (boolean, no default)           |     |           |           |        |    Opt    |       |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``use_count_query`` (boolean, no default)           |     |           |           |        |     Opt   | Opt   | Opt      |        |           |
-|                                                    |     |           |           |        |           |       |          |        |           |
-|``doc_type`` (string, no default)                   |     |           |           |        |           |       |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``use_terms_query`` (boolean, no default)           |     |           |           |        |     Opt   | Opt   |          | Opt    |           |
-|                                                    |     |           |           |        |           |       |          |        |           |
-|``doc_type`` (string, no default)                   |     |           |           |        |           |       |          |        |           |
-|                                                    |     |           |           |        |           |       |          |        |           |
-|``query_key`` (string, no default)                  |     |           |           |        |           |       |          |        |           |
-|                                                    |     |           |           |        |           |       |          |        |           |
-|``terms_size`` (int, default 50)                    |     |           |           |        |           |       |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``spike_height`` (int, no default)                 |     |           |           |        |           |   Req |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``spike_type`` ([up|down|both], no default)         |     |           |           |        |           |   Req |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``alert_on_new_data`` (boolean, default False)      |     |           |           |        |           |   Opt |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``threshold_ref`` (int, no default)                 |     |           |           |        |           |   Opt |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``threshold_cur`` (int, no default)                 |     |           |           |        |           |   Opt |          |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``threshold`` (int, no default)                     |     |           |           |        |           |       |    Req   |        |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``fields`` (string, no default)                     |     |           |           |        |           |       |          | Req    |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``terms_window_size`` (time, default 30 days)       |     |           |           |        |           |       |          | Opt    |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``alert_on_missing_fields`` (boolean, default False)|     |           |           |        |           |       |          | Opt    |           |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``cardinality_field`` (string, no default)          |     |           |           |        |           |       |          |        |  Req      |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``max_cardinality`` (boolean, no default)           |     |           |           |        |           |       |          |        |  Opt      |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``min_cardinality`` (boolean, no default)           |     |           |           |        |           |       |          |        |  Opt      |
-+----------------------------------------------------+-----+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|      RULE TYPE                                     |   Any  | Blacklist | Whitelist | Change | Frequency | Spike | Flatline |New_term|Cardinality|
++====================================================+========+===========+===========+========+===========+=======+==========+========+===========+
+| ``compare_key`` (string, no default)               |        |    Req    |   Req     |  Req   |           |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``blacklist`` (list of strs, no default)            |        |    Req    |           |        |           |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``whitelist`` (list of strs, no default)            |        |           |   Req     |        |           |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``ignore_null`` (boolean, no default)              |        |           |   Req     |  Req   |           |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``query_key`` (string, no default)                 |   Opt  |           |           |   Req  |    Opt    |  Opt  |   Opt    |  Req   |  Opt      |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``timeframe`` (time, no default)                   |        |           |           |   Opt  |    Req    |  Req  |   Req    |        |  Req      |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``num_events`` (int, no default)                   |        |           |           |        |    Req    |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``attach_related`` (boolean, no default)           |        |           |           |        |    Opt    |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``use_count_query`` (boolean, no default)           |        |           |           |        |     Opt   | Opt   | Opt      |        |           |
+|                                                    |        |           |           |        |           |       |          |        |           |
+|``doc_type`` (string, no default)                   |        |           |           |        |           |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``use_terms_query`` (boolean, no default)           |        |           |           |        |     Opt   | Opt   |          | Opt    |           |
+|                                                    |        |           |           |        |           |       |          |        |           |
+|``doc_type`` (string, no default)                   |        |           |           |        |           |       |          |        |           |
+|                                                    |        |           |           |        |           |       |          |        |           |
+|``query_key`` (string, no default)                  |        |           |           |        |           |       |          |        |           |
+|                                                    |        |           |           |        |           |       |          |        |           |
+|``terms_size`` (int, default 50)                    |        |           |           |        |           |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``spike_height`` (int, no default)                 |        |           |           |        |           |   Req |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``spike_type`` ([up|down|both], no default)         |        |           |           |        |           |   Req |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``alert_on_new_data`` (boolean, default False)      |        |           |           |        |           |   Opt |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``threshold_ref`` (int, no default)                 |        |           |           |        |           |   Opt |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``threshold_cur`` (int, no default)                 |        |           |           |        |           |   Opt |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``threshold`` (int, no default)                     |        |           |           |        |           |       |    Req   |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``fields`` (string, no default)                     |        |           |           |        |           |       |          | Req    |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``terms_window_size`` (time, default 30 days)       |        |           |           |        |           |       |          | Opt    |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``alert_on_missing_fields`` (boolean, default False)|        |           |           |        |           |       |          | Opt    |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``cardinality_field`` (string, no default)          |        |           |           |        |           |       |          |        |  Req      |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``max_cardinality`` (boolean, no default)           |        |           |           |        |           |       |          |        |  Opt      |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``min_cardinality`` (boolean, no default)           |        |           |           |        |           |       |          |        |  Opt      |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 
 Common Configuration Options
 ============================
@@ -234,6 +234,15 @@ means that if one match occurred at 12:00, another at 1:00, and a third at 2:30,
 alert would be sent at 2:00, containing the first two matches, and another at 4:30, containing the third match plus any additional matches
 occurring before 4:30. This can be very useful if you expect a large number of matches and only want a periodic report. (Optional, time, default none)
 
+If you wish to aggregate all your alerts and send them on a recurring interval, you can do that using the ``schedule`` field.
+
+For example, if you wish to receive alerts every Monday and Friday::
+
+    aggregation:
+      schedule: '2 4 * * mon,fri'
+
+This uses Cron syntax, which you can read more about `here <http://www.nncron.ru/help/EN/working/cron-format.htm>`_. Make sure to `only` include either a schedule field or standard datetime fields (such as ``hours``, ``minutes``, ``days``), not both.
+
 realert
 ^^^^^^^
 
@@ -272,7 +281,7 @@ max_query_size
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. If you
 expect a large number of results, consider using ``use_count_query`` for the rule. If this
 limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting will
-override a global ``max_query_size``. (Optional, int, default 100,000)
+override a global ``max_query_size``. (Optional, int, default value of global ``max_query_size``)
 
 filter
 ^^^^^^
@@ -856,7 +865,7 @@ There are several ways to format the body text of the various types of events. I
     field_values        = Field, ": ", Value
 
 Similarly to ``alert_subject``, ``alert_text`` can be further formatted using standard Python formatting syntax.
-The field names whose values will be used as the arguments can be passed with ``alert_text_args``.
+The field names whose values will be used as the arguments can be passed with ``alert_text_args`` or ``alert_text_kw``.
 
 By default::
 
@@ -1025,13 +1034,23 @@ an alert, however it could be extended to update or close existing alerts.
 
 It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://app.opsgenie.com/integration>`_ in order to create alerts.
 
-The OpsGenie alert requires three options:
+The OpsGenie alert requires one option:
 
 ``opsgenie_key``: The randomly generated API Integration key created by OpsGenie.
+
+Optional:
 
 ``opsgenie_account``: The OpsGenie account to integrate with.
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
+
+``opsgenie_teams``: A list of OpsGenie teams to notify (useful for schedules with escalation).
+
+``opsgenie_tags``: A list of tags for this alert.
+
+``opsgenie_message``: Set the OpsGenie message to something other than the rule name. The message can be formatted with fields from the first match e.g. "Error occurred for {app_name} at {timestamp}.".
+
+``opsgenie_alias``: Set the OpsGenie alias. The alias can be formatted with fields from the first match e.g "{app_name} error".
 
 SNS
 ~~~
@@ -1052,6 +1071,8 @@ Optional:
 
 ``aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
 
+``boto_profile``: The boto profile to use. If none specified, the default will be used.
+
 HipChat
 ~~~~~~~
 
@@ -1064,6 +1085,10 @@ The alerter requires the following two options:
 
 ``hipchat_room_id``: The id associated with the HipChat room you want to send the alert to. Go to https://XXXXX.hipchat.com/rooms and choose
 the room you want to post to. The room ID will be the numeric part of the URL.
+
+``hipchat_domain``: The custom domain in case you have Hipchat own server deployment. Default is api.hipchat.com.
+
+``hipchat_ignore_ssl_errors``: Ignore SSL errors (self-signed certificates, etc.). Default is false.
 
 Slack
 ~~~~~
@@ -1087,6 +1112,20 @@ Elastalert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
 
 ``slack_proxy``: By default Elastalert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
 
+Telegram
+~~~~~
+Telegram alerter will send a notification to a predefined Telegram username or channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following two options:
+
+``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#botfather
+
+``telegram_room_id``: Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+
+Optional:
+
+``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
+
 PagerDuty
 ~~~~~~~~~
 
@@ -1097,6 +1136,23 @@ The alerter requires the following option:
 ``pagerduty_service_key``: Integration Key generated after creating a service with the 'Use our API directly' option at Integration Settings
 
 ``pagerduty_client_name``: The name of the monitoring client that is triggering this event.
+
+VictorOps
+~~~~~~~~~
+
+VictorOps alerter will trigger an incident to a predefined VictorOps routing key. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``victorops_api_key``: API key generated under the 'REST Endpoint' in the Integrations settings.
+
+``victorops_routing_key``: VictorOps routing key to route the alert to.
+
+``victorops_message_type``: VictorOps field to specify serverity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
+
+Optional:
+
+``victorops_entity_display_name``: Humna-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
 
 Debug
 ~~~~~~

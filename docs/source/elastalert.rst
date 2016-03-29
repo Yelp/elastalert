@@ -38,6 +38,7 @@ Currently, we have support built in for these alert types:
 - SNS
 - HipChat
 - Slack
+- Telegram
 - Debug
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
@@ -175,7 +176,7 @@ search and alert metadata back to Elasticsearch.
 ``--start <timestamp>`` will force ElastAlert to begin querying from the given time, instead of the default,
 querying from the present. The timestamp should be ISO8601, e.g.  ``YYYY-MM-DDTHH:MM:SS`` (UTC) or with timezone
 ``YYYY-MM-DDTHH:MM:SS-08:00`` (PST). Note that if querying over a large date range, no alerts will be
-sent until that rule has finished querying over the entire time period.
+sent until that rule has finished querying over the entire time period. To force querying from the current time, use "NOW".
 
 ``--end <timestamp>`` will cause ElastAlert to stop querying at the specified timestamp. By default, ElastAlert
 will periodically query until the present indefinitely.

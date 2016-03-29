@@ -47,8 +47,7 @@ def lookup_es_key(lookup_dict, term):
         subkey = ''
 
         while subkeys:
-            subkey += subkeys[0]
-            subkeys = subkeys[1:]
+            subkey += subkeys.pop(0)
             if subkey in go_deeper:
                 go_deeper = go_deeper[subkey]
                 subkey = ''
@@ -170,3 +169,13 @@ def dt_to_unix(dt):
 
 def dt_to_unixms(dt):
     return dt_to_unix(dt) * 1000
+
+
+def cronite_datetime_to_timestamp(self, d):
+    """
+    Converts a `datetime` object `d` into a UNIX timestamp.
+    """
+    if d.tzinfo is not None:
+        d = d.replace(tzinfo=None) - d.utcoffset()
+
+    return total_seconds((d - datetime.datetime(1970, 1, 1)))

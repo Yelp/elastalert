@@ -6,10 +6,10 @@ Running ElastAlert for the First Time
 Requirements
 ------------
 
-- pip
-- Elasticsearch 1.*
-- ISO8601 timestamped data
-- Python 2.6
+- Elasticsearch 1.* or 2.*
+- ISO8601 or Unix timestamped data
+- Python 2.6 or 2.7
+- pip, see requirements.txt
 
 Downloading and Configuring
 ---------------------------
@@ -21,6 +21,7 @@ First, clone the ElastAlert repository::
 Install the module::
 
     $ python setup.py install
+    $ pip install -r requirements.txt
 
 Next, open up config.yaml.example. In it, you will find several configuration options. ElastAlert may be run without changing any of these settings.
 

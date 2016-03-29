@@ -174,17 +174,18 @@ class FrequencyRule(RuleType):
         """ Add count data to the rule. Data should be of the form {ts: count}. """
         if len(data) > 1:
             raise EAException('add_count_data can only accept one count at a time')
-        for ts, count in data.iteritems():
-            event = ({self.ts_field: ts}, count)
-            self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
-            self.check_for_match('all')
+
+        (ts, count), = data.items()
+
+        event = ({self.ts_field: ts}, count)
+        self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
+        self.check_for_match('all')
 
     def add_terms_data(self, terms):
         for timestamp, buckets in terms.iteritems():
             for bucket in buckets:
-                count = bucket['doc_count']
                 event = ({self.ts_field: timestamp,
-                          self.rules['query_key']: bucket['key']}, count)
+                          self.rules['query_key']: bucket['key']}, bucket['doc_count'])
                 self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
                 self.check_for_match(bucket['key'])
 
@@ -377,7 +378,11 @@ class SpikeRule(RuleType):
             self.ref_window_filled_once = True
 
         if self.find_matches(self.ref_windows[qk].count(), self.cur_windows[qk].count()):
-            match = self.cur_windows[qk].data[-1][0]
+            # skip over placeholder events which have count=0
+            for match, count in self.cur_windows[qk].data:
+                if count:
+                    break
+
             self.add_match(match, qk)
             self.clear_windows(qk, match)
 
@@ -561,6 +566,7 @@ class NewTermsRule(RuleType):
                                  self.rules['timestamp_field']: timestamp,
                                  'new_field': field}
                         self.add_match(match)
+                        self.seen_values[field].append(bucket['key'])
 
 
 class CardinalityRule(RuleType):

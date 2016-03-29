@@ -5,6 +5,7 @@ from __future__ import print_function
 import getpass
 import json
 import os
+import time
 
 import argparse
 import yaml
@@ -39,12 +40,12 @@ def main():
     if filename:
         with open(filename) as config_file:
             data = yaml.load(config_file)
-        host = data.get('es_host')
-        port = data.get('es_port')
+        host = args.host if args.host else data.get('es_host')
+        port = args.port if args.port else data.get('es_port')
         username = data.get('es_username')
         password = data.get('es_password')
-        url_prefix = data.get('es_url_prefix', '')
-        use_ssl = data.get('use_ssl')
+        url_prefix = args.url_prefix if args.url_prefix is not None else data.get('es_url_prefix', '')
+        use_ssl = args.ssl if args.ssl is not None else data.get('use_ssl')
     else:
         host = args.host if args.host else raw_input('Enter elasticsearch host: ')
         port = args.port if args.port else int(raw_input('Enter elasticsearch port: '))
@@ -68,6 +69,7 @@ def main():
                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
     es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                 '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
+                                                'alert_time': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'match_body': {'enabled': False, 'type': 'object'},
                                                 'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
     past_mapping = {'past_elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
@@ -91,6 +93,8 @@ def main():
         print('Got %s documents' % (len(res['hits']['hits'])))
 
     es.indices.create(index)
+    # To avoid a race condition. TODO: replace this with a real check
+    time.sleep(2)
     es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
     es.indices.put_mapping(index=index, doc_type='elastalert_status', body=ess_mapping)
     es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)

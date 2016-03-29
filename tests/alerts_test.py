@@ -12,8 +12,10 @@ from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
+from elastalert.alerts import SlackAlerter
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
+from elastalert.config import load_modules
 
 
 class mock_rule:
@@ -446,3 +448,79 @@ def test_command():
         alert.alert([match])
     assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE)
     assert mock_subprocess.communicate.called_with(input=json.dumps(match))
+
+
+def test_slack_uses_custom_title():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['alert_subject'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            }
+        ]
+    }
+    mock_post_request.assert_called_once_with(rule['slack_webhook_url'], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
+
+
+def test_slack_uses_rule_name_when_custom_title_is_not_provided():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['name'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            }
+        ]
+    }
+    mock_post_request.assert_called_once_with(rule['slack_webhook_url'], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
+
+
+def test_alert_text_kw(ea):
+    rule = ea.rules[0].copy()
+    rule['alert_text'] = '{field} at {time}'
+    rule['alert_text_kw'] = {
+        '@timestamp': 'time',
+        'field': 'field',
+    }
+    match = {'@timestamp': '1918-01-17', 'field': 'value'}
+    alert_text = unicode(BasicMatchString(rule, match))
+    body = '{field} at {@timestamp}'.format(**match)
+    assert body in alert_text
