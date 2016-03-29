@@ -618,94 +618,38 @@ def test_flatline_query_key():
 def test_cardinality_max():
     rules = {'max_cardinality': 4,
              'timeframe': datetime.timedelta(minutes=10),
-             'cardinality_field': 'user',
+             'query_key': 'user',
              'timestamp_field': '@timestamp'}
     rule = CardinalityRule(rules)
 
     # Add 4 different usernames
     users = ['bill', 'coach', 'zoey', 'louis']
-    for user in users:
-        event = {'@timestamp': datetime.datetime.now(), 'user': user}
-        rule.add_data([event])
-        assert len(rule.matches) == 0
-    rule.garbage_collect(datetime.datetime.now())
-
-    # Add a duplicate, stay at 4 cardinality
-    event = {'@timestamp': datetime.datetime.now(), 'user': 'coach'}
-    rule.add_data([event])
-    rule.garbage_collect(datetime.datetime.now())
+    terms = {datetime.datetime.now(): [{"key": user} for user in users]}
+    rule.add_terms_data(terms)
     assert len(rule.matches) == 0
 
     # Next unique will trigger
-    event = {'@timestamp': datetime.datetime.now(), 'user': 'francis'}
-    rule.add_data([event])
-    rule.garbage_collect(datetime.datetime.now())
+    users2 = ['bill', 'coach', 'zoey', 'louis', "me"]
+    terms = {datetime.datetime.now(): [{"key": user} for user in users2]}
+    rule.add_terms_data(terms)
     assert len(rule.matches) == 1
-    rule.matches = []
-
-    # 15 minutes later, adding more will not trigger an alert
-    users = ['nick', 'rochelle', 'ellis']
-    for user in users:
-        event = {'@timestamp': datetime.datetime.now() + datetime.timedelta(minutes=15), 'user': user}
-        rule.add_data([event])
-        assert len(rule.matches) == 0
 
 
 def test_cardinality_min():
     rules = {'min_cardinality': 4,
              'timeframe': datetime.timedelta(minutes=10),
-             'cardinality_field': 'user',
+             'query_key': 'user',
              'timestamp_field': '@timestamp'}
     rule = CardinalityRule(rules)
 
-    # Add 2 different usernames, no alert because time hasn't elapsed
+    # Add 2 different usernames, alert
     users = ['foo', 'bar']
-    for user in users:
-        event = {'@timestamp': datetime.datetime.now(), 'user': user}
-        rule.add_data([event])
-        assert len(rule.matches) == 0
-    rule.garbage_collect(datetime.datetime.now())
-
-    # Add 3 more unique ad t+5 mins
-    users = ['faz', 'fuz', 'fiz']
-    for user in users:
-        event = {'@timestamp': datetime.datetime.now() + datetime.timedelta(minutes=5), 'user': user}
-        rule.add_data([event])
-    rule.garbage_collect(datetime.datetime.now() + datetime.timedelta(minutes=5))
-    assert len(rule.matches) == 0
-
-    # Adding the same one again at T+15 causes an alert
-    user = 'faz'
-    event = {'@timestamp': datetime.datetime.now() + datetime.timedelta(minutes=15), 'user': user}
-    rule.add_data([event])
-    rule.garbage_collect(datetime.datetime.now() + datetime.timedelta(minutes=15))
+    terms = {datetime.datetime.now(): [{"key": user} for user in users]}
+    rule.add_terms_data(terms)
     assert len(rule.matches) == 1
-
-
-def test_cardinality_qk():
-    rules = {'max_cardinality': 2,
-             'timeframe': datetime.timedelta(minutes=10),
-             'cardinality_field': 'foo',
-             'timestamp_field': '@timestamp',
-             'query_key': 'user'}
-    rule = CardinalityRule(rules)
-
-    # Add 3 different usernames, one value each
-    users = ['foo', 'bar', 'baz']
-    for user in users:
-        event = {'@timestamp': datetime.datetime.now(), 'user': user, 'foo': 'foo' + user}
-        rule.add_data([event])
-        assert len(rule.matches) == 0
-    rule.garbage_collect(datetime.datetime.now())
-
-    # Add 2 more unique for "baz", one alert per value
-    values = ['faz', 'fuz', 'fiz']
-    for value in values:
-        event = {'@timestamp': datetime.datetime.now() + datetime.timedelta(minutes=5), 'user': 'baz', 'foo': value}
-        rule.add_data([event])
-    rule.garbage_collect(datetime.datetime.now() + datetime.timedelta(minutes=5))
-    assert len(rule.matches) == 2
-    assert rule.matches[0]['user'] == 'baz'
-    assert rule.matches[1]['user'] == 'baz'
-    assert rule.matches[0]['foo'] == 'fuz'
-    assert rule.matches[1]['foo'] == 'fiz'
+    rule.matches = []
+    # Add 3 more unique
+    users = ['foo', 'bar', "baz", "hoo"]
+    terms = {datetime.datetime.now(): [{"key": user} for user in users]}
+    rule.add_terms_data(terms)
+    assert len(rule.matches) == 0

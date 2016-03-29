@@ -9,5 +9,5 @@ dist/
 venv/
 docs/build/
 build/
-
+.idea/
 my_rules

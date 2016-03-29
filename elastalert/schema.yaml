@@ -99,12 +99,14 @@ oneOf:
       terms_size: {type: integer}
 
   - title: Cardinality
-    required: [cardinality_field, timeframe]
+    required: [query_key, timeframe]
     properties:
       type: {enum: [cardinality]}
       max_cardinality: {type: integer}
       min_cardinality: {type: integer}
-      cardinality_field: {type: string}
+      query_key: {type: string}
+      use_terms_query: {type: boolean}
+      doc_type: {type: string}
       timeframe: *timeframe
 
   - title: Custom Rule from Module
