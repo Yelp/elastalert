@@ -158,6 +158,10 @@ unless overwritten in the rule config. The default is "localhost".
 
 ``email_reply_to``: This sets the Reply-To header in emails. The default is the recipient address.
 
+``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon ElasticSearch Service. It'll use instance role keys to sign the requests.
+
+``boto_profile``: Boto profile to use when signing requests to Amazon ElasticSearch Service, if you don't want to use the instance role keys.
+
 .. _runningelastalert:
 
 Running ElastAlert
