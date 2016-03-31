@@ -32,7 +32,10 @@ setup(
         'pyyaml',
         'simplejson',
         'boto',
+        'botocore',
         'blist',
-        'croniter'
+        'croniter',
+        'configparser',
+        'aws-requests-auth'
     ]
 )

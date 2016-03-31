@@ -15,9 +15,11 @@ from socket import error
 
 import argparse
 import dateutil.tz
+from elasticsearch import RequestsHttpConnection
 import kibana
 import yaml
 from alerts import DebugAlerter
+from auth import Auth
 from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
@@ -126,6 +128,7 @@ class ElastAlerter():
                              port=es_conn_conf['es_port'],
                              url_prefix=es_conn_conf['es_url_prefix'],
                              use_ssl=es_conn_conf['use_ssl'],
+                             connection_class=RequestsHttpConnection,
                              http_auth=es_conn_conf['http_auth'],
                              timeout=es_conn_conf['es_conn_timeout'])
 
@@ -140,6 +143,8 @@ class ElastAlerter():
         parsed_conf['http_auth'] = None
         parsed_conf['es_username'] = None
         parsed_conf['es_password'] = None
+        parsed_conf['aws_region'] = None
+        parsed_conf['boto_profile'] = None
         parsed_conf['es_host'] = conf['es_host']
         parsed_conf['es_port'] = conf['es_port']
         parsed_conf['es_url_prefix'] = ''
@@ -149,8 +154,18 @@ class ElastAlerter():
             parsed_conf['es_username'] = conf['es_username']
             parsed_conf['es_password'] = conf['es_password']
 
-        if parsed_conf['es_username'] and parsed_conf['es_password']:
-            parsed_conf['http_auth'] = parsed_conf['es_username'] + ':' + parsed_conf['es_password']
+        if 'aws_region' in conf:
+            parsed_conf['aws_region'] = conf['aws_region']
+
+        if 'boto_profile' in conf:
+            parsed_conf['boto_profile'] = conf['boto_profile']
+
+        auth = Auth()
+        parsed_conf['http_auth'] = auth(host=conf['es_host'],
+                                        username=parsed_conf['es_username'],
+                                        password=parsed_conf['es_password'],
+                                        aws_region=parsed_conf['aws_region'],
+                                        boto_profile=parsed_conf['boto_profile'])
 
         if 'use_ssl' in conf:
             parsed_conf['use_ssl'] = conf['use_ssl']
