@@ -137,6 +137,7 @@ def load_options(rule, conf, args=None):
     rule.setdefault('es_username', conf.get('es_username'))
     rule.setdefault('es_password', conf.get('es_password'))
     rule.setdefault('max_query_size', conf.get('max_query_size'))
+    rule.setdefault('es_conn_timeout', conf.get('es_conn_timeout'))
     rule.setdefault('description', "")
 
     # Set timestamp_type conversion function, used when generating queries and processing hits
