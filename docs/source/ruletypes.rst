@@ -1154,6 +1154,22 @@ Optional:
 
 ``victorops_entity_display_name``: Humna-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
 
+Gitter
+~~~~~~
+
+Gitter alerter will send a notification to a predefined Gitter channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following option:
+
+``gitter_webhook_url``: The webhook URL that includes your auth data and the ID of the channel (room) you want to post to. Go to the Integration Settings
+of the channel https://gitter.im/ORGA/CHANNEL#integrations , click 'CUSTOM' and copy the resulting URL.
+
+Optional:
+
+``gitter_msg_level``: By default the alert will be posted with the 'error' level. You can use 'info' if you want the messages to be black instead of red.
+
+``gitter_proxy``: By default Elastalert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy.
+
 Debug
 ~~~~~~
 
