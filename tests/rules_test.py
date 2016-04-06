@@ -509,7 +509,7 @@ def test_new_term():
 
 
 def test_new_term_nested_field():
-    
+
     rules = {'fields': ['a', 'b.c'],
              'timestamp_field': '@timestamp',
              'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
@@ -522,24 +522,12 @@ def test_new_term_nested_field():
 
         assert rule.es.search.call_count == 2
 
-    # Key1 and key2 shouldn't cause a match
-    rule.add_data([{'@timestamp': ts_now(), 'a': 'key1', 'b': {'c': 'key2'}}])
-    assert rule.matches == []
-
-    # Neither will missing values
-    rule.add_data([{'@timestamp': ts_now(), 'a': 'key2'}])
-    assert rule.matches == []
-
     # Key3 causes an alert for nested field b.c
-    rule.add_data([{'@timestamp': ts_now(), 'a': 'key2', 'b': {'c': 'key3'}}])
+    rule.add_data([{'@timestamp': ts_now(), 'b': {'c': 'key3'}}])
     assert len(rule.matches) == 1
     assert rule.matches[0]['new_field'] == 'b.c'
     assert rule.matches[0]['b']['c'] == 'key3'
     rule.matches = []
-
-    # Key3 doesn't cause another alert for nested field b.c
-    rule.add_data([{'@timestamp': ts_now(), 'a': 'key2', 'b.c': 'key3'}])
-    assert rule.matches == []
 
 
 def test_new_term_with_terms():
