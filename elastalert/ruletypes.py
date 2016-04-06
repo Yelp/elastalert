@@ -545,7 +545,7 @@ class NewTermsRule(RuleType):
     def add_data(self, data):
         for document in data:
             for field in self.fields:
-                value = document.get(field)
+                value = lookup_es_key(document, field)
                 if not value and self.rules.get('alert_on_missing_field'):
                     document['missing_field'] = field
                     self.add_match(document)

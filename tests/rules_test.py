@@ -508,6 +508,28 @@ def test_new_term():
     assert rule.matches[0]['missing_field'] == 'b'
 
 
+def test_new_term_nested_field():
+
+    rules = {'fields': ['a', 'b.c'],
+             'timestamp_field': '@timestamp',
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+    mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
+                                                                     {'key': 'key2', 'doc_count': 5}]}}}}
+    with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.search.return_value = mock_res
+        rule = NewTermsRule(rules)
+
+        assert rule.es.search.call_count == 2
+
+    # Key3 causes an alert for nested field b.c
+    rule.add_data([{'@timestamp': ts_now(), 'b': {'c': 'key3'}}])
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['new_field'] == 'b.c'
+    assert rule.matches[0]['b']['c'] == 'key3'
+    rule.matches = []
+
+
 def test_new_term_with_terms():
     rules = {'fields': ['a'],
              'timestamp_field': '@timestamp',
