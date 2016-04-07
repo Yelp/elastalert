@@ -205,3 +205,8 @@ properties:
   telegram_bot_token: {type: string}
   telegram_room_id: {type: string}
   telegram_api_url: {type: string}
+
+  ### Gitter
+  gitter_webhook_url: {type: string}
+  gitter_proxy: {type: string}
+  gitter_msg_level: {enum: [info, error]}

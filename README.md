@@ -47,6 +47,7 @@ Currently, we have support built in for the following alert types:
 - AWS SNS
 - VictorOps
 - PagerDuty
+- Gitter
 
 Additional rule types and alerts can be easily imported or written.
 
