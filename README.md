@@ -67,7 +67,7 @@ To get started, check out `Running ElastAlert For The First Time` in the [docume
 
 ``--debug`` will print additional information to the screen as well as suppresses alerts and instead prints the alert body.
 
-``--verbose`` will print additional information without without supressing alerts.
+``--verbose`` will print additional information without supressing alerts.
 
 ``--start`` will begin querying at the given timestamp. By default, ElastAlert will begin querying from the present.
 Timestamp format is ``YYYY-MM-DDTHH-MM-SS[-/+HH:MM]`` (Note the T between date and hour).
