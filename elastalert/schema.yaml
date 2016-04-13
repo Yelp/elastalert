@@ -6,6 +6,11 @@ definitions:
     type: [string, array]
     items: {type: string}
 
+  # Either a single string OR an array of strings OR an array of ararys
+  arrayOfStringsOrOtherArrays: &arrayOfStringsOrOtherArray
+    type: [string, array]
+    items: {type: string, type: array}
+
   timeFrame: &timeframe
     type: object
     additionalProperties: false
@@ -92,7 +97,7 @@ oneOf:
     required: [fields]
     properties:
       type: {enum: [new_term]}
-      fields: *arrayOfString
+      fields: *arrayOfStringsOrOtherArray
       terms_window_size: *timeframe
       alert_on_missing_field: {type: boolean}
       use_terms_query: {type: boolean}
