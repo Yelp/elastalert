@@ -557,6 +557,14 @@ class NewTermsRule(RuleType):
                     for bucket in buckets:
                         # We need to walk down the hierarchy and obtain the value at each level
                         self.seen_values[tuple(field)] += self.flatten_aggregation_hierarchy(bucket)
+                    # If we don't have any results, it could either be because of the absence of any baseline data
+                    # OR it may be because the composite key contained a non-primitive type.  Either way, give the
+                    # end-users a heads up to help them debug what might be going on.
+                    if not self.seen_values[tuple(field)]:
+                        elastalert_logger.warning((
+                            'No results were found from all sub-aggregations.  This can either indicate that there is '
+                            'no baseline data OR that a non-primitive field was used in a composite key.'
+                        ))
                 else:
                     keys = [bucket['key'] for bucket in buckets]
                     self.seen_values[field] = keys
@@ -565,7 +573,7 @@ class NewTermsRule(RuleType):
                 self.seen_values[field] = []
                 elastalert_logger.info('Found no values for %s' % (field))
 
-    def flatten_aggregation_hierarchy(self, root, prefix=''):
+    def flatten_aggregation_hierarchy(self, root, hierarchy_tuple=()):
         """ For nested aggregations, the results come back in the following format:
             {
             "aggregations" : {
@@ -643,12 +651,12 @@ class NewTermsRule(RuleType):
             e.g the above snippet would yield a list with:
 
             [
-             '1.1.1.1::80::ack',
-             '1.1.1.1::80::syn',
-             '1.1.1.1::82::ack',
-             '1.1.1.1::82::syn',
-             '2.2.2.2::443::ack',
-             '2.2.2.2::443::syn'
+             ('1.1.1.1', '80', 'ack'),
+             ('1.1.1.1', '80', 'syn'),
+             ('1.1.1.1', '82', 'ack'),
+             ('1.1.1.1', '82', 'syn'),
+             ('2.2.2.2', '443', 'ack'),
+             ('2.2.2.2', '443', 'syn')
             ]
 
             A similar formatting will be performed in the add_data method and used as the basis for comparison
@@ -657,36 +665,32 @@ class NewTermsRule(RuleType):
         results = []
         # There are more aggregation hierarchies left.  Traverse them.
         if 'values' in root:
-            if prefix:
-                prefix += "::"
-            results += self.flatten_aggregation_hierarchy(root['values']['buckets'], prefix + root['key'])
+            results += self.flatten_aggregation_hierarchy(root['values']['buckets'], hierarchy_tuple + (root['key'],))
         else:
             # We've gotten to a sub-aggregation, which may have further sub-aggregations
             # See if we need to traverse further
             for node in root:
                 if 'values' in node:
-                    results += self.flatten_aggregation_hierarchy(node, prefix)
+                    results += self.flatten_aggregation_hierarchy(node, hierarchy_tuple)
                 else:
-                    results.append(prefix + "::" + str(node['key']))
+                    results.append(hierarchy_tuple + (node['key'],))
         return results
 
     def add_data(self, data):
         for document in data:
             for field in self.fields:
-                value = ''
+                value = ()
                 lookup_field = field
                 if type(field) == list:
                     # For composite keys, make the lookup based on all fields
                     # Make it a tuple since it can be hashed and used in dictionary lookups
                     lookup_field = tuple(field)
-                    for i, f in enumerate(field):
-                        lookup_result = lookup_es_key(document, f)
+                    for sub_field in field:
+                        lookup_result = lookup_es_key(document, sub_field)
                         if not lookup_result:
                             value = None
                             break
-                        value += str(lookup_result)
-                        if i < len(field) - 1:
-                            value += "::"
+                        value += (lookup_result,)
                 else:
                     value = lookup_es_key(document, field)
                 if not value and self.rules.get('alert_on_missing_field'):
