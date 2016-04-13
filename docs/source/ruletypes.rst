@@ -128,7 +128,7 @@ Rule Configuration Cheat Sheet
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 |``threshold`` (int, no default)                     |        |           |           |        |           |       |    Req   |        |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``fields`` (string, no default)                     |        |           |           |        |           |       |          | Req    |           |
+|``fields`` (string or list, no default)             |        |           |           |        |           |       |          | Req    |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 |``terms_window_size`` (time, default 30 days)       |        |           |           |        |           |       |          | Opt    |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
@@ -771,7 +771,9 @@ use an aggregation query to gather all known terms for a list of fields.
 
 This rule requires one additional option:
 
-``fields``: A list of fields to monitor for new terms. ``query_key`` will be used if ``fields`` is not set.
+``fields``: A list of fields to monitor for new terms. ``query_key`` will be used if ``fields`` is not set. Each entry in the
+list of fields can itself be a list.  If a field entry is provided as a list, it will be interpreted as a set of fields
+that compose a composite key used for the elasticsearch query.  These fields may only refer to primitive types.
 
 Optional:
 
