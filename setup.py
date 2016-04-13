@@ -27,7 +27,7 @@ setup(
         'jira==0.32',  # jira.exceptions is missing from later versions
         'jsonschema',
         'mock',
-        'python-dateutil==1.5',
+        'python-dateutil',
         'PyStaticConfiguration',
         'pyyaml',
         'simplejson',
