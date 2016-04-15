@@ -364,7 +364,7 @@ class JiraAlerter(Alerter):
         if 'jira_ignore_in_title' in self.rule:
             title = title.replace(matches[0].get(self.rule['jira_ignore_in_title'], ''), '')
 
-        # This is necessary for search tor work. Other special characters and dashes
+        # This is necessary for search to work. Other special characters and dashes
         # directly adjacent to words appear to be ok
         title = title.replace(' - ', ' ')
         title = title.replace('\\', '\\\\')
