@@ -1006,7 +1006,12 @@ Optional:
 ``jira_bump_tickets``: If true, ElastAlert search for existing tickets newer than ``jira_max_age`` and comment on the ticket with
 information about the alert instead of opening another ticket. ElastAlert finds the existing ticket by searching by summary. If the
 summary has changed or contains special characters, it may fail to find the ticket. If you are using a custom ``alert_subject``,
-the two summaries must be exact matches. Defaults to false.
+the two summaries must be exact matches, except by setting ``jira_ignore_in_title``, you can ignore the value of a field when searching.
+For example, if the custom subject is "foo occured at bar", and "foo" is the value field X in the match, you can set ``jira_ignore_in_title``
+to "X" and it will only bump tickets with "bar" in the subject. Defaults to false.
+
+``jira_ignore_in_title``: ElastAlert will attempt to remove the value for this field from the JIRA subject when searching for tickets to bump.
+See ``jira_bump_tickets`` description above for an example.
 
 ``jira_max_age``: If ``jira_bump_tickets`` is true, the maximum age of a ticket, in days, such that ElastAlert will comment on the ticket
 instead of opening a new one. Default is 30 days.

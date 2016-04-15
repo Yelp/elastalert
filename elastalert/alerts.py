@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 import subprocess
+import warnings
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTP_SSL
@@ -21,7 +22,6 @@ from util import EAException
 from util import elastalert_logger
 from util import lookup_es_key
 from util import pretty_ts
-import warnings
 
 
 class BasicMatchString(object):
@@ -361,9 +361,13 @@ class JiraAlerter(Alerter):
         else:
             title = self.create_title(matches)
 
+        if 'jira_ignore_in_title' in self.rule:
+            title = title.replace(matches[0].get(self.rule['jira_ignore_in_title'], ''), '')
+
         # This is necessary for search for work. Other special characters and dashes
         # directly adjacent to words appear to be ok
         title = title.replace(' - ', ' ')
+        title = title.replace('\\', '\\\\')
 
         date = (datetime.datetime.now() - datetime.timedelta(days=self.max_age)).strftime('%Y-%m-%d')
         jql = 'project=%s AND summary~"%s" and created >= "%s"' % (self.project, title, date)
