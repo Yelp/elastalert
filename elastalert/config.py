@@ -141,6 +141,12 @@ def load_options(rule, conf, args=None):
     rule.setdefault('es_conn_timeout', conf.get('es_conn_timeout'))
     rule.setdefault('description', "")
 
+    # Set elasticsearch options from global config
+    if 'es_url_prefix' in conf:
+        rule.setdefault('es_url_prefix', conf.get('es_url_prefix'))
+    if 'use_ssl' in conf:
+        rule.setdefault('use_ssl', conf.get('use_ssl'))
+
     # Set timestamp_type conversion function, used when generating queries and processing hits
     rule['timestamp_type'] = rule['timestamp_type'].strip().lower()
     if rule['timestamp_type'] == 'iso':
