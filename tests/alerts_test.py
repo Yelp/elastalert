@@ -13,9 +13,9 @@ from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import SlackAlerter
+from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
-from elastalert.config import load_modules
 
 
 class mock_rule:
@@ -365,6 +365,22 @@ def test_jira():
 
     expected.insert(2, mock.call().search_issues(mock.ANY))
     assert mock_jira.mock_calls == expected
+
+    # Remove a field if jira_ignore_in_title set
+    rule['jira_ignore_in_title'] = 'test_term'
+    with nested(
+        mock.patch('elastalert.alerts.JIRA'),
+        mock.patch('elastalert.alerts.yaml_loader')
+    ) as (mock_jira, mock_open):
+        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+        mock_jira.return_value = mock.Mock()
+        mock_jira.return_value.search_issues.return_value = []
+        mock_jira.return_value.priorities.return_value = [mock_priority]
+
+        alert = JiraAlerter(rule)
+        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+
+    assert 'test_value' not in mock_jira.mock_calls[2][1][0]
 
     # Issue is still created if search_issues throws an exception
     with nested(
