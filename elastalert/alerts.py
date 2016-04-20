@@ -604,11 +604,12 @@ class SlackAlerter(Alerter):
             ]
         }
 
-        try:
-            response = requests.post(self.slack_webhook_url, data=json.dumps(payload), headers=headers, proxies=proxies)
-            response.raise_for_status()
-        except RequestException as e:
-            raise EAException("Error posting to slack: %s" % e)
+        for i in self.slack_webhook_url:
+            try:
+                response = requests.post(i, data=json.dumps(payload), headers=headers, proxies=proxies)
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error posting to slack: %s" % e)
         elastalert_logger.info("Alert sent to Slack")
 
     def get_info(self):
