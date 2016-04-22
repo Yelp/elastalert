@@ -9,7 +9,7 @@ definitions:
   # Either a single string OR an array of strings OR an array of ararys
   arrayOfStringsOrOtherArrays: &arrayOfStringsOrOtherArray
     type: [string, array]
-    items: {type: string, type: array}
+    items: {type: [string, array]}
 
   timeFrame: &timeframe
     type: object
