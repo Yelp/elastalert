@@ -1162,7 +1162,7 @@ The alerter requires the following options:
 
 Optional:
 
-``victorops_entity_display_name``: Humna-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
+``victorops_entity_display_name``: Human-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
 
 Gitter
 ~~~~~~
