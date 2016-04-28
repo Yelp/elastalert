@@ -83,6 +83,25 @@ def dt_to_ts(dt):
     return ts.replace('000+00:00', 'Z').replace('+00:00', 'Z')
 
 
+def ts_to_dt_with_format(timestamp, ts_format):
+    if isinstance(timestamp, datetime.datetime):
+        logging.warning('Expected str timestamp, got datetime')
+        return timestamp
+    dt = datetime.datetime.strptime(timestamp, ts_format)
+    # Implicitly convert local timestamps to UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=dateutil.tz.tzutc())
+    return dt
+
+
+def dt_to_ts_with_format(dt, ts_format):
+    if not isinstance(dt, datetime.datetime):
+        logging.warning('Expected datetime, got %s' % (type(dt)))
+        return dt
+    ts = dt.strftime(ts_format)
+    return ts
+
+
 def ts_now():
     return datetime.datetime.utcnow().replace(tzinfo=dateutil.tz.tzutc())
 
