@@ -154,11 +154,11 @@ def dt_to_int(dt):
 
 
 def unixms_to_dt(ts):
-    return unix_to_dt(ts / 1000)
+    return unix_to_dt(float(ts) / 1000)
 
 
 def unix_to_dt(ts):
-    dt = datetime.datetime.utcfromtimestamp(ts)
+    dt = datetime.datetime.utcfromtimestamp(float(ts))
     dt = dt.replace(tzinfo=dateutil.tz.tzutc())
     return dt
 
