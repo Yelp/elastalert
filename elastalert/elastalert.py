@@ -33,6 +33,7 @@ from util import EAException
 from util import elastalert_logger
 from util import format_index
 from util import lookup_es_key
+from util import set_es_key
 from util import pretty_ts
 from util import seconds
 from util import ts_add
@@ -263,8 +264,11 @@ class ElastAlerter():
                 # Fields are returned as lists, assume any with length 1 are not arrays in _source
                 # Except sometimes they aren't lists. This is dependent on ES version
                 hit['_source'].setdefault(key, value[0] if type(value) is list and len(value) == 1 else value)
-            hit['_source'][rule['timestamp_field']] = rule['ts_to_dt'](hit['_source'][rule['timestamp_field']])
-            hit[rule['timestamp_field']] = hit['_source'][rule['timestamp_field']]
+
+            # Convert the timestamp to a datetime
+            ts = lookup_es_key(hit['_source'], rule['timestamp_field'])
+            set_es_key(hit['_source'], rule['timestamp_field'], rule['ts_to_dt'](ts))
+            set_es_key(hit, rule['timestamp_field'], lookup_es_key(hit['_source'], rule['timestamp_field']))
 
             # Tack metadata fields into _source
             for field in ['_id', '_index', '_type']:
@@ -378,7 +382,7 @@ class ElastAlerter():
                 continue
 
             # Remember the new data's IDs
-            rule['processed_hits'][event['_id']] = event[rule['timestamp_field']]
+            rule['processed_hits'][event['_id']] = lookup_es_key(event, rule['timestamp_field'])
             new_events.append(event)
 
         return new_events
