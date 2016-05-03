@@ -179,6 +179,7 @@ def set_time(dashboard, start, end):
 def set_index_name(dashboard, name):
     dashboard['index']['default'] = name
 
+
 def set_timestamp_field(dashboard, field):
     # set the nav timefield if we don't want @timestamp
     dashboard['nav'][0]['timefield'] = field

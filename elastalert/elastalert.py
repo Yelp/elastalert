@@ -15,7 +15,6 @@ from socket import error
 
 import argparse
 import dateutil.tz
-from elasticsearch import RequestsHttpConnection
 import kibana
 import yaml
 from alerts import DebugAlerter
@@ -24,6 +23,7 @@ from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
 from croniter import croniter
+from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 from elasticsearch.exceptions import ElasticsearchException
 from enhancements import DropMatchException
@@ -790,7 +790,7 @@ class ElastAlerter():
         Returns the url to the dashboard. '''
         db = copy.deepcopy(kibana.dashboard_temp)
 
-        # Set timestamp fields to match our rule especially if 
+        # Set timestamp fields to match our rule especially if
         # we have configured something other than @timestamp
         kibana.set_timestamp_field(db, rule['timestamp_field'])
 
