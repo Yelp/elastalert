@@ -790,6 +790,10 @@ class ElastAlerter():
         Returns the url to the dashboard. '''
         db = copy.deepcopy(kibana.dashboard_temp)
 
+        # Set timestamp fields to match our rule especially if 
+        # we have configured something other than @timestamp
+        kibana.set_timestamp_field(db, rule['timestamp_field'])
+
         # Set filters
         for filter in rule['filter']:
             if filter:

@@ -179,6 +179,18 @@ def set_time(dashboard, start, end):
 def set_index_name(dashboard, name):
     dashboard['index']['default'] = name
 
+def set_timestamp_field(dashboard, field):
+    # set the nav timefield if we don't want @timestamp
+    dashboard['nav'][0]['timefield'] = field
+
+    # set the time_field for each of our panels
+    for row in dashboard.get('rows'):
+        for panel in row.get('panels'):
+            panel['time_field'] = field
+
+    # set our filter's  time field
+    dashboard['services']['filter']['list']['0']['field'] = field
+
 
 def add_filter(dashboard, es_filter):
     next_id = max(dashboard['services']['filter']['ids']) + 1
