@@ -124,6 +124,13 @@ class ElastAlerter():
     @staticmethod
     def new_elasticsearch(es_conn_conf):
         """ returns an Elasticsearch instance configured using an es_conn_config """
+        auth = Auth()
+        es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
+                                         username=es_conn_conf['es_username'],
+                                         password=es_conn_conf['es_password'],
+                                         aws_region=es_conn_conf['aws_region'],
+                                         boto_profile=es_conn_conf['boto_profile'])
+
         return Elasticsearch(host=es_conn_conf['es_host'],
                              port=es_conn_conf['es_port'],
                              url_prefix=es_conn_conf['es_url_prefix'],
@@ -159,13 +166,6 @@ class ElastAlerter():
 
         if 'boto_profile' in conf:
             parsed_conf['boto_profile'] = conf['boto_profile']
-
-        auth = Auth()
-        parsed_conf['http_auth'] = auth(host=conf['es_host'],
-                                        username=parsed_conf['es_username'],
-                                        password=parsed_conf['es_password'],
-                                        aws_region=parsed_conf['aws_region'],
-                                        boto_profile=parsed_conf['boto_profile'])
 
         if 'use_ssl' in conf:
             parsed_conf['use_ssl'] = conf['use_ssl']
