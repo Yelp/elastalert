@@ -9,7 +9,17 @@ logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
 
 
-def lookup_es_key(lookup_dict, term):
+def new_get_event_ts(ts_field):
+    """ Constructs a lambda that may be called to extract the timestamp field
+    from a given event.
+
+    :returns: A callable function that takes an event and outputs that event's
+    timestamp field.
+    """
+    return lambda event: lookup_es_key(event[0], ts_field)
+
+
+def _find_es_dict_by_key(lookup_dict, term):
     """ Performs iterative dictionary search based upon the following conditions:
 
     1. Subkeys may either appear behind a full stop (.) or at one lookup_dict level lower in the tree.
@@ -25,37 +35,67 @@ def lookup_es_key(lookup_dict, term):
        {'juniper_duo.geoip': {'country_name': 'Democratic People's Republic of Korea'}}
 
     We want a search term of form "key.subkey.subsubkey" to match in all cases.
-    :returns: The value identified by term or None if it cannot be found
+    :returns: A tuple with the first element being the dict that contains the key and the second
+    element which is the last subkey used to access the target specified by the term. None is
+    returned for both if the key can not be found.
     """
     if term in lookup_dict:
-        return lookup_dict[term]
-    else:
-        # If the term does not match immediately, perform iterative lookup:
-        # 1. Split the search term into tokens
-        # 2. Recurrently concatenate these together to traverse deeper into the dictionary,
-        #    clearing the subkey at every successful lookup.
-        #
-        # This greedy approach is correct because subkeys must always appear in order,
-        # preferring full stops and traversal interchangeably.
-        #
-        # Subkeys will NEVER be duplicated between an alias and a traversal.
-        #
-        # For example:
-        #  {'foo.bar': {'bar': 'ray'}} to look up foo.bar will return {'bar': 'ray'}, not 'ray'
-        go_deeper = lookup_dict
-        subkeys = term.split('.')
-        subkey = ''
+        return lookup_dict, term
 
-        while subkeys:
-            subkey += subkeys.pop(0)
-            if subkey in go_deeper:
-                go_deeper = go_deeper[subkey]
-                subkey = ''
-            else:
-                subkey += '.'
-        if subkey:
-            return None
-        return go_deeper
+    # If the term does not match immediately, perform iterative lookup:
+    # 1. Split the search term into tokens
+    # 2. Recurrently concatenate these together to traverse deeper into the dictionary,
+    #    clearing the subkey at every successful lookup.
+    #
+    # This greedy approach is correct because subkeys must always appear in order,
+    # preferring full stops and traversal interchangeably.
+    #
+    # Subkeys will NEVER be duplicated between an alias and a traversal.
+    #
+    # For example:
+    #  {'foo.bar': {'bar': 'ray'}} to look up foo.bar will return {'bar': 'ray'}, not 'ray'
+    dict_cursor = lookup_dict
+    subkeys = term.split('.')
+    subkey = ''
+
+    while len(subkeys) > 0:
+        subkey += subkeys.pop(0)
+
+        if subkey in dict_cursor:
+            if len(subkeys) == 0:
+                break
+
+            dict_cursor = dict_cursor[subkey]
+            subkey = ''
+        elif len(subkeys) == 0:
+            # If there are no keys left to match, return None values
+            dict_cursor = None
+            subkey = None
+        else:
+            subkey += '.'
+
+    return dict_cursor, subkey
+
+
+def set_es_key(lookup_dict, term, value):
+    """ Looks up the location that the term maps to and sets it to the given value.
+    :returns: True if the value was set successfully, False otherwise.
+    """
+    value_dict, value_key = _find_es_dict_by_key(lookup_dict, term)
+
+    if value_dict is not None:
+        value_dict[value_key] = value
+        return True
+
+    return False
+
+
+def lookup_es_key(lookup_dict, term):
+    """ Performs iterative dictionary search for the given term.
+    :returns: The value identified by term or None if it cannot be found.
+    """
+    value_dict, value_key = _find_es_dict_by_key(lookup_dict, term)
+    return None if value_key is None else value_dict[value_key]
 
 
 def ts_to_dt(timestamp):
