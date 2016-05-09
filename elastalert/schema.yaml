@@ -140,8 +140,11 @@ properties:
   max_query_size: {type: integer}
 
   filter :
-    type: array
+    type: [array, object]
     items: *filter
+    additionalProperties: false
+    properties:
+        download_dashboard: {type: string}
 
   include: {type: array, items: {type: string}}
   top_count_keys: {type: array, items: {type: string}}
