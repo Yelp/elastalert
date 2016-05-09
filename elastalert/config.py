@@ -58,7 +58,12 @@ alerts_mapping = {
     'telegram': alerts.TelegramAlerter,
     'gitter': alerts.GitterAlerter
 }
-
+# A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
+# For example, jira goes before email so the ticket # will be added to the resulting email.
+alerts_order = {alert:index for index, alert in enumerate([
+    'jira',
+    'email',
+])}
 
 def get_module(module_name):
     """ Loads a module and returns a specific object.
@@ -308,6 +313,7 @@ def load_alerts(rule, alert_field):
         inline_alerts = []
         if type(alert_field) != list:
             alert_field = [alert_field]
+        alert_field = sorted(alert_field, key=alerts_order.get)
         for alert in alert_field:
             if isinstance(alert, basestring):
                 global_alerts.append(alerts_mapping[alert] if alert in alerts_mapping else get_module(alert))
