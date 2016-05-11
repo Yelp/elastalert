@@ -470,7 +470,7 @@ def test_slack_uses_custom_title():
     rule = {
         'name': 'Test Rule',
         'type': 'any',
-        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_webhook_url': ['http://please.dontgohere.slack'],
         'alert_subject': 'Cool subject',
         'alert': []
     }
