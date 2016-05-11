@@ -116,6 +116,8 @@ even if ElastAlert is stopped and restarted, it will never miss data or look at 
 
 ``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
 
+``es_send_get_body_as``: Optional; Method for querying Elasticsearch - ``GET``, ``POST`` or ``source``. The default is ``GET``
+
 ``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``10``.
 
 ``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all

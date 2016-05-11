@@ -138,7 +138,8 @@ class ElastAlerter():
                              use_ssl=es_conn_conf['use_ssl'],
                              connection_class=RequestsHttpConnection,
                              http_auth=es_conn_conf['http_auth'],
-                             timeout=es_conn_conf['es_conn_timeout'])
+                             timeout=es_conn_conf['es_conn_timeout'],
+                             send_get_body_as=es_conn_conf['send_get_body_as'])
 
     @staticmethod
     def build_es_conn_config(conf):
@@ -157,6 +158,7 @@ class ElastAlerter():
         parsed_conf['es_port'] = conf['es_port']
         parsed_conf['es_url_prefix'] = ''
         parsed_conf['es_conn_timeout'] = 10
+        parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
 
         if 'es_username' in conf:
             parsed_conf['es_username'] = conf['es_username']
