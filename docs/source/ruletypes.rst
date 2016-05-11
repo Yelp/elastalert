@@ -80,6 +80,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           +
 | ``timestamp_type`` (string, default iso)                     |           |
 +--------------------------------------------------------------+           |
+| ``timestamp_format`` (string, default "%Y-%m-%dT%H:%M:%SZ")  |           |
++--------------------------------------------------------------+           |
 | ``_source_enabled`` (boolean, default True)                  |           |
 +--------------------------------------------------------------+-----------+
 
@@ -398,10 +400,18 @@ treated as if it were a single field whose value is the component values, or "No
 timestamp_type
 ^^^^^^^^^^^^^^
 
-``timestamp_type``: One of ``iso``, ``unix``, or ``unix_ms``. This option will set the type of ``@timestamp`` (or ``timestamp_field``) used
-to query Elasticsearch. ``iso`` will use ISO8601 timestamps, which will work with any Elasticsearch date type field. ``unix`` will
-query using an integer unix (seconds since 1/1/1970) timestamp. ``unix_ms`` will use milliseconds unix timestamp. The default is ``iso``.
+``timestamp_type``: One of ``iso``, ``unix``, ``unix_ms``, ``custom``. This option will set the type of ``@timestamp`` (or ``timestamp_field``)
+used to query Elasticsearch. ``iso`` will use ISO8601 timestamps, which will work with most Elasticsearch date type field. ``unix`` will
+query using an integer unix (seconds since 1/1/1970) timestamp. ``unix_ms`` will use milliseconds unix timestamp. ``custom`` allows you to define
+your own ``timestamp_format``. The default is ``iso``.
 (Optional, string enum, default iso).
+
+timestamp_format
+^^^^^^^^^^^^^^^^
+
+``timestamp_format``: In case Elasticsearch used custom date format for date type field, this option provides a way to define custom timestamp
+format to match the type used for Elastisearch date type field. This option is only valid if ``timestamp_type`` set to ``custom``.
+(Optional, string, default '%Y-%m-%dT%H:%M:%SZ').
 
 _source_enabled
 ^^^^^^^^^^^^^^^
@@ -1147,6 +1157,9 @@ The alerter requires the following option:
 
 ``pagerduty_client_name``: The name of the monitoring client that is triggering this event.
 
+``pagerduty_incident_key``: If not set pagerduty will trigger a new incident for each alert sent. If set to a unique string per rule pagerduty will identify the incident that this event should be applied.
+If there's no open (i.e. unresolved) incident with this key, a new one will be created. If there's already an open incident with a matching key, this event will be appended to that incident's log.
+
 VictorOps
 ~~~~~~~~~
 
@@ -1162,7 +1175,7 @@ The alerter requires the following options:
 
 Optional:
 
-``victorops_entity_display_name``: Humna-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
+``victorops_entity_display_name``: Human-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
 
 Gitter
 ~~~~~~

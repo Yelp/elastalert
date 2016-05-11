@@ -3,15 +3,16 @@
 from __future__ import print_function
 
 import getpass
-import json
 import os
 import time
 
 import argparse
+import elasticsearch.helpers
 import yaml
-from elasticsearch.client import Elasticsearch, IndicesClient
-from elasticsearch import RequestsHttpConnection
 from auth import Auth
+from elasticsearch import RequestsHttpConnection
+from elasticsearch.client import Elasticsearch
+from elasticsearch.client import IndicesClient
 
 
 def main():
@@ -98,12 +99,6 @@ def main():
     old_index = (args.old_index if args.old_index is not None
                  else raw_input('Name of existing index to copy? (Default None) '))
 
-    res = None
-    if old_index:
-        print('Downloading existing data...')
-        res = es.search(index=old_index, body={}, size=500000)
-        print('Got %s documents' % (len(res['hits']['hits'])))
-
     es_index = IndicesClient(es)
     if es_index.exists(index):
         print('Index ' + index + ' already exists. Skipping index creation.')
@@ -119,11 +114,10 @@ def main():
     es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping)
     print('New index %s created' % index)
 
-    if res:
-        bulk = ''.join(['%s\n%s\n' % (json.dumps({'create': {'_type': doc['_type'], '_index': index}}),
-                                      json.dumps(doc['_source'])) for doc in res['hits']['hits']])
-        print('Uploading data...')
-        es.bulk(body=bulk, index=index)
+    if old_index:
+        print("Copying all data from old index '{0}' to new index '{1}'".format(old_index, index))
+        # Use the defaults for chunk_size, scroll, scan_kwargs, and bulk_kwargs
+        elasticsearch.helpers.reindex(es, old_index, index)
 
     print('Done!')
 

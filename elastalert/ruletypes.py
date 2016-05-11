@@ -13,6 +13,7 @@ from util import lookup_es_key
 from util import pretty_ts
 from util import ts_now
 from util import ts_to_dt
+from util import new_get_event_ts
 
 
 class RuleType(object):
@@ -168,7 +169,7 @@ class FrequencyRule(RuleType):
     def __init__(self, *args):
         super(FrequencyRule, self).__init__(*args)
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
-        self.get_ts = lambda event: event[0][self.ts_field]
+        self.get_ts = new_get_event_ts(self.ts_field)
         self.attach_related = self.rules.get('attach_related', False)
 
     def add_count_data(self, data):
@@ -220,14 +221,15 @@ class FrequencyRule(RuleType):
         """ Remove all occurrence data that is beyond the timeframe away """
         stale_keys = []
         for key, window in self.occurrences.iteritems():
-            if timestamp - window.data[-1][0][self.ts_field] > self.rules['timeframe']:
+            if timestamp - lookup_es_key(window.data[-1][0], self.ts_field) > self.rules['timeframe']:
                 stale_keys.append(key)
         map(self.occurrences.pop, stale_keys)
 
     def get_match_str(self, match):
         lt = self.rules.get('use_local_time')
-        starttime = pretty_ts(dt_to_ts(ts_to_dt(match[self.ts_field]) - self.rules['timeframe']), lt)
-        endtime = pretty_ts(match[self.ts_field], lt)
+        match_ts = lookup_es_key(match, self.ts_field)
+        starttime = pretty_ts(dt_to_ts(ts_to_dt(match_ts) - self.rules['timeframe']), lt)
+        endtime = pretty_ts(match_ts, lt)
         message = 'At least %d events occurred between %s and %s\n\n' % (self.rules['num_events'],
                                                                          starttime,
                                                                          endtime)
@@ -245,7 +247,7 @@ class AnyRule(RuleType):
 class EventWindow(object):
     """ A container for hold event counts for rules which need a chronological ordered event window. """
 
-    def __init__(self, timeframe, onRemoved=None, getTimestamp=lambda e: e[0]['@timestamp']):
+    def __init__(self, timeframe, onRemoved=None, getTimestamp=new_get_event_ts('@timestamp')):
         self.timeframe = timeframe
         self.onRemoved = onRemoved
         self.get_ts = getTimestamp
@@ -318,7 +320,7 @@ class SpikeRule(RuleType):
         self.cur_windows = {}
 
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
-        self.get_ts = lambda e: e[0][self.ts_field]
+        self.get_ts = new_get_event_ts(self.ts_field)
         self.first_event = {}
         self.skip_checks = {}
 

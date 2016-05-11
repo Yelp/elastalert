@@ -15,7 +15,6 @@ from socket import error
 
 import argparse
 import dateutil.tz
-from elasticsearch import RequestsHttpConnection
 import kibana
 import yaml
 from alerts import DebugAlerter
@@ -24,6 +23,7 @@ from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
 from croniter import croniter
+from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 from elasticsearch.exceptions import ElasticsearchException
 from enhancements import DropMatchException
@@ -33,6 +33,7 @@ from util import EAException
 from util import elastalert_logger
 from util import format_index
 from util import lookup_es_key
+from util import set_es_key
 from util import pretty_ts
 from util import seconds
 from util import ts_add
@@ -124,6 +125,13 @@ class ElastAlerter():
     @staticmethod
     def new_elasticsearch(es_conn_conf):
         """ returns an Elasticsearch instance configured using an es_conn_config """
+        auth = Auth()
+        es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
+                                         username=es_conn_conf['es_username'],
+                                         password=es_conn_conf['es_password'],
+                                         aws_region=es_conn_conf['aws_region'],
+                                         boto_profile=es_conn_conf['boto_profile'])
+
         return Elasticsearch(host=es_conn_conf['es_host'],
                              port=es_conn_conf['es_port'],
                              url_prefix=es_conn_conf['es_url_prefix'],
@@ -159,13 +167,6 @@ class ElastAlerter():
 
         if 'boto_profile' in conf:
             parsed_conf['boto_profile'] = conf['boto_profile']
-
-        auth = Auth()
-        parsed_conf['http_auth'] = auth(host=conf['es_host'],
-                                        username=parsed_conf['es_username'],
-                                        password=parsed_conf['es_password'],
-                                        aws_region=parsed_conf['aws_region'],
-                                        boto_profile=parsed_conf['boto_profile'])
 
         if 'use_ssl' in conf:
             parsed_conf['use_ssl'] = conf['use_ssl']
@@ -263,8 +264,11 @@ class ElastAlerter():
                 # Fields are returned as lists, assume any with length 1 are not arrays in _source
                 # Except sometimes they aren't lists. This is dependent on ES version
                 hit['_source'].setdefault(key, value[0] if type(value) is list and len(value) == 1 else value)
-            hit['_source'][rule['timestamp_field']] = rule['ts_to_dt'](hit['_source'][rule['timestamp_field']])
-            hit[rule['timestamp_field']] = hit['_source'][rule['timestamp_field']]
+
+            # Convert the timestamp to a datetime
+            ts = lookup_es_key(hit['_source'], rule['timestamp_field'])
+            set_es_key(hit['_source'], rule['timestamp_field'], rule['ts_to_dt'](ts))
+            set_es_key(hit, rule['timestamp_field'], lookup_es_key(hit['_source'], rule['timestamp_field']))
 
             # Tack metadata fields into _source
             for field in ['_id', '_index', '_type']:
@@ -378,7 +382,7 @@ class ElastAlerter():
                 continue
 
             # Remember the new data's IDs
-            rule['processed_hits'][event['_id']] = event[rule['timestamp_field']]
+            rule['processed_hits'][event['_id']] = lookup_es_key(event, rule['timestamp_field'])
             new_events.append(event)
 
         return new_events
@@ -789,6 +793,10 @@ class ElastAlerter():
         ''' Uses a template dashboard to upload a temp dashboard showing the match.
         Returns the url to the dashboard. '''
         db = copy.deepcopy(kibana.dashboard_temp)
+
+        # Set timestamp fields to match our rule especially if
+        # we have configured something other than @timestamp
+        kibana.set_timestamp_field(db, rule['timestamp_field'])
 
         # Set filters
         for filter in rule['filter']:

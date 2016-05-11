@@ -14,10 +14,12 @@ import yaml.scanner
 from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
 from util import dt_to_ts
+from util import dt_to_ts_with_format
 from util import dt_to_unix
 from util import dt_to_unixms
 from util import EAException
 from util import ts_to_dt
+from util import ts_to_dt_with_format
 from util import unix_to_dt
 from util import unixms_to_dt
 
@@ -131,6 +133,7 @@ def load_options(rule, conf, args=None):
     rule.setdefault('timestamp_field', '@timestamp')
     rule.setdefault('filter', [])
     rule.setdefault('timestamp_type', 'iso')
+    rule.setdefault('timestamp_format', '%Y-%m-%dT%H:%M:%SZ')
     rule.setdefault('_source_enabled', True)
     rule.setdefault('use_local_time', True)
     rule.setdefault('es_port', conf.get('es_port'))
@@ -158,6 +161,15 @@ def load_options(rule, conf, args=None):
     elif rule['timestamp_type'] == 'unix_ms':
         rule['ts_to_dt'] = unixms_to_dt
         rule['dt_to_ts'] = dt_to_unixms
+    elif rule['timestamp_type'] == 'custom':
+        def _ts_to_dt_with_format(ts):
+            return ts_to_dt_with_format(ts, ts_format=rule['timestamp_format'])
+
+        def _dt_to_ts_with_format(dt):
+            return dt_to_ts_with_format(dt, ts_format=rule['timestamp_format'])
+
+        rule['ts_to_dt'] = _ts_to_dt_with_format
+        rule['dt_to_ts'] = _dt_to_ts_with_format
     else:
         raise EAException('timestamp_type must be one of iso, unix, or unix_ms')
 

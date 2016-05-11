@@ -110,7 +110,7 @@ class JiraFormattedMatchString(BasicMatchString):
     def _add_match_items(self):
         match_items = dict([(x, y) for x, y in self.match.items() if not x.startswith('top_events_')])
         json_blob = self._pretty_print_as_json(match_items)
-        preformatted_text = '{{code:json}}{0}{{code}}'.format(json_blob)
+        preformatted_text = u'{{code:json}}{0}{{code}}'.format(json_blob)
         self.text += preformatted_text
 
 
@@ -626,6 +626,7 @@ class PagerDutyAlerter(Alerter):
         super(PagerDutyAlerter, self).__init__(rule)
         self.pagerduty_service_key = self.rule['pagerduty_service_key']
         self.pagerduty_client_name = self.rule['pagerduty_client_name']
+        self.pagerduty_incident_key = self.rule.get('pagerduty_incident_key', '')
         self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
     def alert(self, matches):
@@ -637,6 +638,7 @@ class PagerDutyAlerter(Alerter):
             'service_key': self.pagerduty_service_key,
             'description': self.rule['name'],
             'event_type': 'trigger',
+            'incident_key': self.pagerduty_incident_key,
             'client': self.pagerduty_client_name,
             'details': {
                 "information": body.encode('UTF-8'),
