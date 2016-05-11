@@ -194,7 +194,7 @@ properties:
   hipchat_ignore_ssl_errors: {type: boolean}
 
   ### Slack
-  slack_webhook_url: {type: array, items: {type: string}}
+  slack_webhook_url: *arrayOfString
   slack_username_override: {type: string}
   slack_emoji_override: {type: string}
   slack_msg_color: {enum: [good, warning, danger]}
