@@ -65,6 +65,7 @@ alerts_order = {
     'email': 1
 }
 
+
 def get_module(module_name):
     """ Loads a module and returns a specific object.
     module_name should 'module.file.object'.
@@ -306,8 +307,6 @@ def get_file_paths(conf, use_rule=None):
 
 
 def load_alerts(rule, alert_field):
-    reqs = rule['type'].required_options
-
     def normalize_config(alert):
         """Alert config entries are either "alertType" or {"alertType": {"key": "data"}}.
         This function normalizes them both to the latter format. """
@@ -316,7 +315,7 @@ def load_alerts(rule, alert_field):
         elif isinstance(alert, dict):
             name, config = iter(alert.items()).next()
             config_copy = copy.copy(rule)
-            config_copy.update(config) # warning, this (intentionally) mutates the rule dict
+            config_copy.update(config)  # warning, this (intentionally) mutates the rule dict
             return name, config_copy
         else:
             raise EAException()
@@ -325,7 +324,7 @@ def load_alerts(rule, alert_field):
         alert_class = alerts_mapping.get(alert) or get_module(alert)
         if not issubclass(alert_class, alerts.Alerter):
             raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
-        missing_options = alert_class.required_options - frozenset(alert_config or [])
+        missing_options = (rule['type'].required_options | alert_class.required_options) - frozenset(alert_config or [])
         if missing_options:
             raise EAException('Missing required option(s): %s' % (', '.join(missing_options)))
         return alert_class(alert_config)
@@ -335,9 +334,9 @@ def load_alerts(rule, alert_field):
             alert_field = [alert_field]
 
         alert_field = [normalize_config(x) for x in alert_field]
-        alert_field = sorted(alert_field, key=lambda (a,b): alerts_order.get(a, -1))
+        alert_field = sorted(alert_field, key=lambda (a, b): alerts_order.get(a, -1))
         # Convert all alerts into Alerter objects
-        alert_field = [create_alert(a,b) for a,b in alert_field]
+        alert_field = [create_alert(a, b) for a, b in alert_field]
 
     except (KeyError, EAException) as e:
         raise EAException('Error initiating alert %s: %s' % (rule['alert'], e))
