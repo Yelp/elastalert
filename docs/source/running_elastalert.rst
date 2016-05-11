@@ -43,6 +43,8 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
 
+``es_send_get_body_as``: Optional; Method for querying Elasticsearch - ``GET``, ``POST`` or ``source``. The default is ``GET``
+
 ``writeback_index`` is the name of the index in which ElastAlert will store data. We will create this index later.
 
 ``alert_time_limit`` is the retry window for failed alerts.

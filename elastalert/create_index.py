@@ -25,6 +25,7 @@ def main():
     parser.add_argument('--no-ssl', dest='ssl', action='store_false', help='Do not use SSL')
     parser.add_argument('--index', help='Index name to create')
     parser.add_argument('--old-index', help='Old index name to copy')
+    parser.add_argument('--send_get_body_as', default='GET', help='Method for querying Elasticsearch - POST, GET or source')
     parser.add_argument('--boto-profile', default=None, help='Boto profile to use for signing requests')
     parser.add_argument('--aws-region', default=None, help='AWS Region to use for signing requests')
     args = parser.parse_args()
@@ -46,6 +47,7 @@ def main():
         url_prefix = args.url_prefix if args.url_prefix is not None else data.get('es_url_prefix', '')
         use_ssl = args.ssl if args.ssl is not None else data.get('use_ssl')
         aws_region = data.get('aws_region', None)
+        send_get_body_as = data.get('send_get_body_as', 'GET')
     else:
         username = None
         password = None
@@ -59,6 +61,7 @@ def main():
             password = getpass.getpass('Enter optional basic-auth password: ')
         url_prefix = (args.url_prefix if args.url_prefix is not None
                       else raw_input('Enter optional Elasticsearch URL prefix: '))
+        send_get_body_as = args.send_get_body_as
 
     auth = Auth()
     http_auth = auth(host=host,
@@ -73,7 +76,8 @@ def main():
         use_ssl=use_ssl,
         connection_class=RequestsHttpConnection,
         http_auth=http_auth,
-        url_prefix=url_prefix)
+        url_prefix=url_prefix,
+        send_get_body_as=send_get_body_as)
 
     silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                   'until': {'type': 'date', 'format': 'dateOptionalTime'},
