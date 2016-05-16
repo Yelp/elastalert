@@ -502,7 +502,7 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
     rule = {
         'name': 'Test Rule',
         'type': 'any',
-        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_webhook_url': ['http://please.dontgohere.slack'],
         'alert': []
     }
     load_modules(rule)
