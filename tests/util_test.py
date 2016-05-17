@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from elastalert.util import lookup_es_key, set_es_key
+from elastalert.util import lookup_es_key, set_es_key, add_raw_postfix
 
 
 def test_setting_keys(ea):
@@ -58,3 +58,9 @@ def test_looking_up_nested_composite_keys(ea):
     }
 
     assert lookup_es_key(record, 'Fields.ts.value') == expected
+
+
+def test_add_raw_postfix(ea):
+    expected = 'foo.raw'
+    assert add_raw_postfix('foo') == expected
+    assert add_raw_postfix('foo.raw') == expected

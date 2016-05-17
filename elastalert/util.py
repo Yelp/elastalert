@@ -238,3 +238,9 @@ def cronite_datetime_to_timestamp(self, d):
         d = d.replace(tzinfo=None) - d.utcoffset()
 
     return total_seconds((d - datetime.datetime(1970, 1, 1)))
+
+
+def add_raw_postfix(field):
+    if not field.endswith('.raw'):
+        field += '.raw'
+    return field
