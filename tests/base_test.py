@@ -253,7 +253,6 @@ def test_agg(ea):
     call1 = ea.writeback_es.create.call_args_list[0][1]['body']
     call2 = ea.writeback_es.create.call_args_list[1][1]['body']
     call3 = ea.writeback_es.create.call_args_list[2][1]['body']
-
     assert call1['match_body'] == {'@timestamp': '2014-09-26T12:34:45'}
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
@@ -282,14 +281,15 @@ def test_agg(ea):
         assert mock_es.call_count == 2
     assert_alerts(ea, [hits_timestamps[:2], hits_timestamps[2:]])
 
-    call1 = ea.writeback_es.search.call_args_list[6][1]['body']
-    call2 = ea.writeback_es.search.call_args_list[7][1]['body']
-    call3 = ea.writeback_es.search.call_args_list[8][1]['body']
+    call1 = ea.writeback_es.search.call_args_list[7][1]['body']
+    call2 = ea.writeback_es.search.call_args_list[8][1]['body']
+    call3 = ea.writeback_es.search.call_args_list[9][1]['body']
+    call4 = ea.writeback_es.search.call_args_list[10][1]['body']
 
-    assert 'alert_time' in call1['filter']['range']
-    assert call2['query']['query_string']['query'] == 'aggregate_id:ABCD'
-    assert call3['query']['query_string']['query'] == 'aggregate_id:CDEF'
-    assert ea.writeback_es.search.call_args_list[7][1]['size'] == 1337
+    assert 'alert_time' in call2['filter']['range']
+    assert call3['query']['query_string']['query'] == 'aggregate_id:ABCD'
+    assert call4['query']['query_string']['query'] == 'aggregate_id:CDEF'
+    assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
 
 
 def test_agg_cron(ea):
@@ -340,7 +340,8 @@ def test_agg_no_writeback_connectivity(ea):
                                    {'@timestamp': hit3}]
     ea.writeback_es.create.side_effect = elasticsearch.exceptions.ElasticsearchException('Nope')
     with mock.patch('elastalert.elastalert.Elasticsearch'):
-        ea.run_rule(ea.rules[0], END, START)
+        with mock.patch.object(ea, 'find_pending_aggregate_alert', return_value=None):
+            ea.run_rule(ea.rules[0], END, START)
 
     assert ea.rules[0]['agg_matches'] == [{'@timestamp': hit1},
                                           {'@timestamp': hit2},

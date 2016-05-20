@@ -33,9 +33,9 @@ from util import EAException
 from util import elastalert_logger
 from util import format_index
 from util import lookup_es_key
-from util import set_es_key
 from util import pretty_ts
 from util import seconds
+from util import set_es_key
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
@@ -1121,26 +1121,55 @@ class ElastAlerter():
                 self.handle_error("Error fetching aggregated matches: %s" % (e), {'id': _id})
         return matches
 
+    def find_pending_aggregate_alert(self, rule):
+        query = {'filter': {'bool': {'must': [{'term': {'rule_name': rule['name']}},
+                                              {'range': {'alert_time': {'gt': ts_now()}}},
+                                              {'not': {'exists': {'field': 'aggregate_id'}}},
+                                              {'term': {'alert_sent': 'false'}}]}},
+                 'sort': {'alert_time': {'order': 'desc'}}}
+        if not self.writeback_es:
+            self.writeback_es = self.new_elasticsearch(self.es_conn_config)
+        try:
+            res = self.writeback_es.search(index=self.writeback_index,
+                                           doc_type='elastalert',
+                                           body=query,
+                                           size=1)
+            if len(res['hits']['hits']) == 0:
+                return None
+        except (KeyError, ElasticsearchException) as e:
+            self.handle_error("Error searching for pending aggregated matches: %s" % (e), {'rule_name': rule['name']})
+            return None
+
+        return res['hits']['hits'][0]
+
     def add_aggregated_alert(self, match, rule):
         """ Save a match as a pending aggregate alert to elasticsearch. """
         if (not rule['current_aggregate_id'] or
                 ('aggregate_alert_time' in rule and rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]))):
-            # First match, set alert_time
-            match_time = ts_to_dt(match[rule['timestamp_field']])
-            alert_time = ''
-            if isinstance(rule['aggregation'], dict) and rule['aggregation'].get('schedule'):
-                croniter._datetime_to_timestamp = cronite_datetime_to_timestamp  # For Python 2.6 compatibility
-                try:
-                    iter = croniter(rule['aggregation']['schedule'], ts_now())
-                    alert_time = unix_to_dt(iter.get_next())
-                except Exception as e:
-                    self.handle_error("Error parsing aggregate send time Cron format %s" % (e), rule['aggregation']['schedule'])
-            else:
-                alert_time = match_time + rule['aggregation']
 
-            rule['aggregate_alert_time'] = alert_time
-            agg_id = None
-            elastalert_logger.info('New aggregation for %s. next alert at %s.' % (rule['name'], alert_time))
+            # Elastalert may have restarted while pending alerts exist
+            pending_alert = self.find_pending_aggregate_alert(rule)
+            if pending_alert:
+                alert_time = rule['aggregate_alert_time'] = ts_to_dt(pending_alert['_source']['alert_time'])
+                agg_id = rule['current_aggregate_id'] = pending_alert['_id']
+                elastalert_logger.info('Adding alert for %s to aggregation(id: %s), next alert at %s' % (rule['name'], agg_id, alert_time))
+            else:
+                # First match, set alert_time
+                match_time = ts_to_dt(match[rule['timestamp_field']])
+                alert_time = ''
+                if isinstance(rule['aggregation'], dict) and rule['aggregation'].get('schedule'):
+                    croniter._datetime_to_timestamp = cronite_datetime_to_timestamp  # For Python 2.6 compatibility
+                    try:
+                        iter = croniter(rule['aggregation']['schedule'], ts_now())
+                        alert_time = unix_to_dt(iter.get_next())
+                    except Exception as e:
+                        self.handle_error("Error parsing aggregate send time Cron format %s" % (e), rule['aggregation']['schedule'])
+                else:
+                    alert_time = match_time + rule['aggregation']
+
+                rule['aggregate_alert_time'] = alert_time
+                agg_id = None
+                elastalert_logger.info('New aggregation for %s. next alert at %s.' % (rule['name'], alert_time))
         else:
             # Already pending aggregation, use existing alert_time
             alert_time = rule['aggregate_alert_time']
