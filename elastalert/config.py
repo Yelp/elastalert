@@ -58,6 +58,12 @@ alerts_mapping = {
     'telegram': alerts.TelegramAlerter,
     'gitter': alerts.GitterAlerter
 }
+# A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
+# For example, jira goes before email so the ticket # will be added to the resulting email.
+alerts_order = {
+    'jira': 0,
+    'email': 1
+}
 
 
 def get_module(module_name):
@@ -301,46 +307,37 @@ def get_file_paths(conf, use_rule=None):
 
 
 def load_alerts(rule, alert_field):
-    reqs = rule['type'].required_options
+    def normalize_config(alert):
+        """Alert config entries are either "alertType" or {"alertType": {"key": "data"}}.
+        This function normalizes them both to the latter format. """
+        if isinstance(alert, basestring):
+            return alert, rule
+        elif isinstance(alert, dict):
+            name, config = iter(alert.items()).next()
+            config_copy = copy.copy(rule)
+            config_copy.update(config)  # warning, this (intentionally) mutates the rule dict
+            return name, config_copy
+        else:
+            raise EAException()
+
+    def create_alert(alert, alert_config):
+        alert_class = alerts_mapping.get(alert) or get_module(alert)
+        if not issubclass(alert_class, alerts.Alerter):
+            raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
+        missing_options = (rule['type'].required_options | alert_class.required_options) - frozenset(alert_config or [])
+        if missing_options:
+            raise EAException('Missing required option(s): %s' % (', '.join(missing_options)))
+        return alert_class(alert_config)
+
     try:
-        # Convert all alerts into Alerter objects
-        global_alerts = []
-        inline_alerts = []
         if type(alert_field) != list:
             alert_field = [alert_field]
-        for alert in alert_field:
-            if isinstance(alert, basestring):
-                global_alerts.append(alerts_mapping[alert] if alert in alerts_mapping else get_module(alert))
 
-                if not issubclass(global_alerts[-1], alerts.Alerter):
-                    raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
+        alert_field = [normalize_config(x) for x in alert_field]
+        alert_field = sorted(alert_field, key=lambda (a, b): alerts_order.get(a, -1))
+        # Convert all alerts into Alerter objects
+        alert_field = [create_alert(a, b) for a, b in alert_field]
 
-            elif isinstance(alert, dict):
-                alert_name = alert.keys()[0]
-
-                # Each Inline Alert is a tuple, in the form (alert_configuration, alert_class_object)
-                if alert_name in alerts_mapping:
-                    inline_alerts.append((alert[alert_name], alerts_mapping[alert_name]))
-                else:
-                    inline_alerts.append((alert[alert_name], get_module(alert_name)))
-
-                if not issubclass(inline_alerts[-1][1], alerts.Alerter):
-                    raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
-        alert_field = []
-        for (alert_config, alert) in inline_alerts:
-            copied_conf = copy.copy(rule)
-            rule_reqs = alert.required_options
-            copied_conf.update(alert_config)
-            if rule_reqs - frozenset(copied_conf.keys()):
-                raise EAException('Missing required option(s): %s' % (', '.join(rule_reqs - frozenset(copied_conf.keys()))))
-            alert_field.append(alert(copied_conf))
-
-        for alert in global_alerts:
-            reqs = reqs.union(alert.required_options)
-            if reqs - frozenset(rule.keys()):
-                raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(rule.keys()))))
-            else:
-                alert_field.append(alert(rule))
     except (KeyError, EAException) as e:
         raise EAException('Error initiating alert %s: %s' % (rule['alert'], e))
 
