@@ -571,6 +571,8 @@ class SlackAlerter(Alerter):
     def __init__(self, rule):
         super(SlackAlerter, self).__init__(rule)
         self.slack_webhook_url = self.rule['slack_webhook_url']
+        if isinstance(self.slack_webhook_url, basestring):
+            self.slack_webhook_url = [self.slack_webhook_url]
         self.slack_proxy = self.rule.get('slack_proxy', None)
         self.slack_username_override = self.rule.get('slack_username_override', 'elastalert')
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
@@ -605,11 +607,12 @@ class SlackAlerter(Alerter):
             ]
         }
 
-        try:
-            response = requests.post(self.slack_webhook_url, data=json.dumps(payload), headers=headers, proxies=proxies)
-            response.raise_for_status()
-        except RequestException as e:
-            raise EAException("Error posting to slack: %s" % e)
+        for url in self.slack_webhook_url:
+            try:
+                response = requests.post(url, data=json.dumps(payload), headers=headers, proxies=proxies)
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error posting to slack: %s" % e)
         elastalert_logger.info("Alert sent to Slack")
 
     def get_info(self):

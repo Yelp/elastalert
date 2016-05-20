@@ -502,7 +502,7 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
     rule = {
         'name': 'Test Rule',
         'type': 'any',
-        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_webhook_url': ['http://please.dontgohere.slack'],
         'alert': []
     }
     load_modules(rule)
@@ -526,7 +526,7 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
             }
         ]
     }
-    mock_post_request.assert_called_once_with(rule['slack_webhook_url'], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with(rule['slack_webhook_url'][0], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
 
 
 def test_alert_text_kw(ea):
