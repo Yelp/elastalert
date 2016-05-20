@@ -525,6 +525,7 @@ class HipChatAlerter(Alerter):
 
     def __init__(self, rule):
         super(HipChatAlerter, self).__init__(rule)
+        self.hipchat_msg_color = self.rule.get('hipchat_msg_color', 'red')
         self.hipchat_auth_token = self.rule['hipchat_auth_token']
         self.hipchat_room_id = self.rule['hipchat_room_id']
         self.hipchat_domain = self.rule.get('hipchat_domain', 'api.hipchat.com')
@@ -542,7 +543,7 @@ class HipChatAlerter(Alerter):
         # post to hipchat
         headers = {'content-type': 'application/json'}
         payload = {
-            'color': 'red',
+            'color': self.hipchat_msg_color,
             'message': body.replace('\n', '<br />'),
             'notify': True
         }
