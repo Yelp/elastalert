@@ -40,6 +40,7 @@ from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
+from util import add_raw_postfix
 
 
 class ElastAlerter():
@@ -352,7 +353,7 @@ class ElastAlerter():
         if qk:
             filter_key = rule['query_key']
             if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
-                filter_key += '.raw'
+                filter_key = add_raw_postfix(filter_key)
             rule_filter.extend([{'term': {filter_key: qk}}])
         base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
         if size is None:

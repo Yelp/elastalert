@@ -14,6 +14,7 @@ from util import pretty_ts
 from util import ts_now
 from util import ts_to_dt
 from util import new_get_event_ts
+from util import add_raw_postfix
 
 
 class RuleType(object):
@@ -546,14 +547,14 @@ class NewTermsRule(RuleType):
                 level = query_template['aggs']
                 # Iterate on each part of the composite key and add a sub aggs clause to the elastic search query
                 for i, sub_field in enumerate(field):
-                    level['values']['terms']['field'] = sub_field
+                    level['values']['terms']['field'] = add_raw_postfix(sub_field)
                     if i < len(field) - 1:
                         # If we have more fields after the current one, then set up the next nested structure
                         level['values']['aggs'] = {'values': {'terms': copy.deepcopy(field_name)}}
                         level = level['values']['aggs']
             else:
                 # For non-composite keys, only a single agg is needed
-                field_name['field'] = field
+                field_name['field'] = add_raw_postfix(field)
             res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout='50s')
             if 'aggregations' in res:
                 buckets = res['aggregations']['filtered']['values']['buckets']
