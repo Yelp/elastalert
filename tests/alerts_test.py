@@ -12,6 +12,8 @@ from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
+from elastalert.alerts import SlackAlerter
+from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
 
@@ -364,6 +366,22 @@ def test_jira():
     expected.insert(2, mock.call().search_issues(mock.ANY))
     assert mock_jira.mock_calls == expected
 
+    # Remove a field if jira_ignore_in_title set
+    rule['jira_ignore_in_title'] = 'test_term'
+    with nested(
+        mock.patch('elastalert.alerts.JIRA'),
+        mock.patch('elastalert.alerts.yaml_loader')
+    ) as (mock_jira, mock_open):
+        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+        mock_jira.return_value = mock.Mock()
+        mock_jira.return_value.search_issues.return_value = []
+        mock_jira.return_value.priorities.return_value = [mock_priority]
+
+        alert = JiraAlerter(rule)
+        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+
+    assert 'test_value' not in mock_jira.mock_calls[2][1][0]
+
     # Issue is still created if search_issues throws an exception
     with nested(
         mock.patch('elastalert.alerts.JIRA'),
@@ -446,3 +464,79 @@ def test_command():
         alert.alert([match])
     assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE)
     assert mock_subprocess.communicate.called_with(input=json.dumps(match))
+
+
+def test_slack_uses_custom_title():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['alert_subject'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            }
+        ]
+    }
+    mock_post_request.assert_called_once_with(rule['slack_webhook_url'], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
+
+
+def test_slack_uses_rule_name_when_custom_title_is_not_provided():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': ['http://please.dontgohere.slack'],
+        'alert': []
+    }
+    load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['name'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            }
+        ]
+    }
+    mock_post_request.assert_called_once_with(rule['slack_webhook_url'][0], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
+
+
+def test_alert_text_kw(ea):
+    rule = ea.rules[0].copy()
+    rule['alert_text'] = '{field} at {time}'
+    rule['alert_text_kw'] = {
+        '@timestamp': 'time',
+        'field': 'field',
+    }
+    match = {'@timestamp': '1918-01-17', 'field': 'value'}
+    alert_text = unicode(BasicMatchString(rule, match))
+    body = '{field} at {@timestamp}'.format(**match)
+    assert body in alert_text

@@ -40,7 +40,7 @@ compare_key: country_name
 # Ignore documents without the compare_key (country_name) field
 ignore_null: true
 
-# (Optional, change specific)
+# (Required, change specific)
 # The change must occur in two documents with the same query_key
 query_key: username
 

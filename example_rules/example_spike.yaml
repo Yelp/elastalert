@@ -28,11 +28,12 @@ type: spike
 # Index to search, wildcard supported
 index: logstash-*
 
-# (Required, spike specific)
-# The minimum number of events to be used as a baseline
+# (Required one of _cur or _ref, spike specific)
+# The minimum number of events that will trigger an alert
 # For example, if there are only 2 events between 12:00 and 2:00, and 20 between 2:00 and 4:00
-# This rule will ignore that 'spike', because the reference window did not meet the threshold of 5
-threshold: 5
+# _cur is 2 and _ref is 20, and the alert WILL fire because 20 is greater than threshold_cur
+threshold_cur: 5
+#threshold_ref: 5
 
 # (Required, spike specific)
 # The size of the window used to determine average event frequency

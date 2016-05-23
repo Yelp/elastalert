@@ -18,10 +18,12 @@ import dateutil.tz
 import kibana
 import yaml
 from alerts import DebugAlerter
+from auth import Auth
 from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
 from croniter import croniter
+from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 from elasticsearch.exceptions import ElasticsearchException
 from enhancements import DropMatchException
@@ -33,10 +35,12 @@ from util import format_index
 from util import lookup_es_key
 from util import pretty_ts
 from util import seconds
+from util import set_es_key
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
+from util import add_raw_postfix
 
 
 class ElastAlerter():
@@ -73,11 +77,11 @@ class ElastAlerter():
         self.debug = self.args.debug
         self.verbose = self.args.verbose
 
-        if self.debug:
-            self.verbose = True
-
-        if self.verbose:
+        if self.verbose or self.debug:
             elastalert_logger.setLevel(logging.INFO)
+
+        if self.debug:
+            elastalert_logger.info("Note: In debug mode, alerts will be logged to console but NOT actually sent. To send them, use --verbose.")
 
         if not self.args.es_debug:
             logging.getLogger('elasticsearch').setLevel(logging.WARNING)
@@ -114,7 +118,7 @@ class ElastAlerter():
         self.writeback_es = self.new_elasticsearch(self.es_conn_config)
 
         for rule in self.rules:
-            rule = self.init_rule(rule)
+            self.init_rule(rule)
 
         if self.args.silence:
             self.silence()
@@ -122,12 +126,21 @@ class ElastAlerter():
     @staticmethod
     def new_elasticsearch(es_conn_conf):
         """ returns an Elasticsearch instance configured using an es_conn_config """
+        auth = Auth()
+        es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
+                                         username=es_conn_conf['es_username'],
+                                         password=es_conn_conf['es_password'],
+                                         aws_region=es_conn_conf['aws_region'],
+                                         boto_profile=es_conn_conf['boto_profile'])
+
         return Elasticsearch(host=es_conn_conf['es_host'],
                              port=es_conn_conf['es_port'],
                              url_prefix=es_conn_conf['es_url_prefix'],
                              use_ssl=es_conn_conf['use_ssl'],
+                             connection_class=RequestsHttpConnection,
                              http_auth=es_conn_conf['http_auth'],
-                             timeout=es_conn_conf['es_conn_timeout'])
+                             timeout=es_conn_conf['es_conn_timeout'],
+                             send_get_body_as=es_conn_conf['send_get_body_as'])
 
     @staticmethod
     def build_es_conn_config(conf):
@@ -140,17 +153,23 @@ class ElastAlerter():
         parsed_conf['http_auth'] = None
         parsed_conf['es_username'] = None
         parsed_conf['es_password'] = None
+        parsed_conf['aws_region'] = None
+        parsed_conf['boto_profile'] = None
         parsed_conf['es_host'] = conf['es_host']
         parsed_conf['es_port'] = conf['es_port']
         parsed_conf['es_url_prefix'] = ''
         parsed_conf['es_conn_timeout'] = 10
+        parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
 
         if 'es_username' in conf:
             parsed_conf['es_username'] = conf['es_username']
             parsed_conf['es_password'] = conf['es_password']
 
-        if parsed_conf['es_username'] and parsed_conf['es_password']:
-            parsed_conf['http_auth'] = parsed_conf['es_username'] + ':' + parsed_conf['es_password']
+        if 'aws_region' in conf:
+            parsed_conf['aws_region'] = conf['aws_region']
+
+        if 'boto_profile' in conf:
+            parsed_conf['boto_profile'] = conf['boto_profile']
 
         if 'use_ssl' in conf:
             parsed_conf['use_ssl'] = conf['use_ssl']
@@ -195,20 +214,22 @@ class ElastAlerter():
         starttime = to_ts_func(starttime)
         endtime = to_ts_func(endtime)
         filters = copy.copy(filters)
-        query = {'filter': {'bool': {'must': filters}}}
+        es_filters = {'filter': {'bool': {'must': filters}}}
         if starttime and endtime:
-            query['filter']['bool']['must'].append({'range': {timestamp_field: {'gt': starttime,
-                                                                                'lte': endtime}}})
+            es_filters['filter']['bool']['must'].insert(0, {'range': {timestamp_field: {'gt': starttime,
+                                                                                        'lte': endtime}}})
+        query = {'query': {'filtered': es_filters}}
         if sort:
             query['sort'] = [{timestamp_field: {'order': 'desc' if desc else 'asc'}}]
         return query
 
     def get_terms_query(self, query, size, field):
         """ Takes a query generated by get_query and outputs a aggregation query """
+        query = query['query']
         if 'sort' in query:
             query.pop('sort')
-        query.update({'aggs': {'counts': {'terms': {'field': field, 'size': size}}}})
-        aggs_query = {'aggs': {'filtered': query}}
+        query['filtered'].update({'aggs': {'counts': {'terms': {'field': field, 'size': size}}}})
+        aggs_query = {'aggs': query}
         return aggs_query
 
     def get_index_start(self, index, timestamp_field='@timestamp'):
@@ -226,8 +247,7 @@ class ElastAlerter():
         if len(res['hits']['hits']) == 0:
             # Index is completely empty, return a date before the epoch
             return '1969-12-30T00:00:00Z'
-        timestamp = res['hits']['hits'][0][timestamp_field]
-        return timestamp
+        return res['hits']['hits'][0][timestamp_field]
 
     @staticmethod
     def process_hits(rule, hits):
@@ -247,7 +267,11 @@ class ElastAlerter():
                 # Fields are returned as lists, assume any with length 1 are not arrays in _source
                 # Except sometimes they aren't lists. This is dependent on ES version
                 hit['_source'].setdefault(key, value[0] if type(value) is list and len(value) == 1 else value)
-            hit['_source'][rule['timestamp_field']] = rule['ts_to_dt'](hit['_source'][rule['timestamp_field']])
+
+            # Convert the timestamp to a datetime
+            ts = lookup_es_key(hit['_source'], rule['timestamp_field'])
+            set_es_key(hit['_source'], rule['timestamp_field'], rule['ts_to_dt'](ts))
+            set_es_key(hit, rule['timestamp_field'], lookup_es_key(hit['_source'], rule['timestamp_field']))
 
             # Tack metadata fields into _source
             for field in ['_id', '_index', '_type']:
@@ -308,7 +332,6 @@ class ElastAlerter():
         :return: A dictionary mapping timestamps to number of hits for that time period.
         """
         query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
-        query = {'query': {'filtered': query}}
 
         try:
             res = self.current_es.count(index=index, doc_type=rule['doc_type'], body=query, ignore_unavailable=True)
@@ -330,7 +353,7 @@ class ElastAlerter():
         if qk:
             filter_key = rule['query_key']
             if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
-                filter_key += '.raw'
+                filter_key = add_raw_postfix(filter_key)
             rule_filter.extend([{'term': {filter_key: qk}}])
         base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
         if size is None:
@@ -362,7 +385,7 @@ class ElastAlerter():
                 continue
 
             # Remember the new data's IDs
-            rule['processed_hits'][event['_id']] = event[rule['timestamp_field']]
+            rule['processed_hits'][event['_id']] = lookup_es_key(event, rule['timestamp_field'])
             new_events.append(event)
 
         return new_events
@@ -444,8 +467,6 @@ class ElastAlerter():
             self.handle_error('Error querying for last run: %s' % (e), {'rule': rule['name']})
             self.writeback_es = None
 
-        return None
-
     def set_starttime(self, rule, endtime):
         """ Given a rule and an endtime, sets the appropriate starttime for it. """
 
@@ -456,7 +477,7 @@ class ElastAlerter():
             if last_run_end:
                 rule['minimum_starttime'] = last_run_end
                 rule['starttime'] = last_run_end
-                return
+                return None
 
         # Use buffer for normal queries, or run_every increments otherwise
         buffer_time = rule.get('buffer_time', self.buffer_time)
@@ -769,13 +790,16 @@ class ElastAlerter():
         db_name = rule.get('use_kibana4_dashboard')
         start = ts_add(match[rule['timestamp_field']], -rule.get('kibana4_start_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10))))
         end = ts_add(match[rule['timestamp_field']], rule.get('kibana4_end_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10))))
-        link = kibana.kibana4_dashboard_link(db_name, start, end)
-        return link
+        return kibana.kibana4_dashboard_link(db_name, start, end)
 
     def generate_kibana_db(self, rule, match):
         ''' Uses a template dashboard to upload a temp dashboard showing the match.
         Returns the url to the dashboard. '''
         db = copy.deepcopy(kibana.dashboard_temp)
+
+        # Set timestamp fields to match our rule especially if
+        # we have configured something other than @timestamp
+        kibana.set_timestamp_field(db, rule['timestamp_field'])
 
         # Set filters
         for filter in rule['filter']:
@@ -932,13 +956,13 @@ class ElastAlerter():
                     self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
             matches = valid_matches
             if not matches:
-                return
+                return None
 
         # Don't send real alerts in debug mode
         if self.debug:
             alerter = DebugAlerter(rule)
             alerter.alert(matches)
-            return
+            return None
 
         # Run the alerts
         alert_sent = False
@@ -1000,7 +1024,6 @@ class ElastAlerter():
             except ElasticsearchException as e:
                 logging.exception("Error writing alert info to elasticsearch: %s" % (e))
                 self.writeback_es = None
-        return None
 
     def find_recent_pending_alerts(self, time_limit):
         """ Queries writeback_es to find alerts that did not send
@@ -1022,7 +1045,7 @@ class ElastAlerter():
                                                size=1000)
                 if res['hits']['hits']:
                     return res['hits']['hits']
-            except:
+            except:  # TODO: Give this a more relevant exception, try:except: is evil.
                 pass
         return []
 
@@ -1068,7 +1091,7 @@ class ElastAlerter():
                     self.writeback_es.delete(index=self.writeback_index,
                                              doc_type='elastalert',
                                              id=_id)
-                except:
+                except:  # TODO: Give this a more relevant exception, try:except: is evil.
                     self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
 
         # Send in memory aggregated alerts
@@ -1099,26 +1122,55 @@ class ElastAlerter():
                 self.handle_error("Error fetching aggregated matches: %s" % (e), {'id': _id})
         return matches
 
+    def find_pending_aggregate_alert(self, rule):
+        query = {'filter': {'bool': {'must': [{'term': {'rule_name': rule['name']}},
+                                              {'range': {'alert_time': {'gt': ts_now()}}},
+                                              {'not': {'exists': {'field': 'aggregate_id'}}},
+                                              {'term': {'alert_sent': 'false'}}]}},
+                 'sort': {'alert_time': {'order': 'desc'}}}
+        if not self.writeback_es:
+            self.writeback_es = self.new_elasticsearch(self.es_conn_config)
+        try:
+            res = self.writeback_es.search(index=self.writeback_index,
+                                           doc_type='elastalert',
+                                           body=query,
+                                           size=1)
+            if len(res['hits']['hits']) == 0:
+                return None
+        except (KeyError, ElasticsearchException) as e:
+            self.handle_error("Error searching for pending aggregated matches: %s" % (e), {'rule_name': rule['name']})
+            return None
+
+        return res['hits']['hits'][0]
+
     def add_aggregated_alert(self, match, rule):
         """ Save a match as a pending aggregate alert to elasticsearch. """
         if (not rule['current_aggregate_id'] or
                 ('aggregate_alert_time' in rule and rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]))):
-            # First match, set alert_time
-            match_time = ts_to_dt(match[rule['timestamp_field']])
-            alert_time = ''
-            if isinstance(rule['aggregation'], dict) and rule['aggregation'].get('schedule'):
-                croniter._datetime_to_timestamp = cronite_datetime_to_timestamp  # For Python 2.6 compatibility
-                try:
-                    iter = croniter(rule['aggregation']['schedule'], ts_now())
-                    alert_time = unix_to_dt(iter.get_next())
-                except Exception as e:
-                    self.handle_error("Error parsing aggregate send time Cron format %s" % (e), rule['aggregation']['schedule'])
-            else:
-                alert_time = match_time + rule['aggregation']
 
-            rule['aggregate_alert_time'] = alert_time
-            agg_id = None
-            elastalert_logger.info('New aggregation for %s. next alert at %s.' % (rule['name'], alert_time))
+            # Elastalert may have restarted while pending alerts exist
+            pending_alert = self.find_pending_aggregate_alert(rule)
+            if pending_alert:
+                alert_time = rule['aggregate_alert_time'] = ts_to_dt(pending_alert['_source']['alert_time'])
+                agg_id = rule['current_aggregate_id'] = pending_alert['_id']
+                elastalert_logger.info('Adding alert for %s to aggregation(id: %s), next alert at %s' % (rule['name'], agg_id, alert_time))
+            else:
+                # First match, set alert_time
+                match_time = ts_to_dt(match[rule['timestamp_field']])
+                alert_time = ''
+                if isinstance(rule['aggregation'], dict) and rule['aggregation'].get('schedule'):
+                    croniter._datetime_to_timestamp = cronite_datetime_to_timestamp  # For Python 2.6 compatibility
+                    try:
+                        iter = croniter(rule['aggregation']['schedule'], ts_now())
+                        alert_time = unix_to_dt(iter.get_next())
+                    except Exception as e:
+                        self.handle_error("Error parsing aggregate send time Cron format %s" % (e), rule['aggregation']['schedule'])
+                else:
+                    alert_time = match_time + rule['aggregation']
+
+                rule['aggregate_alert_time'] = alert_time
+                agg_id = None
+                elastalert_logger.info('New aggregation for %s. next alert at %s.' % (rule['name'], alert_time))
         else:
             # Already pending aggregation, use existing alert_time
             alert_time = rule['aggregate_alert_time']
@@ -1280,16 +1332,25 @@ class ElastAlerter():
             number = rule.get('top_count_number', 5)
         for key in keys:
             index = self.get_index(rule, starttime, endtime)
-            buckets = self.get_hits_terms(rule, starttime, endtime, index, key, qk, number).values()[0]
-            # get_hits_terms adds to num_hits, but we don't want to count these
-            self.num_hits -= len(buckets)
-            terms = {}
-            for bucket in buckets:
-                terms[bucket['key']] = bucket['doc_count']
-            counts = terms.items()
-            counts.sort(key=lambda x: x[1], reverse=True)
+
+            hits_terms = self.get_hits_terms(rule, starttime, endtime, index, key, qk, number)
+            if hits_terms is None:
+                top_events_count = {}
+            else:
+                buckets = hits_terms.values()[0]
+
+                # get_hits_terms adds to num_hits, but we don't want to count these
+                self.num_hits -= len(buckets)
+                terms = {}
+                for bucket in buckets:
+                    terms[bucket['key']] = bucket['doc_count']
+                counts = terms.items()
+                counts.sort(key=lambda x: x[1], reverse=True)
+                top_events_count = dict(counts[:number])
+
             # Save a dict with the top 5 events by key
-            all_counts['top_events_%s' % (key)] = dict(counts[:number])
+            all_counts['top_events_%s' % (key)] = top_events_count
+
         return all_counts
 
     def next_alert_time(self, rule, name, timestamp):

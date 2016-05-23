@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 import subprocess
+import warnings
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTP_SSL
@@ -21,11 +22,9 @@ from util import EAException
 from util import elastalert_logger
 from util import lookup_es_key
 from util import pretty_ts
-import warnings
 
 
 class BasicMatchString(object):
-
     """ Creates a string containing fields in match for the given rule. """
 
     def __init__(self, rule, match):
@@ -37,12 +36,20 @@ class BasicMatchString(object):
             self.text += '\n'
 
     def _add_custom_alert_text(self):
+        missing = '<MISSING VALUE>'
         alert_text = unicode(self.rule.get('alert_text', ''))
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
             alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
-            alert_text_values = ['<MISSING VALUE>' if val is None else val for val in alert_text_values]
+            alert_text_values = [missing if val is None else val for val in alert_text_values]
             alert_text = alert_text.format(*alert_text_values)
+        elif 'alert_text_kw' in self.rule:
+            kw = {}
+            for name, kw_name in self.rule.get('alert_text_kw').items():
+                val = lookup_es_key(self.match, name)
+                kw[kw_name] = missing if val is None else val
+            alert_text = alert_text.format(**kw)
+
         self.text += alert_text
 
     def _add_rule_text(self):
@@ -53,9 +60,14 @@ class BasicMatchString(object):
             if key.startswith('top_events_'):
                 self.text += '%s:\n' % (key[11:])
                 top_events = counts.items()
-                top_events.sort(key=lambda x: x[1], reverse=True)
-                for term, count in top_events:
-                    self.text += '%s: %s\n' % (term, count)
+
+                if not top_events:
+                    self.text += 'No events found.\n'
+                else:
+                    top_events.sort(key=lambda x: x[1], reverse=True)
+                    for term, count in top_events:
+                        self.text += '%s: %s\n' % (term, count)
+
                 self.text += '\n'
 
     def _add_match_items(self):
@@ -95,11 +107,10 @@ class BasicMatchString(object):
 
 
 class JiraFormattedMatchString(BasicMatchString):
-
     def _add_match_items(self):
         match_items = dict([(x, y) for x, y in self.match.items() if not x.startswith('top_events_')])
         json_blob = self._pretty_print_as_json(match_items)
-        preformatted_text = '{{code:json}}{0}{{code}}'.format(json_blob)
+        preformatted_text = u'{{code:json}}{0}{{code}}'.format(json_blob)
         self.text += preformatted_text
 
 
@@ -149,6 +160,15 @@ class Alerter(object):
 
         return alert_subject
 
+    def create_alert_body(self, matches):
+        body = ''
+        for match in matches:
+            body += unicode(BasicMatchString(self.rule, match))
+            # Separate text of aggregated alerts with dashes
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        return body
+
     def create_default_title(self, matches):
         return self.rule['name']
 
@@ -171,7 +191,8 @@ class DebugAlerter(Alerter):
         qk = self.rule.get('query_key', None)
         for match in matches:
             if qk in match:
-                elastalert_logger.info('Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
+                elastalert_logger.info(
+                    'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
             else:
                 elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
             elastalert_logger.info(unicode(BasicMatchString(self.rule, match)))
@@ -206,12 +227,8 @@ class EmailAlerter(Alerter):
             self.rule['bcc'] = [self.rule['bcc']]
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
+
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
             url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
@@ -297,7 +314,8 @@ class JiraAlerter(Alerter):
                   (','.join(self.bump_in_statuses), ','.join(self.bump_not_in_statuses))
             intersection = list(set(self.bump_in_statuses) & set(self.bump_in_statuses))
             if intersection:
-                msg = '%s Both have common statuses of (%s). As such, no tickets will ever be found.' % (msg, ','.join(intersection))
+                msg = '%s Both have common statuses of (%s). As such, no tickets will ever be found.' % (
+                    msg, ','.join(intersection))
             msg += ' This should be simplified to use only one or the other.'
             logging.warning(msg)
 
@@ -355,9 +373,13 @@ class JiraAlerter(Alerter):
         else:
             title = self.create_title(matches)
 
-        # This is necessary for search for work. Other special characters and dashes
+        if 'jira_ignore_in_title' in self.rule:
+            title = title.replace(matches[0].get(self.rule['jira_ignore_in_title'], ''), '')
+
+        # This is necessary for search to work. Other special characters and dashes
         # directly adjacent to words appear to be ok
         title = title.replace(' - ', ' ')
+        title = title.replace('\\', '\\\\')
 
         date = (datetime.datetime.now() - datetime.timedelta(days=self.max_age)).strftime('%Y-%m-%d')
         jql = 'project=%s AND summary~"%s" and created >= "%s"' % (self.project, title, date)
@@ -395,16 +417,10 @@ class JiraAlerter(Alerter):
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
                     self.pipeline['jira_server'] = self.server
-                return
-
-        description = self.description + '\n'
-        for match in matches:
-            description += unicode(JiraFormattedMatchString(self.rule, match))
-            if len(matches) > 1:
-                description += '\n----------------------------------------\n'
+                return None
 
         self.jira_args['summary'] = title
-        self.jira_args['description'] = description
+        self.jira_args['description'] = self.create_alert_body(matches)
 
         try:
             self.issue = self.client.create_issue(**self.jira_args)
@@ -415,6 +431,14 @@ class JiraAlerter(Alerter):
         if self.pipeline is not None:
             self.pipeline['jira_ticket'] = self.issue
             self.pipeline['jira_server'] = self.server
+
+    def create_alert_body(self, matches):
+        body = self.description + '\n'
+        for match in matches:
+            body += unicode(JiraFormattedMatchString(self.rule, match))
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        return body
 
     def create_default_title(self, matches, for_search=False):
         # If there is a query_key, use that in the title
@@ -482,22 +506,23 @@ class SnsAlerter(Alerter):
         self.aws_access_key = self.rule.get('aws_access_key', '')
         self.aws_secret_key = self.rule.get('aws_secret_key', '')
         self.aws_region = self.rule.get('aws_region', 'us-east-1')
+        self.boto_profile = self.rule.get('boto_profile', '')
 
     def create_default_title(self):
         subject = 'ElastAlert: %s' % (self.rule['name'])
         return subject
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
 
-        # use instance role if aws_access_key and aws_secret_key are not specified
+        # use aws_access_key and aws_secret_key if specified; then use boto profile if specified;
+        # otherwise use instance role
         if not self.aws_access_key and not self.aws_secret_key:
-            sns_client = sns.connect_to_region(self.aws_region)
+            if not self.boto_profile:
+                sns_client = sns.connect_to_region(self.aws_region)
+            else:
+                sns_client = sns.connect_to_region(self.aws_region,
+                                                   profile_name=self.boto_profile)
         else:
             sns_client = sns.connect_to_region(self.aws_region,
                                                aws_access_key_id=self.aws_access_key,
@@ -512,24 +537,25 @@ class HipChatAlerter(Alerter):
 
     def __init__(self, rule):
         super(HipChatAlerter, self).__init__(rule)
+        self.hipchat_msg_color = self.rule.get('hipchat_msg_color', 'red')
         self.hipchat_auth_token = self.rule['hipchat_auth_token']
         self.hipchat_room_id = self.rule['hipchat_room_id']
         self.hipchat_domain = self.rule.get('hipchat_domain', 'api.hipchat.com')
         self.hipchat_ignore_ssl_errors = self.rule.get('hipchat_ignore_ssl_errors', False)
-        self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
+        self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (
+            self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
+
+        # Hipchat sends 400 bad request on messages longer than 10000 characters
+        if (len(body) > 9999):
+            body = body[:9980] + '..(truncated)'
 
         # post to hipchat
         headers = {'content-type': 'application/json'}
         payload = {
-            'color': 'red',
+            'color': self.hipchat_msg_color,
             'message': body.replace('\n', '<br />'),
             'notify': True
         }
@@ -537,7 +563,8 @@ class HipChatAlerter(Alerter):
         try:
             if self.hipchat_ignore_ssl_errors:
                 requests.packages.urllib3.disable_warnings()
-            response = requests.post(self.url, data=json.dumps(payload), headers=headers, verify=not self.hipchat_ignore_ssl_errors)
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers,
+                                     verify=not self.hipchat_ignore_ssl_errors)
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -556,6 +583,8 @@ class SlackAlerter(Alerter):
     def __init__(self, rule):
         super(SlackAlerter, self).__init__(rule)
         self.slack_webhook_url = self.rule['slack_webhook_url']
+        if isinstance(self.slack_webhook_url, basestring):
+            self.slack_webhook_url = [self.slack_webhook_url]
         self.slack_proxy = self.rule.get('slack_proxy', None)
         self.slack_username_override = self.rule.get('slack_username_override', 'elastalert')
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
@@ -570,12 +599,7 @@ class SlackAlerter(Alerter):
         return body
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
 
         body = self.format_body(body)
         # post to slack
@@ -588,18 +612,19 @@ class SlackAlerter(Alerter):
             'attachments': [
                 {
                     'color': self.slack_msg_color,
-                    'title': self.rule['name'],
+                    'title': self.create_title(matches),
                     'text': body,
                     'fields': []
                 }
             ]
         }
 
-        try:
-            response = requests.post(self.slack_webhook_url, data=json.dumps(payload), headers=headers, proxies=proxies)
-            response.raise_for_status()
-        except RequestException as e:
-            raise EAException("Error posting to slack: %s" % e)
+        for url in self.slack_webhook_url:
+            try:
+                response = requests.post(url, data=json.dumps(payload), headers=headers, proxies=proxies)
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error posting to slack: %s" % e)
         elastalert_logger.info("Alert sent to Slack")
 
     def get_info(self):
@@ -616,15 +641,11 @@ class PagerDutyAlerter(Alerter):
         super(PagerDutyAlerter, self).__init__(rule)
         self.pagerduty_service_key = self.rule['pagerduty_service_key']
         self.pagerduty_client_name = self.rule['pagerduty_client_name']
+        self.pagerduty_incident_key = self.rule.get('pagerduty_incident_key', '')
         self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
 
         # post to pagerduty
         headers = {'content-type': 'application/json'}
@@ -632,6 +653,7 @@ class PagerDutyAlerter(Alerter):
             'service_key': self.pagerduty_service_key,
             'description': self.rule['name'],
             'event_type': 'trigger',
+            'incident_key': self.pagerduty_incident_key,
             'client': self.pagerduty_client_name,
             'details': {
                 "information": body.encode('UTF-8'),
@@ -660,15 +682,11 @@ class VictorOpsAlerter(Alerter):
         self.victorops_routing_key = self.rule['victorops_routing_key']
         self.victorops_message_type = self.rule['victorops_message_type']
         self.victorops_entity_display_name = self.rule.get('victorops_entity_display_name', 'no entity display name')
-        self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (self.victorops_api_key, self.victorops_routing_key)
+        self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (
+            self.victorops_api_key, self.victorops_routing_key)
 
     def alert(self, matches):
-        body = ''
-        for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
+        body = self.create_alert_body(matches)
 
         # post to victorops
         headers = {'content-type': 'application/json'}
@@ -689,3 +707,80 @@ class VictorOpsAlerter(Alerter):
     def get_info(self):
         return {'type': 'victorops',
                 'victorops_routing_key': self.victorops_routing_key}
+
+
+class TelegramAlerter(Alerter):
+    """ Send a Telegram message via bot api for each alert """
+    required_options = frozenset(['telegram_bot_token', 'telegram_room_id'])
+
+    def __init__(self, rule):
+        super(TelegramAlerter, self).__init__(rule)
+        self.telegram_bot_token = self.rule['telegram_bot_token']
+        self.telegram_room_id = self.rule['telegram_room_id']
+        self.telegram_api_url = self.rule.get('telegram_api_url', 'api.telegram.org')
+        self.url = 'https://%s/bot%s/%s' % (self.telegram_api_url, self.telegram_bot_token, "sendMessage")
+
+    def alert(self, matches):
+        body = u'⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
+        for match in matches:
+            body += unicode(BasicMatchString(self.rule, match))
+            # Separate text of aggregated alerts with dashes
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        body += u' ```'
+
+        headers = {'content-type': 'application/json'}
+        payload = {
+            'chat_id': self.telegram_room_id,
+            'text': body,
+            'parse_mode': 'markdown',
+            'disable_web_page_preview': True
+        }
+
+        try:
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            warnings.resetwarnings()
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Telegram: %s" % e)
+
+        elastalert_logger.info(
+            "Alert sent to Telegram room %s" % self.telegram_room_id)
+
+    def get_info(self):
+        return {'type': 'telegram',
+                'telegram_room_id': self.telegram_room_id}
+
+
+class GitterAlerter(Alerter):
+    """ Creates a Gitter activity message for each alert """
+    required_options = frozenset(['gitter_webhook_url'])
+
+    def __init__(self, rule):
+        super(GitterAlerter, self).__init__(rule)
+        self.gitter_webhook_url = self.rule['gitter_webhook_url']
+        self.gitter_proxy = self.rule.get('gitter_proxy', None)
+        self.gitter_msg_level = self.rule.get('gitter_msg_level', 'error')
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+
+        # post to Gitter
+        headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.gitter_proxy} if self.gitter_proxy else None
+        payload = {
+            'message': body,
+            'level': self.gitter_msg_level
+        }
+
+        try:
+            response = requests.post(self.gitter_webhook_url, json.dumps(payload), headers=headers, proxies=proxies)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Gitter: %s" % e)
+        elastalert_logger.info("Alert sent to Gitter")
+
+    def get_info(self):
+        return {'type': 'gitter',
+                'gitter_webhook_url': self.gitter_webhook_url}

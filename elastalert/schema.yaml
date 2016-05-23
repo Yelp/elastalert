@@ -6,6 +6,11 @@ definitions:
     type: [string, array]
     items: {type: string}
 
+  # Either a single string OR an array of strings OR an array of ararys
+  arrayOfStringsOrOtherArrays: &arrayOfStringsOrOtherArray
+    type: [string, array]
+    items: {type: [string, array]}
+
   timeFrame: &timeframe
     type: object
     additionalProperties: false
@@ -92,7 +97,7 @@ oneOf:
     required: [fields]
     properties:
       type: {enum: [new_term]}
-      fields: *arrayOfString
+      fields: *arrayOfStringsOrOtherArray
       terms_window_size: *timeframe
       alert_on_missing_field: {type: boolean}
       use_terms_query: {type: boolean}
@@ -135,8 +140,11 @@ properties:
   max_query_size: {type: integer}
 
   filter :
-    type: array
+    type: [array, object]
     items: *filter
+    additionalProperties: false
+    properties:
+        download_dashboard: {type: string}
 
   include: {type: array, items: {type: string}}
   top_count_keys: {type: array, items: {type: string}}
@@ -152,6 +160,7 @@ properties:
   # Alert Content
   alert_text: {type: string} # Python format string
   alert_text_args: {type: array, items: {type: string}}
+  alert_text_kw: {type: object}
   alert_text_type: {enum: [alert_text_only, exclude_fields]}
   timestamp_field: {type: string}
   field: {}
@@ -185,7 +194,7 @@ properties:
   hipchat_ignore_ssl_errors: {type: boolean}
 
   ### Slack
-  slack_webhook_url: {type: string}
+  slack_webhook_url: *arrayOfString
   slack_username_override: {type: string}
   slack_emoji_override: {type: string}
   slack_msg_color: {enum: [good, warning, danger]}
@@ -199,3 +208,13 @@ properties:
   victorops_routing_key: {type: string}
   victorops_message_type: {enum: [INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY]}
   victorops_entity_display_name: {type: string}
+
+  ### Telegram
+  telegram_bot_token: {type: string}
+  telegram_room_id: {type: string}
+  telegram_api_url: {type: string}
+
+  ### Gitter
+  gitter_webhook_url: {type: string}
+  gitter_proxy: {type: string}
+  gitter_msg_level: {enum: [info, error]}

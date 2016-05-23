@@ -42,7 +42,7 @@ class mock_alert(object):
 @pytest.fixture
 def ea():
     rules = [{'es_host': '',
-              'es_port': '',
+              'es_port': 14900,
               'name': 'anytest',
               'index': 'idx',
               'filter': [],

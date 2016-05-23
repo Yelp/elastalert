@@ -38,6 +38,7 @@ Currently, we have support built in for these alert types:
 - SNS
 - HipChat
 - Slack
+- Telegram
 - Debug
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
@@ -115,6 +116,8 @@ even if ElastAlert is stopped and restarted, it will never miss data or look at 
 
 ``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
 
+``es_send_get_body_as``: Optional; Method for querying Elasticsearch - ``GET``, ``POST`` or ``source``. The default is ``GET``
+
 ``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``10``.
 
 ``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all
@@ -156,6 +159,10 @@ is "ElastAlert".
 unless overwritten in the rule config. The default is "localhost".
 
 ``email_reply_to``: This sets the Reply-To header in emails. The default is the recipient address.
+
+``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon ElasticSearch Service. It'll use instance role keys to sign the requests.
+
+``boto_profile``: Boto profile to use when signing requests to Amazon ElasticSearch Service, if you don't want to use the instance role keys.
 
 .. _runningelastalert:
 

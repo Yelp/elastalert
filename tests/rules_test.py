@@ -158,7 +158,7 @@ def test_freq_terms():
 
 def test_eventwindow():
     timeframe = datetime.timedelta(minutes=10)
-    window = EventWindow(timeframe, getTimestamp=lambda e: e[0]['@timestamp'])
+    window = EventWindow(timeframe)
     timestamps = [ts_to_dt(x) for x in ['2014-01-01T10:00:00',
                                         '2014-01-01T10:05:00',
                                         '2014-01-01T10:03:00',
@@ -508,6 +508,28 @@ def test_new_term():
     assert rule.matches[0]['missing_field'] == 'b'
 
 
+def test_new_term_nested_field():
+
+    rules = {'fields': ['a', 'b.c'],
+             'timestamp_field': '@timestamp',
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+    mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
+                                                                     {'key': 'key2', 'doc_count': 5}]}}}}
+    with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.search.return_value = mock_res
+        rule = NewTermsRule(rules)
+
+        assert rule.es.search.call_count == 2
+
+    # Key3 causes an alert for nested field b.c
+    rule.add_data([{'@timestamp': ts_now(), 'b': {'c': 'key3'}}])
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['new_field'] == 'b.c'
+    assert rule.matches[0]['b']['c'] == 'key3'
+    rule.matches = []
+
+
 def test_new_term_with_terms():
     rules = {'fields': ['a'],
              'timestamp_field': '@timestamp',
@@ -540,6 +562,93 @@ def test_new_term_with_terms():
     terms = {ts_now(): [{'key': 'key3', 'doc_count': 1}]}
     rule.add_terms_data(terms)
     assert rule.matches == []
+
+
+def test_new_term_with_composite_fields():
+    rules = {'fields': [['a', 'b', 'c'], ['d', 'e.f']],
+             'timestamp_field': '@timestamp',
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+
+    mock_res = {
+        'aggregations': {
+            'filtered': {
+                'values': {
+                    'buckets': [
+                        {
+                            'key': 'key1',
+                            'doc_count': 5,
+                            'values': {
+                                'buckets': [
+                                    {
+                                        'key': 'key2',
+                                        'doc_count': 5,
+                                        'values': {
+                                            'buckets': [
+                                                {
+                                                    'key': 'key3',
+                                                    'doc_count': 3,
+                                                },
+                                                {
+                                                    'key': 'key4',
+                                                    'doc_count': 2,
+                                                },
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.search.return_value = mock_res
+        rule = NewTermsRule(rules)
+
+        assert rule.es.search.call_count == 2
+
+    # key3 already exists, and thus shouldn't cause a match
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key1', 'b': 'key2', 'c': 'key3'}])
+    assert rule.matches == []
+
+    # key5 causes an alert for composite field [a, b, c]
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key1', 'b': 'key2', 'c': 'key5'}])
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['new_field'] == ('a', 'b', 'c')
+    assert rule.matches[0]['a'] == 'key1'
+    assert rule.matches[0]['b'] == 'key2'
+    assert rule.matches[0]['c'] == 'key5'
+    rule.matches = []
+
+    # New values in other fields that are not part of the composite key should not cause an alert
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key1', 'b': 'key2', 'c': 'key4', 'd': 'unrelated_value'}])
+    assert len(rule.matches) == 0
+    rule.matches = []
+
+    # Verify nested fields work properly
+    # Key6 causes an alert for nested field e.f
+    rule.add_data([{'@timestamp': ts_now(), 'd': 'key4', 'e': {'f': 'key6'}}])
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['new_field'] == ('d', 'e.f')
+    assert rule.matches[0]['d'] == 'key4'
+    assert rule.matches[0]['e']['f'] == 'key6'
+    rule.matches = []
+
+    # Missing_fields
+    rules['alert_on_missing_field'] = True
+    with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.search.return_value = mock_res
+        rule = NewTermsRule(rules)
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key2'}])
+    assert len(rule.matches) == 2
+    # This means that any one of the three n composite fields were not present
+    assert rule.matches[0]['missing_field'] == ('a', 'b', 'c')
+    assert rule.matches[1]['missing_field'] == ('d', 'e.f')
 
 
 def test_flatline():

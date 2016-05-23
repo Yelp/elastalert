@@ -88,14 +88,14 @@ def test_init_rule(ea):
 def test_query(ea):
     ea.current_es.search.return_value = {'hits': {'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
+    ea.current_es.search.assert_called_with(body={'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
 
 
 def test_query_with_fields(ea):
     ea.rules[0]['_source_enabled'] = False
     ea.current_es.search.return_value = {'hits': {'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
+    ea.current_es.search.assert_called_with(body={'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}}, 'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
 
 
 def test_query_with_unix(ea):
@@ -105,7 +105,7 @@ def test_query_with_unix(ea):
     ea.run_query(ea.rules[0], START, END)
     start_unix = dt_to_unix(START)
     end_unix = dt_to_unix(END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
+    ea.current_es.search.assert_called_with(body={'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
 
 
 def test_query_with_unixms(ea):
@@ -115,7 +115,7 @@ def test_query_with_unixms(ea):
     ea.run_query(ea.rules[0], START, END)
     start_unix = dt_to_unixms(START)
     end_unix = dt_to_unixms(END)
-    ea.current_es.search.assert_called_with(body={'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
+    ea.current_es.search.assert_called_with(body={'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'])
 
 
 def test_no_hits(ea):
@@ -253,7 +253,6 @@ def test_agg(ea):
     call1 = ea.writeback_es.create.call_args_list[0][1]['body']
     call2 = ea.writeback_es.create.call_args_list[1][1]['body']
     call3 = ea.writeback_es.create.call_args_list[2][1]['body']
-
     assert call1['match_body'] == {'@timestamp': '2014-09-26T12:34:45'}
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
@@ -282,14 +281,15 @@ def test_agg(ea):
         assert mock_es.call_count == 2
     assert_alerts(ea, [hits_timestamps[:2], hits_timestamps[2:]])
 
-    call1 = ea.writeback_es.search.call_args_list[6][1]['body']
-    call2 = ea.writeback_es.search.call_args_list[7][1]['body']
-    call3 = ea.writeback_es.search.call_args_list[8][1]['body']
+    call1 = ea.writeback_es.search.call_args_list[7][1]['body']
+    call2 = ea.writeback_es.search.call_args_list[8][1]['body']
+    call3 = ea.writeback_es.search.call_args_list[9][1]['body']
+    call4 = ea.writeback_es.search.call_args_list[10][1]['body']
 
-    assert 'alert_time' in call1['filter']['range']
-    assert call2['query']['query_string']['query'] == 'aggregate_id:ABCD'
-    assert call3['query']['query_string']['query'] == 'aggregate_id:CDEF'
-    assert ea.writeback_es.search.call_args_list[7][1]['size'] == 1337
+    assert 'alert_time' in call2['filter']['range']
+    assert call3['query']['query_string']['query'] == 'aggregate_id:ABCD'
+    assert call4['query']['query_string']['query'] == 'aggregate_id:CDEF'
+    assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
 
 
 def test_agg_cron(ea):
@@ -340,7 +340,8 @@ def test_agg_no_writeback_connectivity(ea):
                                    {'@timestamp': hit3}]
     ea.writeback_es.create.side_effect = elasticsearch.exceptions.ElasticsearchException('Nope')
     with mock.patch('elastalert.elastalert.Elasticsearch'):
-        ea.run_rule(ea.rules[0], END, START)
+        with mock.patch.object(ea, 'find_pending_aggregate_alert', return_value=None):
+            ea.run_rule(ea.rules[0], END, START)
 
     assert ea.rules[0]['agg_matches'] == [{'@timestamp': hit1},
                                           {'@timestamp': hit2},
@@ -893,3 +894,16 @@ def test_uncaught_exceptions(ea):
     with mock.patch.object(ea, 'send_notification_email') as mock_email:
         ea.handle_uncaught_exception(e, ea.rules[0])
     assert mock_email.call_args_list[0][1] == {'exception': e, 'rule': ea.disabled_rules[0]}
+
+
+def test_get_top_counts_handles_no_hits_returned(ea):
+    with mock.patch.object(ea, 'get_hits_terms') as mock_hits:
+        mock_hits.return_value = None
+
+        rule = ea.rules[0]
+        starttime = datetime.datetime.now() - datetime.timedelta(minutes=10)
+        endtime = datetime.datetime.now()
+        keys = ['foo']
+
+        all_counts = ea.get_top_counts(rule, starttime, endtime, keys)
+        assert all_counts == {'top_events_foo': {}}

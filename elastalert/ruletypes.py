@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import copy
 import datetime
 
 from blist import sortedlist
@@ -12,6 +13,8 @@ from util import lookup_es_key
 from util import pretty_ts
 from util import ts_now
 from util import ts_to_dt
+from util import new_get_event_ts
+from util import add_raw_postfix
 
 
 class RuleType(object):
@@ -167,24 +170,25 @@ class FrequencyRule(RuleType):
     def __init__(self, *args):
         super(FrequencyRule, self).__init__(*args)
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
-        self.get_ts = lambda event: event[0][self.ts_field]
+        self.get_ts = new_get_event_ts(self.ts_field)
         self.attach_related = self.rules.get('attach_related', False)
 
     def add_count_data(self, data):
         """ Add count data to the rule. Data should be of the form {ts: count}. """
         if len(data) > 1:
             raise EAException('add_count_data can only accept one count at a time')
-        for ts, count in data.iteritems():
-            event = ({self.ts_field: ts}, count)
-            self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
-            self.check_for_match('all')
+
+        (ts, count), = data.items()
+
+        event = ({self.ts_field: ts}, count)
+        self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
+        self.check_for_match('all')
 
     def add_terms_data(self, terms):
         for timestamp, buckets in terms.iteritems():
             for bucket in buckets:
-                count = bucket['doc_count']
                 event = ({self.ts_field: timestamp,
-                          self.rules['query_key']: bucket['key']}, count)
+                          self.rules['query_key']: bucket['key']}, bucket['doc_count'])
                 self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
                 self.check_for_match(bucket['key'])
 
@@ -218,14 +222,15 @@ class FrequencyRule(RuleType):
         """ Remove all occurrence data that is beyond the timeframe away """
         stale_keys = []
         for key, window in self.occurrences.iteritems():
-            if timestamp - window.data[-1][0][self.ts_field] > self.rules['timeframe']:
+            if timestamp - lookup_es_key(window.data[-1][0], self.ts_field) > self.rules['timeframe']:
                 stale_keys.append(key)
         map(self.occurrences.pop, stale_keys)
 
     def get_match_str(self, match):
         lt = self.rules.get('use_local_time')
-        starttime = pretty_ts(dt_to_ts(ts_to_dt(match[self.ts_field]) - self.rules['timeframe']), lt)
-        endtime = pretty_ts(match[self.ts_field], lt)
+        match_ts = lookup_es_key(match, self.ts_field)
+        starttime = pretty_ts(dt_to_ts(ts_to_dt(match_ts) - self.rules['timeframe']), lt)
+        endtime = pretty_ts(match_ts, lt)
         message = 'At least %d events occurred between %s and %s\n\n' % (self.rules['num_events'],
                                                                          starttime,
                                                                          endtime)
@@ -243,7 +248,7 @@ class AnyRule(RuleType):
 class EventWindow(object):
     """ A container for hold event counts for rules which need a chronological ordered event window. """
 
-    def __init__(self, timeframe, onRemoved=None, getTimestamp=lambda e: e[0]['@timestamp']):
+    def __init__(self, timeframe, onRemoved=None, getTimestamp=new_get_event_ts('@timestamp')):
         self.timeframe = timeframe
         self.onRemoved = onRemoved
         self.get_ts = getTimestamp
@@ -316,7 +321,7 @@ class SpikeRule(RuleType):
         self.cur_windows = {}
 
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
-        self.get_ts = lambda e: e[0][self.ts_field]
+        self.get_ts = new_get_event_ts(self.ts_field)
         self.first_event = {}
         self.skip_checks = {}
 
@@ -502,8 +507,10 @@ class NewTermsRule(RuleType):
             raise EAException("fields must not be an empty list")
         if type(self.fields) != list:
             self.fields = [self.fields]
-        if self.rules.get('use_terms_query') and len(self.fields) != 1:
-            raise EAException("use_terms_query can only be used with one field at a time")
+        if self.rules.get('use_terms_query') and (
+            len(self.fields) != 1 or len(self.fields) == 1 and type(self.fields[0]) == list
+        ):
+            raise EAException("use_terms_query can only be used with a single non-composite field")
         try:
             self.get_all_terms(args)
         except Exception as e:
@@ -512,7 +519,12 @@ class NewTermsRule(RuleType):
 
     def get_all_terms(self, args):
         """ Performs a terms aggregation for each field to get every existing term. """
-        self.es = Elasticsearch(host=self.rules['es_host'], port=self.rules['es_port'], timeout=self.rules.get('es_conn_timeout', 50))
+        self.es = Elasticsearch(
+            host=self.rules['es_host'],
+            port=self.rules['es_port'],
+            timeout=self.rules.get('es_conn_timeout', 50),
+            send_get_body_as=self.rules.get('send_get_body_as', 'GET')
+        )
         window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
         field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
         query_template = {"aggs": {"values": {"terms": field_name}}}
@@ -530,32 +542,176 @@ class NewTermsRule(RuleType):
         query = {'aggs': {'filtered': query_template}}
 
         for field in self.fields:
-            field_name['field'] = field
+            # For composite keys, we will need to perform sub-aggregations
+            if type(field) == list:
+                level = query_template['aggs']
+                # Iterate on each part of the composite key and add a sub aggs clause to the elastic search query
+                for i, sub_field in enumerate(field):
+                    level['values']['terms']['field'] = add_raw_postfix(sub_field)
+                    if i < len(field) - 1:
+                        # If we have more fields after the current one, then set up the next nested structure
+                        level['values']['aggs'] = {'values': {'terms': copy.deepcopy(field_name)}}
+                        level = level['values']['aggs']
+            else:
+                # For non-composite keys, only a single agg is needed
+                field_name['field'] = add_raw_postfix(field)
             res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout='50s')
             if 'aggregations' in res:
                 buckets = res['aggregations']['filtered']['values']['buckets']
-                keys = [bucket['key'] for bucket in buckets]
-                self.seen_values[field] = keys
-                elastalert_logger.info('Found %s unique values for %s' % (len(keys), field))
+                if type(field) == list:
+                    # For composite keys, make the lookup based on all fields
+                    # Make it a tuple since it can be hashed and used in dictionary lookups
+                    self.seen_values[tuple(field)] = []
+                    for bucket in buckets:
+                        # We need to walk down the hierarchy and obtain the value at each level
+                        self.seen_values[tuple(field)] += self.flatten_aggregation_hierarchy(bucket)
+                    # If we don't have any results, it could either be because of the absence of any baseline data
+                    # OR it may be because the composite key contained a non-primitive type.  Either way, give the
+                    # end-users a heads up to help them debug what might be going on.
+                    if not self.seen_values[tuple(field)]:
+                        elastalert_logger.warning((
+                            'No results were found from all sub-aggregations.  This can either indicate that there is '
+                            'no baseline data OR that a non-primitive field was used in a composite key.'
+                        ))
+                else:
+                    keys = [bucket['key'] for bucket in buckets]
+                    self.seen_values[field] = keys
+                    elastalert_logger.info('Found %s unique values for %s' % (len(keys), field))
             else:
                 self.seen_values[field] = []
                 elastalert_logger.info('Found no values for %s' % (field))
 
+    def flatten_aggregation_hierarchy(self, root, hierarchy_tuple=()):
+        """ For nested aggregations, the results come back in the following format:
+            {
+            "aggregations" : {
+                "filtered" : {
+                  "doc_count" : 37,
+                  "values" : {
+                    "doc_count_error_upper_bound" : 0,
+                    "sum_other_doc_count" : 0,
+                    "buckets" : [ {
+                      "key" : "1.1.1.1", # IP address (root)
+                      "doc_count" : 13,
+                      "values" : {
+                        "doc_count_error_upper_bound" : 0,
+                        "sum_other_doc_count" : 0,
+                        "buckets" : [ {
+                          "key" : "80",    # Port (sub-aggregation)
+                          "doc_count" : 3,
+                          "values" : {
+                            "doc_count_error_upper_bound" : 0,
+                            "sum_other_doc_count" : 0,
+                            "buckets" : [ {
+                              "key" : "ack",  # Reason (sub-aggregation, leaf-node)
+                              "doc_count" : 3
+                            }, {
+                              "key" : "syn",  # Reason (sub-aggregation, leaf-node)
+                              "doc_count" : 1
+                            } ]
+                          }
+                        }, {
+                          "key" : "82",    # Port (sub-aggregation)
+                          "doc_count" : 3,
+                          "values" : {
+                            "doc_count_error_upper_bound" : 0,
+                            "sum_other_doc_count" : 0,
+                            "buckets" : [ {
+                              "key" : "ack",  # Reason (sub-aggregation, leaf-node)
+                              "doc_count" : 3
+                            }, {
+                              "key" : "syn",  # Reason (sub-aggregation, leaf-node)
+                              "doc_count" : 3
+                            } ]
+                          }
+                        } ]
+                      }
+                    }, {
+                      "key" : "2.2.2.2", # IP address (root)
+                      "doc_count" : 4,
+                      "values" : {
+                        "doc_count_error_upper_bound" : 0,
+                        "sum_other_doc_count" : 0,
+                        "buckets" : [ {
+                          "key" : "443",    # Port (sub-aggregation)
+                          "doc_count" : 3,
+                          "values" : {
+                            "doc_count_error_upper_bound" : 0,
+                            "sum_other_doc_count" : 0,
+                            "buckets" : [ {
+                              "key" : "ack",  # Reason (sub-aggregation, leaf-node)
+                              "doc_count" : 3
+                            }, {
+                              "key" : "syn",  # Reason (sub-aggregation, leaf-node)
+                              "doc_count" : 3
+                            } ]
+                          }
+                        } ]
+                      }
+                    } ]
+                  }
+                }
+              }
+            }
+
+            Each level will either have more values and buckets, or it will be a leaf node
+            We'll ultimately return a flattened list with the hierarchies appended as strings,
+            e.g the above snippet would yield a list with:
+
+            [
+             ('1.1.1.1', '80', 'ack'),
+             ('1.1.1.1', '80', 'syn'),
+             ('1.1.1.1', '82', 'ack'),
+             ('1.1.1.1', '82', 'syn'),
+             ('2.2.2.2', '443', 'ack'),
+             ('2.2.2.2', '443', 'syn')
+            ]
+
+            A similar formatting will be performed in the add_data method and used as the basis for comparison
+
+        """
+        results = []
+        # There are more aggregation hierarchies left.  Traverse them.
+        if 'values' in root:
+            results += self.flatten_aggregation_hierarchy(root['values']['buckets'], hierarchy_tuple + (root['key'],))
+        else:
+            # We've gotten to a sub-aggregation, which may have further sub-aggregations
+            # See if we need to traverse further
+            for node in root:
+                if 'values' in node:
+                    results += self.flatten_aggregation_hierarchy(node, hierarchy_tuple)
+                else:
+                    results.append(hierarchy_tuple + (node['key'],))
+        return results
+
     def add_data(self, data):
         for document in data:
             for field in self.fields:
-                value = document.get(field)
+                value = ()
+                lookup_field = field
+                if type(field) == list:
+                    # For composite keys, make the lookup based on all fields
+                    # Make it a tuple since it can be hashed and used in dictionary lookups
+                    lookup_field = tuple(field)
+                    for sub_field in field:
+                        lookup_result = lookup_es_key(document, sub_field)
+                        if not lookup_result:
+                            value = None
+                            break
+                        value += (lookup_result,)
+                else:
+                    value = lookup_es_key(document, field)
                 if not value and self.rules.get('alert_on_missing_field'):
-                    document['missing_field'] = field
-                    self.add_match(document)
+                    document['missing_field'] = lookup_field
+                    self.add_match(copy.deepcopy(document))
                 elif value:
-                    if value not in self.seen_values[field]:
-                        document['new_field'] = field
-                        self.add_match(document)
-                        self.seen_values[field].append(value)
+                    if value not in self.seen_values[lookup_field]:
+                        document['new_field'] = lookup_field
+                        self.add_match(copy.deepcopy(document))
+                        self.seen_values[lookup_field].append(value)
 
     def add_terms_data(self, terms):
-        # With terms query, len(self.fields) is always 1
+        # With terms query, len(self.fields) is always 1 and the 0'th entry is always a string
         field = self.fields[0]
         for timestamp, buckets in terms.iteritems():
             for bucket in buckets:
