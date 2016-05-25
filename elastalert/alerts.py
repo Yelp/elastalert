@@ -536,11 +536,11 @@ class HipChatAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
-        # Hipchat sends 400 bad request on messages longer than 10000 characters
+        # HipChat sends 400 bad request on messages longer than 10000 characters
         if (len(body) > 9999):
             body = body[:9980] + '..(truncated)'
 
-        # post to hipchat
+        # Post to HipChat
         headers = {'content-type': 'application/json'}
         payload = {
             'color': self.hipchat_msg_color,
@@ -556,7 +556,7 @@ class HipChatAlerter(Alerter):
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
-            raise EAException("Error posting to hipchat: %s" % e)
+            raise EAException("Error posting to HipChat: %s" % e)
         elastalert_logger.info("Alert sent to HipChat room %s" % self.hipchat_room_id)
 
     def get_info(self):
