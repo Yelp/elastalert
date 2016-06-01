@@ -191,6 +191,15 @@ def load_options(rule, conf, args=None):
     if 'email_reply_to' in conf:
         rule.setdefault('email_reply_to', conf['email_reply_to'])
 
+    # Set HipChat options from global config
+    rule.setdefault('hipchat_msg_color', conf.get('hipchat_msg_color', 'red'))
+    rule.setdefault('hipchat_domain', conf.get('hipchat_domain', 'api.hipchat.com'))
+    rule.setdefault('hipchat_ignore_ssl_errors', conf.get('hipchat_ignore_ssl_errors', False))
+    if 'hipchat_auth_token' in conf:
+        rule.setdefault('hipchat_auth_token', conf.get('hipchat_auth_token'))
+    if 'hipchat_room_id' in conf:
+        rule.setdefault('hipchat_room_id', conf.get('hipchat_room_id'))
+
     # Set slack options from global config
     rule.setdefault('slack_webhook_url', conf.get('slack_webhook_url'))
 
