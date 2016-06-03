@@ -323,6 +323,7 @@ def test_jira():
     }
 
     mock_priority = mock.Mock(id='5')
+    mock_fields = mock.Mock(id='6')
 
     with nested(
         mock.patch('elastalert.alerts.JIRA'),
@@ -336,6 +337,7 @@ def test_jira():
     expected = [
         mock.call('jiraserver', basic_auth=('jirauser', 'jirapassword')),
         mock.call().priorities(),
+        mock.call().fields(),
         mock.call().create_issue(
             issuetype={'name': 'testtype'},
             project={'key': 'testproject'},
@@ -346,8 +348,8 @@ def test_jira():
     ]
 
     # We don't care about additional calls to mock_jira, such as __str__
-    assert mock_jira.mock_calls[:3] == expected
-    assert mock_jira.mock_calls[2][2]['description'].startswith(description_txt)
+    assert mock_jira.mock_calls[:4] == expected
+    assert mock_jira.mock_calls[3][2]['description'].startswith(description_txt)
 
     # Search called if jira_bump_tickets
     rule['jira_bump_tickets'] = True
@@ -359,11 +361,12 @@ def test_jira():
         mock_jira.return_value = mock.Mock()
         mock_jira.return_value.search_issues.return_value = []
         mock_jira.return_value.priorities.return_value = [mock_priority]
+        mock_jira.return_value.fields.return_value = [mock_fields]
 
         alert = JiraAlerter(rule)
         alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
 
-    expected.insert(2, mock.call().search_issues(mock.ANY))
+    expected.insert(3, mock.call().search_issues(mock.ANY))
     assert mock_jira.mock_calls == expected
 
     # Remove a field if jira_ignore_in_title set
@@ -380,7 +383,7 @@ def test_jira():
         alert = JiraAlerter(rule)
         alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
 
-    assert 'test_value' not in mock_jira.mock_calls[2][1][0]
+    assert 'test_value' not in mock_jira.mock_calls[3][1][0]
 
     # Issue is still created if search_issues throws an exception
     with nested(
