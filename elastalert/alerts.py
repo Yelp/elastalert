@@ -423,7 +423,8 @@ class JiraAlerter(Alerter):
                 # Handle arrays of simple types like strings or numbers
                 if arg_type == 'array':
                     array_items = field['schema']['items']
-                    if array_items == 'string':
+                    # Simple string types
+                    if array_items in ['string', 'date', 'datetime']:
                         # As a convenience, support the scenario wherein the user only provides
                         # a single value for a multi-value field e.g. jira_labels: Only_One_Label
                         if type(value) != list:
@@ -450,8 +451,8 @@ class JiraAlerter(Alerter):
                             self.jira_args[arg_name] = [{'name': v} for v in value]
                 # Handle non-array types
                 else:
-                    # String type
-                    if arg_type == 'string':
+                    # Simple string types
+                    if arg_type in ['string', 'date', 'datetime']:
                         self.jira_args[arg_name] = value
                     # Number type
                     elif arg_type == 'number':
