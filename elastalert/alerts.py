@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 import subprocess
+import sys
 import warnings
 from email.mime.text import MIMEText
 from smtplib import SMTP
@@ -41,6 +42,12 @@ class BasicMatchString(object):
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
             alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
+
+            # Support referencing other top-level rule properties
+            # This technically may not work if there is a top-level rule property with the same name
+            # as an es result key, since it would have been matched in the lookup_es_key call above
+            alert_text_values = [self.rule.get(arg) if val is None else val for val in alert_text_values]
+
             alert_text_values = [missing if val is None else val for val in alert_text_values]
             alert_text = alert_text.format(*alert_text_values)
         elif 'alert_text_kw' in self.rule:
@@ -155,6 +162,12 @@ class Alerter(object):
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
             alert_subject_values = [lookup_es_key(matches[0], arg) for arg in alert_subject_args]
+
+            # Support referencing other top-level rule properties
+            # This technically may not work if there is a top-level rule property with the same name
+            # as an es result key, since it would have been matched in the lookup_es_key call above
+            alert_subject_values = [self.rule.get(arg) if val is None else val for val in alert_subject_values]
+
             alert_subject_values = ['<MISSING VALUE>' if val is None else val for val in alert_subject_values]
             return alert_subject.format(*alert_subject_values)
 
