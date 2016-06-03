@@ -304,6 +304,28 @@ class JiraAlerter(Alerter):
     """ Creates a Jira ticket for each alert """
     required_options = frozenset(['jira_server', 'jira_account_file', 'jira_project', 'jira_issuetype'])
 
+    # Maintain a static set of built-in fields that we explicitly know how to set
+    # For anything else, we will do best-effort and try to set a string value
+    known_field_list = [
+        'jira_account_file',
+        'jira_assignee',
+        'jira_bump_in_statuses',
+        'jira_bump_not_in_statuses',
+        'jira_bump_tickets',
+        'jira_component',
+        'jira_components',
+        'jira_description',
+        'jira_ignore_in_title',
+        'jira_issuetype',
+        'jira_label',
+        'jira_labels',
+        'jira_max_age',
+        'jira_priority',
+        'jira_project',
+        'jira_server',
+        'jira_watchers',
+    ]
+
     def __init__(self, rule):
         super(JiraAlerter, self).__init__(rule)
         self.server = self.rule['jira_server']
@@ -352,16 +374,17 @@ class JiraAlerter(Alerter):
             if type(self.labels) != list:
                 self.labels = [self.labels]
             self.jira_args['labels'] = self.labels
-        if self.assignee:
-            self.jira_args['assignee'] = {'name': self.assignee}
         if self.watchers:
             # Support single watcher or list
             if type(self.watchers) != list:
                 self.watchers = [self.watchers]
+        if self.assignee:
+            self.jira_args['assignee'] = {'name': self.assignee}
 
         try:
             self.client = JIRA(self.server, basic_auth=(self.user, self.password))
             self.get_priorities()
+            self.get_arbitrary_fields()
         except JIRAError as e:
             # JIRAError may contain HTML, pass along only first 1024 chars
             raise EAException("Error connecting to JIRA: %s" % (str(e)[:1024]))
@@ -371,6 +394,61 @@ class JiraAlerter(Alerter):
                 self.jira_args['priority'] = {'id': self.priority_ids[self.priority]}
         except KeyError:
             logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, self.priority_ids.keys()))
+
+    def get_arbitrary_fields(self):
+        # This API returns metadata about all the fields defined on the jira server (built-ins and custom ones)
+        fields = self.client.fields()
+        for jira_field, value in self.rule.iteritems():
+            # If we find a field that is not covered by the set that we are aware of, it means it is either:
+            # 1. A built-in supported field in JIRA that we don't have on our radar
+            # 2. A custom field that a JIRA admin has configured
+            if jira_field.startswith('jira_') and jira_field not in self.known_field_list:
+                # Remove the jira_ part.  Convert underscores to spaces
+                normalized_jira_field = jira_field[5:].replace('_', ' ').lower()
+                # All jira fields should be found in the 'id' or the 'name' field. Therefore, try both just in case
+                for identifier in ['name', 'id']:
+                    field = next((f for f in fields if normalized_jira_field == f[identifier].replace('_', ' ').lower()), None)
+                    if field:
+                        break
+                if not field:
+                    # Log a warning to elastalert saying that we couldn't find that type?
+                    # OR raise and fail to load the alert entirely? Probably the latter...
+                    raise Exception("Could not find a definition for the jira field '{0}'".format(normalized_jira_field))
+                arg_name = field['id']
+                # Check the schema information to decide how to set the value correctly
+                # If it is an array type, it needs to be set in a particular manner:
+                arg_type = None
+                if 'schema' in field and 'type' in field['schema']:
+                    arg_type = field['schema']['type']
+                # Handle arrays of simple types like strings
+                if arg_type == 'array':
+                    array_items = field['schema']['items']
+                    if array_items == 'string':
+                        # As a convenience, support the scenario wherein the user only provides
+                        # a single value for a multi-value field e.g. jira_labels: Only_One_Label
+                        if type(value) != list:
+                            self.jira_args[arg_name] = [value]
+                        else:
+                            self.jira_args[arg_name] = value
+                    # Also attempt to handle arrays of complex types that have to be passed as objects with an identifier 'key'
+                    else:
+                        # Try setting it as an object, using 'name' as the key
+                        # This may not work, as the key might actually be 'key', 'id', 'value', or something else
+                        # If it works, great!  If not, it will manifest itself as an API error that will bubble up
+                        # Again, as a convenience, support the scenario wherein the user only provides
+                        # a single value for a multi-value field e.g. jira_custom_labels: Only_One_Custom_Label
+                        if type(value) != list:
+                            self.jira_args[arg_name] = [{'name': value}]
+                        else:
+                            self.jira_args[arg_name] = [{'name': v} for v in value]
+                # Handle simple strings
+                else:
+                    # String type
+                    if arg_type == 'string':
+                        self.jira_args[arg_name] = value
+                    # Complex type
+                    else:
+                        self.jira_args[arg_name] = {'name': value}
 
     def get_priorities(self):
         """ Creates a mapping of priority index to id. """

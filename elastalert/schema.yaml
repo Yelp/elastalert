@@ -139,6 +139,9 @@ properties:
   query_delay: *timeframe
   max_query_size: {type: integer}
 
+  owner: {type: string}
+  priority: {type: integer}
+
   filter :
     type: [array, object]
     items: *filter
@@ -182,10 +185,16 @@ properties:
   jira_issuetype: {type: string}
   jira_account_file: {type: string} # a Yaml file that includes the keys {user:, password:}
 
-  jira_component: {type: string}
-  jira_label: {type: string}
+  jira_assignee: {type: string}
+  jira_component: *arrayOfString
+  jira_components: *arrayOfString
+  jira_label: *arrayOfString
+  jira_labels: *arrayOfString
   jira_bump_tickets: {type: boolean}
+  jira_bump_in_statuses: *arrayOfString
+  jira_bump_not_in_statuses: *arrayOfString
   jira_max_age: {type: number}
+  jira_watchers: *arrayOfString
 
   ### HipChat
   hipchat_auth_token: {type: string}
