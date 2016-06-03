@@ -297,8 +297,15 @@ class JiraAlerter(Alerter):
         self.get_account(self.rule['jira_account_file'])
         self.project = self.rule['jira_project']
         self.issue_type = self.rule['jira_issuetype']
-        self.component = self.rule.get('jira_component')
-        self.label = self.rule.get('jira_label')
+
+        # We used to support only a single component. This allows us to maintain backwards compatibility
+        # while also giving the user-facing API a more representative name
+        self.components = self.rule.get('jira_components', self.rule.get('jira_component'))
+
+        # We used to support only a single label. This allows us to maintain backwards compatibility
+        # while also giving the user-facing API a more representative name
+        self.labels = self.rule.get('jira_labels', self.rule.get('jira_label'))
+
         self.description = self.rule.get('jira_description', '')
         self.assignee = self.rule.get('jira_assignee')
         self.max_age = self.rule.get('jira_max_age', 30)
@@ -320,10 +327,17 @@ class JiraAlerter(Alerter):
         self.jira_args = {'project': {'key': self.project},
                           'issuetype': {'name': self.issue_type}}
 
-        if self.component:
-            self.jira_args['components'] = [{'name': self.component}]
-        if self.label:
-            self.jira_args['labels'] = [self.label]
+        if self.components:
+            # Support single component or list
+            if type(self.components) != list:
+                self.jira_args['components'] = [{'name': self.components}]
+            else:
+                self.jira_args['components'] = [{'name': component} for component in self.components]
+        if self.labels:
+            # Support single label or list
+            if type(self.labels) != list:
+                self.labels = [self.labels]
+            self.jira_args['labels'] = self.labels
         if self.assignee:
             self.jira_args['assignee'] = {'name': self.assignee}
 
