@@ -36,7 +36,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_password`` (string, no default)                         |           |
 +--------------------------------------------------------------+           |
-| ``es_url_prefix`` (string, no default)                         |           |
+| ``es_url_prefix`` (string, no default)                       |           |
 +--------------------------------------------------------------+           |
 | ``es_send_get_body_as`` (string, default "GET")              |           |
 +--------------------------------------------------------------+           |
@@ -46,29 +46,29 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``generate_kibana_link`` (boolean, default False)            |           |
 +--------------------------------------------------------------+           |
-|``use_kibana_dashboard`` (string, no default)                 |           |
+| ``use_kibana_dashboard`` (string, no default)                |           |
 +--------------------------------------------------------------+           |
-|``kibana_url`` (string, default from es_host)                 |           |
+| ``kibana_url`` (string, default from es_host)                |           |
 +--------------------------------------------------------------+           |
-|``use_kibana4_dashboard`` (string, no default)                |           |
+| ``use_kibana4_dashboard`` (string, no default)               |           |
 +--------------------------------------------------------------+           |
-|``kibana4_start_timedelta`` (time, default: 10 min)           |           |
+| ``kibana4_start_timedelta`` (time, default: 10 min)          |           |
 +--------------------------------------------------------------+           |
-|``kibana4_end_timedelta`` (time, default: 10 min)             |           |
+| ``kibana4_end_timedelta`` (time, default: 10 min)            |           |
 +--------------------------------------------------------------+           |
-|``use_local_time`` (boolean, default True)                    |           |
+| ``use_local_time`` (boolean, default True)                   |           |
 +--------------------------------------------------------------+           |
 | ``realert`` (time, default: 1 min)                           |           |
 +--------------------------------------------------------------+           |
-|``exponential_realert`` (time, no default)                    |           |
+| ``exponential_realert`` (time, no default)                   |           |
 +--------------------------------------------------------------+           |
-|``match_enhancements`` (list of strs, no default)             |           |
+| ``match_enhancements`` (list of strs, no default)            |           |
 +--------------------------------------------------------------+           |
 | ``top_count_number`` (int, default 5)                        |           |
 +--------------------------------------------------------------+           |
 | ``top_count_keys`` (list of strs)                            |           |
 +--------------------------------------------------------------+           |
-|``raw_count_keys`` (boolean, default True)                    |           |
+| ``raw_count_keys`` (boolean, default True)                   |           |
 +--------------------------------------------------------------+           |
 | ``include`` (list of strs, default ["*"])                    |           |
 +--------------------------------------------------------------+           |
@@ -78,10 +78,14 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``query_delay`` (time, default 0 min)                        |           |
 +--------------------------------------------------------------+           |
-| ``buffer_time`` (time, default from config.yaml)             |           |
+| ``owner`` (string, default empty string)                     |           |
++--------------------------------------------------------------+           |
+| ``priority`` (int, default 2)                                |           |
 |                                                              |           |
 | IGNORED IF ``use_count_query`` or ``use_terms_query`` is true|           |
 +--------------------------------------------------------------+           +
+| ``buffer_time`` (time, default from config.yaml)             |           |
++--------------------------------------------------------------+           |
 | ``timestamp_type`` (string, default iso)                     |           |
 +--------------------------------------------------------------+           |
 | ``timestamp_format`` (string, default "%Y-%m-%dT%H:%M:%SZ")  |           |
@@ -285,6 +289,16 @@ query_delay
 
 ``query_delay``: This option will cause ElastAlert to subtract a time delta from every query, causing the rule to run with a delay.
 This is useful if the data is Elasticsearch doesn't get indexed immediately. (Optional, time)
+
+owner
+^^^^^^^^^^^
+
+``owner``: This value will be used to identify the stakeholder of the alert. Optionally, this field can be included in any alert type. (Optional, string)
+
+priority
+^^^^^^^^^^^
+
+``priority``: This value will be used to identify the relative priority of the alert. Optionally, this field can be included in any alert type (e.g. for use in email subject/body text). (Optional, int, default 2)
 
 max_query_size
 ^^^^^^^^^^^^^^
@@ -1013,14 +1027,20 @@ For an example JIRA account file, see ``example_rules/jira_acct.yaml``. The acco
 
 Optional:
 
-``jira_component``: The name of the component to set the ticket to.
+``jira_component``: The name of the component or components to set the ticket to. This can be a single string or a list of strings. This is provided for backwards compatibility and will eventually be deprecated. It is preferable to use the plurarl ``jira_components`` instead.
+
+``jira_components``: The name of the component or components to set the ticket to. This can be a single string or a list of strings.
 
 ``jira_description``: Similar to ``alert_text``, this text is prepended to the JIRA description.
 
-``jira_label``: The label to add to the JIRA ticket.
+``jira_label``: The label or labels to add to the JIRA ticket.  This can be a single string or a list of strings. This is provided for backwards compatibility and will eventually be deprecated. It is preferable to use the plural ``jira_labels`` instead.
+
+``jira_labels``: The label or labels to add to the JIRA ticket.  This can be a single string or a list of strings.
 
 ``jira_priority``: The index of the priority to set the issue to. In the JIRA dropdown for priorities, 0 would represent the first priority,
 1 the 2nd, etc.
+
+``jira_watchers``: A list of user names to add as watchers on a JIRA ticket. This can be a single string or a list of strings.
 
 ``jira_bump_tickets``: If true, ElastAlert search for existing tickets newer than ``jira_max_age`` and comment on the ticket with
 information about the alert instead of opening another ticket. ElastAlert finds the existing ticket by searching by summary. If the
@@ -1053,6 +1073,21 @@ Example usage::
 
     jira_bump_in_statuses:
       - Open
+
+Arbitrary Jira fields:
+
+Elastalert supports setting any arbitrary JIRA field that your jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your JIRA server, internally, the field is represented as ``customfield_1111``. In elastalert, you may refer to either the public facing name OR the internal representation.
+
+Example usage::
+
+    jira_arbitrary_singular_field: My Name
+    jira_arbitrary_multivalue_field:
+      - Name 1
+      - Name 2
+    jira_customfield_12345: My Custom Value
+    jira_customfield_9999:
+      - My Custom Value 1
+      - My Custom Value 2
 
 OpsGenie
 ~~~~~~~~
