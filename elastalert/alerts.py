@@ -420,7 +420,7 @@ class JiraAlerter(Alerter):
                 arg_type = None
                 if 'schema' in field and 'type' in field['schema']:
                     arg_type = field['schema']['type']
-                # Handle arrays of simple types like strings
+                # Handle arrays of simple types like strings or numbers
                 if arg_type == 'array':
                     array_items = field['schema']['items']
                     if array_items == 'string':
@@ -431,6 +431,13 @@ class JiraAlerter(Alerter):
                         else:
                             self.jira_args[arg_name] = value
                     # Also attempt to handle arrays of complex types that have to be passed as objects with an identifier 'key'
+                    elif array_items == 'number':
+                        # As a convenience, support the scenario wherein the user only provides
+                        # a single value for a multi-value field e.g. jira_labels: Only_One_Label
+                        if type(value) != list:
+                            self.jira_args[arg_name] = [int(value)]
+                        else:
+                            self.jira_args[arg_name] = [int(v) for v in value]
                     else:
                         # Try setting it as an object, using 'name' as the key
                         # This may not work, as the key might actually be 'key', 'id', 'value', or something else
@@ -441,11 +448,14 @@ class JiraAlerter(Alerter):
                             self.jira_args[arg_name] = [{'name': value}]
                         else:
                             self.jira_args[arg_name] = [{'name': v} for v in value]
-                # Handle simple strings
+                # Handle non-array types
                 else:
                     # String type
                     if arg_type == 'string':
                         self.jira_args[arg_name] = value
+                    # Number type
+                    elif arg_type == 'number':
+                        self.jira_args[arg_name] = int(value)
                     # Complex type
                     else:
                         self.jira_args[arg_name] = {'name': value}
