@@ -313,6 +313,7 @@ class JiraAlerter(Alerter):
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
+        self.watchers = self.rule.get('jira_watchers')
 
         if self.bump_in_statuses and self.bump_not_in_statuses:
             msg = 'Both jira_bump_in_statuses (%s) and jira_bump_not_in_statuses (%s) are set.' % \
@@ -340,6 +341,10 @@ class JiraAlerter(Alerter):
             self.jira_args['labels'] = self.labels
         if self.assignee:
             self.jira_args['assignee'] = {'name': self.assignee}
+        if self.watchers:
+            # Support single watcher or list
+            if type(self.watchers) != list:
+                self.watchers = [self.watchers]
 
         try:
             self.client = JIRA(self.server, basic_auth=(self.user, self.password))
@@ -426,6 +431,17 @@ class JiraAlerter(Alerter):
 
         try:
             self.issue = self.client.create_issue(**self.jira_args)
+
+            # You can not add watchers on initial creation. Only as a follow-up action
+            if self.watchers:
+                for watcher in self.watchers:
+                    try:
+                        self.jira.add_watcher(self.issue.key, watcher)
+                    except Exception as ex:
+                        # Re-raise the exception, preserve the stack-trace, and give some
+                        # context as to which watcher failed to be added
+                        raise Exception("Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(watcher, ex)), None, sys.exc_info()[2]
+
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket: %s" % (e))
         elastalert_logger.info("Opened Jira ticket: %s" % (self.issue))
