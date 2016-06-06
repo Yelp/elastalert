@@ -46,7 +46,11 @@ class BasicMatchString(object):
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
-            alert_text_values = [self.rule.get(arg) if val is None else val for val in alert_text_values]
+            for i in xrange(len(alert_text_values)):
+                if alert_text_values[i] is None:
+                    alert_value = self.rule.get(alert_text_args[i])
+                    if alert_value:
+                        alert_text_values[i] = alert_value
 
             alert_text_values = [missing if val is None else val for val in alert_text_values]
             alert_text = alert_text.format(*alert_text_values)
@@ -54,6 +58,13 @@ class BasicMatchString(object):
             kw = {}
             for name, kw_name in self.rule.get('alert_text_kw').items():
                 val = lookup_es_key(self.match, name)
+
+                # Support referencing other top-level rule properties
+                # This technically may not work if there is a top-level rule property with the same name
+                # as an es result key, since it would have been matched in the lookup_es_key call above
+                if val is None:
+                    val = self.rule.get(name)
+
                 kw[kw_name] = missing if val is None else val
             alert_text = alert_text.format(**kw)
 
@@ -166,7 +177,11 @@ class Alerter(object):
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
-            alert_subject_values = [self.rule.get(arg) if val is None else val for val in alert_subject_values]
+            for i in xrange(len(alert_subject_values)):
+                if alert_subject_values[i] is None:
+                    alert_value = self.rule.get(alert_subject_args[i])
+                    if alert_value:
+                        alert_subject_values[i] = alert_value
 
             alert_subject_values = ['<MISSING VALUE>' if val is None else val for val in alert_subject_values]
             return alert_subject.format(*alert_subject_values)

@@ -84,8 +84,8 @@ def test_jira_formatted_match_string(ea):
 
 def test_email():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
-            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
-            'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'snowman': u'☃'}
+            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com', 'owner': 'owner_value',
+            'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': u'☃'}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
@@ -104,7 +104,7 @@ def test_email():
         assert 'Reply-To: test@example.com' in body
         assert 'To: testing@test.test' in body
         assert 'From: testfrom@test.test' in body
-        assert 'Subject: Test alert for test_value' in body
+        assert 'Subject: Test alert for test_value, owned by owner_value' in body
 
 
 def test_email_with_auth():
@@ -543,3 +543,51 @@ def test_alert_text_kw(ea):
     alert_text = unicode(BasicMatchString(rule, match))
     body = '{field} at {@timestamp}'.format(**match)
     assert body in alert_text
+
+
+def test_alert_text_global_substitution(ea):
+    rule = ea.rules[0].copy()
+    rule['owner'] = 'the owner from rule'
+    rule['priority'] = 'priority from rule'
+    rule['abc'] = 'abc from rule'
+    rule['alert_text'] = 'Priority: {0}; Owner: {1}; Abc: {2}'
+    rule['alert_text_args'] = ['priority', 'owner', 'abc']
+
+    match = {
+        '@timestamp': '2016-01-01',
+        'field': 'field_value',
+        'abc': 'abc from match',
+    }
+
+    alert_text = unicode(BasicMatchString(rule, match))
+    assert 'Priority: priority from rule' in alert_text
+    assert 'Owner: the owner from rule' in alert_text
+
+    # When the key exists in both places, it will come from the match
+    assert 'Abc: abc from match' in alert_text
+
+
+def test_alert_text_kw_global_substitution(ea):
+    rule = ea.rules[0].copy()
+    rule['foo_rule'] = 'foo from rule'
+    rule['owner'] = 'the owner from rule'
+    rule['abc'] = 'abc from rule'
+    rule['alert_text'] = 'Owner: {owner}; Foo: {foo}; Abc: {abc}'
+    rule['alert_text_kw'] = {
+        'owner': 'owner',
+        'foo_rule': 'foo',
+        'abc': 'abc',
+    }
+
+    match = {
+        '@timestamp': '2016-01-01',
+        'field': 'field_value',
+        'abc': 'abc from match',
+    }
+
+    alert_text = unicode(BasicMatchString(rule, match))
+    assert 'Owner: the owner from rule' in alert_text
+    assert 'Foo: foo from rule' in alert_text
+
+    # When the key exists in both places, it will come from the match
+    assert 'Abc: abc from match' in alert_text
