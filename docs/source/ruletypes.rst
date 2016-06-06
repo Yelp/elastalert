@@ -1182,7 +1182,7 @@ The alerter requires the following options:
 
 ``victorops_routing_key``: VictorOps routing key to route the alert to.
 
-``victorops_message_type``: VictorOps field to specify serverity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
+``victorops_message_type``: VictorOps field to specify severity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
 
 Optional:
 
