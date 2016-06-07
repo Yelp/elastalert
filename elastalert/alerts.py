@@ -297,6 +297,7 @@ class JiraAlerter(Alerter):
         self.get_account(self.rule['jira_account_file'])
         self.project = self.rule['jira_project']
         self.issue_type = self.rule['jira_issuetype']
+        self.security_level = self.rule.get('jira_security_level')
         self.component = self.rule.get('jira_component')
         self.label = self.rule.get('jira_label')
         self.description = self.rule.get('jira_description', '')
@@ -306,6 +307,7 @@ class JiraAlerter(Alerter):
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
+        self.custom_group_picker_fields = self.rule.get('jira_custom_group_picker_fields')
 
         if self.bump_in_statuses and self.bump_not_in_statuses:
             msg = 'Both jira_bump_in_statuses (%s) and jira_bump_not_in_statuses (%s) are set.' % \
@@ -320,12 +322,22 @@ class JiraAlerter(Alerter):
         self.jira_args = {'project': {'key': self.project},
                           'issuetype': {'name': self.issue_type}}
 
+        if self.security_level:
+            self.jira_args['security'] = {'name': self.security_level}
+
         if self.component:
             self.jira_args['components'] = [{'name': self.component}]
         if self.label:
             self.jira_args['labels'] = [self.label]
         if self.assignee:
             self.jira_args['assignee'] = {'name': self.assignee}
+        # Note: because of the sometimes strange behavior of JIRA with custom field types, we have
+        # to format this differently than a text field. Would be nice to allow the user to just
+        # specify the field name and field value and we take care of the rest, but that'd be a lot
+        # of work. For now, we support group picker fields only.
+        if self.custom_group_picker_fields:
+            for key, value in self.custom_group_picker_fields.items():
+                self.jira_args[key] = {'name': value}
 
         try:
             self.client = JIRA(self.server, basic_auth=(self.user, self.password))
