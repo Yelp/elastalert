@@ -431,10 +431,12 @@ class JiraAlerter(Alerter):
                     raise Exception("Could not find a definition for the jira field '{0}'".format(normalized_jira_field))
                 arg_name = field['id']
                 # Check the schema information to decide how to set the value correctly
-                # If it is an array type, it needs to be set in a particular manner:
-                arg_type = None
-                if 'schema' in field and 'type' in field['schema']:
-                    arg_type = field['schema']['type']
+                # If the schema information is not available, raise an exception since we don't know how to set it
+                # Note this is only the case for two built-in types, id: issuekey and id: thumbnail
+                if not ('schema' in field or 'type' in field['schema']):
+                    raise Exception("Could not determine schema information for the jira field '{0}'".format(normalized_jira_field))
+                arg_type = field['schema']['type']
+
                 # Handle arrays of simple types like strings or numbers
                 if arg_type == 'array':
                     array_items = field['schema']['items']
@@ -553,7 +555,7 @@ class JiraAlerter(Alerter):
             if self.watchers:
                 for watcher in self.watchers:
                     try:
-                        self.jira.add_watcher(self.issue.key, watcher)
+                        self.client.add_watcher(self.issue.key, watcher)
                     except Exception as ex:
                         # Re-raise the exception, preserve the stack-trace, and give some
                         # context as to which watcher failed to be added
