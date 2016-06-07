@@ -29,6 +29,8 @@ class RuleType(object):
         self.matches = []
         self.rules = rules
         self.occurrences = {}
+        self.rules['owner'] = self.rules.get('owner', '')
+        self.rules['priority'] = self.rules.get('priority', '2')
 
     def add_data(self, data):
         """ The function that the elastalert client calls with results from ES.
