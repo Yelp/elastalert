@@ -6,6 +6,7 @@ import subprocess
 import sys
 import warnings
 from email.mime.text import MIMEText
+from email.utils import formatdate
 from smtplib import SMTP
 from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
@@ -268,6 +269,7 @@ class EmailAlerter(Alerter):
         email_msg['To'] = ', '.join(self.rule['email'])
         email_msg['From'] = self.from_addr
         email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
+        email_msg['Date'] = formatdate()
         if self.rule.get('cc'):
             email_msg['CC'] = ','.join(self.rule['cc'])
             to_addr = to_addr + self.rule['cc']
