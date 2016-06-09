@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import copy
 import datetime
 import json
 import logging
@@ -145,6 +146,34 @@ class Alerter(object):
         # pipeline object is created by ElastAlerter.send_alert()
         # and attached to each alerters used by a rule before calling alert()
         self.pipeline = None
+        self.resolve_rule_references(self.rule)
+
+    def resolve_rule_references(self, root):
+        # Support referencing other top-level rule properties to avoid redundant copy/paste
+        if type(root) == list:
+            # Make a copy since we may be modifying the contents of the structure we're walking
+            for i, item in enumerate(copy.copy(root)):
+                if type(item) == dict or type(item) == list:
+                    self.resolve_rule_references(root[i])
+                else:
+                    root[i] = self.resolve_rule_reference(item)
+        elif type(root) == dict:
+            # Make a copy since we may be modifying the contents of the structure we're walking
+            for key, value in root.copy().iteritems():
+                if type(value) == dict or type(value) == list:
+                    self.resolve_rule_references(root[key])
+                else:
+                    root[key] = self.resolve_rule_reference(value)
+
+    def resolve_rule_reference(self, value):
+        strValue = unicode(value)
+        if strValue.startswith('$') and strValue.endswith('$') and strValue[1:-1] in self.rule:
+            if type(value) == int:
+                return int(self.rule[strValue[1:-1]])
+            else:
+                return self.rule[strValue[1:-1]]
+        else:
+            return value
 
     def alert(self, match):
         """ Send an alert. Match is a dictionary of information about the alert.

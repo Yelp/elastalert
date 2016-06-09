@@ -8,6 +8,7 @@ import mock
 import pytest
 from jira.exceptions import JIRAError
 
+from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
 from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
@@ -416,6 +417,7 @@ def test_jira_arbitrary_field_support():
         'name': 'test alert',
         'jira_account_file': 'jirafile',
         'type': mock_rule(),
+        'owner': 'the_owner',
         'jira_project': 'testproject',
         'jira_issuetype': 'testtype',
         'jira_server': 'jiraserver',
@@ -423,6 +425,7 @@ def test_jira_arbitrary_field_support():
         'jira_component': 'testcomponent',
         'jira_description': description_txt,
         'jira_watchers': ['testwatcher1', 'testwatcher2'],
+        'jira_arbitrary_reference_string_field': '$owner$',
         'jira_arbitrary_string_field': 'arbitrary_string_value',
         'jira_arbitrary_string_array_field': ['arbitrary_string_value1', 'arbitrary_string_value2'],
         'jira_arbitrary_string_array_field_provided_as_single_value': 'arbitrary_string_value_in_array_field',
@@ -440,6 +443,7 @@ def test_jira_arbitrary_field_support():
     mock_priority = mock.MagicMock(id='5')
 
     mock_fields = [
+        {'name': 'arbitrary reference string field', 'id': 'arbitrary_reference_string_field', 'schema': {'type': 'string'}},
         {'name': 'arbitrary string field', 'id': 'arbitrary_string_field', 'schema': {'type': 'string'}},
         {'name': 'arbitrary string array field', 'id': 'arbitrary_string_array_field', 'schema': {'type': 'array', 'items': 'string'}},
         {'name': 'arbitrary string array field provided as single value', 'id': 'arbitrary_string_array_field_provided_as_single_value', 'schema': {'type': 'array', 'items': 'string'}},
@@ -472,6 +476,7 @@ def test_jira_arbitrary_field_support():
             components=[{'name': 'testcomponent'}],
             description=mock.ANY,
             summary='Issue test_value occurred at 2014-10-31T00:00:00',
+            arbitrary_reference_string_field='the_owner',
             arbitrary_string_field='arbitrary_string_value',
             arbitrary_string_array_field=['arbitrary_string_value1', 'arbitrary_string_value2'],
             arbitrary_string_array_field_provided_as_single_value=['arbitrary_string_value_in_array_field'],
@@ -718,3 +723,34 @@ def test_alert_text_kw_global_substitution(ea):
 
     # When the key exists in both places, it will come from the match
     assert 'Abc: abc from match' in alert_text
+
+
+def test_resolving_rule_references(ea):
+    rule = {
+        'name': 'test_rule',
+        'type': mock_rule(),
+        'owner': 'the_owner',
+        'priority': 2,
+        'list_of_things': [
+            '1',
+            '$owner$',
+            [
+                '11',
+                '$owner$',
+            ],
+        ],
+        'nested_dict': {
+            'nested_one': '1',
+            'nested_owner': '$owner$',
+        },
+        'resolved_string_reference': '$owner$',
+        'resolved_int_reference': '$priority$',
+        'unresolved_reference': '$foo$',
+    }
+    alert = Alerter(rule)
+    assert 'the_owner' == alert.rule['resolved_string_reference']
+    assert 2 == alert.rule['resolved_int_reference']
+    assert '$foo$' == alert.rule['unresolved_reference']
+    assert 'the_owner' == alert.rule['list_of_things'][1]
+    assert 'the_owner' == alert.rule['list_of_things'][2][1]
+    assert 'the_owner' == alert.rule['nested_dict']['nested_owner']
