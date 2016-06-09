@@ -95,6 +95,7 @@ class ElastAlerter():
         self.max_query_size = self.conf['max_query_size']
         self.rules = self.conf['rules']
         self.writeback_index = self.conf['writeback_index']
+        self.writeback_current_status_index = self.writeback_index + "_current_status"
         self.run_every = self.conf['run_every']
         self.alert_time_limit = self.conf['alert_time_limit']
         self.old_query_limit = self.conf['old_query_limit']
@@ -556,6 +557,7 @@ class ElastAlerter():
 
         # Process any new matches
         num_matches = len(rule['type'].matches)
+        self .update_current_status(num_matches, rule)
         while rule['type'].matches:
             match = rule['type'].matches.pop(0)
 
@@ -605,6 +607,15 @@ class ElastAlerter():
         self.writeback('elastalert_status', body)
 
         return num_matches
+
+    def update_current_status(self, num_matches, rule):
+        body = {'rule_name': rule['name'],
+                'is_active': str(int(num_matches > 0)),
+                '@timestamp': ts_now()}
+        self.writeback_es.index(index=self.writeback_current_status_index,
+                                doc_type="current_status",
+                                body=body,
+                                id=rule['name'])
 
     def init_rule(self, new_rule, new=True):
         ''' Copies some necessary non-config state from an exiting rule to a new rule. '''
