@@ -904,6 +904,7 @@ There are several ways to format the body text of the various types of events. I
 
 Similarly to ``alert_subject``, ``alert_text`` can be further formatted using standard Python formatting syntax.
 The field names whose values will be used as the arguments can be passed with ``alert_text_args`` or ``alert_text_kw``.
+You may also refer to any top-level rule property in the ``alert_subject_args``, ``alert_text_args``, and ``alert_text_kw fields``.  However, if the matched document has a key with the same name, that will take preference over the rule property.
 
 By default::
 
@@ -1243,3 +1244,14 @@ Debug
 ~~~~~~
 
 The debug alerter will log the alert information using the Python logger at the info level. It is logged into a Python Logger object with the name ``elastalert`` that can be easily accessed using the ``getLogger`` command.
+
+
+Alerter
+~~~~~~~
+
+For all Alerter subclasses, you may reference values from a top-level rule property in your Alerter fields by referring to the property name surrounded by dollar signs. This can be useful when you have rule-level properties that you would like to reference many times in your alert. For example:
+
+Example usage::
+
+    jira_priority: $priority$
+    jira_alert_owner: $owner$
