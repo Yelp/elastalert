@@ -202,7 +202,7 @@ class ElastAlerter():
             return index
 
     @staticmethod
-    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False,es_pass_ts_format=None):
+    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False):
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
@@ -216,16 +216,9 @@ class ElastAlerter():
         endtime = to_ts_func(endtime)
         filters = copy.copy(filters)
         es_filters = {'filter': {'bool': {'must': filters}}}
-	es_time_stamp_field = {timestamp_field: {'gt': starttime, 
-						'lte': endtime }} 
-	''' START HACK FOR ES '''
-	if es_pass_ts_format != None:
-		es_time_stamp_field[timestamp_field]['format'] = es_pass_ts_format
-	''' END HACK '''
-
         if starttime and endtime:
-            es_filters['filter']['bool']['must'].insert(0, {'range': es_time_stamp_field})
-
+            es_filters['filter']['bool']['must'].insert(0, {'range': {timestamp_field: {'gt': starttime,
+                                                                                        'lte': endtime}}})
         query = {'query': {'filtered': es_filters}}
         if sort:
             query['sort'] = [{timestamp_field: {'order': 'desc' if desc else 'asc'}}]
@@ -339,7 +332,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A dictionary mapping timestamps to number of hits for that time period.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'],es_pass_ts_format=rule['es_pass_ts_format'])
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
 
         try:
             res = self.current_es.count(index=index, doc_type=rule['doc_type'], body=query, ignore_unavailable=True)

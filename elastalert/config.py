@@ -141,7 +141,6 @@ def load_options(rule, conf, args=None):
     rule.setdefault('timestamp_type', 'iso')
     rule.setdefault('timestamp_format', '%Y-%m-%dT%H:%M:%SZ')
     rule.setdefault('_source_enabled', True)
-    rule.setdefault('es_pass_ts_format', None)
     rule.setdefault('use_local_time', True)
     rule.setdefault('es_port', conf.get('es_port'))
     rule.setdefault('es_host', conf.get('es_host'))

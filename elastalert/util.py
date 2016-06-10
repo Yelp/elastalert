@@ -4,7 +4,6 @@ import logging
 
 import dateutil.parser
 import dateutil.tz
-import re
 
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
@@ -139,21 +138,8 @@ def dt_to_ts_with_format(dt, ts_format):
     if not isinstance(dt, datetime.datetime):
         logging.warning('Expected datetime, got %s' % (type(dt)))
         return dt
-
-    pattern = "(?P<root>.*)\[(?P<from>-?\d{0,2})\:(?P<to>-?\d{0,2})\]$"
-    match = re.match(pattern,ts_format)
-
-
-    if match is None:
-        return dt.strftime(ts_format)
-
-    root = match.group('root')
-    from_char = match.group('from') or '0'
-    to_char = match.group('to') or root.lenght
-
-    formatted = dt.strftime(root)
-    truncated = formatted[int(from_char):int(to_char)]
-    return truncated
+    ts = dt.strftime(ts_format)
+    return ts
 
 
 def ts_now():
