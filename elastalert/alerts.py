@@ -859,12 +859,15 @@ class VictorOpsAlerter(Alerter):
         self.victorops_entity_display_name = self.rule.get('victorops_entity_display_name', 'no entity display name')
         self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (
             self.victorops_api_key, self.victorops_routing_key)
+        self.victorops_proxy = self.rule.get('victorops_proxy', None)
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
         # post to victorops
         headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.victorops_proxy} if self.victorops_proxy else None
         payload = {
             "message_type": self.victorops_message_type,
             "entity_display_name": self.victorops_entity_display_name,
@@ -873,7 +876,7 @@ class VictorOpsAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers, proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to VictorOps: %s" % e)

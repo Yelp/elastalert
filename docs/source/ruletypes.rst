@@ -1230,6 +1230,8 @@ Optional:
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
 
+``victorops_proxy``: By default Elastalert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
+
 Gitter
 ~~~~~~
 
