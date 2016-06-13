@@ -1157,6 +1157,8 @@ the room you want to post to. The room ID will be the numeric part of the URL.
 
 ``hipchat_ignore_ssl_errors``: Ignore SSL errors (self-signed certificates, etc.). Default is false.
 
+``hipchat_proxy``: By default Elastalert will not use a network proxy to send notifications to HipChat. Set this option using ``hostname:port`` if you need to use a proxy.
+
 Slack
 ~~~~~
 

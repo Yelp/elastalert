@@ -712,6 +712,7 @@ class HipChatAlerter(Alerter):
         self.hipchat_ignore_ssl_errors = self.rule.get('hipchat_ignore_ssl_errors', False)
         self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (
             self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
+        self.hipchat_proxy = self.rule.get('hipchat_proxy', None)
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
@@ -722,6 +723,8 @@ class HipChatAlerter(Alerter):
 
         # Post to HipChat
         headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.hipchat_proxy} if self.hipchat_proxy else None
         payload = {
             'color': self.hipchat_msg_color,
             'message': body.replace('\n', '<br />'),
@@ -732,7 +735,8 @@ class HipChatAlerter(Alerter):
             if self.hipchat_ignore_ssl_errors:
                 requests.packages.urllib3.disable_warnings()
             response = requests.post(self.url, data=json.dumps(payload), headers=headers,
-                                     verify=not self.hipchat_ignore_ssl_errors)
+                                     verify=not self.hipchat_ignore_ssl_errors,
+                                     proxies=proxies)
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
