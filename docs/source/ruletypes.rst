@@ -1195,6 +1195,8 @@ Optional:
 
 ``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
 
+``telegram_proxy``: By default Elastalert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
+
 PagerDuty
 ~~~~~~~~~
 

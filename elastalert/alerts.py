@@ -891,6 +891,7 @@ class TelegramAlerter(Alerter):
         self.telegram_room_id = self.rule['telegram_room_id']
         self.telegram_api_url = self.rule.get('telegram_api_url', 'api.telegram.org')
         self.url = 'https://%s/bot%s/%s' % (self.telegram_api_url, self.telegram_bot_token, "sendMessage")
+        self.telegram_proxy = self.rule.get('telegram_proxy', None)
 
     def alert(self, matches):
         body = u'⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
@@ -902,6 +903,8 @@ class TelegramAlerter(Alerter):
         body += u' ```'
 
         headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.telegram_proxy} if self.telegram_proxy else None
         payload = {
             'chat_id': self.telegram_room_id,
             'text': body,
@@ -910,7 +913,7 @@ class TelegramAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers, proxies=proxies)
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
