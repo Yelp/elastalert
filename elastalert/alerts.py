@@ -814,6 +814,7 @@ class PagerDutyAlerter(Alerter):
         self.pagerduty_service_key = self.rule['pagerduty_service_key']
         self.pagerduty_client_name = self.rule['pagerduty_client_name']
         self.pagerduty_incident_key = self.rule.get('pagerduty_incident_key', '')
+        self.pagerduty_proxy = self.rule.get('pagerduty_proxy', None)
         self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
     def alert(self, matches):
@@ -832,8 +833,10 @@ class PagerDutyAlerter(Alerter):
             },
         }
 
+        # set https proxy, if it was provided
+        proxies = {'https': self.pagerduty_proxy} if self.pagerduty_proxy else None
         try:
-            response = requests.post(self.url, data=json.dumps(payload, ensure_ascii=False), headers=headers)
+            response = requests.post(self.url, data=json.dumps(payload, ensure_ascii=False), headers=headers, proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to pagerduty: %s" % e)
