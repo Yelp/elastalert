@@ -372,6 +372,17 @@ class JiraAlerter(Alerter):
         'jira_watchers',
     ]
 
+    # Some built-in jira types that can be used as custom fields require special handling
+    # Here is a sample of one of them:
+    # {"id":"customfield_12807","name":"My Custom Field","custom":true,"orderable":true,"navigable":true,"searchable":true,
+    # "clauseNames":["cf[12807]","My Custom Field"],"schema":{"type":"array","items":"string",
+    # "custom":"com.atlassian.jira.plugin.system.customfieldtypes:multiselect","customId":12807}}
+    # There are likely others that will need to be updated on a case-by-case basis
+    custom_string_types_with_special_handling = [
+        'com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes',
+        'com.atlassian.jira.plugin.system.customfieldtypes:multiselect',
+    ]
+
     def __init__(self, rule):
         super(JiraAlerter, self).__init__(rule)
         self.server = self.rule['jira_server']
@@ -470,33 +481,27 @@ class JiraAlerter(Alerter):
 
                 # Handle arrays of simple types like strings or numbers
                 if arg_type == 'array':
+                    # As a convenience, support the scenario wherein the user only provides
+                    # a single value for a multi-value field e.g. jira_labels: Only_One_Label
+                    if type(value) != list:
+                        value = [value]
                     array_items = field['schema']['items']
                     # Simple string types
                     if array_items in ['string', 'date', 'datetime']:
-                        # As a convenience, support the scenario wherein the user only provides
-                        # a single value for a multi-value field e.g. jira_labels: Only_One_Label
-                        if type(value) != list:
-                            self.jira_args[arg_name] = [value]
+                        # Special case for multi-select custom types (the JIRA metadata says that these are strings, but
+                        # in reality, they are required to be provided as an object.
+                        if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
+                            self.jira_args[arg_name] = [{'value': v} for v in value]
                         else:
                             self.jira_args[arg_name] = value
-                    # Also attempt to handle arrays of complex types that have to be passed as objects with an identifier 'key'
                     elif array_items == 'number':
-                        # As a convenience, support the scenario wherein the user only provides
-                        # a single value for a multi-value field e.g. jira_labels: Only_One_Label
-                        if type(value) != list:
-                            self.jira_args[arg_name] = [int(value)]
-                        else:
-                            self.jira_args[arg_name] = [int(v) for v in value]
+                        self.jira_args[arg_name] = [int(v) for v in value]
+                    # Also attempt to handle arrays of complex types that have to be passed as objects with an identifier 'key'
                     else:
                         # Try setting it as an object, using 'name' as the key
                         # This may not work, as the key might actually be 'key', 'id', 'value', or something else
                         # If it works, great!  If not, it will manifest itself as an API error that will bubble up
-                        # Again, as a convenience, support the scenario wherein the user only provides
-                        # a single value for a multi-value field e.g. jira_custom_labels: Only_One_Custom_Label
-                        if type(value) != list:
-                            self.jira_args[arg_name] = [{'name': value}]
-                        else:
-                            self.jira_args[arg_name] = [{'name': v} for v in value]
+                        self.jira_args[arg_name] = [{'name': v} for v in value]
                 # Handle non-array types
                 else:
                     # Simple string types
