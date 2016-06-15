@@ -408,8 +408,16 @@ match_enhancements
 ^^^^^^^^^^^^^^^^^^
 
 ``match_enhancements``: A list of enhancement modules to use with this rule. An enhancement module is a subclass of enhancements.BaseEnhancement
-that will be given the match dictionary and can modify it before it is passed to the alerter. The enhancements should be specified as
+that will be given the match dictionary and can modify it before it is passed to the alerter. The enhancements will be run after silence and realert
+is calculated and in the case of aggregated alerts, right before the alert is sent. This can be changed by setting ``run_enhancements_first``. 
+The enhancements should be specified as
 ``module.file.EnhancementName``. See :ref:`Enhancements` for more information. (Optional, list of strings, no default)
+
+run_enhancements_first
+^^^^^^^^^^^^^^^^^^^^^^
+
+``run_enhancements_first``: If set to true, enhancements will be run as soon as a match is found. This means that they can be changed
+or dropped before affecting realert or being added to an aggregation. (Optional, boolean, default false)
 
 query_key
 ^^^^^^^^^

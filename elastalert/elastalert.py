@@ -27,6 +27,7 @@ from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 from elasticsearch.exceptions import ElasticsearchException
 from enhancements import DropMatchException
+from util import add_raw_postfix
 from util import cronite_datetime_to_timestamp
 from util import dt_to_ts
 from util import EAException
@@ -40,7 +41,6 @@ from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
-from util import add_raw_postfix
 
 
 class ElastAlerter():
@@ -571,6 +571,15 @@ class ElastAlerter():
                 elastalert_logger.info('Ignoring match for silenced rule %s%s' % (rule['name'], key))
                 continue
 
+            if rule.get('run_enhancements_first'):
+                for enhancement in rule['match_enhancements']:
+                    try:
+                        enhancement.process(match)
+                    except DropMatchException as e:
+                        continue
+                    except EAException as e:
+                        self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+
             if rule['realert']:
                 next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
                 self.set_realert(rule['name'] + key, next_alert, exponent)
@@ -944,19 +953,20 @@ class ElastAlerter():
             if kb_link:
                 matches[0]['kibana_link'] = kb_link
 
-        for enhancement in rule['match_enhancements']:
-            valid_matches = []
-            for match in matches:
-                try:
-                    enhancement.process(match)
-                    valid_matches.append(match)
-                except DropMatchException as e:
-                    pass
-                except EAException as e:
-                    self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
-            matches = valid_matches
-            if not matches:
-                return None
+        if not rule.get('run_enhancements_first'):
+            for enhancement in rule['match_enhancements']:
+                valid_matches = []
+                for match in matches:
+                    try:
+                        enhancement.process(match)
+                        valid_matches.append(match)
+                    except DropMatchException as e:
+                        pass
+                    except EAException as e:
+                        self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+                matches = valid_matches
+                if not matches:
+                    return None
 
         # Don't send real alerts in debug mode
         if self.debug:
