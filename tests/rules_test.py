@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import copy
 import datetime
 
 import mock
@@ -474,9 +475,32 @@ def test_new_term():
     with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
+        call_args = []
+
+        # search is called with a mutable dict containing timestamps, this is required to test
+        def record_args(*args, **kwargs):
+            call_args.append((copy.deepcopy(args), copy.deepcopy(kwargs)))
+            return mock_res
+
+        mock_es.return_value.search.side_effect = record_args
         rule = NewTermsRule(rules)
 
-        assert rule.es.search.call_count == 2
+    # 30 day default range, 1 day default step, times 2 fields
+    assert rule.es.search.call_count == 60
+
+    # Assert that all calls have the proper ordering of time ranges
+    old_ts = '2010-01-01T00:00:00Z'
+    old_field = ''
+    for call in call_args:
+        field = call[1]['body']['aggs']['filtered']['aggs']['values']['terms']['field']
+        if old_field != field:
+            old_field = field
+            old_ts = '2010-01-01T00:00:00Z'
+        gte = call[1]['body']['aggs']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['gte']
+        assert gte > old_ts
+        lt = call[1]['body']['aggs']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['lt']
+        assert lt > gte
+        old_ts = gte
 
     # Key1 and key2 shouldn't cause a match
     rule.add_data([{'@timestamp': ts_now(), 'a': 'key1', 'b': 'key2'}])
@@ -520,7 +544,7 @@ def test_new_term_nested_field():
         mock_es.return_value.search.return_value = mock_res
         rule = NewTermsRule(rules)
 
-        assert rule.es.search.call_count == 2
+        assert rule.es.search.call_count == 60
 
     # Key3 causes an alert for nested field b.c
     rule.add_data([{'@timestamp': ts_now(), 'b': {'c': 'key3'}}])
@@ -533,7 +557,8 @@ def test_new_term_nested_field():
 def test_new_term_with_terms():
     rules = {'fields': ['a'],
              'timestamp_field': '@timestamp',
-             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash', 'query_key': 'a'}
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash', 'query_key': 'a',
+             'window_step_size': {'days': 2}}
     mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
                                                                      {'key': 'key2', 'doc_count': 5}]}}}}
 
@@ -542,7 +567,8 @@ def test_new_term_with_terms():
         mock_es.return_value.search.return_value = mock_res
         rule = NewTermsRule(rules)
 
-        assert rule.es.search.call_count == 1
+        # Only 15 queries because of custom step size
+        assert rule.es.search.call_count == 15
 
     # Key1 and key2 shouldn't cause a match
     terms = {ts_now(): [{'key': 'key1', 'doc_count': 1},
@@ -609,7 +635,7 @@ def test_new_term_with_composite_fields():
         mock_es.return_value.search.return_value = mock_res
         rule = NewTermsRule(rules)
 
-        assert rule.es.search.call_count == 2
+        assert rule.es.search.call_count == 60
 
     # key3 already exists, and thus shouldn't cause a match
     rule.add_data([{'@timestamp': ts_now(), 'a': 'key1', 'b': 'key2', 'c': 'key3'}])

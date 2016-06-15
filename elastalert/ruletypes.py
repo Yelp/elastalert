@@ -4,17 +4,17 @@ import datetime
 
 from blist import sortedlist
 from elasticsearch.client import Elasticsearch
+from util import add_raw_postfix
 from util import dt_to_ts
 from util import EAException
 from util import elastalert_logger
 from util import format_index
 from util import hashable
 from util import lookup_es_key
+from util import new_get_event_ts
 from util import pretty_ts
 from util import ts_now
 from util import ts_to_dt
-from util import new_get_event_ts
-from util import add_raw_postfix
 
 
 class RuleType(object):
@@ -517,7 +517,7 @@ class NewTermsRule(RuleType):
             self.get_all_terms(args)
         except Exception as e:
             # Refuse to start if we cannot get existing terms
-            raise EAException('Error searching for existing terms: %s' % (e))
+            raise EAException('Error searching for existing terms: %s' % (repr(e)))
 
     def get_all_terms(self, args):
         """ Performs a terms aggregation for each field to get every existing term. """
@@ -535,17 +535,18 @@ class NewTermsRule(RuleType):
         else:
             end = ts_now()
         start = end - window_size
-        if self.rules.get('use_strftime_index'):
-            index = format_index(self.rules['index'], start, end)
-        else:
-            index = self.rules['index']
-        time_filter = {self.rules['timestamp_field']: {'lte': dt_to_ts(end), 'gte': dt_to_ts(start)}}
-        query_template['filter'] = {'bool': {'must': [{'range': time_filter}]}}
-        query = {'aggs': {'filtered': query_template}}
+        step = datetime.timedelta(**self.rules.get('window_step_size', {'days': 1}))
 
         for field in self.fields:
+            tmp_start = start
+            tmp_end = min(start + step, end)
+
+            time_filter = {self.rules['timestamp_field']: {'lt': dt_to_ts(tmp_end), 'gte': dt_to_ts(tmp_start)}}
+            query_template['filter'] = {'bool': {'must': [{'range': time_filter}]}}
+            query = {'aggs': {'filtered': query_template}}
             # For composite keys, we will need to perform sub-aggregations
             if type(field) == list:
+                self.seen_values.setdefault(tuple(field), [])
                 level = query_template['aggs']
                 # Iterate on each part of the composite key and add a sub aggs clause to the elastic search query
                 for i, sub_field in enumerate(field):
@@ -555,33 +556,53 @@ class NewTermsRule(RuleType):
                         level['values']['aggs'] = {'values': {'terms': copy.deepcopy(field_name)}}
                         level = level['values']['aggs']
             else:
+                self.seen_values.setdefault(field, [])
                 # For non-composite keys, only a single agg is needed
                 field_name['field'] = add_raw_postfix(field)
-            res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout='50s')
-            if 'aggregations' in res:
-                buckets = res['aggregations']['filtered']['values']['buckets']
-                if type(field) == list:
-                    # For composite keys, make the lookup based on all fields
-                    # Make it a tuple since it can be hashed and used in dictionary lookups
-                    self.seen_values[tuple(field)] = []
-                    for bucket in buckets:
-                        # We need to walk down the hierarchy and obtain the value at each level
-                        self.seen_values[tuple(field)] += self.flatten_aggregation_hierarchy(bucket)
-                    # If we don't have any results, it could either be because of the absence of any baseline data
-                    # OR it may be because the composite key contained a non-primitive type.  Either way, give the
-                    # end-users a heads up to help them debug what might be going on.
-                    if not self.seen_values[tuple(field)]:
+
+            # Query the entire time range in small chunks
+            while tmp_start < end:
+                if self.rules.get('use_strftime_index'):
+                    index = format_index(self.rules['index'], tmp_start, tmp_end)
+                else:
+                    index = self.rules['index']
+                res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout='50s')
+                if 'aggregations' in res:
+                    buckets = res['aggregations']['filtered']['values']['buckets']
+                    if type(field) == list:
+                        # For composite keys, make the lookup based on all fields
+                        # Make it a tuple since it can be hashed and used in dictionary lookups
+                        for bucket in buckets:
+                            # We need to walk down the hierarchy and obtain the value at each level
+                            self.seen_values[tuple(field)] += self.flatten_aggregation_hierarchy(bucket)
+                    else:
+                        keys = [bucket['key'] for bucket in buckets]
+                        self.seen_values[field] += keys
+                else:
+                    self.seen_values.setdefault(field, [])
+                if tmp_start == tmp_end:
+                    break
+                tmp_start = tmp_end
+                tmp_end = min(end, tmp_end + step)
+                time_filter[self.rules['timestamp_field']] = {'lt': dt_to_ts(tmp_end), 'gte': dt_to_ts(tmp_start)}
+
+            for key, values in self.seen_values.iteritems():
+                if not values:
+                    if type(key) == tuple:
+                        # If we don't have any results, it could either be because of the absence of any baseline data
+                        # OR it may be because the composite key contained a non-primitive type.  Either way, give the
+                        # end-users a heads up to help them debug what might be going on.
                         elastalert_logger.warning((
                             'No results were found from all sub-aggregations.  This can either indicate that there is '
                             'no baseline data OR that a non-primitive field was used in a composite key.'
                         ))
-                else:
-                    keys = [bucket['key'] for bucket in buckets]
-                    self.seen_values[field] = keys
-                    elastalert_logger.info('Found %s unique values for %s' % (len(keys), field))
-            else:
-                self.seen_values[field] = []
-                elastalert_logger.info('Found no values for %s' % (field))
+                    else:
+                        elastalert_logger.info('Found no values for %s' % (field))
+                    continue
+                self.seen_values[key] = list(set(values))
+                if type(key) == str:
+                    # Only print this number out for single fields
+                    elastalert_logger.info('Found %s unique values for %s' % (len(values), key))
 
     def flatten_aggregation_hierarchy(self, root, hierarchy_tuple=()):
         """ For nested aggregations, the results come back in the following format:
