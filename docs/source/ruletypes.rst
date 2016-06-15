@@ -142,6 +142,8 @@ Rule Configuration Cheat Sheet
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 |``terms_window_size`` (time, default 30 days)       |        |           |           |        |           |       |          | Opt    |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+|``window_step_size`` (time, default 1 day)          |        |           |           |        |           |       |          | Opt    |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 |``alert_on_missing_fields`` (boolean, default False)|        |           |           |        |           |       |          | Opt    |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 |``cardinality_field`` (string, no default)          |        |           |           |        |           |       |          |        |  Req      |
@@ -815,6 +817,10 @@ Optional:
 
 ``terms_window_size``: The amount of time used for the initial query to find existing terms. No term that has occurred within this time frame
 will trigger an alert. The default is 30 days.
+
+``window_step_size``: When querying for existing terms, split up the time range into steps of this size. For example, using the default
+30 day window size, and the default 1 day step size, 30 invidivdual queries will be made. This helps to avoid timeouts for very
+expensive aggregation queries. The default is 1 day.
 
 ``alert_on_missing_field``: Whether or not to alert when a field is missing from a document. The default is false.
 
