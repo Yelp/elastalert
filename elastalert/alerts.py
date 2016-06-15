@@ -372,6 +372,17 @@ class JiraAlerter(Alerter):
         'jira_watchers',
     ]
 
+    # Some built-in jira types that can be used as custom fields require special handling
+    # Here is a sample of one of them:
+    # {"id":"customfield_12807","name":"My Custom Field","custom":true,"orderable":true,"navigable":true,"searchable":true,
+    # "clauseNames":["cf[12807]","My Custom Field"],"schema":{"type":"array","items":"string",
+    # "custom":"com.atlassian.jira.plugin.system.customfieldtypes:multiselect","customId":12807}}
+    # There are likely others that will need to be updated on a case-by-case basis
+    custom_string_types_with_special_handling = [
+        'com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes',
+        'com.atlassian.jira.plugin.system.customfieldtypes:multiselect'
+    ]
+
     def __init__(self, rule):
         super(JiraAlerter, self).__init__(rule)
         self.server = self.rule['jira_server']
@@ -473,6 +484,13 @@ class JiraAlerter(Alerter):
                     array_items = field['schema']['items']
                     # Simple string types
                     if array_items in ['string', 'date', 'datetime']:
+                        # Special case for multi-select custom types (the JIRA metadata says that these are strings, but
+                        # in reality, they are required to be provided as an object.
+                        if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
+                            if type(value) != list:
+                                self.jira_args[arg_name] = [{'value': value}]
+                            else:
+                                self.jira_args[arg_name] = [{'value': v} for v in value]
                         # As a convenience, support the scenario wherein the user only provides
                         # a single value for a multi-value field e.g. jira_labels: Only_One_Label
                         if type(value) != list:
