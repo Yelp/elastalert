@@ -380,7 +380,7 @@ class JiraAlerter(Alerter):
     # There are likely others that will need to be updated on a case-by-case basis
     custom_string_types_with_special_handling = [
         'com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes',
-        'com.atlassian.jira.plugin.system.customfieldtypes:multiselect'
+        'com.atlassian.jira.plugin.system.customfieldtypes:multiselect',
     ]
 
     def __init__(self, rule):
