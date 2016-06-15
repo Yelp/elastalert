@@ -583,7 +583,7 @@ class NewTermsRule(RuleType):
                 if tmp_start == tmp_end:
                     break
                 tmp_start = tmp_end
-                tmp_end = min(end, tmp_end + step)
+                tmp_end = min(tmp_start + step, end)
                 time_filter[self.rules['timestamp_field']] = {'lt': dt_to_ts(tmp_end), 'gte': dt_to_ts(tmp_start)}
 
             for key, values in self.seen_values.iteritems():
@@ -600,9 +600,7 @@ class NewTermsRule(RuleType):
                         elastalert_logger.info('Found no values for %s' % (field))
                     continue
                 self.seen_values[key] = list(set(values))
-                if type(key) == str:
-                    # Only print this number out for single fields
-                    elastalert_logger.info('Found %s unique values for %s' % (len(values), key))
+                elastalert_logger.info('Found %s unique values for %s' % (len(values), key))
 
     def flatten_aggregation_hierarchy(self, root, hierarchy_tuple=()):
         """ For nested aggregations, the results come back in the following format:
