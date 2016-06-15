@@ -712,6 +712,7 @@ class HipChatAlerter(Alerter):
         self.hipchat_ignore_ssl_errors = self.rule.get('hipchat_ignore_ssl_errors', False)
         self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (
             self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
+        self.hipchat_proxy = self.rule.get('hipchat_proxy', None)
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
@@ -722,6 +723,8 @@ class HipChatAlerter(Alerter):
 
         # Post to HipChat
         headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.hipchat_proxy} if self.hipchat_proxy else None
         payload = {
             'color': self.hipchat_msg_color,
             'message': body.replace('\n', '<br />'),
@@ -732,7 +735,8 @@ class HipChatAlerter(Alerter):
             if self.hipchat_ignore_ssl_errors:
                 requests.packages.urllib3.disable_warnings()
             response = requests.post(self.url, data=json.dumps(payload), headers=headers,
-                                     verify=not self.hipchat_ignore_ssl_errors)
+                                     verify=not self.hipchat_ignore_ssl_errors,
+                                     proxies=proxies)
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -810,6 +814,7 @@ class PagerDutyAlerter(Alerter):
         self.pagerduty_service_key = self.rule['pagerduty_service_key']
         self.pagerduty_client_name = self.rule['pagerduty_client_name']
         self.pagerduty_incident_key = self.rule.get('pagerduty_incident_key', '')
+        self.pagerduty_proxy = self.rule.get('pagerduty_proxy', None)
         self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
     def alert(self, matches):
@@ -828,8 +833,10 @@ class PagerDutyAlerter(Alerter):
             },
         }
 
+        # set https proxy, if it was provided
+        proxies = {'https': self.pagerduty_proxy} if self.pagerduty_proxy else None
         try:
-            response = requests.post(self.url, data=json.dumps(payload, ensure_ascii=False), headers=headers)
+            response = requests.post(self.url, data=json.dumps(payload, ensure_ascii=False), headers=headers, proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to pagerduty: %s" % e)
@@ -852,12 +859,15 @@ class VictorOpsAlerter(Alerter):
         self.victorops_entity_display_name = self.rule.get('victorops_entity_display_name', 'no entity display name')
         self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (
             self.victorops_api_key, self.victorops_routing_key)
+        self.victorops_proxy = self.rule.get('victorops_proxy', None)
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
         # post to victorops
         headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.victorops_proxy} if self.victorops_proxy else None
         payload = {
             "message_type": self.victorops_message_type,
             "entity_display_name": self.victorops_entity_display_name,
@@ -866,7 +876,7 @@ class VictorOpsAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers, proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to VictorOps: %s" % e)
@@ -887,6 +897,7 @@ class TelegramAlerter(Alerter):
         self.telegram_room_id = self.rule['telegram_room_id']
         self.telegram_api_url = self.rule.get('telegram_api_url', 'api.telegram.org')
         self.url = 'https://%s/bot%s/%s' % (self.telegram_api_url, self.telegram_bot_token, "sendMessage")
+        self.telegram_proxy = self.rule.get('telegram_proxy', None)
 
     def alert(self, matches):
         body = u'⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
@@ -898,6 +909,8 @@ class TelegramAlerter(Alerter):
         body += u' ```'
 
         headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.telegram_proxy} if self.telegram_proxy else None
         payload = {
             'chat_id': self.telegram_room_id,
             'text': body,
@@ -906,7 +919,7 @@ class TelegramAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload), headers=headers)
+            response = requests.post(self.url, data=json.dumps(payload), headers=headers, proxies=proxies)
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:

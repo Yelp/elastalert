@@ -1157,6 +1157,8 @@ the room you want to post to. The room ID will be the numeric part of the URL.
 
 ``hipchat_ignore_ssl_errors``: Ignore SSL errors (self-signed certificates, etc.). Default is false.
 
+``hipchat_proxy``: By default Elastalert will not use a network proxy to send notifications to HipChat. Set this option using ``hostname:port`` if you need to use a proxy.
+
 Slack
 ~~~~~
 
@@ -1193,6 +1195,8 @@ Optional:
 
 ``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
 
+``telegram_proxy``: By default Elastalert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
+
 PagerDuty
 ~~~~~~~~~
 
@@ -1206,6 +1210,8 @@ The alerter requires the following option:
 
 ``pagerduty_incident_key``: If not set pagerduty will trigger a new incident for each alert sent. If set to a unique string per rule pagerduty will identify the incident that this event should be applied.
 If there's no open (i.e. unresolved) incident with this key, a new one will be created. If there's already an open incident with a matching key, this event will be appended to that incident's log.
+
+``pagerduty_proxy``: By default Elastalert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
 
 VictorOps
 ~~~~~~~~~
@@ -1223,6 +1229,8 @@ The alerter requires the following options:
 Optional:
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
+
+``victorops_proxy``: By default Elastalert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
 
 Gitter
 ~~~~~~
