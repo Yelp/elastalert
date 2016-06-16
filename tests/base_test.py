@@ -237,6 +237,33 @@ def test_match_with_module(ea):
     mod.process.assert_called_with({'@timestamp': END})
 
 
+def test_match_with_module_with_agg(ea):
+    mod = BaseEnhancement(ea.rules[0])
+    mod.process = mock.Mock()
+    ea.rules[0]['match_enhancements'] = [mod]
+    ea.rules[0]['aggregation'] = datetime.timedelta(minutes=15)
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP])
+    ea.current_es.search.return_value = hits
+    ea.rules[0]['type'].matches = [{'@timestamp': END}]
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert mod.process.call_count == 0
+
+
+def test_match_with_enhancements_first(ea):
+    mod = BaseEnhancement(ea.rules[0])
+    mod.process = mock.Mock()
+    ea.rules[0]['match_enhancements'] = [mod]
+    ea.rules[0]['aggregation'] = datetime.timedelta(minutes=15)
+    ea.rules[0]['run_enhancements_first'] = True
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP])
+    ea.current_es.search.return_value = hits
+    ea.rules[0]['type'].matches = [{'@timestamp': END}]
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        ea.run_rule(ea.rules[0], END, START)
+    mod.process.assert_called_with({'@timestamp': END})
+
+
 def test_agg(ea):
     ea.max_aggregation = 1337
     hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:47:45']
