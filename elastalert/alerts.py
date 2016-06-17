@@ -381,6 +381,7 @@ class JiraAlerter(Alerter):
     custom_string_types_with_special_handling = [
         'com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes',
         'com.atlassian.jira.plugin.system.customfieldtypes:multiselect',
+        'com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons',
     ]
 
     def __init__(self, rule):
@@ -506,7 +507,12 @@ class JiraAlerter(Alerter):
                 else:
                     # Simple string types
                     if arg_type in ['string', 'date', 'datetime']:
-                        self.jira_args[arg_name] = value
+                        # Special case for custom types (the JIRA metadata says that these are strings, but
+                        # in reality, they are required to be provided as an object.
+                        if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
+                            self.jira_args[arg_name] = {'value': value}
+                        else:
+                            self.jira_args[arg_name] = value
                     # Number type
                     elif arg_type == 'number':
                         self.jira_args[arg_name] = int(value)
