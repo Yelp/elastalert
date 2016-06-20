@@ -13,7 +13,7 @@ buffer_time:
   minutes: 15
 
 # The elasticsearch hostname for metadata writeback
-# Note that every rule can have it's own elasticsearch host
+# Note that every rule can have its own elasticsearch host
 es_host: elasticsearch.example.com
 
 # The elasticsearch port
