@@ -648,7 +648,7 @@ class CommandAlerter(Alerter):
     def __init__(self, *args):
         super(CommandAlerter, self).__init__(*args)
         self.last_command = []
-        if isinstance(self.rule['command'], basestring) and '%' in self.rule['command']:
+        if isinstance(self.rule['command'], basestring):
             logging.warning('Warning! You could be vulnerable to shell injection!')
             self.rule['command'] = [self.rule['command']]
 
