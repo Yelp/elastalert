@@ -648,7 +648,9 @@ class CommandAlerter(Alerter):
     def __init__(self, *args):
         super(CommandAlerter, self).__init__(*args)
         self.last_command = []
+        self.shell = False
         if isinstance(self.rule['command'], basestring):
+            self.shell = True
             if '%' in self.rule['command']:
                 logging.warning('Warning! You could be vulnerable to shell injection!')
             self.rule['command'] = [self.rule['command']]
@@ -663,7 +665,7 @@ class CommandAlerter(Alerter):
 
         # Run command and pipe data
         try:
-            subp = subprocess.Popen(command, stdin=subprocess.PIPE)
+            subp = subprocess.Popen(command, stdin=subprocess.PIPE, shell=self.shell)
 
             if self.rule.get('pipe_match_json'):
                 match_json = json.dumps(matches) + '\n'
