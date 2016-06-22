@@ -8,6 +8,7 @@ import util
 import requests
 from alerts import Alerter
 from jinja2 import Environment
+from kibana4_context import kibana4_context_args
 from requests.exceptions import RequestException
 from util import EAException
 from util import elastalert_logger, pretty_ts, ts_to_dt
@@ -35,6 +36,7 @@ class HipChatv1Alerter(Alerter):
                 'json': json,
                 'util': util,
                 'datetime': datetime,
+                'kibana_context_args': kibana4_context_args,
               }
 
         if not self.hipchat_description:
@@ -51,7 +53,7 @@ class HipChatv1Alerter(Alerter):
             'from': self.hipchat_from,
             'color': 'yellow',
             'message': "<p>".join([html, body]),
-            'notify': True,
+            'notify': 1,
         }
 
         try:
