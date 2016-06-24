@@ -1,22 +1,20 @@
 language: python
 python:
-    - '2.6'
-    - '2.7'
-
+- '2.6'
+- '2.7'
 env:
-    - TOXENV=py26
-    - TOXENV=py27
-
+- TOXENV=py26
+- TOXENV=py27
 install:
-    - pip install tox
-
+- pip install tox
 script: make test
-
 deploy:
-    provider: pypi
-    user: yelplabs
-    password:
-        secure: r9zzkDhFF/aMhId26nVuyk91t0uMLFd80ZWIXpOdGL36AvOKTj90l2Usb9ipxJeIBdiccQ5rFtX7r2RnFC9Q3cP83A0c5p1jacpb7OyNRVDaYqr/+iDVp83SQKF9l2PnKyIXeLpIbVi6x7s0L+gJ7Ex+6ck0X9V1MA1zFtFxOyhGRAPxjPhywLAIsWd7RdclD/Bg79YtZ9pZGg0QK0hm9S3RZL+e2kdM+9rNpfhmyI6Bcf6ZBMoJtsCWWRRg8JgI/StfrXs1VpJfjWmy+XApsOWTWWfjdLO3IpuDhQrAfrCwM8n7AHv8MCfxt8yPlRKA4OEg2TGOm7U+VSIubV64hgFdSt7fazYh+uttUxGE8cz8Jt/rRCYmrYmWPzm7MIoFOwBfrK7QEQDxSN9gWUbL3eWgPGQMVZC06hb0pdLog/8piNrC5DBwywlPy24ChVlt+0UMA8rzIepwX1//Bcc4a9lIxbLFg8P/1JtS7Tkfag9p2Y1Z943GU1JAHhPLktdxMxFlZ4qTfaaxz7fYU+Kr/47noNLWKtnNejVEgy4bYAR9NxDET/vnpeJ7MacefYL0zvXBWO6MCbVDCUbM8fQWrZUAjeFzMCk8kXgA1qkkQ0Lm/7ACbUUECiZ1qclZh2du6Cvt6xRsBJXDXjzYwm2ECKGS8GQ4pJ6h3DypdHgHrMM=
-    on:
-        tags: true
-        branch: master
+  provider: pypi
+  user: yelplabs
+  password:
+    secure: TpSTlFu89tciZzboIfitHhU5NhAB1L1/rI35eQTXstiqzYg2mweOuip+MPNx9AlX3Swg7MhaFYnSUvRqPljuoLjLD0EQ7BHLVSBFl92ukkAMTeKvM6LbB9HnGOwzmAvTR5coegk8IHiegudODWvnhIj4hp7/0EA+gVX7E55kEAw=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: Yelp/elastalert
+    branch: master
