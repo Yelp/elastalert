@@ -577,14 +577,21 @@ def test_command():
              'somefield': 'foobarbaz'}
     with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
         alert.alert([match])
-    assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE)
+    assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
 
     # Test command as string with formatted arg
     rule = {'command': '/bin/test/ --arg %(somefield)s'}
     alert = CommandAlerter(rule)
     with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
         alert.alert([match])
-    assert mock_popen.called_with('/bin/test --arg foobarbaz', stdin=subprocess.PIPE)
+    assert mock_popen.called_with('/bin/test --arg foobarbaz', stdin=subprocess.PIPE, shell=False)
+
+    # Test command as string without formatted arg
+    rule = {'command': '/bin/test/foo.sh'}
+    alert = CommandAlerter(rule)
+    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+        alert.alert([match])
+    assert mock_popen.called_with('/bin/test/foo.sh', stdin=subprocess.PIPE, shell=True)
 
     # Test command with pipe_match_json
     rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],
@@ -597,7 +604,7 @@ def test_command():
         mock_popen.return_value = mock_subprocess
         mock_subprocess.communicate.return_value = (None, None)
         alert.alert([match])
-    assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE)
+    assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
     assert mock_subprocess.communicate.called_with(input=json.dumps(match))
 
 
