@@ -773,6 +773,7 @@ class SlackAlerter(Alerter):
             self.slack_webhook_url = [self.slack_webhook_url]
         self.slack_proxy = self.rule.get('slack_proxy', None)
         self.slack_username_override = self.rule.get('slack_username_override', 'elastalert')
+        self.slack_channel_override = self.rule.get('slack_channel_override', '')
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
 
@@ -794,6 +795,7 @@ class SlackAlerter(Alerter):
         proxies = {'https': self.slack_proxy} if self.slack_proxy else None
         payload = {
             'username': self.slack_username_override,
+            'channel': self.slack_channel_override,
             'icon_emoji': self.slack_emoji_override,
             'attachments': [
                 {
