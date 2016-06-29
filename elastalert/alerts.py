@@ -542,6 +542,7 @@ class SlackAlerter(Alerter):
         self.slack_username_override = self.rule.get('slack_username_override', 'elastalert')
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
+        self.slack_channel = self.rule.get('slack_channel', '')
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -567,6 +568,7 @@ class SlackAlerter(Alerter):
         payload = {
             'username': self.slack_username_override,
             'icon_emoji': self.slack_emoji_override,
+            'channel': self.slack_channel,
             'attachments': [
                 {
                     'color': self.slack_msg_color,
