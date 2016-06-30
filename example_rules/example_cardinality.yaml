@@ -1,5 +1,4 @@
-# Alert when a login event is detected for user "admin" never before seen IP
-# In this example, "login" logs contain which user has logged in from what IP
+# Alert when the rate of events exceeds a threshold
 
 # (Optional)
 # Elasticsearch host
@@ -8,6 +7,10 @@
 # (Optional)
 # Elasticsearch port
 # es_port: 14900
+
+# (Required)
+# Index to search, wildcard supported
+index: logstash-*
 
 # (OptionaL) Connect with SSL to elasticsearch
 #use_ssl: True
@@ -18,38 +21,33 @@
 
 # (Required)
 # Rule name, must be unique
-name: Example rule
+name: Example cardinality rule
 
 # (Required)
 # Type of alert.
 # the frequency rule type alerts when num_events events occur with timeframe time
-type: new_term
+type: cardinality
 
-# (Required)
-# Index to search, wildcard supported
-index: logstash-*
+# (Required, cardinality specific)
+# Count the number of unique values for this field
+cardinality_field: "Hostname"
 
-# (Required, new_term specific)
-# Monitor the field ip_address
-fields:
- - "ip_address"
+# (Required, frequency specific)
+# Alert when there less than 15 unique hostnames
+min_cardinality: 15
 
-# (Optional, new_term specific)
-# This means that we will query 90 days worth of data when ElastAlert starts to find which values of ip_address already exist
-# If they existed in the last 90 days, no alerts will be triggered for them when they appear
-terms_window_size:
-  days: 90
+# (Required, frequency specific)
+# The cardinality is defined as the number of unique values for the most recent 4 hours
+timeframe:
+  hours: 4
 
 # (Required)
 # A list of elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
 # For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
-# We are filtering for only "login_event" type documents with username "admin"
 filter:
 - term:
-    _type: "login_event"
-- term:
-    username: admin
+    status: "active"
 
 # (Required)
 # The alert is use when a match is found

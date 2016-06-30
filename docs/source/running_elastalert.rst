@@ -6,10 +6,10 @@ Running ElastAlert for the First Time
 Requirements
 ------------
 
-- pip
-- Elasticsearch 1.*
-- ISO8601 timestamped data
-- Python 2.6
+- Elasticsearch 1.* or 2.*
+- ISO8601 or Unix timestamped data
+- Python 2.6 or 2.7
+- pip, see requirements.txt
 
 Downloading and Configuring
 ---------------------------
@@ -21,6 +21,7 @@ First, clone the ElastAlert repository::
 Install the module::
 
     $ python setup.py install
+    $ pip install -r requirements.txt
 
 Next, open up config.yaml.example. In it, you will find several configuration options. ElastAlert may be run without changing any of these settings.
 
@@ -28,7 +29,7 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``run_every`` is how often ElastAlert will query Elasticsearch.
 
-``buffer_time`` is the size of the query window, stretching backwards from the time each query is run.
+``buffer_time`` is the size of the query window, stretching backwards from the time each query is run. This value is ignored for rules where ``use_count_query`` or ``use_terms_query`` is set to true.
 
 ``es_host`` is the address of an Elasticsearch cluster where ElastAlert will store data about its state, queries run, alerts, and errors. Each rule may also use a different Elasticsearch host to query against.
 
@@ -39,6 +40,10 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``.
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
+
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
+
+``es_send_get_body_as``: Optional; Method for querying Elasticsearch - ``GET``, ``POST`` or ``source``. The default is ``GET``
 
 ``writeback_index`` is the name of the index in which ElastAlert will store data. We will create this index later.
 
@@ -103,7 +108,7 @@ Each rule defines a query to perform, parameters on what triggers a match, and a
 
 There are many other optional configuration options, see :ref:`Common configuration options <commonconfig>`.
 
-All documents must have a timestamp field. ElastAlert will try to use ``@timestamp`` by default, but this can be changed with the ``timestamp_field`` option.
+All documents must have a timestamp field. ElastAlert will try to use ``@timestamp`` by default, but this can be changed with the ``timestamp_field`` option. By default, ElastAlert uses ISO8601 timestamps, though unix timestamps are supported by setting ``timestamp_type``.
 
 As is, this rule means "Send an email to elastalert@example.com when there are more than 50 documents with ``some_field == some_value`` within a 4 hour period."
 
@@ -121,7 +126,7 @@ Running ElastAlert
 
 There are two ways of invoking ElastAlert. As a daemon, through Supervisor (http://supervisord.org/), or directly with Python. For easier debugging purposes in this tutorial, we will invoke it directly::
 
-    $ python -m elastalert.elastalert --verbose --rule example_frequency.yaml
+    $ python -m elastalert.elastalert --verbose --rule example_frequency.yaml  # or use the entry point: elastalert --verbose --rule ...
     No handlers could be found for logger "elasticsearch"
     INFO:root:Queried rule Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 hits
     INFO:elasticsearch:POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]

@@ -6,6 +6,8 @@ import mock
 import pytest
 
 from elastalert.elastalert import ElastAlerter
+from elastalert.util import dt_to_ts
+from elastalert.util import ts_to_dt
 
 
 class mock_es_client(object):
@@ -40,7 +42,7 @@ class mock_alert(object):
 @pytest.fixture
 def ea():
     rules = [{'es_host': '',
-              'es_port': '',
+              'es_port': 14900,
               'name': 'anytest',
               'index': 'idx',
               'filter': [],
@@ -50,7 +52,11 @@ def ea():
               'processed_hits': {},
               'timestamp_field': '@timestamp',
               'match_enhancements': [],
-              'rule_file': 'blah.yaml'}]
+              'rule_file': 'blah.yaml',
+              'max_query_size': 10000,
+              'ts_to_dt': ts_to_dt,
+              'dt_to_ts': dt_to_ts,
+              '_source_enabled': True}]
     conf = {'rules_folder': 'rules',
             'run_every': datetime.timedelta(minutes=10),
             'buffer_time': datetime.timedelta(minutes=5),
@@ -59,7 +65,7 @@ def ea():
             'es_port': 14900,
             'writeback_index': 'wb',
             'rules': rules,
-            'max_query_size': 100000,
+            'max_query_size': 10000,
             'old_query_limit': datetime.timedelta(weeks=1),
             'disable_rules_on_error': False}
     elasticsearch.client.Elasticsearch = mock_es_client

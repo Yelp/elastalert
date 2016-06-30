@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import copy
 import datetime
 import logging
 import random
@@ -18,7 +19,6 @@ import yaml
 from elastalert.config import load_modules
 from elastalert.config import load_options
 from elastalert.elastalert import ElastAlerter
-from elastalert.elastalert import Elasticsearch
 from elastalert.util import lookup_es_key
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
@@ -40,20 +40,18 @@ class MockElastAlerter(object):
     def __init__(self):
         self.data = []
 
-    def test_file(self, args):
+    def test_file(self, conf, args):
         """ Loads a rule config file, performs a query over the last day (args.days), lists available keys
         and prints the number of results. """
-        filename = args.file
-        with open(filename) as fh:
-            conf = yaml.load(fh)
-        load_options(conf)
+        load_options(conf, {})
         print("Successfully loaded %s\n" % (conf['name']))
 
         if args.schema_only:
             return []
 
         # Set up elasticsearch client and query
-        es_client = Elasticsearch(host=conf['es_host'], port=conf['es_port'])
+        es_config = ElastAlerter.build_es_conn_config(conf)
+        es_client = ElastAlerter.new_elasticsearch(es_config)
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()
         ts = conf.get('timestamp_field', '@timestamp')
@@ -121,8 +119,6 @@ class MockElastAlerter(object):
             print("Downloaded %s documents to save" % (num_hits))
             return res['hits']['hits']
 
-        return None
-
     def mock_count(self, rule, start, end, index):
         """ Mocks the effects of get_hits_count using global data instead of Elasticsearch """
         count = 0
@@ -180,7 +176,7 @@ class MockElastAlerter(object):
         elastalert.get_hits = self.mock_hits
         elastalert.new_elasticsearch = mock.Mock()
 
-    def run_elastalert(self, args):
+    def run_elastalert(self, rule, args):
         """ Creates an ElastAlert instance and run's over for a specific rule using either real or mock data. """
         # Mock configuration. Nothing here is used except run_every
         conf = {'rules_folder': 'rules',
@@ -190,14 +186,12 @@ class MockElastAlerter(object):
                 'es_host': 'es',
                 'es_port': 14900,
                 'writeback_index': 'wb',
-                'max_query_size': 100000,
+                'max_query_size': 10000,
                 'old_query_limit': datetime.timedelta(weeks=1),
                 'disable_rules_on_error': False}
 
         # Load and instantiate rule
-        with open(args.file) as fh:
-            rule = yaml.load(fh)
-        load_options(rule)
+        load_options(rule, conf)
         load_modules(rule)
         conf['rules'] = [rule]
 
@@ -205,7 +199,7 @@ class MockElastAlerter(object):
         timestamp_field = rule.get('timestamp_field', '@timestamp')
         if args.json:
             if not self.data:
-                return
+                return None
             try:
                 self.data.sort(key=lambda x: x[timestamp_field])
                 starttime = ts_to_dt(self.data[0][timestamp_field])
@@ -213,7 +207,7 @@ class MockElastAlerter(object):
                 endtime = ts_to_dt(endtime) + datetime.timedelta(seconds=1)
             except KeyError as e:
                 print("All documents must have a timestamp and _id: %s" % (e), file=sys.stderr)
-                return
+                return None
 
             # Create mock _id for documents if it's missing
             used_ids = []
@@ -229,7 +223,7 @@ class MockElastAlerter(object):
                 doc.update({'_id': doc.get('_id', get_id())})
         else:
             endtime = ts_now()
-            starttime = endtime - datetime.timedelta(days=1)
+            starttime = endtime - datetime.timedelta(days=args.days)
 
         # Set run_every to cover the entire time range unless use_count_query or use_terms_query is set
         # This is to prevent query segmenting which unnecessarily slows down tests
@@ -271,18 +265,21 @@ class MockElastAlerter(object):
         parser.add_argument('--count-only', action='store_true', dest='count', help='Only display the number of documents matching the filter')
         args = parser.parse_args()
 
+        with open(args.file) as fh:
+            rule_yaml = yaml.load(fh)
+
         if args.json:
             with open(args.json, 'r') as data_file:
                 self.data = simplejson.loads(data_file.read())
         else:
-            hits = self.test_file(args)
+            hits = self.test_file(copy.deepcopy(rule_yaml), args)
             if hits and args.save:
                 with open(args.save, 'wb') as data_file:
                     # Add _id to _source for dump
                     [doc['_source'].update({'_id': doc['_id']}) for doc in hits]
                     data_file.write(simplejson.dumps([doc['_source'] for doc in hits], indent='    '))
         if not args.schema_only and not args.count:
-            self.run_elastalert(args)
+            self.run_elastalert(rule_yaml, args)
 
 
 def main():

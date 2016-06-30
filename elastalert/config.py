@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import copy
 import datetime
 import hashlib
 import logging
@@ -10,16 +11,24 @@ import jsonschema
 import ruletypes
 import yaml
 import yaml.scanner
+from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
+from util import dt_to_ts
+from util import dt_to_ts_with_format
+from util import dt_to_unix
+from util import dt_to_unixms
 from util import EAException
-
+from util import ts_to_dt
+from util import ts_to_dt_with_format
+from util import unix_to_dt
+from util import unixms_to_dt
 
 # schema for rule yaml
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
 
 # Required global (config.yaml) and local (rule.yaml)  configuration options
 required_globals = frozenset(['run_every', 'rules_folder', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
-required_locals = frozenset(['alert', 'type', 'name', 'es_host', 'es_port', 'index'])
+required_locals = frozenset(['alert', 'type', 'name', 'index'])
 
 # Used to map the names of rules to their classes
 rules_mapping = {
@@ -30,15 +39,30 @@ rules_mapping = {
     'whitelist': ruletypes.WhitelistRule,
     'change': ruletypes.ChangeRule,
     'flatline': ruletypes.FlatlineRule,
-    'new_term': ruletypes.NewTermsRule
+    'new_term': ruletypes.NewTermsRule,
+    'cardinality': ruletypes.CardinalityRule
 }
 
 # Used to map names of alerts to their classes
 alerts_mapping = {
     'email': alerts.EmailAlerter,
     'jira': alerts.JiraAlerter,
+    'opsgenie': OpsGenieAlerter,
     'debug': alerts.DebugAlerter,
-    'command': alerts.CommandAlerter
+    'command': alerts.CommandAlerter,
+    'sns': alerts.SnsAlerter,
+    'hipchat': alerts.HipChatAlerter,
+    'slack': alerts.SlackAlerter,
+    'pagerduty': alerts.PagerDutyAlerter,
+    'victorops': alerts.VictorOpsAlerter,
+    'telegram': alerts.TelegramAlerter,
+    'gitter': alerts.GitterAlerter
+}
+# A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
+# For example, jira goes before email so the ticket # will be added to the resulting email.
+alerts_order = {
+    'jira': 0,
+    'email': 1
 }
 
 
@@ -55,7 +79,7 @@ def get_module(module_name):
     return module
 
 
-def load_configuration(filename, conf=None, args=None):
+def load_configuration(filename, conf, args=None):
     """ Load a yaml rule file and fill in the relevant fields with objects.
 
     :param filename: The name of a rule configuration file.
@@ -73,7 +97,7 @@ def load_configuration(filename, conf=None, args=None):
     return rule
 
 
-def load_options(rule, conf=None, args=None):
+def load_options(rule, conf, args=None):
     """ Converts time objects, sets defaults, and validates some settings.
 
     :param rule: A dictionary of parsed YAML from a rule config file.
@@ -93,7 +117,7 @@ def load_options(rule, conf=None, args=None):
             rule['realert'] = datetime.timedelta(**rule['realert'])
         else:
             rule['realert'] = datetime.timedelta(minutes=1)
-        if 'aggregation' in rule:
+        if 'aggregation' in rule and not rule['aggregation'].get('schedule'):
             rule['aggregation'] = datetime.timedelta(**rule['aggregation'])
         if 'query_delay' in rule:
             rule['query_delay'] = datetime.timedelta(**rule['query_delay'])
@@ -114,14 +138,70 @@ def load_options(rule, conf=None, args=None):
     rule.setdefault('query_delay', datetime.timedelta(seconds=0))
     rule.setdefault('timestamp_field', '@timestamp')
     rule.setdefault('filter', [])
+    rule.setdefault('timestamp_type', 'iso')
+    rule.setdefault('timestamp_format', '%Y-%m-%dT%H:%M:%SZ')
+    rule.setdefault('_source_enabled', True)
     rule.setdefault('use_local_time', True)
+    rule.setdefault('es_port', conf.get('es_port'))
+    rule.setdefault('es_host', conf.get('es_host'))
+    rule.setdefault('es_username', conf.get('es_username'))
+    rule.setdefault('es_password', conf.get('es_password'))
+    rule.setdefault('max_query_size', conf.get('max_query_size'))
+    rule.setdefault('es_conn_timeout', conf.get('es_conn_timeout'))
+    rule.setdefault('description', "")
+
+    # Set elasticsearch options from global config
+    if 'es_url_prefix' in conf:
+        rule.setdefault('es_url_prefix', conf.get('es_url_prefix'))
+    if 'use_ssl' in conf:
+        rule.setdefault('use_ssl', conf.get('use_ssl'))
+
+    # Set timestamp_type conversion function, used when generating queries and processing hits
+    rule['timestamp_type'] = rule['timestamp_type'].strip().lower()
+    if rule['timestamp_type'] == 'iso':
+        rule['ts_to_dt'] = ts_to_dt
+        rule['dt_to_ts'] = dt_to_ts
+    elif rule['timestamp_type'] == 'unix':
+        rule['ts_to_dt'] = unix_to_dt
+        rule['dt_to_ts'] = dt_to_unix
+    elif rule['timestamp_type'] == 'unix_ms':
+        rule['ts_to_dt'] = unixms_to_dt
+        rule['dt_to_ts'] = dt_to_unixms
+    elif rule['timestamp_type'] == 'custom':
+        def _ts_to_dt_with_format(ts):
+            return ts_to_dt_with_format(ts, ts_format=rule['timestamp_format'])
+
+        def _dt_to_ts_with_format(dt):
+            return dt_to_ts_with_format(dt, ts_format=rule['timestamp_format'])
+
+        rule['ts_to_dt'] = _ts_to_dt_with_format
+        rule['dt_to_ts'] = _dt_to_ts_with_format
+    else:
+        raise EAException('timestamp_type must be one of iso, unix, or unix_ms')
 
     # Set email options from global config
-    if conf:
-        rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
-        rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
-        if 'email_reply_to' in conf:
-            rule.setdefault('email_reply_to', conf['email_reply_to'])
+    rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
+    rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
+    if 'smtp_port' in conf:
+        rule.setdefault('smtp_port', conf.get('smtp_port'))
+    if 'smtp_ssl' in conf:
+        rule.setdefault('smtp_ssl', conf.get('smtp_ssl'))
+    if 'smtp_auth_file' in conf:
+        rule.setdefault('smtp_auth_file', conf.get('smtp_auth_file'))
+    if 'email_reply_to' in conf:
+        rule.setdefault('email_reply_to', conf['email_reply_to'])
+
+    # Set HipChat options from global config
+    rule.setdefault('hipchat_msg_color', conf.get('hipchat_msg_color', 'red'))
+    rule.setdefault('hipchat_domain', conf.get('hipchat_domain', 'api.hipchat.com'))
+    rule.setdefault('hipchat_ignore_ssl_errors', conf.get('hipchat_ignore_ssl_errors', False))
+    if 'hipchat_auth_token' in conf:
+        rule.setdefault('hipchat_auth_token', conf.get('hipchat_auth_token'))
+    if 'hipchat_room_id' in conf:
+        rule.setdefault('hipchat_room_id', conf.get('hipchat_room_id'))
+
+    # Set slack options from global config
+    rule.setdefault('slack_webhook_url', conf.get('slack_webhook_url'))
 
     # Make sure we have required options
     if required_locals - frozenset(rule.keys()):
@@ -135,7 +215,7 @@ def load_options(rule, conf=None, args=None):
         rule['query_key'] = ','.join(rule['query_key'])
 
     # Add QK, CK and timestamp to include
-    include = rule.get('include', [])
+    include = rule.get('include', ['*'])
     if 'query_key' in rule:
         include.append(rule['query_key'])
     if 'compound_query_key' in rule:
@@ -198,19 +278,6 @@ def load_modules(rule, args=None):
         match_enhancements.append(enhancement(rule))
     rule['match_enhancements'] = match_enhancements
 
-    # Convert all alerts into Alerter objects
-    rule_alerts = []
-    if type(rule['alert']) != list:
-        rule['alert'] = [rule['alert']]
-    for alert in rule['alert']:
-        if alert in alerts_mapping:
-            rule_alerts.append(alerts_mapping[alert])
-        else:
-            rule_alerts.append(get_module(alert))
-            if not issubclass(rule_alerts[-1], alerts.Alerter):
-                raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
-        rule['alert'] = rule_alerts
-
     # Convert rule type into RuleType object
     if rule['type'] in rules_mapping:
         rule['type'] = rules_mapping[rule['type']]
@@ -221,22 +288,16 @@ def load_modules(rule, args=None):
 
     # Make sure we have required alert and type options
     reqs = rule['type'].required_options
-    for alert in rule['alert']:
-        reqs = reqs.union(alert.required_options)
+
     if reqs - frozenset(rule.keys()):
         raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(rule.keys()))))
-
-    # Instantiate alert
-    try:
-        rule['alert'] = [alert(rule) for alert in rule['alert']]
-    except (KeyError, EAException) as e:
-        raise EAException('Error initiating alert %s: %s' % (rule['alert'], e))
-
     # Instantiate rule
     try:
         rule['type'] = rule['type'](rule, args)
     except (KeyError, EAException) as e:
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
+    # Instantiate alert
+    rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
 
 
 def get_file_paths(conf, use_rule=None):
@@ -252,6 +313,44 @@ def get_file_paths(conf, use_rule=None):
             if filename.endswith('.yaml'):
                 rule_files.append(os.path.join(root, filename))
     return rule_files
+
+
+def load_alerts(rule, alert_field):
+    def normalize_config(alert):
+        """Alert config entries are either "alertType" or {"alertType": {"key": "data"}}.
+        This function normalizes them both to the latter format. """
+        if isinstance(alert, basestring):
+            return alert, rule
+        elif isinstance(alert, dict):
+            name, config = iter(alert.items()).next()
+            config_copy = copy.copy(rule)
+            config_copy.update(config)  # warning, this (intentionally) mutates the rule dict
+            return name, config_copy
+        else:
+            raise EAException()
+
+    def create_alert(alert, alert_config):
+        alert_class = alerts_mapping.get(alert) or get_module(alert)
+        if not issubclass(alert_class, alerts.Alerter):
+            raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
+        missing_options = (rule['type'].required_options | alert_class.required_options) - frozenset(alert_config or [])
+        if missing_options:
+            raise EAException('Missing required option(s): %s' % (', '.join(missing_options)))
+        return alert_class(alert_config)
+
+    try:
+        if type(alert_field) != list:
+            alert_field = [alert_field]
+
+        alert_field = [normalize_config(x) for x in alert_field]
+        alert_field = sorted(alert_field, key=lambda (a, b): alerts_order.get(a, -1))
+        # Convert all alerts into Alerter objects
+        alert_field = [create_alert(a, b) for a, b in alert_field]
+
+    except (KeyError, EAException) as e:
+        raise EAException('Error initiating alert %s: %s' % (rule['alert'], e))
+
+    return alert_field
 
 
 def load_rules(args):
@@ -270,7 +369,7 @@ def load_rules(args):
     if required_globals - frozenset(conf.keys()):
         raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(conf.keys()))))
 
-    conf.setdefault('max_query_size', 100000)
+    conf.setdefault('max_query_size', 10000)
     conf.setdefault('disable_rules_on_error', True)
 
     # Convert run_every, buffer_time into a timedelta object

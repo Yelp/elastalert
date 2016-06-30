@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+import copy
 import datetime
 
 import mock
 
 from elastalert.ruletypes import AnyRule
 from elastalert.ruletypes import BlacklistRule
+from elastalert.ruletypes import CardinalityRule
 from elastalert.ruletypes import ChangeRule
 from elastalert.ruletypes import EventWindow
 from elastalert.ruletypes import FlatlineRule
@@ -157,7 +159,7 @@ def test_freq_terms():
 
 def test_eventwindow():
     timeframe = datetime.timedelta(minutes=10)
-    window = EventWindow(timeframe, getTimestamp=lambda e: e[0]['@timestamp'])
+    window = EventWindow(timeframe)
     timestamps = [ts_to_dt(x) for x in ['2014-01-01T10:00:00',
                                         '2014-01-01T10:05:00',
                                         '2014-01-01T10:03:00',
@@ -200,6 +202,18 @@ def test_spike_count():
     assert len(rule.matches) == 0
     rule.add_count_data({ts_to_dt('2014-09-26T00:00:20'): 0})
     assert len(rule.matches) == 1
+
+
+def test_spike_deep_key():
+    rules = {'threshold_ref': 10,
+             'spike_height': 2,
+             'timeframe': datetime.timedelta(seconds=10),
+             'spike_type': 'both',
+             'timestamp_field': '@timestamp',
+             'query_key': 'foo.bar.baz'}
+    rule = SpikeRule(rules)
+    rule.add_data([{'@timestamp': ts_to_dt('2015'), 'foo': {'bar': {'baz': 'LOL'}}}])
+    assert 'LOL' in rule.cur_windows
 
 
 def test_spike():
@@ -461,9 +475,32 @@ def test_new_term():
     with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
+        call_args = []
+
+        # search is called with a mutable dict containing timestamps, this is required to test
+        def record_args(*args, **kwargs):
+            call_args.append((copy.deepcopy(args), copy.deepcopy(kwargs)))
+            return mock_res
+
+        mock_es.return_value.search.side_effect = record_args
         rule = NewTermsRule(rules)
 
-        assert rule.es.search.call_count == 2
+    # 30 day default range, 1 day default step, times 2 fields
+    assert rule.es.search.call_count == 60
+
+    # Assert that all calls have the proper ordering of time ranges
+    old_ts = '2010-01-01T00:00:00Z'
+    old_field = ''
+    for call in call_args:
+        field = call[1]['body']['aggs']['filtered']['aggs']['values']['terms']['field']
+        if old_field != field:
+            old_field = field
+            old_ts = '2010-01-01T00:00:00Z'
+        gte = call[1]['body']['aggs']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['gte']
+        assert gte > old_ts
+        lt = call[1]['body']['aggs']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['lt']
+        assert lt > gte
+        old_ts = gte
 
     # Key1 and key2 shouldn't cause a match
     rule.add_data([{'@timestamp': ts_now(), 'a': 'key1', 'b': 'key2'}])
@@ -493,6 +530,151 @@ def test_new_term():
     rule.add_data([{'@timestamp': ts_now(), 'a': 'key2'}])
     assert len(rule.matches) == 1
     assert rule.matches[0]['missing_field'] == 'b'
+
+
+def test_new_term_nested_field():
+
+    rules = {'fields': ['a', 'b.c'],
+             'timestamp_field': '@timestamp',
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+    mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
+                                                                     {'key': 'key2', 'doc_count': 5}]}}}}
+    with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.search.return_value = mock_res
+        rule = NewTermsRule(rules)
+
+        assert rule.es.search.call_count == 60
+
+    # Key3 causes an alert for nested field b.c
+    rule.add_data([{'@timestamp': ts_now(), 'b': {'c': 'key3'}}])
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['new_field'] == 'b.c'
+    assert rule.matches[0]['b']['c'] == 'key3'
+    rule.matches = []
+
+
+def test_new_term_with_terms():
+    rules = {'fields': ['a'],
+             'timestamp_field': '@timestamp',
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash', 'query_key': 'a',
+             'window_step_size': {'days': 2}}
+    mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
+                                                                     {'key': 'key2', 'doc_count': 5}]}}}}
+
+    with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.search.return_value = mock_res
+        rule = NewTermsRule(rules)
+
+        # Only 15 queries because of custom step size
+        assert rule.es.search.call_count == 15
+
+    # Key1 and key2 shouldn't cause a match
+    terms = {ts_now(): [{'key': 'key1', 'doc_count': 1},
+                        {'key': 'key2', 'doc_count': 1}]}
+    rule.add_terms_data(terms)
+    assert rule.matches == []
+
+    # Key3 causes an alert for field a
+    terms = {ts_now(): [{'key': 'key3', 'doc_count': 1}]}
+    rule.add_terms_data(terms)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['new_field'] == 'a'
+    assert rule.matches[0]['a'] == 'key3'
+    rule.matches = []
+
+    # Key3 doesn't cause another alert
+    terms = {ts_now(): [{'key': 'key3', 'doc_count': 1}]}
+    rule.add_terms_data(terms)
+    assert rule.matches == []
+
+
+def test_new_term_with_composite_fields():
+    rules = {'fields': [['a', 'b', 'c'], ['d', 'e.f']],
+             'timestamp_field': '@timestamp',
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+
+    mock_res = {
+        'aggregations': {
+            'filtered': {
+                'values': {
+                    'buckets': [
+                        {
+                            'key': 'key1',
+                            'doc_count': 5,
+                            'values': {
+                                'buckets': [
+                                    {
+                                        'key': 'key2',
+                                        'doc_count': 5,
+                                        'values': {
+                                            'buckets': [
+                                                {
+                                                    'key': 'key3',
+                                                    'doc_count': 3,
+                                                },
+                                                {
+                                                    'key': 'key4',
+                                                    'doc_count': 2,
+                                                },
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+
+    with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.search.return_value = mock_res
+        rule = NewTermsRule(rules)
+
+        assert rule.es.search.call_count == 60
+
+    # key3 already exists, and thus shouldn't cause a match
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key1', 'b': 'key2', 'c': 'key3'}])
+    assert rule.matches == []
+
+    # key5 causes an alert for composite field [a, b, c]
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key1', 'b': 'key2', 'c': 'key5'}])
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['new_field'] == ('a', 'b', 'c')
+    assert rule.matches[0]['a'] == 'key1'
+    assert rule.matches[0]['b'] == 'key2'
+    assert rule.matches[0]['c'] == 'key5'
+    rule.matches = []
+
+    # New values in other fields that are not part of the composite key should not cause an alert
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key1', 'b': 'key2', 'c': 'key4', 'd': 'unrelated_value'}])
+    assert len(rule.matches) == 0
+    rule.matches = []
+
+    # Verify nested fields work properly
+    # Key6 causes an alert for nested field e.f
+    rule.add_data([{'@timestamp': ts_now(), 'd': 'key4', 'e': {'f': 'key6'}}])
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['new_field'] == ('d', 'e.f')
+    assert rule.matches[0]['d'] == 'key4'
+    assert rule.matches[0]['e']['f'] == 'key6'
+    rule.matches = []
+
+    # Missing_fields
+    rules['alert_on_missing_field'] = True
+    with mock.patch('elastalert.ruletypes.Elasticsearch') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.search.return_value = mock_res
+        rule = NewTermsRule(rules)
+    rule.add_data([{'@timestamp': ts_now(), 'a': 'key2'}])
+    assert len(rule.matches) == 2
+    # This means that any one of the three n composite fields were not present
+    assert rule.matches[0]['missing_field'] == ('a', 'b', 'c')
+    assert rule.matches[1]['missing_field'] == ('d', 'e.f')
 
 
 def test_flatline():
@@ -566,3 +748,99 @@ def test_flatline_query_key():
     rule.garbage_collect(ts_to_dt(timestamp))
     assert len(rule.matches) == 3
     assert set(['key3']) == set([m['key'] for m in rule.matches if m['@timestamp'] == timestamp])
+
+
+def test_cardinality_max():
+    rules = {'max_cardinality': 4,
+             'timeframe': datetime.timedelta(minutes=10),
+             'cardinality_field': 'user',
+             'timestamp_field': '@timestamp'}
+    rule = CardinalityRule(rules)
+
+    # Add 4 different usernames
+    users = ['bill', 'coach', 'zoey', 'louis']
+    for user in users:
+        event = {'@timestamp': datetime.datetime.now(), 'user': user}
+        rule.add_data([event])
+        assert len(rule.matches) == 0
+    rule.garbage_collect(datetime.datetime.now())
+
+    # Add a duplicate, stay at 4 cardinality
+    event = {'@timestamp': datetime.datetime.now(), 'user': 'coach'}
+    rule.add_data([event])
+    rule.garbage_collect(datetime.datetime.now())
+    assert len(rule.matches) == 0
+
+    # Next unique will trigger
+    event = {'@timestamp': datetime.datetime.now(), 'user': 'francis'}
+    rule.add_data([event])
+    rule.garbage_collect(datetime.datetime.now())
+    assert len(rule.matches) == 1
+    rule.matches = []
+
+    # 15 minutes later, adding more will not trigger an alert
+    users = ['nick', 'rochelle', 'ellis']
+    for user in users:
+        event = {'@timestamp': datetime.datetime.now() + datetime.timedelta(minutes=15), 'user': user}
+        rule.add_data([event])
+        assert len(rule.matches) == 0
+
+
+def test_cardinality_min():
+    rules = {'min_cardinality': 4,
+             'timeframe': datetime.timedelta(minutes=10),
+             'cardinality_field': 'user',
+             'timestamp_field': '@timestamp'}
+    rule = CardinalityRule(rules)
+
+    # Add 2 different usernames, no alert because time hasn't elapsed
+    users = ['foo', 'bar']
+    for user in users:
+        event = {'@timestamp': datetime.datetime.now(), 'user': user}
+        rule.add_data([event])
+        assert len(rule.matches) == 0
+    rule.garbage_collect(datetime.datetime.now())
+
+    # Add 3 more unique ad t+5 mins
+    users = ['faz', 'fuz', 'fiz']
+    for user in users:
+        event = {'@timestamp': datetime.datetime.now() + datetime.timedelta(minutes=5), 'user': user}
+        rule.add_data([event])
+    rule.garbage_collect(datetime.datetime.now() + datetime.timedelta(minutes=5))
+    assert len(rule.matches) == 0
+
+    # Adding the same one again at T+15 causes an alert
+    user = 'faz'
+    event = {'@timestamp': datetime.datetime.now() + datetime.timedelta(minutes=15), 'user': user}
+    rule.add_data([event])
+    rule.garbage_collect(datetime.datetime.now() + datetime.timedelta(minutes=15))
+    assert len(rule.matches) == 1
+
+
+def test_cardinality_qk():
+    rules = {'max_cardinality': 2,
+             'timeframe': datetime.timedelta(minutes=10),
+             'cardinality_field': 'foo',
+             'timestamp_field': '@timestamp',
+             'query_key': 'user'}
+    rule = CardinalityRule(rules)
+
+    # Add 3 different usernames, one value each
+    users = ['foo', 'bar', 'baz']
+    for user in users:
+        event = {'@timestamp': datetime.datetime.now(), 'user': user, 'foo': 'foo' + user}
+        rule.add_data([event])
+        assert len(rule.matches) == 0
+    rule.garbage_collect(datetime.datetime.now())
+
+    # Add 2 more unique for "baz", one alert per value
+    values = ['faz', 'fuz', 'fiz']
+    for value in values:
+        event = {'@timestamp': datetime.datetime.now() + datetime.timedelta(minutes=5), 'user': 'baz', 'foo': value}
+        rule.add_data([event])
+    rule.garbage_collect(datetime.datetime.now() + datetime.timedelta(minutes=5))
+    assert len(rule.matches) == 2
+    assert rule.matches[0]['user'] == 'baz'
+    assert rule.matches[1]['user'] == 'baz'
+    assert rule.matches[0]['foo'] == 'fuz'
+    assert rule.matches[1]['foo'] == 'fiz'

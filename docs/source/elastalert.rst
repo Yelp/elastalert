@@ -29,10 +29,17 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 - "Match on any event matching a given filter" (``any`` type)
 - "Match when a field has two different values within some time" (``change`` type)
 
-Currently, we have support built in for two alert types:
+Currently, we have support built in for these alert types:
 
+- Command
 - Email
 - JIRA
+- OpsGenie
+- SNS
+- HipChat
+- Slack
+- Telegram
+- Debug
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
 
@@ -92,12 +99,12 @@ ElastAlert has a global configuration file, ``config.yaml``, which defines sever
 
 ``buffer_time``: ElastAlert will continuously query against a window from the present to ``buffer_time`` ago.
 This way, logs can be back filled up to a certain extent and ElastAlert will still process the events. This
-may be overridden by individual rules. Note that back filled data may not always trigger count based alerts
-as if it was queried in real time.
+may be overridden by individual rules. This option is ignored for rules where ``use_count_query`` or ``use_terms_query``
+ is set to true. Note that back filled data may not always trigger count based alerts as if it was queried in real time.
 
 ``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about its searches.
 When ElastAlert is started, it will query for information about the time that it was last run. This way,
-even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice.
+even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice. It will also specify the default cluster for each rule to run on.
 
 ``es_port``: The port corresponding to ``es_host``.
 
@@ -106,6 +113,10 @@ even if ElastAlert is stopped and restarted, it will never miss data or look at 
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``.
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
+
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
+
+``es_send_get_body_as``: Optional; Method for querying Elasticsearch - ``GET``, ``POST`` or ``source``. The default is ``GET``
 
 ``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``10``.
 
@@ -121,9 +132,12 @@ configuration.
 ``writeback_index``: The index on ``es_host`` to use.
 
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. The
-default is 100,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
+default is 10,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
 limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting
 can be overridden by any individual rule.
+
+``max_aggregation``: The maximum number of alerts to aggregate together. If a rule has ``aggregation`` set, all
+alerts occuring within a timeframe will be sent together. The default is 10,000.
 
 ``old_query_limit``: The maximum time between queries for ElastAlert to start at the most recently run query.
 When ElastAlert starts, for each rule, it will search ``elastalert_metadata`` for the most recently run query and start
@@ -146,6 +160,10 @@ unless overwritten in the rule config. The default is "localhost".
 
 ``email_reply_to``: This sets the Reply-To header in emails. The default is the recipient address.
 
+``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon ElasticSearch Service. It'll use instance role keys to sign the requests.
+
+``boto_profile``: Boto profile to use when signing requests to Amazon ElasticSearch Service, if you don't want to use the instance role keys.
+
 .. _runningelastalert:
 
 Running ElastAlert
@@ -164,7 +182,7 @@ search and alert metadata back to Elasticsearch.
 ``--start <timestamp>`` will force ElastAlert to begin querying from the given time, instead of the default,
 querying from the present. The timestamp should be ISO8601, e.g.  ``YYYY-MM-DDTHH:MM:SS`` (UTC) or with timezone
 ``YYYY-MM-DDTHH:MM:SS-08:00`` (PST). Note that if querying over a large date range, no alerts will be
-sent until that rule has finished querying over the entire time period.
+sent until that rule has finished querying over the entire time period. To force querying from the current time, use "NOW".
 
 ``--end <timestamp>`` will cause ElastAlert to stop querying at the specified timestamp. By default, ElastAlert
 will periodically query until the present indefinitely.
@@ -179,7 +197,9 @@ or its subdirectories.
 ``--verbose`` will increase the logging verboseness, which allows you to see information about the state
 of queries.
 
-``--es_debug`` will enable logging for all queries made to Elasticsearch. 
+``--es_debug`` will enable logging for all queries made to Elasticsearch.
+
+``--es_debug_trace`` will enable logging curl commands for all queries made to Elasticsearch to a file.
 
 ``--end <timestamp>`` will force ElastAlert to stop querying after the given time, instead of the default,
 querying to the present time. This really only makes sense when running standalone. The timestamp is formatted
