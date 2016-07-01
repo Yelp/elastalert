@@ -627,6 +627,7 @@ def test_slack_uses_custom_title():
 
     expected_data = {
         'username': 'elastalert',
+        'channel': '',
         'icon_emoji': ':ghost:',
         'attachments': [
             {
@@ -658,6 +659,40 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
 
     expected_data = {
         'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['name'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            }
+        ]
+    }
+    mock_post_request.assert_called_once_with(rule['slack_webhook_url'][0], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
+
+
+def test_slack_uses_custom_slack_channel():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': ['http://please.dontgohere.slack'],
+        'slack_channel_override': '#test-alert',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '#test-alert',
         'icon_emoji': ':ghost:',
         'attachments': [
             {

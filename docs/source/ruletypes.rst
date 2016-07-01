@@ -1188,6 +1188,8 @@ Optional:
 
 ``slack_username_override``: By default Slack will use your username when posting to the channel. Use this option to change it (free text).
 
+``slack_username_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
+
 ``slack_emoji_override``: By default Elastalert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
 Elastalert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
 
