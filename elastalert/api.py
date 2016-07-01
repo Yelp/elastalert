@@ -52,6 +52,27 @@ def slugify(s):
     valid_chars = "-_.()%s%s" % (string.ascii_letters, string.digits)
     return ''.join(c for c in s if c in valid_chars)
 
+def create_rule(rule):
+    try:
+        filepath = "%s/%s.yaml" % (conf['rules_folder'],
+                                   slugify(rule["name"]))
+        save_rule(filepath, rule)
+    except:
+        # Something went wrong. Possibly folder permissions
+        return False
+
+    # Rule Created Successfully
+    return True
+
+def verify_rule(rule):
+    # Verify rule has required fields
+    required_fields = ["es_host", "es_port", "index", "name", "type",
+                       "alert"]
+    if all(field in rule for field in required_fields):
+        return True
+    else:
+        return False
+
 def save_rule(filepath, rule):
     if not os.path.exists(os.path.dirname(filepath)):
         os.makedirs(os.path.dirname(filepath))
@@ -96,13 +117,30 @@ def test_rule(filepath, days=1):
 def index():
     return jsonify({ "name": "ElastAlert Rest API" })
 
-@app.route("/elastalert/api/rules/<rule_id>", methods=['GET', 'DELETE'])
+@app.route("/elastalert/api/rules/<rule_id>", methods=['GET', 'DELETE', 'POST'])
 def rule(rule_id):
     if request.method == 'DELETE':
         rules = load_rules()
         if rule_id in rules:
             os.remove(rules[rule_id]["rule_file"])
             return jsonify({"response": "Rule Deleted"})
+        else:
+            return jsonify({"response": "Invalid rule_id"})
+    if request.method == 'POST':
+        # Update existing rule
+        rules = load_rules()
+        if rule_id in rules:
+            os.remove(rules[rule_id]["rule_file"])
+            new_rule = request.get_json()
+            if verify_rule(new_rule):
+                if create_rule(new_rule):
+                    return jsonify({"response": "Rule Updated"})
+                else:
+                    return jsonify({"response": "Server Error: Rule not created"})
+            else:
+                return jsonify({"response": "Rule Invalid"})
+        else:
+            return jsonify({"response": "Invalid rule_id"})
     else:
         # GET
         rules = load_rules()
@@ -128,14 +166,11 @@ def rules():
         new_rule = request.get_json()
         load_rules()
 
-        # Verify rule has required fields
-        required_fields = ["es_host", "es_port", "index", "name", "type",
-                           "alert"]
-        if all(field in new_rule for field in required_fields):
-            filepath = "%s/%s.yaml" % (conf['rules_folder'],
-                                       slugify(new_rule["name"]))
-            save_rule(filepath, new_rule)
-            return jsonify({"response": "Rule Created"})
+        if verify_rule(new_rule):
+            if create_rule(new_rule):
+                return jsonify({"response": "Rule Created"})
+            else:
+                return jsonify({"response": "Server Error: Rule not created"})
         else:
             return jsonify({"response": "Rule Invalid"})
     else:
