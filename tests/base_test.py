@@ -11,6 +11,7 @@ import pytest
 from elasticsearch.exceptions import ElasticsearchException
 
 from elastalert.enhancements import BaseEnhancement
+from elastalert.enhancements import DropMatchException
 from elastalert.kibana import dashboard_temp
 from elastalert.util import dt_to_ts
 from elastalert.util import dt_to_unix
@@ -260,8 +261,19 @@ def test_match_with_enhancements_first(ea):
     ea.current_es.search.return_value = hits
     ea.rules[0]['type'].matches = [{'@timestamp': END}]
     with mock.patch('elastalert.elastalert.Elasticsearch'):
-        ea.run_rule(ea.rules[0], END, START)
+        with mock.patch.object(ea, 'add_aggregated_alert') as add_alert:
+            ea.run_rule(ea.rules[0], END, START)
     mod.process.assert_called_with({'@timestamp': END})
+    assert add_alert.call_count == 1
+
+    # Assert that dropmatchexception behaves properly
+    mod.process = mock.MagicMock(side_effect=DropMatchException)
+    ea.rules[0]['type'].matches = [{'@timestamp': END}]
+    with mock.patch('elastalert.elastalert.Elasticsearch'):
+        with mock.patch.object(ea, 'add_aggregated_alert') as add_alert:
+            ea.run_rule(ea.rules[0], END, START)
+    mod.process.assert_called_with({'@timestamp': END})
+    assert add_alert.call_count == 0
 
 
 def test_agg(ea):
