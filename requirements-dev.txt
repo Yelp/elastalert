@@ -1,6 +1,6 @@
 -r requirements.txt
 coverage
-flake8
+flake8<3.0.0
 pre-commit
 pylint<1.4
 pytest
