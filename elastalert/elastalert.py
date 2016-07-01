@@ -572,13 +572,14 @@ class ElastAlerter():
                 continue
 
             if rule.get('run_enhancements_first'):
-                for enhancement in rule['match_enhancements']:
-                    try:
-                        enhancement.process(match)
-                    except DropMatchException as e:
-                        continue
-                    except EAException as e:
-                        self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+                try:
+                    for enhancement in rule['match_enhancements']:
+                        try:
+                            enhancement.process(match)
+                        except EAException as e:
+                            self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+                except DropMatchException:
+                    continue
 
             if rule['realert']:
                 next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
