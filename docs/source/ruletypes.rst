@@ -1262,6 +1262,39 @@ Optional:
 
 ``gitter_proxy``: By default Elastalert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy.
 
+ServiceNow
+~~~~~~
+
+The ServiceNow alerter will create a ne Incident in ServiceNow. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``servicenow_rest_url``: The ServiceNow RestApi url, this will look like https://instancename.service-now.com/api/now/v1/table/incident
+
+``username``: The ServiceNow Username to access the api.
+
+``password``: The ServiceNow password to access the api.
+
+``short_description``: The ServiceNow password to access the api.
+
+``comments``: Comments to be attached to the incident, this is the equivilant of work notes.
+
+``assignment_group``: The group to assign the incident to.
+
+``category``: The category to attach the incident to, use an existing category.
+
+``subcategory``: The subcategory to attach the incident to, use an existing subcategory.
+
+``cmdb_ci``: The configuration item to attach the incident to.
+
+``caller_id``: The caller id (email address) of the user that created the incident (elastalert@somewhere.com).
+
+
+Optional:
+
+``servicenow_proxy``: By default Elastalert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy.
+
+
 Debug
 ~~~~~~
 
