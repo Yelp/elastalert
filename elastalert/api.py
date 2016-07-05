@@ -66,8 +66,7 @@ def create_rule(rule):
 
 def verify_rule(rule):
     # Verify rule has required fields
-    required_fields = ["es_host", "es_port", "index", "name", "type",
-                       "alert"]
+    required_fields = ["index", "name", "type", "alert"]
     if all(field in rule for field in required_fields):
         return True
     else:
@@ -131,9 +130,9 @@ def rule(rule_id):
         # Update existing rule
         rules = load_rules()
         if rule_id in rules:
-            os.remove(rules[rule_id]["rule_file"])
             new_rule = request.get_json()
             if verify_rule(new_rule):
+                os.remove(rules[rule_id]["rule_file"])
                 if create_rule(new_rule):
                     return jsonify({"response": "Rule Updated"})
                 else:
