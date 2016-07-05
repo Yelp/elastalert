@@ -117,7 +117,8 @@ def test_rule(filepath, days=1):
 def index():
     return jsonify({ "name": "ElastAlert Rest API" })
 
-@app.route("/elastalert/api/rules/<rule_id>", methods=['GET', 'DELETE', 'POST'])
+@app.route("/elastalert/api/rules/<rule_id>", methods=['GET', 'DELETE', 'POST',
+                                                       'PUT'])
 def rule(rule_id):
     if request.method == 'DELETE':
         rules = load_rules()
@@ -126,7 +127,7 @@ def rule(rule_id):
             return jsonify({"response": "Rule Deleted"})
         else:
             return jsonify({"response": "Invalid rule_id"})
-    if request.method == 'POST':
+    if request.method == 'POST' or request.method == 'PUT':
         # Update existing rule
         rules = load_rules()
         if rule_id in rules:
