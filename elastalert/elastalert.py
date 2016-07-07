@@ -571,7 +571,7 @@ class ElastAlerter():
                 elastalert_logger.info('Ignoring match for silenced rule %s%s' % (rule['name'], key))
                 continue
 
-            if rule['realert'] and rule.get('silence_matches_first'):
+            if rule['realert']:
                 next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
                 self.set_realert(rule['name'] + key, next_alert, exponent)
 
@@ -584,10 +584,6 @@ class ElastAlerter():
                             self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
                 except DropMatchException:
                     continue
-
-            if rule['realert'] and not rule.get('silence_matches_first'):
-                next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
-                self.set_realert(rule['name'] + key, next_alert, exponent)
 
             # If no aggregation, alert immediately
             if not rule['aggregation']:
