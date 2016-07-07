@@ -417,7 +417,8 @@ run_enhancements_first
 ^^^^^^^^^^^^^^^^^^^^^^
 
 ``run_enhancements_first``: If set to true, enhancements will be run as soon as a match is found. This means that they can be changed
-or dropped before affecting realert or being added to an aggregation. (Optional, boolean, default false)
+or dropped before affecting realert or being added to an aggregation. Silence stashes will still be created before the
+enhancement runs, meaning even if a ``DropMatchException`` is raised, the rule will still be silenced. (Optional, boolean, default false)
 
 query_key
 ^^^^^^^^^
