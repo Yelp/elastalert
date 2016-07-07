@@ -772,13 +772,13 @@ class ElastAlerter():
                                                             self.num_hits, num_matches, self.alerts_sent))
                 self.alerts_sent = 0
 
-            self.remove_old_events(rule)
+                if next_run < datetime.datetime.utcnow():
+                    # We were processing for longer than our refresh interval
+                    # This can happen if --start was specified with a large time period
+                    # or if we are running too slow to process events in real time.
+                    logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, endtime, self.run_every))
 
-        if next_run < datetime.datetime.utcnow():
-            # We were processing for longer than our refresh interval
-            # This can happen if --start was specified with a large time period
-            # or if we are running too slow to process events in real time.
-            logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, endtime, self.run_every))
+            self.remove_old_events(rule)
 
         # Only force starttime once
         self.starttime = None
