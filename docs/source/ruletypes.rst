@@ -423,7 +423,7 @@ silence_matches_first
 ^^^^^^^^^^^^^^^^^^^^^
 
 ``silence_matches_first``: If set to true, a silence stash will be created for matches before enhancements are run. This means that even
-if a ``DropMatchException`` is raised, the rule will be silenced.
+if a ``DropMatchException`` is raised, the rule will be silenced. (Optional, boolean, default false)
 
 query_key
 ^^^^^^^^^
