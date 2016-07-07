@@ -571,6 +571,10 @@ class ElastAlerter():
                 elastalert_logger.info('Ignoring match for silenced rule %s%s' % (rule['name'], key))
                 continue
 
+            if rule['realert'] and rule.get('silence_matches_first'):
+                next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
+                self.set_realert(rule['name'] + key, next_alert, exponent)
+
             if rule.get('run_enhancements_first'):
                 try:
                     for enhancement in rule['match_enhancements']:
@@ -581,7 +585,7 @@ class ElastAlerter():
                 except DropMatchException:
                     continue
 
-            if rule['realert']:
+            if rule['realert'] and not rule.get('silence_matches_first'):
                 next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
                 self.set_realert(rule['name'] + key, next_alert, exponent)
 
