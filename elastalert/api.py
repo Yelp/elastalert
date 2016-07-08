@@ -11,6 +11,7 @@ import jsonschema
 from util import EAException
 from base64 import b64encode, b64decode
 from test_rule import MockElastAlerter
+from werkzeug.serving import make_ssl_devcert
 import StringIO
 from flask.ext.cors import CORS
 
@@ -181,8 +182,9 @@ def rules():
         # GET
         return jsonify(load_rules())
 
-def main():
-    app.run(debug=True, ssl_context=('/Users/calebc/Projects/elastalert/certificates/server.crt', '/Users/calebc/Projects/elastalert/certificates/server.key'))
+def debug():
+    context = make_ssl_devcert('certificate/server', host='localhost')
+    app.run(debug=True, threaded=True, ssl_context=context)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug()
