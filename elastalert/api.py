@@ -7,6 +7,7 @@ import yaml
 import re
 import string
 import os
+import jsonschema
 from util import EAException
 from base64 import b64encode, b64decode
 from test_rule import MockElastAlerter
@@ -25,6 +26,9 @@ parser.add_argument('--config', action='store', dest='config', default="config.y
 parser.add_argument('--rule', dest='rule', help='Run only a specific rule (by filename, must still be in rules folder)')
 args = parser.parse_args(sys.argv[1:])
 conf = {}
+
+# schema for rule yaml
+rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
 
 def load_rules():
     global conf
@@ -66,11 +70,11 @@ def create_rule(rule):
 
 def verify_rule(rule):
     # Verify rule has required fields
-    required_fields = ["index", "name", "type", "alert"]
-    if all(field in rule for field in required_fields):
-        return True
-    else:
+    try:
+        rule_schema.validate(rule)
+    except jsonschema.ValidationError as e:
         return False
+    return True
 
 def save_rule(filepath, rule):
     if not os.path.exists(os.path.dirname(filepath)):
