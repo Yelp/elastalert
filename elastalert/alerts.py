@@ -777,6 +777,7 @@ class SlackAlerter(Alerter):
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
         self.slack_parse_override = self.rule.get('slack_parse_override', 'none')
+        self.slack_text_string = self.rule.get('slack_text_string', '')
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -799,6 +800,7 @@ class SlackAlerter(Alerter):
             'channel': self.slack_channel_override,
             'icon_emoji': self.slack_emoji_override,
             'parse': self.slack_parse_override,
+            'text': self.slack_text_string,
             'attachments': [
                 {
                     'color': self.slack_msg_color,
