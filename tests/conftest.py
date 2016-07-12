@@ -67,7 +67,8 @@ def ea():
             'rules': rules,
             'max_query_size': 10000,
             'old_query_limit': datetime.timedelta(weeks=1),
-            'disable_rules_on_error': False}
+            'disable_rules_on_error': False,
+            'scroll_keepalive': '30s'}
     elasticsearch.client.Elasticsearch = mock_es_client
     with mock.patch('elastalert.elastalert.get_rule_hashes'):
         with mock.patch('elastalert.elastalert.load_rules') as load_conf:
