@@ -428,8 +428,6 @@ class ElastAlerter():
 
         # Reset hit counter and query
         rule_inst = rule['type']
-        prev_num_hits = self.num_hits
-        max_size = rule.get('max_query_size', self.max_query_size)
         index = self.get_index(rule, start, end)
         if rule.get('use_count_query'):
             data = self.get_hits_count(rule, start, end, index)
