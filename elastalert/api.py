@@ -88,13 +88,11 @@ def test_rule(filepath, days=1):
 
     # I have to do some hackery to mimic an argparser object
     def args():
-        file = None
         schema_only = None
         days = None
         save = None
         count = None
 
-    args.file = filepath
     args.schema_only = False
     args.days = days
     args.save = False
@@ -106,7 +104,7 @@ def test_rule(filepath, days=1):
     sys.stderr = testOutputHandler
 
     # Run rule test
-    test_instance.test_file(args)
+    test_instance.test_file(filepath, args)
 
     # Assign output of method to string
     ruleTestOutput = testOutputHandler.getvalue()
@@ -155,12 +153,7 @@ def rule(rule_id):
 def test():
     rule = request.get_json()
 
-    filepath = "%s/%s.yaml" % ("temp_test_rules",
-                               slugify(rule["name"]))
-
-    save_rule(filepath, rule)
-
-    result = test_rule(filepath)
+    result = test_rule(rule)
 
     return jsonify({"test_results": result})
 
