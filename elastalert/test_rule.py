@@ -243,7 +243,7 @@ class MockElastAlerter(object):
             for initializing rules. Also initializes rules.
 
             :return: the default rule configuration, a dictionary """
-        if args.config != None:
+        if args.config is not None:
             with open(args.config) as fh:
                 conf = yaml.load(fh)
 
@@ -252,7 +252,7 @@ class MockElastAlerter(object):
                 if key in conf:
                     conf[key] = datetime.timedelta(**conf[key])
 
-        if args.config == None:
+        else:
             conf = {}
 
         # Mock configuration. This specifies the base values for attributes, unless supplied otherwise.
