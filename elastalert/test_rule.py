@@ -18,7 +18,6 @@ import yaml
 
 from elastalert.config import load_modules
 from elastalert.config import load_options
-from elastalert.config import load_rules 
 from elastalert.elastalert import ElastAlerter
 from elastalert.util import lookup_es_key
 from elastalert.util import ts_now
