@@ -133,8 +133,9 @@ configuration.
 
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. The
 default is 10,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
-limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting
-can be overridden by any individual rule.
+limit is reached, ElastAlert will `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_ through pages the size of ``max_query_size`` until processing all results.
+
+``scroll_keepalive``: The maximum time (formatted in `Time Units <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units>`_) the scrolling context should be kept alive. Avoid using high values as it abuses resources in ElasticSearch, but be mindful to allow sufficient time to finish processing all the results. 
 
 ``max_aggregation``: The maximum number of alerts to aggregate together. If a rule has ``aggregation`` set, all
 alerts occuring within a timeframe will be sent together. The default is 10,000.
