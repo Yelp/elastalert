@@ -148,6 +148,7 @@ def load_options(rule, conf, args=None):
     rule.setdefault('es_username', conf.get('es_username'))
     rule.setdefault('es_password', conf.get('es_password'))
     rule.setdefault('max_query_size', conf.get('max_query_size'))
+    rule.setdefault('scroll_keepalive', conf.get('scroll_keepalive'))
     rule.setdefault('es_conn_timeout', conf.get('es_conn_timeout'))
     rule.setdefault('description', "")
 
@@ -371,6 +372,7 @@ def load_rules(args):
         raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(conf.keys()))))
 
     conf.setdefault('max_query_size', 10000)
+    conf.setdefault('scroll_keepalive', '30s')
     conf.setdefault('disable_rules_on_error', True)
 
     # Convert run_every, buffer_time into a timedelta object

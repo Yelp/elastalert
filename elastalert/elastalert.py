@@ -93,6 +93,7 @@ class ElastAlerter():
 
         self.conf = load_rules(self.args)
         self.max_query_size = self.conf['max_query_size']
+        self.scroll_keepalive = self.conf['scroll_keepalive']
         self.rules = self.conf['rules']
         self.writeback_index = self.conf['writeback_index']
         self.run_every = self.conf['run_every']
@@ -112,7 +113,6 @@ class ElastAlerter():
         self.rule_hashes = get_rule_hashes(self.conf, self.args.rule)
         self.starttime = self.args.start
         self.disabled_rules = []
-        self.scroll_keepalive = self.conf.get('scroll_keepalive', '30s')
 
         self.es_conn_config = self.build_es_conn_config(self.conf)
 
