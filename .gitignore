@@ -1,4 +1,3 @@
-config.yaml
 .tox/
 .coverage
 __pycache__/
