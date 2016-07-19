@@ -1,19 +1,20 @@
-import argparse
-from flask import Flask, jsonify, request
-import sys
-from config import get_file_paths, load_configuration
+from flask import Flask, jsonify, request, abort
+from werkzeug.serving import make_ssl_devcert
 from staticconf.loader import yaml_loader
-import yaml
-import re
-import string
-import os
-import jsonschema
-from util import EAException
 from base64 import b64encode, b64decode
 from test_rule import MockElastAlerter
-from werkzeug.serving import make_ssl_devcert
-import StringIO
+from config import get_file_paths
 from flask.ext.cors import CORS
+from util import EAException
+from functools import wraps
+import jsonschema
+import StringIO
+import argparse
+import string
+import yaml
+import sys
+import re
+import os
 
 """ A REST API webserver that allows for interaction with ElastAlert from
 an API. """
@@ -26,14 +27,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--config', action='store', dest='config', default="config.yaml", help='Global config file (default: config.yaml)')
 parser.add_argument('--rule', dest='rule', help='Run only a specific rule (by filename, must still be in rules folder)')
 args = parser.parse_args(sys.argv[1:])
-conf = {}
+conf = yaml_loader(args.config)
+conf.setdefault('api_server_authentication_enabled', False)
 
 # schema for rule yaml
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
 
 def load_rules():
-    global conf
-    conf = yaml_loader(args.config)
     conf.setdefault('max_query_size', 100000)
     conf.setdefault('disable_rules_on_error', True)
     # Load each rule configuration file
@@ -115,12 +115,27 @@ def test_rule(filepath, days=1):
 
     return ruleTestOutput
 
+def require_auth(view_function):
+    @wraps(view_function)
+    def decorated_function(*args, **kwargs):
+        if (bool(request.headers.get('key')) and
+            request.headers.get('key') == conf['api_server_authentication_key'] and
+            conf['api_server_authentication_enabled']):
+            return view_function(*args, **kwargs)
+        elif not conf['api_server_authentication_enabled']:
+            return view_function(*args, **kwargs)
+        else:
+            abort(401)
+    return decorated_function
+
 @app.route("/elastalert/api", methods=['GET'])
+@require_auth
 def index():
     return jsonify({ "name": "ElastAlert Rest API" })
 
 @app.route("/elastalert/api/rules/<rule_id>", methods=['GET', 'DELETE', 'POST',
                                                        'PUT'])
+@require_auth
 def rule(rule_id):
     if request.method == 'DELETE':
         rules = load_rules()
@@ -150,6 +165,7 @@ def rule(rule_id):
         return jsonify(rules[rule_id])
 
 @app.route("/elastalert/api/rules/test", methods=['POST'])
+@require_auth
 def test():
     rule = request.get_json()
 
@@ -158,6 +174,7 @@ def test():
     return jsonify({"test_results": result})
 
 @app.route("/elastalert/api/rules", methods=['GET', 'POST'])
+@require_auth
 def rules():
     if request.method == 'POST':
         # create a rule

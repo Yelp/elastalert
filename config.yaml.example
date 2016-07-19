@@ -25,7 +25,7 @@ es_port: 9200
 # Connect with SSL to elasticsearch
 #use_ssl: True
 
-# GET request with body is the default option for Elasticsearch. 
+# GET request with body is the default option for Elasticsearch.
 # If it fails for some reason, you can pass 'GET', 'POST' or 'source'.
 # See http://elasticsearch-py.readthedocs.io/en/master/connection.html?highlight=send_get_body_as#transport
 # for details
@@ -44,3 +44,7 @@ writeback_index: elastalert_status
 # sending the alert until this time period has elapsed
 alert_time_limit:
   days: 2
+
+# API server options
+#api_server_authentication_enabled: true
+#api_server_authentication_key: PrivateKeyGoesHere
