@@ -308,12 +308,18 @@ def get_file_paths(conf, use_rule=None):
         return [use_rule]
     rule_folder = conf['rules_folder']
     rule_files = []
-    for root, folders, files in os.walk(rule_folder):
-        for filename in files:
-            if use_rule and use_rule != filename:
-                continue
-            if filename.endswith('.yaml'):
-                rule_files.append(os.path.join(root, filename))
+    if conf['scan_subdirectories']:
+        for root, folders, files in os.walk(rule_folder):
+            for filename in files:
+                if use_rule and use_rule != filename:
+                    continue
+                if filename.endswith('.yaml'):
+                    rule_files.append(os.path.join(root, filename))
+    else:
+        for filename in os.listdir(rule_folder):
+            fullpath = os.path.join(rule_folder, filename)
+            if os.path.isfile(fullpath) and filename.endswith('.yaml'):
+                rule_files.append(fullpath)
     return rule_files
 
 
@@ -374,6 +380,7 @@ def load_rules(args):
     conf.setdefault('max_query_size', 10000)
     conf.setdefault('scroll_keepalive', '30s')
     conf.setdefault('disable_rules_on_error', True)
+    conf.setdefault('scan_subdirectories', True)
 
     # Convert run_every, buffer_time into a timedelta object
     try:
