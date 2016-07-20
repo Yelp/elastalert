@@ -319,7 +319,6 @@ def get_file_paths(conf, use_rule=None):
             fullpath = os.path.join(rule_folder, filename)
             if os.path.isfile(fullpath) and filename.endswith('.yaml'):
                 rule_files.append(fullpath)
-    
     return rule_files
 
 

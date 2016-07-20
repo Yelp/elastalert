@@ -124,6 +124,8 @@ even if ElastAlert is stopped and restarted, it will never miss data or look at 
 files in this folder, and all subdirectories, that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
 or remove rules based on their respective config files.
 
+``scan_subdirectories``: Optional; Sets whether or not ElastAlert should recursively descend the rules directory - ``true`` or ``false``. The default is ``true``
+
 ``run_every``: How often ElastAlert should query Elasticsearch. ElastAlert will remember the last time
 it ran the query for a given rule, and periodically query from that time until the present. The format of
 this field is a nested unit of time, such as ``minutes: 5``. This is how time is defined in every ElastAlert
