@@ -148,6 +148,7 @@ def load_options(rule, conf, args=None):
     rule.setdefault('es_username', conf.get('es_username'))
     rule.setdefault('es_password', conf.get('es_password'))
     rule.setdefault('max_query_size', conf.get('max_query_size'))
+    rule.setdefault('scroll_keepalive', conf.get('scroll_keepalive'))
     rule.setdefault('es_conn_timeout', conf.get('es_conn_timeout'))
     rule.setdefault('description', "")
 
@@ -307,12 +308,18 @@ def get_file_paths(conf, use_rule=None):
         return [use_rule]
     rule_folder = conf['rules_folder']
     rule_files = []
-    for root, folders, files in os.walk(rule_folder):
-        for filename in files:
-            if use_rule and use_rule != filename:
-                continue
-            if filename.endswith('.yaml'):
-                rule_files.append(os.path.join(root, filename))
+    if conf['scan_subdirectories']:
+        for root, folders, files in os.walk(rule_folder):
+            for filename in files:
+                if use_rule and use_rule != filename:
+                    continue
+                if filename.endswith('.yaml'):
+                    rule_files.append(os.path.join(root, filename))
+    else:
+        for filename in os.listdir(rule_folder):
+            fullpath = os.path.join(rule_folder, filename)
+            if os.path.isfile(fullpath) and filename.endswith('.yaml'):
+                rule_files.append(fullpath)
     return rule_files
 
 
@@ -371,7 +378,9 @@ def load_rules(args):
         raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(conf.keys()))))
 
     conf.setdefault('max_query_size', 10000)
+    conf.setdefault('scroll_keepalive', '30s')
     conf.setdefault('disable_rules_on_error', True)
+    conf.setdefault('scan_subdirectories', True)
 
     # Convert run_every, buffer_time into a timedelta object
     try:

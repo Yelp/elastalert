@@ -636,7 +636,9 @@ def test_slack_uses_custom_title():
                 'text': BasicMatchString(rule, match).__str__(),
                 'fields': []
             }
-        ]
+        ],
+        'text': '',
+        'parse': 'none'
     }
     mock_post_request.assert_called_once_with(rule['slack_webhook_url'], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
 
@@ -668,7 +670,9 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
                 'text': BasicMatchString(rule, match).__str__(),
                 'fields': []
             }
-        ]
+        ],
+        'text': '',
+        'parse': 'none'
     }
     mock_post_request.assert_called_once_with(rule['slack_webhook_url'][0], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
 
@@ -701,7 +705,9 @@ def test_slack_uses_custom_slack_channel():
                 'text': BasicMatchString(rule, match).__str__(),
                 'fields': []
             }
-        ]
+        ],
+        'text': '',
+        'parse': 'none'
     }
     mock_post_request.assert_called_once_with(rule['slack_webhook_url'][0], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
 
