@@ -24,3 +24,4 @@ urllib3==1.8.2
 wsgiref==0.1.2
 Flask==0.10.1
 Flask-Cors==2.1.2
+cryptography==1.4
