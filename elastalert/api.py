@@ -5,6 +5,7 @@ from base64 import b64encode, b64decode
 from test_rule import MockElastAlerter
 from config import get_file_paths
 from flask.ext.cors import CORS
+from datetime import datetime
 from util import EAException
 from functools import wraps
 import jsonschema
@@ -78,8 +79,13 @@ def verify_rule(rule):
     return True
 
 def save_rule(filepath, rule):
+    print("Rule saved!")
     if not os.path.exists(os.path.dirname(filepath)):
         os.makedirs(os.path.dirname(filepath))
+    print(os.path.isfile(os.path.abspath(filepath)))
+
+    print(os.path.abspath(filepath))
+
     with open(filepath, 'w') as outfile:
         outfile.write(yaml.safe_dump(rule, default_flow_style=False))
 
@@ -140,7 +146,10 @@ def rule(rule_id):
     if request.method == 'DELETE':
         rules = load_rules()
         if rule_id in rules:
-            os.remove(rules[rule_id]["rule_file"])
+            if os.path.isfile(os.path.abspath(rules[rule_id]["rule_file"])):
+                os.rename(rules[rule_id]["rule_file"], '{}.{}.bak'
+                          .format(rules[rule_id]["rule_file"],
+                          datetime.now().strftime("%m-%d-%Y_%H:%M")))
             return jsonify({"response": "Rule Deleted"})
         else:
             return jsonify({"response": "Invalid rule_id"})
@@ -150,7 +159,10 @@ def rule(rule_id):
         if rule_id in rules:
             new_rule = request.get_json()
             if verify_rule(new_rule):
-                os.remove(rules[rule_id]["rule_file"])
+                if os.path.isfile(os.path.abspath(rules[rule_id]["rule_file"])):
+                    os.rename(rules[rule_id]["rule_file"], '{}.{}.bak'
+                              .format(rules[rule_id]["rule_file"],
+                              datetime.now().strftime("%m-%d-%Y_%H:%M")))
                 if create_rule(new_rule):
                     return jsonify({"response": "Rule Updated"})
                 else:
