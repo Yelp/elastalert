@@ -266,7 +266,8 @@ class MockElastAlerter(object):
             'old_query_limit': datetime.timedelta(weeks=1),
             'run_every': datetime.timedelta(minutes=5),
             'disable_rules_on_error': False,
-            'buffer_time': datetime.timedelta(minutes=45)
+            'buffer_time': datetime.timedelta(minutes=45),
+            'scroll_keepalive': '30s'
         }
 
         for key in conf_default:
