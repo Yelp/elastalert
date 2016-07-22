@@ -9,8 +9,11 @@ from datetime import datetime
 from util import EAException
 from functools import wraps
 import jsonschema
+import tempfile
 import StringIO
 import argparse
+import atexit
+import shutil
 import string
 import yaml
 import sys
@@ -204,9 +207,19 @@ def rules():
         # GET
         return jsonify(load_rules())
 
+def cleanup(filepath):
+    shutil.rmtree(os.path.dirname(filepath), ignore_errors=True)
+
 def debug():
-    context = make_ssl_devcert('certificate/server', host='localhost')
+    tempPath = tempfile.mkdtemp() + "/server"
+    atexit.register(cleanup, tempPath)
+
+    print(tempPath)
+
+    context = make_ssl_devcert(tempPath, host='localhost')
     app.run(debug=True, threaded=True, ssl_context=context)
+
+
 
 if __name__ == '__main__':
     debug()
