@@ -217,7 +217,7 @@ def debug():
     print(tempPath)
 
     context = make_ssl_devcert(tempPath, host='localhost')
-    app.run(debug=True, threaded=True, ssl_context=context)
+    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True, ssl_context=context)
 
 
 
