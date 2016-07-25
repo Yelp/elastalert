@@ -108,6 +108,30 @@ def test_email():
         assert 'From: testfrom@test.test' in body
         assert 'Subject: Test alert for test_value, owned by owner_value' in body
 
+def test_email_with_unicode_strings():
+    rule = {'name': 'test alert', 'email': u'testing@test.test', 'from_addr': 'testfrom@test.test',
+            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com', 'owner': 'owner_value',
+            'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': u'☃'}
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+
+        alert = EmailAlerter(rule)
+        alert.alert([{'test_term': 'test_value'}])
+        expected = [mock.call('localhost'),
+                    mock.call().ehlo(),
+                    mock.call().has_extn('STARTTLS'),
+                    mock.call().starttls(),
+                    mock.call().sendmail(mock.ANY, [u'testing@test.test'], mock.ANY),
+                    mock.call().close()]
+        assert mock_smtp.mock_calls == expected
+
+        body = mock_smtp.mock_calls[4][1][2]
+
+        assert 'Reply-To: test@example.com' in body
+        assert 'To: testing@test.test' in body
+        assert 'From: testfrom@test.test' in body
+        assert 'Subject: Test alert for test_value, owned by owner_value' in body
+
 
 def test_email_with_auth():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
