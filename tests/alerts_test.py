@@ -108,6 +108,7 @@ def test_email():
         assert 'From: testfrom@test.test' in body
         assert 'Subject: Test alert for test_value, owned by owner_value' in body
 
+
 def test_email_with_unicode_strings():
     rule = {'name': 'test alert', 'email': u'testing@test.test', 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com', 'owner': 'owner_value',
