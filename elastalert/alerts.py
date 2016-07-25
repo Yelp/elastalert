@@ -273,15 +273,15 @@ class EmailAlerter(Alerter):
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
         # Convert email to a list if it isn't already
-        if isinstance(self.rule['email'], str):
+        if isinstance(self.rule['email'], basestring):
             self.rule['email'] = [self.rule['email']]
         # If there is a cc then also convert it a list if it isn't
         cc = self.rule.get('cc')
-        if cc and isinstance(cc, str):
+        if cc and isinstance(cc, basestring):
             self.rule['cc'] = [self.rule['cc']]
         # If there is a bcc then also convert it to a list if it isn't
         bcc = self.rule.get('bcc')
-        if bcc and isinstance(bcc, str):
+        if bcc and isinstance(bcc, basestring):
             self.rule['bcc'] = [self.rule['bcc']]
 
     def alert(self, matches):
