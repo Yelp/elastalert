@@ -304,7 +304,7 @@ class ElastAlerter():
 
         try:
             if scroll:
-                res = self.current_es.scroll(scroll_id=self.scroll_id, scroll=scroll_keepalive)
+                res = self.current_es.scroll(scroll_id=rule['scroll_id'], scroll=scroll_keepalive)
             else:
                 res = self.current_es.search(scroll=scroll_keepalive, index=index, size=rule['max_query_size'], body=query, ignore_unavailable=True, **extra_args)
                 self.total_hits = int(res['hits']['total'])
@@ -323,7 +323,7 @@ class ElastAlerter():
         status_log = "Queried rule %s from %s to %s: %s / %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), self.num_hits, len(hits))
         if self.total_hits > rule.get('max_query_size', self.max_query_size):
             elastalert_logger.info("%s (scrolling..)" % status_log)
-            self.scroll_id = res['_scroll_id']
+            rule['scroll_id'] = res['_scroll_id']
         else:
             elastalert_logger.info(status_log)
 
@@ -449,8 +449,15 @@ class ElastAlerter():
             else:
                 rule_inst.add_data(data)
 
-        if hasattr(self, 'scroll_id') and self.num_hits < self.total_hits:
-            self.run_query(rule, start, end, scroll=True)
+        try:
+            if rule.get('scroll_id') and self.num_hits < self.total_hits:
+                self.run_query(rule, start, end, scroll=True)
+        except RuntimeError:
+            # It's possible to scroll far enough to hit max recursive depth
+            pass
+
+        if 'scroll_id' in rule:
+            rule.pop('scroll_id')
 
         return True
 
