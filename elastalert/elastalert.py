@@ -93,6 +93,7 @@ class ElastAlerter():
 
         self.conf = load_rules(self.args)
         self.max_query_size = self.conf['max_query_size']
+        self.scroll_keepalive = self.conf['scroll_keepalive']
         self.rules = self.conf['rules']
         self.writeback_index = self.conf['writeback_index']
         self.run_every = self.conf['run_every']
@@ -286,7 +287,7 @@ class ElastAlerter():
 
         return processed_hits
 
-    def get_hits(self, rule, starttime, endtime, index):
+    def get_hits(self, rule, starttime, endtime, index, scroll=False):
         """ Query elasticsearch for the given rule and return the results.
 
         :param rule: The rule configuration.
@@ -296,11 +297,17 @@ class ElastAlerter():
         """
         query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], to_ts_func=rule['dt_to_ts'])
         extra_args = {'_source_include': rule['include']}
+        scroll_keepalive = rule.get('scroll_keepalive', self.scroll_keepalive)
         if not rule.get('_source_enabled'):
             query['fields'] = rule['include']
             extra_args = {}
+
         try:
-            res = self.current_es.search(index=index, size=rule['max_query_size'], body=query, ignore_unavailable=True, **extra_args)
+            if scroll:
+                res = self.current_es.scroll(scroll_id=rule['scroll_id'], scroll=scroll_keepalive)
+            else:
+                res = self.current_es.search(scroll=scroll_keepalive, index=index, size=rule['max_query_size'], body=query, ignore_unavailable=True, **extra_args)
+                self.total_hits = int(res['hits']['total'])
             logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
@@ -313,7 +320,13 @@ class ElastAlerter():
         hits = res['hits']['hits']
         self.num_hits += len(hits)
         lt = rule.get('use_local_time')
-        elastalert_logger.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(hits)))
+        status_log = "Queried rule %s from %s to %s: %s / %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), self.num_hits, len(hits))
+        if self.total_hits > rule.get('max_query_size', self.max_query_size):
+            elastalert_logger.info("%s (scrolling..)" % status_log)
+            rule['scroll_id'] = res['_scroll_id']
+        else:
+            elastalert_logger.info(status_log)
+
         hits = self.process_hits(rule, hits)
 
         # Record doc_type for use in get_top_counts
@@ -400,7 +413,7 @@ class ElastAlerter():
                 remove.append(_id)
         map(rule['processed_hits'].pop, remove)
 
-    def run_query(self, rule, start=None, end=None):
+    def run_query(self, rule, start=None, end=None, scroll=False):
         """ Query for the rule and pass all of the results to the RuleType instance.
 
         :param rule: The rule configuration.
@@ -415,15 +428,13 @@ class ElastAlerter():
 
         # Reset hit counter and query
         rule_inst = rule['type']
-        prev_num_hits = self.num_hits
-        max_size = rule.get('max_query_size', self.max_query_size)
         index = self.get_index(rule, start, end)
         if rule.get('use_count_query'):
             data = self.get_hits_count(rule, start, end, index)
         elif rule.get('use_terms_query'):
             data = self.get_hits_terms(rule, start, end, index, rule['query_key'])
         else:
-            data = self.get_hits(rule, start, end, index)
+            data = self.get_hits(rule, start, end, index, scroll)
             if data:
                 data = self.remove_duplicate_events(data, rule)
 
@@ -437,9 +448,16 @@ class ElastAlerter():
                 rule_inst.add_terms_data(data)
             else:
                 rule_inst.add_data(data)
-        # Warn if we hit max_query_size
-        if self.num_hits - prev_num_hits == max_size and not rule.get('use_count_query'):
-            logging.warning("Hit max_query_size (%s) while querying for %s" % (max_size, rule['name']))
+
+        try:
+            if rule.get('scroll_id') and self.num_hits < self.total_hits:
+                self.run_query(rule, start, end, scroll=True)
+        except RuntimeError:
+            # It's possible to scroll far enough to hit max recursive depth
+            pass
+
+        if 'scroll_id' in rule:
+            rule.pop('scroll_id')
 
         return True
 
@@ -571,18 +589,19 @@ class ElastAlerter():
                 elastalert_logger.info('Ignoring match for silenced rule %s%s' % (rule['name'], key))
                 continue
 
-            if rule.get('run_enhancements_first'):
-                for enhancement in rule['match_enhancements']:
-                    try:
-                        enhancement.process(match)
-                    except DropMatchException as e:
-                        continue
-                    except EAException as e:
-                        self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
-
             if rule['realert']:
                 next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
                 self.set_realert(rule['name'] + key, next_alert, exponent)
+
+            if rule.get('run_enhancements_first'):
+                try:
+                    for enhancement in rule['match_enhancements']:
+                        try:
+                            enhancement.process(match)
+                        except EAException as e:
+                            self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+                except DropMatchException:
+                    continue
 
             # If no aggregation, alert immediately
             if not rule['aggregation']:
@@ -771,13 +790,13 @@ class ElastAlerter():
                                                             self.num_hits, num_matches, self.alerts_sent))
                 self.alerts_sent = 0
 
-            self.remove_old_events(rule)
+                if next_run < datetime.datetime.utcnow():
+                    # We were processing for longer than our refresh interval
+                    # This can happen if --start was specified with a large time period
+                    # or if we are running too slow to process events in real time.
+                    logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, endtime, self.run_every))
 
-        if next_run < datetime.datetime.utcnow():
-            # We were processing for longer than our refresh interval
-            # This can happen if --start was specified with a large time period
-            # or if we are running too slow to process events in real time.
-            logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, endtime, self.run_every))
+            self.remove_old_events(rule)
 
         # Only force starttime once
         self.starttime = None

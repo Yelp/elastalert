@@ -57,10 +57,10 @@ def main():
         use_ssl = (args.ssl if args.ssl is not None
                    else raw_input('Use SSL? t/f: ').lower() in ('t', 'true'))
         if args.no_auth is None:
-            username = raw_input('Enter optional basic-auth username: ')
-            password = getpass.getpass('Enter optional basic-auth password: ')
+            username = raw_input('Enter optional basic-auth username (or leave blank): ')
+            password = getpass.getpass('Enter optional basic-auth password (or leave blank): ')
         url_prefix = (args.url_prefix if args.url_prefix is not None
-                      else raw_input('Enter optional Elasticsearch URL prefix: '))
+                      else raw_input('Enter optional Elasticsearch URL prefix (prepends a string to the URL of every request): '))
         send_get_body_as = args.send_get_body_as
 
     auth = Auth()

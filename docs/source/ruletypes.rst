@@ -417,7 +417,8 @@ run_enhancements_first
 ^^^^^^^^^^^^^^^^^^^^^^
 
 ``run_enhancements_first``: If set to true, enhancements will be run as soon as a match is found. This means that they can be changed
-or dropped before affecting realert or being added to an aggregation. (Optional, boolean, default false)
+or dropped before affecting realert or being added to an aggregation. Silence stashes will still be created before the
+enhancement runs, meaning even if a ``DropMatchException`` is raised, the rule will still be silenced. (Optional, boolean, default false)
 
 query_key
 ^^^^^^^^^
@@ -1188,6 +1189,8 @@ Optional:
 
 ``slack_username_override``: By default Slack will use your username when posting to the channel. Use this option to change it (free text).
 
+``slack_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
+
 ``slack_emoji_override``: By default Elastalert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
 Elastalert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
 
@@ -1261,6 +1264,39 @@ Optional:
 ``gitter_msg_level``: By default the alert will be posted with the 'error' level. You can use 'info' if you want the messages to be black instead of red.
 
 ``gitter_proxy``: By default Elastalert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy.
+
+ServiceNow
+~~~~~~
+
+The ServiceNow alerter will create a ne Incident in ServiceNow. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``servicenow_rest_url``: The ServiceNow RestApi url, this will look like https://instancename.service-now.com/api/now/v1/table/incident
+
+``username``: The ServiceNow Username to access the api.
+
+``password``: The ServiceNow password to access the api.
+
+``short_description``: The ServiceNow password to access the api.
+
+``comments``: Comments to be attached to the incident, this is the equivilant of work notes.
+
+``assignment_group``: The group to assign the incident to.
+
+``category``: The category to attach the incident to, use an existing category.
+
+``subcategory``: The subcategory to attach the incident to, use an existing subcategory.
+
+``cmdb_ci``: The configuration item to attach the incident to.
+
+``caller_id``: The caller id (email address) of the user that created the incident (elastalert@somewhere.com).
+
+
+Optional:
+
+``servicenow_proxy``: By default Elastalert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy.
+
 
 Debug
 ~~~~~~

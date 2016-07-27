@@ -109,6 +109,31 @@ def test_email():
         assert 'Subject: Test alert for test_value, owned by owner_value' in body
 
 
+def test_email_with_unicode_strings():
+    rule = {'name': 'test alert', 'email': u'testing@test.test', 'from_addr': 'testfrom@test.test',
+            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com', 'owner': 'owner_value',
+            'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': u'☃'}
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+
+        alert = EmailAlerter(rule)
+        alert.alert([{'test_term': 'test_value'}])
+        expected = [mock.call('localhost'),
+                    mock.call().ehlo(),
+                    mock.call().has_extn('STARTTLS'),
+                    mock.call().starttls(),
+                    mock.call().sendmail(mock.ANY, [u'testing@test.test'], mock.ANY),
+                    mock.call().close()]
+        assert mock_smtp.mock_calls == expected
+
+        body = mock_smtp.mock_calls[4][1][2]
+
+        assert 'Reply-To: test@example.com' in body
+        assert 'To: testing@test.test' in body
+        assert 'From: testfrom@test.test' in body
+        assert 'Subject: Test alert for test_value, owned by owner_value' in body
+
+
 def test_email_with_auth():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
@@ -627,6 +652,7 @@ def test_slack_uses_custom_title():
 
     expected_data = {
         'username': 'elastalert',
+        'channel': '',
         'icon_emoji': ':ghost:',
         'attachments': [
             {
@@ -635,7 +661,9 @@ def test_slack_uses_custom_title():
                 'text': BasicMatchString(rule, match).__str__(),
                 'fields': []
             }
-        ]
+        ],
+        'text': '',
+        'parse': 'none'
     }
     mock_post_request.assert_called_once_with(rule['slack_webhook_url'], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
 
@@ -658,6 +686,7 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
 
     expected_data = {
         'username': 'elastalert',
+        'channel': '',
         'icon_emoji': ':ghost:',
         'attachments': [
             {
@@ -666,7 +695,44 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
                 'text': BasicMatchString(rule, match).__str__(),
                 'fields': []
             }
-        ]
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    mock_post_request.assert_called_once_with(rule['slack_webhook_url'][0], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
+
+
+def test_slack_uses_custom_slack_channel():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': ['http://please.dontgohere.slack'],
+        'slack_channel_override': '#test-alert',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '#test-alert',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['name'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            }
+        ],
+        'text': '',
+        'parse': 'none'
     }
     mock_post_request.assert_called_once_with(rule['slack_webhook_url'][0], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
 

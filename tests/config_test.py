@@ -189,7 +189,7 @@ def test_raises_on_bad_generate_kibana_filters():
                     load_configuration('blah', test_config)
 
 
-def test_get_file_paths():
+def test_get_file_paths_recursive():
     conf = {'scan_subdirectories': True, 'rules_folder': 'root'}
     walk_paths = (('root', ('folder_a', 'folder_b'), ('rule.yaml',)),
                   ('root/folder_a', (), ('a.yaml', 'ab.yaml')),
@@ -203,3 +203,19 @@ def test_get_file_paths():
     assert 'root/folder_a/ab.yaml' in paths
     assert 'root/folder_b/b.yaml' in paths
     assert len(paths) == 4
+
+
+def test_get_file_paths():
+    # Check for no subdirectory
+    conf = {'scan_subdirectories': False, 'rules_folder': 'root'}
+    files = ['badfile', 'a.yaml', 'b.yaml']
+
+    with mock.patch('os.listdir') as mock_list:
+        with mock.patch('os.path.isfile') as mock_path:
+            mock_path.return_value = True
+            mock_list.return_value = files
+            paths = get_file_paths(conf)
+
+    assert 'root/a.yaml' in paths
+    assert 'root/b.yaml' in paths
+    assert len(paths) == 2
