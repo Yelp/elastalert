@@ -137,7 +137,7 @@ configuration.
 default is 10,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
 limit is reached, ElastAlert will `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_ through pages the size of ``max_query_size`` until processing all results.
 
-``scroll_keepalive``: The maximum time (formatted in `Time Units <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units>`_) the scrolling context should be kept alive. Avoid using high values as it abuses resources in ElasticSearch, but be mindful to allow sufficient time to finish processing all the results. 
+``scroll_keepalive``: The maximum time (formatted in `Time Units <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units>`_) the scrolling context should be kept alive. Avoid using high values as it abuses resources in ElasticSearch, but be mindful to allow sufficient time to finish processing all the results.
 
 ``max_aggregation``: The maximum number of alerts to aggregate together. If a rule has ``aggregation`` set, all
 alerts occuring within a timeframe will be sent together. The default is 10,000.
@@ -166,6 +166,10 @@ unless overwritten in the rule config. The default is "localhost".
 ``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon ElasticSearch Service. It'll use instance role keys to sign the requests.
 
 ``boto_profile``: Boto profile to use when signing requests to Amazon ElasticSearch Service, if you don't want to use the instance role keys.
+
+``api_server_authentication_enabled``: Enables authentication on the REST api server. When using this make sure your traffic is encrypted or the api_server_authentication_key will be passed in plain text. The development server by default does use SSL.
+
+``api_server_authentication_key``: Sets the authentication key for the REST api server. This simply a pre-shared string of characters.
 
 .. _runningelastalert:
 
@@ -209,3 +213,27 @@ querying to the present time. This really only makes sense when running standalo
 as ``YYYY-MM-DDTHH:MM:SS`` (UTC) or with timezone ``YYYY-MM-DDTHH:MM:SS-XX:00`` (UTC-XX).
 
 ``--pin_rules`` will stop ElastAlert from loading, reloading or removing rules based on changes to their config files.
+
+Running ElastAlert REST API
+===========================
+
+The ElastAlert REST API is for interfacing with ElastAlert from outside systems. It allows for creation, updating, testing, and deletion/disabling of rules.
+The server is based off of flask so running the API requires a WSGI server. For details on how to configure a WSGI server you will want to look at `this page <http://flask.pocoo.org/docs/0.11/deploying/>`_
+To simplify things we have allowed for use of the builtin Flask API server but it's not recommended for production deployments.
+To use that you will want to use the following command script.
+
+``$ elastalert-api-server-debug``
+
+When the ``api_server_authentication_enabled`` configuration option is set you will want to include the authentication key set with ``api_server_authentication_key`` as a header option within all of your requests.
+The header option key will be ``key``. So your header should look like the following ``key: AuthKeyHere``.
+
+Below are all of the endpoints for the API:
+
+``GET /elastalert/api`` Returns ``{ "name": "ElastAlert Rest API" }`` and is used to confirm the API is working.
+
+``POST /elastalert/api/rules/test`` this endpoint is to test rules with the ``test_rule.py`` script. The rule is passed in JSON format in the body of the request.
+It will reply with the result of the test in a JSON format.
+
+``GET/DELETE/POST/PUT /elastalert/api/rules/<rule_id>``` Used to get, delete, or update a rule. The rule_id is simply the rule name base64 encoded. The body of the request will include the new rule in JSON.
+
+``GET/POST /elastalert/api/rules`` Used to create new rules or return all existing rules.
