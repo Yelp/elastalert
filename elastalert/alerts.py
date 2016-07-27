@@ -250,9 +250,9 @@ class DebugAlerter(Alerter):
         for match in matches:
             if qk in match:
                 elastalert_logger.info(
-                    'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], match[self.rule['timestamp_field']]))
+                    'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])]))
             else:
-                elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], match[self.rule['timestamp_field']]))
+                elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
             elastalert_logger.info(unicode(BasicMatchString(self.rule, match)))
 
     def get_info(self):
@@ -566,7 +566,7 @@ class JiraAlerter(Alerter):
 
     def comment_on_ticket(self, ticket, match):
         text = unicode(JiraFormattedMatchString(self.rule, match))
-        timestamp = pretty_ts(match[self.rule['timestamp_field']])
+        timestamp = pretty_ts(lookup_es_key(match, self.rule['timestamp_field']))
         comment = "This alert was triggered again at %s\n%s" % (timestamp, text)
         self.client.add_comment(ticket, comment)
 
