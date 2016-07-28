@@ -1,12 +1,12 @@
 from flask import Flask, jsonify, request, abort
 from werkzeug.serving import make_ssl_devcert
 from staticconf.loader import yaml_loader
-from base64 import b64encode, b64decode
 from test_rule import MockElastAlerter
 from config import get_file_paths
 from flask.ext.cors import CORS
 from datetime import datetime
 from util import EAException
+from base64 import b64encode
 from functools import wraps
 import jsonschema
 import tempfile
@@ -17,7 +17,6 @@ import shutil
 import string
 import yaml
 import sys
-import re
 import os
 
 """ A REST API webserver that allows for interaction with ElastAlert from
@@ -37,18 +36,20 @@ conf.setdefault('api_server_authentication_enabled', False)
 # schema for rule yaml
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
 
+
 def load_rules():
     conf.setdefault('max_query_size', 100000)
     conf.setdefault('disable_rules_on_error', True)
     # Load each rule configuration file
-    rules = {} # empty rules dict
+    rules = {}  # empty rules dict
     rule_files = get_file_paths(conf)
     for rule_file in rule_files:
         try:
             rule = yaml_loader(rule_file)
             rule['rule_file'] = rule_file
         except yaml.scanner.ScannerError as e:
-            raise EAException('Could not parse file %s: %s' % (filename, e))
+            raise EAException('Could not parse file %s: %s' % (rule_file
+            , e))
         except EAException as e:
             raise EAException('Error loading file %s: %s' % (rule_file, e))
 
@@ -56,10 +57,12 @@ def load_rules():
         rules[rule['rule_id']] = rule
     return rules
 
+
 def slugify(s):
     """ Convert String to a filename slug """
     valid_chars = "-_.()%s%s" % (string.ascii_letters, string.digits)
     return ''.join(c for c in s if c in valid_chars)
+
 
 def create_rule(rule):
     try:
@@ -73,13 +76,15 @@ def create_rule(rule):
     # Rule Created Successfully
     return True
 
+
 def verify_rule(rule):
     # Verify rule has required fields
     try:
         rule_schema.validate(rule)
-    except jsonschema.ValidationError as e:
+    except jsonschema.ValidationError:
         return False
     return True
+
 
 def save_rule(filepath, rule):
     print("Rule saved!")
@@ -91,6 +96,7 @@ def save_rule(filepath, rule):
 
     with open(filepath, 'w') as outfile:
         outfile.write(yaml.safe_dump(rule, default_flow_style=False))
+
 
 def test_rule(filepath, days=1):
     test_instance = MockElastAlerter()
@@ -124,6 +130,7 @@ def test_rule(filepath, days=1):
 
     return ruleTestOutput
 
+
 def require_auth(view_function):
     @wraps(view_function)
     def decorated_function(*args, **kwargs):
@@ -137,10 +144,12 @@ def require_auth(view_function):
             abort(401)
     return decorated_function
 
+
 @app.route("/elastalert/api", methods=['GET'])
 @require_auth
 def index():
-    return jsonify({ "name": "ElastAlert Rest API" })
+    return jsonify({"name": "ElastAlert Rest API"})
+
 
 @app.route("/elastalert/api/rules/<rule_id>", methods=['GET', 'DELETE', 'POST',
                                                        'PUT'])
@@ -179,6 +188,7 @@ def rule(rule_id):
         rules = load_rules()
         return jsonify(rules[rule_id])
 
+
 @app.route("/elastalert/api/rules/test", methods=['POST'])
 @require_auth
 def test():
@@ -187,6 +197,7 @@ def test():
     result = test_rule(rule)
 
     return jsonify({"test_results": result})
+
 
 @app.route("/elastalert/api/rules", methods=['GET', 'POST'])
 @require_auth
@@ -207,8 +218,10 @@ def rules():
         # GET
         return jsonify(load_rules())
 
+
 def cleanup(filepath):
     shutil.rmtree(os.path.dirname(filepath), ignore_errors=True)
+
 
 def debug():
     tempPath = tempfile.mkdtemp() + "/server"
@@ -218,7 +231,6 @@ def debug():
 
     context = make_ssl_devcert(tempPath, host='localhost')
     app.run(host="0.0.0.0", port=5000, debug=True, threaded=True, ssl_context=context)
-
 
 
 if __name__ == '__main__':
