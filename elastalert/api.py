@@ -19,6 +19,8 @@ import yaml
 import sys
 import os
 
+# noqa: F841
+
 """ A REST API webserver that allows for interaction with ElastAlert from
 an API. """
 
@@ -48,8 +50,7 @@ def load_rules():
             rule = yaml_loader(rule_file)
             rule['rule_file'] = rule_file
         except yaml.scanner.ScannerError as e:
-            raise EAException('Could not parse file %s: %s' % (rule_file
-            , e))
+            raise EAException('Could not parse file %s: %s' % (rule_file, e))
         except EAException as e:
             raise EAException('Error loading file %s: %s' % (rule_file, e))
 
@@ -135,8 +136,8 @@ def require_auth(view_function):
     @wraps(view_function)
     def decorated_function(*args, **kwargs):
         if (bool(request.headers.get('key')) and
-            request.headers.get('key') == conf['api_server_authentication_key'] and
-            conf['api_server_authentication_enabled']):
+                request.headers.get('key') == conf['api_server_authentication_key'] and
+                conf['api_server_authentication_enabled']):
             return view_function(*args, **kwargs)
         elif not conf['api_server_authentication_enabled']:
             return view_function(*args, **kwargs)
