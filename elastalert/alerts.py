@@ -16,7 +16,6 @@ from socket import error
 
 import boto.sns as sns
 import requests
-import simplejson
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 from requests.exceptions import RequestException
@@ -26,12 +25,14 @@ from util import elastalert_logger
 from util import lookup_es_key
 from util import pretty_ts
 
+
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
-       if hasattr(obj, 'isoformat'):
-           return obj.isoformat()
-       else:
-           return json.JSONEncoder.default(self, obj)
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
+        else:
+            return json.JSONEncoder.default(self, obj)
+
 
 class BasicMatchString(object):
     """ Creates a string containing fields in match for the given rule. """
@@ -113,10 +114,10 @@ class BasicMatchString(object):
 
     def _pretty_print_as_json(self, blob):
         try:
-            return simplejson.dumps(blob, cls = DateTimeEncoder, sort_keys=True, indent=4, ensure_ascii=False)
+            return json.dumps(blob, cls=DateTimeEncoder, sort_keys=True, indent=4, ensure_ascii=False)
         except UnicodeDecodeError:
             # This blob contains non-unicode, so lets pretend it's Latin-1 to show something
-            return simplejson.dumps(blob, cls = DateTimeEncoder, sort_keys=True, indent=4, encoding='Latin-1', ensure_ascii=False)
+            return json.dumps(blob, cls=DateTimeEncoder, sort_keys=True, indent=4, encoding='Latin-1', ensure_ascii=False)
 
     def __str__(self):
         self.text = self.rule['name'] + '\n\n'
@@ -674,7 +675,7 @@ class CommandAlerter(Alerter):
             subp = subprocess.Popen(command, stdin=subprocess.PIPE, shell=self.shell)
 
             if self.rule.get('pipe_match_json'):
-                match_json = json.dumps(matches, cls = DateTimeEncoder) + '\n'
+                match_json = json.dumps(matches, cls=DateTimeEncoder) + '\n'
                 stdout, stderr = subp.communicate(input=match_json)
         except OSError as e:
             raise EAException("Error while running command %s: %s" % (' '.join(command), e))
@@ -754,7 +755,7 @@ class HipChatAlerter(Alerter):
         try:
             if self.hipchat_ignore_ssl_errors:
                 requests.packages.urllib3.disable_warnings()
-            response = requests.post(self.url, data=json.dumps(payload, cls = DateTimeEncoder), headers=headers,
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
                                      verify=not self.hipchat_ignore_ssl_errors,
                                      proxies=proxies)
             warnings.resetwarnings()
@@ -819,7 +820,7 @@ class SlackAlerter(Alerter):
 
         for url in self.slack_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(payload, cls = DateTimeEncoder), headers=headers, proxies=proxies)
+                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting to slack: %s" % e)
@@ -862,7 +863,7 @@ class PagerDutyAlerter(Alerter):
         # set https proxy, if it was provided
         proxies = {'https': self.pagerduty_proxy} if self.pagerduty_proxy else None
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls = DateTimeEncoder, ensure_ascii=False), headers=headers, proxies=proxies)
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder, ensure_ascii=False), headers=headers, proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to pagerduty: %s" % e)
@@ -902,7 +903,7 @@ class VictorOpsAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls = DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to VictorOps: %s" % e)
@@ -945,7 +946,7 @@ class TelegramAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls = DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -982,7 +983,7 @@ class GitterAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.gitter_webhook_url, json.dumps(payload, cls = DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.gitter_webhook_url, json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Gitter: %s" % e)
@@ -1024,7 +1025,7 @@ class ServiceNowAlerter(Alerter):
             "caller_id": self.rule["caller_id"]
         }
         try:
-            response = requests.post(self.servicenow_rest_url, auth=(self.rule['username'], self.rule['password']), headers=headers, data=json.dumps(payload, cls = DateTimeEncoder), proxies=proxies)
+            response = requests.post(self.servicenow_rest_url, auth=(self.rule['username'], self.rule['password']), headers=headers, data=json.dumps(payload, cls=DateTimeEncoder), proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to ServiceNow: %s" % e)

@@ -47,7 +47,7 @@ def test_basic_match_string(ea):
     match.pop('non-serializable')
     match['object'] = {'this': {'that': [1, 2, "3"]}}
     alert_text = unicode(BasicMatchString(ea.rules[0], match))
-    assert '"this": {\n        "that": [\n            1,\n            2,\n            "3"\n        ]\n    }' in alert_text
+    assert '"this": {\n        "that": [\n            1, \n            2, \n            "3"\n        ]\n    }' in alert_text
 
     ea.rules[0]['alert_text'] = 'custom text'
     alert_text = unicode(BasicMatchString(ea.rules[0], match))
@@ -75,8 +75,8 @@ def test_jira_formatted_match_string(ea):
     expected_alert_text_snippet = '{code:json}{\n' \
         + tab + '"foo": {\n' \
         + 2 * tab + '"bar": [\n' \
-        + 3 * tab + '"one",\n' \
-        + 3 * tab + '2,\n' \
+        + 3 * tab + '"one", \n' \
+        + 3 * tab + '2, \n' \
         + 3 * tab + '"three"\n' \
         + 2 * tab + ']\n' \
         + tab + '}\n' \
