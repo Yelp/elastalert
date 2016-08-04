@@ -171,6 +171,7 @@ properties:
   ### Commands
   command: *arrayOfString
   pipe_match_json: {type: boolean}
+  fail_on_non_zero_exit: {type: boolean}
 
   ### Email
   email: *arrayOfString
