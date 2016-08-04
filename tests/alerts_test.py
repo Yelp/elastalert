@@ -632,6 +632,21 @@ def test_command():
     assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
     assert mock_subprocess.communicate.called_with(input=json.dumps(match))
 
+    # Test command with fail_on_non_zero_exit
+    rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],
+            'fail_on_non_zero_exit': True}
+    alert = CommandAlerter(rule)
+    match = {'@timestamp': '2014-01-01T00:00:00',
+             'somefield': 'foobarbaz'}
+    with pytest.raises(Exception) as exception:
+        with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+            mock_subprocess = mock.Mock()
+            mock_popen.return_value = mock_subprocess
+            mock_subprocess.wait.return_value = 1
+            alert.alert([match])
+    assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
+    assert "Non-zero exit code while running command" in str(exception)
+
 
 def test_slack_uses_custom_title():
     rule = {
