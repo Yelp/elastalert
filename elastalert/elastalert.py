@@ -620,7 +620,7 @@ class ElastAlerter():
                         try:
                             enhancement.process(match)
                         except EAException as e:
-                            self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule[':name']})
+                            self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
                 except DropMatchException:
                     continue
 

@@ -60,7 +60,6 @@ def main():
         port = args.port if args.port else int(raw_input('Enter elasticsearch port: '))
         use_ssl = (args.ssl if args.ssl is not None
                    else raw_input('Use SSL? t/f: ').lower() in ('t', 'true'))
-
         if args.no_auth is None:
             username = raw_input('Enter optional basic-auth username (or leave blank): ')
             password = getpass.getpass('Enter optional basic-auth password (or leave blank): ')
