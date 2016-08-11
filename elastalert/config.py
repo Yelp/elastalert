@@ -400,6 +400,7 @@ def load_rules(args):
             conf['old_query_limit'] = datetime.timedelta(**conf['old_query_limit'])
         else:
             conf['old_query_limit'] = datetime.timedelta(weeks=1)
+
     except (KeyError, TypeError) as e:
         raise EAException('Invalid time format used: %s' % (e))
 
