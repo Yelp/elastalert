@@ -158,6 +158,12 @@ def load_options(rule, conf, args=None):
     if 'use_ssl' in conf:
         rule.setdefault('use_ssl', conf.get('use_ssl'))
 
+    # Add support for client ssl certificate auth
+    if 'verify_certs' in conf:
+        rule.setdefault('verify_certs', conf.get('verify_certs'))
+        rule.setdefault('ca_certs', conf.get('ca_certs'))
+        rule.setdefault('client_cert', conf.get('client_cert'))
+
     # Set timestamp_type conversion function, used when generating queries and processing hits
     rule['timestamp_type'] = rule['timestamp_type'].strip().lower()
     if rule['timestamp_type'] == 'iso':
@@ -394,6 +400,7 @@ def load_rules(args):
             conf['old_query_limit'] = datetime.timedelta(**conf['old_query_limit'])
         else:
             conf['old_query_limit'] = datetime.timedelta(weeks=1)
+
     except (KeyError, TypeError) as e:
         raise EAException('Invalid time format used: %s' % (e))
 

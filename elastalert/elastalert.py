@@ -134,14 +134,27 @@ class ElastAlerter():
                                          aws_region=es_conn_conf['aws_region'],
                                          boto_profile=es_conn_conf['boto_profile'])
 
-        return Elasticsearch(host=es_conn_conf['es_host'],
-                             port=es_conn_conf['es_port'],
-                             url_prefix=es_conn_conf['es_url_prefix'],
-                             use_ssl=es_conn_conf['use_ssl'],
-                             connection_class=RequestsHttpConnection,
-                             http_auth=es_conn_conf['http_auth'],
-                             timeout=es_conn_conf['es_conn_timeout'],
-                             send_get_body_as=es_conn_conf['send_get_body_as'])
+        if es_conn_conf['verify_certs']:
+            return Elasticsearch(host=es_conn_conf['es_host'],
+                                 port=es_conn_conf['es_port'],
+                                 url_prefix=es_conn_conf['es_url_prefix'],
+                                 use_ssl=es_conn_conf['use_ssl'],
+                                 verify_certs=es_conn_conf['verify_certs'],
+                                 ca_certs=es_conn_conf['ca_certs'],
+                                 client_cert=es_conn_conf['client_cert'],
+                                 connection_class=RequestsHttpConnection,
+                                 http_auth=es_conn_conf['http_auth'],
+                                 timeout=es_conn_conf['es_conn_timeout'],
+                                 send_get_body_as=es_conn_conf['send_get_body_as'])
+        else:
+            return Elasticsearch(host=es_conn_conf['es_host'],
+                                 port=es_conn_conf['es_port'],
+                                 url_prefix=es_conn_conf['es_url_prefix'],
+                                 use_ssl=es_conn_conf['use_ssl'],
+                                 connection_class=RequestsHttpConnection,
+                                 http_auth=es_conn_conf['http_auth'],
+                                 timeout=es_conn_conf['es_conn_timeout'],
+                                 send_get_body_as=es_conn_conf['send_get_body_as'])
 
     @staticmethod
     def build_es_conn_config(conf):
@@ -151,6 +164,9 @@ class ElastAlerter():
         will be a basicauth username:password formatted string """
         parsed_conf = {}
         parsed_conf['use_ssl'] = False
+        parsed_conf['verify_certs'] = False
+        parsed_conf['ca_certs'] = None
+        parsed_conf['client_cert'] = None
         parsed_conf['http_auth'] = None
         parsed_conf['es_username'] = None
         parsed_conf['es_password'] = None
@@ -174,6 +190,11 @@ class ElastAlerter():
 
         if 'use_ssl' in conf:
             parsed_conf['use_ssl'] = conf['use_ssl']
+
+        if 'verify_certs' in conf:
+            parsed_conf['verify_certs'] = conf['verify_certs']
+            parsed_conf['client_cert'] = conf['client_cert']
+            parsed_conf['ca_certs'] = conf['ca_certs']
 
         if 'es_conn_timeout' in conf:
             parsed_conf['es_conn_timeout'] = conf['es_conn_timeout']
@@ -599,7 +620,7 @@ class ElastAlerter():
                         try:
                             enhancement.process(match)
                         except EAException as e:
-                            self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+                            self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule[':name']})
                 except DropMatchException:
                     continue
 
