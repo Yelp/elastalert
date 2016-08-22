@@ -52,6 +52,7 @@ def test_basic_match_string(ea):
     ea.rules[0]['alert_text'] = 'custom text'
     alert_text = unicode(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
+    assert 'anytest' not in alert_text
 
     ea.rules[0]['alert_text_type'] = 'alert_text_only'
     alert_text = unicode(BasicMatchString(ea.rules[0], match))
