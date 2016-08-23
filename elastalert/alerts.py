@@ -120,7 +120,10 @@ class BasicMatchString(object):
             return json.dumps(blob, cls=DateTimeEncoder, sort_keys=True, indent=4, encoding='Latin-1', ensure_ascii=False)
 
     def __str__(self):
-        self.text = self.rule['name'] + '\n\n'
+        self.text = ''
+        if 'alert_text' not in self.rule:
+            self.text += self.rule['name'] + '\n\n'
+
         self._add_custom_alert_text()
         self._ensure_new_line()
         if self.rule.get('alert_text_type') != 'alert_text_only':
