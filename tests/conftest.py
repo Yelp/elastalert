@@ -69,7 +69,7 @@ def ea():
             'old_query_limit': datetime.timedelta(weeks=1),
             'disable_rules_on_error': False,
             'scroll_keepalive': '30s'}
-    elastalert.elastalert.new_elasticsearch = mock_es_client
+    elastalert.elastalert.elasticsearch_client = mock_es_client
     with mock.patch('elastalert.elastalert.get_rule_hashes'):
         with mock.patch('elastalert.elastalert.load_rules') as load_conf:
             load_conf.return_value = conf

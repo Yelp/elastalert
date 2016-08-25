@@ -249,7 +249,7 @@ def add_raw_postfix(field):
     return field
 
 
-def new_elasticsearch(conf):
+def elasticsearch_client(conf):
     """ returns an Elasticsearch instance configured using an es_conn_config """
     es_conn_conf = build_es_conn_config(conf)
     auth = Auth()

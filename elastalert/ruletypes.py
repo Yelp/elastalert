@@ -7,10 +7,10 @@ from util import add_raw_postfix
 from util import dt_to_ts
 from util import EAException
 from util import elastalert_logger
+from util import elasticsearch_client
 from util import format_index
 from util import hashable
 from util import lookup_es_key
-from util import new_elasticsearch
 from util import new_get_event_ts
 from util import pretty_ts
 from util import ts_now
@@ -521,7 +521,7 @@ class NewTermsRule(RuleType):
 
     def get_all_terms(self, args):
         """ Performs a terms aggregation for each field to get every existing term. """
-        self.es = new_elasticsearch(self.rules)
+        self.es = elasticsearch_client(self.rules)
         window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
         field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
         query_template = {"aggs": {"values": {"terms": field_name}}}

@@ -472,7 +472,7 @@ def test_new_term():
     mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
                                                                      {'key': 'key2', 'doc_count': 5}]}}}}
 
-    with mock.patch('elastalert.ruletypes.new_elasticsearch') as mock_es:
+    with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
         call_args = []
@@ -523,7 +523,7 @@ def test_new_term():
 
     # Missing_field
     rules['alert_on_missing_field'] = True
-    with mock.patch('elastalert.ruletypes.new_elasticsearch') as mock_es:
+    with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
         rule = NewTermsRule(rules)
@@ -539,7 +539,7 @@ def test_new_term_nested_field():
              'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
     mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
                                                                      {'key': 'key2', 'doc_count': 5}]}}}}
-    with mock.patch('elastalert.ruletypes.new_elasticsearch') as mock_es:
+    with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
         rule = NewTermsRule(rules)
@@ -562,7 +562,7 @@ def test_new_term_with_terms():
     mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
                                                                      {'key': 'key2', 'doc_count': 5}]}}}}
 
-    with mock.patch('elastalert.ruletypes.new_elasticsearch') as mock_es:
+    with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
         rule = NewTermsRule(rules)
@@ -630,7 +630,7 @@ def test_new_term_with_composite_fields():
         }
     }
 
-    with mock.patch('elastalert.ruletypes.new_elasticsearch') as mock_es:
+    with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
         rule = NewTermsRule(rules)
@@ -666,7 +666,7 @@ def test_new_term_with_composite_fields():
 
     # Missing_fields
     rules['alert_on_missing_field'] = True
-    with mock.patch('elastalert.ruletypes.new_elasticsearch') as mock_es:
+    with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
         rule = NewTermsRule(rules)

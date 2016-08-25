@@ -29,9 +29,9 @@ from util import cronite_datetime_to_timestamp
 from util import dt_to_ts
 from util import EAException
 from util import elastalert_logger
+from util import elasticsearch_client
 from util import format_index
 from util import lookup_es_key
-from util import new_elasticsearch
 from util import pretty_ts
 from util import seconds
 from util import set_es_key
@@ -112,7 +112,7 @@ class ElastAlerter():
         self.starttime = self.args.start
         self.disabled_rules = []
 
-        self.writeback_es = new_elasticsearch(self.conf)
+        self.writeback_es = elasticsearch_client(self.conf)
 
         for rule in self.rules:
             self.init_rule(rule)
@@ -467,7 +467,7 @@ class ElastAlerter():
         """
         run_start = time.time()
 
-        self.current_es = new_elasticsearch(rule)
+        self.current_es = elasticsearch_client(rule)
         self.current_es_addr = (rule['es_host'], rule['es_port'])
 
         # If there are pending aggregate matches, try processing them
@@ -697,7 +697,7 @@ class ElastAlerter():
         """ Run each rule one time """
         # If writeback_es errored, it's disabled until the next query cycle
         if not self.writeback_es:
-            self.writeback_es = new_elasticsearch(self.conf)
+            self.writeback_es = elasticsearch_client(self.conf)
 
         self.send_pending_alerts()
 
@@ -804,7 +804,7 @@ class ElastAlerter():
                    'dashboard': db_js}
 
         # Upload
-        es = new_elasticsearch(rule)
+        es = elasticsearch_client(rule)
 
         res = es.create(index='kibana-int',
                         doc_type='temp',
@@ -819,7 +819,7 @@ class ElastAlerter():
 
     def get_dashboard(self, rule, db_name):
         """ Download dashboard which matches use_kibana_dashboard from elasticsearch. """
-        es = new_elasticsearch(rule)
+        es = elasticsearch_client(rule)
         if not db_name:
             raise EAException("use_kibana_dashboard undefined")
         query = {'query': {'term': {'_id': db_name}}}
@@ -1034,7 +1034,7 @@ class ElastAlerter():
                 continue
 
             # Set current_es for top_count_keys query
-            self.current_es = new_elasticsearch(rule)
+            self.current_es = elasticsearch_client(rule)
             self.current_es_addr = (rule['es_host'], rule['es_port'])
 
             # Send the alert unless it's a future alert
@@ -1091,7 +1091,7 @@ class ElastAlerter():
                                               {'term': {'alert_sent': 'false'}}]}},
                  'sort': {'alert_time': {'order': 'desc'}}}
         if not self.writeback_es:
-            self.writeback_es = new_elasticsearch(self.conf)
+            self.writeback_es = elasticsearch_client(self.conf)
         try:
             res = self.writeback_es.search(index=self.writeback_index,
                                            doc_type='elastalert',
@@ -1227,7 +1227,7 @@ class ElastAlerter():
     def handle_error(self, message, data=None):
         ''' Logs message at error level and writes message, data and traceback to Elasticsearch. '''
         if not self.writeback_es:
-            self.writeback_es = new_elasticsearch(self.conf)
+            self.writeback_es = elasticsearch_client(self.conf)
 
         logging.error(message)
         body = {'message': message}
