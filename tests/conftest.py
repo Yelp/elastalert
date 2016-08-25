@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import datetime
 
-import elasticsearch
 import mock
 import pytest
 
-from elastalert.elastalert import ElastAlerter
+import elastalert.elastalert
+import elastalert.util
 from elastalert.util import dt_to_ts
 from elastalert.util import ts_to_dt
 
@@ -69,11 +69,11 @@ def ea():
             'old_query_limit': datetime.timedelta(weeks=1),
             'disable_rules_on_error': False,
             'scroll_keepalive': '30s'}
-    elasticsearch.client.Elasticsearch = mock_es_client
+    elastalert.elastalert.new_elasticsearch = mock_es_client
     with mock.patch('elastalert.elastalert.get_rule_hashes'):
         with mock.patch('elastalert.elastalert.load_rules') as load_conf:
             load_conf.return_value = conf
-            ea = ElastAlerter(['--pin_rules'])
+            ea = elastalert.elastalert.ElastAlerter(['--pin_rules'])
     ea.rules[0]['type'] = mock_ruletype()
     ea.rules[0]['alert'] = [mock_alert()]
     ea.writeback_es = mock_es_client()

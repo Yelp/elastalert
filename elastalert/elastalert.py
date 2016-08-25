@@ -18,13 +18,10 @@ import dateutil.tz
 import kibana
 import yaml
 from alerts import DebugAlerter
-from auth import Auth
 from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
 from croniter import croniter
-from elasticsearch import RequestsHttpConnection
-from elasticsearch.client import Elasticsearch
 from elasticsearch.exceptions import ElasticsearchException
 from enhancements import DropMatchException
 from util import add_raw_postfix
@@ -34,6 +31,7 @@ from util import EAException
 from util import elastalert_logger
 from util import format_index
 from util import lookup_es_key
+from util import new_elasticsearch
 from util import pretty_ts
 from util import seconds
 from util import set_es_key
@@ -114,74 +112,13 @@ class ElastAlerter():
         self.starttime = self.args.start
         self.disabled_rules = []
 
-        self.es_conn_config = self.build_es_conn_config(self.conf)
-
-        self.writeback_es = self.new_elasticsearch(self.es_conn_config)
+        self.writeback_es = new_elasticsearch(self.conf)
 
         for rule in self.rules:
             self.init_rule(rule)
 
         if self.args.silence:
             self.silence()
-
-    @staticmethod
-    def new_elasticsearch(es_conn_conf):
-        """ returns an Elasticsearch instance configured using an es_conn_config """
-        auth = Auth()
-        es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
-                                         username=es_conn_conf['es_username'],
-                                         password=es_conn_conf['es_password'],
-                                         aws_region=es_conn_conf['aws_region'],
-                                         boto_profile=es_conn_conf['boto_profile'])
-
-        return Elasticsearch(host=es_conn_conf['es_host'],
-                             port=es_conn_conf['es_port'],
-                             url_prefix=es_conn_conf['es_url_prefix'],
-                             use_ssl=es_conn_conf['use_ssl'],
-                             connection_class=RequestsHttpConnection,
-                             http_auth=es_conn_conf['http_auth'],
-                             timeout=es_conn_conf['es_conn_timeout'],
-                             send_get_body_as=es_conn_conf['send_get_body_as'])
-
-    @staticmethod
-    def build_es_conn_config(conf):
-        """ Given a conf dictionary w/ raw config properties 'use_ssl', 'es_host', 'es_port'
-        'es_username' and 'es_password', this will return a new dictionary
-        with properly initialized values for 'es_host', 'es_port', 'use_ssl' and 'http_auth' which
-        will be a basicauth username:password formatted string """
-        parsed_conf = {}
-        parsed_conf['use_ssl'] = False
-        parsed_conf['http_auth'] = None
-        parsed_conf['es_username'] = None
-        parsed_conf['es_password'] = None
-        parsed_conf['aws_region'] = None
-        parsed_conf['boto_profile'] = None
-        parsed_conf['es_host'] = conf['es_host']
-        parsed_conf['es_port'] = conf['es_port']
-        parsed_conf['es_url_prefix'] = ''
-        parsed_conf['es_conn_timeout'] = 10
-        parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
-
-        if 'es_username' in conf:
-            parsed_conf['es_username'] = conf['es_username']
-            parsed_conf['es_password'] = conf['es_password']
-
-        if 'aws_region' in conf:
-            parsed_conf['aws_region'] = conf['aws_region']
-
-        if 'boto_profile' in conf:
-            parsed_conf['boto_profile'] = conf['boto_profile']
-
-        if 'use_ssl' in conf:
-            parsed_conf['use_ssl'] = conf['use_ssl']
-
-        if 'es_conn_timeout' in conf:
-            parsed_conf['es_conn_timeout'] = conf['es_conn_timeout']
-
-        if 'es_url_prefix' in conf:
-            parsed_conf['es_url_prefix'] = conf['es_url_prefix']
-
-        return parsed_conf
 
     @staticmethod
     def get_index(rule, starttime=None, endtime=None):
@@ -530,8 +467,7 @@ class ElastAlerter():
         """
         run_start = time.time()
 
-        rule_es_conn_config = self.build_es_conn_config(rule)
-        self.current_es = self.new_elasticsearch(rule_es_conn_config)
+        self.current_es = new_elasticsearch(rule)
         self.current_es_addr = (rule['es_host'], rule['es_port'])
 
         # If there are pending aggregate matches, try processing them
@@ -761,7 +697,7 @@ class ElastAlerter():
         """ Run each rule one time """
         # If writeback_es errored, it's disabled until the next query cycle
         if not self.writeback_es:
-            self.writeback_es = self.new_elasticsearch(self.es_conn_config)
+            self.writeback_es = new_elasticsearch(self.conf)
 
         self.send_pending_alerts()
 
@@ -868,8 +804,7 @@ class ElastAlerter():
                    'dashboard': db_js}
 
         # Upload
-        rule_es_conn_config = self.build_es_conn_config(rule)
-        es = self.new_elasticsearch(rule_es_conn_config)
+        es = new_elasticsearch(rule)
 
         res = es.create(index='kibana-int',
                         doc_type='temp',
@@ -884,8 +819,7 @@ class ElastAlerter():
 
     def get_dashboard(self, rule, db_name):
         """ Download dashboard which matches use_kibana_dashboard from elasticsearch. """
-        rule_es_conn_config = self.build_es_conn_config(rule)
-        es = self.new_elasticsearch(rule_es_conn_config)
+        es = new_elasticsearch(rule)
         if not db_name:
             raise EAException("use_kibana_dashboard undefined")
         query = {'query': {'term': {'_id': db_name}}}
@@ -1100,8 +1034,7 @@ class ElastAlerter():
                 continue
 
             # Set current_es for top_count_keys query
-            rule_es_conn_config = self.build_es_conn_config(rule)
-            self.current_es = self.new_elasticsearch(rule_es_conn_config)
+            self.current_es = new_elasticsearch(rule)
             self.current_es_addr = (rule['es_host'], rule['es_port'])
 
             # Send the alert unless it's a future alert
@@ -1158,7 +1091,7 @@ class ElastAlerter():
                                               {'term': {'alert_sent': 'false'}}]}},
                  'sort': {'alert_time': {'order': 'desc'}}}
         if not self.writeback_es:
-            self.writeback_es = self.new_elasticsearch(self.es_conn_config)
+            self.writeback_es = new_elasticsearch(self.conf)
         try:
             res = self.writeback_es.search(index=self.writeback_index,
                                            doc_type='elastalert',
@@ -1294,7 +1227,7 @@ class ElastAlerter():
     def handle_error(self, message, data=None):
         ''' Logs message at error level and writes message, data and traceback to Elasticsearch. '''
         if not self.writeback_es:
-            self.writeback_es = self.new_elasticsearch(self.es_conn_config)
+            self.writeback_es = new_elasticsearch(self.conf)
 
         logging.error(message)
         body = {'message': message}

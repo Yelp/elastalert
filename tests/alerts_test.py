@@ -569,7 +569,7 @@ def test_kibana(ea):
             'include': ['@timestamp'],
             'timestamp_field': '@timestamp'}
     match = {'@timestamp': '2014-10-10T00:00:00'}
-    with mock.patch("elastalert.elastalert.Elasticsearch") as mock_es:
+    with mock.patch("elastalert.elastalert.new_elasticsearch") as mock_es:
         mock_create = mock.Mock(return_value={'_id': 'ABCDEFGH'})
         mock_es_inst = mock.Mock()
         mock_es_inst.create = mock_create
