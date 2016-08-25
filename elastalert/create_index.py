@@ -46,6 +46,10 @@ def main():
         password = data.get('es_password')
         url_prefix = args.url_prefix if args.url_prefix is not None else data.get('es_url_prefix', '')
         use_ssl = args.ssl if args.ssl is not None else data.get('use_ssl')
+        verify_certs = data.get('verify_certs')
+        if verify_certs:
+            ca_certs = data.get('ca_certs')
+            client_cert = data.get('client_cert')
         aws_region = data.get('aws_region', None)
         send_get_body_as = data.get('send_get_body_as', 'GET')
     else:
@@ -70,14 +74,28 @@ def main():
                      aws_region=aws_region,
                      boto_profile=args.boto_profile)
 
-    es = Elasticsearch(
-        host=host,
-        port=port,
-        use_ssl=use_ssl,
-        connection_class=RequestsHttpConnection,
-        http_auth=http_auth,
-        url_prefix=url_prefix,
-        send_get_body_as=send_get_body_as)
+    if verify_certs:
+        es = Elasticsearch(
+            host=host,
+            port=port,
+            timeout=120,
+            use_ssl=use_ssl,
+            verify_certs=verify_certs,
+            ca_certs=ca_certs,
+            client_cert=client_cert,
+            connection_class=RequestsHttpConnection,
+            http_auth=http_auth,
+            url_prefix=url_prefix,
+            send_get_body_as=send_get_body_as)
+    else:
+        es = Elasticsearch(
+            host=host,
+            port=port,
+            use_ssl=use_ssl,
+            connection_class=RequestsHttpConnection,
+            http_auth=http_auth,
+            url_prefix=url_prefix,
+            send_get_body_as=send_get_body_as)
 
     silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                   'until': {'type': 'date', 'format': 'dateOptionalTime'},
