@@ -126,6 +126,7 @@ properties:
   name: {type: string}
 
   use_ssl: {type: boolean}
+  verify_certs: {type: boolean}
   es_username: {type: string}
   es_password: {type: string}
   use_strftime_index: {type: boolean}

@@ -108,7 +108,9 @@ even if ElastAlert is stopped and restarted, it will never miss data or look at 
 
 ``es_port``: The port corresponding to ``es_host``.
 
-``use_ssl``: Optional; whether or not to connect to ``es_host`` using SSL; set to ``True`` or ``False``.
+``use_ssl``: Optional; whether or not to connect to ``es_host`` using TLS; set to ``True`` or ``False``.
+
+``verify_certs``: Optional; whether or not to verify TLS certificates; set to ``True`` or ``False``. The default is ``True``.
 
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``.
 

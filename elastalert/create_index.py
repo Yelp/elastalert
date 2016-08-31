@@ -21,8 +21,10 @@ def main():
     parser.add_argument('--port', type=int, help='Elasticsearch port')
     parser.add_argument('--url-prefix', help='Elasticsearch URL prefix')
     parser.add_argument('--no-auth', action='store_const', const=True, help='Suppress prompt for basic auth')
-    parser.add_argument('--ssl', action='store_true', default=None, help='Use SSL')
-    parser.add_argument('--no-ssl', dest='ssl', action='store_false', help='Do not use SSL')
+    parser.add_argument('--ssl', action='store_true', default=None, help='Use TLS')
+    parser.add_argument('--no-ssl', dest='ssl', action='store_false', help='Do not use TLS')
+    parser.add_argument('--verify-certs', action='store_true', default=None, help='Verify TLS certificates')
+    parser.add_argument('--no-verify-certs', dest='verify_certs', action='store_false', help='Do not verify TLS certificates')
     parser.add_argument('--index', help='Index name to create')
     parser.add_argument('--old-index', help='Old index name to copy')
     parser.add_argument('--send_get_body_as', default='GET', help='Method for querying Elasticsearch - POST, GET or source')
@@ -46,6 +48,7 @@ def main():
         password = data.get('es_password')
         url_prefix = args.url_prefix if args.url_prefix is not None else data.get('es_url_prefix', '')
         use_ssl = args.ssl if args.ssl is not None else data.get('use_ssl')
+        verify_certs = args.verify_certs if args.verify_certs is not None else data.get('verify_certs') is not False
         aws_region = data.get('aws_region', None)
         send_get_body_as = data.get('send_get_body_as', 'GET')
     else:
@@ -56,6 +59,11 @@ def main():
         port = args.port if args.port else int(raw_input('Enter elasticsearch port: '))
         use_ssl = (args.ssl if args.ssl is not None
                    else raw_input('Use SSL? t/f: ').lower() in ('t', 'true'))
+        if use_ssl:
+            verify_certs = (args.verify_certs if args.verify_certs is not None
+                            else raw_input('Verify TLS certificates? t/f: ').lower() not in ('f', 'false'))
+        else:
+            verify_certs = True
         if args.no_auth is None:
             username = raw_input('Enter optional basic-auth username (or leave blank): ')
             password = getpass.getpass('Enter optional basic-auth password (or leave blank): ')
@@ -74,6 +82,7 @@ def main():
         host=host,
         port=port,
         use_ssl=use_ssl,
+        verify_certs=verify_certs,
         connection_class=RequestsHttpConnection,
         http_auth=http_auth,
         url_prefix=url_prefix,
