@@ -32,6 +32,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``use_ssl`` (boolean, default False)                         |           |
 +--------------------------------------------------------------+           |
+| ``verify_certs`` (boolean, default True)                     |           |
++--------------------------------------------------------------+           |
 | ``es_username`` (string, no default)                         |           |
 +--------------------------------------------------------------+           |
 | ``es_password`` (string, no default)                         |           |
@@ -203,7 +205,12 @@ Optional Settings
 use_ssl
 ^^^^^^^
 
-``use_ssl``: Whether or not to connect to ``es_host`` using SSL. (Optional, boolean, default False)
+``use_ssl``: Whether or not to connect to ``es_host`` using TLS. (Optional, boolean, default False)
+
+verify_certs
+^^^^^^^^^^^^
+
+``verify_certs``: Whether or not to verify TLS certificates. (Optional, boolean, default True)
 
 es_username
 ^^^^^^^^^^^
@@ -1002,7 +1009,7 @@ Optional:
 
 ``smtp_port``: The port to use. Default is 25.
 
-``smtp_ssl``: Connect the SMTP host using SSL, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
+``smtp_ssl``: Connect the SMTP host using TLS, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
 STARTTLS.
 
 ``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. It should be YAML formatted and contain
@@ -1170,7 +1177,7 @@ the room you want to post to. The room ID will be the numeric part of the URL.
 
 ``hipchat_domain``: The custom domain in case you have HipChat own server deployment. Default is api.hipchat.com.
 
-``hipchat_ignore_ssl_errors``: Ignore SSL errors (self-signed certificates, etc.). Default is false.
+``hipchat_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
 
 ``hipchat_proxy``: By default Elastalert will not use a network proxy to send notifications to HipChat. Set this option using ``hostname:port`` if you need to use a proxy.
 
