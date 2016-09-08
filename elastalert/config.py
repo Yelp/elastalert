@@ -205,6 +205,12 @@ def load_options(rule, conf, args=None):
     # Set slack options from global config
     rule.setdefault('slack_webhook_url', conf.get('slack_webhook_url'))
 
+    # Set pagerduty options from global config
+    if 'pagerduty_service_key' in conf:
+        rule.setdefault('pagerduty_service_key', conf.get('pagerduty_service_key'))
+    if 'pagerduty_client_name' in conf:
+        rule.setdefault('pagerduty_client_name', conf.get('pagerduty_client_name'))
+
     # Make sure we have required options
     if required_locals - frozenset(rule.keys()):
         raise EAException('Missing required option(s): %s' % (', '.join(required_locals - frozenset(rule.keys()))))
@@ -233,6 +239,12 @@ def load_options(rule, conf, args=None):
     if 'top_count_keys' in rule and rule.get('raw_count_keys', True):
         keys = rule.get('top_count_keys')
         rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in keys]
+
+    # Get kibana link options from global config
+    if 'generate_kibana_link' in conf:
+        rule.setdefault('generate_kibana_link', conf.get('generate_kibana_link'))
+    if 'kibana_url' in conf:
+        rule.setdefault('kibana_url', conf.get('kibana_url'))
 
     # Check that generate_kibana_url is compatible with the filters
     if rule.get('generate_kibana_link'):
