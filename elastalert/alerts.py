@@ -730,6 +730,7 @@ class HipChatAlerter(Alerter):
     def __init__(self, rule):
         super(HipChatAlerter, self).__init__(rule)
         self.hipchat_msg_color = self.rule.get('hipchat_msg_color', 'red')
+        self.hipchat_message_format = self.rule.get('hipchat_message_format', 'html')
         self.hipchat_auth_token = self.rule['hipchat_auth_token']
         self.hipchat_room_id = self.rule['hipchat_room_id']
         self.hipchat_domain = self.rule.get('hipchat_domain', 'api.hipchat.com')
@@ -745,13 +746,18 @@ class HipChatAlerter(Alerter):
         if (len(body) > 9999):
             body = body[:9980] + '..(truncated)'
 
+        # Use appropriate line ending for text/html
+        if self.hipchat_message_format == 'html':
+            body = body.replace('\n', '<br />')
+
         # Post to HipChat
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
         proxies = {'https': self.hipchat_proxy} if self.hipchat_proxy else None
         payload = {
             'color': self.hipchat_msg_color,
-            'message': body.replace('\n', '<br />'),
+            'message': body,
+            'message_format': self.hipchat_message_format,
             'notify': True
         }
 
