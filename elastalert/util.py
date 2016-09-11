@@ -244,3 +244,11 @@ def add_raw_postfix(field):
     if not field.endswith('.raw'):
         field += '.raw'
     return field
+
+
+def actual_event_count(data_list):
+    count = 0
+    for event in data_list:
+        if event[1] > 0:
+            count += 1
+    return count
