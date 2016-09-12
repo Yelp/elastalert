@@ -423,10 +423,6 @@ def load_rules(args):
         rules.append(rule)
         names.append(rule['name'])
 
-    if not rules:
-        logging.exception('No rules loaded. Exiting')
-        exit(1)
-
     conf['rules'] = rules
     return conf
 
