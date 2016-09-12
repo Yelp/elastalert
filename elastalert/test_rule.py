@@ -19,6 +19,7 @@ import yaml
 from elastalert.config import load_modules
 from elastalert.config import load_options
 from elastalert.elastalert import ElastAlerter
+from elastalert.util import elasticsearch_client
 from elastalert.util import lookup_es_key
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
@@ -47,8 +48,7 @@ class MockElastAlerter(object):
             return []
 
         # Set up elasticsearch client and query
-        es_config = ElastAlerter.build_es_conn_config(conf)
-        es_client = ElastAlerter.new_elasticsearch(es_config)
+        es_client = elasticsearch_client(conf)
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()
         ts = conf.get('timestamp_field', '@timestamp')
@@ -171,7 +171,7 @@ class MockElastAlerter(object):
         elastalert.get_hits_count = self.mock_count
         elastalert.get_hits_terms = self.mock_terms
         elastalert.get_hits = self.mock_hits
-        elastalert.new_elasticsearch = mock.Mock()
+        elastalert.elasticsearch_client = mock.Mock()
 
     def run_elastalert(self, rule, conf, args):
         """ Creates an ElastAlert instance and run's over for a specific rule using either real or mock data. """

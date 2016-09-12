@@ -3,11 +3,11 @@ import copy
 import datetime
 
 from blist import sortedlist
-from elasticsearch.client import Elasticsearch
 from util import add_raw_postfix
 from util import dt_to_ts
 from util import EAException
 from util import elastalert_logger
+from util import elasticsearch_client
 from util import format_index
 from util import hashable
 from util import lookup_es_key
@@ -521,12 +521,7 @@ class NewTermsRule(RuleType):
 
     def get_all_terms(self, args):
         """ Performs a terms aggregation for each field to get every existing term. """
-        self.es = Elasticsearch(
-            host=self.rules['es_host'],
-            port=self.rules['es_port'],
-            timeout=self.rules.get('es_conn_timeout', 50),
-            send_get_body_as=self.rules.get('send_get_body_as', 'GET')
-        )
+        self.es = elasticsearch_client(self.rules)
         window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
         field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
         query_template = {"aggs": {"values": {"terms": field_name}}}

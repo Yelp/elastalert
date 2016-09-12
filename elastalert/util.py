@@ -4,6 +4,9 @@ import logging
 
 import dateutil.parser
 import dateutil.tz
+from auth import Auth
+from elasticsearch import RequestsHttpConnection
+from elasticsearch.client import Elasticsearch
 
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
@@ -244,3 +247,62 @@ def add_raw_postfix(field):
     if not field.endswith('.raw'):
         field += '.raw'
     return field
+
+
+def elasticsearch_client(conf):
+    """ returns an Elasticsearch instance configured using an es_conn_config """
+    es_conn_conf = build_es_conn_config(conf)
+    auth = Auth()
+    es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
+                                     username=es_conn_conf['es_username'],
+                                     password=es_conn_conf['es_password'],
+                                     aws_region=es_conn_conf['aws_region'],
+                                     boto_profile=es_conn_conf['boto_profile'])
+
+    return Elasticsearch(host=es_conn_conf['es_host'],
+                         port=es_conn_conf['es_port'],
+                         url_prefix=es_conn_conf['es_url_prefix'],
+                         use_ssl=es_conn_conf['use_ssl'],
+                         verify_certs=es_conn_conf['verify_certs'],
+                         connection_class=RequestsHttpConnection,
+                         http_auth=es_conn_conf['http_auth'],
+                         timeout=es_conn_conf['es_conn_timeout'],
+                         send_get_body_as=es_conn_conf['send_get_body_as'])
+
+
+def build_es_conn_config(conf):
+    """ Given a conf dictionary w/ raw config properties 'use_ssl', 'es_host', 'es_port'
+    'es_username' and 'es_password', this will return a new dictionary
+    with properly initialized values for 'es_host', 'es_port', 'use_ssl' and 'http_auth' which
+    will be a basicauth username:password formatted string """
+    parsed_conf = {}
+    parsed_conf['use_ssl'] = False
+    parsed_conf['verify_certs'] = True
+    parsed_conf['http_auth'] = None
+    parsed_conf['es_username'] = None
+    parsed_conf['es_password'] = None
+    parsed_conf['aws_region'] = None
+    parsed_conf['boto_profile'] = None
+    parsed_conf['es_host'] = conf['es_host']
+    parsed_conf['es_port'] = conf['es_port']
+    parsed_conf['es_url_prefix'] = ''
+    parsed_conf['es_conn_timeout'] = 10
+    parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
+
+    if 'es_username' in conf:
+        parsed_conf['es_username'] = conf['es_username']
+        parsed_conf['es_password'] = conf['es_password']
+
+    if 'aws_region' in conf:
+        parsed_conf['aws_region'] = conf['aws_region']
+
+    if 'boto_profile' in conf:
+        parsed_conf['boto_profile'] = conf['boto_profile']
+
+    if 'use_ssl' in conf:
+        parsed_conf['use_ssl'] = conf['use_ssl']
+
+    if 'verify_certs' in conf:
+        parsed_conf['verify_certs'] = conf['verify_certs']
+
+    return parsed_conf
