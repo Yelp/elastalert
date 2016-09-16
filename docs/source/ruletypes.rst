@@ -1181,7 +1181,9 @@ the room you want to post to. The room ID will be the numeric part of the URL.
 
 ``hipchat_proxy``: By default Elastalert will not use a network proxy to send notifications to HipChat. Set this option using ``hostname:port`` if you need to use a proxy.
 
-``hipchat_message_format``: Determines how the message is treated by our server and rendered inside HipChat applications
+``hipchat_notify``: When set to true, triggers a hipchat bell as if it were a user. Default is true.
+
+``hipchat_message_format``: Determines how the message is treated by HipChat and rendered inside HipChat applications
 html - Message is rendered as HTML and receives no special treatment. Must be valid HTML and entities must be escaped (e.g.: '&amp;' instead of '&'). May contain basic tags: a, b, i, strong, em, br, img, pre, code, lists, tables.
 text - Message is treated just like a message sent by a user. Can include @mentions, emoticons, pastes, and auto-detected URLs (Twitter, YouTube, images, etc).
 Valid values: html, text.
