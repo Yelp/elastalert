@@ -735,6 +735,7 @@ class HipChatAlerter(Alerter):
         self.hipchat_room_id = self.rule['hipchat_room_id']
         self.hipchat_domain = self.rule.get('hipchat_domain', 'api.hipchat.com')
         self.hipchat_ignore_ssl_errors = self.rule.get('hipchat_ignore_ssl_errors', False)
+        self.hipchat_notify = self.rule.get('hipchat_notify', True)
         self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (
             self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
         self.hipchat_proxy = self.rule.get('hipchat_proxy', None)
@@ -758,7 +759,7 @@ class HipChatAlerter(Alerter):
             'color': self.hipchat_msg_color,
             'message': body,
             'message_format': self.hipchat_message_format,
-            'notify': True
+            'notify': self.hipchat_notify
         }
 
         try:

@@ -202,6 +202,7 @@ properties:
   hipchat_room_id: {type: string}
   hipchat_domain: {type: string}
   hipchat_ignore_ssl_errors: {type: boolean}
+  hipchat_notify: {type: boolean}
 
   ### Slack
   slack_webhook_url: *arrayOfString
