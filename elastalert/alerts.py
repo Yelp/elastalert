@@ -262,21 +262,23 @@ class StompAlerter(Alerter):
         alerts=[];
 
         qk = self.rule.get('query_key', None)
+        fullmessage={};
         for match in matches:
             if qk in match:
                 elastalert_logger.info(
                     'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
                 alerts.append(
-                        'Alert for %s, %s at %s:' % (self.rule['name'], match[qk]
+                        '1)Alert for %s, %s at %s:' % (self.rule['name'], match[qk]
                         , lookup_es_key(match, self.rule['timestamp_field'])))
+                fullmessage['match']=match[qk];
             else:
                 elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
                 alerts.append(
-                    'Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field']))
+                    '2)Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field']))
                 )
+                fullmessage['match']=lookup_es_key(match, self.rule['timestamp_field']);
             elastalert_logger.info(unicode(BasicMatchString(self.rule, match)))
 
-        fullmessage={};
         fullmessage['alerts']=alerts;
         fullmessage['rule']=self.rule['name'];
         fullmessage['matching']=unicode(BasicMatchString(self.rule, match));
