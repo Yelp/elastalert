@@ -259,14 +259,6 @@ class StompAlerter(Alerter):
 
     def alert(self, matches):
 
-
-        print "STOMP ALERT triggered";
-        print self;
-        print "STOMP ALERT triggered 2";
-        print matches;
-
-        print json.dumps(matches);
-
         alerts=[];
 
         qk = self.rule.get('query_key', None)
