@@ -1,0 +1,69 @@
+# Alert when some field changes between documents
+# This rule would alert on documents similar to the following:
+# {'username': 'bob', 'country_name': 'USA', '@timestamp': '2014-10-15T00:00:00'}
+# {'username': 'bob', 'country_name': 'Russia', '@timestamp': '2014-10-15T05:00:00'}
+# Because the user (query_key) bob logged in from different countries (compare_key) in the same day (timeframe)
+
+# (Optional)
+# Elasticsearch host
+# es_host: elasticsearch.example.com
+
+# (Optional)
+# Elasticsearch port
+# es_port: 14900
+
+# (Optional) Connect with SSL to elasticsearch
+#use_ssl: True
+
+# (Optional) basic-auth username and password for elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# (Required)
+# Rule name, must be unique
+name: New country login
+
+# (Required)
+# Type of alert.
+# the change rule will alert when a certain field changes in two documents within a timeframe
+type: change
+
+# (Required)
+# Index to search, wildcard supported
+index: logstash-*
+
+# (Required, change specific)
+# The field to look for changes in
+compare_key: country_name
+
+# (Required, change specific)
+# Ignore documents without the compare_key (country_name) field
+ignore_null: true
+
+# (Required, change specific)
+# The change must occur in two documents with the same query_key
+query_key: username
+
+# (Required, change specific)
+# The value of compare_key must change in two events that are less than timeframe apart to trigger an alert
+timeframe:
+  days: 1
+
+# (Required)
+# A list of elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter:
+- query:
+    query_string:
+      query: "document_type: login"
+
+# (Required)
+# The alert is use when a match is found
+alert:
+- "email"
+
+# (required, email specific)
+# a list of email addresses to send alerts to
+email:
+- "elastalert@example.com"

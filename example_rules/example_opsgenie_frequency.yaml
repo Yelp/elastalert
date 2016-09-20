@@ -1,0 +1,77 @@
+# Alert when the rate of events exceeds a threshold
+
+# (Optional)
+# Elasticsearch host
+es_host: localhost
+
+# (Optional)
+# Elasticsearch port
+es_port: 9200
+
+# (Required)
+# OpsGenie credentials
+opsgenie_key: ogkey
+
+# (Optional)
+# OpsGenie user account that the alert will show as created by
+#opsgenie_account: neh
+
+# (Optional)
+# OpsGenie recipients of the alert
+#opsgenie_recipients:
+#  - "neh"
+
+# (Optional)
+# OpsGenie teams to notify
+#opsgenie_teams:
+#  - "Infrastructure"
+
+# (Optional)
+# OpsGenie alert tags
+opsgenie_tags:
+  - "Production"
+
+# (OptionaL) Connect with SSL to elasticsearch
+#use_ssl: True
+
+# (Optional) basic-auth username and password for elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# (Required)
+# Rule name, must be unique
+name: opsgenie_rule
+
+# (Required)
+# Type of alert.
+# the frequency rule type alerts when num_events events occur with timeframe time
+type: frequency
+
+# (Required)
+# Index to search, wildcard supported
+index: logstash-*
+
+#doc_type: "golog"
+
+# (Required, frequency specific)
+# Alert when this many documents matching the query occur within a timeframe
+num_events: 50
+
+# (Required, frequency specific)
+# num_events must occur within this amount of time to trigger an alert
+timeframe:
+  hours: 2
+
+# (Required)
+# A list of elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter:
+- query:
+    query_string:
+      query: "@message: *hihi*"
+
+# (Required)
+# The alert is use when a match is found
+alert:
+- "opsgenie"
