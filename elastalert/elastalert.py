@@ -457,6 +457,20 @@ class ElastAlerter():
             return rule.get('buffer_time', self.buffer_time)
         return self.run_every
 
+    def get_query_key_value(self, rule, match):
+        # concatenate query_key (or none) with rule_name to form the key used for silence_cache, grouped aggregates, etc.
+        if 'query_key' in rule:
+            try:
+                key = unicode(lookup_es_key(match, rule['query_key']))
+            except KeyError:
+                # Some matches may not have a query key
+                # Use a special token for these to not clobber all alerts
+                key = '_missing'
+        else:
+            key = ''
+
+        return key
+
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
 
@@ -509,25 +523,18 @@ class ElastAlerter():
             # If realert is set, silence the rule for that duration
             # Silence is cached by query_key, if it exists
             # Default realert time is 0 seconds
+            silence_cache_key = rule['name']
+            query_key_value = self.get_query_key_value(rule, match)
+            if query_key_value:
+                silence_cache_key += '.' + query_key_value
 
-            # concatenate query_key (or none) with rule_name to form silence_cache key
-            if 'query_key' in rule:
-                try:
-                    key = '.' + unicode(lookup_es_key(match, rule['query_key']))
-                except KeyError:
-                    # Some matches may not have a query key
-                    # Use a special token for these to not clobber all alerts
-                    key = '._missing'
-            else:
-                key = ''
-
-            if self.is_silenced(rule['name'] + key) or self.is_silenced(rule['name']):
-                elastalert_logger.info('Ignoring match for silenced rule %s%s' % (rule['name'], key))
+            if self.is_silenced(silence_cache_key):
+                elastalert_logger.info('Ignoring match for silenced rule %s' % (silence_cache_key,))
                 continue
 
             if rule['realert']:
-                next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
-                self.set_realert(rule['name'] + key, next_alert, exponent)
+                next_alert, exponent = self.next_alert_time(rule, silence_cache_key, ts_now())
+                self.set_realert(silence_cache_key, next_alert, exponent)
 
             if rule.get('run_enhancements_first'):
                 try:
@@ -1039,21 +1046,33 @@ class ElastAlerter():
 
             # Send the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):
-                aggregated_matches = self.get_aggregated_matches(_id)
-                if aggregated_matches:
-                    matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
-                    self.alert(matches, rule, alert_time=alert_time)
+                # Get a list of all the unique keys that were seen during the aggregation period
+                aggregate_keys = self.get_aggregated_match_keys(_id)
+                # For each of those keys, run a separate query against ES to get each group of alerts to send
+                first = True
+                for key in aggregate_keys:
+                    aggregated_matches = self.get_aggregated_matches(_id, key)
+                    if aggregated_matches:
+                        matches = [agg_match['match_body'] for agg_match in aggregated_matches]
+                        # The first record does not actually have an aggregate_id or aggregate_key set in the ES document
+                        # [DPOPES]: Do this in a more elegant way.
+                        # Perhaps make it so that even the first record has aggregate_id and potentially aggregate_key set?
+                        if first:
+                            matches = [match_body] + matches
+                            first = False
+                        self.alert(matches, rule, alert_time=alert_time)
+                    else:
+                        self.alert([match_body], rule, alert_time=alert_time)
                     if rule['current_aggregate_id'] == _id:
                         rule['current_aggregate_id'] = None
-                else:
-                    self.alert([match_body], rule, alert_time=alert_time)
 
-                # Delete it from the index
+                # Delete the record with id == _id from the index
+                # In the case of aggregations, this will be the first record encountered during the aggregation window
                 try:
                     self.writeback_es.delete(index=self.writeback_index,
                                              doc_type='elastalert',
                                              id=_id)
-                except:  # TODO: Give this a more relevant exception, try:except: is evil.
+                except Exception:  # TODO: Give this a more relevant exception, try:except: is evil.
                     self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
 
         # Send in memory aggregated alerts
@@ -1063,11 +1082,55 @@ class ElastAlerter():
                     self.alert(rule['agg_matches'], rule)
                     rule['agg_matches'] = []
 
-    def get_aggregated_matches(self, _id):
-        """ Removes and returns all matches from writeback_es that have aggregate_id == _id """
+    def get_aggregated_match_keys(self, aggregate_id):
+        """ Returns all aggregation keys for a given aggregate_id
+            If the 'query_key' field is set on the rule, this will be the values of the aggregation keys
+            If the 'query_key' field is not set on a rule, such that there are no aggs, this will return a list with None
+        """
+        query = {
+            'query': {
+                'match': {
+                    'aggregate_id': aggregate_id,
+                }
+            },
+            'aggregations': {
+                'values': {
+                    'terms': {
+                        'field': 'aggregate_key',
+                    }
+                }
+            }
+        }
 
+        aggregate_keys = []
+        if self.writeback_es:
+            try:
+                res = self.writeback_es.search(index=self.writeback_index,
+                                               doc_type='elastalert',
+                                               body=query,
+                                               size=0)
+                if 'aggregations' not in res:
+                    return [None]
+                for bucket in res['aggregations']['values']['buckets']:
+                    aggregate_keys.append(bucket['key'])
+            except (KeyError, ElasticsearchException) as e:
+                self.handle_error("Error fetching aggregation keys: %s" % (e), {'id': aggregate_id})
+
+        if not aggregate_keys:
+            aggregate_keys.append(None)
+        return aggregate_keys
+
+    def get_aggregated_matches(self, _id, query_key_value=None):
+        """ Removes and returns all matches from writeback_es that have aggregate_id == _id
+        and optionally aggregate_query_key_value == 'query_key_value', in the case of 'query_key' being set
+        on an alert that uses aggregation
+        """
         # XXX if there are more than self.max_aggregation matches, you have big alerts and we will leave entries in ES.
-        query = {'query': {'query_string': {'query': 'aggregate_id:%s' % (_id)}}}
+        query_string = 'aggregate_id:{0}'.format(_id)
+        if query_key_value:
+            query_string += ' AND aggregate_key:{0}'.format(query_key_value)
+        query = {'query': {'query_string': {'query': query_string}}}
+
         matches = []
         if self.writeback_es:
             try:
@@ -1107,6 +1170,11 @@ class ElastAlerter():
 
     def add_aggregated_alert(self, match, rule):
         """ Save a match as a pending aggregate alert to elasticsearch. """
+        # Optionally include the 'query_key' as a dimension for aggregations
+        query_key_value = None
+        if 'query_key' in rule:
+            query_key_value = self.get_query_key_value(rule, match)
+
         if (not rule['current_aggregate_id'] or
                 ('aggregate_alert_time' in rule and rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]))):
 
@@ -1115,9 +1183,9 @@ class ElastAlerter():
             if pending_alert:
                 alert_time = rule['aggregate_alert_time'] = ts_to_dt(pending_alert['_source']['alert_time'])
                 agg_id = rule['current_aggregate_id'] = pending_alert['_id']
-                elastalert_logger.info('Adding alert for %s to aggregation(id: %s), next alert at %s' % (rule['name'], agg_id, alert_time))
+                elastalert_logger.info('Adding alert for %s to aggregation(id: %s, query_key:%s), next alert at %s' % (rule['name'], agg_id, query_key_value, alert_time))
             else:
-                # First match, set alert_time
+                # First match for this query_key value, set alert_time
                 match_time = ts_to_dt(match[rule['timestamp_field']])
                 alert_time = ''
                 if isinstance(rule['aggregation'], dict) and rule['aggregation'].get('schedule'):
@@ -1130,18 +1198,27 @@ class ElastAlerter():
                 else:
                     alert_time = match_time + rule['aggregation']
 
-                rule['aggregate_alert_time'] = alert_time
-                agg_id = None
-                elastalert_logger.info('New aggregation for %s. next alert at %s.' % (rule['name'], alert_time))
+                # Don't overwrite the aggregate_alert_time if it's already been set previously
+                if 'aggregate_alert_time' not in rule:
+                    rule['aggregate_alert_time'] = alert_time
+                # This will either be None since its the first aggregation ever,
+                # OR it will be a value from a different key within the aggregation window
+                # Previously, the agg_id was always set to None. Not sure if that's desired with the query_key functionality
+                agg_id = rule['current_aggregate_id']
+
+                if not agg_id:
+                    elastalert_logger.info('New aggregation for rule:%s, query_key:%s. next alert at %s.' % (rule['name'], query_key_value, alert_time))
         else:
             # Already pending aggregation, use existing alert_time
             alert_time = rule['aggregate_alert_time']
             agg_id = rule['current_aggregate_id']
-            elastalert_logger.info('Adding alert for %s to aggregation(id: %s), next alert at %s' % (rule['name'], agg_id, alert_time))
+            elastalert_logger.info('Adding alert for %s to aggregation(id: %s, query_key:%s), next alert at %s' % (rule['name'], agg_id, query_key_value, alert_time))
 
         alert_body = self.get_alert_body(match, rule, False, alert_time)
         if agg_id:
             alert_body['aggregate_id'] = agg_id
+        if query_key_value:
+            alert_body['aggregate_key'] = query_key_value
         res = self.writeback('elastalert', alert_body)
 
         # If new aggregation, save _id
@@ -1154,7 +1231,7 @@ class ElastAlerter():
 
         return res
 
-    def silence(self):
+    def silence(self, rule_name=None):
         """ Silence an alert for a period of time. --silence and --rule must be passed as args. """
         if self.debug:
             logging.error('--silence not compatible with --debug')
@@ -1165,7 +1242,8 @@ class ElastAlerter():
             exit(1)
 
         # With --rule, self.rules will only contain that specific rule
-        rule_name = self.rules[0]['name']
+        if not rule_name:
+            rule_name = self.rules[0]['name']
 
         try:
             unit, num = self.args.silence.split('=')
