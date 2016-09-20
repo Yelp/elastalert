@@ -1066,13 +1066,14 @@ class ElastAlerter():
                     if rule['current_aggregate_id'] == _id:
                         rule['current_aggregate_id'] = None
 
-                    # Delete it from the index
-                    try:
-                        self.writeback_es.delete(index=self.writeback_index,
-                                                 doc_type='elastalert',
-                                                 id=_id)
-                    except Exception:  # TODO: Give this a more relevant exception, try:except: is evil.
-                        self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
+                # Delete the record with id == _id from the index
+                # In the case of aggregations, this will be the first record encountered during the aggregation window
+                try:
+                    self.writeback_es.delete(index=self.writeback_index,
+                                             doc_type='elastalert',
+                                             id=_id)
+                except Exception:  # TODO: Give this a more relevant exception, try:except: is evil.
+                    self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
 
         # Send in memory aggregated alerts
         for rule in self.rules:
