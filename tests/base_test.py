@@ -303,14 +303,18 @@ def test_agg(ea):
 
     assert call3['match_body'] == {'@timestamp': '2014-09-26T12:47:45'}
     assert not call3['alert_sent']
-    assert 'aggregate_id' not in call3
+    assert call3['aggregate_id'] == 'ABCD'
 
-    # First call - Find all pending alerts (only entries without agg_id)
-    # Second call - Find matches with agg_id == 'ABCD'
-    # Third call - Find matches with agg_id == 'CDEF'
+    # First call  - Find all pending alerts (only entries without agg_id)
+    # Second call - Find all matching keys (in this case, query_key is not set, so will return no keys)
+    # Third call  - Find matches with agg_id == 'ABCD'
+    # Fourth call - Find all matching keys (in this case, query_key is not set, so will return no keys)
+    # Fifth call  - Find matches with agg_id == 'CDEF'
     ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': call1},
                                                              {'_id': 'CDEF', '_source': call3}]}},
+                                          {'aggregations': {'values': {'buckets': []}}},
                                           {'hits': {'hits': [{'_id': 'BCDE', '_source': call2}]}},
+                                          {'aggregations': {'values': {'buckets': []}}},
                                           {'hits': {'total': 0, 'hits': []}}]
 
     with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es:
@@ -320,15 +324,19 @@ def test_agg(ea):
         assert mock_es.call_count == 2
     assert_alerts(ea, [hits_timestamps[:2], hits_timestamps[2:]])
 
-    call1 = ea.writeback_es.search.call_args_list[7][1]['body']
-    call2 = ea.writeback_es.search.call_args_list[8][1]['body']
-    call3 = ea.writeback_es.search.call_args_list[9][1]['body']
-    call4 = ea.writeback_es.search.call_args_list[10][1]['body']
+    call1 = ea.writeback_es.search.call_args_list[4][1]['body']
+    call2 = ea.writeback_es.search.call_args_list[5][1]['body']
+    call3 = ea.writeback_es.search.call_args_list[6][1]['body']
+    call4 = ea.writeback_es.search.call_args_list[7][1]['body']
+    call5 = ea.writeback_es.search.call_args_list[8][1]['body']
+    call6 = ea.writeback_es.search.call_args_list[9][1]['body']
 
     assert 'alert_time' in call2['filter']['range']
-    assert call3['query']['query_string']['query'] == 'aggregate_id:ABCD'
-    assert call4['query']['query_string']['query'] == 'aggregate_id:CDEF'
-    assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
+    assert 'aggregations' in call3
+    assert call4['query']['query_string']['query'] == 'aggregate_id:ABCD'
+    assert 'aggregations' in call5
+    assert call6['query']['query_string']['query'] == 'aggregate_id:CDEF'
+    assert ea.writeback_es.search.call_args_list[7][1]['size'] == 1337
 
 
 def test_agg_cron(ea):
@@ -364,7 +372,7 @@ def test_agg_cron(ea):
     assert call3['match_body'] == {'@timestamp': '2014-09-26T12:47:45'}
     assert call3['alert_time'] == alerttime2
     assert not call3['alert_sent']
-    assert 'aggregate_id' not in call3
+    assert call3['aggregate_id'] == 'ABCD'
 
 
 def test_agg_no_writeback_connectivity(ea):
@@ -436,7 +444,7 @@ def test_silence_query_key(ea):
     # Silence test rule for 4 hours
     ea.args.rule = 'test_rule.yaml'  # Not a real name, just has to be set
     ea.args.silence = 'hours=4'
-    ea.silence()
+    ea.silence('anytest.qlo')
 
     # Don't alert even with a match
     match = [{'@timestamp': '2014-11-17T00:00:00', 'username': 'qlo'}]
@@ -446,6 +454,13 @@ def test_silence_query_key(ea):
         ea.run_rule(ea.rules[0], END, START)
     assert ea.rules[0]['alert'][0].alert.call_count == 0
 
+    # If there is a new record with a different value for the query_key, we should get an alert
+    match = [{'@timestamp': '2014-11-17T00:00:01', 'username': 'dpopes'}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 1
+
     # Mock ts_now() to +5 hours, alert on match
     match = [{'@timestamp': '2014-11-17T00:00:00', 'username': 'qlo'}]
     ea.rules[0]['type'].matches = match
@@ -454,7 +469,7 @@ def test_silence_query_key(ea):
             # Converted twice to add tzinfo
             mock_ts.return_value = ts_to_dt(dt_to_ts(datetime.datetime.utcnow() + datetime.timedelta(hours=5)))
             ea.run_rule(ea.rules[0], END, START)
-    assert ea.rules[0]['alert'][0].alert.call_count == 1
+    assert ea.rules[0]['alert'][0].alert.call_count == 2
 
 
 def test_realert(ea):
