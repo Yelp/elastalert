@@ -286,6 +286,7 @@ class StompAlerter(Alerter):
         fullmessage['body']=self.create_alert_body(matches);
 
 
+
         self.stomp_hostname=self.rule.get('stomp_hostname', 'localhost')
         self.stomp_hostport=self.rule.get('stomp_hostport', '61613')
         self.stomp_login=self.rule.get('stomp_login', 'admin')
