@@ -1046,11 +1046,20 @@ class ElastAlerter():
 
             # Send the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):
+                # Get a list of all the unique keys that were seen during the aggregation period
                 aggregate_keys = self.get_aggregated_match_keys(_id)
+                # For each of those keys, run a separate query against ES to get each group of alerts to send
+                first = True
                 for key in aggregate_keys:
                     aggregated_matches = self.get_aggregated_matches(_id, key)
                     if aggregated_matches:
-                        matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
+                        matches = [agg_match['match_body'] for agg_match in aggregated_matches]
+                        # The first record does not actually have an aggregate_id or aggregate_key set in the ES document
+                        # [DPOPES]: Do this in a more elegant way.
+                        # Perhaps make it so that even the first record has aggregate_id and potentially aggregate_key set?
+                        if first:
+                            matches = [match_body] + matches
+                            first = False
                         self.alert(matches, rule, alert_time=alert_time)
                     else:
                         self.alert([match_body], rule, alert_time=alert_time)
@@ -1176,8 +1185,6 @@ class ElastAlerter():
                 elastalert_logger.info('Adding alert for %s to aggregation(id: %s, query_key:%s), next alert at %s' % (rule['name'], agg_id, query_key_value, alert_time))
             else:
                 # First match for this query_key value, set alert_time
-                # [DPOPES]: This timestamp logic might need updates, since we probably
-                # don't actually want to keep overwriting it everytime we find a new key
                 match_time = ts_to_dt(match[rule['timestamp_field']])
                 alert_time = ''
                 if isinstance(rule['aggregation'], dict) and rule['aggregation'].get('schedule'):
@@ -1190,6 +1197,7 @@ class ElastAlerter():
                 else:
                     alert_time = match_time + rule['aggregation']
 
+                # Don't overwrite the aggregate_alert_time if it's already been set previously
                 if 'aggregate_alert_time' not in rule:
                     rule['aggregate_alert_time'] = alert_time
                 # This will either be None since its the first aggregation ever,
