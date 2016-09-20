@@ -288,14 +288,15 @@ class StompAlerter(Alerter):
 
         self.stomp_hostname=self.rule.get('stomp_hostname', 'localhost')
         self.stomp_hostport=self.rule.get('stomp_hostport', '61613')
-        self.stomp_login=self.rule.get('stomp_login', 'login')
-        self.stomp_password=self.rule.get('stomp_password', 'password')
+        self.stomp_login=self.rule.get('stomp_login', 'admin')
+        self.stomp_password=self.rule.get('stomp_password', 'admin')
+        self.stomp_destination=self.rule.get('stomp_destination', '/queue/ALERT')
 
         conn = stomp.Connection([(self.stomp_hostname, self.stomp_hostport)])
 
         conn.start()
         conn.connect(self.stomp_login, self.stomp_password)
-        conn.send('/queue/ALERT', json.dumps(fullmessage));
+        conn.send(self.stomp_destination, json.dumps(fullmessage));
         conn.disconnect()
 
 
