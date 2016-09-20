@@ -268,9 +268,8 @@ class StompAlerter(Alerter):
             if qk in match:
                 elastalert_logger.info(
                     'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
-                alerts.append(
-                        '1)Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
-                fullmessage['match']=match[qk]
+                alerts.append('1)Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
+                fullmessage['match'] = match[qk]
             else:
                 elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
                 alerts.append(
