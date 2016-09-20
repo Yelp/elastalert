@@ -1046,8 +1046,8 @@ class ElastAlerter():
 
             # Send the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):
-                aggregation_keys = self.get_aggregated_match_keys(_id)
-                for key in aggregation_keys:
+                aggregate_keys = self.get_aggregated_match_keys(_id)
+                for key in aggregate_keys:
                     aggregated_matches = self.get_aggregated_matches(_id, key)
                     if aggregated_matches:
                         matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
@@ -1086,13 +1086,13 @@ class ElastAlerter():
             'aggregations': {
                 'values': {
                     'terms': {
-                        'field': 'aggregation_key',
+                        'field': 'aggregate_key',
                     }
                 }
             }
         }
 
-        aggregation_keys = []
+        aggregate_keys = []
         if self.writeback_es:
             try:
                 res = self.writeback_es.search(index=self.writeback_index,
@@ -1102,13 +1102,13 @@ class ElastAlerter():
                 if 'aggregations' not in res:
                     return [None]
                 for bucket in res['aggregations']['values']['buckets']:
-                    aggregation_keys.append(bucket['key'])
+                    aggregate_keys.append(bucket['key'])
             except (KeyError, ElasticsearchException) as e:
                 self.handle_error("Error fetching aggregation keys: %s" % (e), {'id': aggregate_id})
 
-        if not aggregation_keys:
-            aggregation_keys.append(None)
-        return aggregation_keys
+        if not aggregate_keys:
+            aggregate_keys.append(None)
+        return aggregate_keys
 
     def get_aggregated_matches(self, _id, query_key_value=None):
         """ Removes and returns all matches from writeback_es that have aggregate_id == _id
@@ -1118,7 +1118,7 @@ class ElastAlerter():
         # XXX if there are more than self.max_aggregation matches, you have big alerts and we will leave entries in ES.
         query_string = 'aggregate_id:{0}'.format(_id)
         if query_key_value:
-            query_string += ' AND aggregation_key:{0}'.format(query_key_value)
+            query_string += ' AND aggregate_key:{0}'.format(query_key_value)
         query = {'query': {'query_string': {'query': query_string}}}
 
         matches = []
@@ -1209,7 +1209,7 @@ class ElastAlerter():
         if agg_id:
             alert_body['aggregate_id'] = agg_id
         if query_key_value:
-            alert_body['aggregation_key'] = query_key_value
+            alert_body['aggregate_key'] = query_key_value
         res = self.writeback('elastalert', alert_body)
 
         # If new aggregation, save _id
