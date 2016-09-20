@@ -582,7 +582,6 @@ class ElastAlerter():
 
         blank_rule = {'agg_matches': [],
                       'current_aggregate_id': None,
-                      'current_aggregate_query_key_values': [],
                       'processed_hits': {}}
         rule = blank_rule
 
@@ -597,7 +596,6 @@ class ElastAlerter():
 
         copy_properties = ['agg_matches',
                            'current_aggregate_id',
-                           'current_aggregate_query_key_values',
                            'aggregate_alert_time',
                            'processed_hits',
                            'starttime',
@@ -1077,7 +1075,7 @@ class ElastAlerter():
     def get_aggregated_match_keys(self, aggregate_id):
         """ Returns all aggregation keys for a given aggregate_id
             If the 'query_key' field is set on the rule, this will be the values of the aggregation keys
-            If the 'query_key' field is not set on a rule, such that there are no aggs, this will return an empty list
+            If the 'query_key' field is not set on a rule, such that there are no aggs, this will return a list with None
         """
         query = {
             'query': {
@@ -1139,14 +1137,12 @@ class ElastAlerter():
                 self.handle_error("Error fetching aggregated matches: %s" % (e), {'id': _id})
         return matches
 
-    def find_pending_aggregate_alert(self, rule, query_key_value=None):
+    def find_pending_aggregate_alert(self, rule):
         query = {'filter': {'bool': {'must': [{'term': {'rule_name': rule['name']}},
                                               {'range': {'alert_time': {'gt': ts_now()}}},
                                               {'not': {'exists': {'field': 'aggregate_id'}}},
                                               {'term': {'alert_sent': 'false'}}]}},
                  'sort': {'alert_time': {'order': 'desc'}}}
-        if query_key_value:
-            query['filter']['bool']['must'].append({'term': {'aggregation_key': query_key_value}})
         if not self.writeback_es:
             self.writeback_es = elasticsearch_client(self.conf)
         try:
@@ -1170,21 +1166,18 @@ class ElastAlerter():
             query_key_value = self.get_query_key_value(rule, match)
 
         if (not rule['current_aggregate_id'] or
-                (query_key_value and query_key_value not in rule['current_aggregate_query_key_values']) or
                 ('aggregate_alert_time' in rule and rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]))):
 
             # Elastalert may have restarted while pending alerts exist
-            pending_alert = self.find_pending_aggregate_alert(rule, query_key_value)
+            pending_alert = self.find_pending_aggregate_alert(rule)
             if pending_alert:
                 alert_time = rule['aggregate_alert_time'] = ts_to_dt(pending_alert['_source']['alert_time'])
                 agg_id = rule['current_aggregate_id'] = pending_alert['_id']
-                if 'query_key' in rule:
-                    if query_key_value not in rule['current_aggregate_query_key_values']:
-                        rule['current_aggregate_query_key_values'].append(query_key_value)
                 elastalert_logger.info('Adding alert for %s to aggregation(id: %s, query_key:%s), next alert at %s' % (rule['name'], agg_id, query_key_value, alert_time))
             else:
                 # First match for this query_key value, set alert_time
-                # [DPOPES]: This timestamp logic might need updates
+                # [DPOPES]: This timestamp logic might need updates, since we probably
+                # don't actually want to keep overwriting it everytime we find a new key
                 match_time = ts_to_dt(match[rule['timestamp_field']])
                 alert_time = ''
                 if isinstance(rule['aggregation'], dict) and rule['aggregation'].get('schedule'):
@@ -1201,6 +1194,7 @@ class ElastAlerter():
                     rule['aggregate_alert_time'] = alert_time
                 # This will either be None since its the first aggregation ever,
                 # OR it will be a value from a different key within the aggregation window
+                # Previously, the agg_id was always set to None. Not sure if that's desired with the query_key functionality
                 agg_id = rule['current_aggregate_id']
 
                 if not agg_id:
@@ -1221,9 +1215,6 @@ class ElastAlerter():
         # If new aggregation, save _id
         if res and not agg_id:
             rule['current_aggregate_id'] = res['_id']
-        if res and 'query_key' in rule:
-            if query_key_value not in rule['current_aggregate_query_key_values']:
-                rule['current_aggregate_query_key_values'].append(query_key_value)
 
         # Couldn't write the match to ES, save it in memory for now
         if not res:
