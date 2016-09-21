@@ -405,9 +405,9 @@ def test_agg_with_query_key(ea):
     hits = generate_hits(hits_timestamps)
     ea.current_es.search.return_value = hits
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
-        # Aggregate first two, query over full range
         ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
         ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
+        # Hit1 and Hit3 should be aggregated together, since they have same query_key value
         ea.rules[0]['type'].matches[0]['key'] = 'Key Value 1'
         ea.rules[0]['type'].matches[1]['key'] = 'Key Value 2'
         ea.rules[0]['type'].matches[2]['key'] = 'Key Value 1'
@@ -443,8 +443,8 @@ def test_agg_with_query_key(ea):
     # Second call - Find matches with agg_id == 'ABCD'
     # Third call - Find matches with agg_id == 'CDEF'
     ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': call1},
-                                                             {'_id': 'CDEF', '_source': call3}]}},
-                                          {'hits': {'hits': [{'_id': 'BCDE', '_source': call2}]}},
+                                                             {'_id': 'CDEF', '_source': call2}]}},
+                                          {'hits': {'hits': [{'_id': 'BCDE', '_source': call3}]}},
                                           {'hits': {'total': 0, 'hits': []}}]
 
     with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es:
@@ -452,7 +452,7 @@ def test_agg_with_query_key(ea):
         # Assert that current_es was refreshed from the aggregate rules
         assert mock_es.called_with(host='', port='')
         assert mock_es.call_count == 2
-    assert_alerts(ea, [hits_timestamps[:2], hits_timestamps[2:]])
+    assert_alerts(ea, [[hits_timestamps[0], hits_timestamps[2]], [hits_timestamps[1]]])
 
     call1 = ea.writeback_es.search.call_args_list[4][1]['body']
     call2 = ea.writeback_es.search.call_args_list[5][1]['body']
