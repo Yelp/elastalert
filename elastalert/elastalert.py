@@ -143,11 +143,11 @@ class ElastAlerter():
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
-        :param filters: A list of elasticsearch filters to use.
+        :param filters: A list of Elasticsearch filters to use.
         :param starttime: A timestamp to use as the start time of the query.
         :param endtime: A timestamp to use as the end time of the query.
         :param sort: If true, sort results by timestamp. (Default True)
-        :return: A query dictionary to pass to elasticsearch.
+        :return: A query dictionary to pass to Elasticsearch.
         """
         starttime = to_ts_func(starttime)
         endtime = to_ts_func(endtime)
@@ -225,7 +225,7 @@ class ElastAlerter():
         return processed_hits
 
     def get_hits(self, rule, starttime, endtime, index, scroll=False):
-        """ Query elasticsearch for the given rule and return the results.
+        """ Query Elasticsearch for the given rule and return the results.
 
         :param rule: The rule configuration.
         :param starttime: The earliest time to query.
@@ -272,7 +272,7 @@ class ElastAlerter():
         return hits
 
     def get_hits_count(self, rule, starttime, endtime, index):
-        """ Query elasticsearch for the count of results and returns a list of timestamps
+        """ Query Elasticsearch for the count of results and returns a list of timestamps
         equal to the endtime. This allows the results to be passed to rules which expect
         an object for each hit.
 
@@ -427,7 +427,7 @@ class ElastAlerter():
 
         # This means we are starting fresh
         if 'starttime' not in rule:
-            # Try to get the last run from elasticsearch
+            # Try to get the last run from Elasticsearch
             last_run_end = self.get_starttime(rule)
             if last_run_end:
                 rule['minimum_starttime'] = last_run_end
@@ -778,7 +778,7 @@ class ElastAlerter():
         return self.upload_dashboard(db, rule, match)
 
     def upload_dashboard(self, db, rule, match):
-        ''' Uploads a dashboard schema to the kibana-int elasticsearch index associated with rule.
+        ''' Uploads a dashboard schema to the kibana-int Elasticsearch index associated with rule.
         Returns the url to the dashboard. '''
         # Set time range
         start = ts_add(match[rule['timestamp_field']], -rule.get('timeframe', datetime.timedelta(minutes=10)))
@@ -818,7 +818,7 @@ class ElastAlerter():
         return kibana_url + '#/dashboard/temp/%s' % (res['_id'])
 
     def get_dashboard(self, rule, db_name):
-        """ Download dashboard which matches use_kibana_dashboard from elasticsearch. """
+        """ Download dashboard which matches use_kibana_dashboard from Elasticsearch. """
         es = elasticsearch_client(rule)
         if not db_name:
             raise EAException("use_kibana_dashboard undefined")
@@ -985,7 +985,7 @@ class ElastAlerter():
                                                doc_type=doc_type, body=body)
                 return res
             except ElasticsearchException as e:
-                logging.exception("Error writing alert info to elasticsearch: %s" % (e))
+                logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
                 self.writeback_es = None
 
     def find_recent_pending_alerts(self, time_limit):
@@ -1106,7 +1106,7 @@ class ElastAlerter():
         return res['hits']['hits'][0]
 
     def add_aggregated_alert(self, match, rule):
-        """ Save a match as a pending aggregate alert to elasticsearch. """
+        """ Save a match as a pending aggregate alert to Elasticsearch. """
         if (not rule['current_aggregate_id'] or
                 ('aggregate_alert_time' in rule and rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]))):
 
@@ -1177,13 +1177,13 @@ class ElastAlerter():
             exit(1)
 
         if not self.set_realert(rule_name, silence_ts, 0):
-            logging.error('Failed to save silence command to elasticsearch')
+            logging.error('Failed to save silence command to Elasticsearch')
             exit(1)
 
         elastalert_logger.info('Success. %s will be silenced until %s' % (rule_name, silence_ts))
 
     def set_realert(self, rule_name, timestamp, exponent):
-        """ Write a silence to elasticsearch for rule_name until timestamp. """
+        """ Write a silence to Elasticsearch for rule_name until timestamp. """
         body = {'exponent': exponent,
                 'rule_name': rule_name,
                 '@timestamp': ts_now(),

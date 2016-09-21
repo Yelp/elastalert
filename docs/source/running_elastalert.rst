@@ -124,7 +124,7 @@ Running the ``elastalert-test-rule`` tool will test that your config file succes
 If you want to specify a configuration file to use, you can run it with the config flag.
 
     $ elastalert-test-rule --config <path-to-config-file> example_rules/example_frequency.yaml.
-    
+
 The configuration preferences will be loaded as follows:
     1. Configurations specified in the yaml file.
     2. Configurations specified in the config file, if specified.
@@ -138,9 +138,9 @@ Running ElastAlert
 There are two ways of invoking ElastAlert. As a daemon, through Supervisor (http://supervisord.org/), or directly with Python. For easier debugging purposes in this tutorial, we will invoke it directly::
 
     $ python -m elastalert.elastalert --verbose --rule example_frequency.yaml  # or use the entry point: elastalert --verbose --rule ...
-    No handlers could be found for logger "elasticsearch"
+    No handlers could be found for logger "Elasticsearch"
     INFO:root:Queried rule Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 hits
-    INFO:elasticsearch:POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]
+    INFO:Elasticsearch:POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]
     INFO:root:Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits, 0 matches, 0 alerts sent
     INFO:root:Sleeping for 297 seconds
 

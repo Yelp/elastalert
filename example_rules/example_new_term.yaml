@@ -9,10 +9,10 @@
 # Elasticsearch port
 # es_port: 14900
 
-# (OptionaL) Connect with SSL to elasticsearch
+# (OptionaL) Connect with SSL to Elasticsearch
 #use_ssl: True
 
-# (Optional) basic-auth username and password for elasticsearch
+# (Optional) basic-auth username and password for Elasticsearch
 #es_username: someusername
 #es_password: somepassword
 
@@ -41,7 +41,7 @@ terms_window_size:
   days: 90
 
 # (Required)
-# A list of elasticsearch filters used for find events
+# A list of Elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
 # For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
 # We are filtering for only "login_event" type documents with username "admin"

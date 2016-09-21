@@ -416,7 +416,7 @@ match_enhancements
 
 ``match_enhancements``: A list of enhancement modules to use with this rule. An enhancement module is a subclass of enhancements.BaseEnhancement
 that will be given the match dictionary and can modify it before it is passed to the alerter. The enhancements will be run after silence and realert
-is calculated and in the case of aggregated alerts, right before the alert is sent. This can be changed by setting ``run_enhancements_first``. 
+is calculated and in the case of aggregated alerts, right before the alert is sent. This can be changed by setting ``run_enhancements_first``.
 The enhancements should be specified as
 ``module.file.EnhancementName``. See :ref:`Enhancements` for more information. (Optional, list of strings, no default)
 
@@ -459,7 +459,7 @@ _source_enabled
 
 ``_source_enabled``: If true, ElastAlert will use _source to retrieve fields from documents in Elasticsearch. If false,
 ElastAlert will use ``fields`` to retrieve stored fields. Both of these are represented internally as if they came from ``_source``.
-See https://www.elastic.co/guide/en/elasticsearch/reference/1.3/mapping-fields.html for more details. The fields used come from ``include``,
+See https://www.elastic.co/guide/en/Elasticsearch/reference/1.3/mapping-fields.html for more details. The fields used come from ``include``,
 see above for more details. (Optional, boolean, default True)
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
@@ -643,7 +643,7 @@ This rule requires two additional options:
 
 Optional:
 
-``use_count_query``: If true, ElastAlert will poll elasticsearch using the count api, and not download all of the matching documents. This is
+``use_count_query``: If true, ElastAlert will poll Elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
 of tens of thousands or more. ``doc_type`` must be set to use this.
 
@@ -772,7 +772,7 @@ consider the following examples::
 trigger an immediate alert. When set to false, baseline must be established for each new ``query_key`` value, and then subsequent spikes may
 cause alerts. Baseline is established after ``timeframe`` has elapsed twice since first occurrence.
 
-``use_count_query``: If true, ElastAlert will poll elasticsearch using the count api, and not download all of the matching documents. This is
+``use_count_query``: If true, ElastAlert will poll Elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
 of tens of thousands or more. ``doc_type`` must be set to use this.
 
@@ -824,9 +824,9 @@ This rule requires one additional option:
 
 ``fields``: A list of fields to monitor for new terms. ``query_key`` will be used if ``fields`` is not set. Each entry in the
 list of fields can itself be a list.  If a field entry is provided as a list, it will be interpreted as a set of fields
-that compose a composite key used for the elasticsearch query.  ``Note: the composite fields may only refer to primitive
-types, otherwise the initial elasticsearch query will not properly return the aggregation results, thus causing alerts
-to fire every time the elastalert service initially launches with the rule. A warning will be logged to the console if
+that compose a composite key used for the Elasticsearch query.  ``Note: the composite fields may only refer to primitive
+types, otherwise the initial Elasticsearch query will not properly return the aggregation results, thus causing alerts
+to fire every time the ElastAlert service initially launches with the rule. A warning will be logged to the console if
 this scenario is encountered. However, future alerts will actually work as expected after the initial flurry.``
 
 Optional:

@@ -47,7 +47,7 @@ class MockElastAlerter(object):
         if args.schema_only:
             return []
 
-        # Set up elasticsearch client and query
+        # Set up Elasticsearch client and query
         es_client = elasticsearch_client(conf)
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()

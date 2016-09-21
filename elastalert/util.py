@@ -175,8 +175,8 @@ def ts_add(ts, td):
 
 def hashable(obj):
     """ Convert obj to a hashable obj.
-    We use the value of some fields from elasticsearch as keys for dictionaries. This means
-    that whatever elasticsearch returns must be hashable, and it sometimes returns a list or dict."""
+    We use the value of some fields from Elasticsearch as keys for dictionaries. This means
+    that whatever Elasticsearch returns must be hashable, and it sometimes returns a list or dict."""
     if not obj.__hash__:
         return str(obj)
     return obj

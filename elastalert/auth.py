@@ -13,9 +13,9 @@ class Auth(object):
         """ Return the authorization header. If 'boto_profile' is passed, it'll be used. Otherwise it'll sign requests
         with instance role.
 
-        :param host: ElasticSearch host.
-        :param username: Username used for authenticating the requests to ElasticSearch.
-        :param password: Password used for authenticating the requests to ElasticSearch.
+        :param host: Elasticsearch host.
+        :param username: Username used for authenticating the requests to Elasticsearch.
+        :param password: Password used for authenticating the requests to Elasticsearch.
         :param aws_region: AWS Region to use. Only required when signing requests.
         :param boto_profile: Boto profile to use for connecting. Only required when signing requests.
         """

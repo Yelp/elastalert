@@ -26,7 +26,7 @@ elastalert_status
 - ``matches``: The number of matches that the rule returned after processing the hits. Note that this does not necessarily mean that alerts were triggered.
 - ``time_taken``: The number of seconds it took for this query to run.
 
-``elastalert_status`` is what ElastAlert will use to determine what time range to query when it first starts to avoid duplicating queries. 
+``elastalert_status`` is what ElastAlert will use to determine what time range to query when it first starts to avoid duplicating queries.
 For each rule, it will start querying from the most recent endtime. If ElastAlert is running in debug mode, it will still attempt to base
 its start time by looking for the most recent search performed, but it will not write the results of any query back to Elasticsearch.
 
