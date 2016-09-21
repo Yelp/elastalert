@@ -461,7 +461,11 @@ class ElastAlerter():
         # concatenate query_key (or none) with rule_name to form the key used for silence_cache, grouped aggregates, etc.
         if 'query_key' in rule:
             try:
-                key = unicode(lookup_es_key(match, rule['query_key']))
+                key = lookup_es_key(match, rule['query_key'])
+                if key is not None:
+                    # Only do the unicode conversion if we actually found something)
+                    # Otherwise we might transform None --> 'None'
+                    key = unicode(key)
             except KeyError:
                 # Some matches may not have a query key
                 # Use a special token for these to not clobber all alerts
@@ -525,7 +529,7 @@ class ElastAlerter():
             # Default realert time is 0 seconds
             silence_cache_key = rule['name']
             query_key_value = self.get_query_key_value(rule, match)
-            if query_key_value:
+            if query_key_value is not None:
                 silence_cache_key += '.' + query_key_value
 
             if self.is_silenced(silence_cache_key):
