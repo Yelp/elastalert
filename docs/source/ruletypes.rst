@@ -267,6 +267,20 @@ For example, if you wish to receive alerts every Monday and Friday::
 
 This uses Cron syntax, which you can read more about `here <http://www.nncron.ru/help/EN/working/cron-format.htm>`_. Make sure to `only` include either a schedule field or standard datetime fields (such as ``hours``, ``minutes``, ``days``), not both.
 
+By default, all events that occur during an aggregation window are grouped together. However, if your rule has the ``query_key`` field set, then each event sharing a common key value will be grouped together. A separate aggregation window will be made for each newly encountered key value.
+
+For example, if you wish to receive alerts that are grouped by the user who triggered the event, you can set::
+
+    query_key: 'my_data.username'
+
+Then, assuming an aggregation window of 10 minutes, if you receive the following data points::
+
+    {'my_data': {'username': 'alice'}, '@timestamp': '2016-09-20T00:00:00'}
+    {'my_data': {'username': 'bob'}, '@timestamp': '2016-09-20T00:05:00'}
+    {'my_data': {'username': 'alice'}, '@timestamp': '2016-09-20T00:06:00'}
+
+This should result in 2 alerts: One containing alice's two events, sent at ``2016-09-20T00:10:00`` and one containing bob's one event sent at ``2016-09-20T00:16:00``
+
 realert
 ^^^^^^^
 
