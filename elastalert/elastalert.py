@@ -42,7 +42,7 @@ from util import unix_to_dt
 
 
 class ElastAlerter():
-    """ The main Elastalert runner. This class holds all state about active rules,
+    """ The main ElastAlert runner. This class holds all state about active rules,
     controls when queries are run, and passes information between rules and alerts.
 
     :param args: An argparse arguments instance. Should contain debug and start
@@ -741,7 +741,7 @@ class ElastAlerter():
             self.load_rule_changes()
 
     def stop(self):
-        """ Stop an elastalert runner that's been started """
+        """ Stop an ElastAlert runner that's been started """
         self.running = False
 
     def sleep_for(self, duration):
@@ -1110,7 +1110,7 @@ class ElastAlerter():
         if (not rule['current_aggregate_id'] or
                 ('aggregate_alert_time' in rule and rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]))):
 
-            # Elastalert may have restarted while pending alerts exist
+            # ElastAlert may have restarted while pending alerts exist
             pending_alert = self.find_pending_aggregate_alert(rule)
             if pending_alert:
                 alert_time = rule['aggregate_alert_time'] = ts_to_dt(pending_alert['_source']['alert_time'])

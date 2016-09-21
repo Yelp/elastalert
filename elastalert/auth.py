@@ -26,14 +26,14 @@ class Auth(object):
             return None
 
         if boto_profile:
-            # Executing elastalert from machine with aws credentials
+            # Executing ElastAlert from machine with aws credentials
             config = configparser.ConfigParser()
             config.read(os.path.expanduser('~') + '/.aws/credentials')
             aws_access_key_id = str(config[boto_profile]['aws_access_key_id'])
             aws_secret_access_key = str(config[boto_profile]['aws_secret_access_key'])
             aws_token = None
         else:
-            # Executing elastalert from machine deployed with specific role
+            # Executing ElastAlert from machine deployed with specific role
             provider = InstanceMetadataProvider(
                 iam_role_fetcher=InstanceMetadataFetcher(timeout=1000, num_attempts=2))
             aws_credentials = provider.load()

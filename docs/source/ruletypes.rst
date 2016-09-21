@@ -824,8 +824,8 @@ This rule requires one additional option:
 
 ``fields``: A list of fields to monitor for new terms. ``query_key`` will be used if ``fields`` is not set. Each entry in the
 list of fields can itself be a list.  If a field entry is provided as a list, it will be interpreted as a set of fields
-that compose a composite key used for the Elasticsearch query.  ``Note: the composite fields may only refer to primitive
-types, otherwise the initial Elasticsearch query will not properly return the aggregation results, thus causing alerts
+that compose a composite key used for the ElasticSearch query.  ``Note: the composite fields may only refer to primitive
+types, otherwise the initial ElasticSearch query will not properly return the aggregation results, thus causing alerts
 to fire every time the ElastAlert service initially launches with the rule. A warning will be logged to the console if
 this scenario is encountered. However, future alerts will actually work as expected after the initial flurry.``
 
@@ -1099,7 +1099,7 @@ Example usage::
 
 Arbitrary Jira fields:
 
-Elastalert supports setting any arbitrary JIRA field that your jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your JIRA server, internally, the field is represented as ``customfield_1111``. In elastalert, you may refer to either the public facing name OR the internal representation.
+ElastAlert supports setting any arbitrary JIRA field that your jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your JIRA server, internally, the field is represented as ``customfield_1111``. In elastalert, you may refer to either the public facing name OR the internal representation.
 
 Example usage::
 
@@ -1179,7 +1179,7 @@ the room you want to post to. The room ID will be the numeric part of the URL.
 
 ``hipchat_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
 
-``hipchat_proxy``: By default Elastalert will not use a network proxy to send notifications to HipChat. Set this option using ``hostname:port`` if you need to use a proxy.
+``hipchat_proxy``: By default ElastAlert will not use a network proxy to send notifications to HipChat. Set this option using ``hostname:port`` if you need to use a proxy.
 
 ``hipchat_notify``: When set to true, triggers a hipchat bell as if it were a user. Default is true.
 
@@ -1206,12 +1206,12 @@ Optional:
 
 ``slack_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
 
-``slack_emoji_override``: By default Elastalert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
-Elastalert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
+``slack_emoji_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
+ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
 
 ``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
 
-``slack_proxy``: By default Elastalert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
+``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
 
 Telegram
 ~~~~~
@@ -1227,7 +1227,7 @@ Optional:
 
 ``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
 
-``telegram_proxy``: By default Elastalert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
+``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
 
 PagerDuty
 ~~~~~~~~~
@@ -1243,7 +1243,7 @@ The alerter requires the following option:
 ``pagerduty_incident_key``: If not set pagerduty will trigger a new incident for each alert sent. If set to a unique string per rule pagerduty will identify the incident that this event should be applied.
 If there's no open (i.e. unresolved) incident with this key, a new one will be created. If there's already an open incident with a matching key, this event will be appended to that incident's log.
 
-``pagerduty_proxy``: By default Elastalert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
+``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
 
 VictorOps
 ~~~~~~~~~
@@ -1262,7 +1262,7 @@ Optional:
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
 
-``victorops_proxy``: By default Elastalert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
+``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
 
 Gitter
 ~~~~~~
@@ -1278,7 +1278,7 @@ Optional:
 
 ``gitter_msg_level``: By default the alert will be posted with the 'error' level. You can use 'info' if you want the messages to be black instead of red.
 
-``gitter_proxy``: By default Elastalert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy.
+``gitter_proxy``: By default ElastAlert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy.
 
 ServiceNow
 ~~~~~~
@@ -1310,7 +1310,7 @@ The alerter requires the following options:
 
 Optional:
 
-``servicenow_proxy``: By default Elastalert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy.
+``servicenow_proxy``: By default ElastAlert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy.
 
 
 Debug
