@@ -434,6 +434,8 @@ def test_agg_with_query_key(ea):
 
     assert call3['match_body'] == {'@timestamp': '2014-09-26T12:43:45', 'key': 'Key Value 1', 'key': 'Key Value 1'}
     assert not call3['alert_sent']
+    # Call3 should have it's aggregate_id set to call1's _id
+    # It should also have the same alert_time as call1
     assert call3['aggregate_id'] == 'ABCD'
     assert 'aggregate_key' in call3
     assert call3['aggregate_key'] == 'Key Value 1'
