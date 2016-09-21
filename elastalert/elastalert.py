@@ -1125,12 +1125,10 @@ class ElastAlerter():
         """ Save a match as a pending aggregate alert to elasticsearch. """
 
         # Optionally include the 'query_key' as a dimension for aggregations
-        query_key_value = None
-        if 'query_key' in rule:
-            query_key_value = self.get_query_key_value(rule, match)
+        query_key_value = self.get_query_key_value(rule, match)
 
         if (not rule['current_aggregate_id'].get(query_key_value) or
-                ('aggregate_alert_time' in rule and 'query_key_value' in rule['aggregate_alert_time'] and rule['aggregate_alert_time'].get(query_key_value) < ts_to_dt(match[rule['timestamp_field']]))):
+                ('aggregate_alert_time' in rule and query_key_value in rule['aggregate_alert_time'] and rule['aggregate_alert_time'].get(query_key_value) < ts_to_dt(match[rule['timestamp_field']]))):
 
             # Elastalert may have restarted while pending alerts exist
             pending_alert = self.find_pending_aggregate_alert(rule, query_key_value)
