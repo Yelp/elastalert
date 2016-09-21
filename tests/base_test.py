@@ -320,15 +320,15 @@ def test_agg(ea):
         assert mock_es.call_count == 2
     assert_alerts(ea, [hits_timestamps[:2], hits_timestamps[2:]])
 
-    call1 = ea.writeback_es.search.call_args_list[7][1]['body']
-    call2 = ea.writeback_es.search.call_args_list[8][1]['body']
-    call3 = ea.writeback_es.search.call_args_list[9][1]['body']
-    call4 = ea.writeback_es.search.call_args_list[10][1]['body']
+    call1 = ea.writeback_es.search.call_args_list[4][1]['body']
+    call2 = ea.writeback_es.search.call_args_list[5][1]['body']
+    call3 = ea.writeback_es.search.call_args_list[6][1]['body']
+    call4 = ea.writeback_es.search.call_args_list[7][1]['body']
 
     assert 'alert_time' in call2['filter']['range']
     assert call3['query']['query_string']['query'] == 'aggregate_id:ABCD'
     assert call4['query']['query_string']['query'] == 'aggregate_id:CDEF'
-    assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
+    assert ea.writeback_es.search.call_args_list[7][1]['size'] == 1337
 
 
 def test_agg_cron(ea):
@@ -436,7 +436,7 @@ def test_silence_query_key(ea):
     # Silence test rule for 4 hours
     ea.args.rule = 'test_rule.yaml'  # Not a real name, just has to be set
     ea.args.silence = 'hours=4'
-    ea.silence()
+    ea.silence('anytest.qlo')
 
     # Don't alert even with a match
     match = [{'@timestamp': '2014-11-17T00:00:00', 'username': 'qlo'}]

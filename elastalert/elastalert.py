@@ -1177,7 +1177,7 @@ class ElastAlerter():
 
         return res
 
-    def silence(self):
+    def silence(self, rule_name=None):
         """ Silence an alert for a period of time. --silence and --rule must be passed as args. """
         if self.debug:
             logging.error('--silence not compatible with --debug')
@@ -1188,7 +1188,8 @@ class ElastAlerter():
             exit(1)
 
         # With --rule, self.rules will only contain that specific rule
-        rule_name = self.rules[0]['name']
+        if not rule_name:
+            rule_name = self.rules[0]['name']
 
         try:
             unit, num = self.args.silence.split('=')
