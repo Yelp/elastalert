@@ -446,6 +446,13 @@ def test_silence_query_key(ea):
         ea.run_rule(ea.rules[0], END, START)
     assert ea.rules[0]['alert'][0].alert.call_count == 0
 
+    # If there is a new record with a different value for the query_key, we should get an alert
+    match = [{'@timestamp': '2014-11-17T00:00:01', 'username': 'dpopes'}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 1
+
     # Mock ts_now() to +5 hours, alert on match
     match = [{'@timestamp': '2014-11-17T00:00:00', 'username': 'qlo'}]
     ea.rules[0]['type'].matches = match
@@ -454,7 +461,7 @@ def test_silence_query_key(ea):
             # Converted twice to add tzinfo
             mock_ts.return_value = ts_to_dt(dt_to_ts(datetime.datetime.utcnow() + datetime.timedelta(hours=5)))
             ea.run_rule(ea.rules[0], END, START)
-    assert ea.rules[0]['alert'][0].alert.call_count == 1
+    assert ea.rules[0]['alert'][0].alert.call_count == 2
 
 
 def test_realert(ea):
