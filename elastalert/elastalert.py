@@ -566,7 +566,7 @@ class ElastAlerter():
     def init_rule(self, new_rule, new=True):
         ''' Copies some necessary non-config state from an exiting rule to a new rule. '''
         if 'download_dashboard' in new_rule['filter']:
-            # Download filters from kibana and set the rules filters to them
+            # Download filters from Kibana and set the rules filters to them
             db_filters = self.filters_from_kibana(new_rule, new_rule['filter']['download_dashboard'])
             if db_filters is not None:
                 new_rule['filter'] = db_filters
@@ -849,7 +849,7 @@ class ElastAlerter():
         return self.upload_dashboard(dashboard, rule, match)
 
     def filters_from_kibana(self, rule, db_name):
-        """ Downloads a dashboard from kibana and returns corresponding filters, None on error. """
+        """ Downloads a dashboard from Kibana and returns corresponding filters, None on error. """
         try:
             db = rule.get('dashboard_schema')
             if not db:
@@ -860,7 +860,7 @@ class ElastAlerter():
         return filters
 
     def alert(self, matches, rule, alert_time=None):
-        """ Wraps alerting, kibana linking and enhancements in an exception handler """
+        """ Wraps alerting, Kibana linking and enhancements in an exception handler """
         try:
             return self.send_alert(matches, rule, alert_time=alert_time)
         except Exception as e:
@@ -896,7 +896,7 @@ class ElastAlerter():
                 else:
                     kb_link = self.use_kibana_link(rule, matches[0])
             except EAException as e:
-                self.handle_error("Could not generate kibana dash for %s match: %s" % (rule['name'], e))
+                self.handle_error("Could not generate Kibana dash for %s match: %s" % (rule['name'], e))
             else:
                 if kb_link:
                     matches[0]['kibana_link'] = kb_link

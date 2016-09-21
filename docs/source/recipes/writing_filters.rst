@@ -126,7 +126,7 @@ and when ElastAlert starts, it will download the dashboard schema from Elasticse
 However, if the dashboard name changes or if there is connectivity problems when ElastAlert starts, the rule will not load and
 ElastAlert will exit with an error like "Could not download filters for .."
 
-The second way is to generate a config file once using the kibana dashboard. To do this, run ``elastalert-rule-from-kibana``.
+The second way is to generate a config file once using the Kibana dashboard. To do this, run ``elastalert-rule-from-kibana``.
 
 .. code-block:: console
 
