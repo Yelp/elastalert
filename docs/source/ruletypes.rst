@@ -552,7 +552,7 @@ testing in conjunction with ``--data FILE``. A maximum of 10,000 documents will 
 
 ``--data FILE``: Use a JSON file as a data source instead of Elasticsearch. The file should be a single list containing objects,
 rather than objects on separate lines. Note than this uses mock functions which mimic some Elasticsearch query methods and is not
-guarenteed to have the exact same results as with Elasticsearch. For example, analyzed string fields may behave differently.
+guaranteed to have the exact same results as with Elasticsearch. For example, analyzed string fields may behave differently.
 
 ``--alert``: Trigger real alerts instead of the debug (logging text) alert.
 
