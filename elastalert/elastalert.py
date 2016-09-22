@@ -1210,14 +1210,14 @@ class ElastAlerter():
 
         elastalert_logger.info('Success. %s will be silenced until %s' % (silence_cache_key, silence_ts))
 
-    def set_realert(self, rule_name, timestamp, exponent):
-        """ Write a silence to elasticsearch for rule_name until timestamp. """
+    def set_realert(self, silence_cache_key, timestamp, exponent):
+        """ Write a silence to elasticsearch for silence_cache_key until timestamp. """
         body = {'exponent': exponent,
-                'rule_name': rule_name,
+                'rule_name': silence_cache_key,
                 '@timestamp': ts_now(),
                 'until': timestamp}
 
-        self.silence_cache[rule_name] = (timestamp, exponent)
+        self.silence_cache[silence_cache_key] = (timestamp, exponent)
         return self.writeback('silence', body)
 
     def is_silenced(self, rule_name):
