@@ -234,7 +234,7 @@ class MockElastAlerter(object):
             client.run_rule(rule, endtime, starttime)
 
             if mock_writeback.call_count:
-                print("\nWould have written the following documents to elastalert_status:\n")
+                print("\nWould have written the following documents to writeback index (default is elastalert_status):\n")
                 for call in mock_writeback.call_args_list:
                     print("%s - %s\n" % (call[0][0], call[0][1]))
 
