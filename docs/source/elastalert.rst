@@ -1,4 +1,4 @@
-ElastAlert - Easy & Flexible Alerting With ElasticSearch
+ElastAlert - Easy & Flexible Alerting With Elasticsearch
 ********************************************************
 
 ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
@@ -40,7 +40,6 @@ Currently, we have support built in for these alert types:
 - Slack
 - Telegram
 - Debug
-- Stomp
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
 
@@ -138,9 +137,9 @@ configuration.
 
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. The
 default is 10,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
-limit is reached, ElastAlert will `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_ through pages the size of ``max_query_size`` until processing all results.
+limit is reached, ElastAlert will `scroll <https://www.elastic.co/guide/en/Elasticsearch/reference/current/search-request-scroll.html>`_ through pages the size of ``max_query_size`` until processing all results.
 
-``scroll_keepalive``: The maximum time (formatted in `Time Units <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units>`_) the scrolling context should be kept alive. Avoid using high values as it abuses resources in ElasticSearch, but be mindful to allow sufficient time to finish processing all the results.
+``scroll_keepalive``: The maximum time (formatted in `Time Units <https://www.elastic.co/guide/en/Elasticsearch/reference/current/common-options.html#time-units>`_) the scrolling context should be kept alive. Avoid using high values as it abuses resources in Elasticsearch, but be mindful to allow sufficient time to finish processing all the results.
 
 ``max_aggregation``: The maximum number of alerts to aggregate together. If a rule has ``aggregation`` set, all
 alerts occuring within a timeframe will be sent together. The default is 10,000.
@@ -166,9 +165,9 @@ unless overwritten in the rule config. The default is "localhost".
 
 ``email_reply_to``: This sets the Reply-To header in emails. The default is the recipient address.
 
-``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon ElasticSearch Service. It'll use instance role keys to sign the requests.
+``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon Elasticsearch Service. It'll use instance role keys to sign the requests.
 
-``boto_profile``: Boto profile to use when signing requests to Amazon ElasticSearch Service, if you don't want to use the instance role keys.
+``boto_profile``: Boto profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
 
 .. _runningelastalert:
 
