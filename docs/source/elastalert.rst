@@ -40,6 +40,7 @@ Currently, we have support built in for these alert types:
 - Slack
 - Telegram
 - Debug
+- Stomp
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
 
