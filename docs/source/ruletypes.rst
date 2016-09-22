@@ -416,7 +416,7 @@ match_enhancements
 
 ``match_enhancements``: A list of enhancement modules to use with this rule. An enhancement module is a subclass of enhancements.BaseEnhancement
 that will be given the match dictionary and can modify it before it is passed to the alerter. The enhancements will be run after silence and realert
-is calculated and in the case of aggregated alerts, right before the alert is sent. This can be changed by setting ``run_enhancements_first``. 
+is calculated and in the case of aggregated alerts, right before the alert is sent. This can be changed by setting ``run_enhancements_first``.
 The enhancements should be specified as
 ``module.file.EnhancementName``. See :ref:`Enhancements` for more information. (Optional, list of strings, no default)
 
@@ -1318,6 +1318,21 @@ Debug
 
 The debug alerter will log the alert information using the Python logger at the info level. It is logged into a Python Logger object with the name ``elastalert`` that can be easily accessed using the ``getLogger`` command.
 
+Stomp
+~~~~~
+
+This alert type will use the STOMP protocol in order to push a message to a broker like ActiveMQ or RabbitMQ. The message body is a JSON string containing the alert details.
+The default values will work with a pristine ActiveMQ installation.
+
+Optional:
+
+``stomp_hostname``: The STOMP host to use, defaults to localhost.
+``stomp_hostport``: The STOMP port to use, defaults to 61613.
+``stomp_login``: The STOMP login to use, defaults to admin.
+``stomp_password``: The STOMP password to use, defaults to admin.
+``stomp_destination``: The STOMP destination to use, defaults to /queue/ALERT
+
+The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
 
 Alerter
 ~~~~~~~
