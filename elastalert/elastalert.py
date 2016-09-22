@@ -532,7 +532,7 @@ class ElastAlerter():
             if query_key_value is not None:
                 silence_cache_key += '.' + query_key_value
 
-            if self.is_silenced(silence_cache_key):
+            if self.is_silenced(rule['name'] + "._silence") or self.is_silenced(silence_cache_key):
                 elastalert_logger.info('Ignoring match for silenced rule %s' % (silence_cache_key,))
                 continue
 
@@ -1181,7 +1181,7 @@ class ElastAlerter():
 
         return res
 
-    def silence(self, rule_name=None):
+    def silence(self, silence_cache_key=None):
         """ Silence an alert for a period of time. --silence and --rule must be passed as args. """
         if self.debug:
             logging.error('--silence not compatible with --debug')
@@ -1192,8 +1192,8 @@ class ElastAlerter():
             exit(1)
 
         # With --rule, self.rules will only contain that specific rule
-        if not rule_name:
-            rule_name = self.rules[0]['name']
+        if not silence_cache_key:
+            silence_cache_key = self.rules[0]['name'] + "._silence"
 
         try:
             unit, num = self.args.silence.split('=')
@@ -1204,11 +1204,11 @@ class ElastAlerter():
             logging.error('%s is not a valid time period' % (self.args.silence))
             exit(1)
 
-        if not self.set_realert(rule_name, silence_ts, 0):
+        if not self.set_realert(silence_cache_key, silence_ts, 0):
             logging.error('Failed to save silence command to elasticsearch')
             exit(1)
 
-        elastalert_logger.info('Success. %s will be silenced until %s' % (rule_name, silence_ts))
+        elastalert_logger.info('Success. %s will be silenced until %s' % (silence_cache_key, silence_ts))
 
     def set_realert(self, rule_name, timestamp, exponent):
         """ Write a silence to elasticsearch for rule_name until timestamp. """

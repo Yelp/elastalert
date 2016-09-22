@@ -320,15 +320,15 @@ def test_agg(ea):
         assert mock_es.call_count == 2
     assert_alerts(ea, [hits_timestamps[:2], hits_timestamps[2:]])
 
-    call1 = ea.writeback_es.search.call_args_list[4][1]['body']
-    call2 = ea.writeback_es.search.call_args_list[5][1]['body']
-    call3 = ea.writeback_es.search.call_args_list[6][1]['body']
-    call4 = ea.writeback_es.search.call_args_list[7][1]['body']
+    call1 = ea.writeback_es.search.call_args_list[7][1]['body']
+    call2 = ea.writeback_es.search.call_args_list[8][1]['body']
+    call3 = ea.writeback_es.search.call_args_list[9][1]['body']
+    call4 = ea.writeback_es.search.call_args_list[10][1]['body']
 
     assert 'alert_time' in call2['filter']['range']
     assert call3['query']['query_string']['query'] == 'aggregate_id:ABCD'
     assert call4['query']['query_string']['query'] == 'aggregate_id:CDEF'
-    assert ea.writeback_es.search.call_args_list[7][1]['size'] == 1337
+    assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
 
 
 def test_agg_cron(ea):
@@ -456,15 +456,15 @@ def test_agg_with_query_key(ea):
         assert mock_es.call_count == 2
     assert_alerts(ea, [[hits_timestamps[0], hits_timestamps[2]], [hits_timestamps[1]]])
 
-    call1 = ea.writeback_es.search.call_args_list[4][1]['body']
-    call2 = ea.writeback_es.search.call_args_list[5][1]['body']
-    call3 = ea.writeback_es.search.call_args_list[6][1]['body']
-    call4 = ea.writeback_es.search.call_args_list[7][1]['body']
+    call1 = ea.writeback_es.search.call_args_list[7][1]['body']
+    call2 = ea.writeback_es.search.call_args_list[8][1]['body']
+    call3 = ea.writeback_es.search.call_args_list[9][1]['body']
+    call4 = ea.writeback_es.search.call_args_list[10][1]['body']
 
     assert 'alert_time' in call2['filter']['range']
     assert call3['query']['query_string']['query'] == 'aggregate_id:ABCD'
     assert call4['query']['query_string']['query'] == 'aggregate_id:CDEF'
-    assert ea.writeback_es.search.call_args_list[7][1]['size'] == 1337
+    assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
 
 
 def test_silence(ea):
