@@ -651,22 +651,8 @@ def test_slack_uses_custom_title():
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
 
-    expected_data = {
-        'username': 'elastalert',
-        'channel': '',
-        'icon_emoji': ':ghost:',
-        'attachments': [
-            {
-                'color': 'danger',
-                'title': rule['alert_subject'],
-                'text': BasicMatchString(rule, match).__str__(),
-                'fields': []
-            }
-        ],
-        'text': '',
-        'parse': 'none'
-    }
-    mock_post_request.assert_called_once_with(rule['slack_webhook_url'], data=json.dumps(expected_data), headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with(rule['slack_webhook_url'], data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    assert rule['alert_subject'] in mock_post_request.call_args_list[0][1]['data']
 
 
 def test_slack_uses_rule_name_when_custom_title_is_not_provided():
