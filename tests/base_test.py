@@ -194,7 +194,7 @@ def test_run_rule_calls_garbage_collect(ea):
                            mock.patch.object(ea, 'run_query')) as (mock_gc, mock_get_hits):
         ea.run_rule(ea.rules[0], ts_to_dt(end_time), ts_to_dt(start_time))
 
-    # Running elastalert every hour for 12 hours, we should see self.garbage_collect called 12 times.
+    # Running ElastAlert every hour for 12 hours, we should see self.garbage_collect called 12 times.
     assert mock_gc.call_count == 12
 
     # The calls should be spaced 1 hour apart
@@ -288,7 +288,7 @@ def test_agg(ea):
         ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
         ea.run_rule(ea.rules[0], END, START)
 
-    # Assert that the three matches were added to elasticsearch
+    # Assert that the three matches were added to Elasticsearch
     call1 = ea.writeback_es.create.call_args_list[0][1]['body']
     call2 = ea.writeback_es.create.call_args_list[1][1]['body']
     call3 = ea.writeback_es.create.call_args_list[2][1]['body']
@@ -347,7 +347,7 @@ def test_agg_cron(ea):
             ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
             ea.run_rule(ea.rules[0], END, START)
 
-    # Assert that the three matches were added to elasticsearch
+    # Assert that the three matches were added to Elasticsearch
     call1 = ea.writeback_es.create.call_args_list[0][1]['body']
     call2 = ea.writeback_es.create.call_args_list[1][1]['body']
     call3 = ea.writeback_es.create.call_args_list[2][1]['body']

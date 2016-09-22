@@ -13,9 +13,9 @@ class Auth(object):
         """ Return the authorization header. If 'boto_profile' is passed, it'll be used. Otherwise it'll sign requests
         with instance role.
 
-        :param host: ElasticSearch host.
-        :param username: Username used for authenticating the requests to ElasticSearch.
-        :param password: Password used for authenticating the requests to ElasticSearch.
+        :param host: Elasticsearch host.
+        :param username: Username used for authenticating the requests to Elasticsearch.
+        :param password: Password used for authenticating the requests to Elasticsearch.
         :param aws_region: AWS Region to use. Only required when signing requests.
         :param boto_profile: Boto profile to use for connecting. Only required when signing requests.
         """
@@ -26,14 +26,14 @@ class Auth(object):
             return None
 
         if boto_profile:
-            # Executing elastalert from machine with aws credentials
+            # Executing ElastAlert from machine with aws credentials
             config = configparser.ConfigParser()
             config.read(os.path.expanduser('~') + '/.aws/credentials')
             aws_access_key_id = str(config[boto_profile]['aws_access_key_id'])
             aws_secret_access_key = str(config[boto_profile]['aws_secret_access_key'])
             aws_token = None
         else:
-            # Executing elastalert from machine deployed with specific role
+            # Executing ElastAlert from machine deployed with specific role
             provider = InstanceMetadataProvider(
                 iam_role_fetcher=InstanceMetadataFetcher(timeout=1000, num_attempts=2))
             aws_credentials = provider.load()

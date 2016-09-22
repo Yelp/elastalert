@@ -2,7 +2,7 @@
 # Any .yaml file will be loaded as a rule
 rules_folder: example_rules
 
-# How often ElastAlert will query elasticsearch
+# How often ElastAlert will query Elasticsearch
 # The unit can be anything from weeks to seconds
 run_every:
   minutes: 1
@@ -12,29 +12,29 @@ run_every:
 buffer_time:
   minutes: 15
 
-# The elasticsearch hostname for metadata writeback
-# Note that every rule can have its own elasticsearch host
+# The Elasticsearch hostname for metadata writeback
+# Note that every rule can have its own Elasticsearch host
 es_host: elasticsearch.example.com
 
-# The elasticsearch port
+# The Elasticsearch port
 es_port: 9200
 
-# Optional URL prefix for elasticsearch
+# Optional URL prefix for Elasticsearch
 #es_url_prefix: elasticsearch
 
-# Connect with TLS to elasticsearch
+# Connect with TLS to Elasticsearch
 #use_ssl: True
 
 # Verify TLS certificates
 #verify_certs: True
 
-# GET request with body is the default option for Elasticsearch. 
+# GET request with body is the default option for Elasticsearch.
 # If it fails for some reason, you can pass 'GET', 'POST' or 'source'.
 # See http://elasticsearch-py.readthedocs.io/en/master/connection.html?highlight=send_get_body_as#transport
 # for details
 #es_send_get_body_as: GET
 
-# Option basic-auth username and password for elasticsearch
+# Option basic-auth username and password for Elasticsearch
 #es_username: someusername
 #es_password: somepassword
 
