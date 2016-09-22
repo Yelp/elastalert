@@ -8,7 +8,7 @@ from auth import Auth
 from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 
-logging.basicConfig(level=logging.INFO, filename='./alerter.log')
+logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
 
 
