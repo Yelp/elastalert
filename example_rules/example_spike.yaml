@@ -8,10 +8,10 @@
 # Elasticsearch port
 # es_port: 14900
 
-# (Optional) Connect with SSL to elasticsearch
+# (Optional) Connect with SSL to Elasticsearch
 #use_ssl: True
 
-# (Optional) basic-auth username and password for elasticsearch
+# (Optional) basic-auth username and password for Elasticsearch
 #es_username: someusername
 #es_password: somepassword
 
@@ -54,7 +54,7 @@ spike_height: 3
 spike_type: "up"
 
 # (Required)
-# A list of elasticsearch filters used for find events
+# A list of Elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
 # For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
 filter:

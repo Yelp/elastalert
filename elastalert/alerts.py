@@ -479,7 +479,7 @@ class JiraAlerter(Alerter):
                     if field:
                         break
                 if not field:
-                    # Log a warning to elastalert saying that we couldn't find that type?
+                    # Log a warning to ElastAlert saying that we couldn't find that type?
                     # OR raise and fail to load the alert entirely? Probably the latter...
                     raise Exception("Could not find a definition for the jira field '{0}'".format(normalized_jira_field))
                 arg_name = field['id']
@@ -908,7 +908,7 @@ class VictorOpsAlerter(Alerter):
         payload = {
             "message_type": self.victorops_message_type,
             "entity_display_name": self.victorops_entity_display_name,
-            "monitoring_tool": "Elastalert",
+            "monitoring_tool": "ElastAlert",
             "state_message": body
         }
 

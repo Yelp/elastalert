@@ -152,7 +152,7 @@ def load_options(rule, conf, args=None):
     rule.setdefault('es_conn_timeout', conf.get('es_conn_timeout'))
     rule.setdefault('description', "")
 
-    # Set elasticsearch options from global config
+    # Set Elasticsearch options from global config
     if 'es_url_prefix' in conf:
         rule.setdefault('es_url_prefix', conf.get('es_url_prefix'))
     if 'use_ssl' in conf:
@@ -240,7 +240,7 @@ def load_options(rule, conf, args=None):
         keys = rule.get('top_count_keys')
         rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in keys]
 
-    # Get kibana link options from global config
+    # Get Kibana link options from global config
     if 'generate_kibana_link' in conf:
         rule.setdefault('generate_kibana_link', conf.get('generate_kibana_link'))
     if 'kibana_url' in conf:

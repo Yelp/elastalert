@@ -33,8 +33,8 @@ class RuleType(object):
         self.rules['priority'] = self.rules.get('priority', '2')
 
     def add_data(self, data):
-        """ The function that the elastalert client calls with results from ES.
-        Data is a list of dictionaries, from elasticsearch.
+        """ The function that the ElastAlert client calls with results from ES.
+        Data is a list of dictionaries, from Elasticsearch.
 
         :param data: A list of events, each of which is a dictionary of terms.
         """
@@ -43,7 +43,7 @@ class RuleType(object):
     def add_match(self, event):
         """ This function is called on all matching events. Rules use it to add
         extra information about the context of a match. Event is a dictionary
-        containing terms directly from elasticsearch and alerts will report
+        containing terms directly from Elasticsearch and alerts will report
         all of the information.
 
         :param event: The matching event, a dictionary of terms.

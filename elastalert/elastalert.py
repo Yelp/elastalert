@@ -42,7 +42,7 @@ from util import unix_to_dt
 
 
 class ElastAlerter():
-    """ The main Elastalert runner. This class holds all state about active rules,
+    """ The main ElastAlert runner. This class holds all state about active rules,
     controls when queries are run, and passes information between rules and alerts.
 
     :param args: An argparse arguments instance. Should contain debug and start
@@ -143,11 +143,11 @@ class ElastAlerter():
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
-        :param filters: A list of elasticsearch filters to use.
+        :param filters: A list of Elasticsearch filters to use.
         :param starttime: A timestamp to use as the start time of the query.
         :param endtime: A timestamp to use as the end time of the query.
         :param sort: If true, sort results by timestamp. (Default True)
-        :return: A query dictionary to pass to elasticsearch.
+        :return: A query dictionary to pass to Elasticsearch.
         """
         starttime = to_ts_func(starttime)
         endtime = to_ts_func(endtime)
@@ -225,7 +225,7 @@ class ElastAlerter():
         return processed_hits
 
     def get_hits(self, rule, starttime, endtime, index, scroll=False):
-        """ Query elasticsearch for the given rule and return the results.
+        """ Query Elasticsearch for the given rule and return the results.
 
         :param rule: The rule configuration.
         :param starttime: The earliest time to query.
@@ -272,7 +272,7 @@ class ElastAlerter():
         return hits
 
     def get_hits_count(self, rule, starttime, endtime, index):
-        """ Query elasticsearch for the count of results and returns a list of timestamps
+        """ Query Elasticsearch for the count of results and returns a list of timestamps
         equal to the endtime. This allows the results to be passed to rules which expect
         an object for each hit.
 
@@ -427,7 +427,7 @@ class ElastAlerter():
 
         # This means we are starting fresh
         if 'starttime' not in rule:
-            # Try to get the last run from elasticsearch
+            # Try to get the last run from Elasticsearch
             last_run_end = self.get_starttime(rule)
             if last_run_end:
                 rule['minimum_starttime'] = last_run_end
@@ -566,7 +566,7 @@ class ElastAlerter():
     def init_rule(self, new_rule, new=True):
         ''' Copies some necessary non-config state from an exiting rule to a new rule. '''
         if 'download_dashboard' in new_rule['filter']:
-            # Download filters from kibana and set the rules filters to them
+            # Download filters from Kibana and set the rules filters to them
             db_filters = self.filters_from_kibana(new_rule, new_rule['filter']['download_dashboard'])
             if db_filters is not None:
                 new_rule['filter'] = db_filters
@@ -741,7 +741,7 @@ class ElastAlerter():
             self.load_rule_changes()
 
     def stop(self):
-        """ Stop an elastalert runner that's been started """
+        """ Stop an ElastAlert runner that's been started """
         self.running = False
 
     def sleep_for(self, duration):
@@ -778,7 +778,7 @@ class ElastAlerter():
         return self.upload_dashboard(db, rule, match)
 
     def upload_dashboard(self, db, rule, match):
-        ''' Uploads a dashboard schema to the kibana-int elasticsearch index associated with rule.
+        ''' Uploads a dashboard schema to the kibana-int Elasticsearch index associated with rule.
         Returns the url to the dashboard. '''
         # Set time range
         start = ts_add(match[rule['timestamp_field']], -rule.get('timeframe', datetime.timedelta(minutes=10)))
@@ -818,7 +818,7 @@ class ElastAlerter():
         return kibana_url + '#/dashboard/temp/%s' % (res['_id'])
 
     def get_dashboard(self, rule, db_name):
-        """ Download dashboard which matches use_kibana_dashboard from elasticsearch. """
+        """ Download dashboard which matches use_kibana_dashboard from Elasticsearch. """
         es = elasticsearch_client(rule)
         if not db_name:
             raise EAException("use_kibana_dashboard undefined")
@@ -849,7 +849,7 @@ class ElastAlerter():
         return self.upload_dashboard(dashboard, rule, match)
 
     def filters_from_kibana(self, rule, db_name):
-        """ Downloads a dashboard from kibana and returns corresponding filters, None on error. """
+        """ Downloads a dashboard from Kibana and returns corresponding filters, None on error. """
         try:
             db = rule.get('dashboard_schema')
             if not db:
@@ -860,7 +860,7 @@ class ElastAlerter():
         return filters
 
     def alert(self, matches, rule, alert_time=None):
-        """ Wraps alerting, kibana linking and enhancements in an exception handler """
+        """ Wraps alerting, Kibana linking and enhancements in an exception handler """
         try:
             return self.send_alert(matches, rule, alert_time=alert_time)
         except Exception as e:
@@ -896,7 +896,7 @@ class ElastAlerter():
                 else:
                     kb_link = self.use_kibana_link(rule, matches[0])
             except EAException as e:
-                self.handle_error("Could not generate kibana dash for %s match: %s" % (rule['name'], e))
+                self.handle_error("Could not generate Kibana dash for %s match: %s" % (rule['name'], e))
             else:
                 if kb_link:
                     matches[0]['kibana_link'] = kb_link
@@ -985,7 +985,7 @@ class ElastAlerter():
                                                doc_type=doc_type, body=body)
                 return res
             except ElasticsearchException as e:
-                logging.exception("Error writing alert info to elasticsearch: %s" % (e))
+                logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
                 self.writeback_es = None
 
     def find_recent_pending_alerts(self, time_limit):
@@ -1106,11 +1106,11 @@ class ElastAlerter():
         return res['hits']['hits'][0]
 
     def add_aggregated_alert(self, match, rule):
-        """ Save a match as a pending aggregate alert to elasticsearch. """
+        """ Save a match as a pending aggregate alert to Elasticsearch. """
         if (not rule['current_aggregate_id'] or
                 ('aggregate_alert_time' in rule and rule['aggregate_alert_time'] < ts_to_dt(match[rule['timestamp_field']]))):
 
-            # Elastalert may have restarted while pending alerts exist
+            # ElastAlert may have restarted while pending alerts exist
             pending_alert = self.find_pending_aggregate_alert(rule)
             if pending_alert:
                 alert_time = rule['aggregate_alert_time'] = ts_to_dt(pending_alert['_source']['alert_time'])
@@ -1177,13 +1177,13 @@ class ElastAlerter():
             exit(1)
 
         if not self.set_realert(rule_name, silence_ts, 0):
-            logging.error('Failed to save silence command to elasticsearch')
+            logging.error('Failed to save silence command to Elasticsearch')
             exit(1)
 
         elastalert_logger.info('Success. %s will be silenced until %s' % (rule_name, silence_ts))
 
     def set_realert(self, rule_name, timestamp, exponent):
-        """ Write a silence to elasticsearch for rule_name until timestamp. """
+        """ Write a silence to Elasticsearch for rule_name until timestamp. """
         body = {'exponent': exponent,
                 'rule_name': rule_name,
                 '@timestamp': ts_now(),
