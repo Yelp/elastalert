@@ -220,9 +220,9 @@ class ElastAlerter():
                 values = [lookup_es_key(hit['_source'], key) for key in rule['compound_query_key']]
                 hit['_source'][rule['query_key']] = ', '.join([unicode(value) for value in values])
 
-            if rule.get('compound_aggregate_key'):
-                values = [lookup_es_key(hit['_source'], key) for key in rule['compound_aggregate_key']]
-                hit['_source'][rule['aggregate_key']] = ', '.join([unicode(value) for value in values])
+            if rule.get('compound_aggregation_key'):
+                values = [lookup_es_key(hit['_source'], key) for key in rule['compound_aggregation_key']]
+                hit['_source'][rule['aggregation_key']] = ', '.join([unicode(value) for value in values])
 
             processed_hits.append(hit['_source'])
 
@@ -820,9 +820,9 @@ class ElastAlerter():
                     term = {'term': {qk: match[qk]}}
                     kibana.add_filter(db, term)
 
-        # Add filter for query_key value
-        if 'aggregate_key' in rule:
-            for qk in rule.get('compound_aggregate_key', [rule['aggregate_key']]):
+        # Add filter for aggregation_key value
+        if 'aggregation_key' in rule:
+            for qk in rule.get('compound_aggregation_key', [rule['aggregation_key']]):
                 if qk in match:
                     term = {'term': {qk: match[qk]}}
                     kibana.add_filter(db, term)
