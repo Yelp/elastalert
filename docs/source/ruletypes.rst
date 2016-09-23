@@ -110,6 +110,8 @@ Rule Configuration Cheat Sheet
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``query_key`` (string, no default)                 |   Opt  |           |           |   Req  |    Opt    |  Opt  |   Opt    |  Req   |  Opt      |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``aggregation_key`` (string, no default)           |   Opt  |           |           |        |           |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``timeframe`` (time, no default)                   |        |           |           |   Opt  |    Req    |  Req  |   Req    |        |  Req      |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``num_events`` (int, no default)                   |        |           |           |        |    Req    |       |          |        |           |
@@ -267,11 +269,11 @@ For example, if you wish to receive alerts every Monday and Friday::
 
 This uses Cron syntax, which you can read more about `here <http://www.nncron.ru/help/EN/working/cron-format.htm>`_. Make sure to `only` include either a schedule field or standard datetime fields (such as ``hours``, ``minutes``, ``days``), not both.
 
-By default, all events that occur during an aggregation window are grouped together. However, if your rule has the ``query_key`` field set, then each event sharing a common key value will be grouped together. A separate aggregation window will be made for each newly encountered key value.
+By default, all events that occur during an aggregation window are grouped together. However, if your rule has the ``aggregation_key`` field set, then each event sharing a common key value will be grouped together. A separate aggregation window will be made for each newly encountered key value.
 
 For example, if you wish to receive alerts that are grouped by the user who triggered the event, you can set::
 
-    query_key: 'my_data.username'
+    aggregation_key: 'my_data.username'
 
 Then, assuming an aggregation window of 10 minutes, if you receive the following data points::
 
@@ -451,6 +453,11 @@ additional alerts for ``{'username': 'bob'}`` will be ignored while other userna
 ``query_key`` will be grouped together. A list of fields may also be used, which will create a compound query key. This compound key is
 treated as if it were a single field whose value is the component values, or "None", joined by commas. A new field with the key
 "field1,field2,etc" will be created in each document and may conflict with existing fields of the same name.
+
+aggregation_key
+^^^^^^^^^^^^^^^
+
+``aggregation_key``: Having an aggregation key in conjunction with an aggregation will make it so that each new value encountered for the aggregation_key field will result in a new, separate aggregation window.
 
 timestamp_type
 ^^^^^^^^^^^^^^

@@ -220,6 +220,10 @@ class ElastAlerter():
                 values = [lookup_es_key(hit['_source'], key) for key in rule['compound_query_key']]
                 hit['_source'][rule['query_key']] = ', '.join([unicode(value) for value in values])
 
+            if rule.get('compound_aggregate_key'):
+                values = [lookup_es_key(hit['_source'], key) for key in rule['compound_aggregate_key']]
+                hit['_source'][rule['aggregate_key']] = ', '.join([unicode(value) for value in values])
+
             processed_hits.append(hit['_source'])
 
         return processed_hits
@@ -458,22 +462,30 @@ class ElastAlerter():
         return self.run_every
 
     def get_query_key_value(self, rule, match):
-        # concatenate query_key (or none) with rule_name to form the key used for silence_cache, grouped aggregates, etc.
-        if 'query_key' in rule:
-            try:
-                key = lookup_es_key(match, rule['query_key'])
-                if key is not None:
-                    # Only do the unicode conversion if we actually found something)
-                    # Otherwise we might transform None --> 'None'
-                    key = unicode(key)
-            except KeyError:
-                # Some matches may not have a query key
-                # Use a special token for these to not clobber all alerts
-                key = '_missing'
-        else:
-            key = None
+        # get the value for the match's query_key (or none) to form the key used for the silence_cache.
+        return self.get_named_key_value(rule, match, 'query_key')
 
-        return key
+    def get_aggregation_key_value(self, rule, match):
+        # get the value for the match's aggregation_key (or none) to form the key used for grouped aggregates.
+        return self.get_named_key_value(rule, match, 'aggregation_key')
+
+    def get_named_key_value(self, rule, match, key_name):
+        # search the match for the key specified in the rule to get the value
+        if key_name in rule:
+            try:
+                key_value = lookup_es_key(match, rule[key_name])
+                if key_value is not None:
+                    # Only do the unicode conversion if we actually found something)
+                    # otherwise we might transform None --> 'None'
+                    key_value = unicode(key_value)
+            except KeyError:
+                # Some matches may not have the specified key
+                # use a special token for these
+                key_value = '_missing'
+        else:
+            key_value = None
+
+        return key_value
 
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
@@ -808,6 +820,13 @@ class ElastAlerter():
                     term = {'term': {qk: match[qk]}}
                     kibana.add_filter(db, term)
 
+        # Add filter for query_key value
+        if 'aggregate_key' in rule:
+            for qk in rule.get('compound_aggregate_key', [rule['aggregate_key']]):
+                if qk in match:
+                    term = {'term': {qk: match[qk]}}
+                    kibana.add_filter(db, term)
+
         # Convert to json
         db_js = json.dumps(db)
         db_body = {'user': 'guest',
@@ -1074,11 +1093,11 @@ class ElastAlerter():
         # Send in memory aggregated alerts
         for rule in self.rules:
             if rule['agg_matches']:
-                for query_key_value, aggregate_alert_time in rule['aggregate_alert_time'].iteritems():
+                for aggregation_key_value, aggregate_alert_time in rule['aggregate_alert_time'].iteritems():
                     if ts_now() > aggregate_alert_time:
-                        alertable_matches = [agg_match for agg_match in rule['agg_matches'] if self.get_query_key_value(rule, agg_match) == query_key_value]
+                        alertable_matches = [agg_match for agg_match in rule['agg_matches'] if self.get_aggregation_key_value(rule, agg_match) == aggregation_key_value]
                         self.alert(alertable_matches, rule)
-                        rule['agg_matches'] = [agg_match for agg_match in rule['agg_matches'] if self.get_query_key_value(rule, agg_match) != query_key_value]
+                        rule['agg_matches'] = [agg_match for agg_match in rule['agg_matches'] if self.get_aggregation_key_value(rule, agg_match) != aggregation_key_value]
 
     def get_aggregated_matches(self, _id):
         """ Removes and returns all matches from writeback_es that have aggregate_id == _id """
@@ -1101,14 +1120,14 @@ class ElastAlerter():
                 self.handle_error("Error fetching aggregated matches: %s" % (e), {'id': _id})
         return matches
 
-    def find_pending_aggregate_alert(self, rule, query_key_value=None):
+    def find_pending_aggregate_alert(self, rule, aggregation_key_value=None):
         query = {'filter': {'bool': {'must': [{'term': {'rule_name': rule['name']}},
                                               {'range': {'alert_time': {'gt': ts_now()}}},
                                               {'not': {'exists': {'field': 'aggregate_id'}}},
                                               {'term': {'alert_sent': 'false'}}]}},
                  'sort': {'alert_time': {'order': 'desc'}}}
-        if query_key_value:
-            query['filter']['bool']['must'].append({'term': {'aggregate_key': query_key_value}})
+        if aggregation_key_value:
+            query['filter']['bool']['must'].append({'term': {'aggregate_key': aggregation_key_value}})
 
         if not self.writeback_es:
             self.writeback_es = elasticsearch_client(self.conf)
@@ -1128,19 +1147,19 @@ class ElastAlerter():
     def add_aggregated_alert(self, match, rule):
         """ Save a match as a pending aggregate alert to Elasticsearch. """
 
-        # Optionally include the 'query_key' as a dimension for aggregations
-        query_key_value = self.get_query_key_value(rule, match)
+        # Optionally include the 'aggregation_key' as a dimension for aggregations
+        aggregation_key_value = self.get_aggregation_key_value(rule, match)
 
-        if (not rule['current_aggregate_id'].get(query_key_value) or
-                ('aggregate_alert_time' in rule and query_key_value in rule['aggregate_alert_time'] and rule['aggregate_alert_time'].get(query_key_value) < ts_to_dt(match[rule['timestamp_field']]))):
+        if (not rule['current_aggregate_id'].get(aggregation_key_value) or
+                ('aggregate_alert_time' in rule and aggregation_key_value in rule['aggregate_alert_time'] and rule['aggregate_alert_time'].get(aggregation_key_value) < ts_to_dt(match[rule['timestamp_field']]))):
 
             # ElastAlert may have restarted while pending alerts exist
-            pending_alert = self.find_pending_aggregate_alert(rule, query_key_value)
+            pending_alert = self.find_pending_aggregate_alert(rule, aggregation_key_value)
             if pending_alert:
                 alert_time = ts_to_dt(pending_alert['_source']['alert_time'])
-                rule['aggregate_alert_time'][query_key_value] = alert_time
-                agg_id = rule['current_aggregate_id'] = {query_key_value: pending_alert['_id']}
-                elastalert_logger.info('Adding alert for %s to aggregation(id: %s, query_key: %s), next alert at %s' % (rule['name'], agg_id, query_key_value, alert_time))
+                rule['aggregate_alert_time'][aggregation_key_value] = alert_time
+                agg_id = rule['current_aggregate_id'] = {aggregation_key_value: pending_alert['_id']}
+                elastalert_logger.info('Adding alert for %s to aggregation(id: %s, query_key: %s), next alert at %s' % (rule['name'], agg_id, aggregation_key_value, alert_time))
             else:
                 # First match, set alert_time
                 match_time = ts_to_dt(match[rule['timestamp_field']])
@@ -1155,25 +1174,25 @@ class ElastAlerter():
                 else:
                     alert_time = match_time + rule['aggregation']
 
-                rule['aggregate_alert_time'][query_key_value] = alert_time
+                rule['aggregate_alert_time'][aggregation_key_value] = alert_time
                 agg_id = None
-                elastalert_logger.info('New aggregation for %s, query_key: %s. next alert at %s.' % (rule['name'], query_key_value, alert_time))
+                elastalert_logger.info('New aggregation for %s, query_key: %s. next alert at %s.' % (rule['name'], aggregation_key_value, alert_time))
         else:
             # Already pending aggregation, use existing alert_time
-            alert_time = rule['aggregate_alert_time'].get(query_key_value)
-            agg_id = rule['current_aggregate_id'].get(query_key_value)
-            elastalert_logger.info('Adding alert for %s to aggregation(id: %s, query_key: %s), next alert at %s' % (rule['name'], agg_id, query_key_value, alert_time))
+            alert_time = rule['aggregate_alert_time'].get(aggregation_key_value)
+            agg_id = rule['current_aggregate_id'].get(aggregation_key_value)
+            elastalert_logger.info('Adding alert for %s to aggregation(id: %s, query_key: %s), next alert at %s' % (rule['name'], agg_id, aggregation_key_value, alert_time))
 
         alert_body = self.get_alert_body(match, rule, False, alert_time)
         if agg_id:
             alert_body['aggregate_id'] = agg_id
-        if query_key_value:
-            alert_body['aggregate_key'] = query_key_value
+        if aggregation_key_value:
+            alert_body['aggregate_key'] = aggregation_key_value
         res = self.writeback('elastalert', alert_body)
 
         # If new aggregation, save _id
         if res and not agg_id:
-            rule['current_aggregate_id'][query_key_value] = res['_id']
+            rule['current_aggregate_id'][aggregation_key_value] = res['_id']
 
         # Couldn't write the match to ES, save it in memory for now
         if not res:
