@@ -397,7 +397,7 @@ def test_agg_no_writeback_connectivity(ea):
     ea.add_aggregated_alert.assert_any_call({'@timestamp': hit3}, ea.rules[0])
 
 
-def test_agg_with_query_key(ea):
+def test_agg_with_aggregation_key(ea):
     ea.max_aggregation = 1337
     hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:43:45']
     alerttime1 = dt_to_ts(ts_to_dt(hits_timestamps[0]) + datetime.timedelta(minutes=10))
@@ -411,7 +411,7 @@ def test_agg_with_query_key(ea):
         ea.rules[0]['type'].matches[0]['key'] = 'Key Value 1'
         ea.rules[0]['type'].matches[1]['key'] = 'Key Value 2'
         ea.rules[0]['type'].matches[2]['key'] = 'Key Value 1'
-        ea.rules[0]['query_key'] = 'key'
+        ea.rules[0]['aggregation_key'] = 'key'
         ea.run_rule(ea.rules[0], END, START)
 
     # Assert that the three matches were added to elasticsearch
