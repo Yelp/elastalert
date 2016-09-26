@@ -1160,7 +1160,7 @@ class ElastAlerter():
                 rule['aggregate_alert_time'][aggregation_key_value] = alert_time
                 agg_id = pending_alert['_id']
                 rule['current_aggregate_id'] = {aggregation_key_value: agg_id}
-                elastalert_logger.info('Adding alert for %s to aggregation(id: %s, query_key: %s), next alert at %s' % (rule['name'], agg_id, aggregation_key_value, alert_time))
+                elastalert_logger.info('Adding alert for %s to aggregation(id: %s, aggregation_key: %s), next alert at %s' % (rule['name'], agg_id, aggregation_key_value, alert_time))
             else:
                 # First match, set alert_time
                 match_time = ts_to_dt(match[rule['timestamp_field']])
@@ -1177,12 +1177,12 @@ class ElastAlerter():
 
                 rule['aggregate_alert_time'][aggregation_key_value] = alert_time
                 agg_id = None
-                elastalert_logger.info('New aggregation for %s, query_key: %s. next alert at %s.' % (rule['name'], aggregation_key_value, alert_time))
+                elastalert_logger.info('New aggregation for %s, aggregation_key: %s. next alert at %s.' % (rule['name'], aggregation_key_value, alert_time))
         else:
             # Already pending aggregation, use existing alert_time
             alert_time = rule['aggregate_alert_time'].get(aggregation_key_value)
             agg_id = rule['current_aggregate_id'].get(aggregation_key_value)
-            elastalert_logger.info('Adding alert for %s to aggregation(id: %s, query_key: %s), next alert at %s' % (rule['name'], agg_id, aggregation_key_value, alert_time))
+            elastalert_logger.info('Adding alert for %s to aggregation(id: %s, aggregation_key: %s), next alert at %s' % (rule['name'], agg_id, aggregation_key_value, alert_time))
 
         alert_body = self.get_alert_body(match, rule, False, alert_time)
         if agg_id:
