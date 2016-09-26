@@ -480,7 +480,7 @@ _source_enabled
 
 ``_source_enabled``: If true, ElastAlert will use _source to retrieve fields from documents in Elasticsearch. If false,
 ElastAlert will use ``fields`` to retrieve stored fields. Both of these are represented internally as if they came from ``_source``.
-See https://www.elastic.co/guide/en/Elasticsearch/reference/1.3/mapping-fields.html for more details. The fields used come from ``include``,
+See https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html for more details. The fields used come from ``include``,
 see above for more details. (Optional, boolean, default True)
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
