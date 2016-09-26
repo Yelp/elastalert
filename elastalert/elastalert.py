@@ -1158,7 +1158,8 @@ class ElastAlerter():
             if pending_alert:
                 alert_time = ts_to_dt(pending_alert['_source']['alert_time'])
                 rule['aggregate_alert_time'][aggregation_key_value] = alert_time
-                agg_id = rule['current_aggregate_id'] = {aggregation_key_value: pending_alert['_id']}
+                agg_id = pending_alert['_id']
+                rule['current_aggregate_id'] = {aggregation_key_value: agg_id}
                 elastalert_logger.info('Adding alert for %s to aggregation(id: %s, query_key: %s), next alert at %s' % (rule['name'], agg_id, aggregation_key_value, alert_time))
             else:
                 # First match, set alert_time
