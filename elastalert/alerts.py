@@ -700,7 +700,7 @@ class SnsAlerter(Alerter):
         self.aws_region = self.rule.get('aws_region', 'us-east-1')
         self.boto_profile = self.rule.get('boto_profile', '')
 
-    def create_default_title(self):
+    def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
         return subject
 
@@ -719,7 +719,7 @@ class SnsAlerter(Alerter):
             sns_client = sns.connect_to_region(self.aws_region,
                                                aws_access_key_id=self.aws_access_key,
                                                aws_secret_access_key=self.aws_secret_key)
-        sns_client.publish(self.sns_topic_arn, body, subject=self.create_default_title())
+        sns_client.publish(self.sns_topic_arn, body, subject=self.create_title(matches))
         elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
 
 
