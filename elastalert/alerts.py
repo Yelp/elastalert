@@ -20,6 +20,7 @@ from jira.client import JIRA
 from jira.exceptions import JIRAError
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
+from texttable import Texttable
 from util import EAException
 from util import elastalert_logger
 from util import lookup_es_key
@@ -229,13 +230,28 @@ class Alerter(object):
         return alert_subject
 
     def create_alert_body(self, matches):
-        body = ''
+        body = self.get_aggregation_summary_text(matches)
         for match in matches:
             body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
         return body
+
+    def get_aggregation_summary_text(self, matches):
+        text = ''
+        if 'aggregation' in self.rule and 'summary_table_fields' in self.rule:
+            summary_table_fields = self.rule['summary_table_fields']
+            if not isinstance(summary_table_fields, list):
+                summary_table_fields = [summary_table_fields]
+            text += "Aggregation resulted in the following data for summary_table_fields ==> {0}:\n\n".format(summary_table_fields)
+            text_table = Texttable()
+            text_table.header(summary_table_fields)
+            for match in matches:
+                text_table.add_row([unicode(lookup_es_key(match, key)) for key in summary_table_fields])
+            text += text_table.draw() + '\n\n'
+
+        return unicode(text)
 
     def create_default_title(self, matches):
         return self.rule['name']
@@ -623,11 +639,18 @@ class JiraAlerter(Alerter):
 
     def create_alert_body(self, matches):
         body = self.description + '\n'
+        body += self.get_aggregation_summary_text(matches)
         for match in matches:
             body += unicode(JiraFormattedMatchString(self.rule, match))
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
         return body
+
+    def get_aggregation_summary_text(self, matches):
+        text = super(JiraAlerter, self).get_aggregation_summary_text(matches)
+        if text:
+            text = '{noformat}{0}{noformat}'.format(text)
+        return text
 
     def create_default_title(self, matches, for_search=False):
         # If there is a query_key, use that in the title
