@@ -112,6 +112,8 @@ Rule Configuration Cheat Sheet
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``aggregation_key`` (string, no default)           |   Opt  |           |           |        |           |       |          |        |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``summary_table_fields`` (list, no default)        |   Opt  |           |           |        |           |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``timeframe`` (time, no default)                   |        |           |           |   Opt  |    Req    |  Req  |   Req    |        |  Req      |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``num_events`` (int, no default)                   |        |           |           |        |    Req    |       |          |        |           |
@@ -277,11 +279,29 @@ For example, if you wish to receive alerts that are grouped by the user who trig
 
 Then, assuming an aggregation window of 10 minutes, if you receive the following data points::
 
-    {'my_data': {'username': 'alice'}, '@timestamp': '2016-09-20T00:00:00'}
-    {'my_data': {'username': 'bob'}, '@timestamp': '2016-09-20T00:05:00'}
-    {'my_data': {'username': 'alice'}, '@timestamp': '2016-09-20T00:06:00'}
+    {'my_data': {'username': 'alice', 'event_type': 'login'}, '@timestamp': '2016-09-20T00:00:00'}
+    {'my_data': {'username': 'bob', 'event_type': 'something'}, '@timestamp': '2016-09-20T00:05:00'}
+    {'my_data': {'username': 'alice', 'event_type': 'something else'}, '@timestamp': '2016-09-20T00:06:00'}
 
 This should result in 2 alerts: One containing alice's two events, sent at ``2016-09-20T00:10:00`` and one containing bob's one event sent at ``2016-09-20T00:16:00``
+
+For aggregations, there can sometimes be a large number of documents present in the viewing medium (email, jira ticket, etc..). If you set the ``summary_table_fields`` field, Elastalert will provide a summary of the specified fields from all the results.
+
+For example, if you wish to summarize the usernames and event_types that appear in the documents so that you can see the most relevant fields at a quick glance, you can set::
+
+    summary_table_fields:
+        - my_data.username
+        - my_data.event_type
+
+Then, for the same sample data shown above listing alice and bob's events, Elastalert will provide the following summary table in the alert medium::
+
+    +------------------+--------------------+
+    | my_data.username | my_data.event_type |
+    +------------------+--------------------+
+    |      alice       |       login        |
+    |       bob        |     something      |
+    |      alice       |   something else   |
+    +------------------+--------------------+
 
 realert
 ^^^^^^^
@@ -458,6 +478,11 @@ aggregation_key
 ^^^^^^^^^^^^^^^
 
 ``aggregation_key``: Having an aggregation key in conjunction with an aggregation will make it so that each new value encountered for the aggregation_key field will result in a new, separate aggregation window.
+
+summary_table_fields
+^^^^^^^^^^^^^^^
+
+``summary_table_fields``: Specifying the summmary_table_fields in conjunction with an aggregation will make it so that each aggregated alert will contain a table summarizing the values for the specified fields in all the matches that were aggregated together.
 
 timestamp_type
 ^^^^^^^^^^^^^^
