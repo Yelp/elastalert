@@ -110,6 +110,8 @@ Rule Configuration Cheat Sheet
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``query_key`` (string, no default)                 |   Opt  |           |           |   Req  |    Opt    |  Opt  |   Opt    |  Req   |  Opt      |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``aggregation_key`` (string, no default)           |   Opt  |           |           |        |           |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``timeframe`` (time, no default)                   |        |           |           |   Opt  |    Req    |  Req  |   Req    |        |  Req      |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``num_events`` (int, no default)                   |        |           |           |        |    Req    |       |          |        |           |
@@ -266,6 +268,20 @@ For example, if you wish to receive alerts every Monday and Friday::
       schedule: '2 4 * * mon,fri'
 
 This uses Cron syntax, which you can read more about `here <http://www.nncron.ru/help/EN/working/cron-format.htm>`_. Make sure to `only` include either a schedule field or standard datetime fields (such as ``hours``, ``minutes``, ``days``), not both.
+
+By default, all events that occur during an aggregation window are grouped together. However, if your rule has the ``aggregation_key`` field set, then each event sharing a common key value will be grouped together. A separate aggregation window will be made for each newly encountered key value.
+
+For example, if you wish to receive alerts that are grouped by the user who triggered the event, you can set::
+
+    aggregation_key: 'my_data.username'
+
+Then, assuming an aggregation window of 10 minutes, if you receive the following data points::
+
+    {'my_data': {'username': 'alice'}, '@timestamp': '2016-09-20T00:00:00'}
+    {'my_data': {'username': 'bob'}, '@timestamp': '2016-09-20T00:05:00'}
+    {'my_data': {'username': 'alice'}, '@timestamp': '2016-09-20T00:06:00'}
+
+This should result in 2 alerts: One containing alice's two events, sent at ``2016-09-20T00:10:00`` and one containing bob's one event sent at ``2016-09-20T00:16:00``
 
 realert
 ^^^^^^^
@@ -438,6 +454,11 @@ additional alerts for ``{'username': 'bob'}`` will be ignored while other userna
 treated as if it were a single field whose value is the component values, or "None", joined by commas. A new field with the key
 "field1,field2,etc" will be created in each document and may conflict with existing fields of the same name.
 
+aggregation_key
+^^^^^^^^^^^^^^^
+
+``aggregation_key``: Having an aggregation key in conjunction with an aggregation will make it so that each new value encountered for the aggregation_key field will result in a new, separate aggregation window.
+
 timestamp_type
 ^^^^^^^^^^^^^^
 
@@ -459,7 +480,7 @@ _source_enabled
 
 ``_source_enabled``: If true, ElastAlert will use _source to retrieve fields from documents in Elasticsearch. If false,
 ElastAlert will use ``fields`` to retrieve stored fields. Both of these are represented internally as if they came from ``_source``.
-See https://www.elastic.co/guide/en/elasticsearch/reference/1.3/mapping-fields.html for more details. The fields used come from ``include``,
+See https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html for more details. The fields used come from ``include``,
 see above for more details. (Optional, boolean, default True)
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
@@ -552,7 +573,7 @@ testing in conjunction with ``--data FILE``. A maximum of 10,000 documents will 
 
 ``--data FILE``: Use a JSON file as a data source instead of Elasticsearch. The file should be a single list containing objects,
 rather than objects on separate lines. Note than this uses mock functions which mimic some Elasticsearch query methods and is not
-guarenteed to have the exact same results as with Elasticsearch. For example, analyzed string fields may behave differently.
+guaranteed to have the exact same results as with Elasticsearch. For example, analyzed string fields may behave differently.
 
 ``--alert``: Trigger real alerts instead of the debug (logging text) alert.
 
@@ -643,7 +664,7 @@ This rule requires two additional options:
 
 Optional:
 
-``use_count_query``: If true, ElastAlert will poll elasticsearch using the count api, and not download all of the matching documents. This is
+``use_count_query``: If true, ElastAlert will poll Elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
 of tens of thousands or more. ``doc_type`` must be set to use this.
 
@@ -772,7 +793,7 @@ consider the following examples::
 trigger an immediate alert. When set to false, baseline must be established for each new ``query_key`` value, and then subsequent spikes may
 cause alerts. Baseline is established after ``timeframe`` has elapsed twice since first occurrence.
 
-``use_count_query``: If true, ElastAlert will poll elasticsearch using the count api, and not download all of the matching documents. This is
+``use_count_query``: If true, ElastAlert will poll Elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
 of tens of thousands or more. ``doc_type`` must be set to use this.
 
@@ -824,9 +845,9 @@ This rule requires one additional option:
 
 ``fields``: A list of fields to monitor for new terms. ``query_key`` will be used if ``fields`` is not set. Each entry in the
 list of fields can itself be a list.  If a field entry is provided as a list, it will be interpreted as a set of fields
-that compose a composite key used for the elasticsearch query.  ``Note: the composite fields may only refer to primitive
-types, otherwise the initial elasticsearch query will not properly return the aggregation results, thus causing alerts
-to fire every time the elastalert service initially launches with the rule. A warning will be logged to the console if
+that compose a composite key used for the ElasticSearch query.  ``Note: the composite fields may only refer to primitive
+types, otherwise the initial ElasticSearch query will not properly return the aggregation results, thus causing alerts
+to fire every time the ElastAlert service initially launches with the rule. A warning will be logged to the console if
 this scenario is encountered. However, future alerts will actually work as expected after the initial flurry.``
 
 Optional:
@@ -1099,7 +1120,7 @@ Example usage::
 
 Arbitrary Jira fields:
 
-Elastalert supports setting any arbitrary JIRA field that your jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your JIRA server, internally, the field is represented as ``customfield_1111``. In elastalert, you may refer to either the public facing name OR the internal representation.
+ElastAlert supports setting any arbitrary JIRA field that your jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your JIRA server, internally, the field is represented as ``customfield_1111``. In elastalert, you may refer to either the public facing name OR the internal representation.
 
 Example usage::
 
@@ -1179,7 +1200,7 @@ the room you want to post to. The room ID will be the numeric part of the URL.
 
 ``hipchat_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
 
-``hipchat_proxy``: By default Elastalert will not use a network proxy to send notifications to HipChat. Set this option using ``hostname:port`` if you need to use a proxy.
+``hipchat_proxy``: By default ElastAlert will not use a network proxy to send notifications to HipChat. Set this option using ``hostname:port`` if you need to use a proxy.
 
 ``hipchat_notify``: When set to true, triggers a hipchat bell as if it were a user. Default is true.
 
@@ -1206,12 +1227,12 @@ Optional:
 
 ``slack_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
 
-``slack_emoji_override``: By default Elastalert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
-Elastalert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
+``slack_emoji_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
+ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
 
 ``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
 
-``slack_proxy``: By default Elastalert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
+``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
 
 Telegram
 ~~~~~
@@ -1227,7 +1248,7 @@ Optional:
 
 ``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
 
-``telegram_proxy``: By default Elastalert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
+``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
 
 PagerDuty
 ~~~~~~~~~
@@ -1243,7 +1264,7 @@ The alerter requires the following option:
 ``pagerduty_incident_key``: If not set pagerduty will trigger a new incident for each alert sent. If set to a unique string per rule pagerduty will identify the incident that this event should be applied.
 If there's no open (i.e. unresolved) incident with this key, a new one will be created. If there's already an open incident with a matching key, this event will be appended to that incident's log.
 
-``pagerduty_proxy``: By default Elastalert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
+``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
 
 VictorOps
 ~~~~~~~~~
@@ -1262,7 +1283,7 @@ Optional:
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
 
-``victorops_proxy``: By default Elastalert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
+``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
 
 Gitter
 ~~~~~~
@@ -1278,7 +1299,7 @@ Optional:
 
 ``gitter_msg_level``: By default the alert will be posted with the 'error' level. You can use 'info' if you want the messages to be black instead of red.
 
-``gitter_proxy``: By default Elastalert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy.
+``gitter_proxy``: By default ElastAlert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy.
 
 ServiceNow
 ~~~~~~
@@ -1310,7 +1331,7 @@ The alerter requires the following options:
 
 Optional:
 
-``servicenow_proxy``: By default Elastalert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy.
+``servicenow_proxy``: By default ElastAlert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy.
 
 
 Debug

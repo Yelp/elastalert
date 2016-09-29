@@ -213,7 +213,7 @@ def add_filter(dashboard, es_filter):
     elif 'term' in es_filter:
         kibana_filter['type'] = 'field'
         f_field, f_query = es_filter['term'].items()[0]
-        # Wrap query in quotes, otherwise certain characters cause kibana to throw errors
+        # Wrap query in quotes, otherwise certain characters cause Kibana to throw errors
         if isinstance(f_query, basestring):
             f_query = '"%s"' % (f_query.replace('"', '\\"'))
         if isinstance(f_query, list):

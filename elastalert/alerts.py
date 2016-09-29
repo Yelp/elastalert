@@ -528,7 +528,7 @@ class JiraAlerter(Alerter):
                     if field:
                         break
                 if not field:
-                    # Log a warning to elastalert saying that we couldn't find that type?
+                    # Log a warning to ElastAlert saying that we couldn't find that type?
                     # OR raise and fail to load the alert entirely? Probably the latter...
                     raise Exception("Could not find a definition for the jira field '{0}'".format(normalized_jira_field))
                 arg_name = field['id']
@@ -749,7 +749,7 @@ class SnsAlerter(Alerter):
         self.aws_region = self.rule.get('aws_region', 'us-east-1')
         self.boto_profile = self.rule.get('boto_profile', '')
 
-    def create_default_title(self):
+    def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
         return subject
 
@@ -768,7 +768,7 @@ class SnsAlerter(Alerter):
             sns_client = sns.connect_to_region(self.aws_region,
                                                aws_access_key_id=self.aws_access_key,
                                                aws_secret_access_key=self.aws_secret_key)
-        sns_client.publish(self.sns_topic_arn, body, subject=self.create_default_title())
+        sns_client.publish(self.sns_topic_arn, body, subject=self.create_title(matches))
         elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
 
 
@@ -957,7 +957,7 @@ class VictorOpsAlerter(Alerter):
         payload = {
             "message_type": self.victorops_message_type,
             "entity_display_name": self.victorops_entity_display_name,
-            "monitoring_tool": "Elastalert",
+            "monitoring_tool": "ElastAlert",
             "state_message": body
         }
 

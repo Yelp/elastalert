@@ -45,7 +45,7 @@ add_data(self, data):
 
 When ElastAlert queries Elasticsearch, it will pass all of the hits to the rule type by calling ``add_data``.
 ``data`` is a list of dictionary objects which contain all of the fields in ``include``, ``query_key`` and ``compare_key``
-if they exist, and ``@timestamp`` as a datetime object. They will always come in chronological order sorted by '@timestamp'. 
+if they exist, and ``@timestamp`` as a datetime object. They will always come in chronological order sorted by '@timestamp'.
 
 get_match_str(self, match):
 ------------------------------
@@ -91,7 +91,7 @@ Now, in a file named ``my_rules.py``, add
 
         # By setting required_options to a set of strings
         # You can ensure that the rule config file specifies all
-        # of the options. Otherwise, ElastAlert will throw an exception 
+        # of the options. Otherwise, ElastAlert will throw an exception
         # when trying to load the rule.
         required_options = set(['time_start', 'time_end', 'usernames'])
 
@@ -100,7 +100,7 @@ Now, in a file named ``my_rules.py``, add
         # including all the fields that the config specifies with "include"
         def add_data(self, data):
             for document in data:
-                
+
                 # To access config options, use self.rules
                 if document['username'] in self.rules['usernames']:
 
@@ -110,10 +110,10 @@ Now, in a file named ``my_rules.py``, add
                     # Convert time_start and time_end to time objects
                     time_start = dateutil.parser.parse(self.rules['time_start']).time()
                     time_end = dateutil.parser.parse(self.rules['time_end']).time()
-                    
+
                     # If the time falls between start and end
                     if login_time > time_start and login_time < time_end:
-                        
+
                         # To add a match, use self.add_match
                         self.add_match(document)
 
@@ -162,5 +162,3 @@ An alert from this rule will look something like::
 
     @timestamp: 2015-03-02T22:23:24Z
     username: userXYZ
-
-

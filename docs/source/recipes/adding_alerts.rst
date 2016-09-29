@@ -16,7 +16,7 @@ something like this:
         def get_info(self):
             ...
 
-You can import alert types by specifying the type as ``module.file.AlertName``, where module is the name of a python module, 
+You can import alert types by specifying the type as ``module.file.AlertName``, where module is the name of a python module,
 and file is the name of the python file containing a ``Alerter`` subclass named ``AlertName``.
 
 Basics
@@ -41,7 +41,7 @@ alert(self, match):
 -------------------
 
 ElastAlert will call this function to send an alert. ``matches`` is a list of dictionary objects with
-information about the match. You can get a nice string representation of the match by calling 
+information about the match. You can get a nice string representation of the match by calling
 ``self.rule['type'].get_match_str(match, self.rule)``. If this method raises an exception, it will
 be caught by ElastAlert and the alert will be marked as unsent and saved for later.
 
@@ -74,11 +74,11 @@ Now, in a file named ``my_alerts.py``, add
 
         # By setting required_options to a set of strings
         # You can ensure that the rule config file specifies all
-        # of the options. Otherwise, ElastAlert will throw an exception 
+        # of the options. Otherwise, ElastAlert will throw an exception
         # when trying to load the rule.
         required_options = set(['output_file_path'])
 
-        # Alert is called 
+        # Alert is called
         def alert(self, matches):
 
             # Matches is a list of match dictionaries.
@@ -88,11 +88,11 @@ Now, in a file named ``my_alerts.py``, add
 
                 # Config options can be accessed with self.rule
                 with open(self.rule['output_file_path'], "a") as output_file:
-                    
+
                     # basic_match_string will transform the match into the default
                     # human readable string format
                     match_string = str(BasicMatchString(self.rule, match))
-                    
+
                     output_file.write(match_string)
 
         # get_info is called after an alert is sent to get data that is written back
@@ -112,8 +112,3 @@ In the rule configuration file, we are going to specify the alert by writing
 
 ElastAlert will attempt to import the alert with ``from elastalert_modules.my_alerts import AwesomeNewAlerter``.
 This means that the folder must be in a location where it can be imported as a python module.
-
-                    
-
-                    
-

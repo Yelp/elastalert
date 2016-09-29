@@ -47,7 +47,7 @@ class MockElastAlerter(object):
         if args.schema_only:
             return []
 
-        # Set up elasticsearch client and query
+        # Set up Elasticsearch client and query
         es_client = elasticsearch_client(conf)
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()
@@ -234,7 +234,7 @@ class MockElastAlerter(object):
             client.run_rule(rule, endtime, starttime)
 
             if mock_writeback.call_count:
-                print("\nWould have written the following documents to elastalert_status:\n")
+                print("\nWould have written the following documents to writeback index (default is elastalert_status):\n")
                 for call in mock_writeback.call_args_list:
                     print("%s - %s\n" % (call[0][0], call[0][1]))
 

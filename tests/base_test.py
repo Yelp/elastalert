@@ -194,7 +194,7 @@ def test_run_rule_calls_garbage_collect(ea):
                            mock.patch.object(ea, 'run_query')) as (mock_gc, mock_get_hits):
         ea.run_rule(ea.rules[0], ts_to_dt(end_time), ts_to_dt(start_time))
 
-    # Running elastalert every hour for 12 hours, we should see self.garbage_collect called 12 times.
+    # Running ElastAlert every hour for 12 hours, we should see self.garbage_collect called 12 times.
     assert mock_gc.call_count == 12
 
     # The calls should be spaced 1 hour apart
@@ -288,7 +288,7 @@ def test_agg(ea):
         ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
         ea.run_rule(ea.rules[0], END, START)
 
-    # Assert that the three matches were added to elasticsearch
+    # Assert that the three matches were added to Elasticsearch
     call1 = ea.writeback_es.create.call_args_list[0][1]['body']
     call2 = ea.writeback_es.create.call_args_list[1][1]['body']
     call3 = ea.writeback_es.create.call_args_list[2][1]['body']
@@ -347,7 +347,7 @@ def test_agg_cron(ea):
             ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
             ea.run_rule(ea.rules[0], END, START)
 
-    # Assert that the three matches were added to elasticsearch
+    # Assert that the three matches were added to Elasticsearch
     call1 = ea.writeback_es.create.call_args_list[0][1]['body']
     call2 = ea.writeback_es.create.call_args_list[1][1]['body']
     call3 = ea.writeback_es.create.call_args_list[2][1]['body']
@@ -397,6 +397,76 @@ def test_agg_no_writeback_connectivity(ea):
     ea.add_aggregated_alert.assert_any_call({'@timestamp': hit3}, ea.rules[0])
 
 
+def test_agg_with_aggregation_key(ea):
+    ea.max_aggregation = 1337
+    hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:43:45']
+    alerttime1 = dt_to_ts(ts_to_dt(hits_timestamps[0]) + datetime.timedelta(minutes=10))
+    alerttime2 = dt_to_ts(ts_to_dt(hits_timestamps[1]) + datetime.timedelta(minutes=10))
+    hits = generate_hits(hits_timestamps)
+    ea.current_es.search.return_value = hits
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
+        ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
+        # Hit1 and Hit3 should be aggregated together, since they have same query_key value
+        ea.rules[0]['type'].matches[0]['key'] = 'Key Value 1'
+        ea.rules[0]['type'].matches[1]['key'] = 'Key Value 2'
+        ea.rules[0]['type'].matches[2]['key'] = 'Key Value 1'
+        ea.rules[0]['aggregation_key'] = 'key'
+        ea.run_rule(ea.rules[0], END, START)
+
+    # Assert that the three matches were added to elasticsearch
+    call1 = ea.writeback_es.create.call_args_list[0][1]['body']
+    call2 = ea.writeback_es.create.call_args_list[1][1]['body']
+    call3 = ea.writeback_es.create.call_args_list[2][1]['body']
+    assert call1['match_body'] == {'@timestamp': '2014-09-26T12:34:45', 'key': 'Key Value 1'}
+    assert not call1['alert_sent']
+    assert 'aggregate_id' not in call1
+    assert 'aggregate_key' in call1
+    assert call1['aggregate_key'] == 'Key Value 1'
+    assert call1['alert_time'] == alerttime1
+
+    assert call2['match_body'] == {'@timestamp': '2014-09-26T12:40:45', 'key': 'Key Value 2'}
+    assert not call2['alert_sent']
+    assert 'aggregate_id' not in call2
+    assert 'aggregate_key' in call2
+    assert call2['aggregate_key'] == 'Key Value 2'
+    assert call2['alert_time'] == alerttime2
+
+    assert call3['match_body'] == {'@timestamp': '2014-09-26T12:43:45', 'key': 'Key Value 1', 'key': 'Key Value 1'}
+    assert not call3['alert_sent']
+    # Call3 should have it's aggregate_id set to call1's _id
+    # It should also have the same alert_time as call1
+    assert call3['aggregate_id'] == 'ABCD'
+    assert 'aggregate_key' in call3
+    assert call3['aggregate_key'] == 'Key Value 1'
+    assert call3['alert_time'] == alerttime1
+
+    # First call - Find all pending alerts (only entries without agg_id)
+    # Second call - Find matches with agg_id == 'ABCD'
+    # Third call - Find matches with agg_id == 'CDEF'
+    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': call1},
+                                                             {'_id': 'CDEF', '_source': call2}]}},
+                                          {'hits': {'hits': [{'_id': 'BCDE', '_source': call3}]}},
+                                          {'hits': {'total': 0, 'hits': []}}]
+
+    with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es:
+        ea.send_pending_alerts()
+        # Assert that current_es was refreshed from the aggregate rules
+        assert mock_es.called_with(host='', port='')
+        assert mock_es.call_count == 2
+    assert_alerts(ea, [[hits_timestamps[0], hits_timestamps[2]], [hits_timestamps[1]]])
+
+    call1 = ea.writeback_es.search.call_args_list[7][1]['body']
+    call2 = ea.writeback_es.search.call_args_list[8][1]['body']
+    call3 = ea.writeback_es.search.call_args_list[9][1]['body']
+    call4 = ea.writeback_es.search.call_args_list[10][1]['body']
+
+    assert 'alert_time' in call2['filter']['range']
+    assert call3['query']['query_string']['query'] == 'aggregate_id:ABCD'
+    assert call4['query']['query_string']['query'] == 'aggregate_id:CDEF'
+    assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
+
+
 def test_silence(ea):
     # Silence test rule for 4 hours
     ea.args.rule = 'test_rule.yaml'  # Not a real name, just has to be set
@@ -436,7 +506,7 @@ def test_silence_query_key(ea):
     # Silence test rule for 4 hours
     ea.args.rule = 'test_rule.yaml'  # Not a real name, just has to be set
     ea.args.silence = 'hours=4'
-    ea.silence()
+    ea.silence('anytest.qlo')
 
     # Don't alert even with a match
     match = [{'@timestamp': '2014-11-17T00:00:00', 'username': 'qlo'}]
@@ -446,6 +516,13 @@ def test_silence_query_key(ea):
         ea.run_rule(ea.rules[0], END, START)
     assert ea.rules[0]['alert'][0].alert.call_count == 0
 
+    # If there is a new record with a different value for the query_key, we should get an alert
+    match = [{'@timestamp': '2014-11-17T00:00:01', 'username': 'dpopes'}]
+    ea.rules[0]['type'].matches = match
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 1
+
     # Mock ts_now() to +5 hours, alert on match
     match = [{'@timestamp': '2014-11-17T00:00:00', 'username': 'qlo'}]
     ea.rules[0]['type'].matches = match
@@ -454,7 +531,7 @@ def test_silence_query_key(ea):
             # Converted twice to add tzinfo
             mock_ts.return_value = ts_to_dt(dt_to_ts(datetime.datetime.utcnow() + datetime.timedelta(hours=5)))
             ea.run_rule(ea.rules[0], END, START)
-    assert ea.rules[0]['alert'][0].alert.call_count == 1
+    assert ea.rules[0]['alert'][0].alert.call_count == 2
 
 
 def test_realert(ea):
