@@ -8,7 +8,7 @@ from setuptools import setup
 base_dir = os.path.dirname(__file__)
 setup(
     name='elastalert',
-    version='0.1.0',
+    version='0.1.1',
     description='Runs custom filters on Elasticsearch and alerts on matches',
     author='Quentin Long',
     author_email='qlo@yelp.com',
@@ -36,6 +36,7 @@ setup(
         'blist',
         'croniter',
         'configparser',
-        'aws-requests-auth'
+        'aws-requests-auth',
+        'texttable'
     ]
 )
