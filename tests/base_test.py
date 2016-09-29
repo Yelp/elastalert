@@ -17,6 +17,7 @@ from elastalert.util import dt_to_ts
 from elastalert.util import dt_to_unix
 from elastalert.util import dt_to_unixms
 from elastalert.util import EAException
+from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
 from elastalert.util import unix_to_dt
 
@@ -1023,3 +1024,23 @@ def test_get_top_counts_handles_no_hits_returned(ea):
 
         all_counts = ea.get_top_counts(rule, starttime, endtime, keys)
         assert all_counts == {'top_events_foo': {}}
+
+
+def test_remove_old_events(ea):
+    now = ts_now()
+    minute = datetime.timedelta(minutes=1)
+    ea.rules[0]['processed_hits'] = {'foo': now - minute,
+                                     'bar': now - minute * 5,
+                                     'baz': now - minute * 15}
+    ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=10)
+
+    # With a query delay, only events older than 20 minutes will be removed (none)
+    ea.rules[0]['query_delay'] = datetime.timedelta(minutes=10)
+    ea.remove_old_events(ea.rules[0])
+    assert len(ea.rules[0]['processed_hits']) == 3
+
+    # With no query delay, the 15 minute old event will be removed
+    ea.rules[0].pop('query_delay')
+    ea.remove_old_events(ea.rules[0])
+    assert len(ea.rules[0]['processed_hits']) == 2
+    assert 'baz' not in ea.rules[0]['processed_hits']

@@ -349,6 +349,8 @@ class ElastAlerter():
         now = ts_now()
         remove = []
         buffer_time = rule.get('buffer_time', self.buffer_time)
+        if rule.get('query_delay'):
+            buffer_time += rule['query_delay']
         for _id, timestamp in rule['processed_hits'].iteritems():
             if now - timestamp > buffer_time:
                 remove.append(_id)
