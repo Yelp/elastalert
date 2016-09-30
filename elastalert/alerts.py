@@ -244,7 +244,7 @@ class Alerter(object):
             summary_table_fields = self.rule['summary_table_fields']
             if not isinstance(summary_table_fields, list):
                 summary_table_fields = [summary_table_fields]
-            text += "Aggregation resulted in the following data for summary_table_fields ==> {0}:\n\n".format(summary_table_fields)
+            text += u"Aggregation resulted in the following data for summary_table_fields ==> {0}:\n\n".format(summary_table_fields)
             text_table = Texttable()
             text_table.header(summary_table_fields)
             for match in matches:
