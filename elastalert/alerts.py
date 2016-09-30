@@ -209,7 +209,7 @@ class Alerter(object):
         return self.create_default_title(matches)
 
     def create_custom_title(self, matches):
-        alert_subject = self.rule['alert_subject']
+        alert_subject = unicode(self.rule['alert_subject'])
 
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
@@ -649,7 +649,7 @@ class JiraAlerter(Alerter):
     def get_aggregation_summary_text(self, matches):
         text = super(JiraAlerter, self).get_aggregation_summary_text(matches)
         if text:
-            text = '{noformat}{0}{noformat}'.format(text)
+            text = u'{noformat}{0}{noformat}'.format(text)
         return text
 
     def create_default_title(self, matches, for_search=False):
