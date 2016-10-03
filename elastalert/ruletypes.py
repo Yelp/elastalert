@@ -209,7 +209,11 @@ class FrequencyRule(RuleType):
 
             # Store the timestamps of recent occurrences, per key
             self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append((event, 1))
-            self.check_for_match(key)
+
+        # Only check for match _once_ after adding all the events discovered in this run
+        # If the current running count is 1, and the threshold is 10, and we go to add 8 entries
+        # it should only count as a single match, and not 8 consecutive ones.
+        self.check_for_match(key)
 
     def check_for_match(self, key):
         # Match if, after removing old events, we hit num_events
@@ -467,13 +471,17 @@ class FlatlineRule(FrequencyRule):
         # Match if, after removing old events, we hit num_events
         count = self.occurrences[key].count()
         if count < self.rules['threshold']:
-            event = self.occurrences[key].data[-1][0]
+            # Do a deep-copy, otherwise we lose the datetime type in the timestamp field of the last event
+            event = copy.deepcopy(self.occurrences[key].data[-1][0])
             event.update(key=key, count=count)
             self.add_match(event)
 
-            # we after adding this match, let's remove this key so we don't realert on it
-            self.occurrences.pop(key)
-            del self.first_event[key]
+            # After adding this match, leave the occurrences windows alone since it will
+            # be pruned in the next add_data or garbage_collect, but reset the first_event
+            # so that alerts continue to fire until the threshold is passed again.
+            least_recent_ts = self.get_ts(self.occurrences[key].data[0])
+            timeframe_ago = most_recent_ts - self.rules['timeframe']
+            self.first_event[key] = min(least_recent_ts, timeframe_ago)
 
     def get_match_str(self, match):
         ts = match[self.rules['timestamp_field']]
