@@ -649,7 +649,7 @@ class JiraAlerter(Alerter):
     def get_aggregation_summary_text(self, matches):
         text = super(JiraAlerter, self).get_aggregation_summary_text(matches)
         if text:
-            text = u'{noformat}{0}{noformat}'.format(text)
+            text = u'{{noformat}}{0}{{noformat}}'.format(text)
         return text
 
     def create_default_title(self, matches, for_search=False):
