@@ -718,6 +718,24 @@ def test_flatline():
     assert len(rule.matches) == 3
 
 
+def test_flatline_no_data():
+    rules = {
+        'timeframe': datetime.timedelta(seconds=30),
+        'threshold': 2,
+        'timestamp_field': '@timestamp',
+    }
+
+    rule = FlatlineRule(rules)
+
+    # Initial lack of data
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:00:00Z'))
+    assert len(rule.matches) == 0
+
+    # Passed the timeframe, still no events
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:35:00Z'))
+    assert len(rule.matches) == 1
+
+
 def test_flatline_count():
     rules = {'timeframe': datetime.timedelta(seconds=30),
              'threshold': 1,

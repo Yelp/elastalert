@@ -495,8 +495,10 @@ class FlatlineRule(FrequencyRule):
     def garbage_collect(self, ts):
         # We add an event with a count of zero to the EventWindow for each key. This will cause the EventWindow
         # to remove events that occurred more than one `timeframe` ago, and call onRemoved on them.
-        for key in self.occurrences.keys():
+        default = ['all'] if 'query_key' not in self.rules else []
+        for key in self.occurrences.keys() or default:
             self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({self.ts_field: ts}, 0))
+            self.first_event.setdefault(key, ts)
             self.check_for_match(key)
 
 
