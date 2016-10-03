@@ -244,11 +244,22 @@ class Alerter(object):
             summary_table_fields = self.rule['summary_table_fields']
             if not isinstance(summary_table_fields, list):
                 summary_table_fields = [summary_table_fields]
-            text += u"Aggregation resulted in the following data for summary_table_fields ==> {0}:\n\n".format(summary_table_fields)
+            # Include a count aggregation so that we can see at a glance how many of each aggregation_key were encountered
+            summary_table_fields_with_count = summary_table_fields + ['count']
+            text += "Aggregation resulted in the following data for summary_table_fields ==> {0}:\n\n".format(summary_table_fields_with_count)
             text_table = Texttable()
-            text_table.header(summary_table_fields)
+            text_table.header(summary_table_fields_with_count)
+            match_aggregation = {}
+
+            # Maintain an aggregate count for each unique key encountered in the aggregation period
             for match in matches:
-                text_table.add_row([unicode(lookup_es_key(match, key)) for key in summary_table_fields])
+                key_tuple = tuple([unicode(lookup_es_key(match, key)) for key in summary_table_fields])
+                if key_tuple not in match_aggregation:
+                    match_aggregation[key_tuple] = 1
+                else:
+                    match_aggregation[key_tuple] = match_aggregation[key_tuple] + 1
+            for keys, count in match_aggregation.iteritems():
+                text_table.add_row([key for key in keys] + [count])
             text += text_table.draw() + '\n\n'
 
         return unicode(text)
