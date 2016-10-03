@@ -678,10 +678,12 @@ def test_new_term_with_composite_fields():
 
 
 def test_flatline():
-    events = hits(10)
-    rules = {'timeframe': datetime.timedelta(seconds=30),
-             'threshold': 2,
-             'timestamp_field': '@timestamp'}
+    events = hits(40)
+    rules = {
+        'timeframe': datetime.timedelta(seconds=30),
+        'threshold': 2,
+        'timestamp_field': '@timestamp',
+    }
 
     rule = FlatlineRule(rules)
 
@@ -689,7 +691,8 @@ def test_flatline():
     rule.add_data(hits(1))
     assert rule.matches == []
 
-    rule.add_data(events)
+    # Add hits with timestamps 2014-09-26T12:00:00 --> 2014-09-26T12:00:09
+    rule.add_data(events[0:10])
 
     # This will be run at the end of the hits
     rule.garbage_collect(ts_to_dt('2014-09-26T12:00:11Z'))
@@ -698,6 +701,21 @@ def test_flatline():
     # This would be run if the query returned nothing for a future timestamp
     rule.garbage_collect(ts_to_dt('2014-09-26T12:00:45Z'))
     assert len(rule.matches) == 1
+
+    # After another garbage collection, since there are still no events, a new match is added
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:00:50Z'))
+    assert len(rule.matches) == 2
+
+    # Add hits with timestamps 2014-09-26T12:00:30 --> 2014-09-26T12:00:39
+    rule.add_data(events[30:])
+
+    # Now that there is data in the last 30 minutes, no more matches should be added
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:00:55Z'))
+    assert len(rule.matches) == 2
+
+    # After that window passes with no more data, a new match is added
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:01:11Z'))
+    assert len(rule.matches) == 3
 
 
 def test_flatline_count():
@@ -743,11 +761,11 @@ def test_flatline_query_key():
     assert len(rule.matches) == 2
     assert set(['key1', 'key2']) == set([m['key'] for m in rule.matches if m['@timestamp'] == timestamp])
 
-    # Next time the rule runs, the key1 and key2 will have been forgotten. Now key3 will cause an alert
+    # Next time the rule runs, all 3 keys still have no data, so all three will cause an alert
     timestamp = '2014-09-26T12:01:20Z'
     rule.garbage_collect(ts_to_dt(timestamp))
-    assert len(rule.matches) == 3
-    assert set(['key3']) == set([m['key'] for m in rule.matches if m['@timestamp'] == timestamp])
+    assert len(rule.matches) == 5
+    assert set(['key1', 'key2', 'key3']) == set([m['key'] for m in rule.matches if m['@timestamp'] == timestamp])
 
 
 def test_cardinality_max():
