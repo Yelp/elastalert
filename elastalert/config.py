@@ -197,6 +197,7 @@ def load_options(rule, conf, args=None):
     rule.setdefault('hipchat_msg_color', conf.get('hipchat_msg_color', 'red'))
     rule.setdefault('hipchat_domain', conf.get('hipchat_domain', 'api.hipchat.com'))
     rule.setdefault('hipchat_notify', conf.get('hipchat_notify', True))
+    rule.setdefault('hipchat_from', conf.get('hipchat_from', ''))
     rule.setdefault('hipchat_ignore_ssl_errors', conf.get('hipchat_ignore_ssl_errors', False))
     if 'hipchat_auth_token' in conf:
         rule.setdefault('hipchat_auth_token', conf.get('hipchat_auth_token'))
