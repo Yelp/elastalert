@@ -1229,6 +1229,8 @@ the room you want to post to. The room ID will be the numeric part of the URL.
 
 ``hipchat_notify``: When set to true, triggers a hipchat bell as if it were a user. Default is true.
 
+``hipchat_from``: When humans report to hipchat, a timestamp appears next to their name. For bots, the name is the name of the token. The from, instead of a timestamp, defaults to empty unless set, which you can do here. This is optional.
+
 ``hipchat_message_format``: Determines how the message is treated by HipChat and rendered inside HipChat applications
 html - Message is rendered as HTML and receives no special treatment. Must be valid HTML and entities must be escaped (e.g.: '&amp;' instead of '&'). May contain basic tags: a, b, i, strong, em, br, img, pre, code, lists, tables.
 text - Message is treated just like a message sent by a user. Can include @mentions, emoticons, pastes, and auto-detected URLs (Twitter, YouTube, images, etc).
