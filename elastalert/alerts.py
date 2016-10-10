@@ -864,9 +864,9 @@ class SlackAlerter(Alerter):
             ]
         }
         if self.slack_icon_url_override != '':
-            payload.icon_url = self.slack_icon_url_override
+            payload['icon_url'] = self.slack_icon_url_override
         else:
-            payload.icon_emoji = self.slack_emoji_override
+            payload['icon_emoji'] = self.slack_emoji_override
 
         for url in self.slack_webhook_url:
             try:
