@@ -880,3 +880,39 @@ def test_cardinality_qk():
     assert rule.matches[1]['user'] == 'baz'
     assert rule.matches[0]['foo'] == 'fuz'
     assert rule.matches[1]['foo'] == 'fiz'
+
+
+def test_cardinality_nested_cardinality_field():
+    rules = {'max_cardinality': 4,
+             'timeframe': datetime.timedelta(minutes=10),
+             'cardinality_field': 'd.ip',
+             'timestamp_field': '@timestamp'}
+    rule = CardinalityRule(rules)
+
+    # Add 4 different IPs
+    ips = ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4']
+    for ip in ips:
+        event = {'@timestamp': datetime.datetime.now(), 'd': {'ip': ip}}
+        rule.add_data([event])
+        assert len(rule.matches) == 0
+    rule.garbage_collect(datetime.datetime.now())
+
+    # Add a duplicate, stay at 4 cardinality
+    event = {'@timestamp': datetime.datetime.now(), 'd': {'ip': '10.0.0.4'}}
+    rule.add_data([event])
+    rule.garbage_collect(datetime.datetime.now())
+    assert len(rule.matches) == 0
+
+    # Next unique will trigger
+    event = {'@timestamp': datetime.datetime.now(), 'd': {'ip': '10.0.0.5'}}
+    rule.add_data([event])
+    rule.garbage_collect(datetime.datetime.now())
+    assert len(rule.matches) == 1
+    rule.matches = []
+
+    # 15 minutes later, adding more will not trigger an alert
+    ips = ['10.0.0.6', '10.0.0.7', '10.0.0.8']
+    for ip in ips:
+        event = {'@timestamp': datetime.datetime.now() + datetime.timedelta(minutes=15), 'd': {'ip': ip}}
+        rule.add_data([event])
+        assert len(rule.matches) == 0

@@ -774,9 +774,10 @@ class CardinalityRule(RuleType):
                 key = 'all'
             self.cardinality_cache.setdefault(key, {})
             self.first_event.setdefault(key, event[self.ts_field])
-            if self.cardinality_field in event:
+            value = hashable(lookup_es_key(event, self.cardinality_field))
+            if value is not None:
                 # Store this timestamp as most recent occurence of the term
-                self.cardinality_cache[key][event[self.cardinality_field]] = event[self.ts_field]
+                self.cardinality_cache[key][value] = event[self.ts_field]
                 self.check_for_match(key, event)
 
     def check_for_match(self, key, event, gc=True):
