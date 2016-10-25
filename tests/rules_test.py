@@ -903,6 +903,12 @@ def test_cardinality_nested_cardinality_field():
     rule.garbage_collect(datetime.datetime.now())
     assert len(rule.matches) == 0
 
+    # Add an event with no IP, stay at 4 cardinality
+    event = {'@timestamp': datetime.datetime.now()}
+    rule.add_data([event])
+    rule.garbage_collect(datetime.datetime.now())
+    assert len(rule.matches) == 0
+
     # Next unique will trigger
     event = {'@timestamp': datetime.datetime.now(), 'd': {'ip': '10.0.0.5'}}
     rule.add_data([event])
