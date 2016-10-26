@@ -828,6 +828,7 @@ class SlackAlerter(Alerter):
         self.slack_username_override = self.rule.get('slack_username_override', 'elastalert')
         self.slack_channel_override = self.rule.get('slack_channel_override', '')
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
+        self.slack_icon_url_override = self.rule.get('slack_icon_url_override', '')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
         self.slack_parse_override = self.rule.get('slack_parse_override', 'none')
         self.slack_text_string = self.rule.get('slack_text_string', '')
@@ -851,7 +852,6 @@ class SlackAlerter(Alerter):
         payload = {
             'username': self.slack_username_override,
             'channel': self.slack_channel_override,
-            'icon_emoji': self.slack_emoji_override,
             'parse': self.slack_parse_override,
             'text': self.slack_text_string,
             'attachments': [
@@ -863,6 +863,10 @@ class SlackAlerter(Alerter):
                 }
             ]
         }
+        if self.slack_icon_url_override != '':
+            payload['icon_url'] = self.slack_icon_url_override
+        else:
+            payload['icon_emoji'] = self.slack_emoji_override
 
         for url in self.slack_webhook_url:
             try:
