@@ -778,8 +778,8 @@ class ElastAlerter():
     def generate_kibana4_db(self, rule, match):
         ''' Creates a link for a kibana4 dashboard which has time set to the match. '''
         db_name = rule.get('use_kibana4_dashboard')
-        start = ts_add(match[rule['timestamp_field']], -rule.get('kibana4_start_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10))))
-        end = ts_add(match[rule['timestamp_field']], rule.get('kibana4_end_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10))))
+        start = ts_add(lookup_es_key(match, rule['timestamp_field']), -rule.get('kibana4_start_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10))))
+        end = ts_add(lookup_es_key(match, rule['timestamp_field']), rule.get('kibana4_end_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10))))
         return kibana.kibana4_dashboard_link(db_name, start, end)
 
     def generate_kibana_db(self, rule, match):
@@ -807,8 +807,8 @@ class ElastAlerter():
         ''' Uploads a dashboard schema to the kibana-int Elasticsearch index associated with rule.
         Returns the url to the dashboard. '''
         # Set time range
-        start = ts_add(match[rule['timestamp_field']], -rule.get('timeframe', datetime.timedelta(minutes=10)))
-        end = ts_add(match[rule['timestamp_field']], datetime.timedelta(minutes=10))
+        start = ts_add(lookup_es_key(match, rule['timestamp_field']), -rule.get('timeframe', datetime.timedelta(minutes=10)))
+        end = ts_add(lookup_es_key(match, rule['timestamp_field']), datetime.timedelta(minutes=10))
         kibana.set_time(db, start, end)
 
         # Set dashboard name
@@ -915,8 +915,8 @@ class ElastAlerter():
                     qk = match[rule['query_key']]
                 else:
                     qk = None
-                start = ts_to_dt(match[rule['timestamp_field']]) - rule.get('timeframe', datetime.timedelta(minutes=10))
-                end = ts_to_dt(match[rule['timestamp_field']]) + datetime.timedelta(minutes=10)
+                start = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) - rule.get('timeframe', datetime.timedelta(minutes=10))
+                end = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) + datetime.timedelta(minutes=10)
                 keys = rule.get('top_count_keys')
                 counts = self.get_top_counts(rule, start, end, keys, qk=qk)
                 match.update(counts)
@@ -1153,7 +1153,7 @@ class ElastAlerter():
         aggregation_key_value = self.get_aggregation_key_value(rule, match)
 
         if (not rule['current_aggregate_id'].get(aggregation_key_value) or
-                ('aggregate_alert_time' in rule and aggregation_key_value in rule['aggregate_alert_time'] and rule['aggregate_alert_time'].get(aggregation_key_value) < ts_to_dt(match[rule['timestamp_field']]))):
+                ('aggregate_alert_time' in rule and aggregation_key_value in rule['aggregate_alert_time'] and rule['aggregate_alert_time'].get(aggregation_key_value) < ts_to_dt(lookup_es_key(match, rule['timestamp_field'])))):
 
             # ElastAlert may have restarted while pending alerts exist
             pending_alert = self.find_pending_aggregate_alert(rule, aggregation_key_value)
@@ -1165,7 +1165,7 @@ class ElastAlerter():
                 elastalert_logger.info('Adding alert for %s to aggregation(id: %s, aggregation_key: %s), next alert at %s' % (rule['name'], agg_id, aggregation_key_value, alert_time))
             else:
                 # First match, set alert_time
-                match_time = ts_to_dt(match[rule['timestamp_field']])
+                match_time = ts_to_dt(lookup_es_key(match, rule['timestamp_field']))
                 alert_time = ''
                 if isinstance(rule['aggregation'], dict) and rule['aggregation'].get('schedule'):
                     croniter._datetime_to_timestamp = cronite_datetime_to_timestamp  # For Python 2.6 compatibility
