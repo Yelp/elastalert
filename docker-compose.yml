@@ -1,0 +1,11 @@
+version: '2'
+services:
+    tox:
+        build:
+            context: ./
+            dockerfile: Dockerfile-test
+        command: tox
+        container_name: elastalert_tox
+        working_dir: /home/elastalert
+        volumes:
+            - ./:/home/elastalert/
