@@ -286,7 +286,7 @@ def build_es_conn_config(conf):
     parsed_conf['es_host'] = conf['es_host']
     parsed_conf['es_port'] = conf['es_port']
     parsed_conf['es_url_prefix'] = ''
-    parsed_conf['es_conn_timeout'] = 10
+    parsed_conf['es_conn_timeout'] = conf['es_conn_timeout']
     parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
 
     if 'es_username' in conf:
