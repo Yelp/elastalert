@@ -23,7 +23,7 @@ setup(
     package_data={'elastalert': ['schema.yaml']},
     install_requires=[
         'argparse',
-        'elasticsearch<=3.0.0',  # Elastalert is not yet compatible with ES5
+        'elasticsearch<3.0.0',  # Elastalert is not yet compatible with ES5
         'jira==0.32',  # jira.exceptions is missing from later versions
         'jsonschema',
         'mock',
