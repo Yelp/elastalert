@@ -71,7 +71,7 @@ def main():
         url_prefix = (args.url_prefix if args.url_prefix is not None
                       else raw_input('Enter optional Elasticsearch URL prefix (prepends a string to the URL of every request): '))
         send_get_body_as = args.send_get_body_as
-    
+
     timeout = args.timeout
     auth = Auth()
     http_auth = auth(host=host,
