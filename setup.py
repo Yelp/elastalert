@@ -8,7 +8,7 @@ from setuptools import setup
 base_dir = os.path.dirname(__file__)
 setup(
     name='elastalert',
-    version='0.1.2',
+    version='0.1.3',
     description='Runs custom filters on Elasticsearch and alerts on matches',
     author='Quentin Long',
     author_email='qlo@yelp.com',
@@ -23,7 +23,7 @@ setup(
     package_data={'elastalert': ['schema.yaml']},
     install_requires=[
         'argparse',
-        'elasticsearch',
+        'elasticsearch<3.0.0',  # Elastalert is not yet compatible with ES5
         'jira==0.32',  # jira.exceptions is missing from later versions
         'jsonschema',
         'mock',
