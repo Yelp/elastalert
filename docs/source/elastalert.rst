@@ -169,6 +169,8 @@ unless overwritten in the rule config. The default is "localhost".
 
 ``boto_profile``: Boto profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
 
+``num_workers``: The number of worker threads which will execute the Elasticsearch queries in parallel. The default is 1.
+
 .. _runningelastalert:
 
 Running ElastAlert
