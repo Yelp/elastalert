@@ -305,4 +305,7 @@ def build_es_conn_config(conf):
     if 'verify_certs' in conf:
         parsed_conf['verify_certs'] = conf['verify_certs']
 
+    if 'es_url_prefix' in conf:
+        parsed_conf['es_url_prefix'] = conf['es_url_prefix']
+
     return parsed_conf
