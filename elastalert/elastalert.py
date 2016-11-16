@@ -410,8 +410,9 @@ class ElastAlerter():
         :param rule: The rule configuration.
         :return: A timestamp or None.
         """
-        query = {'filter': {'term': {'rule_name': '%s' % (rule['name'])}},
+        query = {'query': {'bool' : {'filter': {'term': {'rule_name': '%s' % (rule['name'])}}}},
                  'sort': {'@timestamp': {'order': 'desc'}}}
+
         try:
             if self.writeback_es:
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert_status',
