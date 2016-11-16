@@ -156,7 +156,7 @@ class ElastAlerter():
         if starttime and endtime:
             es_filters['filter']['bool']['must'].insert(0, {'range': {timestamp_field: {'gt': starttime,
                                                                                         'lte': endtime}}})
-        query = {'query': {'filtered': es_filters}}
+        query = {'query': {'bool': es_filters}}
         if sort:
             query['sort'] = [{timestamp_field: {'order': 'desc' if desc else 'asc'}}]
         return query
