@@ -209,13 +209,13 @@ class FrequencyRule(RuleType):
 
             # Store the timestamps of recent occurrences, per key
             self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append((event, 1))
+            self.check_for_match(key, end=False)
 
-        # Only check for match _once_ after adding all the events discovered in this run
-        # If the current running count is 1, and the threshold is 10, and we go to add 8 entries
-        # it should only count as a single match, and not 8 consecutive ones.
-        self.check_for_match(key)
+        # We call this multiple times with the 'end' parameter because subclasses
+        # may or may not want to check while only partial data has been added
+        self.check_for_match(key, end=True)
 
-    def check_for_match(self, key):
+    def check_for_match(self, key, end=False):
         # Match if, after removing old events, we hit num_events
         if self.occurrences[key].count() >= self.rules['num_events']:
             event = self.occurrences[key].data[-1][0]
@@ -459,7 +459,12 @@ class FlatlineRule(FrequencyRule):
         # Dictionary mapping query keys to the first events
         self.first_event = {}
 
-    def check_for_match(self, key):
+    def check_for_match(self, key, end=True):
+        # This function gets called between every added document with end=True after the last
+        # We ignore the calls before the end because it may trigger false positives
+        if not end:
+            return
+
         most_recent_ts = self.get_ts(self.occurrences[key].data[-1])
         if self.first_event.get(key) is None:
             self.first_event[key] = most_recent_ts
