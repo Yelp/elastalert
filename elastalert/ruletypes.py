@@ -216,7 +216,9 @@ class FrequencyRule(RuleType):
         self.check_for_match(key, end=True)
 
     def check_for_match(self, key, end=False):
-        # Match if, after removing old events, we hit num_events
+        # Match if, after removing old events, we hit num_events.
+        # the 'end' parameter depends on whether this was called from the
+        # middle or end of an add_data call and is used in subclasses
         if self.occurrences[key].count() >= self.rules['num_events']:
             event = self.occurrences[key].data[-1][0]
             if self.attach_related:
