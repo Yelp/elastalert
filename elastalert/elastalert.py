@@ -1015,7 +1015,7 @@ class ElastAlerter():
             body['@timestamp'] = dt_to_ts(ts_now())
         if self.writeback_es:
             try:
-                res = self.writeback_es.create(index=self.writeback_index,
+                res = self.writeback_es.index(index=self.writeback_index,
                                                doc_type=doc_type, body=body)
                 return res
             except ElasticsearchException as e:
@@ -1030,9 +1030,10 @@ class ElastAlerter():
         # unless there is constantly more than 1000 alerts to send.
 
         # Fetch recent, unsent alerts that aren't part of an aggregate, earlier alerts first.
-        query = {'query': {'query_string': {'query': '!_exists_:aggregate_id AND alert_sent:false'}},
-                 'filter': {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
-                                                     'to': dt_to_ts(ts_now())}}},
+        query = {'query': {'bool' : {
+                    'must' : {'query_string': {'query': '!_exists_:aggregate_id AND alert_sent:false'}},
+                    'filter': {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
+                                                     'to': dt_to_ts(ts_now())}}}}},
                  'sort': {'alert_time': {'order': 'asc'}}}
         if self.writeback_es:
             try:
@@ -1042,7 +1043,8 @@ class ElastAlerter():
                                                size=1000)
                 if res['hits']['hits']:
                     return res['hits']['hits']
-            except:  # TODO: Give this a more relevant exception, try:except: is evil.
+            except ElasticsearchException as e:
+                logging.exception("Error finding recent pending alerts: %s %s" % (e, query))
                 pass
         return []
 
@@ -1254,7 +1256,7 @@ class ElastAlerter():
         if self.debug:
             return False
 
-        query = {'filter': {'term': {'rule_name': rule_name}},
+        query = {'query': {'term': {'rule_name': rule_name}},
                  'sort': {'until': {'order': 'desc'}}}
 
         if self.writeback_es:
