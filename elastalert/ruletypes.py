@@ -213,7 +213,8 @@ class FrequencyRule(RuleType):
 
         # We call this multiple times with the 'end' parameter because subclasses
         # may or may not want to check while only partial data has been added
-        self.check_for_match(key, end=True)
+        if key in self.occurrences:  # could have been emptied by previous check
+            self.check_for_match(key, end=True)
 
     def check_for_match(self, key, end=False):
         # Match if, after removing old events, we hit num_events.
