@@ -113,12 +113,17 @@ class ElastAlerter():
         self.disabled_rules = []
 
         self.writeback_es = elasticsearch_client(self.conf)
+        self.five = self.is_five()
 
         for rule in self.rules:
             self.init_rule(rule)
 
         if self.args.silence:
             self.silence()
+
+    def is_five(self):
+        info = self.writeback_es.info()
+        return info['version']['number'].startswith('5')
 
     @staticmethod
     def get_index(rule, starttime=None, endtime=None):
@@ -139,7 +144,7 @@ class ElastAlerter():
             return index
 
     @staticmethod
-    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False):
+    def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False, five=False):
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
@@ -156,7 +161,10 @@ class ElastAlerter():
         if starttime and endtime:
             es_filters['filter']['bool']['must'].insert(0, {'range': {timestamp_field: {'gt': starttime,
                                                                                         'lte': endtime}}})
-        query = {'query': {'bool': es_filters}}
+        if five:
+            query = {'query': {'bool': es_filters}}
+        else:
+            query = {'query': {'filtered': es_filters}}
         if sort:
             query['sort'] = [{timestamp_field: {'order': 'desc' if desc else 'asc'}}]
         return query
@@ -236,7 +244,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A list of hits, bounded by rule['max_query_size'].
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], to_ts_func=rule['dt_to_ts'])
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], to_ts_func=rule['dt_to_ts'], five=self.five)
         extra_args = {'_source_include': rule['include']}
         scroll_keepalive = rule.get('scroll_keepalive', self.scroll_keepalive)
         if not rule.get('_source_enabled'):
@@ -285,7 +293,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A dictionary mapping timestamps to number of hits for that time period.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'], five=self.five)
 
         try:
             res = self.current_es.count(index=index, doc_type=rule['doc_type'], body=query, ignore_unavailable=True)
@@ -309,7 +317,7 @@ class ElastAlerter():
             if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
                 filter_key = add_raw_postfix(filter_key)
             rule_filter.extend([{'term': {filter_key: qk}}])
-        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
+        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'], five=self.five)
         if size is None:
             size = rule.get('terms_size', 50)
         query = self.get_terms_query(base_query, size, key)
@@ -410,8 +418,11 @@ class ElastAlerter():
         :param rule: The rule configuration.
         :return: A timestamp or None.
         """
-        query = {'query': {'bool' : {'filter': {'term': {'rule_name': '%s' % (rule['name'])}}}},
-                 'sort': {'@timestamp': {'order': 'desc'}}}
+        sort = {'sort': {'@timestamp': {'order': 'desc'}}}
+        query = {'filter': {'term': {'rule_name': '%s' % (rule['name'])}}}
+        if self.five:
+            query = {'query': {'bool': query}}
+        query.update(sort)
 
         try:
             if self.writeback_es:
@@ -840,9 +851,9 @@ class ElastAlerter():
         # Upload
         es = elasticsearch_client(rule)
 
-        res = es.create(index='kibana-int',
-                        doc_type='temp',
-                        body=db_body)
+        res = es.index(index='kibana-int',
+                       doc_type='temp',
+                       body=db_body)
 
         # Return dashboard URL
         kibana_url = rule.get('kibana_url')
@@ -1016,7 +1027,7 @@ class ElastAlerter():
         if self.writeback_es:
             try:
                 res = self.writeback_es.index(index=self.writeback_index,
-                                               doc_type=doc_type, body=body)
+                                              doc_type=doc_type, body=body)
                 return res
             except ElasticsearchException as e:
                 logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
@@ -1030,11 +1041,15 @@ class ElastAlerter():
         # unless there is constantly more than 1000 alerts to send.
 
         # Fetch recent, unsent alerts that aren't part of an aggregate, earlier alerts first.
-        query = {'query': {'bool' : {
-                    'must' : {'query_string': {'query': '!_exists_:aggregate_id AND alert_sent:false'}},
-                    'filter': {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
-                                                     'to': dt_to_ts(ts_now())}}}}},
-                 'sort': {'alert_time': {'order': 'asc'}}}
+        inner_query = {'query_string': {'query': '!_exists_:aggregate_id AND alert_sent:false'}}
+        time_filter = {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
+                                                'to': dt_to_ts(ts_now())}}}
+        sort = {'sort': {'alert_time': {'order': 'asc'}}}
+        if self.five:
+            query = {'query': {'bool': {'must': inner_query, 'filter': time_filter}}}
+        else:
+            query = {'query': inner_query, 'filter': time_filter}
+        query.update(sort)
         if self.writeback_es:
             try:
                 res = self.writeback_es.search(index=self.writeback_index,
@@ -1256,8 +1271,13 @@ class ElastAlerter():
         if self.debug:
             return False
 
-        query = {'query': {'term': {'rule_name': rule_name}},
-                 'sort': {'until': {'order': 'desc'}}}
+        query = {'term': {'rule_name': rule_name}}
+        sort = {'sort': {'until': {'order': 'desc'}}}
+        if self.five:
+            query = {'query': query}
+        else:
+            query = {'filter': query}
+        query.update(sort)
 
         if self.writeback_es:
             try:
