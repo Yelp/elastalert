@@ -9,6 +9,7 @@ import sys
 import time
 import traceback
 from email.mime.text import MIMEText
+from multiprocessing.pool import ThreadPool
 from smtplib import SMTP
 from smtplib import SMTPException
 from socket import error
@@ -102,6 +103,7 @@ class ElastAlerter():
         self.from_addr = self.conf.get('from_addr', 'ElastAlert')
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
+        self.num_workers = self.conf.get('num_workers', 1)
         self.alerts_sent = 0
         self.num_hits = 0
         self.current_es = None
@@ -719,6 +721,39 @@ class ElastAlerter():
             sleep_duration = (next_run - datetime.datetime.utcnow()).seconds
             self.sleep_for(sleep_duration)
 
+    def execute_rule(self, rule):
+        next_run = datetime.datetime.utcnow() + self.run_every
+
+        # Set endtime based on the rule's delay
+        delay = rule.get('query_delay')
+        if hasattr(self.args, 'end') and self.args.end:
+            endtime = ts_to_dt(self.args.end)
+        elif delay:
+            endtime = ts_now() - delay
+        else:
+            endtime = ts_now()
+
+        try:
+            num_matches = self.run_rule(rule, endtime, self.starttime)
+        except EAException as e:
+            self.handle_error("Error running rule %s: %s" % (rule['name'], e), {'rule': rule['name']})
+        except Exception as e:
+            self.handle_uncaught_exception(e, rule)
+        else:
+            old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
+            elastalert_logger.info("Ran %s from %s to %s: %s query hits, %s matches,"
+                                   " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
+                                                        self.num_hits, num_matches, self.alerts_sent))
+            self.alerts_sent = 0
+
+            if next_run < datetime.datetime.utcnow():
+                # We were processing for longer than our refresh interval
+                # This can happen if --start was specified with a large time period
+                # or if we are running too slow to process events in real time.
+                logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, endtime, self.run_every))
+
+        self.remove_old_events(rule)
+
     def run_all_rules(self):
         """ Run each rule one time """
         # If writeback_es errored, it's disabled until the next query cycle
@@ -727,38 +762,8 @@ class ElastAlerter():
 
         self.send_pending_alerts()
 
-        next_run = datetime.datetime.utcnow() + self.run_every
-
-        for rule in self.rules:
-            # Set endtime based on the rule's delay
-            delay = rule.get('query_delay')
-            if hasattr(self.args, 'end') and self.args.end:
-                endtime = ts_to_dt(self.args.end)
-            elif delay:
-                endtime = ts_now() - delay
-            else:
-                endtime = ts_now()
-
-            try:
-                num_matches = self.run_rule(rule, endtime, self.starttime)
-            except EAException as e:
-                self.handle_error("Error running rule %s: %s" % (rule['name'], e), {'rule': rule['name']})
-            except Exception as e:
-                self.handle_uncaught_exception(e, rule)
-            else:
-                old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
-                elastalert_logger.info("Ran %s from %s to %s: %s query hits, %s matches,"
-                                       " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                            self.num_hits, num_matches, self.alerts_sent))
-                self.alerts_sent = 0
-
-                if next_run < datetime.datetime.utcnow():
-                    # We were processing for longer than our refresh interval
-                    # This can happen if --start was specified with a large time period
-                    # or if we are running too slow to process events in real time.
-                    logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, endtime, self.run_every))
-
-            self.remove_old_events(rule)
+        pool = ThreadPool(processes=self.num_workers)
+        pool.map(self.execute_rule, self.rules)
 
         # Only force starttime once
         self.starttime = None
