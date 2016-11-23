@@ -6,6 +6,7 @@ from __future__ import print_function
 import copy
 import datetime
 import logging
+import os
 import random
 import re
 import string
@@ -16,6 +17,7 @@ import mock
 import simplejson
 import yaml
 
+import elastalert.config
 from elastalert.config import load_modules
 from elastalert.config import load_options
 from elastalert.elastalert import ElastAlerter
@@ -246,14 +248,17 @@ class MockElastAlerter(object):
         if args.config is not None:
             with open(args.config) as fh:
                 conf = yaml.load(fh)
-
-            # Need to convert these parameters to datetime objects
-            for key in ['buffer_time', 'run_every', 'alert_time_limit', 'old_query_limit']:
-                if key in conf:
-                    conf[key] = datetime.timedelta(**conf[key])
-
         else:
-            conf = {}
+            if os.path.isfile('config.yaml'):
+                with open('config.yaml') as fh:
+                    conf = yaml.load(fh)
+            else:
+                conf = {}
+
+        # Need to convert these parameters to datetime objects
+        for key in ['buffer_time', 'run_every', 'alert_time_limit', 'old_query_limit']:
+            if key in conf:
+                conf[key] = datetime.timedelta(**conf[key])
 
         # Mock configuration. This specifies the base values for attributes, unless supplied otherwise.
         conf_default = {
@@ -273,7 +278,7 @@ class MockElastAlerter(object):
         for key in conf_default:
             if key not in conf:
                 conf[key] = conf_default[key]
-
+        elastalert.config.base_config = copy.deepcopy(conf)
         load_options(rules, conf)
         print("Successfully loaded %s\n" % (rules['name']))
 
