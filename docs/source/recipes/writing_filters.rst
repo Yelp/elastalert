@@ -9,11 +9,11 @@ The filters used in rules are part of the Elasticsearch query DSL, further docum
 https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
 This document contains a small subset of particularly useful filters.
 
-The filter section is passed to Elasticsearch exactly as follows::
+The filter section is converted from YAML to JSON and passed to Elasticsearch exactly as follows::
 
-    filter:
-      and:
-        filters:
+    query:
+      bool:
+        must:
           - [filters from rule.yaml]
 
 Every result that matches these filters will be passed to the rule for processing.
@@ -97,21 +97,25 @@ For ranges on fields::
 Negation, and, or
 *****************
 
-Any of the filters can be embedded in ``not``, ``and``, and ``or``::
+Any of the filters can be embedded in ``must_not`` (boolean NOT), ``must`` (boolean AND), and ``should`` (boolean OR)::
 
     filter:
-    - or:
-        - term:
-            field: "value"
-        - wildcard:
-            field: "foo*bar"
-        - and:
-            - not:
-                term:
-                  field: "value"
-            - not:
-                term:
-                  _type: "something"
+    - bool:
+        should:
+          - term:
+              field: "value"
+          - wildcard:
+              field: "foo*bar"
+          - bool:
+              must:
+                - term:
+                    field: "value"
+                - bool:
+                    must_not:
+                      - term:
+                          _type: "something"
+
+See https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html for more examples.
 
 
 Loading Filters Directly From Kibana 3
