@@ -154,8 +154,7 @@ class ElastAlerter():
         filters = copy.copy(filters)
         es_filters = {'filter': filters}
         if starttime and endtime:
-            es_filters['filter'].insert(0, {'range': {timestamp_field: {'gt': starttime,
-                                                                                        'lte': endtime}}})
+            es_filters['filter'].insert(0, {'range': {timestamp_field: {'gt': starttime, 'lte': endtime}}})
 
         query = {'query': {'bool': es_filters}}
         if sort:
@@ -846,9 +845,7 @@ class ElastAlerter():
         # Upload
         es = elasticsearch_client(rule)
 
-        res = es.index(index='kibana-int',
-                        doc_type='temp',
-                        body=db_body)
+        res = es.index(index='kibana-int', doc_type='temp', body=db_body)
 
         # Return dashboard URL
         kibana_url = rule.get('kibana_url')
@@ -1024,8 +1021,7 @@ class ElastAlerter():
             body['@timestamp'] = dt_to_ts(ts_now())
         if self.writeback_es:
             try:
-                res = self.writeback_es.index(index=self.writeback_index,
-                                               doc_type=doc_type, body=body)
+                res = self.writeback_es.index(index=self.writeback_index, doc_type=doc_type, body=body)
                 return res
             except ElasticsearchException as e:
                 logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
@@ -1432,6 +1428,7 @@ def main(args=None):
     client = ElastAlerter(args)
     if not client.args.silence:
         client.start()
+
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))

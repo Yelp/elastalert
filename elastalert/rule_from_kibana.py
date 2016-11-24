@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
-
 import json
 
 import yaml
 from elasticsearch.client import Elasticsearch
-
 from elastalert.kibana import filters_from_dashboard
 
 
@@ -33,6 +30,7 @@ def main():
     print("es_port: %s" % (es_port))
     print("filter:")
     print(yaml.safe_dump(config_filters))
+
 
 if __name__ == '__main__':
     main()

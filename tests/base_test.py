@@ -276,7 +276,7 @@ def test_run_rule_calls_garbage_collect(ea):
     ea.current_es.search.return_value = hits
     with contextlib.ExitStack() as stack:
         mock_gc = stack.enter_context(mock.patch.object(ea.rules[0]['type'], 'garbage_collect'))
-        mock_get_hits = stack.enter_context(mock.patch.object(ea, 'run_query'))
+        stack.enter_context(mock.patch.object(ea, 'run_query'))
         ea.run_rule(ea.rules[0], ts_to_dt(end_time), ts_to_dt(start_time))
 
     # Running ElastAlert every hour for 12 hours, we should see self.garbage_collect called 12 times.
@@ -305,7 +305,6 @@ def test_query_exception(ea):
     mock_es = mock.Mock()
     mock_es.search.side_effect = ElasticsearchException
     run_rule_query_exception(ea, mock_es)
-
 
 
 def test_query_exception_count_query(ea):

@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
-
 import copy
 import datetime
 import logging
@@ -315,6 +313,7 @@ class MockElastAlerter(object):
 def main():
     test_instance = MockElastAlerter()
     test_instance.run_rule_test()
+
 
 if __name__ == '__main__':
     main()

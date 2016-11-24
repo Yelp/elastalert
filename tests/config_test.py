@@ -69,6 +69,7 @@ def test_import_rules():
         assert mock_import.call_args_list[0][0][0] == 'testing2.test2'
         assert mock_import.call_args_list[0][0][3] == ['Alerter']
 
+
 def test_load_inline_alert_rule():
     test_rule_copy = copy.deepcopy(test_rule)
     test_rule_copy['alert'] = [
@@ -168,7 +169,6 @@ def test_raises_on_missing_config():
 
             with pytest.raises(EAException):
                 load_rules(test_args)
-
 
 
 def test_raises_on_bad_generate_kibana_filters():
