@@ -15,30 +15,30 @@ from socket import error
 
 import argparse
 import dateutil.tz
-import kibana
+from . import kibana
 import yaml
-from alerts import DebugAlerter
-from config import get_rule_hashes
-from config import load_configuration
-from config import load_rules
+from .alerts import DebugAlerter
+from .config import get_rule_hashes
+from .config import load_configuration
+from .config import load_rules
 from croniter import croniter
 from elasticsearch.exceptions import ElasticsearchException
-from enhancements import DropMatchException
-from util import add_raw_postfix
-from util import cronite_datetime_to_timestamp
-from util import dt_to_ts
-from util import EAException
-from util import elastalert_logger
-from util import elasticsearch_client
-from util import format_index
-from util import lookup_es_key
-from util import pretty_ts
-from util import seconds
-from util import set_es_key
-from util import ts_add
-from util import ts_now
-from util import ts_to_dt
-from util import unix_to_dt
+from .enhancements import DropMatchException
+from .util import add_raw_postfix
+from .util import cronite_datetime_to_timestamp
+from .util import dt_to_ts
+from .util import EAException
+from .util import elastalert_logger
+from .util import elasticsearch_client
+from .util import format_index
+from .util import lookup_es_key
+from .util import pretty_ts
+from .util import seconds
+from .util import set_es_key
+from .util import ts_add
+from .util import ts_now
+from .util import ts_to_dt
+from .util import unix_to_dt
 
 
 class ElastAlerter():
@@ -152,11 +152,12 @@ class ElastAlerter():
         starttime = to_ts_func(starttime)
         endtime = to_ts_func(endtime)
         filters = copy.copy(filters)
-        es_filters = {'filter': {'bool': {'must': filters}}}
+        es_filters = {'filter': filters}
         if starttime and endtime:
-            es_filters['filter']['bool']['must'].insert(0, {'range': {timestamp_field: {'gt': starttime,
+            es_filters['filter'].insert(0, {'range': {timestamp_field: {'gt': starttime,
                                                                                         'lte': endtime}}})
-        query = {'query': {'filtered': es_filters}}
+
+        query = {'query': {'bool': es_filters}}
         if sort:
             query['sort'] = [{timestamp_field: {'order': 'desc' if desc else 'asc'}}]
         return query
@@ -166,7 +167,7 @@ class ElastAlerter():
         query = query['query']
         if 'sort' in query:
             query.pop('sort')
-        query['filtered'].update({'aggs': {'counts': {'terms': {'field': field, 'size': size}}}})
+        query.update({'aggs': {'counts': {'terms': {'field': field, 'size': size}}}})
         aggs_query = {'aggs': query}
         return aggs_query
 
@@ -201,7 +202,7 @@ class ElastAlerter():
         for hit in hits:
             # Merge fields and _source
             hit.setdefault('_source', {})
-            for key, value in hit.get('fields', {}).items():
+            for key, value in list(hit.get('fields', {}).items()):
                 # Fields are returned as lists, assume any with length 1 are not arrays in _source
                 # Except sometimes they aren't lists. This is dependent on ES version
                 hit['_source'].setdefault(key, value[0] if type(value) is list and len(value) == 1 else value)
@@ -218,11 +219,11 @@ class ElastAlerter():
 
             if rule.get('compound_query_key'):
                 values = [lookup_es_key(hit['_source'], key) for key in rule['compound_query_key']]
-                hit['_source'][rule['query_key']] = ', '.join([unicode(value) for value in values])
+                hit['_source'][rule['query_key']] = ', '.join([str(value) for value in values])
 
             if rule.get('compound_aggregation_key'):
                 values = [lookup_es_key(hit['_source'], key) for key in rule['compound_aggregation_key']]
-                hit['_source'][rule['aggregation_key']] = ', '.join([unicode(value) for value in values])
+                hit['_source'][rule['aggregation_key']] = ', '.join([str(value) for value in values])
 
             processed_hits.append(hit['_source'])
 
@@ -326,7 +327,7 @@ class ElastAlerter():
 
         if 'aggregations' not in res:
             return {}
-        buckets = res['aggregations']['filtered']['counts']['buckets']
+        buckets = res['aggregations']['filter']['counts']['buckets']
         self.num_hits += len(buckets)
         lt = rule.get('use_local_time')
         elastalert_logger.info('Queried rule %s from %s to %s: %s buckets' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(buckets)))
@@ -351,10 +352,10 @@ class ElastAlerter():
         buffer_time = rule.get('buffer_time', self.buffer_time)
         if rule.get('query_delay'):
             buffer_time += rule['query_delay']
-        for _id, timestamp in rule['processed_hits'].iteritems():
+        for _id, timestamp in rule['processed_hits'].items():
             if now - timestamp > buffer_time:
                 remove.append(_id)
-        map(rule['processed_hits'].pop, remove)
+        list(map(rule['processed_hits'].pop, remove))
 
     def run_query(self, rule, start=None, end=None, scroll=False):
         """ Query for the rule and pass all of the results to the RuleType instance.
@@ -410,8 +411,14 @@ class ElastAlerter():
         :param rule: The rule configuration.
         :return: A timestamp or None.
         """
-        query = {'filter': {'term': {'rule_name': '%s' % (rule['name'])}},
-                 'sort': {'@timestamp': {'order': 'desc'}}}
+        query = {
+            'query': {
+                'term': {
+                    'rule_name': '%s' % (rule['name'])
+                }
+            },
+            'sort': {'@timestamp': {'order': 'desc'}}
+        }
         try:
             if self.writeback_es:
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert_status',
@@ -479,7 +486,7 @@ class ElastAlerter():
                 if key_value is not None:
                     # Only do the unicode conversion if we actually found something)
                     # otherwise we might transform None --> 'None'
-                    key_value = unicode(key_value)
+                    key_value = str(key_value)
             except KeyError:
                 # Some matches may not have the specified key
                 # use a special token for these
@@ -632,7 +639,7 @@ class ElastAlerter():
         new_rule_hashes = get_rule_hashes(self.conf, self.args.rule)
 
         # Check each current rule for changes
-        for rule_file, hash_value in self.rule_hashes.iteritems():
+        for rule_file, hash_value in self.rule_hashes.items():
             if rule_file not in new_rule_hashes:
                 # Rule file was deleted
                 elastalert_logger.info('Rule file %s not found, stopping rule execution' % (rule_file))
@@ -839,7 +846,7 @@ class ElastAlerter():
         # Upload
         es = elasticsearch_client(rule)
 
-        res = es.create(index='kibana-int',
+        res = es.index(index='kibana-int',
                         doc_type='temp',
                         body=db_body)
 
@@ -1006,7 +1013,7 @@ class ElastAlerter():
 
     def writeback(self, doc_type, body):
         # Convert any datetime objects to timestamps
-        for key in body.keys():
+        for key in list(body.keys()):
             if isinstance(body[key], datetime.datetime):
                 body[key] = dt_to_ts(body[key])
         if self.debug:
@@ -1017,7 +1024,7 @@ class ElastAlerter():
             body['@timestamp'] = dt_to_ts(ts_now())
         if self.writeback_es:
             try:
-                res = self.writeback_es.create(index=self.writeback_index,
+                res = self.writeback_es.index(index=self.writeback_index,
                                                doc_type=doc_type, body=body)
                 return res
             except ElasticsearchException as e:
@@ -1032,10 +1039,27 @@ class ElastAlerter():
         # unless there is constantly more than 1000 alerts to send.
 
         # Fetch recent, unsent alerts that aren't part of an aggregate, earlier alerts first.
-        query = {'query': {'query_string': {'query': '!_exists_:aggregate_id AND alert_sent:false'}},
-                 'filter': {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
-                                                     'to': dt_to_ts(ts_now())}}},
-                 'sort': {'alert_time': {'order': 'asc'}}}
+        query = {
+            'query': {
+                'bool': {
+                    'alert_sent': 'false',
+                    'must_not': {
+                        'exists': {
+                            'field': 'aggregate_id'
+                        }
+                    },
+                    'filter': {
+                        'range': {
+                            'alert_time': {
+                                'from': dt_to_ts(ts_now() - time_limit),
+                                'to': dt_to_ts(ts_now())
+                            }
+                        }
+                    },
+                }
+            },
+            'sort': {'alert_time': {'order': 'asc'}}
+        }
         if self.writeback_es:
             try:
                 res = self.writeback_es.search(index=self.writeback_index,
@@ -1080,7 +1104,7 @@ class ElastAlerter():
                     matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
                     self.alert(matches, rule, alert_time=alert_time)
                     if rule['current_aggregate_id']:
-                        for qk, id in rule['current_aggregate_id'].iteritems():
+                        for qk, id in rule['current_aggregate_id'].items():
                             if id == _id:
                                 rule['current_aggregate_id'].pop(qk)
                                 break
@@ -1098,7 +1122,7 @@ class ElastAlerter():
         # Send in memory aggregated alerts
         for rule in self.rules:
             if rule['agg_matches']:
-                for aggregation_key_value, aggregate_alert_time in rule['aggregate_alert_time'].iteritems():
+                for aggregation_key_value, aggregate_alert_time in rule['aggregate_alert_time'].items():
                     if ts_now() > aggregate_alert_time:
                         alertable_matches = [agg_match for agg_match in rule['agg_matches'] if self.get_aggregation_key_value(rule, agg_match) == aggregation_key_value]
                         self.alert(alertable_matches, rule)
@@ -1302,6 +1326,7 @@ class ElastAlerter():
             self.send_notification_email(exception=exception, rule=rule)
 
     def send_notification_email(self, text='', exception=None, rule=None, subject=None, rule_file=None):
+        print('send emails')
         email_body = text
         rule_name = None
         if rule:
@@ -1319,13 +1344,13 @@ class ElastAlerter():
             tb = traceback.format_exc()
             email_body += tb
 
-        if isinstance(self.notify_email, basestring):
+        if isinstance(self.notify_email, str):
             self.notify_email = [self.notify_email]
         email = MIMEText(email_body)
         email['Subject'] = subject if subject else 'ElastAlert notification'
         recipients = self.notify_email
         if rule and rule.get('notify_email'):
-            if isinstance(rule['notify_email'], basestring):
+            if isinstance(rule['notify_email'], str):
                 rule['notify_email'] = [rule['notify_email']]
             recipients = recipients + rule['notify_email']
         recipients = list(set(recipients))
@@ -1352,14 +1377,14 @@ class ElastAlerter():
             if hits_terms is None:
                 top_events_count = {}
             else:
-                buckets = hits_terms.values()[0]
+                buckets = list(hits_terms.values())[0]
 
                 # get_hits_terms adds to num_hits, but we don't want to count these
                 self.num_hits -= len(buckets)
                 terms = {}
                 for bucket in buckets:
                     terms[bucket['key']] = bucket['doc_count']
-                counts = terms.items()
+                counts = list(terms.items())
                 counts.sort(key=lambda x: x[1], reverse=True)
                 top_events_count = dict(counts[:number])
 

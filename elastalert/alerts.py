@@ -21,10 +21,10 @@ from jira.exceptions import JIRAError
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from texttable import Texttable
-from util import EAException
-from util import elastalert_logger
-from util import lookup_es_key
-from util import pretty_ts
+from .util import EAException
+from .util import elastalert_logger
+from .util import lookup_es_key
+from .util import pretty_ts
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -48,7 +48,7 @@ class BasicMatchString(object):
 
     def _add_custom_alert_text(self):
         missing = '<MISSING VALUE>'
-        alert_text = unicode(self.rule.get('alert_text', ''))
+        alert_text = str(self.rule.get('alert_text', ''))
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
             alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
@@ -56,7 +56,7 @@ class BasicMatchString(object):
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
-            for i in xrange(len(alert_text_values)):
+            for i in range(len(alert_text_values)):
                 if alert_text_values[i] is None:
                     alert_value = self.rule.get(alert_text_args[i])
                     if alert_value:
@@ -66,7 +66,7 @@ class BasicMatchString(object):
             alert_text = alert_text.format(*alert_text_values)
         elif 'alert_text_kw' in self.rule:
             kw = {}
-            for name, kw_name in self.rule.get('alert_text_kw').items():
+            for name, kw_name in list(self.rule.get('alert_text_kw').items()):
                 val = lookup_es_key(self.match, name)
 
                 # Support referencing other top-level rule properties
@@ -84,10 +84,10 @@ class BasicMatchString(object):
         self.text += self.rule['type'].get_match_str(self.match)
 
     def _add_top_counts(self):
-        for key, counts in self.match.items():
+        for key, counts in list(self.match.items()):
             if key.startswith('top_events_'):
                 self.text += '%s:\n' % (key[11:])
-                top_events = counts.items()
+                top_events = list(counts.items())
 
                 if not top_events:
                     self.text += 'No events found.\n'
@@ -99,12 +99,12 @@ class BasicMatchString(object):
                 self.text += '\n'
 
     def _add_match_items(self):
-        match_items = self.match.items()
+        match_items = list(self.match.items())
         match_items.sort(key=lambda x: x[0])
         for key, value in match_items:
             if key.startswith('top_events_'):
                 continue
-            value_str = unicode(value)
+            value_str = str(value)
             if type(value) in [list, dict]:
                 try:
                     value_str = self._pretty_print_as_json(value)
@@ -139,9 +139,9 @@ class BasicMatchString(object):
 
 class JiraFormattedMatchString(BasicMatchString):
     def _add_match_items(self):
-        match_items = dict([(x, y) for x, y in self.match.items() if not x.startswith('top_events_')])
+        match_items = dict([(x, y) for x, y in list(self.match.items()) if not x.startswith('top_events_')])
         json_blob = self._pretty_print_as_json(match_items)
-        preformatted_text = u'{{code:json}}{0}{{code}}'.format(json_blob)
+        preformatted_text = '{{code:json}}{0}{{code}}'.format(json_blob)
         self.text += preformatted_text
 
 
@@ -170,14 +170,14 @@ class Alerter(object):
                     root[i] = self.resolve_rule_reference(item)
         elif type(root) == dict:
             # Make a copy since we may be modifying the contents of the structure we're walking
-            for key, value in root.copy().iteritems():
+            for key, value in list(root.copy().items()):
                 if type(value) == dict or type(value) == list:
                     self.resolve_rule_references(root[key])
                 else:
                     root[key] = self.resolve_rule_reference(value)
 
     def resolve_rule_reference(self, value):
-        strValue = unicode(value)
+        strValue = str(value)
         if strValue.startswith('$') and strValue.endswith('$') and strValue[1:-1] in self.rule:
             if type(value) == int:
                 return int(self.rule[strValue[1:-1]])
@@ -209,7 +209,7 @@ class Alerter(object):
         return self.create_default_title(matches)
 
     def create_custom_title(self, matches):
-        alert_subject = unicode(self.rule['alert_subject'])
+        alert_subject = str(self.rule['alert_subject'])
 
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
@@ -218,7 +218,7 @@ class Alerter(object):
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
-            for i in xrange(len(alert_subject_values)):
+            for i in range(len(alert_subject_values)):
                 if alert_subject_values[i] is None:
                     alert_value = self.rule.get(alert_subject_args[i])
                     if alert_value:
@@ -232,7 +232,7 @@ class Alerter(object):
     def create_alert_body(self, matches):
         body = self.get_aggregation_summary_text(matches)
         for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
+            body += str(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
@@ -253,16 +253,16 @@ class Alerter(object):
 
             # Maintain an aggregate count for each unique key encountered in the aggregation period
             for match in matches:
-                key_tuple = tuple([unicode(lookup_es_key(match, key)) for key in summary_table_fields])
+                key_tuple = tuple([str(lookup_es_key(match, key)) for key in summary_table_fields])
                 if key_tuple not in match_aggregation:
                     match_aggregation[key_tuple] = 1
                 else:
                     match_aggregation[key_tuple] = match_aggregation[key_tuple] + 1
-            for keys, count in match_aggregation.iteritems():
+            for keys, count in list(match_aggregation.items()):
                 text_table.add_row([key for key in keys] + [count])
             text += text_table.draw() + '\n\n'
 
-        return unicode(text)
+        return str(text)
 
     def create_default_title(self, matches):
         return self.rule['name']
@@ -290,7 +290,7 @@ class DebugAlerter(Alerter):
                     'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
             else:
                 elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
-            elastalert_logger.info(unicode(BasicMatchString(self.rule, match)))
+            elastalert_logger.info(str(BasicMatchString(self.rule, match)))
 
     def get_info(self):
         return {'type': 'debug'}
@@ -310,15 +310,15 @@ class EmailAlerter(Alerter):
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
         # Convert email to a list if it isn't already
-        if isinstance(self.rule['email'], basestring):
+        if isinstance(self.rule['email'], str):
             self.rule['email'] = [self.rule['email']]
         # If there is a cc then also convert it a list if it isn't
         cc = self.rule.get('cc')
-        if cc and isinstance(cc, basestring):
+        if cc and isinstance(cc, str):
             self.rule['cc'] = [self.rule['cc']]
         # If there is a bcc then also convert it to a list if it isn't
         bcc = self.rule.get('bcc')
-        if bcc and isinstance(bcc, basestring):
+        if bcc and isinstance(bcc, str):
             self.rule['bcc'] = [self.rule['bcc']]
 
     def alert(self, matches):
@@ -488,12 +488,12 @@ class JiraAlerter(Alerter):
             if self.priority is not None:
                 self.jira_args['priority'] = {'id': self.priority_ids[self.priority]}
         except KeyError:
-            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, self.priority_ids.keys()))
+            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, list(self.priority_ids.keys())))
 
     def get_arbitrary_fields(self):
         # This API returns metadata about all the fields defined on the jira server (built-ins and custom ones)
         fields = self.client.fields()
-        for jira_field, value in self.rule.iteritems():
+        for jira_field, value in list(self.rule.items()):
             # If we find a field that is not covered by the set that we are aware of, it means it is either:
             # 1. A built-in supported field in JIRA that we don't have on our radar
             # 2. A custom field that a JIRA admin has configured
@@ -602,7 +602,7 @@ class JiraAlerter(Alerter):
             return issues[0]
 
     def comment_on_ticket(self, ticket, match):
-        text = unicode(JiraFormattedMatchString(self.rule, match))
+        text = str(JiraFormattedMatchString(self.rule, match))
         timestamp = pretty_ts(lookup_es_key(match, self.rule['timestamp_field']))
         comment = "This alert was triggered again at %s\n%s" % (timestamp, text)
         self.client.add_comment(ticket, comment)
@@ -638,7 +638,7 @@ class JiraAlerter(Alerter):
                     except Exception as ex:
                         # Re-raise the exception, preserve the stack-trace, and give some
                         # context as to which watcher failed to be added
-                        raise Exception("Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(watcher, ex)), None, sys.exc_info()[2]
+                        raise Exception("Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(watcher, ex)).with_traceback(sys.exc_info()[2])
 
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket: %s" % (e))
@@ -652,7 +652,7 @@ class JiraAlerter(Alerter):
         body = self.description + '\n'
         body += self.get_aggregation_summary_text(matches)
         for match in matches:
-            body += unicode(JiraFormattedMatchString(self.rule, match))
+            body += str(JiraFormattedMatchString(self.rule, match))
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
         return body
@@ -660,7 +660,7 @@ class JiraAlerter(Alerter):
     def get_aggregation_summary_text(self, matches):
         text = super(JiraAlerter, self).get_aggregation_summary_text(matches)
         if text:
-            text = u'{{noformat}}{0}{{noformat}}'.format(text)
+            text = '{{noformat}}{0}{{noformat}}'.format(text)
         return text
 
     def create_default_title(self, matches, for_search=False):
@@ -693,7 +693,7 @@ class CommandAlerter(Alerter):
         super(CommandAlerter, self).__init__(*args)
         self.last_command = []
         self.shell = False
-        if isinstance(self.rule['command'], basestring):
+        if isinstance(self.rule['command'], str):
             self.shell = True
             if '%' in self.rule['command']:
                 logging.warning('Warning! You could be vulnerable to shell injection!')
@@ -824,7 +824,7 @@ class SlackAlerter(Alerter):
     def __init__(self, rule):
         super(SlackAlerter, self).__init__(rule)
         self.slack_webhook_url = self.rule['slack_webhook_url']
-        if isinstance(self.slack_webhook_url, basestring):
+        if isinstance(self.slack_webhook_url, str):
             self.slack_webhook_url = [self.slack_webhook_url]
         self.slack_proxy = self.rule.get('slack_proxy', None)
         self.slack_username_override = self.rule.get('slack_username_override', 'elastalert')
@@ -837,7 +837,6 @@ class SlackAlerter(Alerter):
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
-        body = body.encode('UTF-8')
         body = body.replace('&', '&amp;')
         body = body.replace('<', '&lt;')
         body = body.replace('>', '&gt;')
@@ -979,13 +978,13 @@ class TelegramAlerter(Alerter):
         self.telegram_proxy = self.rule.get('telegram_proxy', None)
 
     def alert(self, matches):
-        body = u'⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
+        body = '⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
         for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
+            body += str(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
-        body += u' ```'
+        body += ' ```'
 
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
