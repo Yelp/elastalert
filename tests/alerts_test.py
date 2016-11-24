@@ -2,8 +2,9 @@
 import datetime
 import json
 import subprocess
-from contextlib import nested
+from contextlib import ExitStack
 
+import base64
 import mock
 import pytest
 from jira.exceptions import JIRAError
@@ -28,7 +29,7 @@ class mock_rule:
 def test_basic_match_string(ea):
     ea.rules[0]['top_count_keys'] = ['username']
     match = {'@timestamp': '1918-01-17', 'field': 'value', 'top_events_username': {'bob': 10, 'mallory': 5}}
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'anytest' in alert_text
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
@@ -37,58 +38,43 @@ def test_basic_match_string(ea):
 
     # Non serializable objects don't cause errors
     match['non-serializable'] = {open: 10}
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = str(BasicMatchString(ea.rules[0], match))
 
     # unicode objects dont cause errors
-    match['snowman'] = u'☃'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    match['snowman'] = '☃'
+    alert_text = str(BasicMatchString(ea.rules[0], match))
 
     # Pretty printed objects
     match.pop('non-serializable')
     match['object'] = {'this': {'that': [1, 2, "3"]}}
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
-    assert '"this": {\n        "that": [\n            1, \n            2, \n            "3"\n        ]\n    }' in alert_text
+    alert_text = str(BasicMatchString(ea.rules[0], match))
+    assert '"this": {\n        "that": [\n            1,\n            2,\n            "3"\n        ]\n    }' in alert_text
 
     ea.rules[0]['alert_text'] = 'custom text'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'anytest' not in alert_text
 
     ea.rules[0]['alert_text_type'] = 'alert_text_only'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'some stuff happened' not in alert_text
     assert 'username' not in alert_text
     assert 'field: value' not in alert_text
 
     ea.rules[0]['alert_text_type'] = 'exclude_fields'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
     assert 'field: value' not in alert_text
 
 
-def test_jira_formatted_match_string(ea):
-    match = {'foo': {'bar': ['one', 2, 'three']}, 'top_events_poof': 'phew'}
-    alert_text = str(JiraFormattedMatchString(ea.rules[0], match))
-    tab = 4 * ' '
-    expected_alert_text_snippet = '{code:json}{\n' \
-        + tab + '"foo": {\n' \
-        + 2 * tab + '"bar": [\n' \
-        + 3 * tab + '"one", \n' \
-        + 3 * tab + '2, \n' \
-        + 3 * tab + '"three"\n' \
-        + 2 * tab + ']\n' \
-        + tab + '}\n' \
-        + '}{code}'
-    assert expected_alert_text_snippet in alert_text
-
 
 def test_email():
-    rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
+    rule = {'name': 'test alert', 'email': ['bdh931101@gmail.com'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com', 'owner': 'owner_value',
-            'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': u'☃'}
+            'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': '☃'}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
@@ -98,22 +84,21 @@ def test_email():
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(),
-                    mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
+                    mock.call().sendmail(mock.ANY, ['bdh931101@gmail.com'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
 
         assert 'Reply-To: test@example.com' in body
-        assert 'To: testing@test.test' in body
+        assert 'To: bdh931101@gmail.com' in body
         assert 'From: testfrom@test.test' in body
         assert 'Subject: Test alert for test_value, owned by owner_value' in body
 
-
 def test_email_with_unicode_strings():
-    rule = {'name': 'test alert', 'email': u'testing@test.test', 'from_addr': 'testfrom@test.test',
+    rule = {'name': 'test alert', 'email': 'testing@test.test', 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com', 'owner': 'owner_value',
-            'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': u'☃'}
+            'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': '☃'}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
@@ -123,7 +108,7 @@ def test_email_with_unicode_strings():
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(),
-                    mock.call().sendmail(mock.ANY, [u'testing@test.test'], mock.ANY),
+                    mock.call().sendmail(mock.ANY, ['testing@test.test'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
 
@@ -242,7 +227,7 @@ def test_email_with_args():
         mock_smtp.return_value = mock.Mock()
 
         alert = EmailAlerter(rule)
-        alert.alert([{'test_term': 'test_value', 'test_arg1': 'testing', 'test': {'term': ':)', 'arg3': u'☃'}}])
+        alert.alert([{'test_term': 'test_value', 'test_arg1': 'testing', 'test': {'term': ':)', 'arg3': '☃'}}])
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
@@ -253,8 +238,8 @@ def test_email_with_args():
 
         body = mock_smtp.mock_calls[4][1][2]
         # Extract the MIME encoded message body
-        body_text = body.split('\n\n')[-1][:-1].decode('base64')
-
+        body_text = body.split('\n\n')[-1][:-1]
+        body_text = base64.b64decode(body_text).decode('utf-8')
         assert 'testing' in body_text
         assert '<MISSING VALUE>' in body_text
         assert '☃' in body_text
@@ -293,9 +278,9 @@ def test_opsgenie_basic():
 
         alert = OpsGenieAlerter(rule)
         alert.alert([{'@timestamp': '2014-10-31T00:00:00'}])
-        print("mock_post: {0}".format(mock_post._mock_call_args_list))
+        print(("mock_post: {0}".format(mock_post._mock_call_args_list)))
         mcal = mock_post._mock_call_args_list
-        print('mcal: {0}'.format(mcal[0]))
+        print(('mcal: {0}'.format(mcal[0])))
         assert mcal[0][0][0] == ('https://api.opsgenie.com/v1/json/alert')
 
         assert mock_post.called
@@ -319,9 +304,9 @@ def test_opsgenie_frequency():
 
         assert alert.get_info()['recipients'] == rule['opsgenie_recipients']
 
-        print("mock_post: {0}".format(mock_post._mock_call_args_list))
+        print(("mock_post: {0}".format(mock_post._mock_call_args_list)))
         mcal = mock_post._mock_call_args_list
-        print('mcal: {0}'.format(mcal[0]))
+        print(('mcal: {0}'.format(mcal[0])))
         assert mcal[0][0][0] == ('https://api.opsgenie.com/v1/json/alert')
 
         assert mock_post.called
@@ -331,232 +316,6 @@ def test_opsgenie_frequency():
         assert mcal[0][1]['json']['recipients'] == ['lytics']
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
-
-
-def test_jira():
-    description_txt = "Description stuff goes here like a runbook link."
-    rule = {
-        'name': 'test alert',
-        'jira_account_file': 'jirafile',
-        'type': mock_rule(),
-        'jira_project': 'testproject',
-        'jira_priority': 0,
-        'jira_issuetype': 'testtype',
-        'jira_server': 'jiraserver',
-        'jira_label': 'testlabel',
-        'jira_component': 'testcomponent',
-        'jira_description': description_txt,
-        'jira_watchers': ['testwatcher1', 'testwatcher2'],
-        'timestamp_field': '@timestamp',
-        'alert_subject': 'Issue {0} occurred at {1}',
-        'alert_subject_args': ['test_term', '@timestamp']
-    }
-
-    mock_priority = mock.Mock(id='5')
-
-    with nested(
-        mock.patch('elastalert.alerts.JIRA'),
-        mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
-        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-        mock_jira.return_value.priorities.return_value = [mock_priority]
-        mock_jira.return_value.fields.return_value = []
-        alert = JiraAlerter(rule)
-        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
-
-    expected = [
-        mock.call('jiraserver', basic_auth=('jirauser', 'jirapassword')),
-        mock.call().priorities(),
-        mock.call().fields(),
-        mock.call().create_issue(
-            issuetype={'name': 'testtype'},
-            priority={'id': '5'},
-            project={'key': 'testproject'},
-            labels=['testlabel'],
-            components=[{'name': 'testcomponent'}],
-            description=mock.ANY,
-            summary='Issue test_value occurred at 2014-10-31T00:00:00',
-        ),
-        mock.call().add_watcher(mock.ANY, 'testwatcher1'),
-        mock.call().add_watcher(mock.ANY, 'testwatcher2'),
-    ]
-
-    # We don't care about additional calls to mock_jira, such as __str__
-    assert mock_jira.mock_calls[:6] == expected
-    assert mock_jira.mock_calls[3][2]['description'].startswith(description_txt)
-
-    # Search called if jira_bump_tickets
-    rule['jira_bump_tickets'] = True
-    with nested(
-        mock.patch('elastalert.alerts.JIRA'),
-        mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
-        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-        mock_jira.return_value = mock.Mock()
-        mock_jira.return_value.search_issues.return_value = []
-        mock_jira.return_value.priorities.return_value = [mock_priority]
-        mock_jira.return_value.fields.return_value = []
-
-        alert = JiraAlerter(rule)
-        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
-
-    expected.insert(3, mock.call().search_issues(mock.ANY))
-    assert mock_jira.mock_calls == expected
-
-    # Remove a field if jira_ignore_in_title set
-    rule['jira_ignore_in_title'] = 'test_term'
-    with nested(
-        mock.patch('elastalert.alerts.JIRA'),
-        mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
-        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-        mock_jira.return_value = mock.Mock()
-        mock_jira.return_value.search_issues.return_value = []
-        mock_jira.return_value.priorities.return_value = [mock_priority]
-        mock_jira.return_value.fields.return_value = []
-
-        alert = JiraAlerter(rule)
-        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
-
-    assert 'test_value' not in mock_jira.mock_calls[3][1][0]
-
-    # Issue is still created if search_issues throws an exception
-    with nested(
-        mock.patch('elastalert.alerts.JIRA'),
-        mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
-        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-        mock_jira.return_value = mock.Mock()
-        mock_jira.return_value.search_issues.side_effect = JIRAError
-        mock_jira.return_value.priorities.return_value = [mock_priority]
-        mock_jira.return_value.fields.return_value = []
-
-        alert = JiraAlerter(rule)
-        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
-
-    assert mock_jira.mock_calls == expected
-
-
-def test_jira_arbitrary_field_support():
-    description_txt = "Description stuff goes here like a runbook link."
-    rule = {
-        'name': 'test alert',
-        'jira_account_file': 'jirafile',
-        'type': mock_rule(),
-        'owner': 'the_owner',
-        'jira_project': 'testproject',
-        'jira_issuetype': 'testtype',
-        'jira_server': 'jiraserver',
-        'jira_label': 'testlabel',
-        'jira_component': 'testcomponent',
-        'jira_description': description_txt,
-        'jira_watchers': ['testwatcher1', 'testwatcher2'],
-        'jira_arbitrary_reference_string_field': '$owner$',
-        'jira_arbitrary_string_field': 'arbitrary_string_value',
-        'jira_arbitrary_string_array_field': ['arbitrary_string_value1', 'arbitrary_string_value2'],
-        'jira_arbitrary_string_array_field_provided_as_single_value': 'arbitrary_string_value_in_array_field',
-        'jira_arbitrary_number_field': 1,
-        'jira_arbitrary_number_array_field': [2, 3],
-        'jira_arbitrary_number_array_field_provided_as_single_value': 1,
-        'jira_arbitrary_complex_field': 'arbitrary_complex_value',
-        'jira_arbitrary_complex_array_field': ['arbitrary_complex_value1', 'arbitrary_complex_value2'],
-        'jira_arbitrary_complex_array_field_provided_as_single_value': 'arbitrary_complex_value_in_array_field',
-        'timestamp_field': '@timestamp',
-        'alert_subject': 'Issue {0} occurred at {1}',
-        'alert_subject_args': ['test_term', '@timestamp']
-    }
-
-    mock_priority = mock.MagicMock(id='5')
-
-    mock_fields = [
-        {'name': 'arbitrary reference string field', 'id': 'arbitrary_reference_string_field', 'schema': {'type': 'string'}},
-        {'name': 'arbitrary string field', 'id': 'arbitrary_string_field', 'schema': {'type': 'string'}},
-        {'name': 'arbitrary string array field', 'id': 'arbitrary_string_array_field', 'schema': {'type': 'array', 'items': 'string'}},
-        {'name': 'arbitrary string array field provided as single value', 'id': 'arbitrary_string_array_field_provided_as_single_value', 'schema': {'type': 'array', 'items': 'string'}},
-        {'name': 'arbitrary number field', 'id': 'arbitrary_number_field', 'schema': {'type': 'number'}},
-        {'name': 'arbitrary number array field', 'id': 'arbitrary_number_array_field', 'schema': {'type': 'array', 'items': 'number'}},
-        {'name': 'arbitrary number array field provided as single value', 'id': 'arbitrary_number_array_field_provided_as_single_value', 'schema': {'type': 'array', 'items': 'number'}},
-        {'name': 'arbitrary complex field', 'id': 'arbitrary_complex_field', 'schema': {'type': 'ArbitraryType'}},
-        {'name': 'arbitrary complex array field', 'id': 'arbitrary_complex_array_field', 'schema': {'type': 'array', 'items': 'ArbitraryType'}},
-        {'name': 'arbitrary complex array field provided as single value', 'id': 'arbitrary_complex_array_field_provided_as_single_value', 'schema': {'type': 'array', 'items': 'ArbitraryType'}},
-    ]
-
-    with nested(
-            mock.patch('elastalert.alerts.JIRA'),
-            mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
-        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-        mock_jira.return_value.priorities.return_value = [mock_priority]
-        mock_jira.return_value.fields.return_value = mock_fields
-        alert = JiraAlerter(rule)
-        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
-
-    expected = [
-        mock.call('jiraserver', basic_auth=('jirauser', 'jirapassword')),
-        mock.call().priorities(),
-        mock.call().fields(),
-        mock.call().create_issue(
-            issuetype={'name': 'testtype'},
-            project={'key': 'testproject'},
-            labels=['testlabel'],
-            components=[{'name': 'testcomponent'}],
-            description=mock.ANY,
-            summary='Issue test_value occurred at 2014-10-31T00:00:00',
-            arbitrary_reference_string_field='the_owner',
-            arbitrary_string_field='arbitrary_string_value',
-            arbitrary_string_array_field=['arbitrary_string_value1', 'arbitrary_string_value2'],
-            arbitrary_string_array_field_provided_as_single_value=['arbitrary_string_value_in_array_field'],
-            arbitrary_number_field=1,
-            arbitrary_number_array_field=[2, 3],
-            arbitrary_number_array_field_provided_as_single_value=[1],
-            arbitrary_complex_field={'name': 'arbitrary_complex_value'},
-            arbitrary_complex_array_field=[{'name': 'arbitrary_complex_value1'}, {'name': 'arbitrary_complex_value2'}],
-            arbitrary_complex_array_field_provided_as_single_value=[{'name': 'arbitrary_complex_value_in_array_field'}],
-        ),
-        mock.call().add_watcher(mock.ANY, 'testwatcher1'),
-        mock.call().add_watcher(mock.ANY, 'testwatcher2'),
-    ]
-
-    # We don't care about additional calls to mock_jira, such as __str__
-    assert mock_jira.mock_calls[:6] == expected
-    assert mock_jira.mock_calls[3][2]['description'].startswith(description_txt)
-
-    # Reference an arbitrary string field that is not defined on the JIRA server
-    rule['jira_nonexistent_field'] = 'nonexistent field value'
-
-    with nested(
-            mock.patch('elastalert.alerts.JIRA'),
-            mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
-        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-        mock_jira.return_value.priorities.return_value = [mock_priority]
-        mock_jira.return_value.fields.return_value = mock_fields
-
-        with pytest.raises(Exception) as exception:
-            alert = JiraAlerter(rule)
-            alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
-        assert "Could not find a definition for the jira field 'nonexistent field'" in str(exception)
-
-    del rule['jira_nonexistent_field']
-
-    # Reference a watcher that does not exist
-    rule['jira_watchers'] = 'invalid_watcher'
-
-    with nested(
-            mock.patch('elastalert.alerts.JIRA'),
-            mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
-        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
-        mock_jira.return_value.priorities.return_value = [mock_priority]
-        mock_jira.return_value.fields.return_value = mock_fields
-
-        # Cause add_watcher to raise, which most likely means that the user did not exist
-        mock_jira.return_value.add_watcher.side_effect = Exception()
-
-        with pytest.raises(Exception) as exception:
-            alert = JiraAlerter(rule)
-            alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
-        assert "Exception encountered when trying to add 'invalid_watcher' as a watcher. Does the user exist?" in str(exception)
 
 
 def test_kibana(ea):
@@ -570,9 +329,10 @@ def test_kibana(ea):
             'timestamp_field': '@timestamp'}
     match = {'@timestamp': '2014-10-10T00:00:00'}
     with mock.patch("elastalert.elastalert.elasticsearch_client") as mock_es:
-        mock_create = mock.Mock(return_value={'_id': 'ABCDEFGH'})
+        mock_create = mock.Mock()
+        mock_create.return_value = {'_id': 'ABCDEFGH'}
         mock_es_inst = mock.Mock()
-        mock_es_inst.create = mock_create
+        mock_es_inst.index = mock_create
         mock_es.return_value = mock_es_inst
         link = ea.generate_kibana_db(rule, match)
 
@@ -764,7 +524,7 @@ def test_alert_text_kw(ea):
         'field': 'field',
     }
     match = {'@timestamp': '1918-01-17', 'field': 'value'}
-    alert_text = unicode(BasicMatchString(rule, match))
+    alert_text = str(BasicMatchString(rule, match))
     body = '{field} at {@timestamp}'.format(**match)
     assert body in alert_text
 
@@ -783,7 +543,7 @@ def test_alert_text_global_substitution(ea):
         'abc': 'abc from match',
     }
 
-    alert_text = unicode(BasicMatchString(rule, match))
+    alert_text = str(BasicMatchString(rule, match))
     assert 'Priority: priority from rule' in alert_text
     assert 'Owner: the owner from rule' in alert_text
 
@@ -809,7 +569,7 @@ def test_alert_text_kw_global_substitution(ea):
         'abc': 'abc from match',
     }
 
-    alert_text = unicode(BasicMatchString(rule, match))
+    alert_text = str(BasicMatchString(rule, match))
     assert 'Owner: the owner from rule' in alert_text
     assert 'Foo: foo from rule' in alert_text
 

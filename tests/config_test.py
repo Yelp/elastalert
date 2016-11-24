@@ -13,14 +13,15 @@ from elastalert.config import load_modules
 from elastalert.config import load_options
 from elastalert.config import load_rules
 from elastalert.util import EAException
-
+import contextlib
 
 test_config = {'rules_folder': 'test_folder',
                'run_every': {'minutes': 10},
                'buffer_time': {'minutes': 10},
                'es_host': 'elasticsearch.test',
                'es_port': 12345,
-               'writeback_index': 'test_index'}
+               'writeback_index': 'test_index',
+               'scan_subdirectories': False}
 
 test_rule = {'es_host': 'test_host',
              'es_port': 12345,
@@ -52,7 +53,7 @@ def test_import_rules():
         mock_open.return_value = test_rule_copy
 
         # Test that type is imported
-        with mock.patch('__builtin__.__import__') as mock_import:
+        with mock.patch('builtins.__import__') as mock_import:
             mock_import.return_value = elastalert.ruletypes
             load_configuration('test_config', test_config)
         assert mock_import.call_args_list[0][0][0] == 'testing.test'
@@ -62,12 +63,11 @@ def test_import_rules():
         test_rule_copy = copy.deepcopy(test_rule)
         mock_open.return_value = test_rule_copy
         test_rule_copy['alert'] = 'testing2.test2.Alerter'
-        with mock.patch('__builtin__.__import__') as mock_import:
+        with mock.patch('builtins.__import__') as mock_import:
             mock_import.return_value = elastalert.alerts
             load_configuration('test_config', test_config)
         assert mock_import.call_args_list[0][0][0] == 'testing2.test2'
         assert mock_import.call_args_list[0][0][3] == ['Alerter']
-
 
 def test_load_inline_alert_rule():
     test_rule_copy = copy.deepcopy(test_rule)
@@ -96,22 +96,26 @@ def test_load_inline_alert_rule():
 def test_load_rules():
     test_rule_copy = copy.deepcopy(test_rule)
     test_config_copy = copy.deepcopy(test_config)
-    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+    with contextlib.ExitStack() as stack:
+        mock_open = stack.enter_context(mock.patch('elastalert.config.yaml_loader'))
+        mock_ls = stack.enter_context(mock.patch('os.listdir'))
+        mock_isfile = stack.enter_context(mock.patch('os.path.isfile'))
+        mock_ls.return_value = ['testrule.yaml']
         mock_open.side_effect = [test_config_copy, test_rule_copy]
+        mock_isfile.return_value = True
 
-        with mock.patch('os.listdir') as mock_ls:
-            mock_ls.return_value = ['testrule.yaml']
-            rules = load_rules(test_args)
-            assert isinstance(rules['rules'][0]['type'], elastalert.ruletypes.RuleType)
-            assert isinstance(rules['rules'][0]['alert'][0], elastalert.alerts.Alerter)
-            assert isinstance(rules['rules'][0]['timeframe'], datetime.timedelta)
-            assert isinstance(rules['run_every'], datetime.timedelta)
-            for included_key in ['comparekey', 'testkey', '@timestamp']:
-                assert included_key in rules['rules'][0]['include']
+        rules = load_rules(test_args)
 
-            # Assert include doesn't contain duplicates
-            assert rules['rules'][0]['include'].count('@timestamp') == 1
-            assert rules['rules'][0]['include'].count('comparekey') == 1
+        assert isinstance(rules['rules'][0]['type'], elastalert.ruletypes.RuleType)
+        assert isinstance(rules['rules'][0]['alert'][0], elastalert.alerts.Alerter)
+        assert isinstance(rules['rules'][0]['timeframe'], datetime.timedelta)
+        assert isinstance(rules['run_every'], datetime.timedelta)
+        for included_key in ['comparekey', 'testkey', '@timestamp']:
+            assert included_key in rules['rules'][0]['include']
+
+        # Assert include doesn't contain duplicates
+        assert rules['rules'][0]['include'].count('@timestamp') == 1
+        assert rules['rules'][0]['include'].count('comparekey') == 1
 
 
 def test_load_default_host_port():
@@ -145,7 +149,7 @@ def test_compound_query_key():
 def test_raises_on_missing_config():
     optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include', 'es_host', 'es_port')
     test_rule_copy = copy.deepcopy(test_rule)
-    for key in test_rule_copy.keys():
+    for key in list(test_rule_copy.keys()):
         test_rule_copy = copy.deepcopy(test_rule)
         test_config_copy = copy.deepcopy(test_config)
         test_rule_copy.pop(key)
@@ -153,13 +157,18 @@ def test_raises_on_missing_config():
         # Non required keys
         if key in optional_keys:
             continue
+        with contextlib.ExitStack() as stack:
+            mock_open = stack.enter_context(mock.patch('elastalert.config.yaml_loader'))
+            mock_ls = stack.enter_context(mock.patch('os.listdir'))
+            mock_isfile = stack.enter_context(mock.patch('os.path.isfile'))
 
-        with mock.patch('elastalert.config.yaml_loader') as mock_open:
             mock_open.side_effect = [test_config_copy, test_rule_copy]
-            with mock.patch('os.listdir') as mock_ls:
-                mock_ls.return_value = ['testrule.yaml']
-                with pytest.raises(EAException):
-                    load_rules(test_args)
+            mock_ls.return_value = ['testrule.yaml']
+            mock_isfile.return_value = True
+
+            with pytest.raises(EAException):
+                load_rules(test_args)
+
 
 
 def test_raises_on_bad_generate_kibana_filters():
