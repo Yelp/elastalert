@@ -16,7 +16,6 @@ pbr==1.10.0
 pluggy==0.4.0
 py==1.4.31
 PyStaticConfiguration==0.10.2
-pytest==3.0.4
 python-dateutil==2.6.0
 PyYAML==3.12
 requests==2.12.1
@@ -27,6 +26,5 @@ simplejson==3.10.0
 six==1.10.0
 texttable==0.8.7
 tlslite==0.4.9
-tox==2.5.0
 urllib3==1.19.1
 virtualenv==15.1.0
