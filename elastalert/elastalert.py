@@ -1276,7 +1276,7 @@ class ElastAlerter():
         if self.debug:
             return False
 
-        query = {'filter': {'term': {'rule_name': rule_name}},
+        query = {'query': {'term': {'rule_name': rule_name}},
                  'sort': {'until': {'order': 'desc'}}}
 
         if self.writeback_es:
