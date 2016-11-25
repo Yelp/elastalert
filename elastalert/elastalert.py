@@ -756,7 +756,8 @@ class ElastAlerter():
                     # We were processing for longer than our refresh interval
                     # This can happen if --start was specified with a large time period
                     # or if we are running too slow to process events in real time.
-                    logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, endtime, self.run_every))
+                    logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
+                                                                                     self.run_every))
 
             self.remove_old_events(rule)
 
