@@ -636,6 +636,14 @@ class ElastAlerter():
                 continue
             new_rule[prop] = rule[prop]
 
+        # In ES5, filters starting with 'query' should have the top wrapper removed
+        if self.five:
+            for es_filter in new_rule.get('filters', []):
+                if es_filter.get('query'):
+                    new_filter = es_filter['query']
+                    new_rule['filters'].append(new_filter)
+                    new_rule['filters'].remove(es_filter)
+
         return new_rule
 
     def load_rule_changes(self):
