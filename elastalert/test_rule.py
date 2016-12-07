@@ -71,7 +71,7 @@ class MockElastAlerter(object):
 
         # Get a count of all docs
         count_query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts, sort=False)
-        count_query = {'query': {'filtered': count_query}}
+        count_query = {'query': {'bool': count_query}}
         try:
             res = es_client.count(index, doc_type=doc_type, body=count_query, ignore_unavailable=True)
         except Exception as e:
