@@ -21,6 +21,8 @@ from jira.exceptions import JIRAError
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from texttable import Texttable
+from twilio import TwilioRestException
+from twilio.rest import TwilioRestClient
 from util import EAException
 from util import elastalert_logger
 from util import lookup_es_key
@@ -924,6 +926,34 @@ class PagerDutyAlerter(Alerter):
     def get_info(self):
         return {'type': 'pagerduty',
                 'pagerduty_client_name': self.pagerduty_client_name}
+
+
+class TwilioAlerter(Alerter):
+    required_options = frozenset(['twilio_accout_sid', 'twilio_auth_token', 'twilio_to_number', 'twilio_from_number'])
+
+    def __init__(self, rule):
+        super(TwilioAlerter, self).__init__(rule)
+        self.twilio_accout_sid = self.rule['twilio_accout_sid']
+        self.twilio_auth_token = self.rule['twilio_auth_token']
+        self.twilio_to_number = self.rule['twilio_to_number']
+        self.twilio_from_number = self.rule['twilio_from_number']
+
+    def alert(self, matches):
+        client = TwilioRestClient(self.twilio_accout_sid, self.twilio_auth_token)
+
+        try:
+            client.messages.create(body=self.rule['name'],
+                                   to=self.twilio_to_number,
+                                   from_=self.twilio_to_number)
+
+        except TwilioRestException as e:
+            raise EAException("Error posting to twilio: %s" % e)
+
+        elastalert_logger.info("Trigger sent to Twilio")
+
+    def get_info(self):
+        return {'type': 'twilio',
+                'twilio_client_name': self.twilio_from_number}
 
 
 class VictorOpsAlerter(Alerter):
