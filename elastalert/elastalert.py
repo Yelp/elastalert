@@ -104,7 +104,6 @@ class ElastAlerter():
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.num_workers = self.conf.get('num_workers', 1)
-        self.alerts_sent = 0
         self.current_es = None
         self.current_es_addr = None
         self.buffer_time = self.conf['buffer_time']
@@ -603,7 +602,8 @@ class ElastAlerter():
                       'aggregate_alert_time': {},
                       'current_aggregate_id': {},
                       'processed_hits': {},
-                      'num_hits': 0}
+                      'num_hits': 0,
+                      'alerts_sent': 0}
         rule = blank_rule
 
         # Set rule to either a blank template or existing rule with same name
@@ -743,8 +743,8 @@ class ElastAlerter():
             old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
             elastalert_logger.info("Ran %s from %s to %s: %s query hits, %s matches,"
                                    " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                        rule['num_hits'], num_matches, self.alerts_sent))
-            self.alerts_sent = 0
+                                                        rule['num_hits'], num_matches, rule['alerts_sent']))
+            rule['alerts_sent'] = 0
 
             if next_run < datetime.datetime.utcnow():
                 # We were processing for longer than our refresh interval
@@ -982,7 +982,7 @@ class ElastAlerter():
                 self.handle_error('Error while running alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
                 alert_exception = str(e)
             else:
-                self.alerts_sent += 1
+                rule['alerts_sent'] += 1
                 alert_sent = True
 
         # Write the alert(s) to ES

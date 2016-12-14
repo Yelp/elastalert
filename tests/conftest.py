@@ -57,7 +57,8 @@ def ea():
               'ts_to_dt': ts_to_dt,
               'dt_to_ts': dt_to_ts,
               '_source_enabled': True,
-              'num_hits': 0}]
+              'num_hits': 0,
+              'alerts_sent': 0}]
     conf = {'rules_folder': 'rules',
             'run_every': datetime.timedelta(minutes=10),
             'buffer_time': datetime.timedelta(minutes=5),
