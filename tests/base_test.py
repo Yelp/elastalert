@@ -662,7 +662,7 @@ def test_query_segmenting(ea):
         mock_es_init.return_value = mock_es
         run_and_assert_segmented_queries(ea, START, END, ea.rules[0]['buffer_time'])
     # Assert that num_hits correctly includes the 1 hit per query
-    assert ea.num_hits == ea.current_es.search.call_count
+    assert ea.rules[0]['num_hits'] == ea.current_es.search.call_count
 
     # run_every segments with count queries
     ea.rules[0]['use_count_query'] = True

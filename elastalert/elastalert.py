@@ -105,7 +105,6 @@ class ElastAlerter():
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.num_workers = self.conf.get('num_workers', 1)
         self.alerts_sent = 0
-        self.num_hits = 0
         self.current_es = None
         self.current_es_addr = None
         self.buffer_time = self.conf['buffer_time']
@@ -261,9 +260,9 @@ class ElastAlerter():
             return None
 
         hits = res['hits']['hits']
-        self.num_hits += len(hits)
+        rule['num_hits'] += len(hits)
         lt = rule.get('use_local_time')
-        status_log = "Queried rule %s from %s to %s: %s / %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), self.num_hits, len(hits))
+        status_log = "Queried rule %s from %s to %s: %s / %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), rule['num_hits'], len(hits))
         if self.total_hits > rule.get('max_query_size', self.max_query_size):
             elastalert_logger.info("%s (scrolling..)" % status_log)
             rule['scroll_id'] = res['_scroll_id']
@@ -299,7 +298,7 @@ class ElastAlerter():
             self.handle_error('Error running count query: %s' % (e), {'rule': rule['name']})
             return None
 
-        self.num_hits += res['count']
+        rule['num_hits'] += res['count']
         lt = rule.get('use_local_time')
         elastalert_logger.info("Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), res['count']))
         return {endtime: res['count']}
@@ -329,7 +328,7 @@ class ElastAlerter():
         if 'aggregations' not in res:
             return {}
         buckets = res['aggregations']['filtered']['counts']['buckets']
-        self.num_hits += len(buckets)
+        rule['num_hits'] += len(buckets)
         lt = rule.get('use_local_time')
         elastalert_logger.info('Queried rule %s from %s to %s: %s buckets' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(buckets)))
         return {endtime: buckets}
@@ -395,7 +394,7 @@ class ElastAlerter():
                 rule_inst.add_data(data)
 
         try:
-            if rule.get('scroll_id') and self.num_hits < self.total_hits:
+            if rule.get('scroll_id') and rule['num_hits'] < self.total_hits:
                 self.run_query(rule, start, end, scroll=True)
         except RuntimeError:
             # It's possible to scroll far enough to hit max recursive depth
@@ -522,7 +521,7 @@ class ElastAlerter():
             return 0
 
         # Run the rule. If querying over a large time period, split it up into segments
-        self.num_hits = 0
+        rule['num_hits'] = 0
         segment_size = self.get_segment_size(rule)
 
         while endtime - rule['starttime'] > segment_size:
@@ -583,7 +582,7 @@ class ElastAlerter():
                 'endtime': endtime,
                 'starttime': rule['original_starttime'],
                 'matches': num_matches,
-                'hits': self.num_hits,
+                'hits': rule['num_hits'],
                 '@timestamp': ts_now(),
                 'time_taken': time_taken}
         self.writeback('elastalert_status', body)
@@ -603,7 +602,8 @@ class ElastAlerter():
         blank_rule = {'agg_matches': [],
                       'aggregate_alert_time': {},
                       'current_aggregate_id': {},
-                      'processed_hits': {}}
+                      'processed_hits': {},
+                      'num_hits': 0}
         rule = blank_rule
 
         # Set rule to either a blank template or existing rule with same name
@@ -743,7 +743,7 @@ class ElastAlerter():
             old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
             elastalert_logger.info("Ran %s from %s to %s: %s query hits, %s matches,"
                                    " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                        self.num_hits, num_matches, self.alerts_sent))
+                                                        rule['num_hits'], num_matches, self.alerts_sent))
             self.alerts_sent = 0
 
             if next_run < datetime.datetime.utcnow():
@@ -1357,7 +1357,7 @@ class ElastAlerter():
                 buckets = hits_terms.values()[0]
 
                 # get_hits_terms adds to num_hits, but we don't want to count these
-                self.num_hits -= len(buckets)
+                rule['num_hits'] -= len(buckets)
                 terms = {}
                 for bucket in buckets:
                     terms[bucket['key']] = bucket['doc_count']
