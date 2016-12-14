@@ -4,7 +4,7 @@ import logging
 
 import dateutil.parser
 import dateutil.tz
-from auth import Auth
+from .auth import Auth
 from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 

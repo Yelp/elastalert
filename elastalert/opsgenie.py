@@ -2,10 +2,10 @@
 import json
 import logging
 import requests
-from alerts import Alerter
-from alerts import BasicMatchString
-from util import EAException
-from util import elastalert_logger
+from .alerts import Alerter
+from .alerts import BasicMatchString
+from .util import EAException
+from .util import elastalert_logger
 
 
 class OpsGenieAlerter(Alerter):
@@ -27,7 +27,7 @@ class OpsGenieAlerter(Alerter):
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
+            body += str(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
