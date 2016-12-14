@@ -910,6 +910,9 @@ class ElastAlerter():
         :param matches: A list of matches.
         :param rule: A rule configuration.
         """
+        if not matches:
+            return
+
         if alert_time is None:
             alert_time = ts_now()
 
