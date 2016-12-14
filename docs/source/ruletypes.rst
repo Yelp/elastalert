@@ -1296,6 +1296,22 @@ If there's no open (i.e. unresolved) incident with this key, a new one will be c
 
 ``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
 
+Twilio
+~~~~~~
+
+Twilio alerter will trigger an incident to a mobile phone as sms from your twilio phone number. Alert name will arrive as sms once this option is chosen.
+
+The alerter requires the following option:
+
+``twilio_accout_sid``: This is sid of your twilio account.
+
+``twilio_auth_token``: Auth token assosiated with your twilio account.
+
+``twilio_to_number``: The phone number where you would like send the notification.
+
+``twilio_from_number``: Your twilio phone number from which message will be sent.
+
+
 VictorOps
 ~~~~~~~~~
 

@@ -37,6 +37,7 @@ setup(
         'croniter',
         'configparser',
         'aws-requests-auth',
-        'texttable'
+        'texttable',
+        'twilio'
     ]
 )
