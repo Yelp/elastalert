@@ -1385,6 +1385,21 @@ Debug
 
 The debug alerter will log the alert information using the Python logger at the info level. It is logged into a Python Logger object with the name ``elastalert`` that can be easily accessed using the ``getLogger`` command.
 
+Stomp
+~~~~~
+
+This alert type will use the STOMP protocol in order to push a message to a broker like ActiveMQ or RabbitMQ. The message body is a JSON string containing the alert details.
+The default values will work with a pristine ActiveMQ installation.
+
+Optional:
+
+``stomp_hostname``: The STOMP host to use, defaults to localhost.
+``stomp_hostport``: The STOMP port to use, defaults to 61613.
+``stomp_login``: The STOMP login to use, defaults to admin.
+``stomp_password``: The STOMP password to use, defaults to admin.
+``stomp_destination``: The STOMP destination to use, defaults to /queue/ALERT
+
+The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
 
 Alerter
 ~~~~~~~
