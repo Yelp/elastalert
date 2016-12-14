@@ -601,9 +601,7 @@ class ElastAlerter():
         blank_rule = {'agg_matches': [],
                       'aggregate_alert_time': {},
                       'current_aggregate_id': {},
-                      'processed_hits': {},
-                      'num_hits': 0,
-                      'alerts_sent': 0}
+                      'processed_hits': {}}
         rule = blank_rule
 
         # Set rule to either a blank template or existing rule with same name

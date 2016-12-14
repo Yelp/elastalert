@@ -151,6 +151,8 @@ def load_options(rule, conf, args=None):
     rule.setdefault('scroll_keepalive', conf.get('scroll_keepalive'))
     rule.setdefault('es_conn_timeout', conf.get('es_conn_timeout'))
     rule.setdefault('description', "")
+    rule.setdefault('num_events', 0)
+    rule.setdefault('alerts_sent', 0)
 
     # Set Elasticsearch options from global config
     if 'es_url_prefix' in conf:
