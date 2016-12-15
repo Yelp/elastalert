@@ -112,6 +112,11 @@ oneOf:
       cardinality_field: {type: string}
       timeframe: *timeframe
 
+  - title: Metric Aggregation
+    required: [metric_agg_key,metric_agg_type]
+    properties:
+      type: {enum: [metric_aggregation]}
+      #timeframe: *timeframe
   - title: Custom Rule from Module
     properties:
       # custom rules include a period in the rule type
