@@ -1296,6 +1296,22 @@ If there's no open (i.e. unresolved) incident with this key, a new one will be c
 
 ``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
 
+Twilio
+~~~~~~
+
+Twilio alerter will trigger an incident to a mobile phone as sms from your twilio phone number. Alert name will arrive as sms once this option is chosen.
+
+The alerter requires the following option:
+
+``twilio_accout_sid``: This is sid of your twilio account.
+
+``twilio_auth_token``: Auth token assosiated with your twilio account.
+
+``twilio_to_number``: The phone number where you would like send the notification.
+
+``twilio_from_number``: Your twilio phone number from which message will be sent.
+
+
 VictorOps
 ~~~~~~~~~
 
@@ -1369,6 +1385,21 @@ Debug
 
 The debug alerter will log the alert information using the Python logger at the info level. It is logged into a Python Logger object with the name ``elastalert`` that can be easily accessed using the ``getLogger`` command.
 
+Stomp
+~~~~~
+
+This alert type will use the STOMP protocol in order to push a message to a broker like ActiveMQ or RabbitMQ. The message body is a JSON string containing the alert details.
+The default values will work with a pristine ActiveMQ installation.
+
+Optional:
+
+``stomp_hostname``: The STOMP host to use, defaults to localhost.
+``stomp_hostport``: The STOMP port to use, defaults to 61613.
+``stomp_login``: The STOMP login to use, defaults to admin.
+``stomp_password``: The STOMP password to use, defaults to admin.
+``stomp_destination``: The STOMP destination to use, defaults to /queue/ALERT
+
+The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
 
 Alerter
 ~~~~~~~

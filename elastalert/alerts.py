@@ -6,6 +6,8 @@ import logging
 import subprocess
 import sys
 import warnings
+import stomp
+
 from email.mime.text import MIMEText
 from email.utils import formatdate
 from smtplib import SMTP
@@ -21,6 +23,8 @@ from jira.exceptions import JIRAError
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from texttable import Texttable
+from twilio import TwilioRestException
+from twilio.rest import TwilioRestClient
 from util import EAException
 from util import elastalert_logger
 from util import lookup_es_key
@@ -277,6 +281,53 @@ class Alerter(object):
             raise EAException('Account file must have user and password fields')
         self.user = account_conf['user']
         self.password = account_conf['password']
+
+
+class StompAlerter(Alerter):
+    """ The stomp alerter publishes alerts via stomp to a broker. """
+    required_options = frozenset(['stomp_hostname', 'stomp_hostport', 'stomp_login', 'stomp_password'])
+
+    def alert(self, matches):
+
+        alerts = []
+
+        qk = self.rule.get('query_key', None)
+        fullmessage = {}
+        for match in matches:
+            if qk in match:
+                elastalert_logger.info(
+                    'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
+                alerts.append('1)Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
+                fullmessage['match'] = match[qk]
+            else:
+                elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
+                alerts.append(
+                    '2)Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field']))
+                )
+                fullmessage['match'] = lookup_es_key(match, self.rule['timestamp_field'])
+            elastalert_logger.info(unicode(BasicMatchString(self.rule, match)))
+
+        fullmessage['alerts'] = alerts
+        fullmessage['rule'] = self.rule['name']
+        fullmessage['matching'] = unicode(BasicMatchString(self.rule, match))
+        fullmessage['alertDate'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        fullmessage['body'] = self.create_alert_body(matches)
+
+        self.stomp_hostname = self.rule.get('stomp_hostname', 'localhost')
+        self.stomp_hostport = self.rule.get('stomp_hostport', '61613')
+        self.stomp_login = self.rule.get('stomp_login', 'admin')
+        self.stomp_password = self.rule.get('stomp_password', 'admin')
+        self.stomp_destination = self.rule.get('stomp_destination', '/queue/ALERT')
+
+        conn = stomp.Connection([(self.stomp_hostname, self.stomp_hostport)])
+
+        conn.start()
+        conn.connect(self.stomp_login, self.stomp_password)
+        conn.send(self.stomp_destination, json.dumps(fullmessage))
+        conn.disconnect()
+
+    def get_info(self):
+        return {'type': 'stomp'}
 
 
 class DebugAlerter(Alerter):
@@ -924,6 +975,34 @@ class PagerDutyAlerter(Alerter):
     def get_info(self):
         return {'type': 'pagerduty',
                 'pagerduty_client_name': self.pagerduty_client_name}
+
+
+class TwilioAlerter(Alerter):
+    required_options = frozenset(['twilio_accout_sid', 'twilio_auth_token', 'twilio_to_number', 'twilio_from_number'])
+
+    def __init__(self, rule):
+        super(TwilioAlerter, self).__init__(rule)
+        self.twilio_accout_sid = self.rule['twilio_accout_sid']
+        self.twilio_auth_token = self.rule['twilio_auth_token']
+        self.twilio_to_number = self.rule['twilio_to_number']
+        self.twilio_from_number = self.rule['twilio_from_number']
+
+    def alert(self, matches):
+        client = TwilioRestClient(self.twilio_accout_sid, self.twilio_auth_token)
+
+        try:
+            client.messages.create(body=self.rule['name'],
+                                   to=self.twilio_to_number,
+                                   from_=self.twilio_to_number)
+
+        except TwilioRestException as e:
+            raise EAException("Error posting to twilio: %s" % e)
+
+        elastalert_logger.info("Trigger sent to Twilio")
+
+    def get_info(self):
+        return {'type': 'twilio',
+                'twilio_client_name': self.twilio_from_number}
 
 
 class VictorOpsAlerter(Alerter):

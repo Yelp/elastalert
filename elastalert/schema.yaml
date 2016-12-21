@@ -218,6 +218,12 @@ properties:
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
+  
+  ### Twilio
+  twilio_accout_sid: {type: string}
+  twilio_auth_token: {type: string}
+  twilio_to_number: {type: string}
+  twilio_from_number: {type: string}
 
   ### VictorOps
   victorops_api_key: {type: string}
