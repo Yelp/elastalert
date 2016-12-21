@@ -1045,6 +1045,66 @@ class GitterAlerter(Alerter):
         return {'type': 'gitter',
                 'gitter_webhook_url': self.gitter_webhook_url}
 
+class AlertaAlerter(Alerter):
+    """ Creates a Gitter activity message for each alert """
+    required_options = frozenset(['alerta_webhook_url', 'alerta_severity', 'alerta_environment', 'alerta_resource'])
+
+    def __init__(self, rule):
+        super(AlertaAlerter, self).__init__(rule)
+        self.alerta_url = self.rule.get('alerta_webhook_url', 'http://localhost:8080')
+        self.alerta_severity = self.rule.get('alerta_severity', 'major')
+        self.alerta_resource = self.rule.get('alerta_resource', 'elastalert')
+        self.alerta_environment = self.rule.get('alerta_environment', 'Production')
+        self.alerta_origin = self.rule.get('alerta_origin', 'elastalert')
+        
+        
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+        
+        qk = self.rule.get('query_key', None)
+        
+        # post to Alerta
+        headers = {'Authorization': 'Key DypDblPowe7xeoNZb7_nEN9McFrfmRSgszjZmiod','content-type': 'application/json'}
+        
+        # set https proxy, if it was provided
+        payload = {
+            'resource': self.alerta_resource,
+            'event': self.create_default_title(matches),
+            'origin': self.alerta_origin,
+            "severity": self.alerta_severity,
+            "text": self.rule['type'].get_match_str(matches[0]),
+            "environment": self.alerta_environment,
+            "severity": self.alerta_severity,
+            "group": "Misc",
+            "value": len(matches),
+            "service": [
+                "elastalert"
+            ],
+             "rawData": self.create_alert_body(matches),
+             "random": "random"
+        }
+
+        try:
+            response = requests.post(self.alerta_url + '/alert', json.dumps(payload, cls=DateTimeEncoder), headers=headers)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Alerta: %s" % e)
+        elastalert_logger.info("Alert sent to Alerta")
+
+    def create_default_title(self, matches):
+        title = '%s' % (self.rule['name'])
+
+        # If the rule has a query_key, add that value plus timestamp to subject
+        if 'query_key' in self.rule:
+            qk = matches[0].get(self.rule['query_key'])
+            if qk:
+                title += '.%s' % (qk)
+
+        return title
+        
+    def get_info(self):
+        return {'type': 'alerta',
+                'alerta_url': self.alerta_url}
 
 class ServiceNowAlerter(Alerter):
     """ Creates a ServiceNow alert """

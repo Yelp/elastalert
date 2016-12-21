@@ -57,7 +57,8 @@ alerts_mapping = {
     'victorops': alerts.VictorOpsAlerter,
     'telegram': alerts.TelegramAlerter,
     'gitter': alerts.GitterAlerter,
-    'servicenow': alerts.ServiceNowAlerter
+    'servicenow': alerts.ServiceNowAlerter,
+    'alerta': alerts.AlertaAlerter
 }
 # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
 # For example, jira goes before email so the ticket # will be added to the resulting email.
