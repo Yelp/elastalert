@@ -1401,6 +1401,32 @@ Optional:
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
 
+Alerta
+~~~~~~
+
+Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint. 
+The default values will work with a local Alerta server installation with authorization disabled.
+
+Optional:
+
+``alerta_server_url``: This is the url of the /alert API endpoint for Alerta server. Defaults to http://localhost:8080/alert.
+
+``alerta_api_key``: This is the api key for alerta server. Default behaviour is that no Authorization header sent with the request.
+
+``alerta_resource``: The resource name of the generated alert. Defaults to elastalert.
+
+``alerta_service``: A service tag for the generated alert. Defaults to elastalert.
+
+``alerta_severity``: The severity level of the alert. Defaults to warning.
+
+``alerta_origin``: The origin field for the generated alert. Defaults to elastalert.
+
+``alerta_environment``: The environment field for the generated alert. Defaults to Production.
+
+``alerta_group``: The group field for the generated alert. Defaults to Misc.
+
+``alerta_use_qk_as_resource``: If true will override alerta_resource with the query key value if one is present.
+
 Alerter
 ~~~~~~~
 
