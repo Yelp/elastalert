@@ -1166,12 +1166,14 @@ class ServiceNowAlerter(Alerter):
                 'self.servicenow_rest_url': self.servicenow_rest_url}
                 
 class AlertaAlerter(Alerter):
-    """ Creates a Gitter activity message for each alert """
-    required_options = frozenset(['alerta_webhook_url', 'alerta_severity', 'alerta_environment', 'alerta_resource'])
+    """ Creates an Alerta event for each alert """
+    required_options = frozenset(['alerta_host', 'alerta_port'])
 
     def __init__(self, rule):
         super(AlertaAlerter, self).__init__(rule)
-        self.alerta_server_url = self.rule.get('alerta_server_url', 'http://localhost:8080/alert')
+        self.alerta_host = self.rule.get('alerta_host')
+        self.alerta_port = self.rule.get('alerta_port')
+        self.alerta_url = 'http://%s:%s/alert' % (self.alerta_host,self.alerta_port)
         self.alerta_severity = self.rule.get('alerta_severity', 'warning')
         self.alerta_resource = self.rule.get('alerta_resource', 'elastalert')
         self.alerta_environment = self.rule.get('alerta_environment', 'Production')
@@ -1182,7 +1184,7 @@ class AlertaAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
         
-        if  self.rule.get('use_qk_as_resource') and 'query_key' in self.rule and self.rule['query_key'] in matches[0]
+        if  self.rule.get('use_qk_as_resource') and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
             resource = matches[0][self.rule['query_key']]
         else:
             resource = self.alerta_resource
@@ -1230,4 +1232,4 @@ class AlertaAlerter(Alerter):
         
     def get_info(self):
         return {'type': 'alerta',
-                'alerta_server_url': self.alerta_server_url}
+                'alerta_url': self.alerta_url}

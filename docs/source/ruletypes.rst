@@ -1406,12 +1406,16 @@ Alerta
 
 Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint. 
 The default values will work with a local Alerta server installation with authorization disabled.
+See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on alerta alert format.
+Required:
+
+``alerta_host``: API server hostname. 
+
+``alerta_port``: API server port. 
 
 Optional:
 
-``alerta_server_url``: This is the url of the /alert API endpoint for Alerta server. Defaults to http://localhost:8080/alert.
-
-``alerta_api_key``: This is the api key for alerta server. Default behaviour is that no Authorization header sent with the request.
+``alerta_api_key``: This is the api key for alerta server if required. Default behaviour is that no Authorization header sent with the request.
 
 ``alerta_resource``: The resource name of the generated alert. Defaults to elastalert.
 
@@ -1425,7 +1429,7 @@ Optional:
 
 ``alerta_group``: The group field for the generated alert. Defaults to Misc.
 
-``alerta_use_qk_as_resource``: If true will override alerta_resource with the query key value if one is present.
+``alerta_use_qk_as_resource``: If true and query_key is present this will override alerta_resource field with the query key value (Can be useful if query_key is a hostname).
 
 Alerter
 ~~~~~~~
