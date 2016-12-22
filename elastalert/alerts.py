@@ -1124,6 +1124,7 @@ class GitterAlerter(Alerter):
         return {'type': 'gitter',
                 'gitter_webhook_url': self.gitter_webhook_url}
 
+
 class ServiceNowAlerter(Alerter):
     """ Creates a ServiceNow alert """
     required_options = set(['username', 'password', 'servicenow_rest_url', 'short_description', 'comments', 'assignment_group', 'category', 'subcategory', 'cmdb_ci', 'caller_id'])
@@ -1164,7 +1165,8 @@ class ServiceNowAlerter(Alerter):
     def get_info(self):
         return {'type': 'ServiceNow',
                 'self.servicenow_rest_url': self.servicenow_rest_url}
-                
+
+
 class AlertaAlerter(Alerter):
     """ Creates an Alerta event for each alert """
     required_options = frozenset(['alerta_host', 'alerta_port'])
@@ -1173,28 +1175,26 @@ class AlertaAlerter(Alerter):
         super(AlertaAlerter, self).__init__(rule)
         self.alerta_host = self.rule.get('alerta_host')
         self.alerta_port = self.rule.get('alerta_port')
-        self.alerta_url = 'http://%s:%s/alert' % (self.alerta_host,self.alerta_port)
+        self.alerta_url = 'http://%s:%s/alert' % (self.alerta_host, self.alerta_port)
         self.alerta_severity = self.rule.get('alerta_severity', 'warning')
         self.alerta_resource = self.rule.get('alerta_resource', 'elastalert')
         self.alerta_environment = self.rule.get('alerta_environment', 'Production')
         self.alerta_origin = self.rule.get('alerta_origin', 'elastalert')
         self.alerta_group = self.rule.get('alerta_group', 'Misc')
         self.alerta_service = self.rule.get('alerta_service', 'elastalert')
-          
+
     def alert(self, matches):
-        body = self.create_alert_body(matches)
-        
         if  self.rule.get('use_qk_as_resource') and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
             resource = matches[0][self.rule['query_key']]
         else:
             resource = self.alerta_resource
-            
+
         # post to Alerta
         headers = {'content-type': 'application/json'}
-        
+
         if 'alerta_api_key' in self.rule:
             headers['Authorization'] = 'Key %s' % (self.rule['alerta_api_key'])
-        
+
         # set https proxy, if it was provided
         payload = {
             'resource': resource,
@@ -1209,7 +1209,7 @@ class AlertaAlerter(Alerter):
             "service": [
                 self.alerta_service
             ],
-             "rawData": self.create_alert_body(matches)
+            "rawData": self.create_alert_body(matches)
         }
 
         try:
@@ -1229,7 +1229,7 @@ class AlertaAlerter(Alerter):
                 title += '.%s' % (qk)
 
         return title
-        
+
     def get_info(self):
         return {'type': 'alerta',
                 'alerta_url': self.alerta_url}
