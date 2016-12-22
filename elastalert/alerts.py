@@ -1184,7 +1184,7 @@ class AlertaAlerter(Alerter):
         self.alerta_service = self.rule.get('alerta_service', 'elastalert')
 
     def alert(self, matches):
-        if  self.rule.get('use_qk_as_resource') and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
+        if self.rule.get('use_qk_as_resource') and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
             resource = matches[0][self.rule['query_key']]
         else:
             resource = self.alerta_resource
