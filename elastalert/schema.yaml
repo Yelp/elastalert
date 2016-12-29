@@ -160,6 +160,7 @@ properties:
   use_local_time: {type: boolean}
   match_enhancements: {type: array, items: {type: string}}
   query_key: *arrayOfString
+  replace_dots_in_field_names: {type: boolean}
 
   # Alert Content
   alert_text: {type: string} # Python format string
@@ -218,7 +219,7 @@ properties:
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
-  
+
   ### Twilio
   twilio_accout_sid: {type: string}
   twilio_auth_token: {type: string}
