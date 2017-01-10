@@ -39,6 +39,7 @@ from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
+from util import replace_dots_in_field_names
 
 
 class ElastAlerter():
@@ -111,6 +112,7 @@ class ElastAlerter():
         self.rule_hashes = get_rule_hashes(self.conf, self.args.rule)
         self.starttime = self.args.start
         self.disabled_rules = []
+        self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
 
         self.writeback_es = elasticsearch_client(self.conf)
 
@@ -1006,20 +1008,28 @@ class ElastAlerter():
         return body
 
     def writeback(self, doc_type, body):
-        # Convert any datetime objects to timestamps
-        for key in body.keys():
-            if isinstance(body[key], datetime.datetime):
-                body[key] = dt_to_ts(body[key])
+        # ES 2.0 - 2.3 does not support dots in field names.
+        if self.replace_dots_in_field_names:
+            writeback_body = replace_dots_in_field_names(body)
+        else:
+            writeback_body = body
+
+        for key in writeback_body.keys():
+            # Convert any datetime objects to timestamps
+            if isinstance(writeback_body[key], datetime.datetime):
+                writeback_body[key] = dt_to_ts(writeback_body[key])
+
         if self.debug:
-            elastalert_logger.info("Skipping writing to ES: %s" % (body))
+            elastalert_logger.info("Skipping writing to ES: %s" % (writeback_body))
             return None
 
-        if '@timestamp' not in body:
-            body['@timestamp'] = dt_to_ts(ts_now())
+        if '@timestamp' not in writeback_body:
+            writeback_body['@timestamp'] = dt_to_ts(ts_now())
+
         if self.writeback_es:
             try:
                 res = self.writeback_es.create(index=self.writeback_index,
-                                               doc_type=doc_type, body=body)
+                                               doc_type=doc_type, body=writeback_body)
                 return res
             except ElasticsearchException as e:
                 logging.exception("Error writing alert info to Elasticsearch: %s" % (e))

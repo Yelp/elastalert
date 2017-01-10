@@ -170,6 +170,9 @@ unless overwritten in the rule config. The default is "localhost".
 
 ``boto_profile``: Boto profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
 
+``replace_dots_in_field_names``: If ``True``, ElastAlert replaces any dots in field names with an underscore before writing documents to Elasticsearch.
+The default value is ``False``. Elasticsearch 2.0 - 2.3 does not support dots in field names.
+
 .. _runningelastalert:
 
 Running ElastAlert
