@@ -33,13 +33,13 @@ from util import elasticsearch_client
 from util import format_index
 from util import lookup_es_key
 from util import pretty_ts
+from util import replace_dots_in_field_names
 from util import seconds
 from util import set_es_key
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
-from util import replace_dots_in_field_names
 
 
 class ElastAlerter():
@@ -539,6 +539,7 @@ class ElastAlerter():
         num_matches = len(rule['type'].matches)
         while rule['type'].matches:
             match = rule['type'].matches.pop(0)
+            match['num_hits'] = self.num_hits
 
             # If realert is set, silence the rule for that duration
             # Silence is cached by query_key, if it exists
