@@ -38,6 +38,7 @@ setup(
         'configparser',
         'aws-requests-auth',
         'texttable',
-        'twilio'
+        'twilio',
+        'stomp.py'
     ]
 )
