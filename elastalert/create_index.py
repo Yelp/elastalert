@@ -120,7 +120,7 @@ def main():
         print('Index ' + index + ' already exists. Skipping index creation.')
         return None
 
-    es.indices.index(index)
+    es.indices.create(index)
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
     es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
