@@ -236,7 +236,7 @@ def test_match_with_module(ea):
     mod.process = mock.Mock()
     ea.rules[0]['match_enhancements'] = [mod]
     test_match(ea)
-    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0})
+    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
 
 
 def test_match_with_module_with_agg(ea):
@@ -264,7 +264,7 @@ def test_match_with_enhancements_first(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         with mock.patch.object(ea, 'add_aggregated_alert') as add_alert:
             ea.run_rule(ea.rules[0], END, START)
-    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0})
+    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
     assert add_alert.call_count == 1
 
     # Assert that dropmatchexception behaves properly
@@ -273,7 +273,7 @@ def test_match_with_enhancements_first(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         with mock.patch.object(ea, 'add_aggregated_alert') as add_alert:
             ea.run_rule(ea.rules[0], END, START)
-    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0})
+    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
     assert add_alert.call_count == 0
 
 
@@ -374,7 +374,7 @@ def test_agg_no_writeback_connectivity(ea):
     hits = generate_hits([hit1, hit2, hit3])
     ea.current_es.search.return_value = hits
     ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
-    ea.rules[0]['type'].matches = [{'@timestamp': hit1, 'num_hits': 3},
+    ea.rules[0]['type'].matches = [{'@timestamp': hit1},
                                    {'@timestamp': hit2},
                                    {'@timestamp': hit3}]
     ea.writeback_es.create.side_effect = elasticsearch.exceptions.ElasticsearchException('Nope')
@@ -382,9 +382,9 @@ def test_agg_no_writeback_connectivity(ea):
         with mock.patch.object(ea, 'find_pending_aggregate_alert', return_value=None):
             ea.run_rule(ea.rules[0], END, START)
 
-    assert ea.rules[0]['agg_matches'] == [{'@timestamp': hit1, 'num_hits': 0},
-                                          {'@timestamp': hit2, 'num_hits': 0},
-                                          {'@timestamp': hit3, 'num_hits': 0}]
+    assert ea.rules[0]['agg_matches'] == [{'@timestamp': hit1, 'num_hits': 0, 'num_matches': 3},
+                                          {'@timestamp': hit2, 'num_hits': 0, 'num_matches': 3},
+                                          {'@timestamp': hit3, 'num_hits': 0, 'num_matches': 3}]
 
     ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
     ea.add_aggregated_alert = mock.Mock()
@@ -392,9 +392,9 @@ def test_agg_no_writeback_connectivity(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         ea.run_rule(ea.rules[0], END, START)
 
-    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit1, 'num_hits': 0}, ea.rules[0])
-    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit2, 'num_hits': 0}, ea.rules[0])
-    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit3, 'num_hits': 0}, ea.rules[0])
+    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit1, 'num_hits': 0, 'num_matches': 3}, ea.rules[0])
+    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit2, 'num_hits': 0, 'num_matches': 3}, ea.rules[0])
+    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit3, 'num_hits': 0, 'num_matches': 3}, ea.rules[0])
 
 
 def test_agg_with_aggregation_key(ea):
