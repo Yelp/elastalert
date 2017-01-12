@@ -586,6 +586,8 @@ class JiraAlerter(Alerter):
                     elif array_items == 'number':
                         self.jira_args[arg_name] = [int(v) for v in value]
                     # Also attempt to handle arrays of complex types that have to be passed as objects with an identifier 'key'
+                    elif array_items == 'option':
+                        self.jira_args[arg_name] = [{'value': v} for v in value]
                     else:
                         # Try setting it as an object, using 'name' as the key
                         # This may not work, as the key might actually be 'key', 'id', 'value', or something else
@@ -604,6 +606,8 @@ class JiraAlerter(Alerter):
                     # Number type
                     elif arg_type == 'number':
                         self.jira_args[arg_name] = int(value)
+                    elif arg_type == 'option':
+                        self.jira_args[arg_name] = {'value': value}
                     # Complex type
                     else:
                         self.jira_args[arg_name] = {'name': value}
