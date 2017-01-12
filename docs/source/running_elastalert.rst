@@ -14,6 +14,10 @@ Requirements
 Downloading and Configuring
 ---------------------------
 
+### Install
+
+#### from git
+
 First, clone the ElastAlert repository::
 
     $ git clone https://github.com/Yelp/elastalert.git
@@ -22,6 +26,14 @@ Install the module::
 
     $ python setup.py install
     $ pip install -r requirements.txt
+
+#### from pip
+
+Install the module using pip::
+
+    $ pip install elastalert
+
+### Configure
 
 Next, open up config.yaml.example. In it, you will find several configuration options. ElastAlert may be run without changing any of these settings.
 
