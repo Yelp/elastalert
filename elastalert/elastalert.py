@@ -220,6 +220,9 @@ class ElastAlerter():
 
             # Convert the timestamp to a datetime
             ts = lookup_es_key(hit['_source'], rule['timestamp_field'])
+            if not ts and not rule["_source_enabled"]:
+                raise EAException("Error: No timestamp was found for hit. '_source_enabled' is set to false, check your mappings for stored fields") 
+                
             set_es_key(hit['_source'], rule['timestamp_field'], rule['ts_to_dt'](ts))
             set_es_key(hit, rule['timestamp_field'], lookup_es_key(hit['_source'], rule['timestamp_field']))
 
@@ -252,7 +255,10 @@ class ElastAlerter():
         extra_args = {'_source_include': rule['include']}
         scroll_keepalive = rule.get('scroll_keepalive', self.scroll_keepalive)
         if not rule.get('_source_enabled'):
-            query['fields'] = rule['include']
+            if self.five:
+                query['stored_fields'] = rule['include']
+            else:
+                query['fields'] = rule['include']
             extra_args = {}
 
         try:
