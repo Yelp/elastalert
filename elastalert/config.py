@@ -286,6 +286,9 @@ def load_modules(rule, args=None):
 
 def get_file_paths(conf, use_rule=None):
     # Passing a filename directly can bypass rules_folder and .yaml checks
+
+    isyaml = lambda filename: filename.endswith('.yaml') or filename.endswith('.yml')
+
     if use_rule and os.path.isfile(use_rule):
         return [use_rule]
     rule_folder = conf['rules_folder']
@@ -295,12 +298,12 @@ def get_file_paths(conf, use_rule=None):
             for filename in files:
                 if use_rule and use_rule != filename:
                     continue
-                if filename.endswith('.yaml'):
+                if isyaml(filename):
                     rule_files.append(os.path.join(root, filename))
     else:
         for filename in os.listdir(rule_folder):
             fullpath = os.path.join(rule_folder, filename)
-            if os.path.isfile(fullpath) and filename.endswith('.yaml'):
+            if os.path.isfile(fullpath) and isyaml(filename):
                 rule_files.append(fullpath)
     return rule_files
 
