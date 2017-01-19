@@ -870,10 +870,14 @@ This rule requires one additional option:
 
 ``fields``: A list of fields to monitor for new terms. ``query_key`` will be used if ``fields`` is not set. Each entry in the
 list of fields can itself be a list.  If a field entry is provided as a list, it will be interpreted as a set of fields
-that compose a composite key used for the ElasticSearch query.  ``Note: the composite fields may only refer to primitive
-types, otherwise the initial ElasticSearch query will not properly return the aggregation results, thus causing alerts
-to fire every time the ElastAlert service initially launches with the rule. A warning will be logged to the console if
-this scenario is encountered. However, future alerts will actually work as expected after the initial flurry.``
+that compose a composite key used for the ElasticSearch query.
+
+.. note::
+
+   The composite fields may only refer to primitive types, otherwise the initial ElasticSearch query will not properly return
+   the aggregation results, thus causing alerts to fire every time the ElastAlert service initially launches with the rule.
+   A warning will be logged to the console if this scenario is encountered. However, future alerts will actually work as
+   expected after the initial flurry.
 
 Optional:
 
