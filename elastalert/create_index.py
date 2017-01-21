@@ -33,7 +33,7 @@ def main():
     parser.add_argument('--timeout', default=60, help='Elasticsearch request timeout')
     parser.add_argument('--config', default='config.yml', help='Global config file (default: config.yaml)')
     args = parser.parse_args()
-       
+
     if os.path.isfile('../config.yaml'):
         filename = '../config.yaml'
     elif os.path.isfile(args.config):
