@@ -31,7 +31,7 @@ def main():
     parser.add_argument('--boto-profile', default=None, help='Boto profile to use for signing requests')
     parser.add_argument('--aws-region', default=None, help='AWS Region to use for signing requests')
     parser.add_argument('--timeout', default=60, help='Elasticsearch request timeout')
-    parser.add_argument('--config', default='config.yml', help='Global config file (default: config.yaml)')
+    parser.add_argument('--config', default='config.yaml', help='Global config file (default: config.yaml)')
     args = parser.parse_args()
 
     if os.path.isfile('../config.yaml'):
