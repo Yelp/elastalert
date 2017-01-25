@@ -112,11 +112,8 @@ class BlacklistRule(CompareRule):
 
     def generate_query(self):
         if self.rules.get('key_indexed', False):
-            query = {'bool': {
-                                'should': [],
-                                'minimum_should_match': 1
-                             }
-                    }
+            query = {'bool': {'should': [],
+                              'minimum_should_match': 1}}
 
             for blacklist_item in self.rules['blacklist']:
                 should = {'match': {self.rules['compare_key']: blacklist_item}}
@@ -139,10 +136,7 @@ class WhitelistRule(CompareRule):
 
     def generate_query(self):
         if self.rules.get('key_indexed', False):
-            query = {'bool': {
-                                'must_not': [],
-                             }
-                    }
+            query = {'bool': {'must_not': []}}
 
             for whitelist_item in self.rules['whitelist']:
                 must_not = {'match': {self.rules['compare_key']: whitelist_item}}
