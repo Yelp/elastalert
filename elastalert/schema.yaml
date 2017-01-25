@@ -40,6 +40,7 @@ oneOf:
       type: {enum: [blacklist]}
       compare_key: {type: string}
       blacklist: {type: array, items: {type: string}}
+      key_indexed: {type: boolean}
 
   - title: Whitelist
     required: [whitelist, compare_key, ignore_null]
@@ -48,6 +49,7 @@ oneOf:
       compare_key: {type: string}
       whitelist: {type: array, items: {type: string}}
       ignore_null: {type: boolean}
+      key_indexed: {type: boolean}
 
   - title: Change
     required: [query_key, compare_key, ignore_null]

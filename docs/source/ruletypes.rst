@@ -108,6 +108,8 @@ Rule Configuration Cheat Sheet
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``ignore_null`` (boolean, no default)              |        |           |   Req     |  Req   |           |       |          |        |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``key_indexed`` (boolean, default False)           |        |    Opt    |   Opt     |        |           |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``query_key`` (string, no default)                 |   Opt  |           |           |   Req  |    Opt    |  Opt  |   Opt    |  Req   |  Opt      |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``aggregation_key`` (string, no default)           |   Opt  |           |           |        |           |       |          |        |           |
@@ -637,6 +639,9 @@ This rule requires two additional options:
 
 ``blacklist``: A list of blacklisted values. The ``compare_key`` term must be equal to one of these values for it to match.
 
+``key_indexed``: If true, Elastalert will craft an ElasticSearch query using the provided blacklist to only return documents that match.
+This reduces the amount of documents ElastAlert must verify locally, but requires the data being searched to be adequately indexed/analyzed.
+
 Whitelist
 ~~~~~~~~~
 
@@ -650,6 +655,9 @@ This rule requires three additional options:
 ``ignore_null``: If true, events without a ``compare_key`` field will not match.
 
 ``whitelist``: A list of whitelisted values. The ``compare_key`` term must be in this list or else it will match.
+
+``key_indexed``: If true, Elastalert will craft an ElasticSearch query using the provided whitelist to only return documents that do not match.
+This reduces the amount of documents ElastAlert must verify locally, but requires the data being searched to be adequately indexed/analyzed.
 
 Change
 ~~~~~~

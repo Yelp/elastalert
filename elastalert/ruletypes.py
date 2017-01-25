@@ -83,6 +83,13 @@ class RuleType(object):
         :param terms: A list of buckets with a key, corresponding to query_key, and the count """
         raise NotImplementedError()
 
+    def generate_query(self):
+        """ Gets called when forming ElasticSearch queries, expects a DSL 'query'.
+
+        Gives an opportunity to the rule to search for more specific things, enabling more efficient searches.
+        """
+        return None
+
 
 class CompareRule(RuleType):
     """ A base class for matching a specific term by passing it to a compare function """
@@ -103,6 +110,22 @@ class BlacklistRule(CompareRule):
     """ A CompareRule where the compare function checks a given key against a blacklist """
     required_options = frozenset(['compare_key', 'blacklist'])
 
+    def generate_query(self):
+        if self.rules.get('key_indexed', False):
+            query = {'bool': {
+                                'should': [],
+                                'minimum_should_match': 1
+                             }
+                    }
+
+            for blacklist_item in self.rules['blacklist']:
+                should = {'match': {self.rules['compare_key']: blacklist_item}}
+                query['bool']['should'].append(should)
+
+            return query
+        else:
+            return None
+
     def compare(self, event):
         term = lookup_es_key(event, self.rules['compare_key'])
         if term in self.rules['blacklist']:
@@ -113,6 +136,21 @@ class BlacklistRule(CompareRule):
 class WhitelistRule(CompareRule):
     """ A CompareRule where the compare function checks a given term against a whitelist """
     required_options = frozenset(['compare_key', 'whitelist', 'ignore_null'])
+
+    def generate_query(self):
+        if self.rules.get('key_indexed', False):
+            query = {'bool': {
+                                'must_not': [],
+                             }
+                    }
+
+            for whitelist_item in self.rules['whitelist']:
+                must_not = {'match': {self.rules['compare_key']: whitelist_item}}
+                query['bool']['must_not'].append(must_not)
+
+            return query
+        else:
+            return None
 
     def compare(self, event):
         term = lookup_es_key(event, self.rules['compare_key'])
