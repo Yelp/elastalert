@@ -290,7 +290,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A dictionary mapping timestamps to number of hits for that time period.
         """
-        query = self.get_query(rule['type'], rule['filter'], rule['query'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
+        query = self.get_query(rule['type'], rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'])
 
         try:
             res = self.current_es.count(index=index, doc_type=rule['doc_type'], body=query, ignore_unavailable=True)
