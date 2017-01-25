@@ -126,7 +126,7 @@ class MockElastAlerter(object):
                 count += 1
         return {end: count}
 
-    def mock_hits(self, rule, start, end, index):
+    def mock_hits(self, rule, start, end, index, scroll=False):
         """ Mocks the effects of get_hits using global data instead of Elasticsearch. """
         docs = []
         for doc in self.data:
@@ -146,8 +146,7 @@ class MockElastAlerter(object):
         resp = [{'_source': doc, '_id': doc['_id']} for doc in docs]
         for doc in resp:
             doc['_source'].pop('_id')
-        ElastAlerter.process_hits(rule, resp)
-        return resp
+        return ElastAlerter.process_hits(rule, resp)
 
     def mock_terms(self, rule, start, end, index, key, qk=None, size=None):
         """ Mocks the effects of get_hits_terms using global data instead of Elasticsearch. """
