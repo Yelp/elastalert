@@ -707,9 +707,9 @@ class CommandAlerter(Alerter):
         try:
             matche = matches[0]
             matchString = BasicMatchString(self.rule, matche)
-	        matche['_rule_text'] = unicode(matchString.get_rule_text())
-	
-	        command = [command_arg % matche for command_arg in self.rule['command']]
+            matche['_rule_text'] = unicode(matchString.get_rule_text())
+            
+            command = [command_arg % matche for command_arg in self.rule['command']]
             self.last_command = command
         except KeyError as e:
             raise EAException("Error formatting command: %s" % (e))
