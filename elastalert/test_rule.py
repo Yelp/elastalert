@@ -49,12 +49,14 @@ class MockElastAlerter(object):
         if args.schema_only:
             return []
 
+        load_modules(conf)
+
         # Set up Elasticsearch client and query
         es_client = elasticsearch_client(conf)
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()
         ts = conf.get('timestamp_field', '@timestamp')
-        query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts)
+        query = ElastAlerter.get_query(conf['type'], conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts)
         index = ElastAlerter.get_index(conf, start_time, end_time)
 
         # Get one document for schema
@@ -72,7 +74,7 @@ class MockElastAlerter(object):
         doc_type = res['hits']['hits'][0]['_type']
 
         # Get a count of all docs
-        count_query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts, sort=False)
+        count_query = ElastAlerter.get_query(conf['type'], conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts, sort=False)
         count_query = {'query': {'filtered': count_query}}
         try:
             res = es_client.count(index, doc_type=doc_type, body=count_query, ignore_unavailable=True)

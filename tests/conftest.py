@@ -29,6 +29,7 @@ class mock_ruletype(object):
         self.get_match_data = lambda x: x
         self.get_match_str = lambda x: "some stuff happened"
         self.garbage_collect = mock.Mock()
+        self.generate_query = mock.Mock(return_value=None)
 
 
 class mock_alert(object):
