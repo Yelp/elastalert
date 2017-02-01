@@ -652,11 +652,11 @@ class ElastAlerter():
 
         # In ES5, filters starting with 'query' should have the top wrapper removed
         if self.five:
-            for es_filter in new_rule.get('filters', []):
+            for es_filter in new_rule.get('filter', []):
                 if es_filter.get('query'):
                     new_filter = es_filter['query']
-                    new_rule['filters'].append(new_filter)
-                    new_rule['filters'].remove(es_filter)
+                    new_rule['filter'].append(new_filter)
+                    new_rule['filter'].remove(es_filter)
 
         return new_rule
 
