@@ -870,10 +870,14 @@ This rule requires one additional option:
 
 ``fields``: A list of fields to monitor for new terms. ``query_key`` will be used if ``fields`` is not set. Each entry in the
 list of fields can itself be a list.  If a field entry is provided as a list, it will be interpreted as a set of fields
-that compose a composite key used for the ElasticSearch query.  ``Note: the composite fields may only refer to primitive
-types, otherwise the initial ElasticSearch query will not properly return the aggregation results, thus causing alerts
-to fire every time the ElastAlert service initially launches with the rule. A warning will be logged to the console if
-this scenario is encountered. However, future alerts will actually work as expected after the initial flurry.``
+that compose a composite key used for the ElasticSearch query.
+
+.. note::
+
+   The composite fields may only refer to primitive types, otherwise the initial ElasticSearch query will not properly return
+   the aggregation results, thus causing alerts to fire every time the ElastAlert service initially launches with the rule.
+   A warning will be logged to the console if this scenario is encountered. However, future alerts will actually work as
+   expected after the initial flurry.
 
 Optional:
 
@@ -1017,17 +1021,23 @@ in the case of an aggregated alert, as a JSON array, to the stdin of the process
 
 This alert requires one option:
 
-``command``: A list of arguments to execute or a string to execute. If in list format, the first argument is the name of the program to execute. If passing a
-string, the command will be executed through the shell. The command string or args will be formatted using Python's % string format syntax with the
-match passed the format argument. This means that a field can be accessed with ``%(field_name)s``. In an aggregated alert, these fields will come
-from the first match.
+``command``: A list of arguments to execute or a string to execute. If in list format, the first argument is the name of the program to execute. If passed a
+string, the command is executed through the shell.
+
+Strings can be formatted using the old-style format (``%``) or the new-style format (``.format()``). When the old-style format is used, fields are accessed
+using ``%(field_name)s``. When the new-style format is used, fields are accessed using ``{match[field_name]}``. New-style formatting allows accessing nested
+fields (e.g., ``{match[field_1_name][field_2_name]}``).
+
+In an aggregated alert, these fields come from the first match.
 
 Optional:
+
+``new_style_string_format``: If True, arguments are formatted using ``.format()`` rather than ``%``. The default is False.
 
 ``pipe_match_json``: If true, the match will be converted to JSON and passed to stdin of the command. Note that this will cause ElastAlert to block
 until the command exits or sends an EOF to stdout.
 
-Example usage::
+Example usage using old-style format::
 
     alert:
       - command
@@ -1037,6 +1047,12 @@ Example usage::
 
     Executing commmands with untrusted data can make it vulnerable to shell injection! If you use formatted data in
     your command, it is highly recommended that you use a args list format instead of a shell string.
+
+Example usage using new-style format::
+
+    alert:
+      - command
+    command: ["/bin/send_alert", "--username", "{match[username]}"]
 
 
 Email
@@ -1296,6 +1312,22 @@ If there's no open (i.e. unresolved) incident with this key, a new one will be c
 
 ``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
 
+Twilio
+~~~~~~
+
+Twilio alerter will trigger an incident to a mobile phone as sms from your twilio phone number. Alert name will arrive as sms once this option is chosen.
+
+The alerter requires the following option:
+
+``twilio_accout_sid``: This is sid of your twilio account.
+
+``twilio_auth_token``: Auth token assosiated with your twilio account.
+
+``twilio_to_number``: The phone number where you would like send the notification.
+
+``twilio_from_number``: Your twilio phone number from which message will be sent.
+
+
 VictorOps
 ~~~~~~~~~
 
@@ -1369,6 +1401,21 @@ Debug
 
 The debug alerter will log the alert information using the Python logger at the info level. It is logged into a Python Logger object with the name ``elastalert`` that can be easily accessed using the ``getLogger`` command.
 
+Stomp
+~~~~~
+
+This alert type will use the STOMP protocol in order to push a message to a broker like ActiveMQ or RabbitMQ. The message body is a JSON string containing the alert details.
+The default values will work with a pristine ActiveMQ installation.
+
+Optional:
+
+``stomp_hostname``: The STOMP host to use, defaults to localhost.
+``stomp_hostport``: The STOMP port to use, defaults to 61613.
+``stomp_login``: The STOMP login to use, defaults to admin.
+``stomp_password``: The STOMP password to use, defaults to admin.
+``stomp_destination``: The STOMP destination to use, defaults to /queue/ALERT
+
+The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
 
 Alerter
 ~~~~~~~

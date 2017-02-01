@@ -33,6 +33,7 @@ from util import elasticsearch_client
 from util import format_index
 from util import lookup_es_key
 from util import pretty_ts
+from util import replace_dots_in_field_names
 from util import seconds
 from util import set_es_key
 from util import ts_add
@@ -111,6 +112,7 @@ class ElastAlerter():
         self.rule_hashes = get_rule_hashes(self.conf, self.args.rule)
         self.starttime = self.args.start
         self.disabled_rules = []
+        self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
 
         self.writeback_es = elasticsearch_client(self.conf)
         self.five = self.is_five()
@@ -559,6 +561,8 @@ class ElastAlerter():
         num_matches = len(rule['type'].matches)
         while rule['type'].matches:
             match = rule['type'].matches.pop(0)
+            match['num_hits'] = self.num_hits
+            match['num_matches'] = num_matches
 
             # If realert is set, silence the rule for that duration
             # Silence is cached by query_key, if it exists
@@ -786,7 +790,8 @@ class ElastAlerter():
                     # We were processing for longer than our refresh interval
                     # This can happen if --start was specified with a large time period
                     # or if we are running too slow to process events in real time.
-                    logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, endtime, self.run_every))
+                    logging.warning("Querying from %s to %s took longer than %s!" % (old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
+                                                                                     self.run_every))
 
             self.remove_old_events(rule)
 
@@ -1035,16 +1040,24 @@ class ElastAlerter():
         return body
 
     def writeback(self, doc_type, body):
-        # Convert any datetime objects to timestamps
-        for key in body.keys():
-            if isinstance(body[key], datetime.datetime):
-                body[key] = dt_to_ts(body[key])
+        # ES 2.0 - 2.3 does not support dots in field names.
+        if self.replace_dots_in_field_names:
+            writeback_body = replace_dots_in_field_names(body)
+        else:
+            writeback_body = body
+
+        for key in writeback_body.keys():
+            # Convert any datetime objects to timestamps
+            if isinstance(writeback_body[key], datetime.datetime):
+                writeback_body[key] = dt_to_ts(writeback_body[key])
+
         if self.debug:
-            elastalert_logger.info("Skipping writing to ES: %s" % (body))
+            elastalert_logger.info("Skipping writing to ES: %s" % (writeback_body))
             return None
 
-        if '@timestamp' not in body:
-            body['@timestamp'] = dt_to_ts(ts_now())
+        if '@timestamp' not in writeback_body:
+            writeback_body['@timestamp'] = dt_to_ts(ts_now())
+
         if self.writeback_es:
             try:
                 res = self.writeback_es.index(index=self.writeback_index,

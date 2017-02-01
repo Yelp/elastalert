@@ -48,12 +48,14 @@ alerts_mapping = {
     'email': alerts.EmailAlerter,
     'jira': alerts.JiraAlerter,
     'opsgenie': OpsGenieAlerter,
+    'stomp': alerts.StompAlerter,
     'debug': alerts.DebugAlerter,
     'command': alerts.CommandAlerter,
     'sns': alerts.SnsAlerter,
     'hipchat': alerts.HipChatAlerter,
     'slack': alerts.SlackAlerter,
     'pagerduty': alerts.PagerDutyAlerter,
+    'twilio': alerts.TwilioAlerter,
     'victorops': alerts.VictorOpsAlerter,
     'telegram': alerts.TelegramAlerter,
     'gitter': alerts.GitterAlerter,
@@ -65,6 +67,8 @@ alerts_order = {
     'jira': 0,
     'email': 1
 }
+
+base_config = {}
 
 
 def get_module(module_name):
@@ -133,7 +137,9 @@ def load_options(rule, conf, args=None):
     except (KeyError, TypeError) as e:
         raise EAException('Invalid time format used: %s' % (e))
 
-    # Set defaults
+    # Set defaults, copy defaults from config.yaml
+    for key, val in base_config.items():
+        rule.setdefault(key, val)
     rule.setdefault('realert', datetime.timedelta(seconds=0))
     rule.setdefault('aggregation', datetime.timedelta(seconds=0))
     rule.setdefault('query_delay', datetime.timedelta(seconds=0))
@@ -143,20 +149,7 @@ def load_options(rule, conf, args=None):
     rule.setdefault('timestamp_format', '%Y-%m-%dT%H:%M:%SZ')
     rule.setdefault('_source_enabled', True)
     rule.setdefault('use_local_time', True)
-    rule.setdefault('es_port', conf.get('es_port'))
-    rule.setdefault('es_host', conf.get('es_host'))
-    rule.setdefault('es_username', conf.get('es_username'))
-    rule.setdefault('es_password', conf.get('es_password'))
-    rule.setdefault('max_query_size', conf.get('max_query_size'))
-    rule.setdefault('scroll_keepalive', conf.get('scroll_keepalive'))
-    rule.setdefault('es_conn_timeout', conf.get('es_conn_timeout'))
     rule.setdefault('description', "")
-
-    # Set Elasticsearch options from global config
-    if 'es_url_prefix' in conf:
-        rule.setdefault('es_url_prefix', conf.get('es_url_prefix'))
-    if 'use_ssl' in conf:
-        rule.setdefault('use_ssl', conf.get('use_ssl'))
 
     # Set timestamp_type conversion function, used when generating queries and processing hits
     rule['timestamp_type'] = rule['timestamp_type'].strip().lower()
@@ -181,37 +174,12 @@ def load_options(rule, conf, args=None):
     else:
         raise EAException('timestamp_type must be one of iso, unix, or unix_ms')
 
-    # Set email options from global config
-    rule.setdefault('smtp_host', conf.get('smtp_host', 'localhost'))
-    rule.setdefault('from_addr', conf.get('from_addr', 'ElastAlert'))
-    if 'smtp_port' in conf:
-        rule.setdefault('smtp_port', conf.get('smtp_port'))
-    if 'smtp_ssl' in conf:
-        rule.setdefault('smtp_ssl', conf.get('smtp_ssl'))
-    if 'smtp_auth_file' in conf:
-        rule.setdefault('smtp_auth_file', conf.get('smtp_auth_file'))
-    if 'email_reply_to' in conf:
-        rule.setdefault('email_reply_to', conf['email_reply_to'])
-
     # Set HipChat options from global config
-    rule.setdefault('hipchat_msg_color', conf.get('hipchat_msg_color', 'red'))
-    rule.setdefault('hipchat_domain', conf.get('hipchat_domain', 'api.hipchat.com'))
-    rule.setdefault('hipchat_notify', conf.get('hipchat_notify', True))
-    rule.setdefault('hipchat_from', conf.get('hipchat_from', ''))
-    rule.setdefault('hipchat_ignore_ssl_errors', conf.get('hipchat_ignore_ssl_errors', False))
-    if 'hipchat_auth_token' in conf:
-        rule.setdefault('hipchat_auth_token', conf.get('hipchat_auth_token'))
-    if 'hipchat_room_id' in conf:
-        rule.setdefault('hipchat_room_id', conf.get('hipchat_room_id'))
-
-    # Set slack options from global config
-    rule.setdefault('slack_webhook_url', conf.get('slack_webhook_url'))
-
-    # Set pagerduty options from global config
-    if 'pagerduty_service_key' in conf:
-        rule.setdefault('pagerduty_service_key', conf.get('pagerduty_service_key'))
-    if 'pagerduty_client_name' in conf:
-        rule.setdefault('pagerduty_client_name', conf.get('pagerduty_client_name'))
+    rule.setdefault('hipchat_msg_color', 'red')
+    rule.setdefault('hipchat_domain', 'api.hipchat.com')
+    rule.setdefault('hipchat_notify', True)
+    rule.setdefault('hipchat_from', '')
+    rule.setdefault('hipchat_ignore_ssl_errors', False)
 
     # Make sure we have required options
     if required_locals - frozenset(rule.keys()):
@@ -247,12 +215,6 @@ def load_options(rule, conf, args=None):
     if 'top_count_keys' in rule and rule.get('raw_count_keys', True):
         keys = rule.get('top_count_keys')
         rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in keys]
-
-    # Get Kibana link options from global config
-    if 'generate_kibana_link' in conf:
-        rule.setdefault('generate_kibana_link', conf.get('generate_kibana_link'))
-    if 'kibana_url' in conf:
-        rule.setdefault('kibana_url', conf.get('kibana_url'))
 
     # Check that generate_kibana_url is compatible with the filters
     if rule.get('generate_kibana_link'):
@@ -416,6 +378,9 @@ def load_rules(args):
             conf['old_query_limit'] = datetime.timedelta(weeks=1)
     except (KeyError, TypeError) as e:
         raise EAException('Invalid time format used: %s' % (e))
+
+    global base_config
+    base_config = copy.deepcopy(conf)
 
     # Load each rule configuration file
     rules = []

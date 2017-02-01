@@ -236,7 +236,7 @@ def test_match_with_module(ea):
     mod.process = mock.Mock()
     ea.rules[0]['match_enhancements'] = [mod]
     test_match(ea)
-    mod.process.assert_called_with({'@timestamp': END})
+    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
 
 
 def test_match_with_module_with_agg(ea):
@@ -264,7 +264,7 @@ def test_match_with_enhancements_first(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         with mock.patch.object(ea, 'add_aggregated_alert') as add_alert:
             ea.run_rule(ea.rules[0], END, START)
-    mod.process.assert_called_with({'@timestamp': END})
+    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
     assert add_alert.call_count == 1
 
     # Assert that dropmatchexception behaves properly
@@ -273,7 +273,7 @@ def test_match_with_enhancements_first(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         with mock.patch.object(ea, 'add_aggregated_alert') as add_alert:
             ea.run_rule(ea.rules[0], END, START)
-    mod.process.assert_called_with({'@timestamp': END})
+    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
     assert add_alert.call_count == 0
 
 
@@ -298,11 +298,11 @@ def test_agg(ea):
     assert 'aggregate_id' not in call1
     assert call1['alert_time'] == alerttime1
 
-    assert call2['match_body'] == {'@timestamp': '2014-09-26T12:40:45'}
+    assert call2['match_body']['@timestamp'] == '2014-09-26T12:40:45'
     assert not call2['alert_sent']
     assert call2['aggregate_id'] == 'ABCD'
 
-    assert call3['match_body'] == {'@timestamp': '2014-09-26T12:47:45'}
+    assert call3['match_body']['@timestamp'] == '2014-09-26T12:47:45'
     assert not call3['alert_sent']
     assert 'aggregate_id' not in call3
 
@@ -358,11 +358,11 @@ def test_agg_cron(ea):
     assert 'aggregate_id' not in call1
     assert call1['alert_time'] == alerttime1
 
-    assert call2['match_body'] == {'@timestamp': '2014-09-26T12:40:45'}
+    assert call2['match_body']['@timestamp'] == '2014-09-26T12:40:45'
     assert not call2['alert_sent']
     assert call2['aggregate_id'] == 'ABCD'
 
-    assert call3['match_body'] == {'@timestamp': '2014-09-26T12:47:45'}
+    assert call3['match_body']['@timestamp'] == '2014-09-26T12:47:45'
     assert call3['alert_time'] == alerttime2
     assert not call3['alert_sent']
     assert 'aggregate_id' not in call3
@@ -383,9 +383,9 @@ def test_agg_no_writeback_connectivity(ea):
         with mock.patch.object(ea, 'find_pending_aggregate_alert', return_value=None):
             ea.run_rule(ea.rules[0], END, START)
 
-    assert ea.rules[0]['agg_matches'] == [{'@timestamp': hit1},
-                                          {'@timestamp': hit2},
-                                          {'@timestamp': hit3}]
+    assert ea.rules[0]['agg_matches'] == [{'@timestamp': hit1, 'num_hits': 0, 'num_matches': 3},
+                                          {'@timestamp': hit2, 'num_hits': 0, 'num_matches': 3},
+                                          {'@timestamp': hit3, 'num_hits': 0, 'num_matches': 3}]
 
     ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
     ea.add_aggregated_alert = mock.Mock()
@@ -393,9 +393,9 @@ def test_agg_no_writeback_connectivity(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         ea.run_rule(ea.rules[0], END, START)
 
-    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit1}, ea.rules[0])
-    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit2}, ea.rules[0])
-    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit3}, ea.rules[0])
+    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit1, 'num_hits': 0, 'num_matches': 3}, ea.rules[0])
+    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit2, 'num_hits': 0, 'num_matches': 3}, ea.rules[0])
+    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit3, 'num_hits': 0, 'num_matches': 3}, ea.rules[0])
 
 
 def test_agg_with_aggregation_key(ea):
@@ -426,14 +426,14 @@ def test_agg_with_aggregation_key(ea):
     assert call1['aggregate_key'] == 'Key Value 1'
     assert call1['alert_time'] == alerttime1
 
-    assert call2['match_body'] == {'@timestamp': '2014-09-26T12:40:45', 'key': 'Key Value 2'}
+    assert call2['match_body']['key'] == 'Key Value 2'
     assert not call2['alert_sent']
     assert 'aggregate_id' not in call2
     assert 'aggregate_key' in call2
     assert call2['aggregate_key'] == 'Key Value 2'
     assert call2['alert_time'] == alerttime2
 
-    assert call3['match_body'] == {'@timestamp': '2014-09-26T12:43:45', 'key': 'Key Value 1', 'key': 'Key Value 1'}
+    assert call3['match_body']['key'] == 'Key Value 1'
     assert not call3['alert_sent']
     # Call3 should have it's aggregate_id set to call1's _id
     # It should also have the same alert_time as call1
