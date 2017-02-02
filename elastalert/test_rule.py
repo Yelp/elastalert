@@ -51,10 +51,18 @@ class MockElastAlerter(object):
 
         # Set up Elasticsearch client and query
         es_client = elasticsearch_client(conf)
+
+        try:
+            is_five = es_client.info()['version']['number'].startswith('5')
+        except Exception as e:
+            print("Error connecting to ElasticSearch:", file=sys.stderr)
+            print(repr(e)[:2048], file=sys.stderr)
+            return None
+
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()
         ts = conf.get('timestamp_field', '@timestamp')
-        query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts)
+        query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts, five=is_five)
         index = ElastAlerter.get_index(conf, start_time, end_time)
 
         # Get one document for schema
@@ -72,8 +80,7 @@ class MockElastAlerter(object):
         doc_type = res['hits']['hits'][0]['_type']
 
         # Get a count of all docs
-        count_query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts, sort=False)
-        count_query = {'query': {'filtered': count_query}}
+        count_query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts, sort=False, five=is_five)
         try:
             res = es_client.count(index, doc_type=doc_type, body=count_query, ignore_unavailable=True)
         except Exception as e:

@@ -572,7 +572,7 @@ def test_kibana(ea):
     with mock.patch("elastalert.elastalert.elasticsearch_client") as mock_es:
         mock_create = mock.Mock(return_value={'_id': 'ABCDEFGH'})
         mock_es_inst = mock.Mock()
-        mock_es_inst.create = mock_create
+        mock_es_inst.index = mock_create
         mock_es.return_value = mock_es_inst
         link = ea.generate_kibana_db(rule, match)
 

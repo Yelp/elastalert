@@ -290,9 +290,9 @@ def test_agg(ea):
         ea.run_rule(ea.rules[0], END, START)
 
     # Assert that the three matches were added to Elasticsearch
-    call1 = ea.writeback_es.create.call_args_list[0][1]['body']
-    call2 = ea.writeback_es.create.call_args_list[1][1]['body']
-    call3 = ea.writeback_es.create.call_args_list[2][1]['body']
+    call1 = ea.writeback_es.index.call_args_list[0][1]['body']
+    call2 = ea.writeback_es.index.call_args_list[1][1]['body']
+    call3 = ea.writeback_es.index.call_args_list[2][1]['body']
     assert call1['match_body']['@timestamp'] == '2014-09-26T12:34:45'
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
@@ -349,9 +349,10 @@ def test_agg_cron(ea):
             ea.run_rule(ea.rules[0], END, START)
 
     # Assert that the three matches were added to Elasticsearch
-    call1 = ea.writeback_es.create.call_args_list[0][1]['body']
-    call2 = ea.writeback_es.create.call_args_list[1][1]['body']
-    call3 = ea.writeback_es.create.call_args_list[2][1]['body']
+    call1 = ea.writeback_es.index.call_args_list[0][1]['body']
+    call2 = ea.writeback_es.index.call_args_list[1][1]['body']
+    call3 = ea.writeback_es.index.call_args_list[2][1]['body']
+
     assert call1['match_body']['@timestamp'] == '2014-09-26T12:34:45'
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
@@ -377,7 +378,7 @@ def test_agg_no_writeback_connectivity(ea):
     ea.rules[0]['type'].matches = [{'@timestamp': hit1},
                                    {'@timestamp': hit2},
                                    {'@timestamp': hit3}]
-    ea.writeback_es.create.side_effect = elasticsearch.exceptions.ElasticsearchException('Nope')
+    ea.writeback_es.index.side_effect = elasticsearch.exceptions.ElasticsearchException('Nope')
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         with mock.patch.object(ea, 'find_pending_aggregate_alert', return_value=None):
             ea.run_rule(ea.rules[0], END, START)
@@ -415,9 +416,9 @@ def test_agg_with_aggregation_key(ea):
         ea.run_rule(ea.rules[0], END, START)
 
     # Assert that the three matches were added to elasticsearch
-    call1 = ea.writeback_es.create.call_args_list[0][1]['body']
-    call2 = ea.writeback_es.create.call_args_list[1][1]['body']
-    call3 = ea.writeback_es.create.call_args_list[2][1]['body']
+    call1 = ea.writeback_es.index.call_args_list[0][1]['body']
+    call2 = ea.writeback_es.index.call_args_list[1][1]['body']
+    call3 = ea.writeback_es.index.call_args_list[2][1]['body']
     assert call1['match_body']['key'] == 'Key Value 1'
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
@@ -648,8 +649,8 @@ def run_and_assert_segmented_queries(ea, start, end, segment_size):
             start += segment_size
 
         # Assert elastalert_status was created for the entire time range
-        assert ea.writeback_es.create.call_args_list[-1][1]['body']['starttime'] == dt_to_ts(original_start)
-        assert ea.writeback_es.create.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end)
+        assert ea.writeback_es.index.call_args_list[-1][1]['body']['starttime'] == dt_to_ts(original_start)
+        assert ea.writeback_es.index.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end)
 
 
 def test_query_segmenting(ea):
@@ -776,18 +777,18 @@ def test_kibana_dashboard(ea):
         assert mock_call['body'] == {'query': {'term': {'_id': 'my dashboard'}}}
 
         # Dashboard found
-        mock_es.create.return_value = {'_id': 'ABCDEFG'}
+        mock_es.index.return_value = {'_id': 'ABCDEFG'}
         mock_es.search.return_value = {'hits': {'hits': [{'_source': {'dashboard': json.dumps(dashboard_temp)}}]}}
         url = ea.use_kibana_link(ea.rules[0], match)
         assert 'ABCDEFG' in url
-        db = json.loads(mock_es.create.call_args_list[0][1]['body']['dashboard'])
+        db = json.loads(mock_es.index.call_args_list[0][1]['body']['dashboard'])
         assert 'anytest' in db['title']
 
         # Query key filtering added
         ea.rules[0]['query_key'] = 'foobar'
         match['foobar'] = 'baz'
         url = ea.use_kibana_link(ea.rules[0], match)
-        db = json.loads(mock_es.create.call_args_list[-1][1]['body']['dashboard'])
+        db = json.loads(mock_es.index.call_args_list[-1][1]['body']['dashboard'])
         assert db['services']['filter']['list']['1']['field'] == 'foobar'
         assert db['services']['filter']['list']['1']['query'] == '"baz"'
 
@@ -798,7 +799,7 @@ def test_kibana_dashboard(ea):
         match['bar'] = 'dog'
         match['foo,bar'] = 'cat, dog'
         url = ea.use_kibana_link(ea.rules[0], match)
-        db = json.loads(mock_es.create.call_args_list[-1][1]['body']['dashboard'])
+        db = json.loads(mock_es.index.call_args_list[-1][1]['body']['dashboard'])
         found_filters = 0
         for filter_id, filter_dict in db['services']['filter']['list'].items():
             if (filter_dict['field'] == 'foo' and filter_dict['query'] == '"cat"') or \

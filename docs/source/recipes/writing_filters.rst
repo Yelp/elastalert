@@ -39,7 +39,7 @@ See http://lucene.apache.org/core/2_9_4/queryparsersyntax.html for more informat
           query: "field: value OR otherfield: othervalue"
     - query:
         query_string:
-          query: "this: that AND these: those"
+           query: "this: that AND these: those"
 
 term
 ****
