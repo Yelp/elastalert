@@ -8,7 +8,7 @@
 
 ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
 
-ElastAlert currently works with Elasticsearch 1.X and 2.X.
+ElastAlert works with all versions of Elasticsearch.
 
 At Yelp, we use Elasticsearch, Logstash and Kibana for managing our ever increasing amount of data and logs.
 Kibana is great for visualizing and querying data, but we quickly realized that it needed a companion tool for alerting
