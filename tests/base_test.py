@@ -293,7 +293,7 @@ def test_agg(ea):
     call1 = ea.writeback_es.index.call_args_list[0][1]['body']
     call2 = ea.writeback_es.index.call_args_list[1][1]['body']
     call3 = ea.writeback_es.index.call_args_list[2][1]['body']
-    assert call1['match_body'] == {'@timestamp': '2014-09-26T12:34:45'}
+    assert call1['match_body']['@timestamp'] == '2014-09-26T12:34:45'
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
     assert call1['alert_time'] == alerttime1
@@ -353,7 +353,7 @@ def test_agg_cron(ea):
     call2 = ea.writeback_es.index.call_args_list[1][1]['body']
     call3 = ea.writeback_es.index.call_args_list[2][1]['body']
 
-    assert call1['match_body'] == {'@timestamp': '2014-09-26T12:34:45'}
+    assert call1['match_body']['@timestamp'] == '2014-09-26T12:34:45'
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
     assert call1['alert_time'] == alerttime1
@@ -419,7 +419,7 @@ def test_agg_with_aggregation_key(ea):
     call1 = ea.writeback_es.index.call_args_list[0][1]['body']
     call2 = ea.writeback_es.index.call_args_list[1][1]['body']
     call3 = ea.writeback_es.index.call_args_list[2][1]['body']
-    assert call1['match_body'] == {'@timestamp': '2014-09-26T12:34:45', 'key': 'Key Value 1'}
+    assert call1['match_body']['key'] == 'Key Value 1'
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
     assert 'aggregate_key' in call1

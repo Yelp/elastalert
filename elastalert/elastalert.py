@@ -115,7 +115,7 @@ class ElastAlerter():
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
 
         self.writeback_es = elasticsearch_client(self.conf)
-        self.five = self.is_five()
+        self.es_version = self.get_version()
 
         for rule in self.rules:
             self.init_rule(rule)
@@ -123,9 +123,12 @@ class ElastAlerter():
         if self.args.silence:
             self.silence()
 
-    def is_five(self):
+    def get_version(self):
         info = self.writeback_es.info()
-        return info['version']['number'].startswith('5')
+        return info['version']['number']
+
+    def is_five(self):
+        return self.es_version.startswith('5')
 
     @staticmethod
     def get_index(rule, starttime=None, endtime=None):
@@ -176,7 +179,7 @@ class ElastAlerter():
         query_element = query['query']
         if 'sort' in query_element:
             query_element.pop('sort')
-        if not self.five:
+        if not self.is_five():
             query_element['filtered'].update({'aggs': {'counts': {'terms': {'field': field, 'size': size}}}})
             aggs_query = {'aggs': query_element}
         else:
@@ -253,11 +256,11 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A list of hits, bounded by rule['max_query_size'].
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], to_ts_func=rule['dt_to_ts'], five=self.five)
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], to_ts_func=rule['dt_to_ts'], five=self.is_five())
         extra_args = {'_source_include': rule['include']}
         scroll_keepalive = rule.get('scroll_keepalive', self.scroll_keepalive)
         if not rule.get('_source_enabled'):
-            if self.five:
+            if self.is_five():
                 query['stored_fields'] = rule['include']
             else:
                 query['fields'] = rule['include']
@@ -305,7 +308,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A dictionary mapping timestamps to number of hits for that time period.
         """
-        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'], five=self.five)
+        query = self.get_query(rule['filter'], starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'], five=self.is_five())
 
         try:
             res = self.current_es.count(index=index, doc_type=rule['doc_type'], body=query, ignore_unavailable=True)
@@ -329,13 +332,13 @@ class ElastAlerter():
             if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
                 filter_key = add_raw_postfix(filter_key)
             rule_filter.extend([{'term': {filter_key: qk}}])
-        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'], five=self.five)
+        base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'], five=self.is_five())
         if size is None:
             size = rule.get('terms_size', 50)
         query = self.get_terms_query(base_query, size, key)
 
         try:
-            if not self.five:
+            if not self.is_five():
                 res = self.current_es.search(index=index, doc_type=rule['doc_type'], body=query, search_type='count', ignore_unavailable=True)
             else:
                 res = self.current_es.search(index=index, doc_type=rule['doc_type'], body=query, size=0, ignore_unavailable=True)
@@ -349,7 +352,7 @@ class ElastAlerter():
 
         if 'aggregations' not in res:
             return {}
-        if not self.five:
+        if not self.is_five():
             buckets = res['aggregations']['filtered']['counts']['buckets']
         else:
             buckets = res['aggregations']['counts']['buckets']
@@ -438,7 +441,7 @@ class ElastAlerter():
         """
         sort = {'sort': {'@timestamp': {'order': 'desc'}}}
         query = {'filter': {'term': {'rule_name': '%s' % (rule['name'])}}}
-        if self.five:
+        if self.is_five():
             query = {'query': {'bool': query}}
         query.update(sort)
 
@@ -657,7 +660,7 @@ class ElastAlerter():
             new_rule[prop] = rule[prop]
 
         # In ES5, filters starting with 'query' should have the top wrapper removed
-        if self.five:
+        if self.is_five():
             for es_filter in new_rule.get('filter', []):
                 if es_filter.get('query'):
                     new_filter = es_filter['query']
@@ -1085,7 +1088,7 @@ class ElastAlerter():
         time_filter = {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
                                                 'to': dt_to_ts(ts_now())}}}
         sort = {'sort': {'alert_time': {'order': 'asc'}}}
-        if self.five:
+        if self.is_five():
             query = {'query': {'bool': {'must': inner_query, 'filter': time_filter}}}
         else:
             query = {'query': inner_query, 'filter': time_filter}
@@ -1313,7 +1316,7 @@ class ElastAlerter():
 
         query = {'term': {'rule_name': rule_name}}
         sort = {'sort': {'until': {'order': 'desc'}}}
-        if self.five:
+        if self.is_five():
             query = {'query': query}
         else:
             query = {'filter': query}
