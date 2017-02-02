@@ -1186,12 +1186,13 @@ class ElastAlerter():
     def find_pending_aggregate_alert(self, rule, aggregation_key_value=None):
         query = {'filter': {'bool': {'must': [{'term': {'rule_name': rule['name']}},
                                               {'range': {'alert_time': {'gt': ts_now()}}},
-                                              {'not': {'exists': {'field': 'aggregate_id'}}},
-                                              {'term': {'alert_sent': 'false'}}]}},
-                 'sort': {'alert_time': {'order': 'desc'}}}
+                                              {'term': {'alert_sent': 'false'}}],
+                                     'must_not': [{'exists': {'field': 'aggregate_id'}}]}}}
         if aggregation_key_value:
             query['filter']['bool']['must'].append({'term': {'aggregate_key': aggregation_key_value}})
-
+        if self.is_five():
+            query = {'query': {'bool': query}}
+        query['sort'] = {'alert_time': {'order': 'desc'}}
         if not self.writeback_es:
             self.writeback_es = elasticsearch_client(self.conf)
         try:
