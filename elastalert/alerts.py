@@ -769,7 +769,8 @@ class CommandAlerter(Alerter):
 
             matche = matches[0]
             matchString = BasicMatchString(self.rule, matche)
-            matche['_rule_text'] = unicode(matchString.get_rule_text())
+            matche['elastalert_rule_text'] = unicode(matchString.get_rule_text())
+            matche['elastalert_subject_title'] = self.create_title(matches)
             matches[0] = matche
 
             if self.new_style_string_format:

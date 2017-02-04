@@ -17,7 +17,7 @@
 
 # (Required)
 # Rule name, must be unique
-name: name_alert_qycloud_status_error
+name: qycloud_status_error
 
 
 # (Required)
@@ -53,13 +53,13 @@ filter:
 # (Required)
 # The alert is use when a match is found
 alert:
-- "email"
+#- "email"
 - "debug"
 - "command"
 
 #我这是用告警使用命令行，自定义更好
 pipe_match_json: true
-command: ["/home/df/workspace/tool/elastalert/example_rules/shell/email.php", "%(_rule_text)s"]
+command: ["/home/df/workspace/tool/elastalert/example_rules/shell/Email.php", "%(elastalert_rule_text)s", "%(elastalert_subject_title)s"]
 
 # (required, email specific)
 # a list of email addresses to send alerts to
