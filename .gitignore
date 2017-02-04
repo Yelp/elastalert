@@ -1,4 +1,3 @@
-config.yaml
 .tox/
 .coverage
 __pycache__/
@@ -9,5 +8,5 @@ dist/
 venv/
 docs/build/
 build/
-
+.idea/
 my_rules

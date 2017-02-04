@@ -85,8 +85,11 @@ class BasicMatchString(object):
         self.text += alert_text
 
     def _add_rule_text(self):
-        self.text += self.rule['type'].get_match_str(self.match)
+        self.text += self.get_rule_text()
 
+    def get_rule_text(self):
+        return self.rule['type'].get_match_str(self.match)
+       
     def _add_top_counts(self):
         for key, counts in self.match.items():
             if key.startswith('top_events_'):
@@ -763,10 +766,18 @@ class CommandAlerter(Alerter):
     def alert(self, matches):
         # Format the command and arguments
         try:
+
+            matche = matches[0]
+            matchString = BasicMatchString(self.rule, matche)
+            matche['elastalert_rule_text'] = unicode(matchString.get_rule_text())
+            matche['elastalert_subject_title'] = self.create_title(matches)
+            matches[0] = matche
+
             if self.new_style_string_format:
                 command = [command_arg.format(match=matches[0]) for command_arg in self.rule['command']]
             else:
                 command = [command_arg % matches[0] for command_arg in self.rule['command']]
+
             self.last_command = command
         except KeyError as e:
             raise EAException("Error formatting command: %s" % (e))

@@ -1,0 +1,68 @@
+# Alert when the rate of events exceeds a threshold
+
+# (Optional)
+# Elasticsearch host
+#es_host: 192.168.1.100
+
+# (Optional)
+# Elasticsearch port
+#es_port: 9200
+
+# (OptionaL) Connect with SSL to Elasticsearch
+#use_ssl: false
+
+# (Optional) basic-auth username and password for Elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# (Required)
+# Rule name, must be unique
+name: qycloud_status_error
+
+
+# (Required)
+# Type of alert.
+# the frequency rule type alerts when num_events events occur with timeframe time
+type: frequency
+#type: any
+
+# (Required)
+# Index to search, wildcard supported
+#此规则查询所使用的索引
+index: monitor-*
+
+# (Required, frequency specific)
+# Alert when this many documents matching the query occur within a timeframe
+num_events: 5
+
+# (Required, frequency specific)
+# num_events must occur within this amount of time to trigger an alert
+timeframe:
+  minutes: 5
+
+# (Required)
+# A list of Elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+
+#此处是es5 的写法
+filter:
+- query_string:
+    query: "status: >=500"
+
+# (Required)
+# The alert is use when a match is found
+alert:
+#- "email"
+- "debug"
+- "command"
+
+#我这是用告警使用命令行，自定义更好
+pipe_match_json: true
+command: ["/home/df/workspace/tool/elastalert/example_rules/shell/Email.php", "%(elastalert_rule_text)s", "%(elastalert_subject_title)s"]
+
+# (required, email specific)
+# a list of email addresses to send alerts to
+email:
+- "66313856@qq.com"
+- "474851817@qq.com"
