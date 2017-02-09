@@ -1127,13 +1127,14 @@ class ElastAlerter():
                 if aggregated_matches:
                     matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
                     self.alert(matches, rule, alert_time=alert_time)
-                    if rule['current_aggregate_id']:
-                        for qk, id in rule['current_aggregate_id'].iteritems():
-                            if id == _id:
-                                rule['current_aggregate_id'].pop(qk)
-                                break
                 else:
                     self.alert([match_body], rule, alert_time=alert_time)
+
+                if rule['current_aggregate_id']:
+                    for qk, id in rule['current_aggregate_id'].iteritems():
+                        if id == _id:
+                            rule['current_aggregate_id'].pop(qk)
+                            break
 
                 # Delete it from the index
                 try:
@@ -1214,7 +1215,6 @@ class ElastAlerter():
                 elastalert_logger.info('Adding alert for %s to aggregation(id: %s, aggregation_key: %s), next alert at %s' % (rule['name'], agg_id, aggregation_key_value, alert_time))
             else:
                 # First match, set alert_time
-                match_time = ts_to_dt(lookup_es_key(match, rule['timestamp_field']))
                 alert_time = ''
                 if isinstance(rule['aggregation'], dict) and rule['aggregation'].get('schedule'):
                     croniter._datetime_to_timestamp = cronite_datetime_to_timestamp  # For Python 2.6 compatibility
@@ -1224,7 +1224,11 @@ class ElastAlerter():
                     except Exception as e:
                         self.handle_error("Error parsing aggregate send time Cron format %s" % (e), rule['aggregation']['schedule'])
                 else:
-                    alert_time = match_time + rule['aggregation']
+                    if rule.get('aggregate_by_match_time', False):
+                        match_time = ts_to_dt(lookup_es_key(match, rule['timestamp_field']))
+                        alert_time = match_time + rule['aggregation']
+                    else:
+                        alert_time = ts_now() + rule['aggregation']
 
                 rule['aggregate_alert_time'][aggregation_key_value] = alert_time
                 agg_id = None
