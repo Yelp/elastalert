@@ -277,7 +277,7 @@ def test_match_with_enhancements_first(ea):
     assert add_alert.call_count == 0
 
 
-def test_agg(ea):
+def test_agg_matchtime(ea):
     ea.max_aggregation = 1337
     hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:47:45']
     alerttime1 = dt_to_ts(ts_to_dt(hits_timestamps[0]) + datetime.timedelta(minutes=10))
@@ -285,6 +285,7 @@ def test_agg(ea):
     ea.current_es.search.return_value = hits
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         # Aggregate first two, query over full range
+        ea.rules[0]['aggregate_by_match_time'] = True
         ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
         ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
         ea.run_rule(ea.rules[0], END, START)
@@ -330,6 +331,36 @@ def test_agg(ea):
     assert call3['query']['query_string']['query'] == 'aggregate_id:ABCD'
     assert call4['query']['query_string']['query'] == 'aggregate_id:CDEF'
     assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
+
+
+def test_agg_not_matchtime(ea):
+    ea.max_aggregation = 1337
+    hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:47:45']
+    match_time = ts_to_dt('2014-09-26T12:55:00Z')
+    hits = generate_hits(hits_timestamps)
+    ea.current_es.search.return_value = hits
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        with mock.patch('elastalert.elastalert.ts_now', return_value=match_time):
+            ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
+            ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
+            ea.run_rule(ea.rules[0], END, START)
+
+    # Assert that the three matches were added to Elasticsearch
+    call1 = ea.writeback_es.index.call_args_list[0][1]['body']
+    call2 = ea.writeback_es.index.call_args_list[1][1]['body']
+    call3 = ea.writeback_es.index.call_args_list[2][1]['body']
+    assert call1['match_body']['@timestamp'] == '2014-09-26T12:34:45'
+    assert not call1['alert_sent']
+    assert 'aggregate_id' not in call1
+    assert call1['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
+
+    assert call2['match_body']['@timestamp'] == '2014-09-26T12:40:45'
+    assert not call2['alert_sent']
+    assert call2['aggregate_id'] == 'ABCD'
+
+    assert call3['match_body']['@timestamp'] == '2014-09-26T12:47:45'
+    assert not call3['alert_sent']
+    assert call3['aggregate_id'] == 'ABCD'
 
 
 def test_agg_cron(ea):
@@ -401,19 +432,19 @@ def test_agg_no_writeback_connectivity(ea):
 def test_agg_with_aggregation_key(ea):
     ea.max_aggregation = 1337
     hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:43:45']
-    alerttime1 = dt_to_ts(ts_to_dt(hits_timestamps[0]) + datetime.timedelta(minutes=10))
-    alerttime2 = dt_to_ts(ts_to_dt(hits_timestamps[1]) + datetime.timedelta(minutes=10))
+    match_time = ts_to_dt('2014-09-26T12:45:00Z')
     hits = generate_hits(hits_timestamps)
     ea.current_es.search.return_value = hits
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
-        ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
-        ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
-        # Hit1 and Hit3 should be aggregated together, since they have same query_key value
-        ea.rules[0]['type'].matches[0]['key'] = 'Key Value 1'
-        ea.rules[0]['type'].matches[1]['key'] = 'Key Value 2'
-        ea.rules[0]['type'].matches[2]['key'] = 'Key Value 1'
-        ea.rules[0]['aggregation_key'] = 'key'
-        ea.run_rule(ea.rules[0], END, START)
+        with mock.patch('elastalert.elastalert.ts_now', return_value=match_time):
+            ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
+            ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
+            # Hit1 and Hit3 should be aggregated together, since they have same query_key value
+            ea.rules[0]['type'].matches[0]['key'] = 'Key Value 1'
+            ea.rules[0]['type'].matches[1]['key'] = 'Key Value 2'
+            ea.rules[0]['type'].matches[2]['key'] = 'Key Value 1'
+            ea.rules[0]['aggregation_key'] = 'key'
+            ea.run_rule(ea.rules[0], END, START)
 
     # Assert that the three matches were added to elasticsearch
     call1 = ea.writeback_es.index.call_args_list[0][1]['body']
@@ -424,14 +455,14 @@ def test_agg_with_aggregation_key(ea):
     assert 'aggregate_id' not in call1
     assert 'aggregate_key' in call1
     assert call1['aggregate_key'] == 'Key Value 1'
-    assert call1['alert_time'] == alerttime1
+    assert call1['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
     assert call2['match_body']['key'] == 'Key Value 2'
     assert not call2['alert_sent']
     assert 'aggregate_id' not in call2
     assert 'aggregate_key' in call2
     assert call2['aggregate_key'] == 'Key Value 2'
-    assert call2['alert_time'] == alerttime2
+    assert call2['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
     assert call3['match_body']['key'] == 'Key Value 1'
     assert not call3['alert_sent']
@@ -440,7 +471,7 @@ def test_agg_with_aggregation_key(ea):
     assert call3['aggregate_id'] == 'ABCD'
     assert 'aggregate_key' in call3
     assert call3['aggregate_key'] == 'Key Value 1'
-    assert call3['alert_time'] == alerttime1
+    assert call3['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
     # First call - Find all pending alerts (only entries without agg_id)
     # Second call - Find matches with agg_id == 'ABCD'
