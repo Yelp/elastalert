@@ -303,6 +303,18 @@ Then, for the same sample data shown above listing alice and bob's events, Elast
     |      alice       |   something else   |
     +------------------+--------------------+
 
+
+.. note::
+   By default, aggregation time is relative to the current system time, not the time of the match. This means that running elastalert over
+   past events will result in different alerts than if elastalert had been running while those events occured. This behavior can be changed
+   by setting ``aggregate_by_match_time``.
+
+aggregate_by_match_time
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Setting this to true will cause aggregations to be created relative to the timestamp of the first event, rather than the current time. This
+is useful for querying over historic data or if using a very large buffer_time and you want multiple aggregations to occur from a single query. 
+
 realert
 ^^^^^^^
 
