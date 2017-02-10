@@ -1131,8 +1131,8 @@ class ElastAlerter():
                     self.alert([match_body], rule, alert_time=alert_time)
 
                 if rule['current_aggregate_id']:
-                    for qk, id in rule['current_aggregate_id'].iteritems():
-                        if id == _id:
+                    for qk, agg_id in rule['current_aggregate_id'].iteritems():
+                        if agg_id == _id:
                             rule['current_aggregate_id'].pop(qk)
                             break
 
