@@ -10,6 +10,9 @@ from elastalert.util import dt_to_ts
 from elastalert.util import ts_to_dt
 
 
+mock_info = {'status': 200, 'name': 'foo', 'version': {'number': '2.0'}}
+
+
 class mock_es_client(object):
     def __init__(self, host='es', port=14900):
         self.host = host
@@ -17,7 +20,9 @@ class mock_es_client(object):
         self.return_hits = []
         self.search = mock.Mock()
         self.create = mock.Mock()
+        self.index = mock.Mock()
         self.delete = mock.Mock()
+        self.info = mock.Mock(return_value=mock_info)
 
 
 class mock_ruletype(object):
@@ -78,6 +83,6 @@ def ea():
     ea.rules[0]['alert'] = [mock_alert()]
     ea.writeback_es = mock_es_client()
     ea.writeback_es.search.return_value = {'hits': {'hits': []}}
-    ea.writeback_es.create.return_value = {'_id': 'ABCD'}
+    ea.writeback_es.index.return_value = {'_id': 'ABCD'}
     ea.current_es = mock_es_client('', '')
     return ea

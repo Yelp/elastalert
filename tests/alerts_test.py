@@ -572,7 +572,7 @@ def test_kibana(ea):
     with mock.patch("elastalert.elastalert.elasticsearch_client") as mock_es:
         mock_create = mock.Mock(return_value={'_id': 'ABCDEFGH'})
         mock_es_inst = mock.Mock()
-        mock_es_inst.create = mock_create
+        mock_es_inst.index = mock_create
         mock_es.return_value = mock_es_inst
         link = ea.generate_kibana_db(rule, match)
 
@@ -600,24 +600,51 @@ def test_command():
     rule = {'command': ['/bin/test/', '--arg', '%(somefield)s']}
     alert = CommandAlerter(rule)
     match = {'@timestamp': '2014-01-01T00:00:00',
-             'somefield': 'foobarbaz'}
+             'somefield': 'foobarbaz',
+             'nested': {'field': 1}}
     with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
         alert.alert([match])
     assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
 
-    # Test command as string with formatted arg
+    # Test command as string with formatted arg (old-style string format)
     rule = {'command': '/bin/test/ --arg %(somefield)s'}
     alert = CommandAlerter(rule)
     with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
         alert.alert([match])
     assert mock_popen.called_with('/bin/test --arg foobarbaz', stdin=subprocess.PIPE, shell=False)
 
-    # Test command as string without formatted arg
+    # Test command as string without formatted arg (old-style string format)
     rule = {'command': '/bin/test/foo.sh'}
     alert = CommandAlerter(rule)
     with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
         alert.alert([match])
     assert mock_popen.called_with('/bin/test/foo.sh', stdin=subprocess.PIPE, shell=True)
+
+    # Test command as string with formatted arg (new-style string format)
+    rule = {'command': '/bin/test/ --arg {match[somefield]}', 'new_style_string_format': True}
+    alert = CommandAlerter(rule)
+    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+        alert.alert([match])
+    assert mock_popen.called_with('/bin/test --arg foobarbaz', stdin=subprocess.PIPE, shell=False)
+
+    rule = {'command': '/bin/test/ --arg {match[nested][field]}', 'new_style_string_format': True}
+    alert = CommandAlerter(rule)
+    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+        alert.alert([match])
+    assert mock_popen.called_with('/bin/test --arg 1', stdin=subprocess.PIPE, shell=False)
+
+    # Test command as string without formatted arg (new-style string format)
+    rule = {'command': '/bin/test/foo.sh', 'new_style_string_format': True}
+    alert = CommandAlerter(rule)
+    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+        alert.alert([match])
+    assert mock_popen.called_with('/bin/test/foo.sh', stdin=subprocess.PIPE, shell=True)
+
+    rule = {'command': '/bin/test/foo.sh {{bar}}', 'new_style_string_format': True}
+    alert = CommandAlerter(rule)
+    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+        alert.alert([match])
+    assert mock_popen.called_with('/bin/test/foo.sh {bar}', stdin=subprocess.PIPE, shell=True)
 
     # Test command with pipe_match_json
     rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],

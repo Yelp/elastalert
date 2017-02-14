@@ -236,7 +236,7 @@ def test_match_with_module(ea):
     mod.process = mock.Mock()
     ea.rules[0]['match_enhancements'] = [mod]
     test_match(ea)
-    mod.process.assert_called_with({'@timestamp': END})
+    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
 
 
 def test_match_with_module_with_agg(ea):
@@ -264,7 +264,7 @@ def test_match_with_enhancements_first(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         with mock.patch.object(ea, 'add_aggregated_alert') as add_alert:
             ea.run_rule(ea.rules[0], END, START)
-    mod.process.assert_called_with({'@timestamp': END})
+    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
     assert add_alert.call_count == 1
 
     # Assert that dropmatchexception behaves properly
@@ -273,11 +273,11 @@ def test_match_with_enhancements_first(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         with mock.patch.object(ea, 'add_aggregated_alert') as add_alert:
             ea.run_rule(ea.rules[0], END, START)
-    mod.process.assert_called_with({'@timestamp': END})
+    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
     assert add_alert.call_count == 0
 
 
-def test_agg(ea):
+def test_agg_matchtime(ea):
     ea.max_aggregation = 1337
     hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:47:45']
     alerttime1 = dt_to_ts(ts_to_dt(hits_timestamps[0]) + datetime.timedelta(minutes=10))
@@ -285,24 +285,25 @@ def test_agg(ea):
     ea.current_es.search.return_value = hits
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         # Aggregate first two, query over full range
+        ea.rules[0]['aggregate_by_match_time'] = True
         ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
         ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
         ea.run_rule(ea.rules[0], END, START)
 
     # Assert that the three matches were added to Elasticsearch
-    call1 = ea.writeback_es.create.call_args_list[0][1]['body']
-    call2 = ea.writeback_es.create.call_args_list[1][1]['body']
-    call3 = ea.writeback_es.create.call_args_list[2][1]['body']
-    assert call1['match_body'] == {'@timestamp': '2014-09-26T12:34:45'}
+    call1 = ea.writeback_es.index.call_args_list[0][1]['body']
+    call2 = ea.writeback_es.index.call_args_list[1][1]['body']
+    call3 = ea.writeback_es.index.call_args_list[2][1]['body']
+    assert call1['match_body']['@timestamp'] == '2014-09-26T12:34:45'
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
     assert call1['alert_time'] == alerttime1
 
-    assert call2['match_body'] == {'@timestamp': '2014-09-26T12:40:45'}
+    assert call2['match_body']['@timestamp'] == '2014-09-26T12:40:45'
     assert not call2['alert_sent']
     assert call2['aggregate_id'] == 'ABCD'
 
-    assert call3['match_body'] == {'@timestamp': '2014-09-26T12:47:45'}
+    assert call3['match_body']['@timestamp'] == '2014-09-26T12:47:45'
     assert not call3['alert_sent']
     assert 'aggregate_id' not in call3
 
@@ -332,6 +333,36 @@ def test_agg(ea):
     assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
 
 
+def test_agg_not_matchtime(ea):
+    ea.max_aggregation = 1337
+    hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:47:45']
+    match_time = ts_to_dt('2014-09-26T12:55:00Z')
+    hits = generate_hits(hits_timestamps)
+    ea.current_es.search.return_value = hits
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        with mock.patch('elastalert.elastalert.ts_now', return_value=match_time):
+            ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
+            ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
+            ea.run_rule(ea.rules[0], END, START)
+
+    # Assert that the three matches were added to Elasticsearch
+    call1 = ea.writeback_es.index.call_args_list[0][1]['body']
+    call2 = ea.writeback_es.index.call_args_list[1][1]['body']
+    call3 = ea.writeback_es.index.call_args_list[2][1]['body']
+    assert call1['match_body']['@timestamp'] == '2014-09-26T12:34:45'
+    assert not call1['alert_sent']
+    assert 'aggregate_id' not in call1
+    assert call1['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
+
+    assert call2['match_body']['@timestamp'] == '2014-09-26T12:40:45'
+    assert not call2['alert_sent']
+    assert call2['aggregate_id'] == 'ABCD'
+
+    assert call3['match_body']['@timestamp'] == '2014-09-26T12:47:45'
+    assert not call3['alert_sent']
+    assert call3['aggregate_id'] == 'ABCD'
+
+
 def test_agg_cron(ea):
     ea.max_aggregation = 1337
     hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:47:45']
@@ -349,20 +380,20 @@ def test_agg_cron(ea):
             ea.run_rule(ea.rules[0], END, START)
 
     # Assert that the three matches were added to Elasticsearch
-    call1 = ea.writeback_es.create.call_args_list[0][1]['body']
-    call2 = ea.writeback_es.create.call_args_list[1][1]['body']
-    call3 = ea.writeback_es.create.call_args_list[2][1]['body']
+    call1 = ea.writeback_es.index.call_args_list[0][1]['body']
+    call2 = ea.writeback_es.index.call_args_list[1][1]['body']
+    call3 = ea.writeback_es.index.call_args_list[2][1]['body']
 
-    assert call1['match_body'] == {'@timestamp': '2014-09-26T12:34:45'}
+    assert call1['match_body']['@timestamp'] == '2014-09-26T12:34:45'
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
     assert call1['alert_time'] == alerttime1
 
-    assert call2['match_body'] == {'@timestamp': '2014-09-26T12:40:45'}
+    assert call2['match_body']['@timestamp'] == '2014-09-26T12:40:45'
     assert not call2['alert_sent']
     assert call2['aggregate_id'] == 'ABCD'
 
-    assert call3['match_body'] == {'@timestamp': '2014-09-26T12:47:45'}
+    assert call3['match_body']['@timestamp'] == '2014-09-26T12:47:45'
     assert call3['alert_time'] == alerttime2
     assert not call3['alert_sent']
     assert 'aggregate_id' not in call3
@@ -378,14 +409,14 @@ def test_agg_no_writeback_connectivity(ea):
     ea.rules[0]['type'].matches = [{'@timestamp': hit1},
                                    {'@timestamp': hit2},
                                    {'@timestamp': hit3}]
-    ea.writeback_es.create.side_effect = elasticsearch.exceptions.ElasticsearchException('Nope')
+    ea.writeback_es.index.side_effect = elasticsearch.exceptions.ElasticsearchException('Nope')
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         with mock.patch.object(ea, 'find_pending_aggregate_alert', return_value=None):
             ea.run_rule(ea.rules[0], END, START)
 
-    assert ea.rules[0]['agg_matches'] == [{'@timestamp': hit1},
-                                          {'@timestamp': hit2},
-                                          {'@timestamp': hit3}]
+    assert ea.rules[0]['agg_matches'] == [{'@timestamp': hit1, 'num_hits': 0, 'num_matches': 3},
+                                          {'@timestamp': hit2, 'num_hits': 0, 'num_matches': 3},
+                                          {'@timestamp': hit3, 'num_hits': 0, 'num_matches': 3}]
 
     ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
     ea.add_aggregated_alert = mock.Mock()
@@ -393,54 +424,54 @@ def test_agg_no_writeback_connectivity(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         ea.run_rule(ea.rules[0], END, START)
 
-    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit1}, ea.rules[0])
-    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit2}, ea.rules[0])
-    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit3}, ea.rules[0])
+    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit1, 'num_hits': 0, 'num_matches': 3}, ea.rules[0])
+    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit2, 'num_hits': 0, 'num_matches': 3}, ea.rules[0])
+    ea.add_aggregated_alert.assert_any_call({'@timestamp': hit3, 'num_hits': 0, 'num_matches': 3}, ea.rules[0])
 
 
 def test_agg_with_aggregation_key(ea):
     ea.max_aggregation = 1337
     hits_timestamps = ['2014-09-26T12:34:45', '2014-09-26T12:40:45', '2014-09-26T12:43:45']
-    alerttime1 = dt_to_ts(ts_to_dt(hits_timestamps[0]) + datetime.timedelta(minutes=10))
-    alerttime2 = dt_to_ts(ts_to_dt(hits_timestamps[1]) + datetime.timedelta(minutes=10))
+    match_time = ts_to_dt('2014-09-26T12:45:00Z')
     hits = generate_hits(hits_timestamps)
     ea.current_es.search.return_value = hits
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
-        ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
-        ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
-        # Hit1 and Hit3 should be aggregated together, since they have same query_key value
-        ea.rules[0]['type'].matches[0]['key'] = 'Key Value 1'
-        ea.rules[0]['type'].matches[1]['key'] = 'Key Value 2'
-        ea.rules[0]['type'].matches[2]['key'] = 'Key Value 1'
-        ea.rules[0]['aggregation_key'] = 'key'
-        ea.run_rule(ea.rules[0], END, START)
+        with mock.patch('elastalert.elastalert.ts_now', return_value=match_time):
+            ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
+            ea.rules[0]['type'].matches = [{'@timestamp': h} for h in hits_timestamps]
+            # Hit1 and Hit3 should be aggregated together, since they have same query_key value
+            ea.rules[0]['type'].matches[0]['key'] = 'Key Value 1'
+            ea.rules[0]['type'].matches[1]['key'] = 'Key Value 2'
+            ea.rules[0]['type'].matches[2]['key'] = 'Key Value 1'
+            ea.rules[0]['aggregation_key'] = 'key'
+            ea.run_rule(ea.rules[0], END, START)
 
     # Assert that the three matches were added to elasticsearch
-    call1 = ea.writeback_es.create.call_args_list[0][1]['body']
-    call2 = ea.writeback_es.create.call_args_list[1][1]['body']
-    call3 = ea.writeback_es.create.call_args_list[2][1]['body']
-    assert call1['match_body'] == {'@timestamp': '2014-09-26T12:34:45', 'key': 'Key Value 1'}
+    call1 = ea.writeback_es.index.call_args_list[0][1]['body']
+    call2 = ea.writeback_es.index.call_args_list[1][1]['body']
+    call3 = ea.writeback_es.index.call_args_list[2][1]['body']
+    assert call1['match_body']['key'] == 'Key Value 1'
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
     assert 'aggregate_key' in call1
     assert call1['aggregate_key'] == 'Key Value 1'
-    assert call1['alert_time'] == alerttime1
+    assert call1['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
-    assert call2['match_body'] == {'@timestamp': '2014-09-26T12:40:45', 'key': 'Key Value 2'}
+    assert call2['match_body']['key'] == 'Key Value 2'
     assert not call2['alert_sent']
     assert 'aggregate_id' not in call2
     assert 'aggregate_key' in call2
     assert call2['aggregate_key'] == 'Key Value 2'
-    assert call2['alert_time'] == alerttime2
+    assert call2['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
-    assert call3['match_body'] == {'@timestamp': '2014-09-26T12:43:45', 'key': 'Key Value 1', 'key': 'Key Value 1'}
+    assert call3['match_body']['key'] == 'Key Value 1'
     assert not call3['alert_sent']
     # Call3 should have it's aggregate_id set to call1's _id
     # It should also have the same alert_time as call1
     assert call3['aggregate_id'] == 'ABCD'
     assert 'aggregate_key' in call3
     assert call3['aggregate_key'] == 'Key Value 1'
-    assert call3['alert_time'] == alerttime1
+    assert call3['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
     # First call - Find all pending alerts (only entries without agg_id)
     # Second call - Find matches with agg_id == 'ABCD'
@@ -649,8 +680,8 @@ def run_and_assert_segmented_queries(ea, start, end, segment_size):
             start += segment_size
 
         # Assert elastalert_status was created for the entire time range
-        assert ea.writeback_es.create.call_args_list[-1][1]['body']['starttime'] == dt_to_ts(original_start)
-        assert ea.writeback_es.create.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end)
+        assert ea.writeback_es.index.call_args_list[-1][1]['body']['starttime'] == dt_to_ts(original_start)
+        assert ea.writeback_es.index.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end)
 
 
 def test_query_segmenting(ea):
@@ -777,18 +808,18 @@ def test_kibana_dashboard(ea):
         assert mock_call['body'] == {'query': {'term': {'_id': 'my dashboard'}}}
 
         # Dashboard found
-        mock_es.create.return_value = {'_id': 'ABCDEFG'}
+        mock_es.index.return_value = {'_id': 'ABCDEFG'}
         mock_es.search.return_value = {'hits': {'hits': [{'_source': {'dashboard': json.dumps(dashboard_temp)}}]}}
         url = ea.use_kibana_link(ea.rules[0], match)
         assert 'ABCDEFG' in url
-        db = json.loads(mock_es.create.call_args_list[0][1]['body']['dashboard'])
+        db = json.loads(mock_es.index.call_args_list[0][1]['body']['dashboard'])
         assert 'anytest' in db['title']
 
         # Query key filtering added
         ea.rules[0]['query_key'] = 'foobar'
         match['foobar'] = 'baz'
         url = ea.use_kibana_link(ea.rules[0], match)
-        db = json.loads(mock_es.create.call_args_list[-1][1]['body']['dashboard'])
+        db = json.loads(mock_es.index.call_args_list[-1][1]['body']['dashboard'])
         assert db['services']['filter']['list']['1']['field'] == 'foobar'
         assert db['services']['filter']['list']['1']['query'] == '"baz"'
 
@@ -799,7 +830,7 @@ def test_kibana_dashboard(ea):
         match['bar'] = 'dog'
         match['foo,bar'] = 'cat, dog'
         url = ea.use_kibana_link(ea.rules[0], match)
-        db = json.loads(mock_es.create.call_args_list[-1][1]['body']['dashboard'])
+        db = json.loads(mock_es.index.call_args_list[-1][1]['body']['dashboard'])
         found_filters = 0
         for filter_id, filter_dict in db['services']['filter']['list'].items():
             if (filter_dict['field'] == 'foo' and filter_dict['query'] == '"cat"') or \
