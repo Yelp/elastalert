@@ -118,6 +118,14 @@ class ElastAlerter():
         self.es_version = self.get_version()
 
         for rule in self.rules:
+            # Change top_count_keys to .raw
+            if 'top_count_keys' in rule and rule.get('raw_count_keys', True):
+                keys = rule.get('top_count_keys')
+                if self.is_five():
+                    rule['top_count_keys'] = [key + '.keyword' if not key.endswith('.keyword') else key for key in keys]
+                else:
+                    rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in keys]
+
             self.init_rule(rule)
 
         if self.args.silence:
@@ -329,8 +337,12 @@ class ElastAlerter():
         rule_filter = copy.copy(rule['filter'])
         if qk:
             filter_key = rule['query_key']
-            if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
-                filter_key = add_raw_postfix(filter_key)
+            if self.is_five():
+                end='.keyword'
+            else:
+                end='.raw'
+            if rule.get('raw_count_keys', True) and not rule['query_key'].endswith(end) and not self.is_five():
+                filter_key = add_raw_postfix(filter_key, self.is_five())
             rule_filter.extend([{'term': {filter_key: qk}}])
         base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'], five=self.is_five())
         if size is None:
