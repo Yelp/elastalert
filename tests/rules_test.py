@@ -475,7 +475,7 @@ def test_new_term():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'} }
+        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
         call_args = []
 
         # search is called with a mutable dict containing timestamps, this is required to test
@@ -527,7 +527,7 @@ def test_new_term():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'} }
+        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
         rule = NewTermsRule(rules)
     rule.add_data([{'@timestamp': ts_now(), 'a': 'key2'}])
     assert len(rule.matches) == 1
@@ -544,7 +544,7 @@ def test_new_term_nested_field():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'} }
+        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
         rule = NewTermsRule(rules)
 
         assert rule.es.search.call_count == 60
@@ -568,7 +568,7 @@ def test_new_term_with_terms():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'} }
+        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
         rule = NewTermsRule(rules)
 
         # Only 15 queries because of custom step size
@@ -637,7 +637,7 @@ def test_new_term_with_composite_fields():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'} }
+        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
         rule = NewTermsRule(rules)
 
         assert rule.es.search.call_count == 60
@@ -674,7 +674,7 @@ def test_new_term_with_composite_fields():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'} }
+        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
         rule = NewTermsRule(rules)
     rule.add_data([{'@timestamp': ts_now(), 'a': 'key2'}])
     assert len(rule.matches) == 2
@@ -755,7 +755,6 @@ def test_flatline_count():
     assert len(rule.matches) == 0
     rule.add_count_data({ts_to_dt('2014-10-11T00:00:35'): 0})
     assert len(rule.matches) == 1
-
 
 def test_flatline_query_key():
     rules = {'timeframe': datetime.timedelta(seconds=30),

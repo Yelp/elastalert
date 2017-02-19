@@ -338,9 +338,9 @@ class ElastAlerter():
         if qk:
             filter_key = rule['query_key']
             if self.is_five():
-                end='.keyword'
+                end = '.keyword'
             else:
-                end='.raw'
+                end = '.raw'
             if rule.get('raw_count_keys', True) and not rule['query_key'].endswith(end) and not self.is_five():
                 filter_key = add_raw_postfix(filter_key, self.is_five())
             rule_filter.extend([{'term': {filter_key: qk}}])

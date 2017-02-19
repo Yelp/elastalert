@@ -248,7 +248,7 @@ def add_raw_postfix(field, is_five):
     if is_five:
         end = '.keyword'
     else:
-        end =  '.raw'
+        end = '.raw'
     if not field.endswith(end):
         field += end
     return field

@@ -756,12 +756,10 @@ class NewTermsRule(RuleType):
                                  'new_field': field}
                         self.add_match(match)
                         self.seen_values[field].append(bucket['key'])
-                        
+
     def is_five(self):
         version = self.es.info()['version']['number']
         return version.startswith('5')
-
-
 
 class CardinalityRule(RuleType):
     """ A rule that matches if cardinality of a field is above or below a threshold within a timeframe """
