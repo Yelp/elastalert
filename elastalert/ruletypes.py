@@ -761,6 +761,7 @@ class NewTermsRule(RuleType):
         version = self.es.info()['version']['number']
         return version.startswith('5')
 
+
 class CardinalityRule(RuleType):
     """ A rule that matches if cardinality of a field is above or below a threshold within a timeframe """
     required_options = frozenset(['timeframe', 'cardinality_field'])

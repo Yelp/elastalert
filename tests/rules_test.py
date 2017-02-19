@@ -756,6 +756,7 @@ def test_flatline_count():
     rule.add_count_data({ts_to_dt('2014-10-11T00:00:35'): 0})
     assert len(rule.matches) == 1
 
+
 def test_flatline_query_key():
     rules = {'timeframe': datetime.timedelta(seconds=30),
              'threshold': 1,
