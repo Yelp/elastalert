@@ -130,7 +130,7 @@ def load_options(rule, conf, args=None):
         if 'buffer_time' in rule:
             rule['buffer_time'] = datetime.timedelta(**rule['buffer_time'])
         if 'bucket_interval' in rule:
-            rule['bucket_interval_delta'] = datetime.timedelta(**rule['bucket_interval'])
+            rule['bucket_interval_timedelta'] = datetime.timedelta(**rule['bucket_interval'])
         if 'exponential_realert' in rule:
             rule['exponential_realert'] = datetime.timedelta(**rule['exponential_realert'])
         if 'kibana4_start_timedelta' in rule:
