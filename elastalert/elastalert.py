@@ -666,7 +666,7 @@ class ElastAlerter():
             rule['type'].garbage_collect(tmp_endtime)
 
         if rule.get('aggregation_query_element'):
-            if (rule['original_starttime'] - tmp_endtime).total_seconds() == 0:
+            if self.total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
                 rule['starttime'] = rule['original_starttime']
                 return 0;
             else:
@@ -932,7 +932,7 @@ class ElastAlerter():
         if hasattr(dt, 'total_seconds'):
             return dt.total_seconds()
         else:
-            return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+            return (dt.microseconds + (dt.seconds + dt.days * 24 * 3600) * 10**6) / 10**6
 
     def generate_kibana4_db(self, rule, match):
         ''' Creates a link for a kibana4 dashboard which has time set to the match. '''
