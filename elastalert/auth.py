@@ -4,12 +4,12 @@ import configparser
 
 from aws_requests_auth.aws_auth import AWSRequestsAuth
 
-from botocore.credentials import InstanceMetadataProvider, InstanceMetadataFetcher
+from botocore.credentials import InstanceMetadataProvider, InstanceMetadataFetcher, ContainerProvider
 
 
 class Auth(object):
 
-    def __call__(self, host, username, password, aws_region, boto_profile):
+    def __call__(self, host, username, password, aws_region, boto_profile, aws_credentials_provider):
         """ Return the authorization header. If 'boto_profile' is passed, it'll be used. Otherwise it'll sign requests
         with instance role.
 
@@ -34,8 +34,16 @@ class Auth(object):
             aws_token = None
         else:
             # Executing ElastAlert from machine deployed with specific role
-            provider = InstanceMetadataProvider(
-                iam_role_fetcher=InstanceMetadataFetcher(timeout=1000, num_attempts=2))
+            providers = {
+                'instance-metadata': InstanceMetadataProvider(
+                    iam_role_fetcher=InstanceMetadataFetcher(timeout=1000, num_attempts=2)),
+                'container': ContainerProvider()
+            }
+            if aws_credentials_provider in providers:
+                provider = providers[aws_credentials_provider]
+            else:
+                return None
+
             aws_credentials = provider.load()
             aws_access_key_id = str(aws_credentials.access_key)
             aws_secret_access_key = str(aws_credentials.secret_key)

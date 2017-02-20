@@ -270,7 +270,8 @@ def elasticsearch_client(conf):
                                      username=es_conn_conf['es_username'],
                                      password=es_conn_conf['es_password'],
                                      aws_region=es_conn_conf['aws_region'],
-                                     boto_profile=es_conn_conf['boto_profile'])
+                                     boto_profile=es_conn_conf['boto_profile'],
+                                     aws_credentials_provider=es_conn_conf['aws_credentials_provider'])
 
     return Elasticsearch(host=es_conn_conf['es_host'],
                          port=es_conn_conf['es_port'],
@@ -295,6 +296,7 @@ def build_es_conn_config(conf):
     parsed_conf['es_username'] = None
     parsed_conf['es_password'] = None
     parsed_conf['aws_region'] = None
+    parsed_conf['aws_credentials_provider'] = 'instance-metadata'
     parsed_conf['boto_profile'] = None
     parsed_conf['es_host'] = conf['es_host']
     parsed_conf['es_port'] = conf['es_port']
@@ -308,6 +310,9 @@ def build_es_conn_config(conf):
 
     if 'aws_region' in conf:
         parsed_conf['aws_region'] = conf['aws_region']
+
+    if 'aws_credentials_provider' in conf:
+        parsed_conf['aws_credentials_provider'] = conf['aws_credentials_provider']
 
     if 'boto_profile' in conf:
         parsed_conf['boto_profile'] = conf['boto_profile']
