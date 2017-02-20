@@ -658,7 +658,7 @@ class ElastAlerter():
 
         tmp_endtime = rule['starttime']
 
-        while endtime - rule['starttime'] >= segment_size:
+        while endtime - rule['starttime'] > segment_size:
             tmp_endtime = tmp_endtime + segment_size
             if not self.run_query(rule, rule['starttime'], tmp_endtime):
                 return 0
@@ -669,12 +669,14 @@ class ElastAlerter():
             if self.total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
                 rule['starttime'] = rule['original_starttime']
                 return 0;
+            elif endtime - tmp_endtime == segment_size:
+                self.run_query(rule, rule['starttime'], tmp_endtime)
             else:
                 endtime = tmp_endtime
         else:
             if not self.run_query(rule, rule['starttime'], endtime):
                 return 0
-        rule['type'].garbage_collect(endtime)
+            rule['type'].garbage_collect(endtime)
 
         # Process any new matches
         num_matches = len(rule['type'].matches)
