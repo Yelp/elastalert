@@ -203,17 +203,18 @@ class ElastAlerter():
             query_element.pop('sort')
         metric_agg_element = rule['aggregation_query_element']
 
-        if query_key is None:
-            aggs_element = metric_agg_element
-        else:
-            aggs_element = {'bucket_aggs': {'terms': {'field': query_key, 'size': terms_size}, 'aggs': metric_agg_element}}
         bucket_interval_period = rule.get('bucket_interval_period')
         if bucket_interval_period is not None:
             if rule.get('sync_window_offset'):
-                aggs_element = {'interval_aggs': {'date_histogram': {'field': timestamp_field, 'interval': bucket_interval_period, 'offset': '+%ss' % (rule['sync_window_offset'])}, 'aggs': aggs_element}}
+                aggs_element = {'interval_aggs': {'date_histogram': {'field': timestamp_field, 'interval': bucket_interval_period, 'offset': '+%ss' % (rule['sync_window_offset'])}, 'aggs': metric_agg_element}}
             else:
-                aggs_element = {'interval_aggs': {'date_histogram': {'field': timestamp_field, 'interval': bucket_interval_period}, 'aggs': aggs_element}}
+                aggs_element = {'interval_aggs': {'date_histogram': {'field': timestamp_field, 'interval': bucket_interval_period}, 'aggs': metric_agg_element}}
+        else:
+            aggs_element = metric_agg_element
 
+        if query_key is not None:
+            aggs_element = {'bucket_aggs': {'terms': {'field': query_key, 'size': terms_size}, 'aggs': aggs_element}}
+                      
         if not self.is_five():
             query_element['filtered'].update({'aggs': aggs_element})
             aggs_query = {'aggs': query_element}
@@ -408,9 +409,9 @@ class ElastAlerter():
         query = self.get_aggregation_query(base_query, rule, query_key, term_size)
         try:
             if not self.is_five():
-                res = self.current_es.search(index=index, doc_type=rule['doc_type'], body=query, search_type='count', ignore_unavailable=True)
+                res = self.current_es.search(index=index, doc_type=rule.get('doc_type'), body=query, search_type='count', ignore_unavailable=True)
             else:
-                res = self.current_es.search(index=index, doc_type=rule['doc_type'], body=query, size=0, ignore_unavailable=True)
+                res = self.current_es.search(index=index, doc_type=rule.get('doc_type'), body=query, size=0, ignore_unavailable=True)
         except ElasticsearchException as e:
             if len(str(e)) > 1024:
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
@@ -423,7 +424,8 @@ class ElastAlerter():
         else:
             payload = res['aggregations']
         lt = rule.get('use_local_time')
-        elastalert_logger.info('Queried rule %s from %s to %s' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt)))
+        self.num_hits += res['hits']['total']
+        elastalert_logger.info('Queried rule %s from %s to %s: %s hits' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt),res['hits']['total']))
         return {endtime: payload}
 
     def remove_duplicate_events(self, data, rule):
@@ -573,11 +575,13 @@ class ElastAlerter():
     def adjust_start_time_for_interval_sync(self, rule, endtime):
             # If aggregation query adjust bucket offset
         if rule.get('aggregation_query_element'):
-            es_interval_delta = rule.get('bucket_interval_timedelta')
-            unix_starttime = dt_to_unix(rule['starttime'])
-            es_interval_delta_in_sec = self.total_seconds(es_interval_delta)
-            offset = int(unix_starttime % es_interval_delta_in_sec)
+
             if rule.get('bucket_interval'):
+                es_interval_delta = rule.get('bucket_interval_timedelta')
+                unix_starttime = dt_to_unix(rule['starttime'])
+                es_interval_delta_in_sec = self.total_seconds(es_interval_delta)
+                offset = int(unix_starttime % es_interval_delta_in_sec)
+
                 if rule.get('sync_bucket_interval'):
                     rule['starttime'] = unix_to_dt(unix_starttime - offset)
                     endtime = unix_to_dt(dt_to_unix(endtime) - offset)
@@ -668,11 +672,11 @@ class ElastAlerter():
             rule['type'].garbage_collect(tmp_endtime)
 
         if rule.get('aggregation_query_element'):
-            if self.total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
+            if endtime - tmp_endtime == segment_size:
+                self.run_query(rule, tmp_endtime, endtime)
+            elif self.total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
                 rule['starttime'] = rule['original_starttime']
                 return 0
-            elif endtime - tmp_endtime == segment_size:
-                self.run_query(rule, rule['starttime'], tmp_endtime)
             else:
                 endtime = tmp_endtime
         else:
@@ -934,7 +938,9 @@ class ElastAlerter():
         time.sleep(duration)
 
     def total_seconds(self, dt):
-        if hasattr(dt, 'total_seconds'):
+        if dt is None:
+            return 0
+        elif hasattr(dt, 'total_seconds'):
             return dt.total_seconds()
         else:
             return (dt.microseconds + (dt.seconds + dt.days * 24 * 3600) * 10**6) / 10**6
