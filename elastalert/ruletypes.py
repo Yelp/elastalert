@@ -919,11 +919,9 @@ class MetricAggregationRule(BaseAggregationRule):
     def check_terms_matches(self, timestamp, term_data):
         metric_val = term_data[self.metric_key]['value']
         if self.check_thresholds(metric_val):
-            match = {
-                    self.rules['query_key']: term_data['key'],
-                    self.rules['timestamp_field']: timestamp,
-                    self.metric_key: metric_val
-            }
+            match = {self.rules['query_key']: term_data['key'],
+                     self.rules['timestamp_field']: timestamp,
+                     self.metric_key: metric_val}
             self.add_match(match)
         return
 
