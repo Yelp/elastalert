@@ -669,15 +669,19 @@ class ElastAlerter():
                 continue
             new_rule[prop] = rule[prop]
 
-        # In ES5, filters starting with 'query' should have the top wrapper removed
         if self.is_five():
-            for es_filter in copy.copy(new_rule.get('filter', [])):
-                if es_filter.get('query'):
-                    new_filter = es_filter['query']
-                    new_rule['filter'].append(new_filter)
-                    new_rule['filter'].remove(es_filter)
+            self.modify_rule_for_ES5(new_rule)
 
         return new_rule
+
+    @staticmethod
+    def modify_rule_for_ES5(new_rule):
+        # In ES5, filters starting with 'query' should have the top wrapper removed
+        for es_filter in new_rule.get('filter', []):
+            if es_filter.get('query'):
+                new_filter = es_filter['query']
+                new_rule['filter'].append(new_filter)
+                new_rule['filter'].remove(es_filter)
 
     def load_rule_changes(self):
         ''' Using the modification times of rule config files, syncs the running rules
