@@ -929,7 +929,7 @@ class MetricAggregationRule(BaseAggregationRule):
         metric_val = aggregation_data[self.metric_key]['value']
         if self.check_thresholds(metric_val):
             match = {self.rules['timestamp_field']: timestamp,
-            self.metric_key: metric_val}
+                     self.metric_key: metric_val}
             self.add_match(match)
         return
 
