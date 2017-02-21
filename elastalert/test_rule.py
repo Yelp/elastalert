@@ -59,6 +59,9 @@ class MockElastAlerter(object):
             print(repr(e)[:2048], file=sys.stderr)
             return None
 
+        if is_five:
+            ElastAlerter.modify_rule_for_ES5(conf)
+
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()
         ts = conf.get('timestamp_field', '@timestamp')
