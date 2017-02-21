@@ -867,27 +867,24 @@ class BaseAggregationRule(RuleType):
     def add_aggregation_data(self, payload):
         for timestamp, payload_data in payload.iteritems():
             if 'interval_aggs' in payload_data:
-                self.unwrap_interval_buckets(timestamp, payload_data['interval_aggs']['buckets'])
+                self.unwrap_interval_buckets(timestamp, None, payload_data['interval_aggs']['buckets'])
             elif 'bucket_aggs' in payload_data:
                 self.unwrap_term_buckets(timestamp, payload_data['bucket_aggs']['buckets'])
             else:
-                self.check_matches(timestamp, payload_data)
+                self.check_matches(timestamp, None, payload_data)
 
-    def unwrap_interval_buckets(self, timestamp, time_buckets):
-        for time_data in time_buckets:
-            if 'bucket_aggs' in time_data:
-                self.unwrap_term_buckets(timestamp, time_data['bucket_aggs']['buckets'])
-            else:
-                self.check_matches(timestamp, time_data)
+    def unwrap_interval_buckets(self, timestamp, query_key, interval_buckets):
+        for interval_data in interval_buckets:
+            self.check_matches(timestamp, query_key, interval_data)
 
     def unwrap_term_buckets(self, timestamp, term_buckets):
         for term_data in term_buckets:
-            self.check_terms_matches(timestamp, term_data)
+            if 'interval_aggs' in term_data:
+                self.unwrap_interval_buckets(timestamp, term_data['key'], term_data['interval_aggs']['buckets'])
+            else:
+                self.check_matches(timestamp, term_data['key'], term_data)
 
-    def check_terms_matches(self, timestamp, aggregation_data):
-        raise NotImplementedError()
-
-    def check_matches(self, timestamp, aggregation_data):
+    def check_matches(self, timestamp, query_key, aggregation_data):
         raise NotImplementedError()
 
 
@@ -910,26 +907,19 @@ class MetricAggregationRule(BaseAggregationRule):
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
 
     def get_match_str(self, match):
-        message = 'Threshold violation, %s:%s (min: %s max : %s) \n\n' % (self.rules['metric_agg_type'], self.rules['metric_agg_key'], self.rules.get('min_threshold'), self.rules.get('max_threshold'))
+        message = 'Threshold violation, %s:%s %s (min: %s max : %s) \n\n' % (self.rules['metric_agg_type'], self.rules['metric_agg_key'], match[self.metric_key], self.rules.get('min_threshold'), self.rules.get('max_threshold'))
         return message
 
     def generate_aggregation_query(self):
         return {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
 
-    def check_terms_matches(self, timestamp, term_data):
-        metric_val = term_data[self.metric_key]['value']
-        if self.check_thresholds(metric_val):
-            match = {self.rules['query_key']: term_data['key'],
-                     self.rules['timestamp_field']: timestamp,
-                     self.metric_key: metric_val}
-            self.add_match(match)
-        return
-
-    def check_matches(self, timestamp, aggregation_data):
+    def check_matches(self, timestamp, query_key, aggregation_data):
         metric_val = aggregation_data[self.metric_key]['value']
         if self.check_thresholds(metric_val):
             match = {self.rules['timestamp_field']: timestamp,
                      self.metric_key: metric_val}
+            if query_key is not None:
+                match[self.rules['query_key']] = query_key
             self.add_match(match)
         return
 
