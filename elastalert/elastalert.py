@@ -42,6 +42,7 @@ from util import ts_to_dt
 from util import unix_to_dt
 from util import dt_to_unix
 
+
 class ElastAlerter():
     """ The main ElastAlert runner. This class holds all state about active rules,
     controls when queries are run, and passes information between rules and alerts.
@@ -197,16 +198,16 @@ class ElastAlerter():
         if query_key is None:
             aggs_element = metric_agg_element
         else:
-            aggs_element = {'bucket_aggs': {'terms': {'field': query_key, 'size': terms_size}, 'aggs' : metric_agg_element}}
+            aggs_element = {'bucket_aggs': {'terms': {'field': query_key, 'size': terms_size}, 'aggs': metric_agg_element}}
         bucket_interval_period = rule.get('bucket_interval_period')
-        if not bucket_interval_period is None:
+        if bucket_interval_period is not None:
             if rule.get('sync_window_offset'):
-                aggs_element = {'interval_aggs': {'date_histogram': {'field': timestamp_field, 'interval': bucket_interval_period, 'offset': '+%ss' % (rule['sync_window_offset'])}, 'aggs' : aggs_element}}
+                aggs_element = {'interval_aggs': {'date_histogram': {'field': timestamp_field, 'interval': bucket_interval_period, 'offset': '+%ss' % (rule['sync_window_offset'])}, 'aggs': aggs_element}}
             else:
-                aggs_element = {'interval_aggs': {'date_histogram': {'field': timestamp_field, 'interval': bucket_interval_period}, 'aggs' : aggs_element}}
+                aggs_element = {'interval_aggs': {'date_histogram': {'field': timestamp_field, 'interval': bucket_interval_period}, 'aggs': aggs_element}}
 
         if not self.is_five():
-            query_element['filtered'].update({'aggs': aggs_element })
+            query_element['filtered'].update({'aggs': aggs_element})
             aggs_query = {'aggs': query_element}
         else:
             aggs_query = query
@@ -412,6 +413,7 @@ class ElastAlerter():
         lt = rule.get('use_local_time')
         elastalert_logger.info('Queried rule %s from %s to %s' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt)))
         return {endtime: payload}
+
     def remove_duplicate_events(self, data, rule):
         new_events = []
         for event in data:
@@ -521,10 +523,10 @@ class ElastAlerter():
         if 'starttime' not in rule:
             # Try to get the last run from Elasticsearch
             last_run_end = self.get_starttime(rule)
-            if last_run_end:   
+            if last_run_end:
                 rule['starttime'] = last_run_end
                 self.adjust_start_time_for_overlapping_agg_query(rule)
-                self.adjust_start_time_for_interval_sync(rule,endtime)
+                self.adjust_start_time_for_interval_sync(rule, endtime)
                 rule['minimum_starttime'] = rule['starttime']
                 return None
 
@@ -539,12 +541,12 @@ class ElastAlerter():
             # If buffer_time doesn't bring us past the previous endtime, use that instead
             elif 'previous_endtime' in rule:
                 if rule['previous_endtime'] < buffer_delta:
-                    rule['starttime'] = rule['previous_endtime']              
+                    rule['starttime'] = rule['previous_endtime']
                 self.adjust_start_time_for_overlapping_agg_query(rule)
             else:
                 rule['starttime'] = buffer_delta
 
-            self.adjust_start_time_for_interval_sync(rule,endtime)
+            self.adjust_start_time_for_interval_sync(rule, endtime)
 
         else:
             # Query from the end of the last run, if it exists, otherwise a run_every sized window
@@ -553,17 +555,17 @@ class ElastAlerter():
     def adjust_start_time_for_overlapping_agg_query(self, rule):
         if rule.get('aggregation_query_element'):
             if rule.get('allow_buffer_time_overlap') and not rule.get('use_run_every_query_size') and (rule['buffer_time'] > rule['run_every']):
-                rule['starttime'] = rule['starttime'] - ( rule['buffer_time'] - rule['run_every'])
+                rule['starttime'] = rule['starttime'] - (rule['buffer_time'] - rule['run_every'])
                 rule['original_starttime'] = rule['starttime']
 
-    def adjust_start_time_for_interval_sync(self, rule,endtime):
+    def adjust_start_time_for_interval_sync(self, rule, endtime):
             # If aggregation query adjust bucket offset
         if rule.get('aggregation_query_element'):
             es_interval_delta = rule.get('bucket_interval_timedelta')
             unix_starttime = dt_to_unix(rule['starttime'])
             es_interval_delta_in_sec = self.total_seconds(es_interval_delta)
             offset = int(unix_starttime % es_interval_delta_in_sec)
-            if rule.get('bucket_interval'): 
+            if rule.get('bucket_interval'):
                 if rule.get('sync_bucket_interval'):
                     rule['starttime'] = unix_to_dt(unix_starttime - offset)
                     endtime = unix_to_dt(dt_to_unix(endtime) - offset)
@@ -575,11 +577,11 @@ class ElastAlerter():
         count style queries. This mimicks the query size for when ElastAlert is running continuously. """
         if not rule.get('use_count_query') and not rule.get('use_terms_query') and not rule.get('aggregation_query_element'):
             return rule.get('buffer_time', self.buffer_time)
-        elif rule.get('aggregation_query_element'): 
+        elif rule.get('aggregation_query_element'):
             if rule.get('use_run_every_query_size'):
                 return self.run_every
             else:
-                return rule.get('buffer_time', self.buffer_time)   
+                return rule.get('buffer_time', self.buffer_time)
         else:
             return self.run_every
 
@@ -634,7 +636,7 @@ class ElastAlerter():
             self.set_starttime(rule, endtime)
 
         rule['original_starttime'] = rule['starttime']
-                
+
         # Don't run if starttime was set to the future
         if ts_now() <= rule['starttime']:
             logging.warning("Attempted to use query start time in the future (%s), sleeping instead" % (starttime))
@@ -656,7 +658,7 @@ class ElastAlerter():
         if rule.get('aggregation_query_element'):
             if self.total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
                 rule['starttime'] = rule['original_starttime']
-                return 0;
+                return 0
             elif endtime - tmp_endtime == segment_size:
                 self.run_query(rule, rule['starttime'], tmp_endtime)
             else:
@@ -914,6 +916,7 @@ class ElastAlerter():
         """ Sleep for a set duration """
         elastalert_logger.info("Sleeping for %s seconds" % (duration))
         time.sleep(duration)
+
     def total_seconds(self, dt):
         if hasattr(dt, 'total_seconds'):
             return dt.total_seconds()
