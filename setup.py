@@ -38,6 +38,7 @@ setup(
         'configparser',
         'aws-requests-auth',
         'texttable',
+        'exotel',
         'twilio',
         'stomp.py'
     ]

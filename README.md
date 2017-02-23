@@ -49,6 +49,7 @@ Currently, we have support built in for the following alert types:
 - AWS SNS
 - VictorOps
 - PagerDuty
+- Exotel
 - Twilio
 - Gitter
 
