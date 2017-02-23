@@ -890,7 +890,7 @@ class BaseAggregationRule(RuleType):
 
 class MetricAggregationRule(BaseAggregationRule):
     """ A rule that matches when there is a low number of events given a timeframe. """
-    required_options = frozenset(['metric_agg_key', 'metric_agg_type'])
+    required_options = frozenset(['metric_agg_key', 'metric_agg_type', 'doc_type'])
     allowed_aggregations = frozenset(['min', 'max', 'avg', 'sum', 'cardinality', 'value_count'])
 
     def __init__(self, *args):
@@ -924,6 +924,8 @@ class MetricAggregationRule(BaseAggregationRule):
         return
 
     def check_thresholds(self, metric_value):
+        if metric_value is None:
+            return False
         if 'max_threshold' in self.rules and metric_value >= self.rules['max_threshold']:
             return True
         if 'min_threshold' in self.rules and metric_value < self.rules['min_threshold']:
