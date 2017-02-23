@@ -945,6 +945,51 @@ Optional:
 
 ``query_key``: Group cardinality counts by this field. For each unique value of the ``query_key`` field, cardinality will be counted separately.
 
+Metric Aggregation
+~~~~~~~~
+
+``metric_aggregation``: This rule matches when the value of a metric within the calculation window is higher or lower than a threshold. By 
+default this is ``buffer_time``.
+
+This rule requires:
+
+``metric_agg_key``: This is the name of the field over which the metric value will be calculated. The underlying type of this field must be 
+supported by the specified aggregation type. 
+
+``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg', 
+'sum', 'cardinality', 'value_count'.
+
+``doc_type``: Specify the ``_type`` of document to search for.
+
+This rule also requires at least one of the two following options:
+
+``max_threshold``: If the calculated metric value is greater than this number, an alert will be triggered. 
+
+``min_threshold``: If the calculated metric value is less than this number, an alert will be triggered.
+
+Optional:
+
+``query_key``: Group metric calculations by this field. For each unique value of the ``query_key`` field, the metric will be calculated and 
+evaluated separately against the threshold(s).
+
+``use_run_every_query_size``: By default the metric value is calculated over a ``buffer_time`` sized window. If this parameter is true 
+the rule will use ``run_every`` as the calculation window.  
+
+``allow_buffer_time_overlap``: This setting will only have an effect if ``use_run_every_query_size`` is false and ``buffer_time`` is greater 
+than ``run_every``. If true will allow the start of the metric calculation window to overlap the end time of a previous run. By default the 
+start and end times will not overlap, so if the time elapsed since the last run is less than the metric calculation window size, rule execution 
+will be skipped (to avoid calculations on partial data). 
+
+``bucket_interval``: If present this will divide the metric calculation window into ``bucket_interval`` sized segments. The metric value will 
+be calculated and evaluated against the threshold(s) for each segment. If ``bucket_interval`` is specified then ``buffer_time`` must be a 
+multiple of ``bucket_interval``. (Or ``run_every`` if ``use_run_every_query_size`` is true).
+  
+``sync_bucket_interval``: This only has an effect if ``bucket_interval`` is present. If true it will sync the start and end times of the metric 
+calculation window to the keys (timestamps) of the underlying date_histogram buckets. Because of the way elasticsearch calculates date_histogram 
+bucket keys these usually round evenly to nearest minute, hour, day etc (depending on the bucket size). By default the bucket keys are offset to 
+allign with the time elastalert runs, (This both avoid calculations on partial data, and ensures the very latest documents are included). 
+See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_offset for a 
+more comprehensive explaination.
 
 .. _alerts:
 
