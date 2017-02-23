@@ -1324,6 +1324,26 @@ If there's no open (i.e. unresolved) incident with this key, a new one will be c
 
 ``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
 
+Exotel
+~~~~~~
+
+Developers in India can use Exotel alerter, it will trigger an incident to a mobile phone as sms from your exophone. Alert name along with the message body will be sent as an sms.
+
+The alerter requires the following option:
+
+``exotel_accout_sid``: This is sid of your Exotel account.
+
+``exotel_auth_token``: Auth token assosiated with your Exotel account.
+
+``exotel_to_number``: The phone number where you would like send the notification.
+
+``exotel_from_number``: Your exotel phone number from which message will be sent.
+
+The alerter has one optional argument:
+
+``exotel_message_body``: Message you want to send in the sms, is you don't specify this argument only the rule name is sent
+
+
 Twilio
 ~~~~~~
 

@@ -219,6 +219,12 @@ properties:
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
+  
+  ### Exotel
+  exotel_account_sid: {type: string}
+  exotel_auth_token: {type: string}
+  exotel_to_number: {type: string}
+  exotel_from_number: {type: string}
 
   ### Twilio
   twilio_accout_sid: {type: string}
