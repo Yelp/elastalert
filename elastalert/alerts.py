@@ -1003,7 +1003,7 @@ class ExotelAlerter(Alerter):
         self.sms_body = self.rule.get('exotel_message_body', '')
 
     def alert(self, matches):
-        client = Exotel(self.exotel_account_sid, self.exotel_auth_token) 
+        client = Exotel(self.exotel_account_sid, self.exotel_auth_token)
 
         try:
             message_body = self.rule['name'] + self.sms_body
