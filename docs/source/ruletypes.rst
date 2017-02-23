@@ -1335,9 +1335,11 @@ The alerter requires the following option:
 
 ``exotel_auth_token``: Auth token assosiated with your Exotel account.
 
+If you don't know how to find your accound sid and auth token, refer - http://support.exotel.in/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid-
+
 ``exotel_to_number``: The phone number where you would like send the notification.
 
-``exotel_from_number``: Your exotel phone number from which message will be sent.
+``exotel_from_number``: Your exophone number from which message will be sent.
 
 The alerter has one optional argument:
 

@@ -993,6 +993,7 @@ class PagerDutyAlerter(Alerter):
 
 class ExotelAlerter(Alerter):
     required_options = frozenset(['exotel_account_sid', 'exotel_auth_token', 'exotel_to_number', 'exotel_from_number'])
+
     def __init__(self, rule):
         super(ExotelAlerter, self).__init__(rule)
         self.exotel_account_sid = self.rule['exotel_account_sid']
@@ -1001,10 +1002,9 @@ class ExotelAlerter(Alerter):
         self.exotel_from_number = self.rule['exotel_from_number']
         self.sms_body = self.rule.get('exotel_message_body', '')
 
-
     def alert(self, matches):
-        client = Exotel(self.exotel_account_sid, self.exotel_auth_token)
-        
+        client = Exotel(self.exotel_account_sid, self.exotel_auth_token) 
+
         try:
             message_body = self.rule['name'] + self.sms_body
             response = client.sms(self.rule['exotel_from_number'], self.rule['exotel_to_number'], message_body)
@@ -1015,7 +1015,8 @@ class ExotelAlerter(Alerter):
         elastalert_logger.info("Trigger sent to Twilio")
 
     def get_info(self):
-        return {'type': 'twilio','exotel_account': self.exotel_account_sid}
+        return {'type': 'exotel', 'exotel_account': self.exotel_account_sid}
+
 
 class TwilioAlerter(Alerter):
     required_options = frozenset(['twilio_accout_sid', 'twilio_auth_token', 'twilio_to_number', 'twilio_from_number'])
