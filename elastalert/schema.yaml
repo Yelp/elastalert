@@ -117,12 +117,6 @@ oneOf:
     properties:
       type: {enum: [metric_aggregation]}
       #timeframe: *timeframe
-
-  - title: Percentage Match
-    required: [match_bucket_filter]
-    properties:
-      type: {enum: [percentage_match]}
-
   - title: Custom Rule from Module
     properties:
       # custom rules include a period in the rule type

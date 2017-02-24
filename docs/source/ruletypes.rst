@@ -978,38 +978,6 @@ allign with the time elastalert runs, (This both avoid calculations on partial d
 See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_offset for a 
 more comprehensive explaination.
 
-Percentage Match
-~~~~~~~~
-
-``percentage_match``: This rule matches when the percentage of document in the match bucket within a calculation window is higher or lower 
-than a threshold. By default the calculation window is ``buffer_time``.
-
-This rule requires:
-
-``match_bucket_filter``: ES filter DSL. This defines a filter for the match bucket, which should match a subset of the documents returned by the 
-main query filter.   
-
-``doc_type``: Specify the ``_type`` of document to search for.
-
-This rule also requires at least one of the two following options:
-
-``min_percentage``: If the percentage of matching documents is greater than this number, an alert will be triggered. 
-
-``max_percentage``: If the percentage of matching documents is less than this number, an alert will be triggered.
-
-Optional:
-
-``query_key``: Group percentage by this field. For each unique value of the ``query_key`` field, the percentage will be calculated and 
-evaluated separately against the threshold(s).
-
-``use_run_every_query_size``: See ``use_run_every_query_size`` in  Metric Aggregation rule
-
-``allow_buffer_time_overlap``:  See ``allow_buffer_time_overlap`` in  Metric Aggregation rule
-
-``bucket_interval``: See ``bucket_interval`` in  Metric Aggregation rule
-  
-``sync_bucket_interval``: See ``sync_bucket_interval`` in  Metric Aggregation rule
-
 .. _alerts:
 
 Alerts
