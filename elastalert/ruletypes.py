@@ -894,7 +894,7 @@ class BaseAggregationRule(RuleType):
 
 class MetricAggregationRule(BaseAggregationRule):
     """ A rule that matches when there is a low number of events given a timeframe. """
-    required_options = frozenset(['metric_agg_key', 'metric_agg_type', 'doc_type'])
+    required_options = frozenset(['metric_agg_key', 'metric_agg_type'])
     allowed_aggregations = frozenset(['min', 'max', 'avg', 'sum', 'cardinality', 'value_count'])
 
     def __init__(self, *args):
@@ -928,10 +928,55 @@ class MetricAggregationRule(BaseAggregationRule):
         return
 
     def check_thresholds(self, metric_value):
-        if metric_value is None:
-            return False
         if 'max_threshold' in self.rules and metric_value >= self.rules['max_threshold']:
             return True
         if 'min_threshold' in self.rules and metric_value < self.rules['min_threshold']:
+            return True
+        return False
+
+class PercentageMatchRule(BaseAggregationRule):
+    required_options = frozenset(['match_bucket_filter','doc_type'])
+
+    def __init__(self, *args):
+        super(PercentageMatchRule, self).__init__(*args)
+        self.ts_field = self.rules.get('timestamp_field', '@timestamp')
+        if 'max_percentage' not in self.rules and 'min_percentage' not in self.rules:
+            raise EAException("RatioMatchRule must have at least one of either min_percentage or max_percentage")
+
+        self.match_bucket_filter = self.rules['match_bucket_filter'] 
+        self.rules['aggregation_query_element'] = self.generate_aggregation_query()
+
+    def get_match_str(self, match):
+        message = 'Percentage violation, value: %s (min: %s max : %s) \n\n' % (match['percentage'], self.rules.get('min_percentage'), self.rules.get('max_percentage'))
+        return message
+
+    def generate_aggregation_query(self):
+        return {'ratio_match_aggs': {'filters': { "other_bucket": True, 'filters': { 'match_bucket' : {'bool': {'must': self.match_bucket_filter}}}}}}
+
+    def check_matches(self, timestamp, query_key, aggregation_data):
+        match_bucket_count = aggregation_data['ratio_match_aggs']['buckets']['match_bucket']['doc_count']
+        other_bucket_count = aggregation_data['ratio_match_aggs']['buckets']['_other_']['doc_count']
+
+        if match_bucket_count is None or other_bucket_count is None:
+            return
+        else:
+            total_count = other_bucket_count + match_bucket_count
+            if total_count == 0:
+                return
+            else: 
+                match_percentage = (match_bucket_count * 1.0) / (total_count * 1.0) * 100   
+                if self.percentage_violation(match_percentage):
+                    match = {self.rules['timestamp_field']: timestamp,
+                         'percentage': match_percentage}
+                    if query_key is not None:
+                        match[self.rules['query_key']] = query_key
+                
+                    self.add_match(match)
+
+    def percentage_violation(self, match_percentage):
+
+        if 'max_percentage' in self.rules and match_percentage > self.rules['max_percentage']:
+            return True
+        if 'min_percentage' in self.rules and match_percentage < self.rules['min_percentage']:
             return True
         return False
