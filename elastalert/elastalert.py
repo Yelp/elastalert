@@ -27,7 +27,6 @@ from enhancements import DropMatchException
 from util import add_raw_postfix
 from util import cronite_datetime_to_timestamp
 from util import dt_to_ts
-from util import dt_to_unix
 from util import EAException
 from util import elastalert_logger
 from util import elasticsearch_client
@@ -41,6 +40,7 @@ from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
+from util import dt_to_unix
 
 
 class ElastAlerter():
@@ -197,9 +197,10 @@ class ElastAlerter():
 
         bucket_interval_period = rule.get('bucket_interval_period')
         if bucket_interval_period is not None:
-            aggs_element = {'interval_aggs': {'date_histogram': {'field': timestamp_field, 'interval': bucket_interval_period}, 'aggs': metric_agg_element}}
             if rule.get('sync_window_offset'):
-                aggs_element['offset'] = '+%ss' % (rule['sync_window_offset'])
+                aggs_element = {'interval_aggs': {'date_histogram': {'field': timestamp_field, 'interval': bucket_interval_period, 'offset': '+%ss' % (rule['sync_window_offset'])}, 'aggs': metric_agg_element}}
+            else:
+                aggs_element = {'interval_aggs': {'date_histogram': {'field': timestamp_field, 'interval': bucket_interval_period}, 'aggs': metric_agg_element}}
         else:
             aggs_element = metric_agg_element
 
@@ -410,6 +411,7 @@ class ElastAlerter():
             payload = res['aggregations']['filtered']
         else:
             payload = res['aggregations']
+        lt = rule.get('use_local_time')
         self.num_hits += res['hits']['total']
         return {endtime: payload}
 
