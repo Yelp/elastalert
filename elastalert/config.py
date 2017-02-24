@@ -41,8 +41,7 @@ rules_mapping = {
     'flatline': ruletypes.FlatlineRule,
     'new_term': ruletypes.NewTermsRule,
     'cardinality': ruletypes.CardinalityRule,
-    'metric_aggregation': ruletypes.MetricAggregationRule,
-    'percentage_match': ruletypes.PercentageMatchRule,
+    'metric_aggregation': ruletypes.MetricAggregationRule
 }
 
 # Used to map names of alerts to their classes
