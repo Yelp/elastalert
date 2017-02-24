@@ -875,7 +875,7 @@ class BaseAggregationRule(RuleType):
 
     def unwrap_interval_buckets(self, timestamp, query_key, interval_buckets):
         for interval_data in interval_buckets:
-            #Use bucket key here instead of start_time for more accurate match timestamp
+            # Use bucket key here instead of start_time for more accurate match timestamp
             self.check_matches(ts_to_dt(interval_data['key_as_string']), query_key, interval_data)
 
     def unwrap_term_buckets(self, timestamp, term_buckets):
@@ -941,7 +941,7 @@ class PercentageMatchRule(BaseAggregationRule):
         super(PercentageMatchRule, self).__init__(*args)
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
         if 'max_percentage' not in self.rules and 'min_percentage' not in self.rules:
-            raise EAException("RatioMatchRule must have at least one of either min_percentage or max_percentage")
+            raise EAException("PercentageMatchRule must have at least one of either min_percentage or max_percentage")
 
         self.match_bucket_filter = self.rules['match_bucket_filter']
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
@@ -951,11 +951,11 @@ class PercentageMatchRule(BaseAggregationRule):
         return message
 
     def generate_aggregation_query(self):
-        return {'ratio_match_aggs': {'filters': { "other_bucket": True, 'filters': { 'match_bucket' : {'bool': {'must': self.match_bucket_filter}}}}}}
+        return {'percentage_match_aggs': {'filters': {'other_bucket': True, 'filters': {'match_bucket': {'bool': {'must': self.match_bucket_filter}}}}}}
 
     def check_matches(self, timestamp, query_key, aggregation_data):
-        match_bucket_count = aggregation_data['ratio_match_aggs']['buckets']['match_bucket']['doc_count']
-        other_bucket_count = aggregation_data['ratio_match_aggs']['buckets']['_other_']['doc_count']
+        match_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['match_bucket']['doc_count']
+        other_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['_other_']['doc_count']
 
         if match_bucket_count is None or other_bucket_count is None:
             return
@@ -964,7 +964,7 @@ class PercentageMatchRule(BaseAggregationRule):
             if total_count == 0:
                 return
             else: 
-                match_percentage = (match_bucket_count * 1.0) / (total_count * 1.0) * 100 
+                match_percentage = (match_bucket_count * 1.0) / (total_count * 1.0) * 100
                 if self.percentage_violation(match_percentage):
                     match = {self.rules['timestamp_field']: timestamp,
                              'percentage': match_percentage}
