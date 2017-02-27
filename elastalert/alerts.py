@@ -586,6 +586,8 @@ class JiraAlerter(Alerter):
                     elif array_items == 'number':
                         self.jira_args[arg_name] = [int(v) for v in value]
                     # Also attempt to handle arrays of complex types that have to be passed as objects with an identifier 'key'
+                    elif array_items == 'option':
+                        self.jira_args[arg_name] = [{'value': v} for v in value]
                     else:
                         # Try setting it as an object, using 'name' as the key
                         # This may not work, as the key might actually be 'key', 'id', 'value', or something else
@@ -604,6 +606,8 @@ class JiraAlerter(Alerter):
                     # Number type
                     elif arg_type == 'number':
                         self.jira_args[arg_name] = int(value)
+                    elif arg_type == 'option':
+                        self.jira_args[arg_name] = {'value': value}
                     # Complex type
                     else:
                         self.jira_args[arg_name] = {'name': value}
@@ -742,7 +746,9 @@ class CommandAlerter(Alerter):
 
     def __init__(self, *args):
         super(CommandAlerter, self).__init__(*args)
+
         self.last_command = []
+
         self.shell = False
         if isinstance(self.rule['command'], basestring):
             self.shell = True
@@ -750,10 +756,17 @@ class CommandAlerter(Alerter):
                 logging.warning('Warning! You could be vulnerable to shell injection!')
             self.rule['command'] = [self.rule['command']]
 
+        self.new_style_string_format = False
+        if 'new_style_string_format' in self.rule and self.rule['new_style_string_format']:
+            self.new_style_string_format = True
+
     def alert(self, matches):
         # Format the command and arguments
         try:
-            command = [command_arg % matches[0] for command_arg in self.rule['command']]
+            if self.new_style_string_format:
+                command = [command_arg.format(match=matches[0]) for command_arg in self.rule['command']]
+            else:
+                command = [command_arg % matches[0] for command_arg in self.rule['command']]
             self.last_command = command
         except KeyError as e:
             raise EAException("Error formatting command: %s" % (e))

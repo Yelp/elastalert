@@ -212,11 +212,6 @@ def load_options(rule, conf, args=None):
     include.append(rule['timestamp_field'])
     rule['include'] = list(set(include))
 
-    # Change top_count_keys to .raw
-    if 'top_count_keys' in rule and rule.get('raw_count_keys', True):
-        keys = rule.get('top_count_keys')
-        rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in keys]
-
     # Check that generate_kibana_url is compatible with the filters
     if rule.get('generate_kibana_link'):
         for es_filter in rule.get('filter'):
@@ -285,6 +280,10 @@ def load_modules(rule, args=None):
     rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
 
 
+def isyaml(filename):
+    return filename.endswith('.yaml') or filename.endswith('.yml')
+
+
 def get_file_paths(conf, use_rule=None):
     # Passing a filename directly can bypass rules_folder and .yaml checks
     if use_rule and os.path.isfile(use_rule):
@@ -296,12 +295,12 @@ def get_file_paths(conf, use_rule=None):
             for filename in files:
                 if use_rule and use_rule != filename:
                     continue
-                if filename.endswith('.yaml'):
+                if isyaml(filename):
                     rule_files.append(os.path.join(root, filename))
     else:
         for filename in os.listdir(rule_folder):
             fullpath = os.path.join(rule_folder, filename)
-            if os.path.isfile(fullpath) and filename.endswith('.yaml'):
+            if os.path.isfile(fullpath) and isyaml(filename):
                 rule_files.append(fullpath)
     return rule_files
 
