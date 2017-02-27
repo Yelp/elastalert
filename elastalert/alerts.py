@@ -1196,8 +1196,8 @@ class AlertaAlerter(Alerter):
         self.alerta_group = self.rule.get('alerta_group', 'Misc')
         self.alerta_service = self.rule.get('alerta_service', ['elastalert'])
         self.alerta_timeout = self.rule.get('alerta_timeout', 86400)
-        self.alerta_correlate = self.rule.get('alerta_correlate', nil)
-        self.alerta_tags = self.rule.get('alerta_tags', nil)
+        self.alerta_correlate = self.rule.get('alerta_correlate', None)
+        self.alerta_tags = self.rule.get('alerta_tags', None)
 
     def alert(self, matches):
         if self.rule.get('use_qk_as_resource') and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
