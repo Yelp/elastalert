@@ -1194,7 +1194,10 @@ class AlertaAlerter(Alerter):
         self.alerta_environment = self.rule.get('alerta_environment', 'Production')
         self.alerta_origin = self.rule.get('alerta_origin', 'elastalert')
         self.alerta_group = self.rule.get('alerta_group', 'Misc')
-        self.alerta_service = self.rule.get('alerta_service', 'elastalert')
+        self.alerta_service = self.rule.get('alerta_service', ['elastalert'])
+        self.alerta_timeout = self.rule.get('alerta_timeout', 86400)
+        self.alerta_correlate = self.rule.get('alerta_correlate', nil)
+        self.alerta_tags = self.rule.get('alerta_tags', nil)
 
     def alert(self, matches):
         if self.rule.get('use_qk_as_resource') and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
@@ -1209,21 +1212,20 @@ class AlertaAlerter(Alerter):
             headers['Authorization'] = 'Key %s' % (self.rule['alerta_api_key'])
 
         # set https proxy, if it was provided
-        payload = {
-            'resource': resource,
-            'event': self.create_default_title(matches),
-            'origin': self.alerta_origin,
-            "severity": self.alerta_severity,
-            "text": self.rule['type'].get_match_str(matches[0]),
-            "environment": self.alerta_environment,
-            "severity": self.alerta_severity,
-            "group": self.alerta_group,
-            "value": len(matches),
-            "service": [
-                self.alerta_service
-            ],
-            "rawData": self.create_alert_body(matches)
-        }
+        payload = {'resource': resource,
+                   'event': self.create_default_title(matches),
+                   'origin': self.alerta_origin,
+                   'severity': self.alerta_severity,
+                   'text': self.rule['type'].get_match_str(matches[0]),
+                   'environment': self.alerta_environment,
+                   'severity': self.alerta_severity,
+                   'group': self.alerta_group,
+                   'value': len(matches),
+                   'service': self.alerta_service,
+                   'timeout': self.alerta_timeout,
+                   'correlate': self.alerta_correlate,
+                   'tags': self.alerta_tags,
+                   'rawData': self.create_alert_body(matches)}
 
         try:
             response = requests.post(self.alerta_url, json.dumps(payload, cls=DateTimeEncoder), headers=headers)
