@@ -13,6 +13,7 @@ from util import hashable
 from util import lookup_es_key
 from util import new_get_event_ts
 from util import pretty_ts
+from util import total_seconds
 from util import ts_now
 from util import ts_to_dt
 
