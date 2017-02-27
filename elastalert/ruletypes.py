@@ -856,10 +856,10 @@ class BaseAggregationRule(RuleType):
                 raise EAException("Unsupported window size")
 
             if self.rules.get('use_run_every_query_size'):
-                if self.rules['run_every'].total_seconds() % self.rules['bucket_interval_timedelta'].total_seconds() != 0:
+                if total_seconds(self.rules['run_every']) % total_seconds(self.rules['bucket_interval_timedelta']) != 0:
                     raise EAException("run_every must be evenly divisible by bucket_interval if specified")
             else:
-                if self.rules['buffer_time'].total_seconds() % self.rules['bucket_interval_timedelta'].total_seconds() != 0:
+                if total_seconds(self.rules['buffer_time']) % total_seconds(self.rules['bucket_interval_timedelta']) != 0:
                     raise EAException("Buffer_time must be evenly divisible by bucket_interval if specified")
 
     def generate_aggregation_query(self):
@@ -964,7 +964,7 @@ class PercentageMatchRule(BaseAggregationRule):
             total_count = other_bucket_count + match_bucket_count
             if total_count == 0:
                 return
-            else: 
+            else:
                 match_percentage = (match_bucket_count * 1.0) / (total_count * 1.0) * 100
                 if self.percentage_violation(match_percentage):
                     match = {self.rules['timestamp_field']: timestamp, 'percentage': match_percentage}
