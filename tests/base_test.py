@@ -712,17 +712,17 @@ def test_query_segmenting(ea):
 
     # buffer_time segments with terms queries
     ea.rules[0].pop('use_terms_query')
-    ea.rules[0]['aggregation_query_element'] = {'term':{'term_val'}}
+    ea.rules[0]['aggregation_query_element'] = {'term': 'term_val'}
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=30)
         run_and_assert_segmented_queries(ea, START, END, ea.rules[0]['buffer_time'])
 
-    #partial segment size scenario
+    # partial segment size scenario
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=53)
         run_and_assert_segmented_queries(ea, START, END, ea.rules[0]['buffer_time'])
-    
-	#run every segmenting      
+
+	  # run every segmenting      
     ea.rules[0]['use_run_every_query_size'] = True
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         run_and_assert_segmented_queries(ea, START, END, ea.run_every)
