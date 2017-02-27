@@ -37,6 +37,7 @@ from util import pretty_ts
 from util import replace_dots_in_field_names
 from util import seconds
 from util import set_es_key
+from util import total_seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
@@ -564,7 +565,7 @@ class ElastAlerter():
             if rule.get('bucket_interval'):
                 es_interval_delta = rule.get('bucket_interval_timedelta')
                 unix_starttime = dt_to_unix(rule['starttime'])
-                es_interval_delta_in_sec = self.total_seconds(es_interval_delta)
+                es_interval_delta_in_sec = total_seconds(es_interval_delta)
                 offset = int(unix_starttime % es_interval_delta_in_sec)
 
                 if rule.get('sync_bucket_interval'):
@@ -659,7 +660,7 @@ class ElastAlerter():
         if rule.get('aggregation_query_element'):
             if endtime - tmp_endtime == segment_size:
                 self.run_query(rule, tmp_endtime, endtime)
-            elif self.total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
+            elif total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
                 rule['starttime'] = rule['original_starttime']
                 return 0
             else:
@@ -862,7 +863,7 @@ class ElastAlerter():
                 continue
 
             # Wait before querying again
-            sleep_duration = self.total_seconds(next_run - datetime.datetime.utcnow())
+            sleep_duration = total_seconds(next_run - datetime.datetime.utcnow())
             self.sleep_for(sleep_duration)
 
     def run_all_rules(self):
@@ -917,14 +918,6 @@ class ElastAlerter():
         """ Sleep for a set duration """
         elastalert_logger.info("Sleeping for %s seconds" % (duration))
         time.sleep(duration)
-
-    def total_seconds(self, dt):
-        if dt is None:
-            return 0
-        elif hasattr(dt, 'total_seconds'):
-            return dt.total_seconds()
-        else:
-            return (dt.microseconds + (dt.seconds + dt.days * 24 * 3600) * 10**6) / 10**6
 
     def generate_kibana4_db(self, rule, match):
         ''' Creates a link for a kibana4 dashboard which has time set to the match. '''

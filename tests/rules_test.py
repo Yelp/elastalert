@@ -40,7 +40,7 @@ def create_event(timestamp, timestamp_field='@timestamp', **kwargs):
 
 
 def create_bucket_aggregation(agg_name, buckets):
-    agg = {agg_name: {'buckets': buckets }}
+    agg = {agg_name: {'buckets': buckets}}
     return agg
 
 
@@ -977,7 +977,7 @@ def test_base_aggregation_constructor():
     rule = BaseAggregationRule(rules)
 
     with pytest.raises(EAException):
-        rules['bucket_interval_timedelta'] = datetime.timedelta(seconds=13)    
+        rules['bucket_interval_timedelta'] = datetime.timedelta(seconds=13)
         rule = BaseAggregationRule(rules)
 
 
@@ -1078,7 +1078,7 @@ def test_percentage_match():
     rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(None, 100))
     rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(26, 74))
     rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(74, 26))
-    
+
     assert len(rule.matches) == 0
 
     rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(24, 76))
