@@ -31,6 +31,7 @@ from util import lookup_es_key
 from util import pretty_ts
 from util import ts_to_dt
 
+
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'isoformat'):
@@ -1186,12 +1187,12 @@ class AlertaAlerter(Alerter):
 
     def __init__(self, rule):
         super(AlertaAlerter, self).__init__(rule)
-        
+
         if self.rule.get('alerta_ssl'):
-            protocol = 'https'    
+            protocol = 'https'
         else:
-            protocol = 'http' 
-            
+            protocol = 'http'
+
         self.url = '%s://%s:%s/alert' % (protocol, self.rule.get('alerta_host'), self.rule.get('alerta_port'))
         self.api_key = self.rule.get('alerta_api_key', None)
         self.severity = self.rule.get('alerta_severity', 'warning')
@@ -1202,7 +1203,7 @@ class AlertaAlerter(Alerter):
         self.timeout = self.rule.get('alerta_timeout', 86400)
         self.use_match_timestamp = self.rule.get('alerta_use_match_timestamp', False)
         self.use_qk_as_resource = self.rule.get('alerta_use_qk_as_resource', False)
-        
+
     def alert(self, matches):
         if self.use_qk_as_resource and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
             resource = lookup_es_key(matches[0], self.rule['query_key'])
@@ -1211,15 +1212,15 @@ class AlertaAlerter(Alerter):
 
         if self.use_match_timestamp and lookup_es_key(matches[0], self.rule['timestamp_field']):
             createTime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        else: 
+        else:
             createTime = ts_to_dt(lookup_es_key(matches[0], self.rule['timestamp_field'])).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-            
+
         # post to Alerta
         headers = {'content-type': 'application/json'}
 
         if self.api_key is not None:
             headers['Authorization'] = 'Key %s' % (self.rule['alerta_api_key'])
-        
+
         # set https proxy, if it was provided
         payload = {
             'resource': resource,
