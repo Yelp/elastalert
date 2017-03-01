@@ -1337,7 +1337,7 @@ class ElastAlerter():
         if res['hits']['hits']:
             until_ts = res['hits']['hits'][0]['_source']['until']
             exponent = res['hits']['hits'][0]['_source'].get('exponent', 0)
-            if not rule_name in self.silence_cache.keys():
+            if rule_name not in self.silence_cache.keys():
                 self.silence_cache[rule_name] = (ts_to_dt(until_ts), exponent)
             else:
                 self.silence_cache[rule_name] = (ts_to_dt(until_ts), self.silence_cache[rule_name][1])
