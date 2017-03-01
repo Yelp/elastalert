@@ -1186,7 +1186,7 @@ class SimpleAlerter(Alerter):
         simple_webhook_url = self.rule.get('simple_webhook_url')
         if isinstance(simple_webhook_url, basestring):
             simple_webhook_url = [simple_webhook_url]
-        self.siple_webhook_url = simple_webhook_url
+        self.simple_webhook_url = simple_webhook_url
         self.simple_proxy = self.rule.get('simple_proxy')
 
     def alert(self, matches):
