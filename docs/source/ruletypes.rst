@@ -1429,6 +1429,46 @@ Optional:
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
 
+Alerta
+~~~~~~
+
+Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint. 
+The default values will work with a local Alerta server installation with authorization disabled.
+See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on the Alerta alert json format.
+Required:
+
+``alerta_host``: API server hostname. 
+
+``alerta_port``: API server port. 
+
+Optional:
+
+``alerta_api_key``: This is the api key for alerta server if required. Default behaviour is that no Authorization header sent with the request.
+
+``alerta_resource``: The resource name of the generated alert. Defaults to elastalert.
+
+``alerta_service``: A list of service tags for the generated alert. Defaults to "elastalert".
+
+``alerta_severity``: The severity level of the alert. Defaults to "warning".
+
+``alerta_origin``: The origin field for the generated alert. Defaults to "elastalert".
+
+``alerta_environment``: The environment field for the generated alert. Defaults to "Production".
+
+``alerta_group``: The group field for the generated alert. No Default.
+
+``alerta_timeout``: The time in seconds before this alert will expire (in Alerta). Default 84600 (1 Day).
+
+``alerta_correlate``: A list of alerta events that this one correlates with. Default is an empty list.
+
+``alerta_tags``: A list of alerta tags. Default is an empty list.
+
+``alerta_use_qk_as_resource``: If true and query_key is present this will override alerta_resource field with the query key value (Can be useful if query_key is a hostname).
+
+``alerta_use_match_timestamp``: If true will use the timestamp of the first match as the createTime of the alert, otherwise the current time is used. Default False. 
+
+``alerta_ssl``: If true alerts will be sent over https to the alerta server api.
+
 Alerter
 ~~~~~~~
 

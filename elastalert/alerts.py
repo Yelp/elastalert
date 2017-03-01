@@ -29,6 +29,7 @@ from util import EAException
 from util import elastalert_logger
 from util import lookup_es_key
 from util import pretty_ts
+from util import ts_to_dt
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -1178,3 +1179,85 @@ class ServiceNowAlerter(Alerter):
     def get_info(self):
         return {'type': 'ServiceNow',
                 'self.servicenow_rest_url': self.servicenow_rest_url}
+
+
+class AlertaAlerter(Alerter):
+    """ Creates an Alerta event for each alert """
+    required_options = frozenset(['alerta_host', 'alerta_port'])
+
+    def __init__(self, rule):
+        super(AlertaAlerter, self).__init__(rule)
+
+        if self.rule.get('alerta_ssl'):
+            protocol = 'https'
+        else:
+            protocol = 'http'
+
+        self.url = '%s://%s:%s/alert' % (protocol, self.rule.get('alerta_host'), self.rule.get('alerta_port'))
+        self.api_key = self.rule.get('alerta_api_key', None)
+        self.severity = self.rule.get('alerta_severity', 'warning')
+        self.resource = self.rule.get('alerta_resource', 'elastalert')
+        self.environment = self.rule.get('alerta_environment', 'Production')
+        self.origin = self.rule.get('alerta_origin', 'elastalert')
+        self.service = self.rule.get('alerta_service', ['elastalert'])
+        self.timeout = self.rule.get('alerta_timeout', 86400)
+        self.use_match_timestamp = self.rule.get('alerta_use_match_timestamp', False)
+        self.use_qk_as_resource = self.rule.get('alerta_use_qk_as_resource', False)
+
+    def alert(self, matches):
+        if self.use_qk_as_resource and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
+            resource = lookup_es_key(matches[0], self.rule['query_key'])
+        else:
+            resource = self.resource
+
+        if self.use_match_timestamp and lookup_es_key(matches[0], self.rule['timestamp_field']):
+            createTime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        else:
+            createTime = ts_to_dt(lookup_es_key(matches[0], self.rule['timestamp_field'])).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+        # post to Alerta
+        headers = {'content-type': 'application/json'}
+
+        if self.api_key is not None:
+            headers['Authorization'] = 'Key %s' % (self.rule['alerta_api_key'])
+
+        # set https proxy, if it was provided
+        payload = {
+            'resource': resource,
+            'event': self.create_default_title(matches),
+            'origin': self.origin,
+            "severity": self.severity,
+            'text': self.rule['type'].get_match_str(matches[0]),
+            'environment': self.environment,
+            'severity': self.severity,
+            'group': self.rule.get('alerta_group'),
+            'value': len(matches),
+            'service': self.service,
+            'timeout': self.timeout,
+            'createTime': createTime,
+            'correlate': self.rule.get('alerta_correlate', []),
+            'tags': self.rule.get('alerta_tags', []),
+            'rawData': self.create_alert_body(matches),
+        }
+
+        try:
+            response = requests.post(self.url, json.dumps(payload, cls=DateTimeEncoder), headers=headers)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Alerta: %s" % e)
+        elastalert_logger.info("Alert sent to Alerta")
+
+    def create_default_title(self, matches):
+        title = '%s' % (self.rule['name'])
+
+        # If the rule has a query_key, add that value plus timestamp to subject
+        if 'query_key' in self.rule:
+            qk = matches[0].get(self.rule['query_key'])
+            if qk:
+                title += '.%s' % (qk)
+
+        return title
+
+    def get_info(self):
+        return {'type': 'alerta',
+                'alerta_url': self.url}
