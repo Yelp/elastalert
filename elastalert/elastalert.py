@@ -1316,12 +1316,9 @@ class ElastAlerter():
         if rule_name in self.silence_cache:
             if ts_now() < self.silence_cache[rule_name][0]:
                 return True
-            else:
-                return False
 
         if self.debug:
             return False
-
         query = {'term': {'rule_name': rule_name}}
         sort = {'sort': {'until': {'order': 'desc'}}}
         if self.is_five():
@@ -1337,12 +1334,13 @@ class ElastAlerter():
             self.handle_error("Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
 
             return False
-
         if res['hits']['hits']:
             until_ts = res['hits']['hits'][0]['_source']['until']
             exponent = res['hits']['hits'][0]['_source'].get('exponent', 0)
-
-            self.silence_cache[rule_name] = (ts_to_dt(until_ts), exponent)
+            if not rule_name in self.silence_cache.keys():
+                self.silence_cache[rule_name] = (ts_to_dt(until_ts), exponent)
+            else:
+                self.silence_cache[rule_name] = (ts_to_dt(until_ts), self.silence_cache[rule_name][1])
             if ts_now() < ts_to_dt(until_ts):
                 return True
         return False
