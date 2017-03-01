@@ -40,6 +40,7 @@ Currently, we have support built in for these alert types:
 - Slack
 - Telegram
 - Debug
+- Stomp
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
 
@@ -168,6 +169,9 @@ unless overwritten in the rule config. The default is "localhost".
 ``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon Elasticsearch Service. It'll use instance role keys to sign the requests.
 
 ``boto_profile``: Boto profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
+
+``replace_dots_in_field_names``: If ``True``, ElastAlert replaces any dots in field names with an underscore before writing documents to Elasticsearch.
+The default value is ``False``. Elasticsearch 2.0 - 2.3 does not support dots in field names.
 
 .. _runningelastalert:
 

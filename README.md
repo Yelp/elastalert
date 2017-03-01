@@ -8,7 +8,7 @@
 
 ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
 
-ElastAlert currently works with Elasticsearch 1.X and 2.X.
+ElastAlert works with all versions of Elasticsearch.
 
 At Yelp, we use Elasticsearch, Logstash and Kibana for managing our ever increasing amount of data and logs.
 Kibana is great for visualizing and querying data, but we quickly realized that it needed a companion tool for alerting
@@ -49,6 +49,7 @@ Currently, we have support built in for the following alert types:
 - AWS SNS
 - VictorOps
 - PagerDuty
+- Twilio
 - Gitter
 
 Additional rule types and alerts can be easily imported or written.
@@ -82,6 +83,24 @@ to query indefinitely.
 Eg: ``--rule this_rule.yaml``
 
 ``--config`` allows you to specify the location of the configuration. By default, it is will look for config.yaml in the current directory.
+
+## Kibana Plugin and Docker install
+``./bin/kibana plugin -i elastalert -u https://git.bitsensor.io/front-end/elastalert-kibana-plugin/builds/5251/artifacts/file/build/elastalert-0.0.6.zip`` will install the Kibana plugin.
+
+Run and build the the Docker container with ElastAlert and RESTful frontend by
+```bash
+git clone https://git.bitsensor.io/back-end/elastalert.git && cd elastalert
+docker build . -t elastalert
+docker run -d \
+    -p 3030:3030 \
+    -v `pwd`/config/elastalert.yaml:/opt/elastalert/config.yaml \
+    -v `pwd`/config/elastalert-server.json:/opt/elastalert-server/config/config.json \
+    -v `pwd`/rules:/opt/elastalert/rules \
+    --net="host" \
+    elastalert:latest
+cd ../
+./bin/kibana
+```
 
 ## Documentation
 

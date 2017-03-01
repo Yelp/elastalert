@@ -7,6 +7,7 @@ import dateutil.tz
 from auth import Auth
 from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
+from six import string_types
 
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
@@ -243,10 +244,26 @@ def cronite_datetime_to_timestamp(self, d):
     return total_seconds((d - datetime.datetime(1970, 1, 1)))
 
 
-def add_raw_postfix(field):
-    if not field.endswith('.raw'):
-        field += '.raw'
+def add_raw_postfix(field, is_five):
+    if is_five:
+        end = '.keyword'
+    else:
+        end = '.raw'
+    if not field.endswith(end):
+        field += end
     return field
+
+
+def replace_dots_in_field_names(document):
+    """ This method destructively modifies document by replacing any dots in
+    field names with an underscore. """
+    for key, value in list(document.items()):
+        if isinstance(value, dict):
+            value = replace_dots_in_field_names(value)
+        if isinstance(key, string_types) and key.find('.') != -1:
+            del document[key]
+            document[key.replace('.', '_')] = value
+    return document
 
 
 def elasticsearch_client(conf):
