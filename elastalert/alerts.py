@@ -1178,3 +1178,35 @@ class ServiceNowAlerter(Alerter):
     def get_info(self):
         return {'type': 'ServiceNow',
                 'self.servicenow_rest_url': self.servicenow_rest_url}
+
+
+class SimplePostAlerter(Alerter):
+    def __init__(self, rule):
+        super(SimplePostAlerter, self).__init__(rule)
+        simple_webhook_url = self.rule.get('simple_webhook_url')
+        if isinstance(simple_webhook_url, basestring):
+            simple_webhook_url = [simple_webhook_url]
+        self.simple_webhook_url = simple_webhook_url
+        self.simple_proxy = self.rule.get('simple_proxy')
+
+    def alert(self, matches):
+        payload = {
+            'rule': self.rule['name'],
+            'matches': matches
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json;charset=utf-8"
+        }
+        proxies = {'https': self.simple_proxy} if self.simple_proxy else None
+        for url in self.simple_webhook_url:
+            try:
+                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error posting simple alert: %s" % e)
+        elastalert_logger.info("Simple alert sent")
+
+    def get_info(self):
+        return {'type': 'simple',
+                'simple_webhook_url': self.simple_webhook_url}

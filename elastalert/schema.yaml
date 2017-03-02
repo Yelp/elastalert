@@ -241,3 +241,7 @@ properties:
   gitter_webhook_url: {type: string}
   gitter_proxy: {type: string}
   gitter_msg_level: {enum: [info, error]}
+
+  ### Simple
+  simple_webhook_url: *arrayOfString
+  simple_proxy: {type: string}
