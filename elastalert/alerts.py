@@ -1012,7 +1012,7 @@ class ExotelAlerter(Alerter):
                 raise EAException("Error posting to Exotel, response code is %s" % response)
         except:
             raise EAException("Error posting to Exotel")
-        elastalert_logger.info("Trigger sent to Twilio")
+        elastalert_logger.info("Trigger sent to Exotel")
 
     def get_info(self):
         return {'type': 'exotel', 'exotel_account': self.exotel_account_sid}
