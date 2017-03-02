@@ -15,7 +15,7 @@ from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import SlackAlerter
-from elastalert.alerts import SimpleAlerter
+from elastalert.alerts import SimplePostAlerter
 from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
@@ -793,7 +793,7 @@ def test_simple_alerter():
         'alert': []
     }
     load_modules(rule)
-    alert = SimpleAlerter(rule)
+    alert = SimplePostAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
         'somefield': 'foobarbaz'
