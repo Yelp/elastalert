@@ -1180,9 +1180,9 @@ class ServiceNowAlerter(Alerter):
                 'self.servicenow_rest_url': self.servicenow_rest_url}
 
 
-class SimpleAlerter(Alerter):
+class SimplePostAlerter(Alerter):
     def __init__(self, rule):
-        super(SimpleAlerter, self).__init__(rule)
+        super(SimplePostAlerter, self).__init__(rule)
         simple_webhook_url = self.rule.get('simple_webhook_url')
         if isinstance(simple_webhook_url, basestring):
             simple_webhook_url = [simple_webhook_url]
