@@ -132,7 +132,7 @@ class ChangeRule(CompareRule):
     def compare(self, event):
         key = hashable(lookup_es_key(event, self.rules['query_key']))
         val = lookup_es_key(event, self.rules['compare_key'])
-        if not val and self.rules['ignore_null']:
+        if not isinstance(val,bool) and not val and self.rules['ignore_null']:
             return False
         changed = False
 
