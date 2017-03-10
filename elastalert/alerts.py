@@ -386,10 +386,11 @@ class EmailAlerter(Alerter):
         to_addr = self.rule['email']
         if 'email_from_field' in self.rule:
             recipient = lookup_es_key(matches[0], self.rule['email_from_field'])
-            if recipient and '@' in recipient:
-                to_addr = [recipient]
-            elif recipient and 'email_add_domain' in self.rule:
-                to_addr = [recipient + self.rule['email_add_domain']]
+            if isinstance(recipient, basestring):
+                if '@' in recipient:
+                    to_addr = [recipient]
+                elif 'email_add_domain' in self.rule:
+                    to_addr = [recipient + self.rule['email_add_domain']]
         email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(to_addr)
