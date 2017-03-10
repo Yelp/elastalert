@@ -21,7 +21,9 @@ from alerts import DebugAlerter
 from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
+from create_index import create_index
 from croniter import croniter
+from elasticsearch.client import IndicesClient
 from elasticsearch.exceptions import ElasticsearchException
 from enhancements import DropMatchException
 from util import add_raw_postfix
@@ -459,7 +461,7 @@ class ElastAlerter():
 
         index = format_index(self.writeback_index, ts_now() - self.old_query_limit, ts_now())
         try:
-            res = self.writeback_es.search(index=index, doc_type='elastalert_status',
+            res = self.writeback_es.search(index=index, doc_type='elastalert_status', ignore_unavailable=True,
                                            size=1, body=query, _source_include=['endtime', 'rule_name'])
             if res['hits']['hits']:
                 endtime = ts_to_dt(res['hits']['hits'][0]['_source']['endtime'])
@@ -1080,6 +1082,8 @@ class ElastAlerter():
 
         timestamp = ts_to_dt(writeback_body['@timestamp'])
         index = format_index(self.writeback_index, timestamp, timestamp)
+        if not IndicesClient(self.writeback_es).exists(index):
+            create_index(self.writeback_es, index)
 
         try:
             res = self.writeback_es.index(index=index,
@@ -1110,7 +1114,8 @@ class ElastAlerter():
             res = self.writeback_es.search(index=index,
                                            doc_type='elastalert',
                                            body=query,
-                                           size=1000)
+                                           size=1000,
+                                           ignore_unavailable=True)
             if res['hits']['hits']:
                 return res['hits']['hits']
         except ElasticsearchException as e:
@@ -1190,7 +1195,8 @@ class ElastAlerter():
             res = self.writeback_es.search(index=index,
                                            doc_type='elastalert',
                                            body=query,
-                                           size=self.max_aggregation)
+                                           size=self.max_aggregation,
+                                           ignore_unavailable=True)
             for match in res['hits']['hits']:
                 matches.append(match['_source'])
                 self.writeback_es.delete(index=match['_index'],
@@ -1219,7 +1225,8 @@ class ElastAlerter():
             res = self.writeback_es.search(index=index,
                                            doc_type='elastalert',
                                            body=query,
-                                           size=1)
+                                           size=1,
+                                           ignore_unavailable=True)
             if len(res['hits']['hits']) == 0:
                 return None
         except (KeyError, ElasticsearchException) as e:
@@ -1344,7 +1351,7 @@ class ElastAlerter():
         query.update(sort)
         index = format_index(self.writeback_index, ts_now() - rule['realert'], ts_now())
         try:
-            res = self.writeback_es.search(index=index, doc_type='silence',
+            res = self.writeback_es.search(index=index, doc_type='silence', ignore_unavailable=True,
                                            size=1, body=query, _source_include=['until', 'exponent'])
         except ElasticsearchException as e:
             self.handle_error("Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
