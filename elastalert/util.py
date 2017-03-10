@@ -192,7 +192,9 @@ def format_index(index, start, end):
 
     indexes = []
     while start.date() <= end.date():
-        indexes.append(start.strftime(index))
+        new_index = start.strftime(index)
+        if new_index not in indexes:
+            indexes.append(new_index)
         start += datetime.timedelta(days=1)
 
     return ','.join(indexes)

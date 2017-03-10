@@ -457,8 +457,9 @@ class ElastAlerter():
             query = {'query': {'bool': query}}
         query.update(sort)
 
+        index = format_index(self.writeback_index, ts_now() - self.old_query_limit, ts_now())
         try:
-            res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert_status',
+            res = self.writeback_es.search(index=index, doc_type='elastalert_status',
                                            size=1, body=query, _source_include=['endtime', 'rule_name'])
             if res['hits']['hits']:
                 endtime = ts_to_dt(res['hits']['hits'][0]['_source']['endtime'])
@@ -591,7 +592,7 @@ class ElastAlerter():
             if query_key_value is not None:
                 silence_cache_key += '.' + query_key_value
 
-            if self.is_silenced(rule['name'] + "._silence") or self.is_silenced(silence_cache_key):
+            if self.is_silenced(rule['name'] + "._silence", rule) or self.is_silenced(silence_cache_key, rule):
                 elastalert_logger.info('Ignoring match for silenced rule %s' % (silence_cache_key,))
                 continue
 
@@ -1077,8 +1078,11 @@ class ElastAlerter():
         if '@timestamp' not in writeback_body:
             writeback_body['@timestamp'] = dt_to_ts(ts_now())
 
+        timestamp = ts_to_dt(writeback_body['@timestamp'])
+        index = format_index(self.writeback_index, timestamp, timestamp)
+
         try:
-            res = self.writeback_es.index(index=self.writeback_index,
+            res = self.writeback_es.index(index=index,
                                           doc_type=doc_type, body=body)
             return res
         except ElasticsearchException as e:
@@ -1101,8 +1105,9 @@ class ElastAlerter():
         else:
             query = {'query': inner_query, 'filter': time_filter}
         query.update(sort)
+        index = format_index(self.writeback_index, ts_now() - time_limit, ts_now())
         try:
-            res = self.writeback_es.search(index=self.writeback_index,
+            res = self.writeback_es.search(index=index,
                                            doc_type='elastalert',
                                            body=query,
                                            size=1000)
@@ -1116,6 +1121,7 @@ class ElastAlerter():
         pending_alerts = self.find_recent_pending_alerts(self.alert_time_limit)
         for alert in pending_alerts:
             _id = alert['_id']
+            index = alert['_index']
             alert = alert['_source']
             try:
                 rule_name = alert.pop('rule_name')
@@ -1139,7 +1145,7 @@ class ElastAlerter():
 
             # Send the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):
-                aggregated_matches = self.get_aggregated_matches(_id)
+                aggregated_matches = self.get_aggregated_matches(_id, rule)
                 if aggregated_matches:
                     matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
                     self.alert(matches, rule, alert_time=alert_time)
@@ -1154,7 +1160,7 @@ class ElastAlerter():
 
                 # Delete it from the index
                 try:
-                    self.writeback_es.delete(index=self.writeback_index,
+                    self.writeback_es.delete(index=index,
                                              doc_type='elastalert',
                                              id=_id)
                 except:  # TODO: Give this a more relevant exception, try:except: is evil.
@@ -1169,20 +1175,25 @@ class ElastAlerter():
                         self.alert(alertable_matches, rule)
                         rule['agg_matches'] = [agg_match for agg_match in rule['agg_matches'] if self.get_aggregation_key_value(rule, agg_match) != aggregation_key_value]
 
-    def get_aggregated_matches(self, _id):
+    def get_aggregated_matches(self, _id, rule):
         """ Removes and returns all matches from writeback_es that have aggregate_id == _id """
 
         # XXX if there are more than self.max_aggregation matches, you have big alerts and we will leave entries in ES.
         query = {'query': {'query_string': {'query': 'aggregate_id:%s' % (_id)}}, 'sort': {'@timestamp': 'asc'}}
         matches = []
+        if isinstance(rule['aggregation'], datetime.timedelta):
+            index = format_index(self.writeback_index, ts_now() - rule['aggregation'], ts_now())
+        else:
+            # TODO calculate maximum period of the cron schedule instead of using a month
+            index = format_index(self.writeback_index, ts_now() - datetime.timedelta(weeks=4), ts_now())
         try:
-            res = self.writeback_es.search(index=self.writeback_index,
+            res = self.writeback_es.search(index=index,
                                            doc_type='elastalert',
                                            body=query,
                                            size=self.max_aggregation)
             for match in res['hits']['hits']:
                 matches.append(match['_source'])
-                self.writeback_es.delete(index=self.writeback_index,
+                self.writeback_es.delete(index=match['_index'],
                                          doc_type='elastalert',
                                          id=match['_id'])
         except (KeyError, ElasticsearchException) as e:
@@ -1199,8 +1210,13 @@ class ElastAlerter():
         if self.is_five():
             query = {'query': {'bool': query}}
         query['sort'] = {'alert_time': {'order': 'desc'}}
+        if isinstance(rule['aggregation'], datetime.timedelta):
+            index = format_index(self.writeback_index, ts_now() - rule['aggregation'], ts_now())
+        else:
+            # TODO calculate maximum period of the cron schedule instead of using a month
+            index = format_index(self.writeback_index, ts_now() - datetime.timedelta(weeks=4), ts_now())
         try:
-            res = self.writeback_es.search(index=self.writeback_index,
+            res = self.writeback_es.search(index=index,
                                            doc_type='elastalert',
                                            body=query,
                                            size=1)
@@ -1311,7 +1327,7 @@ class ElastAlerter():
         self.silence_cache[silence_cache_key] = (timestamp, exponent)
         return self.writeback('silence', body)
 
-    def is_silenced(self, rule_name):
+    def is_silenced(self, rule_name, rule):
         """ Checks if rule_name is currently silenced. Returns false on exception. """
         if rule_name in self.silence_cache:
             if ts_now() < self.silence_cache[rule_name][0]:
@@ -1326,9 +1342,9 @@ class ElastAlerter():
         else:
             query = {'filter': query}
         query.update(sort)
-
+        index = format_index(self.writeback_index, ts_now() - rule['realert'], ts_now())
         try:
-            res = self.writeback_es.search(index=self.writeback_index, doc_type='silence',
+            res = self.writeback_es.search(index=index, doc_type='silence',
                                            size=1, body=query, _source_include=['until', 'exponent'])
         except ElasticsearchException as e:
             self.handle_error("Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
