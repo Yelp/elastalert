@@ -6,8 +6,6 @@ import logging
 import subprocess
 import sys
 import warnings
-import stomp
-
 from email.mime.text import MIMEText
 from email.utils import formatdate
 from smtplib import SMTP
@@ -18,12 +16,13 @@ from socket import error
 
 import boto.sns as sns
 import requests
+import stomp
+from exotel import Exotel
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from texttable import Texttable
-from exotel import Exotel
 from twilio import TwilioRestException
 from twilio.rest import TwilioRestClient
 from util import EAException
@@ -372,6 +371,9 @@ class EmailAlerter(Alerter):
         bcc = self.rule.get('bcc')
         if bcc and isinstance(bcc, basestring):
             self.rule['bcc'] = [self.rule['bcc']]
+        add_suffix = self.rule.get('email_add_domain')
+        if add_suffix and not add_suffix.startswith('@'):
+            self.rule['email_add_domain'] = '@' + add_suffix
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
@@ -382,9 +384,16 @@ class EmailAlerter(Alerter):
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
+        if 'email_from_field' in self.rule:
+            recipient = lookup_es_key(matches[0], self.rule['email_from_field'])
+            if isinstance(recipient, basestring):
+                if '@' in recipient:
+                    to_addr = [recipient]
+                elif 'email_add_domain' in self.rule:
+                    to_addr = [recipient + self.rule['email_add_domain']]
         email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
-        email_msg['To'] = ', '.join(self.rule['email'])
+        email_msg['To'] = ', '.join(to_addr)
         email_msg['From'] = self.from_addr
         email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
         email_msg['Date'] = formatdate()
@@ -417,7 +426,7 @@ class EmailAlerter(Alerter):
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
         self.smtp.close()
 
-        elastalert_logger.info("Sent email to %s" % (self.rule['email']))
+        elastalert_logger.info("Sent email to %s" % (to_addr))
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])

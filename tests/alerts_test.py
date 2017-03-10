@@ -14,8 +14,8 @@ from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
-from elastalert.alerts import SlackAlerter
 from elastalert.alerts import SimplePostAlerter
+from elastalert.alerts import SlackAlerter
 from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
@@ -109,6 +109,39 @@ def test_email():
         assert 'To: testing@test.test' in body
         assert 'From: testfrom@test.test' in body
         assert 'Subject: Test alert for test_value, owned by owner_value' in body
+
+
+def test_email_from_field():
+    rule = {'name': 'test alert', 'email': ['testing@test.test'], 'email_add_domain': 'example.com',
+            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_from_field': 'data.user', 'owner': 'owner_value'}
+    # Found, without @
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+        alert = EmailAlerter(rule)
+        alert.alert([{'data': {'user': 'qlo'}}])
+        assert mock_smtp.mock_calls[4][1][1] == ['qlo@example.com']
+
+    # Found, with @
+    rule['email_add_domain'] = '@example.com'
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+        alert = EmailAlerter(rule)
+        alert.alert([{'data': {'user': 'qlo'}}])
+        assert mock_smtp.mock_calls[4][1][1] == ['qlo@example.com']
+
+    # Not found
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+        alert = EmailAlerter(rule)
+        alert.alert([{'data': {'foo': 'qlo'}}])
+        assert mock_smtp.mock_calls[4][1][1] == ['testing@test.test']
+
+    # Found, wrong type
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+        alert = EmailAlerter(rule)
+        alert.alert([{'data': {'user': 17}}])
+        assert mock_smtp.mock_calls[4][1][1] == ['testing@test.test']
 
 
 def test_email_with_unicode_strings():
