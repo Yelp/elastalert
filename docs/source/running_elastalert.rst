@@ -27,11 +27,11 @@ Depending on the version of Elasticsearch, you may need to manually install the 
 
 Elasticsearch 5.0+::
 
-    $ pip install elasticsearch>=5.0.0
+    $ pip install "elasticsearch>=5.0.0"
 
 Elasticsearch 2.X::
 
-    $ pip install elasticsearch<3.0.0
+    $ pip install "elasticsearch<3.0.0"
 
 Next, open up config.yaml.example. In it, you will find several configuration options. ElastAlert may be run without changing any of these settings.
 
