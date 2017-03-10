@@ -6,18 +6,18 @@ import mock
 import pytest
 
 from elastalert.ruletypes import AnyRule
+from elastalert.ruletypes import BaseAggregationRule
 from elastalert.ruletypes import BlacklistRule
 from elastalert.ruletypes import CardinalityRule
 from elastalert.ruletypes import ChangeRule
 from elastalert.ruletypes import EventWindow
 from elastalert.ruletypes import FlatlineRule
 from elastalert.ruletypes import FrequencyRule
+from elastalert.ruletypes import MetricAggregationRule
 from elastalert.ruletypes import NewTermsRule
+from elastalert.ruletypes import PercentageMatchRule
 from elastalert.ruletypes import SpikeRule
 from elastalert.ruletypes import WhitelistRule
-from elastalert.ruletypes import BaseAggregationRule
-from elastalert.ruletypes import MetricAggregationRule
-from elastalert.ruletypes import PercentageMatchRule
 from elastalert.util import EAException
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
@@ -1039,11 +1039,11 @@ def test_metric_aggregation():
 
     assert rule.rules['aggregation_query_element'] == {'cpu_pct_avg': {'avg': {'field': 'cpu_pct'}}}
 
-    assert rule.check_thresholds(None) is False
-    assert rule.check_thresholds(0.09) is True
-    assert rule.check_thresholds(0.10) is False
-    assert rule.check_thresholds(0.79) is False
-    assert rule.check_thresholds(0.80) is True
+    assert rule.crossed_thresholds(None) is False
+    assert rule.crossed_thresholds(0.09) is True
+    assert rule.crossed_thresholds(0.10) is False
+    assert rule.crossed_thresholds(0.79) is False
+    assert rule.crossed_thresholds(0.80) is True
 
     rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': None}})
     rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': 0.5}})
