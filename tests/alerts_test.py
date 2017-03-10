@@ -114,12 +114,34 @@ def test_email():
 def test_email_from_field():
     rule = {'name': 'test alert', 'email': ['testing@test.test'], 'email_add_domain': 'example.com',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_from_field': 'data.user', 'owner': 'owner_value'}
+    # Found, without @
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
-
         alert = EmailAlerter(rule)
         alert.alert([{'data': {'user': 'qlo'}}])
         assert mock_smtp.mock_calls[4][1][1] == ['qlo@example.com']
+
+    # Found, with @
+    rule['email_add_domain'] = '@example.com'
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+        alert = EmailAlerter(rule)
+        alert.alert([{'data': {'user': 'qlo'}}])
+        assert mock_smtp.mock_calls[4][1][1] == ['qlo@example.com']
+
+    # Not found
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+        alert = EmailAlerter(rule)
+        alert.alert([{'data': {'foo': 'qlo'}}])
+        assert mock_smtp.mock_calls[4][1][1] == ['testing@test.test']
+
+    # Found, wrong type
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+        alert = EmailAlerter(rule)
+        alert.alert([{'data': {'user': 17}}])
+        assert mock_smtp.mock_calls[4][1][1] == ['testing@test.test']
 
 
 def test_email_with_unicode_strings():
