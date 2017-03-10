@@ -83,6 +83,8 @@ Rule Configuration Cheat Sheet
 | ``owner`` (string, default empty string)                     |           |
 +--------------------------------------------------------------+           |
 | ``priority`` (int, default 2)                                |           |
++--------------------------------------------------------------+           |
+| ``import`` (string)                                          |           |
 |                                                              |           |
 | IGNORED IF ``use_count_query`` or ``use_terms_query`` is true|           |
 +--------------------------------------------------------------+           +
@@ -93,10 +95,6 @@ Rule Configuration Cheat Sheet
 | ``timestamp_format`` (string, default "%Y-%m-%dT%H:%M:%SZ")  |           |
 +--------------------------------------------------------------+           |
 | ``_source_enabled`` (boolean, default True)                  |           |
-+--------------------------------------------------------------+           |
-| ``alert_text_args`` (array of strs)                          |           |
-+--------------------------------------------------------------+           |
-| ``alert_text_kw`` (object)                                   |           |
 +--------------------------------------------------------------+-----------+
 
 |
@@ -210,6 +208,12 @@ or loaded from a module. For loading from a module, the alert should be specifie
 Optional Settings
 ~~~~~~~~~~~~~~~~~
 
+import
+^^^^^^
+
+``import``: If specified includes all the settings from this yaml file. This allows common config options to be shared. Note that imported files that aren't
+complete rules should not have a ``.yml`` or ``.yaml`` suffix so that ElastAlert doesn't treat them as rules. (Optional, string, no default)
+
 use_ssl
 ^^^^^^^
 
@@ -317,7 +321,7 @@ aggregate_by_match_time
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Setting this to true will cause aggregations to be created relative to the timestamp of the first event, rather than the current time. This
-is useful for querying over historic data or if using a very large buffer_time and you want multiple aggregations to occur from a single query. 
+is useful for querying over historic data or if using a very large buffer_time and you want multiple aggregations to occur from a single query.
 
 realert
 ^^^^^^^
