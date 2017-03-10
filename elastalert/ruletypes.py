@@ -917,15 +917,14 @@ class MetricAggregationRule(BaseAggregationRule):
 
     def check_matches(self, timestamp, query_key, aggregation_data):
         metric_val = aggregation_data[self.metric_key]['value']
-        if self.check_thresholds(metric_val):
+        if self.crossed_thresholds(metric_val):
             match = {self.rules['timestamp_field']: timestamp,
                      self.metric_key: metric_val}
             if query_key is not None:
                 match[self.rules['query_key']] = query_key
             self.add_match(match)
-        return
 
-    def check_thresholds(self, metric_value):
+    def crossed_thresholds(self, metric_value):
         if metric_value is None:
             return False
         if 'max_threshold' in self.rules and metric_value >= self.rules['max_threshold']:

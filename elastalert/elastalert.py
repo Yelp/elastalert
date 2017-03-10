@@ -394,7 +394,7 @@ class ElastAlerter():
         base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'], five=self.is_five())
         if term_size is None:
             term_size = rule.get('terms_size', 50)
-        query = self.get_aggregation_query(base_query, rule, query_key, term_size)
+        query = self.get_aggregation_query(base_query, rule, query_key, term_size, self.rule['timestamp_field'])
         try:
             if not self.is_five():
                 res = self.current_es.search(index=index, doc_type=rule.get('doc_type'), body=query, search_type='count', ignore_unavailable=True)
@@ -559,7 +559,7 @@ class ElastAlerter():
                 rule['original_starttime'] = rule['starttime']
 
     def adjust_start_time_for_interval_sync(self, rule, endtime):
-            # If aggregation query adjust bucket offset
+        # If aggregation query adjust bucket offset
         if rule.get('aggregation_query_element'):
 
             if rule.get('bucket_interval'):
@@ -575,8 +575,8 @@ class ElastAlerter():
                     rule['bucket_offset_delta'] = offset
 
     def get_segment_size(self, rule):
-        """ The segment size is either buffer_size for normal queries or run_every for
-        count style queries. This mimicks the query size for when ElastAlert is running continuously. """
+        """ The segment size is either buffer_size for queries which can overlap or run_every for queries
+        which must be strictly separate. This mimicks the query size for when ElastAlert is running continuously. """
         if not rule.get('use_count_query') and not rule.get('use_terms_query') and not rule.get('aggregation_query_element'):
             return rule.get('buffer_time', self.buffer_time)
         elif rule.get('aggregation_query_element'):

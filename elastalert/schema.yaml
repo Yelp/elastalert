@@ -116,6 +116,7 @@ oneOf:
     required: [metric_agg_key,metric_agg_type]
     properties:
       type: {enum: [metric_aggregation]}
+      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count"]}
       #timeframe: *timeframe
 
   - title: Percentage Match
