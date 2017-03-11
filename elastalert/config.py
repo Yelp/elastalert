@@ -104,6 +104,10 @@ def load_configuration(filename, conf, args=None):
         except yaml.scanner.ScannerError as e:
             raise EAException('Could not parse file %s: %s' % (filename, e))
 
+        # Special case for merging filters - if both files specify a filter merge (AND) them
+        if 'filter' in rule and 'filter' in loaded:
+            rule['filter'] = loaded['filter'] + rule['filter']
+
         loaded.update(rule)
         rule = loaded
         if 'import' in rule:

@@ -216,7 +216,8 @@ import
 ^^^^^^
 
 ``import``: If specified includes all the settings from this yaml file. This allows common config options to be shared. Note that imported files that aren't
-complete rules should not have a ``.yml`` or ``.yaml`` suffix so that ElastAlert doesn't treat them as rules. (Optional, string, no default)
+complete rules should not have a ``.yml`` or ``.yaml`` suffix so that ElastAlert doesn't treat them as rules. Filters in imported files are merged (ANDed)
+with any filters in the rule. (Optional, string, no default)
 
 use_ssl
 ^^^^^^^
