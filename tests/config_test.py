@@ -69,6 +69,48 @@ def test_import_rules():
         assert mock_import.call_args_list[0][0][3] == ['Alerter']
 
 
+def test_import_import():
+    import_rule = copy.deepcopy(test_rule)
+    del(import_rule['es_host'])
+    del(import_rule['es_port'])
+    import_rule['import'] = 'importme.ymlt'
+    import_me = {
+        'es_host': 'imported_host',
+        'es_port': 12349,
+        'email': 'ignored@email',  # overwritten by the email in import_rule
+    }
+
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [import_rule, import_me]
+        rules = load_configuration('blah.yaml', test_config)
+        assert mock_open.call_args_list[0][0] == ('blah.yaml',)
+        assert mock_open.call_args_list[1][0] == ('importme.ymlt',)
+        assert len(mock_open.call_args_list) == 2
+        assert rules['es_port'] == 12349
+        assert rules['es_host'] == 'imported_host'
+        assert rules['email'] == ['test@test.test']
+        assert rules['filter'] == import_rule['filter']
+
+
+def test_import_filter():
+    # Check that if a filter is specified the rules are merged:
+
+    import_rule = copy.deepcopy(test_rule)
+    del(import_rule['es_host'])
+    del(import_rule['es_port'])
+    import_rule['import'] = 'importme.ymlt'
+    import_me = {
+        'es_host': 'imported_host',
+        'es_port': 12349,
+        'filter': [{'term': {'ratchet': 'clank'}}],
+    }
+
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [import_rule, import_me]
+        rules = load_configuration('blah.yaml', test_config)
+        assert rules['filter'] == [{'term': {'ratchet': 'clank'}}, {'term': {'key': 'value'}}]
+
+
 def test_load_inline_alert_rule():
     test_rule_copy = copy.deepcopy(test_rule)
     test_rule_copy['alert'] = [
