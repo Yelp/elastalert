@@ -83,6 +83,8 @@ Rule Configuration Cheat Sheet
 | ``owner`` (string, default empty string)                     |           |
 +--------------------------------------------------------------+           |
 | ``priority`` (int, default 2)                                |           |
++--------------------------------------------------------------+           |
+| ``import`` (string)                                          |           |
 |                                                              |           |
 | IGNORED IF ``use_count_query`` or ``use_terms_query`` is true|           |
 +--------------------------------------------------------------+           +
@@ -210,6 +212,13 @@ or loaded from a module. For loading from a module, the alert should be specifie
 Optional Settings
 ~~~~~~~~~~~~~~~~~
 
+import
+^^^^^^
+
+``import``: If specified includes all the settings from this yaml file. This allows common config options to be shared. Note that imported files that aren't
+complete rules should not have a ``.yml`` or ``.yaml`` suffix so that ElastAlert doesn't treat them as rules. Filters in imported files are merged (ANDed)
+with any filters in the rule. (Optional, string, no default)
+
 use_ssl
 ^^^^^^^
 
@@ -317,7 +326,7 @@ aggregate_by_match_time
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Setting this to true will cause aggregations to be created relative to the timestamp of the first event, rather than the current time. This
-is useful for querying over historic data or if using a very large buffer_time and you want multiple aggregations to occur from a single query. 
+is useful for querying over historic data or if using a very large buffer_time and you want multiple aggregations to occur from a single query.
 
 realert
 ^^^^^^^
@@ -1082,6 +1091,18 @@ This alert requires one additional option:
 ``email``: An address or list of addresses to sent the alert to.
 
 Optional:
+
+``email_from_field``: Use a field from the document that triggered the alert as the recipient. If the field cannot be found,
+the ``email`` value will be used as a default. Note that this field will not be available in every rule type, for example, if
+you have ``use_count_query`` or if it's ``type: flatline``. You can optionally add a domain suffix to the field to generate the
+address using ``email_add_domain``. For example, with the following settings::
+
+    email_from_field: "data.user"
+    email_add_domain: "@example.com"
+
+and a match ``{"@timestamp": "2017", "data": {"foo": "bar", "user": "qlo"}}``
+
+an email would be sent to ``qlo@example.com``
 
 ``smtp_host``: The SMTP host to use, defaults to localhost.
 
