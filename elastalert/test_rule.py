@@ -20,6 +20,7 @@ import yaml
 import elastalert.config
 from elastalert.config import load_modules
 from elastalert.config import load_options
+from elastalert.config import load_rule_yaml
 from elastalert.elastalert import ElastAlerter
 from elastalert.util import elasticsearch_client
 from elastalert.util import lookup_es_key
@@ -308,8 +309,7 @@ class MockElastAlerter(object):
         parser.add_argument('--config', action='store', dest='config', help='Global config file.')
         args = parser.parse_args()
 
-        with open(args.file) as fh:
-            rule_yaml = yaml.load(fh)
+        rule_yaml = load_rule_yaml(args.file)
 
         conf = self.load_conf(rule_yaml, args)
 
