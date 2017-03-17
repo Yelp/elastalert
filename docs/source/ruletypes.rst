@@ -950,9 +950,9 @@ supported by the specified aggregation type.
 
 This rule also requires at least one of the two following options:
 
-``max_threshold``: If the calculated metric value is greater than this number, an alert will be triggered. 
+``max_threshold``: If the calculated metric value is greater than this number, an alert will be triggered. This threshold is exclusive.
 
-``min_threshold``: If the calculated metric value is less than this number, an alert will be triggered.
+``min_threshold``: If the calculated metric value is less than this number, an alert will be triggered. This threshold is exclusive.
 
 Optional:
 

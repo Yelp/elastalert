@@ -927,7 +927,7 @@ class MetricAggregationRule(BaseAggregationRule):
     def crossed_thresholds(self, metric_value):
         if metric_value is None:
             return False
-        if 'max_threshold' in self.rules and metric_value >= self.rules['max_threshold']:
+        if 'max_threshold' in self.rules and metric_value > self.rules['max_threshold']:
             return True
         if 'min_threshold' in self.rules and metric_value < self.rules['min_threshold']:
             return True
