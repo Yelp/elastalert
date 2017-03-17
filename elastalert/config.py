@@ -40,7 +40,9 @@ rules_mapping = {
     'change': ruletypes.ChangeRule,
     'flatline': ruletypes.FlatlineRule,
     'new_term': ruletypes.NewTermsRule,
-    'cardinality': ruletypes.CardinalityRule
+    'cardinality': ruletypes.CardinalityRule,
+    'metric_aggregation': ruletypes.MetricAggregationRule,
+    'percentage_match': ruletypes.PercentageMatchRule,
 }
 
 # Used to map names of alerts to their classes
@@ -152,6 +154,8 @@ def load_options(rule, conf, filename, args=None):
             rule['query_delay'] = datetime.timedelta(**rule['query_delay'])
         if 'buffer_time' in rule:
             rule['buffer_time'] = datetime.timedelta(**rule['buffer_time'])
+        if 'bucket_interval' in rule:
+            rule['bucket_interval_timedelta'] = datetime.timedelta(**rule['bucket_interval'])
         if 'exponential_realert' in rule:
             rule['exponential_realert'] = datetime.timedelta(**rule['exponential_realert'])
         if 'kibana4_start_timedelta' in rule:

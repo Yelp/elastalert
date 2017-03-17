@@ -3,17 +3,22 @@ import copy
 import datetime
 
 import mock
+import pytest
 
 from elastalert.ruletypes import AnyRule
+from elastalert.ruletypes import BaseAggregationRule
 from elastalert.ruletypes import BlacklistRule
 from elastalert.ruletypes import CardinalityRule
 from elastalert.ruletypes import ChangeRule
 from elastalert.ruletypes import EventWindow
 from elastalert.ruletypes import FlatlineRule
 from elastalert.ruletypes import FrequencyRule
+from elastalert.ruletypes import MetricAggregationRule
 from elastalert.ruletypes import NewTermsRule
+from elastalert.ruletypes import PercentageMatchRule
 from elastalert.ruletypes import SpikeRule
 from elastalert.ruletypes import WhitelistRule
+from elastalert.util import EAException
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
 
@@ -32,6 +37,16 @@ def create_event(timestamp, timestamp_field='@timestamp', **kwargs):
     event = {timestamp_field: timestamp}
     event.update(**kwargs)
     return event
+
+
+def create_bucket_aggregation(agg_name, buckets):
+    agg = {agg_name: {'buckets': buckets}}
+    return agg
+
+
+def create_percentage_match_agg(match_count, other_count):
+    agg = create_bucket_aggregation('percentage_match_aggs', {'match_bucket': {'doc_count': match_count}, '_other_': {'doc_count': other_count}})
+    return agg
 
 
 def assert_matches_have(matches, terms):
@@ -928,3 +943,155 @@ def test_cardinality_nested_cardinality_field():
         event = {'@timestamp': datetime.datetime.now() + datetime.timedelta(minutes=15), 'd': {'ip': ip}}
         rule.add_data([event])
         assert len(rule.matches) == 0
+
+
+def test_base_aggregation_constructor():
+    rules = {'bucket_interval_timedelta': datetime.timedelta(seconds=10),
+             'buffer_time': datetime.timedelta(minutes=1),
+             'timestamp_field': '@timestamp'}
+
+    # Test time period constructor logic
+    rules['bucket_interval'] = {'seconds': 10}
+    rule = BaseAggregationRule(rules)
+    assert rule.rules['bucket_interval_period'] == '10s'
+
+    rules['bucket_interval'] = {'minutes': 5}
+    rule = BaseAggregationRule(rules)
+    assert rule.rules['bucket_interval_period'] == '5m'
+
+    rules['bucket_interval'] = {'hours': 4}
+    rule = BaseAggregationRule(rules)
+    assert rule.rules['bucket_interval_period'] == '4h'
+
+    rules['bucket_interval'] = {'days': 2}
+    rule = BaseAggregationRule(rules)
+    assert rule.rules['bucket_interval_period'] == '2d'
+
+    rules['bucket_interval'] = {'weeks': 1}
+    rule = BaseAggregationRule(rules)
+    assert rule.rules['bucket_interval_period'] == '1w'
+
+    # buffer_time evenly divisible by bucket_interval
+    with pytest.raises(EAException):
+        rules['bucket_interval_timedelta'] = datetime.timedelta(seconds=13)
+        rule = BaseAggregationRule(rules)
+
+    # run_every evenly divisible by bucket_interval
+    rules['use_run_every_query_size'] = True
+    rules['run_every'] = datetime.timedelta(minutes=2)
+    rules['bucket_interval_timedelta'] = datetime.timedelta(seconds=10)
+    rule = BaseAggregationRule(rules)
+
+    with pytest.raises(EAException):
+        rules['bucket_interval_timedelta'] = datetime.timedelta(seconds=13)
+        rule = BaseAggregationRule(rules)
+
+
+def test_base_aggregation_payloads():
+    with mock.patch.object(BaseAggregationRule, 'check_matches', return_value=None) as mock_check_matches:
+        rules = {'bucket_interval': {'seconds': 10},
+                 'bucket_interval_timedelta': datetime.timedelta(seconds=10),
+                 'buffer_time': datetime.timedelta(minutes=5),
+                 'timestamp_field': '@timestamp'}
+
+        timestamp = datetime.datetime.now()
+        interval_agg = create_bucket_aggregation('interval_aggs', [{'key_as_string': '2014-01-01T00:00:00Z'}])
+        rule = BaseAggregationRule(rules)
+
+        # Payload not wrapped
+        rule.add_aggregation_data({timestamp: {}})
+        mock_check_matches.assert_called_once_with(timestamp, None, {})
+        mock_check_matches.reset_mock()
+
+        # Payload wrapped by date_histogram
+        interval_agg_data = {timestamp: interval_agg}
+        rule.add_aggregation_data(interval_agg_data)
+        mock_check_matches.assert_called_once_with(ts_to_dt('2014-01-01T00:00:00Z'), None, {'key_as_string': '2014-01-01T00:00:00Z'})
+        mock_check_matches.reset_mock()
+
+        # Payload wrapped by terms
+        bucket_agg_data = {timestamp: create_bucket_aggregation('bucket_aggs', [{'key': 'qk'}])}
+        rule.add_aggregation_data(bucket_agg_data)
+        mock_check_matches.assert_called_once_with(timestamp, 'qk', {'key': 'qk'})
+        mock_check_matches.reset_mock()
+
+        # Payload wrapped by terms and date_histogram
+        bucket_interval_agg_data = {timestamp: create_bucket_aggregation('bucket_aggs', [{'key': 'qk', 'interval_aggs': interval_agg['interval_aggs']}])}
+        rule.add_aggregation_data(bucket_interval_agg_data)
+        mock_check_matches.assert_called_once_with(ts_to_dt('2014-01-01T00:00:00Z'), 'qk', {'key_as_string': '2014-01-01T00:00:00Z'})
+        mock_check_matches.reset_mock()
+
+
+def test_metric_aggregation():
+    rules = {'buffer_time': datetime.timedelta(minutes=5),
+             'timestamp_field': '@timestamp',
+             'metric_agg_type': 'avg',
+             'metric_agg_key': 'cpu_pct'}
+
+    # Check threshold logic
+    with pytest.raises(EAException):
+        rule = MetricAggregationRule(rules)
+
+    rules['min_threshold'] = 0.1
+    rules['max_threshold'] = 0.8
+
+    rule = MetricAggregationRule(rules)
+
+    assert rule.rules['aggregation_query_element'] == {'cpu_pct_avg': {'avg': {'field': 'cpu_pct'}}}
+
+    assert rule.crossed_thresholds(None) is False
+    assert rule.crossed_thresholds(0.09) is True
+    assert rule.crossed_thresholds(0.10) is False
+    assert rule.crossed_thresholds(0.79) is False
+    assert rule.crossed_thresholds(0.81) is True
+
+    rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': None}})
+    rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': 0.5}})
+    assert len(rule.matches) == 0
+
+    rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': 0.05}})
+    rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': 0.95}})
+    assert len(rule.matches) == 2
+
+    rules['query_key'] = 'qk'
+    rule = MetricAggregationRule(rules)
+    rule.check_matches(datetime.datetime.now(), 'qk_val', {'cpu_pct_avg': {'value': 0.95}})
+    assert rule.matches[0]['qk'] == 'qk_val'
+
+
+def test_percentage_match():
+    rules = {'match_bucket_filter': {'term': 'term_val'},
+             'buffer_time': datetime.timedelta(minutes=5),
+             'timestamp_field': '@timestamp'}
+
+    # Check threshold logic
+    with pytest.raises(EAException):
+        rule = PercentageMatchRule(rules)
+
+    rules['min_percentage'] = 25
+    rules['max_percentage'] = 75
+    rule = PercentageMatchRule(rules)
+
+    assert rule.rules['aggregation_query_element'] == {'percentage_match_aggs': {'filters': {'other_bucket': True, 'filters': {'match_bucket': {'bool': {'must': {'term': 'term_val'}}}}}}}
+
+    assert rule.percentage_violation(25) is False
+    assert rule.percentage_violation(50) is False
+    assert rule.percentage_violation(75) is False
+    assert rule.percentage_violation(24.9) is True
+    assert rule.percentage_violation(75.1) is True
+
+    rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(0, 0))
+    rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(None, 100))
+    rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(26, 74))
+    rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(74, 26))
+
+    assert len(rule.matches) == 0
+
+    rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(24, 76))
+    rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(76, 24))
+    assert len(rule.matches) == 2
+
+    rules['query_key'] = 'qk'
+    rule = PercentageMatchRule(rules)
+    rule.check_matches(datetime.datetime.now(), 'qk_val', create_percentage_match_agg(76, 24))
+    assert rule.matches[0]['qk'] == 'qk_val'

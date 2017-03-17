@@ -222,9 +222,9 @@ class MockElastAlerter(object):
             endtime = ts_now()
             starttime = endtime - datetime.timedelta(days=args.days)
 
-        # Set run_every to cover the entire time range unless use_count_query or use_terms_query is set
+        # Set run_every to cover the entire time range unless count query, terms query or agg query used
         # This is to prevent query segmenting which unnecessarily slows down tests
-        if not rule.get('use_terms_query') and not rule.get('use_count_query'):
+        if not rule.get('use_terms_query') and not rule.get('use_count_query') and not rule.get('aggregation_query_element'):
             conf['run_every'] = endtime - starttime
 
         # Instantiate ElastAlert to use mock config and special rule

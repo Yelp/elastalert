@@ -681,7 +681,11 @@ def run_and_assert_segmented_queries(ea, start, end, segment_size):
 
         # Assert elastalert_status was created for the entire time range
         assert ea.writeback_es.index.call_args_list[-1][1]['body']['starttime'] == dt_to_ts(original_start)
-        assert ea.writeback_es.index.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end)
+        if ea.rules[0].get('aggregation_query_element'):
+            assert ea.writeback_es.index.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end - (original_end - end))
+            assert original_end - end < segment_size
+        else:
+            assert ea.writeback_es.index.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end)
 
 
 def test_query_segmenting(ea):
@@ -703,6 +707,23 @@ def test_query_segmenting(ea):
     # run_every segments with terms queries
     ea.rules[0].pop('use_count_query')
     ea.rules[0]['use_terms_query'] = True
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        run_and_assert_segmented_queries(ea, START, END, ea.run_every)
+
+    # buffer_time segments with terms queries
+    ea.rules[0].pop('use_terms_query')
+    ea.rules[0]['aggregation_query_element'] = {'term': 'term_val'}
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=30)
+        run_and_assert_segmented_queries(ea, START, END, ea.rules[0]['buffer_time'])
+
+    # partial segment size scenario
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=53)
+        run_and_assert_segmented_queries(ea, START, END, ea.rules[0]['buffer_time'])
+
+    # run every segmenting
+    ea.rules[0]['use_run_every_query_size'] = True
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         run_and_assert_segmented_queries(ea, START, END, ea.run_every)
 
