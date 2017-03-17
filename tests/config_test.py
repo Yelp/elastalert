@@ -185,7 +185,7 @@ def test_compound_query_key():
 
 
 def test_raises_on_missing_config():
-    optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include', 'es_port')
+    optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include', 'es_host', 'es_port', 'name')
     test_rule_copy = copy.deepcopy(test_rule)
     for key in test_rule_copy.keys():
         test_rule_copy = copy.deepcopy(test_rule)
@@ -200,8 +200,9 @@ def test_raises_on_missing_config():
             mock_open.side_effect = [test_config_copy, test_rule_copy]
             with mock.patch('os.listdir') as mock_ls:
                 mock_ls.return_value = ['testrule.yaml']
-                with pytest.raises(EAException):
-                    load_rules(test_args)
+                with pytest.raises(EAException, message='key %s should be required' % key):
+                    rule = load_rules(test_args)
+                    print(rule)
 
 
 def test_raises_on_bad_generate_kibana_filters():
