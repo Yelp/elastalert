@@ -183,6 +183,11 @@ def test_compound_query_key():
     assert test_rule_copy['query_key'] == 'field1,field2'
     assert test_rule_copy['compound_query_key'] == ['field1', 'field2']
 
+def test_name_inference():
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy.pop('name')
+    load_options(test_rule_copy, test_config, 'msmerc woz ere.yaml')
+    assert test_rule_copy['name'] == 'msmerc woz ere'
 
 def test_raises_on_missing_config():
     optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include', 'es_host', 'es_port', 'name')
