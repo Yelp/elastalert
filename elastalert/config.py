@@ -93,7 +93,13 @@ def load_configuration(filename, conf, args=None):
     :param conf: The global configuration dictionary, used for populating defaults.
     :return: The rule configuration, a dictionary.
     """
+    rule = load_rule_yaml(filename)
+    load_options(rule, conf, args)
+    load_modules(rule, args)
+    return rule
 
+
+def load_rule_yaml(filename):
     rule = {
         'rule_file': filename
     }
@@ -117,8 +123,6 @@ def load_configuration(filename, conf, args=None):
         else:
             break
 
-    load_options(rule, conf, args)
-    load_modules(rule, args)
     return rule
 
 
