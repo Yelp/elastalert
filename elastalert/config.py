@@ -93,9 +93,15 @@ def load_configuration(filename, conf, args=None):
     :param conf: The global configuration dictionary, used for populating defaults.
     :return: The rule configuration, a dictionary.
     """
+    rule = load_rule_yaml(filename)
+    load_options(rule, conf, filename, args)
+    load_modules(rule, args)
+    return rule
 
+
+def load_rule_yaml(filename):
     rule = {
-        'rule_file': filename
+        'rule_file': filename,
     }
 
     while True:
@@ -117,12 +123,10 @@ def load_configuration(filename, conf, args=None):
         else:
             break
 
-    load_options(rule, conf, args)
-    load_modules(rule, args)
     return rule
 
 
-def load_options(rule, conf, args=None):
+def load_options(rule, conf, filename, args=None):
     """ Converts time objects, sets defaults, and validates some settings.
 
     :param rule: A dictionary of parsed YAML from a rule config file.
@@ -132,7 +136,7 @@ def load_options(rule, conf, args=None):
     try:
         rule_schema.validate(rule)
     except jsonschema.ValidationError as e:
-        raise EAException("Invalid Rule: %s\n%s" % (rule.get('name'), e))
+        raise EAException("Invalid Rule file: %s\n%s" % (filename, e))
 
     try:
         # Set all time based parameters
@@ -160,6 +164,7 @@ def load_options(rule, conf, args=None):
     # Set defaults, copy defaults from config.yaml
     for key, val in base_config.items():
         rule.setdefault(key, val)
+    rule.setdefault('name', os.path.splitext(filename)[1])
     rule.setdefault('realert', datetime.timedelta(seconds=0))
     rule.setdefault('aggregation', datetime.timedelta(seconds=0))
     rule.setdefault('query_delay', datetime.timedelta(seconds=0))
