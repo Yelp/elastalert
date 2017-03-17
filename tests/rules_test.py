@@ -1043,7 +1043,7 @@ def test_metric_aggregation():
     assert rule.crossed_thresholds(0.09) is True
     assert rule.crossed_thresholds(0.10) is False
     assert rule.crossed_thresholds(0.79) is False
-    assert rule.crossed_thresholds(0.80) is True
+    assert rule.crossed_thresholds(0.81) is True
 
     rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': None}})
     rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': 0.5}})
