@@ -291,7 +291,7 @@ class MockElastAlerter(object):
             if key not in conf:
                 conf[key] = conf_default[key]
         elastalert.config.base_config = copy.deepcopy(conf)
-        load_options(rules, conf)
+        load_options(rules, conf, args.file)
         print("Successfully loaded %s\n" % (rules['name']))
 
         return conf
