@@ -138,7 +138,7 @@ class ChangeRule(CompareRule):
     def compare(self, event):
         key = hashable(lookup_es_key(event, self.rules['query_key']))
         val = lookup_es_key(event, self.rules['compare_key'])
-        if not val and self.rules['ignore_null']:
+        if not isinstance(val, bool) and not val and self.rules['ignore_null']:
             return False
         changed = False
 
@@ -569,7 +569,7 @@ class NewTermsRule(RuleType):
                 level = query_template['aggs']
                 # Iterate on each part of the composite key and add a sub aggs clause to the elastic search query
                 for i, sub_field in enumerate(field):
-                    level['values']['terms']['field'] = add_raw_postfix(sub_field)
+                    level['values']['terms']['field'] = add_raw_postfix(sub_field, self.is_five())
                     if i < len(field) - 1:
                         # If we have more fields after the current one, then set up the next nested structure
                         level['values']['aggs'] = {'values': {'terms': copy.deepcopy(field_name)}}
@@ -577,7 +577,7 @@ class NewTermsRule(RuleType):
             else:
                 self.seen_values.setdefault(field, [])
                 # For non-composite keys, only a single agg is needed
-                field_name['field'] = add_raw_postfix(field)
+                field_name['field'] = add_raw_postfix(field, self.is_five())
 
             # Query the entire time range in small chunks
             while tmp_start < end:
@@ -762,6 +762,10 @@ class NewTermsRule(RuleType):
                                  'new_field': field}
                         self.add_match(match)
                         self.seen_values[field].append(bucket['key'])
+
+    def is_five(self):
+        version = self.es.info()['version']['number']
+        return version.startswith('5')
 
 
 class CardinalityRule(RuleType):

@@ -93,6 +93,10 @@ Rule Configuration Cheat Sheet
 | ``timestamp_format`` (string, default "%Y-%m-%dT%H:%M:%SZ")  |           |
 +--------------------------------------------------------------+           |
 | ``_source_enabled`` (boolean, default True)                  |           |
++--------------------------------------------------------------+           |
+| ``alert_text_args`` (array of strs)                          |           |
++--------------------------------------------------------------+           |
+| ``alert_text_kw`` (object)                                   |           |
 +--------------------------------------------------------------+-----------+
 
 |
@@ -1124,6 +1128,18 @@ This alert requires one additional option:
 
 Optional:
 
+``email_from_field``: Use a field from the document that triggered the alert as the recipient. If the field cannot be found,
+the ``email`` value will be used as a default. Note that this field will not be available in every rule type, for example, if
+you have ``use_count_query`` or if it's ``type: flatline``. You can optionally add a domain suffix to the field to generate the
+address using ``email_add_domain``. For example, with the following settings::
+
+    email_from_field: "data.user"
+    email_add_domain: "@example.com"
+
+and a match ``{"@timestamp": "2017", "data": {"foo": "bar", "user": "qlo"}}``
+
+an email would be sent to ``qlo@example.com``
+
 ``smtp_host``: The SMTP host to use, defaults to localhost.
 
 ``smtp_port``: The port to use. Default is 25.
@@ -1368,6 +1384,28 @@ The alerter requires the following option:
 If there's no open (i.e. unresolved) incident with this key, a new one will be created. If there's already an open incident with a matching key, this event will be appended to that incident's log.
 
 ``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
+
+Exotel
+~~~~~~
+
+Developers in India can use Exotel alerter, it will trigger an incident to a mobile phone as sms from your exophone. Alert name along with the message body will be sent as an sms.
+
+The alerter requires the following option:
+
+``exotel_accout_sid``: This is sid of your Exotel account.
+
+``exotel_auth_token``: Auth token assosiated with your Exotel account.
+
+If you don't know how to find your accound sid and auth token, refer - http://support.exotel.in/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid-
+
+``exotel_to_number``: The phone number where you would like send the notification.
+
+``exotel_from_number``: Your exophone number from which message will be sent.
+
+The alerter has one optional argument:
+
+``exotel_message_body``: Message you want to send in the sms, is you don't specify this argument only the rule name is sent
+
 
 Twilio
 ~~~~~~

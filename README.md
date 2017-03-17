@@ -49,6 +49,7 @@ Currently, we have support built in for the following alert types:
 - AWS SNS
 - VictorOps
 - PagerDuty
+- Exotel
 - Twilio
 - Gitter
 
@@ -83,6 +84,10 @@ to query indefinitely.
 Eg: ``--rule this_rule.yaml``
 
 ``--config`` allows you to specify the location of the configuration. By default, it is will look for config.yaml in the current directory.
+
+## Third Party Tools And Extras
+### Bitsensor Kibana plugin
+[Configure and test rules via a Kibana plugin](https://bitsensor.io/blog/elastalert-kibana-plugin-centralized-logging-with-integrated-alerting)
 
 ## Documentation
 

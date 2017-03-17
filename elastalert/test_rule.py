@@ -59,6 +59,9 @@ class MockElastAlerter(object):
             print(repr(e)[:2048], file=sys.stderr)
             return None
 
+        if is_five:
+            ElastAlerter.modify_rule_for_ES5(conf)
+
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()
         ts = conf.get('timestamp_field', '@timestamp')
@@ -236,8 +239,10 @@ class MockElastAlerter(object):
         if args.json:
             self.mock_elastalert(client)
 
-        # Mock writeback for both real data and json data
-        client.writeback_es = None
+        # Mock writeback to return empty results
+        client.writeback_es = mock.MagicMock()
+        client.writeback_es.search.return_value = {"hits": {"hits": []}}
+
         with mock.patch.object(client, 'writeback') as mock_writeback:
             client.run_rule(rule, endtime, starttime)
 
@@ -269,7 +274,7 @@ class MockElastAlerter(object):
         # Mock configuration. This specifies the base values for attributes, unless supplied otherwise.
         conf_default = {
             'rules_folder': 'rules',
-            'es_host': 'es',
+            'es_host': 'localhost',
             'es_port': 14900,
             'writeback_index': 'wb',
             'max_query_size': 10000,

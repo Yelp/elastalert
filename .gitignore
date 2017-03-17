@@ -1,6 +1,7 @@
 config.yaml
 .tox/
 .coverage
+.idea/*
 __pycache__/
 *.pyc
 virtualenv_run/

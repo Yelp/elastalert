@@ -120,6 +120,14 @@ class ElastAlerter():
         self.es_version = self.get_version()
 
         for rule in self.rules:
+            # Change top_count_keys to .raw
+            if 'top_count_keys' in rule and rule.get('raw_count_keys', True):
+                keys = rule.get('top_count_keys')
+                if self.is_five():
+                    rule['top_count_keys'] = [key + '.keyword' if not key.endswith('.keyword') else key for key in keys]
+                else:
+                    rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in keys]
+
             self.init_rule(rule)
 
         if self.args.silence:
@@ -357,8 +365,12 @@ class ElastAlerter():
         rule_filter = copy.copy(rule['filter'])
         if qk:
             filter_key = rule['query_key']
-            if rule.get('raw_count_keys', True) and not rule['query_key'].endswith('.raw'):
-                filter_key = add_raw_postfix(filter_key)
+            if self.is_five():
+                end = '.keyword'
+            else:
+                end = '.raw'
+            if rule.get('raw_count_keys', True) and not rule['query_key'].endswith(end) and not self.is_five():
+                filter_key = add_raw_postfix(filter_key, self.is_five())
             rule_filter.extend([{'term': {filter_key: qk}}])
         base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'], five=self.is_five())
         if size is None:
@@ -763,15 +775,19 @@ class ElastAlerter():
                 continue
             new_rule[prop] = rule[prop]
 
-        # In ES5, filters starting with 'query' should have the top wrapper removed
         if self.is_five():
-            for es_filter in copy.copy(new_rule.get('filter', [])):
-                if es_filter.get('query'):
-                    new_filter = es_filter['query']
-                    new_rule['filter'].append(new_filter)
-                    new_rule['filter'].remove(es_filter)
+            self.modify_rule_for_ES5(new_rule)
 
         return new_rule
+
+    @staticmethod
+    def modify_rule_for_ES5(new_rule):
+        # In ES5, filters starting with 'query' should have the top wrapper removed
+        for es_filter in new_rule.get('filter', []):
+            if es_filter.get('query'):
+                new_filter = es_filter['query']
+                new_rule['filter'].append(new_filter)
+                new_rule['filter'].remove(es_filter)
 
     def load_rule_changes(self):
         ''' Using the modification times of rule config files, syncs the running rules
@@ -1406,12 +1422,9 @@ class ElastAlerter():
         if rule_name in self.silence_cache:
             if ts_now() < self.silence_cache[rule_name][0]:
                 return True
-            else:
-                return False
 
         if self.debug:
             return False
-
         query = {'term': {'rule_name': rule_name}}
         sort = {'sort': {'until': {'order': 'desc'}}}
         if self.is_five():
@@ -1427,12 +1440,13 @@ class ElastAlerter():
             self.handle_error("Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
 
             return False
-
         if res['hits']['hits']:
             until_ts = res['hits']['hits'][0]['_source']['until']
             exponent = res['hits']['hits'][0]['_source'].get('exponent', 0)
-
-            self.silence_cache[rule_name] = (ts_to_dt(until_ts), exponent)
+            if rule_name not in self.silence_cache.keys():
+                self.silence_cache[rule_name] = (ts_to_dt(until_ts), exponent)
+            else:
+                self.silence_cache[rule_name] = (ts_to_dt(until_ts), self.silence_cache[rule_name][1])
             if ts_now() < ts_to_dt(until_ts):
                 return True
         return False

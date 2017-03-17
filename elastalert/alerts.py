@@ -6,8 +6,6 @@ import logging
 import subprocess
 import sys
 import warnings
-import stomp
-
 from email.mime.text import MIMEText
 from email.utils import formatdate
 from smtplib import SMTP
@@ -18,6 +16,8 @@ from socket import error
 
 import boto.sns as sns
 import requests
+import stomp
+from exotel import Exotel
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 from requests.exceptions import RequestException
@@ -371,6 +371,9 @@ class EmailAlerter(Alerter):
         bcc = self.rule.get('bcc')
         if bcc and isinstance(bcc, basestring):
             self.rule['bcc'] = [self.rule['bcc']]
+        add_suffix = self.rule.get('email_add_domain')
+        if add_suffix and not add_suffix.startswith('@'):
+            self.rule['email_add_domain'] = '@' + add_suffix
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
@@ -381,9 +384,16 @@ class EmailAlerter(Alerter):
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
+        if 'email_from_field' in self.rule:
+            recipient = lookup_es_key(matches[0], self.rule['email_from_field'])
+            if isinstance(recipient, basestring):
+                if '@' in recipient:
+                    to_addr = [recipient]
+                elif 'email_add_domain' in self.rule:
+                    to_addr = [recipient + self.rule['email_add_domain']]
         email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
-        email_msg['To'] = ', '.join(self.rule['email'])
+        email_msg['To'] = ', '.join(to_addr)
         email_msg['From'] = self.from_addr
         email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
         email_msg['Date'] = formatdate()
@@ -416,7 +426,7 @@ class EmailAlerter(Alerter):
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
         self.smtp.close()
 
-        elastalert_logger.info("Sent email to %s" % (self.rule['email']))
+        elastalert_logger.info("Sent email to %s" % (to_addr))
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -990,6 +1000,33 @@ class PagerDutyAlerter(Alerter):
                 'pagerduty_client_name': self.pagerduty_client_name}
 
 
+class ExotelAlerter(Alerter):
+    required_options = frozenset(['exotel_account_sid', 'exotel_auth_token', 'exotel_to_number', 'exotel_from_number'])
+
+    def __init__(self, rule):
+        super(ExotelAlerter, self).__init__(rule)
+        self.exotel_account_sid = self.rule['exotel_account_sid']
+        self.exotel_auth_token = self.rule['exotel_auth_token']
+        self.exotel_to_number = self.rule['exotel_to_number']
+        self.exotel_from_number = self.rule['exotel_from_number']
+        self.sms_body = self.rule.get('exotel_message_body', '')
+
+    def alert(self, matches):
+        client = Exotel(self.exotel_account_sid, self.exotel_auth_token)
+
+        try:
+            message_body = self.rule['name'] + self.sms_body
+            response = client.sms(self.rule['exotel_from_number'], self.rule['exotel_to_number'], message_body)
+            if response != 200:
+                raise EAException("Error posting to Exotel, response code is %s" % response)
+        except:
+            raise EAException("Error posting to Exotel")
+        elastalert_logger.info("Trigger sent to Exotel")
+
+    def get_info(self):
+        return {'type': 'exotel', 'exotel_account': self.exotel_account_sid}
+
+
 class TwilioAlerter(Alerter):
     required_options = frozenset(['twilio_accout_sid', 'twilio_auth_token', 'twilio_to_number', 'twilio_from_number'])
 
@@ -1178,3 +1215,35 @@ class ServiceNowAlerter(Alerter):
     def get_info(self):
         return {'type': 'ServiceNow',
                 'self.servicenow_rest_url': self.servicenow_rest_url}
+
+
+class SimplePostAlerter(Alerter):
+    def __init__(self, rule):
+        super(SimplePostAlerter, self).__init__(rule)
+        simple_webhook_url = self.rule.get('simple_webhook_url')
+        if isinstance(simple_webhook_url, basestring):
+            simple_webhook_url = [simple_webhook_url]
+        self.simple_webhook_url = simple_webhook_url
+        self.simple_proxy = self.rule.get('simple_proxy')
+
+    def alert(self, matches):
+        payload = {
+            'rule': self.rule['name'],
+            'matches': matches
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json;charset=utf-8"
+        }
+        proxies = {'https': self.simple_proxy} if self.simple_proxy else None
+        for url in self.simple_webhook_url:
+            try:
+                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error posting simple alert: %s" % e)
+        elastalert_logger.info("Simple alert sent")
+
+    def get_info(self):
+        return {'type': 'simple',
+                'simple_webhook_url': self.simple_webhook_url}
