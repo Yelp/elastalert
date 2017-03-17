@@ -25,7 +25,7 @@ definitions:
 
   filter: &filter {}
 
-required: [name, type, index, alert]
+required: [type, index, alert]
 type: object
 
 ### Rule Types section
@@ -132,6 +132,7 @@ properties:
   use_strftime_index: {type: boolean}
 
   # Optional Settings
+  import: {type: string}
   aggregation: *timeframe
   realert: *timeframe
   exponential_realert: *timeframe
@@ -219,7 +220,7 @@ properties:
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
-  
+
   ### Exotel
   exotel_account_sid: {type: string}
   exotel_auth_token: {type: string}
