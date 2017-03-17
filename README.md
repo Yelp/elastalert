@@ -93,6 +93,16 @@ Eg: ``--rule this_rule.yaml``
 
 Read the documentation at [Read the Docs](http://elastalert.readthedocs.org).
 
+To build a html version of the docs locally
+
+```
+pip install sphinx_rtd_theme sphinx
+cd docs
+make html
+```
+
+View in browser at build/html/index.html
+
 ## Configuration
 
 See config.yaml.example for details on configuration.
