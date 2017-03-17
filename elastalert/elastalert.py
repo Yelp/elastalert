@@ -205,7 +205,7 @@ class ElastAlerter():
         try:
             res = self.current_es.search(index=index, size=1, body=query, _source_include=[timestamp_field], ignore_unavailable=True)
         except ElasticsearchException as e:
-            self.handle_error("Elasticsearch query error: %s" % (e), {'index': index})
+            self.handle_error("Elasticsearch query error: %s" % (e), {'index': index, 'query': query})
             return '1969-12-30T00:00:00Z'
         if len(res['hits']['hits']) == 0:
             # Index is completely empty, return a date before the epoch
@@ -286,7 +286,7 @@ class ElastAlerter():
             # (so big that they will fill the entire terminal buffer)
             if len(str(e)) > 1024:
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
-            self.handle_error('Error running query: %s' % (e), {'rule': rule['name']})
+            self.handle_error('Error running query: %s' % (e), {'rule': rule['name'], 'query': query})
             return None
 
         hits = res['hits']['hits']
@@ -325,7 +325,7 @@ class ElastAlerter():
             # (so big that they will fill the entire terminal buffer)
             if len(str(e)) > 1024:
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
-            self.handle_error('Error running count query: %s' % (e), {'rule': rule['name']})
+            self.handle_error('Error running count query: %s' % (e), {'rule': rule['name'], 'query': query})
             return None
 
         self.num_hits += res['count']
@@ -359,7 +359,7 @@ class ElastAlerter():
             # (so big that they will fill the entire terminal buffer)
             if len(str(e)) > 1024:
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
-            self.handle_error('Error running query: %s' % (e), {'rule': rule['name']})
+            self.handle_error('Error running terms query: %s' % (e), {'rule': rule['name'], 'query': query})
             return None
 
         if 'aggregations' not in res:

@@ -177,7 +177,7 @@ def test_compound_query_key():
     test_rule_copy = copy.deepcopy(test_rule)
     test_rule_copy.pop('use_count_query')
     test_rule_copy['query_key'] = ['field1', 'field2']
-    load_options(test_rule_copy, test_config)
+    load_options(test_rule_copy, test_config, 'filename.yaml')
     assert 'field1' in test_rule_copy['include']
     assert 'field2' in test_rule_copy['include']
     assert test_rule_copy['query_key'] == 'field1,field2'
@@ -185,7 +185,7 @@ def test_compound_query_key():
 
 
 def test_raises_on_missing_config():
-    optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include', 'es_host', 'es_port')
+    optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include', 'es_port')
     test_rule_copy = copy.deepcopy(test_rule)
     for key in test_rule_copy.keys():
         test_rule_copy = copy.deepcopy(test_rule)
