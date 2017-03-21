@@ -406,7 +406,7 @@ class ElastAlerter():
         base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'], five=self.is_five())
         if term_size is None:
             term_size = rule.get('terms_size', 50)
-        query = self.get_aggregation_query(base_query, rule, query_key, term_size, self.rule['timestamp_field'])
+        query = self.get_aggregation_query(base_query, rule, query_key, term_size, rule['timestamp_field'])
         try:
             if not self.is_five():
                 res = self.current_es.search(index=index, doc_type=rule.get('doc_type'), body=query, search_type='count', ignore_unavailable=True)
