@@ -1301,7 +1301,7 @@ class ElastAlerter():
                                               {'term': {'alert_sent': 'false'}}],
                                      'must_not': [{'exists': {'field': 'aggregate_id'}}]}}}
         if aggregation_key_value:
-            query['filter']['bool']['must'].append({'term': {'aggregate_key': aggregation_key_value}})
+            query['filter']['bool']['must'].append({'term': {'aggregation_key': aggregation_key_value}})
         if self.is_five():
             query = {'query': {'bool': query}}
         query['sort'] = {'alert_time': {'order': 'desc'}}
@@ -1365,7 +1365,7 @@ class ElastAlerter():
         if agg_id:
             alert_body['aggregate_id'] = agg_id
         if aggregation_key_value:
-            alert_body['aggregate_key'] = aggregation_key_value
+            alert_body['aggregation_key'] = aggregation_key_value
         res = self.writeback('elastalert', alert_body)
 
         # If new aggregation, save _id

@@ -221,9 +221,9 @@ def load_options(rule, conf, filename, args=None):
         rule['compound_query_key'] = rule['query_key']
         rule['query_key'] = ','.join(rule['query_key'])
 
-    if isinstance(rule.get('aggregate_key'), list):
-        rule['compound_aggregate_key'] = rule['aggregate_key']
-        rule['aggregate_key'] = ','.join(rule['aggregate_key'])
+    if isinstance(rule.get('aggregation_key'), list):
+        rule['compound_aggregation_key'] = rule['aggregation_key']
+        rule['aggregation_key'] = ','.join(rule['aggregation_key'])
 
     # Add QK, CK and timestamp to include
     include = rule.get('include', ['*'])
@@ -231,8 +231,8 @@ def load_options(rule, conf, filename, args=None):
         include.append(rule['query_key'])
     if 'compound_query_key' in rule:
         include += rule['compound_query_key']
-    if 'compound_aggregate_key' in rule:
-        include += rule['compound_aggregate_key']
+    if 'compound_aggregation_key' in rule:
+        include += rule['compound_aggregation_key']
     if 'compare_key' in rule:
         include.append(rule['compare_key'])
     if 'top_count_keys' in rule:
