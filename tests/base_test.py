@@ -453,15 +453,15 @@ def test_agg_with_aggregation_key(ea):
     assert call1['match_body']['key'] == 'Key Value 1'
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
-    assert 'aggregate_key' in call1
-    assert call1['aggregate_key'] == 'Key Value 1'
+    assert 'aggregation_key' in call1
+    assert call1['aggregation_key'] == 'Key Value 1'
     assert call1['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
     assert call2['match_body']['key'] == 'Key Value 2'
     assert not call2['alert_sent']
     assert 'aggregate_id' not in call2
-    assert 'aggregate_key' in call2
-    assert call2['aggregate_key'] == 'Key Value 2'
+    assert 'aggregation_key' in call2
+    assert call2['aggregation_key'] == 'Key Value 2'
     assert call2['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
     assert call3['match_body']['key'] == 'Key Value 1'
@@ -469,8 +469,8 @@ def test_agg_with_aggregation_key(ea):
     # Call3 should have it's aggregate_id set to call1's _id
     # It should also have the same alert_time as call1
     assert call3['aggregate_id'] == 'ABCD'
-    assert 'aggregate_key' in call3
-    assert call3['aggregate_key'] == 'Key Value 1'
+    assert 'aggregation_key' in call3
+    assert call3['aggregation_key'] == 'Key Value 1'
     assert call3['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
     # First call - Find all pending alerts (only entries without agg_id)
