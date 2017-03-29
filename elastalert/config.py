@@ -147,7 +147,10 @@ def load_options(rule, conf, filename, args=None):
         if 'realert' in rule:
             rule['realert'] = datetime.timedelta(**rule['realert'])
         else:
-            rule['realert'] = datetime.timedelta(minutes=1)
+            if 'aggregation' in rule:
+                rule['realert'] = datetime.timedelta(minutes=0)
+            else:
+                rule['realert'] = datetime.timedelta(minutes=1)
         if 'aggregation' in rule and not rule['aggregation'].get('schedule'):
             rule['aggregation'] = datetime.timedelta(**rule['aggregation'])
         if 'query_delay' in rule:
