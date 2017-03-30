@@ -486,7 +486,7 @@ class ElastAlerter():
             elif rule.get('use_terms_query'):
                 rule_inst.add_terms_data(data)
             elif rule.get('aggregation_query_element'):
-                rule_inst.add_aggregation_data(data)
+                rule_inst.add_aggregation_data(data, rule=rule['match_bucket_filter'])
             else:
                 rule_inst.add_data(data)
 
