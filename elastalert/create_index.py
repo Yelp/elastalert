@@ -41,6 +41,7 @@ def main():
     else:
         filename = ''
 
+    default_credentials_provider = 'instance-metadata'
     if filename:
         with open(filename) as config_file:
             data = yaml.load(config_file)
@@ -53,6 +54,7 @@ def main():
         verify_certs = args.verify_certs if args.verify_certs is not None else data.get('verify_certs') is not False
         aws_region = data.get('aws_region', None)
         send_get_body_as = data.get('send_get_body_as', 'GET')
+        aws_credentials_provider = data.get('aws_credentials_provider', default_credentials_provider)
     else:
         username = None
         password = None
@@ -72,6 +74,7 @@ def main():
         url_prefix = (args.url_prefix if args.url_prefix is not None
                       else raw_input('Enter optional Elasticsearch URL prefix (prepends a string to the URL of every request): '))
         send_get_body_as = args.send_get_body_as
+        aws_credentials_provider = args.aws_credentials_provider if args.aws_credentials_provider else default_credentials_provider
 
     timeout = args.timeout
     auth = Auth()
@@ -79,7 +82,8 @@ def main():
                      username=username,
                      password=password,
                      aws_region=aws_region,
-                     boto_profile=args.boto_profile)
+                     boto_profile=args.boto_profile,
+                     aws_credentials_provider=aws_credentials_provider)
 
     es = Elasticsearch(
         host=host,
