@@ -19,6 +19,14 @@ es_host: elasticsearch.example.com
 # The Elasticsearch port
 es_port: 9200
 
+# The AWS region to use. Set this when using AWS-managed elasticsearch
+#aws_region: us-east-1
+
+# The AWS profile to use. Use this if you are using an aws-cli profile.
+# See http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
+# for details
+#profile: test
+
 # Optional URL prefix for Elasticsearch
 #es_url_prefix: elasticsearch
 

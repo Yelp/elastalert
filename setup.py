@@ -31,15 +31,14 @@ setup(
         'PyStaticConfiguration',
         'pyyaml',
         'simplejson',
-        'boto',
-        'botocore',
+        'boto3',
         'blist',
         'croniter',
         'configparser',
         'aws-requests-auth',
         'texttable',
         'exotel',
-        'twilio',
+        'twilio<6.0.0',
         'stomp.py'
     ]
 )
