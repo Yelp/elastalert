@@ -106,7 +106,7 @@ Each rule defines a query to perform, parameters on what triggers a match, and a
 
 ``type``: Each rule has a different type which may take different parameters. The ``frequency`` type means "Alert when more than ``num_events`` occur within ``timeframe``." For information other types, see :ref:`Rule types <ruletypes>`.
 
-``index``: The name of the index(es) to query. If you are using Logstash, by default the indexes will match "logstash-*".
+``index``: The name of the index(es) to query. If you are using Logstash, by default the indexes will match ``"logstash-*"``.
 
 ``num_events``: This parameter is specific to ``frequency`` type and is the threshold for when an alert is triggered.
 

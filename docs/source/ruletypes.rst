@@ -245,7 +245,7 @@ es_url_prefix
 ``es_url_prefix``: URL prefix for the Elasticsearch endpoint. (Optional, string, no default)
 
 es_send_get_body_as
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 
 ``es_send_get_body_as``: Method for querying Elasticsearch. (Optional, string, default "GET")
 
@@ -361,12 +361,12 @@ query_delay
 This is useful if the data is Elasticsearch doesn't get indexed immediately. (Optional, time)
 
 owner
-^^^^^^^^^^^
+^^^^^
 
 ``owner``: This value will be used to identify the stakeholder of the alert. Optionally, this field can be included in any alert type. (Optional, string)
 
 priority
-^^^^^^^^^^^
+^^^^^^^^
 
 ``priority``: This value will be used to identify the relative priority of the alert. Optionally, this field can be included in any alert type (e.g. for use in email subject/body text). (Optional, int, default 2)
 
@@ -505,7 +505,7 @@ aggregation_key
 ``aggregation_key``: Having an aggregation key in conjunction with an aggregation will make it so that each new value encountered for the aggregation_key field will result in a new, separate aggregation window.
 
 summary_table_fields
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 
 ``summary_table_fields``: Specifying the summmary_table_fields in conjunction with an aggregation will make it so that each aggregated alert will contain a table summarizing the values for the specified fields in all the matches that were aggregated together.
 
@@ -539,7 +539,7 @@ Some rules and alerts require additional options, which also go in the top level
 .. _testing :
 
 Testing Your Rule
-====================
+=================
 
 Once you've written a rule configuration, you will want to validate it. To do so, you can either run ElastAlert in debug mode,
 or use ``elastalert-test-rule``, which is a script that makes various aspects of testing easier.
@@ -636,7 +636,7 @@ guaranteed to have the exact same results as with Elasticsearch. For example, an
 .. _ruletypes:
 
 Rule Types
-===========
+==========
 
 The various ``RuleType`` classes, defined in ``elastalert/ruletypes.py``, form the main logic behind ElastAlert. An instance
 is held in memory for each rule, passed all of the data returned by querying Elasticsearch with a given filter, and generates
@@ -734,7 +734,7 @@ all with the same value of ``query_key``, will trigger an alert.
 the 3rd event will trigger the alert on itself and add the other 2 events in a key named ``related_events`` that can be accessed in the alerter.
 
 Spike
-~~~~~~
+~~~~~
 
 ``spike``: This rule matches when the volume of events during a given time period is ``spike_height`` times larger or smaller
 than during the previous time period. It uses two sliding windows to compare the current and reference frequency
@@ -921,7 +921,7 @@ than regular searching if there is a large number of documents. If this is used,
 that if a new term appears but there are at least 50 terms which appear more frequently, it will not be found.
 
 Cardinality
-~~~~~~~~
+~~~~~~~~~~~
 
 ``cardinality``: This rule matches when a the total number of unique values for a certain field within a time frame is higher or lower
 than a threshold.
@@ -946,7 +946,7 @@ Optional:
 ``query_key``: Group cardinality counts by this field. For each unique value of the ``query_key`` field, cardinality will be counted separately.
 
 Metric Aggregation
-~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 ``metric_aggregation``: This rule matches when the value of a metric within the calculation window is higher or lower than a threshold. By 
 default this is ``buffer_time``.
@@ -992,7 +992,7 @@ See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggr
 more comprehensive explaination.
 
 Percentage Match
-~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 ``percentage_match``: This rule matches when the percentage of document in the match bucket within a calculation window is higher or lower 
 than a threshold. By default the calculation window is ``buffer_time``.
@@ -1026,7 +1026,7 @@ evaluated separately against the threshold(s).
 .. _alerts:
 
 Alerts
-========
+======
 
 Each rule may have any number of alerts attached to it. Alerts are subclasses of ``Alerter`` and are passed
 a dictionary, or list of dictionaries, from ElastAlert which contain relevant information. They are configured
@@ -1064,7 +1064,7 @@ In case the rule matches multiple objects in the index, only the first match is 
 If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``<MISSING VALUE>`` in place of its expected value. This will also occur if ``use_count_query`` is set to true.
 
 Alert Content
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 There are several ways to format the body text of the various types of events. In EBNF::
 
@@ -1202,7 +1202,7 @@ by the smtp server.
 ``bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
 
 Jira
-~~~~~
+~~~~
 
 The JIRA alerter will open a ticket on jira whenever an alert is triggered. You must have a service account for ElastAlert to connect with.
 The credentials of the service account are loaded from a separate file. The ticket number will be written to the alert pipeline, and if it
@@ -1318,9 +1318,9 @@ Optional:
 SNS
 ~~~
 
-The SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters. The SNS alerter
-uses boto and can use credentials in the rule yaml or in a standard boto credential file.
-See http://boto.readthedocs.org/en/latest/boto_config_tut.html#details for details.
+The SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters.
+The SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
+via environment variables. See http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html for details.
 
 SNS requires one option:
 
@@ -1334,7 +1334,7 @@ Optional:
 
 ``aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
 
-``boto_profile``: The boto profile to use. If none specified, the default will be used.
+``profile``: The AWS profile to use. If none specified, the default will be used.
 
 HipChat
 ~~~~~~~
@@ -1395,7 +1395,7 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 ``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
 
 Telegram
-~~~~~
+~~~~~~~~
 Telegram alerter will send a notification to a predefined Telegram username or channel. The body of the notification is formatted the same as with other alerters.
 
 The alerter requires the following two options:
@@ -1500,7 +1500,7 @@ Optional:
 ``gitter_proxy``: By default ElastAlert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy.
 
 ServiceNow
-~~~~~~
+~~~~~~~~~~
 
 The ServiceNow alerter will create a ne Incident in ServiceNow. The body of the notification is formatted the same as with other alerters.
 
@@ -1533,7 +1533,7 @@ Optional:
 
 
 Debug
-~~~~~~
+~~~~~
 
 The debug alerter will log the alert information using the Python logger at the info level. It is logged into a Python Logger object with the name ``elastalert`` that can be easily accessed using the ``getLogger`` command.
 
