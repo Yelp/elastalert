@@ -14,7 +14,7 @@ from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
 
-import boto.sns as sns
+import boto3
 import requests
 import stomp
 from exotel import Exotel
@@ -805,10 +805,11 @@ class SnsAlerter(Alerter):
     def __init__(self, *args):
         super(SnsAlerter, self).__init__(*args)
         self.sns_topic_arn = self.rule.get('sns_topic_arn', '')
-        self.aws_access_key = self.rule.get('aws_access_key', '')
-        self.aws_secret_key = self.rule.get('aws_secret_key', '')
+        self.aws_access_key_id = self.rule.get('aws_access_key_id')
+        self.aws_secret_access_key = self.rule.get('aws_secret_access_key')
         self.aws_region = self.rule.get('aws_region', 'us-east-1')
-        self.boto_profile = self.rule.get('boto_profile', '')
+        self.profile = self.rule.get('boto_profile', None)  # Deprecated
+        self.profile = self.rule.get('aws_profile', None)
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -817,18 +818,13 @@ class SnsAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
-        # use aws_access_key and aws_secret_key if specified; then use boto profile if specified;
-        # otherwise use instance role
-        if not self.aws_access_key and not self.aws_secret_key:
-            if not self.boto_profile:
-                sns_client = sns.connect_to_region(self.aws_region)
-            else:
-                sns_client = sns.connect_to_region(self.aws_region,
-                                                   profile_name=self.boto_profile)
-        else:
-            sns_client = sns.connect_to_region(self.aws_region,
-                                               aws_access_key_id=self.aws_access_key,
-                                               aws_secret_access_key=self.aws_secret_key)
+        session = boto3.Session(
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            region_name=self.aws_region,
+            profile_name=self.profile
+        )
+        sns_client = session.client('sns')
         sns_client.publish(self.sns_topic_arn, body, subject=self.create_title(matches))
         elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
 

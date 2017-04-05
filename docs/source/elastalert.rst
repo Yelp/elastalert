@@ -94,14 +94,14 @@ to the alerter. See :ref:`Enhancements` for more information.
 .. _configuration:
 
 Configuration
-==============
+=============
 
 ElastAlert has a global configuration file, ``config.yaml``, which defines several aspects of its operation:
 
 ``buffer_time``: ElastAlert will continuously query against a window from the present to ``buffer_time`` ago.
 This way, logs can be back filled up to a certain extent and ElastAlert will still process the events. This
 may be overridden by individual rules. This option is ignored for rules where ``use_count_query`` or ``use_terms_query``
- is set to true. Note that back filled data may not always trigger count based alerts as if it was queried in real time.
+is set to true. Note that back filled data may not always trigger count based alerts as if it was queried in real time.
 
 ``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about its searches.
 When ElastAlert is started, it will query for information about the time that it was last run. This way,
@@ -168,7 +168,9 @@ unless overwritten in the rule config. The default is "localhost".
 
 ``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon Elasticsearch Service. It'll use instance role keys to sign the requests.
 
-``boto_profile``: Boto profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
+``boto_profile``: Deprecated! Boto profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
+
+``profile``: AWS profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
 
 ``replace_dots_in_field_names``: If ``True``, ElastAlert replaces any dots in field names with an underscore before writing documents to Elasticsearch.
 The default value is ``False``. Elasticsearch 2.0 - 2.3 does not support dots in field names.

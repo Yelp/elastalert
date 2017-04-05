@@ -1,7 +1,7 @@
 .. _writingrules:
 
 Adding a New Rule Type
-=======================
+======================
 
 This document describes how to create a new rule type. Built in rule types live in ``elastalert/ruletypes.py``
 and are subclasses of ``RuleType``. At the minimum, your rule needs to implement ``add_data``.
@@ -23,7 +23,7 @@ You can import new rule types by specifying the type as ``module.file.RuleName``
 containing ``__init__.py``, and file is the name of the Python file containing a ``RuleType`` subclass named ``RuleName``.
 
 Basics
--------
+------
 
 The ``RuleType`` instance remains in memory while ElastAlert is running, receives data, keeps track of its state,
 and generates matches. Several important member properties are created in the ``__init__`` method of ``RuleType``:
@@ -41,14 +41,14 @@ recommended that you use ``self.add_match(match)`` to add matches. In addition t
 ensure that all of these fields exist before trying to instantiate a ``RuleType`` instance.
 
 add_data(self, data):
-----------------------
+---------------------
 
 When ElastAlert queries Elasticsearch, it will pass all of the hits to the rule type by calling ``add_data``.
 ``data`` is a list of dictionary objects which contain all of the fields in ``include``, ``query_key`` and ``compare_key``
 if they exist, and ``@timestamp`` as a datetime object. They will always come in chronological order sorted by '@timestamp'.
 
 get_match_str(self, match):
-------------------------------
+---------------------------
 
 Alerts will call this function to get a human readable string about a match for an alert. Match will be the same
 object that was added to ``self.matches``, and ``rules`` the same as ``self.rules``. The ``RuleType`` base implementation
