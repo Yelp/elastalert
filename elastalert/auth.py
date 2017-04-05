@@ -18,7 +18,7 @@ class Auth(object):
             return username + ':' + password
 
         session = boto3.session.Session(profile_name=profile_name, region_name=aws_region)
-        credentials = session.get_credentials().get_frozen_credentials()
+        credentials = session.get_credentials()
 
         return AWSRequestsAuth(
             aws_access_key=credentials.access_key,
