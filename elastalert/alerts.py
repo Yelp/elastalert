@@ -250,7 +250,9 @@ class Alerter(object):
                 summary_table_fields = [summary_table_fields]
             # Include a count aggregation so that we can see at a glance how many of each aggregation_key were encountered
             summary_table_fields_with_count = summary_table_fields + ['count']
-            text += "Aggregation resulted in the following data for summary_table_fields ==> {0}:\n\n".format(summary_table_fields_with_count)
+            text += "Aggregation resulted in the following data for summary_table_fields ==> {0}:\n\n".format(
+                summary_table_fields_with_count
+            )
             text_table = Texttable()
             text_table.header(summary_table_fields_with_count)
             match_aggregation = {}
@@ -297,7 +299,9 @@ class StompAlerter(Alerter):
             if qk in match:
                 elastalert_logger.info(
                     'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
-                alerts.append('1)Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
+                alerts.append(
+                    '1)Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field']))
+                )
                 fullmessage['match'] = match[qk]
             else:
                 elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
@@ -703,7 +707,11 @@ class JiraAlerter(Alerter):
                     except Exception as ex:
                         # Re-raise the exception, preserve the stack-trace, and give some
                         # context as to which watcher failed to be added
-                        raise Exception("Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(watcher, ex)), None, sys.exc_info()[2]
+                        raise Exception(
+                                "Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(
+                                    watcher,
+                                    ex
+                                )), None, sys.exc_info()[2]
 
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket using jira_args (%s): %s" % (self.jira_args, e))
@@ -985,7 +993,12 @@ class PagerDutyAlerter(Alerter):
         # set https proxy, if it was provided
         proxies = {'https': self.pagerduty_proxy} if self.pagerduty_proxy else None
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder, ensure_ascii=False), headers=headers, proxies=proxies)
+            response = requests.post(
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder, ensure_ascii=False),
+                headers=headers,
+                proxies=proxies
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to pagerduty: %s" % e)
@@ -1173,7 +1186,18 @@ class GitterAlerter(Alerter):
 
 class ServiceNowAlerter(Alerter):
     """ Creates a ServiceNow alert """
-    required_options = set(['username', 'password', 'servicenow_rest_url', 'short_description', 'comments', 'assignment_group', 'category', 'subcategory', 'cmdb_ci', 'caller_id'])
+    required_options = set([
+        'username',
+        'password',
+        'servicenow_rest_url',
+        'short_description',
+        'comments',
+        'assignment_group',
+        'category',
+        'subcategory',
+        'cmdb_ci',
+        'caller_id'
+    ])
 
     def __init__(self, rule):
         super(GitterAlerter, self).__init__(rule)
@@ -1202,7 +1226,13 @@ class ServiceNowAlerter(Alerter):
             "caller_id": self.rule["caller_id"]
         }
         try:
-            response = requests.post(self.servicenow_rest_url, auth=(self.rule['username'], self.rule['password']), headers=headers, data=json.dumps(payload, cls=DateTimeEncoder), proxies=proxies)
+            response = requests.post(
+                self.servicenow_rest_url,
+                auth=(self.rule['username'], self.rule['password']),
+                headers=headers,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                proxies=proxies
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to ServiceNow: %s" % e)
