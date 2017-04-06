@@ -84,7 +84,14 @@ class MockElastAlerter(object):
         doc_type = res['hits']['hits'][0]['_type']
 
         # Get a count of all docs
-        count_query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts, sort=False, five=is_five)
+        count_query = ElastAlerter.get_query(
+            conf['filter'],
+            starttime=start_time,
+            endtime=end_time,
+            timestamp_field=ts,
+            sort=False,
+            five=is_five
+        )
         try:
             res = es_client.count(index, doc_type=doc_type, body=count_query, ignore_unavailable=True)
         except Exception as e:
@@ -297,15 +304,33 @@ class MockElastAlerter(object):
         return conf
 
     def run_rule_test(self):
-        """ Uses args to run the various components of MockElastAlerter such as loading the file, saving data, loading data, and running. """
+        """
+        Uses args to run the various components of MockElastAlerter such as loading the file, saving data, loading data, and running.
+        """
         parser = argparse.ArgumentParser(description='Validate a rule configuration')
         parser.add_argument('file', metavar='rule', type=str, help='rule configuration filename')
         parser.add_argument('--schema-only', action='store_true', help='Show only schema errors; do not run query')
         parser.add_argument('--days', type=int, default=1, action='store', help='Query the previous N days with this rule')
-        parser.add_argument('--data', type=str, metavar='FILENAME', action='store', dest='json', help='A JSON file containing data to run the rule against')
+        parser.add_argument(
+            '--data',
+            type=str,
+            metavar='FILENAME',
+            action='store',
+            dest='json',
+            help='A JSON file containing data to run the rule against')
         parser.add_argument('--alert', action='store_true', help='Use actual alerts instead of debug output')
-        parser.add_argument('--save-json', type=str, metavar='FILENAME', action='store', dest='save', help='A file to which documents from the last day or --days will be saved')
-        parser.add_argument('--count-only', action='store_true', dest='count', help='Only display the number of documents matching the filter')
+        parser.add_argument(
+            '--save-json',
+            type=str,
+            metavar='FILENAME',
+            action='store',
+            dest='save',
+            help='A file to which documents from the last day or --days will be saved')
+        parser.add_argument(
+            '--count-only',
+            action='store_true',
+            dest='count',
+            help='Only display the number of documents matching the filter')
         parser.add_argument('--config', action='store', dest='config', help='Global config file.')
         args = parser.parse_args()
 
@@ -331,6 +356,7 @@ class MockElastAlerter(object):
 def main():
     test_instance = MockElastAlerter()
     test_instance.run_rule_test()
+
 
 if __name__ == '__main__':
     main()

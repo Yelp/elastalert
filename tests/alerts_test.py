@@ -253,9 +253,17 @@ def test_email_with_cc_and_bcc():
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(),
-                    mock.call().sendmail(mock.ANY,
-                                         ['testing@test.test', 'test@test.test', 'test1@test.com', 'test2@test.com', 'tester@testing.testing'],
-                                         mock.ANY),
+                    mock.call().sendmail(
+                        mock.ANY,
+                        [
+                            'testing@test.test',
+                            'test@test.test',
+                            'test1@test.com',
+                            'test2@test.com',
+                            'tester@testing.testing'
+                        ],
+                        mock.ANY
+                    ),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
 
@@ -268,10 +276,18 @@ def test_email_with_cc_and_bcc():
 
 
 def test_email_with_args():
-    rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
-            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
-            'alert_subject': 'Test alert for {0} {1}', 'alert_subject_args': ['test_term', 'test.term'], 'alert_text': 'Test alert for {0} and {1} {2}',
-            'alert_text_args': ['test_arg1', 'test_arg2', 'test.arg3']}
+    rule = {
+        'name': 'test alert',
+        'email': ['testing@test.test', 'test@test.test'],
+        'from_addr': 'testfrom@test.test',
+        'type': mock_rule(),
+        'timestamp_field': '@timestamp',
+        'email_reply_to': 'test@example.com',
+        'alert_subject': 'Test alert for {0} {1}',
+        'alert_subject_args': ['test_term', 'test.term'],
+        'alert_text': 'Test alert for {0} and {1} {2}',
+        'alert_text_args': ['test_arg1', 'test_arg2', 'test.arg3']
+    }
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
@@ -506,13 +522,29 @@ def test_jira_arbitrary_field_support():
         {'name': 'arbitrary reference string field', 'id': 'arbitrary_reference_string_field', 'schema': {'type': 'string'}},
         {'name': 'arbitrary string field', 'id': 'arbitrary_string_field', 'schema': {'type': 'string'}},
         {'name': 'arbitrary string array field', 'id': 'arbitrary_string_array_field', 'schema': {'type': 'array', 'items': 'string'}},
-        {'name': 'arbitrary string array field provided as single value', 'id': 'arbitrary_string_array_field_provided_as_single_value', 'schema': {'type': 'array', 'items': 'string'}},
+        {
+            'name': 'arbitrary string array field provided as single value',
+            'id': 'arbitrary_string_array_field_provided_as_single_value',
+            'schema': {'type': 'array', 'items': 'string'}
+        },
         {'name': 'arbitrary number field', 'id': 'arbitrary_number_field', 'schema': {'type': 'number'}},
         {'name': 'arbitrary number array field', 'id': 'arbitrary_number_array_field', 'schema': {'type': 'array', 'items': 'number'}},
-        {'name': 'arbitrary number array field provided as single value', 'id': 'arbitrary_number_array_field_provided_as_single_value', 'schema': {'type': 'array', 'items': 'number'}},
+        {
+            'name': 'arbitrary number array field provided as single value',
+            'id': 'arbitrary_number_array_field_provided_as_single_value',
+            'schema': {'type': 'array', 'items': 'number'}
+        },
         {'name': 'arbitrary complex field', 'id': 'arbitrary_complex_field', 'schema': {'type': 'ArbitraryType'}},
-        {'name': 'arbitrary complex array field', 'id': 'arbitrary_complex_array_field', 'schema': {'type': 'array', 'items': 'ArbitraryType'}},
-        {'name': 'arbitrary complex array field provided as single value', 'id': 'arbitrary_complex_array_field_provided_as_single_value', 'schema': {'type': 'array', 'items': 'ArbitraryType'}},
+        {
+            'name': 'arbitrary complex array field',
+            'id': 'arbitrary_complex_array_field',
+            'schema': {'type': 'array', 'items': 'ArbitraryType'}
+        },
+        {
+            'name': 'arbitrary complex array field provided as single value',
+            'id': 'arbitrary_complex_array_field_provided_as_single_value',
+            'schema': {'type': 'array', 'items': 'ArbitraryType'}
+        },
     ]
 
     with nested(
@@ -744,7 +776,12 @@ def test_slack_uses_custom_title():
         'text': '',
         'parse': 'none'
     }
-    mock_post_request.assert_called_once_with(rule['slack_webhook_url'], data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -779,7 +816,12 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
         'text': '',
         'parse': 'none'
     }
-    mock_post_request.assert_called_once_with(rule['slack_webhook_url'][0], data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'][0],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -815,7 +857,12 @@ def test_slack_uses_custom_slack_channel():
         'text': '',
         'parse': 'none'
     }
-    mock_post_request.assert_called_once_with(rule['slack_webhook_url'][0], data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'][0],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -839,7 +886,12 @@ def test_simple_alerter():
         'rule': rule['name'],
         'matches': [match]
     }
-    mock_post_request.assert_called_once_with(rule['simple_webhook_url'], data=mock.ANY, headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'}, proxies=None)
+    mock_post_request.assert_called_once_with(
+        rule['simple_webhook_url'],
+        data=mock.ANY,
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
+        proxies=None
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 

@@ -45,7 +45,16 @@ def create_bucket_aggregation(agg_name, buckets):
 
 
 def create_percentage_match_agg(match_count, other_count):
-    agg = create_bucket_aggregation('percentage_match_aggs', {'match_bucket': {'doc_count': match_count}, '_other_': {'doc_count': other_count}})
+    agg = create_bucket_aggregation(
+        'percentage_match_aggs', {
+            'match_bucket': {
+                'doc_count': match_count
+            },
+            '_other_': {
+                'doc_count': other_count
+            }
+        }
+    )
     return agg
 
 
@@ -1016,7 +1025,9 @@ def test_base_aggregation_payloads():
         mock_check_matches.reset_mock()
 
         # Payload wrapped by terms and date_histogram
-        bucket_interval_agg_data = {timestamp: create_bucket_aggregation('bucket_aggs', [{'key': 'qk', 'interval_aggs': interval_agg['interval_aggs']}])}
+        bucket_interval_agg_data = {
+            timestamp: create_bucket_aggregation('bucket_aggs', [{'key': 'qk', 'interval_aggs': interval_agg['interval_aggs']}])
+        }
         rule.add_aggregation_data(bucket_interval_agg_data)
         mock_check_matches.assert_called_once_with(ts_to_dt('2014-01-01T00:00:00Z'), 'qk', {'key_as_string': '2014-01-01T00:00:00Z'})
         mock_check_matches.reset_mock()
@@ -1072,7 +1083,22 @@ def test_percentage_match():
     rules['max_percentage'] = 75
     rule = PercentageMatchRule(rules)
 
-    assert rule.rules['aggregation_query_element'] == {'percentage_match_aggs': {'filters': {'other_bucket': True, 'filters': {'match_bucket': {'bool': {'must': {'term': 'term_val'}}}}}}}
+    assert rule.rules['aggregation_query_element'] == {
+        'percentage_match_aggs': {
+            'filters': {
+                'other_bucket': True,
+                'filters': {
+                    'match_bucket': {
+                        'bool': {
+                            'must': {
+                                'term': 'term_val'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     assert rule.percentage_violation(25) is False
     assert rule.percentage_violation(50) is False

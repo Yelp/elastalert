@@ -459,8 +459,10 @@ class SpikeRule(RuleType):
         return False
 
     def get_match_str(self, match):
-        message = 'An abnormal number (%d) of events occurred around %s.\n' % (match['spike_count'],
-                                                                               pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time')))
+        message = 'An abnormal number (%d) of events occurred around %s.\n' % (
+            match['spike_count'],
+            pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time'))
+        )
         message += 'Preceding that time, there were only %d events within %s\n\n' % (match['reference_count'], self.rules['timeframe'])
         return message
 
@@ -524,9 +526,11 @@ class FlatlineRule(FrequencyRule):
         ts = match[self.rules['timestamp_field']]
         lt = self.rules.get('use_local_time')
         message = 'An abnormally low number of events occurred around %s.\n' % (pretty_ts(ts, lt))
-        message += 'Between %s and %s, there were less than %s events.\n\n' % (pretty_ts(dt_to_ts(ts_to_dt(ts) - self.rules['timeframe']), lt),
-                                                                               pretty_ts(ts, lt),
-                                                                               self.rules['threshold'])
+        message += 'Between %s and %s, there were less than %s events.\n\n' % (
+            pretty_ts(dt_to_ts(ts_to_dt(ts) - self.rules['timeframe']), lt),
+            pretty_ts(ts, lt),
+            self.rules['threshold']
+        )
         return message
 
     def garbage_collect(self, ts):
@@ -534,7 +538,12 @@ class FlatlineRule(FrequencyRule):
         # to remove events that occurred more than one `timeframe` ago, and call onRemoved on them.
         default = ['all'] if 'query_key' not in self.rules else []
         for key in self.occurrences.keys() or default:
-            self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({self.ts_field: ts}, 0))
+            self.occurrences.setdefault(
+                key,
+                EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)
+            ).append(
+                ({self.ts_field: ts}, 0)
+            )
             self.first_event.setdefault(key, ts)
             self.check_for_match(key)
 
@@ -936,7 +945,13 @@ class MetricAggregationRule(BaseAggregationRule):
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
 
     def get_match_str(self, match):
-        message = 'Threshold violation, %s:%s %s (min: %s max : %s) \n\n' % (self.rules['metric_agg_type'], self.rules['metric_agg_key'], match[self.metric_key], self.rules.get('min_threshold'), self.rules.get('max_threshold'))
+        message = 'Threshold violation, %s:%s %s (min: %s max : %s) \n\n' % (
+            self.rules['metric_agg_type'],
+            self.rules['metric_agg_key'],
+            match[self.metric_key],
+            self.rules.get('min_threshold'),
+            self.rules.get('max_threshold')
+        )
         return message
 
     def generate_aggregation_query(self):
@@ -974,11 +989,28 @@ class PercentageMatchRule(BaseAggregationRule):
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
 
     def get_match_str(self, match):
-        message = 'Percentage violation, value: %s (min: %s max : %s) \n\n' % (match['percentage'], self.rules.get('min_percentage'), self.rules.get('max_percentage'))
+        message = 'Percentage violation, value: %s (min: %s max : %s) \n\n' % (
+            match['percentage'],
+            self.rules.get('min_percentage'),
+            self.rules.get('max_percentage')
+        )
         return message
 
     def generate_aggregation_query(self):
-        return {'percentage_match_aggs': {'filters': {'other_bucket': True, 'filters': {'match_bucket': {'bool': {'must': self.match_bucket_filter}}}}}}
+        return {
+            'percentage_match_aggs': {
+                'filters': {
+                    'other_bucket': True,
+                    'filters': {
+                        'match_bucket': {
+                            'bool': {
+                                'must': self.match_bucket_filter
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
     def check_matches(self, timestamp, query_key, aggregation_data):
         match_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['match_bucket']['doc_count']
