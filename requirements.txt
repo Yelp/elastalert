@@ -21,7 +21,7 @@ supervisor==3.1.2
 texttable==0.8.4
 tlslite==0.4.8
 exotel==0.1.1
-twilio==5.6.0
+twilio==6.0.0
 unittest2==0.8.0
 urllib3==1.8.2
 wsgiref==0.1.2
