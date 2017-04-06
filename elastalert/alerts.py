@@ -23,8 +23,8 @@ from jira.exceptions import JIRAError
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from texttable import Texttable
-from twilio import TwilioRestException
-from twilio.rest import TwilioRestClient
+from twilio.base.exceptions import TwilioRestException
+from twilio.rest import Client as TwilioClient
 from util import EAException
 from util import elastalert_logger
 from util import lookup_es_key
@@ -1034,7 +1034,7 @@ class TwilioAlerter(Alerter):
         self.twilio_from_number = self.rule['twilio_from_number']
 
     def alert(self, matches):
-        client = TwilioRestClient(self.twilio_accout_sid, self.twilio_auth_token)
+        client = TwilioClient(self.twilio_accout_sid, self.twilio_auth_token)
 
         try:
             client.messages.create(body=self.rule['name'],

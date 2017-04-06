@@ -38,7 +38,7 @@ setup(
         'aws-requests-auth',
         'texttable',
         'exotel',
-        'twilio<6.0.0',
+        'twilio',
         'stomp.py'
     ]
 )
