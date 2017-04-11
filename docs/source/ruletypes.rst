@@ -178,11 +178,13 @@ es_host
 ^^^^^^^
 
 ``es_host``: The hostname of the Elasticsearch cluster the rule will use to query. (Required, string, no default)
+The environment variable ``ES_HOST`` will override this field.
 
 es_port
 ^^^^^^^
 
 ``es_port``: The port of the Elasticsearch cluster. (Required, number, no default)
+The environment variable ``ES_PORT`` will override this field.
 
 index
 ^^^^^
@@ -223,6 +225,7 @@ use_ssl
 ^^^^^^^
 
 ``use_ssl``: Whether or not to connect to ``es_host`` using TLS. (Optional, boolean, default False)
+The environment variable ``ES_USE_SSL`` will override this field.
 
 verify_certs
 ^^^^^^^^^^^^
@@ -232,12 +235,12 @@ verify_certs
 es_username
 ^^^^^^^^^^^
 
-``es_username``: basic-auth username for connecting to ``es_host``. (Optional, string, no default)
+``es_username``: basic-auth username for connecting to ``es_host``. (Optional, string, no default) The environment variable ``ES_USERNAME`` will override this field.
 
 es_password
 ^^^^^^^^^^^
 
-``es_password``: basic-auth password for connecting to ``es_host``. (Optional, string, no default)
+``es_password``: basic-auth password for connecting to ``es_host``. (Optional, string, no default) The environment variable ``ES_PASSWORD`` will override this field.
 
 es_url_prefix
 ^^^^^^^^^^^^^
