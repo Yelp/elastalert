@@ -106,16 +106,18 @@ is set to true. Note that back filled data may not always trigger count based al
 ``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about its searches.
 When ElastAlert is started, it will query for information about the time that it was last run. This way,
 even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice. It will also specify the default cluster for each rule to run on.
+The environment variable ``ES_HOST`` will override this field.
 
-``es_port``: The port corresponding to ``es_host``.
+``es_port``: The port corresponding to ``es_host``. The environment variable ``ES_PORT`` will override this field.
 
 ``use_ssl``: Optional; whether or not to connect to ``es_host`` using TLS; set to ``True`` or ``False``.
+The environment variable ``ES_USE_SSL`` will override this field.
 
 ``verify_certs``: Optional; whether or not to verify TLS certificates; set to ``True`` or ``False``. The default is ``True``.
 
-``es_username``: Optional; basic-auth username for connecting to ``es_host``.
+``es_username``: Optional; basic-auth username for connecting to ``es_host``. The environment variable ``ES_USERNAME`` will override this field.
 
-``es_password``: Optional; basic-auth password for connecting to ``es_host``.
+``es_password``: Optional; basic-auth password for connecting to ``es_host``. The environment variable ``ES_PASSWORD`` will override this field.
 
 ``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
 
@@ -167,10 +169,12 @@ unless overwritten in the rule config. The default is "localhost".
 ``email_reply_to``: This sets the Reply-To header in emails. The default is the recipient address.
 
 ``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon Elasticsearch Service. It'll use instance role keys to sign the requests.
+The environment variable ``AWS_DEFAULT_REGION`` will override this field.
 
 ``boto_profile``: Deprecated! Boto profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
 
 ``profile``: AWS profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
+The environment variable ``AWS_DEFAULT_PROFILE`` will override this field.
 
 ``replace_dots_in_field_names``: If ``True``, ElastAlert replaces any dots in field names with an underscore before writing documents to Elasticsearch.
 The default value is ``False``. Elasticsearch 2.0 - 2.3 does not support dots in field names.

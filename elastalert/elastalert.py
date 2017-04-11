@@ -637,7 +637,7 @@ class ElastAlerter():
         run_start = time.time()
 
         self.current_es = elasticsearch_client(rule)
-        self.current_es_addr = (rule['es_host'], rule['es_port'])
+        self.current_es_addr = (self.current_es.host, self.current_es.port)
 
         # If there are pending aggregate matches, try processing them
         for x in range(len(rule['agg_matches'])):
@@ -1014,8 +1014,8 @@ class ElastAlerter():
         # Return dashboard URL
         kibana_url = rule.get('kibana_url')
         if not kibana_url:
-            kibana_url = 'http://%s:%s/_plugin/kibana/' % (rule['es_host'],
-                                                           rule['es_port'])
+            kibana_url = 'http://%s:%s/_plugin/kibana/' % (es.host,
+                                                           es.port)
         return kibana_url + '#/dashboard/temp/%s' % (res['_id'])
 
     def get_dashboard(self, rule, db_name):
@@ -1249,7 +1249,7 @@ class ElastAlerter():
 
             # Set current_es for top_count_keys query
             self.current_es = elasticsearch_client(rule)
-            self.current_es_addr = (rule['es_host'], rule['es_port'])
+            self.current_es_addr = (self.current_es.host, self.current_es.port)
 
             # Send the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):

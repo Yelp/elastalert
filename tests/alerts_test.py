@@ -607,6 +607,8 @@ def test_kibana(ea):
         mock_create = mock.Mock(return_value={'_id': 'ABCDEFGH'})
         mock_es_inst = mock.Mock()
         mock_es_inst.index = mock_create
+        mock_es_inst.host = 'test.testing'
+        mock_es_inst.port = 12345
         mock_es.return_value = mock_es_inst
         link = ea.generate_kibana_db(rule, match)
 

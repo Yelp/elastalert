@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import datetime
 import logging
 
@@ -298,22 +299,22 @@ def build_es_conn_config(conf):
     with properly initialized values for 'es_host', 'es_port', 'use_ssl' and 'http_auth' which
     will be a basicauth username:password formatted string """
     parsed_conf = {}
-    parsed_conf['use_ssl'] = False
+    parsed_conf['use_ssl'] = os.environ.get('ES_USE_SSL', False)
     parsed_conf['verify_certs'] = True
     parsed_conf['http_auth'] = None
     parsed_conf['es_username'] = None
     parsed_conf['es_password'] = None
     parsed_conf['aws_region'] = None
     parsed_conf['profile'] = None
-    parsed_conf['es_host'] = conf['es_host']
-    parsed_conf['es_port'] = conf['es_port']
+    parsed_conf['es_host'] = os.environ.get('ES_HOST', conf['es_host'])
+    parsed_conf['es_port'] = int(os.environ.get('ES_PORT', conf['es_port']))
     parsed_conf['es_url_prefix'] = ''
     parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
     parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
 
     if 'es_username' in conf:
-        parsed_conf['es_username'] = conf['es_username']
-        parsed_conf['es_password'] = conf['es_password']
+        parsed_conf['es_username'] = os.envion.get('ES_USERNAME', conf['es_username'])
+        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD', conf['es_password'])
 
     if 'aws_region' in conf:
         parsed_conf['aws_region'] = conf['aws_region']
