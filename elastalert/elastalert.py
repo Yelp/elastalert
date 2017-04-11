@@ -107,6 +107,7 @@ class ElastAlerter():
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.alerts_sent = 0
         self.num_hits = 0
+        self.num_dupes = 0
         self.current_es = None
         self.current_es_addr = None
         self.buffer_time = self.conf['buffer_time']
