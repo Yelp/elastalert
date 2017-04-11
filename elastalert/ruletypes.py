@@ -94,8 +94,23 @@ class CompareRule(RuleType):
     """ A base class for matching a specific term by passing it to a compare function """
     required_options = frozenset(['compare_key'])
 
+    def expand_entries(self, list_type):
+        """ Expand entries specified in files using the '!file' directive, if there are
+        any, then add everything to a set.
+        """
+        entries_set = set()
+        for entry in self.rules[list_type]:
+            if entry.startswith("!file"):  # - "!file /path/to/list"
+                filename = entry.split()[1]
+                with open(filename, 'r') as f:
+                    for line in f:
+                        entries_set.add(line.rstrip())
+            else:
+                entries_set.add(entry)
+        self.rules[list_type] = entries_set
+
     def compare(self, event):
-        """ An event is a match iff this returns true """
+        """ An event is a match if this returns true """
         raise NotImplementedError()
 
     def add_data(self, data):
@@ -110,6 +125,7 @@ class BlacklistRule(CompareRule):
     required_options = frozenset(['compare_key', 'blacklist'])
 
     def compare(self, event):
+        CompareRule.expand_entries(self, 'blacklist')
         term = lookup_es_key(event, self.rules['compare_key'])
         if term in self.rules['blacklist']:
             return True
@@ -121,6 +137,7 @@ class WhitelistRule(CompareRule):
     required_options = frozenset(['compare_key', 'whitelist', 'ignore_null'])
 
     def compare(self, event):
+        CompareRule.expand_entries(self, 'whitelist')
         term = lookup_es_key(event, self.rules['compare_key'])
         if term is None:
             return not self.rules['ignore_null']
