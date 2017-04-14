@@ -151,6 +151,7 @@ class WhitelistRule(CompareRule):
             return True
         return False
 
+
 class ChangeRule(CompareRule):
     """ A rule that will store values for a certain term and match if those values change """
     required_options = frozenset(['query_key', 'compare_key', 'ignore_null'])
