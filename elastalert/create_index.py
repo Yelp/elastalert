@@ -17,11 +17,11 @@ from elasticsearch.client import IndicesClient
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--host', help='Elasticsearch host')
-    parser.add_argument('--port', type=int, help='Elasticsearch port')
+    parser.add_argument('--host', default=os.environ.get('ES_HOST', None), help='Elasticsearch host')
+    parser.add_argument('--port', default=os.environ.get('ES_PORT', None), type=int, help='Elasticsearch port')
     parser.add_argument('--url-prefix', help='Elasticsearch URL prefix')
     parser.add_argument('--no-auth', action='store_const', const=True, help='Suppress prompt for basic auth')
-    parser.add_argument('--ssl', action='store_true', default=None, help='Use TLS')
+    parser.add_argument('--ssl', action='store_true', default=os.environ.get('ES_USE_SSL', None), help='Use TLS')
     parser.add_argument('--no-ssl', dest='ssl', action='store_false', help='Do not use TLS')
     parser.add_argument('--verify-certs', action='store_true', default=None, help='Verify TLS certificates')
     parser.add_argument('--no-verify-certs', dest='verify_certs', action='store_false', help='Do not verify TLS certificates')
