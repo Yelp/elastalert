@@ -151,7 +151,7 @@ There are two ways of invoking ElastAlert. As a daemon, through Supervisor (http
     No handlers could be found for logger "Elasticsearch"
     INFO:root:Queried rule Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 hits
     INFO:Elasticsearch:POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]
-    INFO:root:Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits, 0 matches, 0 alerts sent
+    INFO:root:Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits (0 already seen), 0 matches, 0 alerts sent
     INFO:root:Sleeping for 297 seconds
 
 ElastAlert uses the python logging system and ``--verbose`` sets it to display INFO level messages. ``--rule example_frequency.yaml`` specifies the rule to run, otherwise ElastAlert will attempt to load the other rules in the example_rules folder.
@@ -166,9 +166,9 @@ ElastAlert periodically queries the most recent ``buffer_time`` (default 45 minu
 
 This line showing that ElastAlert uploaded a document to the elastalert_status index with information about the query it just made.
 
-``Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits, 0 matches, 0 alerts sent``
+``Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits (0 already seen), 0 matches, 0 alerts sent``
 
-The line means ElastAlert has finished processing the rule. For large time periods, sometimes multiple queries may be run, but their data will be processed together. ``query hits`` is the number of documents that are downloaded from Elasticsearch, ``matches`` is the number of matches the rule type outputted, and ``alerts sent`` is the number of alerts actually sent. This may differ from ``matches`` because of options like ``realert`` and ``aggregation`` or because of an error.
+The line means ElastAlert has finished processing the rule. For large time periods, sometimes multiple queries may be run, but their data will be processed together. ``query hits`` is the number of documents that are downloaded from Elasticsearch, ``already seen`` refers to documents that were already counted in a previous overlapping query and will be ignored, ``matches`` is the number of matches the rule type outputted, and ``alerts sent`` is the number of alerts actually sent. This may differ from ``matches`` because of options like ``realert`` and ``aggregation`` or because of an error.
 
 ``Sleeping for 297 seconds``
 

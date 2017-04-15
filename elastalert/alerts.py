@@ -706,7 +706,7 @@ class JiraAlerter(Alerter):
                         raise Exception("Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(watcher, ex)), None, sys.exc_info()[2]
 
         except JIRAError as e:
-            raise EAException("Error creating JIRA ticket: %s" % (e))
+            raise EAException("Error creating JIRA ticket using jira_args (%s): %s" % (self.jira_args, e))
         elastalert_logger.info("Opened Jira ticket: %s" % (self.issue))
 
         if self.pipeline is not None:

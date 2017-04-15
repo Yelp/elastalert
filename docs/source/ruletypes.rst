@@ -178,11 +178,13 @@ es_host
 ^^^^^^^
 
 ``es_host``: The hostname of the Elasticsearch cluster the rule will use to query. (Required, string, no default)
+The environment variable ``ES_HOST`` will override this field.
 
 es_port
 ^^^^^^^
 
 ``es_port``: The port of the Elasticsearch cluster. (Required, number, no default)
+The environment variable ``ES_PORT`` will override this field.
 
 index
 ^^^^^
@@ -223,6 +225,7 @@ use_ssl
 ^^^^^^^
 
 ``use_ssl``: Whether or not to connect to ``es_host`` using TLS. (Optional, boolean, default False)
+The environment variable ``ES_USE_SSL`` will override this field.
 
 verify_certs
 ^^^^^^^^^^^^
@@ -232,12 +235,12 @@ verify_certs
 es_username
 ^^^^^^^^^^^
 
-``es_username``: basic-auth username for connecting to ``es_host``. (Optional, string, no default)
+``es_username``: basic-auth username for connecting to ``es_host``. (Optional, string, no default) The environment variable ``ES_USERNAME`` will override this field.
 
 es_password
 ^^^^^^^^^^^
 
-``es_password``: basic-auth password for connecting to ``es_host``. (Optional, string, no default)
+``es_password``: basic-auth password for connecting to ``es_host``. (Optional, string, no default) The environment variable ``ES_PASSWORD`` will override this field.
 
 es_url_prefix
 ^^^^^^^^^^^^^
@@ -801,9 +804,9 @@ consider the following examples::
     hour4: 100 events (ref: 120, cur: 200) - No alert because spike_height not met
 
     hour1: 0 events (ref: 0, cur: 0) - No alert because (a) threshold_ref not met, (b) ref window not filled
-    hour1: 20 events (ref: 0, cur: 20) - No alert because (a) threshold_ref not met, (b) ref window not filled
-    hour2: 100 events (ref: 0, cur: 120) - No alert because (a) threshold_ref not met, (b) ref window not filled
-    hour3: 100 events (ref: 20, cur: 200) - Alert because (a) spike_height met, (b) threshold_ref met, (c) ref window filled
+    hour2: 20 events (ref: 0, cur: 20) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour3: 100 events (ref: 0, cur: 120) - No alert because (a) threshold_ref not met, (b) ref window not filled
+    hour4: 100 events (ref: 20, cur: 200) - Alert because (a) spike_height met, (b) threshold_ref met, (c) ref window filled
 
     hour1: 1 events (ref: 0, cur: 1) - No alert because (a) threshold_ref not met, (b) ref window not filled
     hour2: 2 events (ref: 0, cur: 3) - No alert because (a) threshold_ref not met, (b) ref window not filled

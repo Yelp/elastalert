@@ -107,6 +107,7 @@ class ElastAlerter():
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.alerts_sent = 0
         self.num_hits = 0
+        self.num_dupes = 0
         self.current_es = None
         self.current_es_addr = None
         self.buffer_time = self.conf['buffer_time']
@@ -476,7 +477,9 @@ class ElastAlerter():
         else:
             data = self.get_hits(rule, start, end, index, scroll)
             if data:
+                old_len = len(data)
                 data = self.remove_duplicate_events(data, rule)
+                self.num_dupes += old_len - len(data)
 
         # There was an exception while querying
         if data is None:
@@ -637,7 +640,7 @@ class ElastAlerter():
         run_start = time.time()
 
         self.current_es = elasticsearch_client(rule)
-        self.current_es_addr = (rule['es_host'], rule['es_port'])
+        self.current_es_addr = (self.current_es.host, self.current_es.port)
 
         # If there are pending aggregate matches, try processing them
         for x in range(len(rule['agg_matches'])):
@@ -659,6 +662,7 @@ class ElastAlerter():
 
         # Run the rule. If querying over a large time period, split it up into segments
         self.num_hits = 0
+        self.num_dupes = 0
         segment_size = self.get_segment_size(rule)
 
         tmp_endtime = rule['starttime']
@@ -914,9 +918,9 @@ class ElastAlerter():
                 self.handle_uncaught_exception(e, rule)
             else:
                 old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
-                elastalert_logger.info("Ran %s from %s to %s: %s query hits, %s matches,"
+                elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
                                        " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                            self.num_hits, num_matches, self.alerts_sent))
+                                                            self.num_hits, self.num_dupes, num_matches, self.alerts_sent))
                 self.alerts_sent = 0
 
                 if next_run < datetime.datetime.utcnow():
@@ -1014,8 +1018,8 @@ class ElastAlerter():
         # Return dashboard URL
         kibana_url = rule.get('kibana_url')
         if not kibana_url:
-            kibana_url = 'http://%s:%s/_plugin/kibana/' % (rule['es_host'],
-                                                           rule['es_port'])
+            kibana_url = 'http://%s:%s/_plugin/kibana/' % (es.host,
+                                                           es.port)
         return kibana_url + '#/dashboard/temp/%s' % (res['_id'])
 
     def get_dashboard(self, rule, db_name):
@@ -1249,7 +1253,7 @@ class ElastAlerter():
 
             # Set current_es for top_count_keys query
             self.current_es = elasticsearch_client(rule)
-            self.current_es_addr = (rule['es_host'], rule['es_port'])
+            self.current_es_addr = (self.current_es.host, self.current_es.port)
 
             # Send the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):
