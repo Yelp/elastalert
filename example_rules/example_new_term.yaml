@@ -18,7 +18,7 @@
 
 # (Required)
 # Rule name, must be unique
-name: Example rule
+name: Example new term rule
 
 # (Required)
 # Type of alert.
