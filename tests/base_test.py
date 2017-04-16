@@ -565,6 +565,18 @@ def test_silence_query_key(ea):
             ea.run_rule(ea.rules[0], END, START)
     assert ea.rules[0]['alert'][0].alert.call_count == 2
 
+    # Test that a rule-wide silence cache is cleared if it's expired and the match has a QK
+    match = [{'@timestamp': '2014-11-17T00:00:00', 'username': 'qlo'}]
+    ea.rules[0]['type'].matches = match
+    ea.silence_cache[ea.rules[0]['name']] = (ts_to_dt('2013-01-01'), 0)
+    with mock.patch('elastalert.elastalert.ts_now') as mock_ts:
+        with mock.patch('elastalert.elastalert.Elasticsearch'):
+            # Converted twice to add tzinfo
+            mock_ts.return_value = ts_to_dt(dt_to_ts(datetime.datetime.utcnow() + datetime.timedelta(hours=5)))
+            ea.run_rule(ea.rules[0], END, START)
+    assert ea.rules[0]['alert'][0].alert.call_count == 2
+    assert ea.rules[0]['name'] not in ea.silence_cache
+
 
 def test_realert(ea):
     hits = ['2014-09-26T12:35:%sZ' % (x) for x in range(60)]

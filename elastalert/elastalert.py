@@ -706,6 +706,11 @@ class ElastAlerter():
                 elastalert_logger.info('Ignoring match for silenced rule %s' % (silence_cache_key,))
                 continue
 
+            # If we have an expired entry in the cache covering all query keys, it can
+            # override a manual silence stash and won't be cleared in set_realert. Clear it here.
+            if key and rule['name'] in self.silence_cache:
+                self.silence_cache.pop(rule['name'])
+
             if rule['realert']:
                 next_alert, exponent = self.next_alert_time(rule, silence_cache_key, ts_now())
                 self.set_realert(silence_cache_key, next_alert, exponent)
