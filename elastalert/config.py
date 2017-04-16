@@ -202,7 +202,7 @@ def load_options(rule, conf, filename, args=None):
             ts = dt_to_ts_with_format(dt, ts_format=rule['timestamp_format'])
             if 'timestamp_format_expr' in rule:
                 # eval expression passing 'ts' and 'dt'
-                return eval(rule['timestamp_format_expr'], {'ts':ts, 'dt':dt})
+                return eval(rule['timestamp_format_expr'], {'ts': ts, 'dt': dt})
             else:
                 return ts
 
