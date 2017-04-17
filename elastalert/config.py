@@ -30,6 +30,9 @@ rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dir
 required_globals = frozenset(['run_every', 'rules_folder', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
 required_locals = frozenset(['alert', 'type', 'name', 'index'])
 
+# Settings that can be derived from ENV variables
+env_settings = ('ES_USE_SSL', 'ES_PASSWORD', 'ES_USERNAME', 'ES_HOST', 'ES_PORT')
+
 # Used to map the names of rules to their classes
 rules_mapping = {
     'frequency': ruletypes.FrequencyRule,
@@ -385,6 +388,10 @@ def load_rules(args):
     filename = args.config
     conf = yaml_loader(filename)
     use_rule = args.rule
+
+    for env_var in env_settings:
+        if env_var in os.environ:
+            conf[env_var.lower()] = os.environ[env_var]
 
     # Make sure we have all required globals
     if required_globals - frozenset(conf.keys()):
