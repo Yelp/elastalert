@@ -1,8 +1,8 @@
 name: Example Percentage Match
 type: percentage_match
 
-es_host: localhost
-es_port: 9200
+#es_host: localhost
+#es_port: 9200
 
 index: logstash-http-request-*
 description: "95% of all http requests should be successful"
