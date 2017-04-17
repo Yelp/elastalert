@@ -1,5 +1,12 @@
 # Change Log
 
+## v0.1.10 - 2017-04-17
+
+### Fixed
+- Fixed an AttributeError occuring with older versions of Elasticsearch library
+- Made example rules more consistent and with unique names
+- Fixed an error caused by a typo when es_username is used
+
 ## v0.1.9 - 2017-04-14
 
 ### Added
