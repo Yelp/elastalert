@@ -31,7 +31,11 @@ required_globals = frozenset(['run_every', 'rules_folder', 'es_host', 'es_port',
 required_locals = frozenset(['alert', 'type', 'name', 'index'])
 
 # Settings that can be derived from ENV variables
-env_settings = ('ES_USE_SSL', 'ES_PASSWORD', 'ES_USERNAME', 'ES_HOST', 'ES_PORT')
+env_settings = {'ES_USE_SSL': 'use_ssl',
+                'ES_PASSWORD': 'es_password',
+                'ES_USERNAME': 'es_username',
+                'ES_HOST': 'es_host',
+                'ES_PORT': 'es_port'}
 
 # Used to map the names of rules to their classes
 rules_mapping = {
@@ -389,9 +393,9 @@ def load_rules(args):
     conf = yaml_loader(filename)
     use_rule = args.rule
 
-    for env_var in env_settings:
+    for env_var, conf_var in env_settings.values():
         if env_var in os.environ:
-            conf[env_var.lower()] = os.environ[env_var]
+            conf[conf_var] = os.environ[env_var]
 
     # Make sure we have all required globals
     if required_globals - frozenset(conf.keys()):
