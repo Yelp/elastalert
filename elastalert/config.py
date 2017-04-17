@@ -420,12 +420,12 @@ def load_rules(args):
         try:
             rule = load_configuration(rule_file, conf, args)
             if rule['name'] in names:
-                raise EAException('Duplicate rule named %s' % (rule['name']))
+                logging.error("Duplicate rule named %s - skipping rule in file %s" % (rule['name'], str(rule_file)))
+            else:
+                rules.append(rule)
+                names.append(rule['name'])
         except EAException as e:
-            raise EAException('Error loading file %s: %s' % (rule_file, e))
-
-        rules.append(rule)
-        names.append(rule['name'])
+            logging.error("Rule file %s skipped due to error loading file: %s", rule_file, e)
 
     conf['rules'] = rules
     return conf
