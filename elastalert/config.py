@@ -393,7 +393,7 @@ def load_rules(args):
     conf = yaml_loader(filename)
     use_rule = args.rule
 
-    for env_var, conf_var in env_settings.values():
+    for env_var, conf_var in env_settings.items():
         if env_var in os.environ:
             conf[conf_var] = os.environ[env_var]
 
