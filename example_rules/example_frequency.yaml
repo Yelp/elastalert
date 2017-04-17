@@ -17,7 +17,7 @@
 
 # (Required)
 # Rule name, must be unique
-name: Example rule
+name: Example frequency rule
 
 # (Required)
 # Type of alert.
