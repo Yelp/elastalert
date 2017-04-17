@@ -663,7 +663,15 @@ This rule requires two additional options:
 
 ``compare_key``: The name of the field to use to compare to the blacklist. If the field is null, those events will be ignored.
 
-``blacklist``: A list of blacklisted values. The ``compare_key`` term must be equal to one of these values for it to match.
+``blacklist``: A list of blacklisted values, and/or a list of paths to flat files which contain the blacklisted values using ``- "!file /path/to/file"``; for example::
+
+    blacklist:
+        - value1
+        - value2
+        - "!file /tmp/blacklist1.txt"
+        - "!file /tmp/blacklist2.txt"
+
+It is possible to mix between blacklist value definitions, or use either one. The ``compare_key`` term must be equal to one of these values for it to match.
 
 Whitelist
 ~~~~~~~~~
@@ -677,7 +685,15 @@ This rule requires three additional options:
 
 ``ignore_null``: If true, events without a ``compare_key`` field will not match.
 
-``whitelist``: A list of whitelisted values. The ``compare_key`` term must be in this list or else it will match.
+``whitelist``: A list of whitelisted values, and/or a list of paths to flat files which contain the whitelisted values using  ``- "!file /path/to/file"``; for example::
+
+    blacklist:
+        - value1
+        - value2
+        - "!file /tmp/whitelist1.txt"
+        - "!file /tmp/whitelist2.txt"
+
+It is possible to mix between whitelisted value definitions, or use either one. The ``compare_key`` term must be in this list or else it will match.
 
 Change
 ~~~~~~
