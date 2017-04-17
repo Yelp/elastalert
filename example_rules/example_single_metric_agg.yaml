@@ -1,8 +1,8 @@
 name: Metricbeat CPU Spike Rule
 type: metric_aggregation
 
-es_host: localhost
-es_port: 9200
+#es_host: localhost
+#es_port: 9200
 
 index: metricbeat-*
 
