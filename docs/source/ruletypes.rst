@@ -687,7 +687,7 @@ This rule requires three additional options:
 
 ``whitelist``: A list of whitelisted values, and/or a list of paths to flat files which contain the whitelisted values using  ``- "!file /path/to/file"``; for example::
 
-    blacklist:
+    whitelist:
         - value1
         - value2
         - "!file /tmp/whitelist1.txt"
