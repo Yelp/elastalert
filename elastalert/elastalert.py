@@ -377,7 +377,7 @@ class ElastAlerter():
         base_query = self.get_query(rule_filter, starttime, endtime, timestamp_field=rule['timestamp_field'], sort=False, to_ts_func=rule['dt_to_ts'], five=rule['five'])
         if size is None:
             size = rule.get('terms_size', 50)
-        query = self.get_terms_query(base_query, size, key)
+        query = self.get_terms_query(base_query, size, key, rule['five'])
 
         try:
             if not rule['five']:
