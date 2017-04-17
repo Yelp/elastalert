@@ -2,11 +2,11 @@
 
 # (Optional)
 # Elasticsearch host
-es_host: localhost
+#es_host: localhost
 
 # (Optional)
 # Elasticsearch port
-es_port: 9200
+#es_port: 9200
 
 # (Required)
 # OpsGenie credentials
