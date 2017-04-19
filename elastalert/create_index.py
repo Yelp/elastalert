@@ -109,6 +109,10 @@ def main():
                                                        'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
     error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False},
                                                          '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
+    current_status_mapping = {'current_status': {'properties': {
+                                          'rule_name': {'index': 'not_analyzed', 'type': 'string'},
+                                          'is_active': {'type': 'boolean'},
+                                          '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
 
     index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
     if not index:
@@ -130,6 +134,10 @@ def main():
     es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)
     es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping)
     es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping)
+
+    current_status_index = index + "_current_status"
+    es.indices.create(current_status_index)
+    es.indices.put_mapping(index=current_status_index, doc_type='current_status', body=current_status_mapping)
     print('New index %s created' % index)
 
     if old_index:
