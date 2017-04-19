@@ -23,6 +23,7 @@ class OpsGenieAlerter(Alerter):
         self.to_addr = self.rule.get('opsgenie_addr', 'https://api.opsgenie.com/v1/json/alert')
         self.custom_message = self.rule.get('opsgenie_message')
         self.alias = self.rule.get('opsgenie_alias')
+        self.opsgenie_proxy = self.rule.get('opsgenie_proxy', None)
 
     def alert(self, matches):
         body = ''
@@ -55,8 +56,12 @@ class OpsGenieAlerter(Alerter):
 
         logging.debug(json.dumps(post))
 
+        headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.opsgenie_proxy} if self.opsgenie_proxy else None
+
         try:
-            r = requests.post(self.to_addr, json=post)
+            r = requests.post(self.to_addr, json=post, headers=headers, proxies=proxies)
 
             logging.debug('request response: {0}'.format(r))
             if r.status_code != 200:
