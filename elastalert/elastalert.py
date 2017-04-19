@@ -514,7 +514,7 @@ class ElastAlerter():
         """
         sort = {'sort': {'@timestamp': {'order': 'desc'}}}
         query = {'filter': {'term': {'rule_name': '%s' % (rule['name'])}}}
-        if rule['five']:
+        if self.is_five():
             query = {'query': {'bool': query}}
         query.update(sort)
 
@@ -795,11 +795,13 @@ class ElastAlerter():
             return
 
         # In ES5, filters starting with 'query' should have the top wrapper removed
+        new_filters = []
         for es_filter in new_rule.get('filter', []):
             if es_filter.get('query'):
-                new_filter = es_filter['query']
-                new_rule['filter'].append(new_filter)
-                new_rule['filter'].remove(es_filter)
+                new_filters.append(es_filter['query'])
+            else:
+                new_filters.append(es_filter)
+        new_rule['filters'] = new_filters
 
     def load_rule_changes(self):
         ''' Using the modification times of rule config files, syncs the running rules
