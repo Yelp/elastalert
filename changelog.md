@@ -1,5 +1,12 @@
 # Change Log
 
+## v0.1.11 - 2017-04-19
+
+### Fixed
+- Fixed an issue that would cause filters starting with "query" to sometimes throw errors in ES5
+- Fixed a bug with multiple versions of ES on different rules
+- Fixed a possible KeyError when using use_terms_query with ES5
+
 ## v0.1.10 - 2017-04-17
 
 ### Fixed
