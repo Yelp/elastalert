@@ -801,7 +801,7 @@ class ElastAlerter():
                 new_filters.append(es_filter['query'])
             else:
                 new_filters.append(es_filter)
-        new_rule['filters'] = new_filters
+        new_rule['filter'] = new_filters
 
     def load_rule_changes(self):
         ''' Using the modification times of rule config files, syncs the running rules
