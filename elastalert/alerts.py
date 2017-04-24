@@ -1039,7 +1039,7 @@ class TwilioAlerter(Alerter):
         try:
             client.messages.create(body=self.rule['name'],
                                    to=self.twilio_to_number,
-                                   from_=self.twilio_to_number)
+                                   from_=self.twilio_from_number)
 
         except TwilioRestException as e:
             raise EAException("Error posting to twilio: %s" % e)
