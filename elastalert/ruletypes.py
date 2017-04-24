@@ -84,8 +84,9 @@ class RuleType(object):
         :param terms: A list of buckets with a key, corresponding to query_key, and the count """
         raise NotImplementedError()
 
-    def add_aggregation_data(self, payload):
+    def add_aggregation_data(self, payload, rule=None):
         """ Gets called when a rule has use_terms_query set to True.
+        :param rule: 
         :param terms: A list of buckets with a key, corresponding to query_key, and the count """
         raise NotImplementedError()
 
@@ -886,35 +887,52 @@ class BaseAggregationRule(RuleType):
                 if total_seconds(self.rules['run_every']) % total_seconds(self.rules['bucket_interval_timedelta']) != 0:
                     raise EAException("run_every must be evenly divisible by bucket_interval if specified")
             else:
-                if total_seconds(self.rules['buffer_time']) % total_seconds(self.rules['bucket_interval_timedelta']) != 0:
+                if total_seconds(self.rules['buffer_time']) % total_seconds(
+                        self.rules['bucket_interval_timedelta']) != 0:
                     raise EAException("Buffer_time must be evenly divisible by bucket_interval if specified")
 
     def generate_aggregation_query(self):
         raise NotImplementedError()
 
-    def add_aggregation_data(self, payload):
+    def add_aggregation_data(self, payload, rule=None):
         for timestamp, payload_data in payload.iteritems():
             if 'interval_aggs' in payload_data:
-                self.unwrap_interval_buckets(timestamp, None, payload_data['interval_aggs']['buckets'])
+                self.unwrap_interval_buckets(timestamp, None, payload_data['interval_aggs']['buckets'], rule=rule)
             elif 'bucket_aggs' in payload_data:
-                self.unwrap_term_buckets(timestamp, payload_data['bucket_aggs']['buckets'])
+                self.unwrap_term_buckets(timestamp, payload_data['bucket_aggs']['buckets'], rule=rule)
             else:
                 self.check_matches(timestamp, None, payload_data)
 
-    def unwrap_interval_buckets(self, timestamp, query_key, interval_buckets):
+    def unwrap_interval_buckets(self, timestamp, query_key, interval_buckets, rule=None):
         for interval_data in interval_buckets:
             # Use bucket key here instead of start_time for more accurate match timestamp
             self.check_matches(ts_to_dt(interval_data['key_as_string']), query_key, interval_data)
 
-    def unwrap_term_buckets(self, timestamp, term_buckets):
+    def unwrap_term_buckets(self, timestamp, term_buckets, rule=None):
+        result = {}
+        match_number = 0
+        other_number = 0
+        time_flag = None
         for term_data in term_buckets:
             if 'interval_aggs' in term_data:
-                self.unwrap_interval_buckets(timestamp, term_data['key'], term_data['interval_aggs']['buckets'])
-            else:
-                self.check_matches(timestamp, term_data['key'], term_data)
+                if rule is not None:
+                    if term_data['key'] in rule[0]['terms'].get(self.rules['query_key']):
+                        for interval_data in term_data['interval_aggs']['buckets']:
+                            match_number += interval_data['percentage_match_aggs']['buckets']['match_bucket'][
+                                'doc_count']
+                            time_flag = interval_data['key_as_string']
+                    if term_data['key'] not in rule[0]['terms'].get(self.rules['query_key']):
+                        for interval_data in term_data['interval_aggs']['buckets']:
+                            other_number += interval_data['percentage_match_aggs']['buckets']['_other_']['doc_count']
+                            time_flag = interval_data['key_as_string']
+        result['match'] = match_number
+        result['other'] = other_number
+        self.check_matches(ts_to_dt(time_flag) if time_flag is not None else timestamp,
+                           str(rule[0]['terms'].get(self.rules['query_key'])), result)
 
     def check_matches(self, timestamp, query_key, aggregation_data):
         raise NotImplementedError()
+
 
 
 class MetricAggregationRule(BaseAggregationRule):
@@ -974,15 +992,17 @@ class PercentageMatchRule(BaseAggregationRule):
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
 
     def get_match_str(self, match):
-        message = 'Percentage violation, value: %s (min: %s max : %s) \n\n' % (match['percentage'], self.rules.get('min_percentage'), self.rules.get('max_percentage'))
+        message = 'Percentage violation, value: %s (min: %s max : %s) \n\n' % (
+            match['percentage'], self.rules.get('min_percentage'), self.rules.get('max_percentage'))
         return message
 
     def generate_aggregation_query(self):
-        return {'percentage_match_aggs': {'filters': {'other_bucket': True, 'filters': {'match_bucket': {'bool': {'must': self.match_bucket_filter}}}}}}
+        return {'percentage_match_aggs': {'filters': {'other_bucket': True, 'filters': {
+            'match_bucket': {'bool': {'must': self.match_bucket_filter}}}}}}
 
     def check_matches(self, timestamp, query_key, aggregation_data):
-        match_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['match_bucket']['doc_count']
-        other_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['_other_']['doc_count']
+        match_bucket_count = aggregation_data['match']
+        other_bucket_count = aggregation_data['other']
 
         if match_bucket_count is None or other_bucket_count is None:
             return
