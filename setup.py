@@ -13,7 +13,7 @@ setup(
     author='Quentin Long',
     author_email='qlo@yelp.com',
     setup_requires='setuptools',
-    license='Copyright 2014 Yelp',
+    license='License :: OSI Approved :: Apache Software License',
     entry_points={
         'console_scripts': ['elastalert-create-index=elastalert.create_index:main',
                             'elastalert-test-rule=elastalert.test_rule:main',
