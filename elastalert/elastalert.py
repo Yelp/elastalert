@@ -258,7 +258,8 @@ class ElastAlerter():
             aggs_element = metric_agg_element
 
         if query_key is not None:
-            aggs_element = {'bucket_aggs': {'terms': {'field': query_key, 'size': terms_size}, 'aggs': aggs_element}}
+            for idx, key in reversed(list(enumerate(query_key.split(',')))):
+                aggs_element = {'bucket_aggs' : {'terms': {'field': key, 'size': terms_size}, 'aggs': aggs_element}}
 
         if not rule['five']:
             query_element['filtered'].update({'aggs': aggs_element})
