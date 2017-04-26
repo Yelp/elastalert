@@ -54,7 +54,11 @@ class RuleType(object):
         ts = self.rules.get('timestamp_field')
         if ts in event:
             event[ts] = dt_to_ts(event[ts])
-        self.matches.append(event)
+        
+        print "appending: '%s' to matches" % event
+        print "before: length: '%d' value: %s" % (len(self.matches), self.matches)
+        self.matches.append(copy.deepcopy(event))
+        print "after: length: '%d' value: %s" % (len(self.matches), self.matches)
 
     def get_match_str(self, match):
         """ Returns a string that gives more context about a match.
@@ -974,13 +978,41 @@ class MetricAggregationRule(BaseAggregationRule):
         return {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
 
     def check_matches(self, timestamp, query_key, aggregation_data):
-        metric_val = aggregation_data[self.metric_key]['value']
-        if self.crossed_thresholds(metric_val):
-            match = {self.rules['timestamp_field']: timestamp,
-                     self.metric_key: metric_val}
-            if query_key is not None:
-                match[self.rules['query_key']] = query_key
-            self.add_match(match)
+        if "compound_query_key" in self.rules:
+            #self.add_match({'cpu_pct_avg': 0.91, 'qk': 'qk_val', '@timestamp': datetime.datetime.now(), 'sub_qk': 'sub_qk_val1'})
+            #self.add_match({'cpu_pct_avg': 0.95, 'qk': 'qk_val', '@timestamp': datetime.datetime.now(), 'sub_qk': 'sub_qk_val2'})
+            self.check_matches_recursive(timestamp, query_key, aggregation_data, self.rules['compound_query_key'], dict())
+
+        else:
+            metric_val = aggregation_data[self.metric_key]['value']
+            if self.crossed_thresholds(metric_val):
+                match = {self.rules['timestamp_field']: timestamp,
+                         self.metric_key: metric_val}
+                if query_key is not None:
+                    match[self.rules['query_key']] = query_key
+                self.add_match(match)
+
+    def check_matches_recursive(self, timestamp, query_key, aggregation_data, compound_keys, match_data):
+        if len(compound_keys) < 1:
+            # shouldn't get to this point, but checking for safety
+            return
+
+        match_data[compound_keys[0]] = aggregation_data['key']
+        if 'bucket_aggs' in aggregation_data:
+            for result in aggregation_data['bucket_aggs']['buckets']:
+                self.check_matches_recursive(timestamp,
+                                             query_key,
+                                             result,
+                                             compound_keys[1:],
+                                             match_data)
+
+        else:
+            metric_val = aggregation_data[self.metric_key]['value']
+            if self.crossed_thresholds(metric_val):
+                match_data[self.rules['timestamp_field']] = timestamp
+                match_data[self.metric_key] = metric_val
+
+                self.add_match(match_data)
 
     def crossed_thresholds(self, metric_value):
         if metric_value is None:
