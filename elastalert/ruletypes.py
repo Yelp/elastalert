@@ -54,11 +54,8 @@ class RuleType(object):
         ts = self.rules.get('timestamp_field')
         if ts in event:
             event[ts] = dt_to_ts(event[ts])
-        
-        print "appending: '%s' to matches" % event
-        print "before: length: '%d' value: %s" % (len(self.matches), self.matches)
+
         self.matches.append(copy.deepcopy(event))
-        print "after: length: '%d' value: %s" % (len(self.matches), self.matches)
 
     def get_match_str(self, match):
         """ Returns a string that gives more context about a match.
@@ -1011,6 +1008,10 @@ class MetricAggregationRule(BaseAggregationRule):
             if self.crossed_thresholds(metric_val):
                 match_data[self.rules['timestamp_field']] = timestamp
                 match_data[self.metric_key] = metric_val
+
+                # add compound key to payload to allow alerts to trigger for every unique occurence
+                compound_value = [match_data[key] for key in self.rules['compound_query_key']]
+                match_data[self.rules['query_key']] = ",".join(compound_value)
 
                 self.add_match(match_data)
 
