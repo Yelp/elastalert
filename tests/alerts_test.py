@@ -911,7 +911,7 @@ def test_pagerduty_alerter_custom_incident_key_with_args():
         'type': 'any',
         'pagerduty_service_key': 'magicalbadgers',
         'pagerduty_client_name': 'ponies inc.',
-        'pagerduty_incident_key': 'custom {}',
+        'pagerduty_incident_key': 'custom {0}',
         'pagerduty_incident_key_args': ['somefield'],
         'alert': []
     }
