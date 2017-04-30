@@ -963,6 +963,7 @@ class PagerDutyAlerter(Alerter):
         self.pagerduty_service_key = self.rule['pagerduty_service_key']
         self.pagerduty_client_name = self.rule['pagerduty_client_name']
         self.pagerduty_incident_key = self.rule.get('pagerduty_incident_key', '')
+        self.pagerduty_incident_key_args = self.rule.get('pagerduty_incident_key_args', None)
         self.pagerduty_proxy = self.rule.get('pagerduty_proxy', None)
         self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
@@ -975,7 +976,7 @@ class PagerDutyAlerter(Alerter):
             'service_key': self.pagerduty_service_key,
             'description': self.rule['name'],
             'event_type': 'trigger',
-            'incident_key': self.pagerduty_incident_key,
+            'incident_key': self.get_incident_key(matches),
             'client': self.pagerduty_client_name,
             'details': {
                 "information": body.encode('UTF-8'),
@@ -990,6 +991,22 @@ class PagerDutyAlerter(Alerter):
         except RequestException as e:
             raise EAException("Error posting to pagerduty: %s" % e)
         elastalert_logger.info("Trigger sent to PagerDuty")
+
+    def get_incident_key(self, matches):
+        if self.pagerduty_incident_key_args:
+            incident_key_values = [lookup_es_key(matches[0], arg) for arg in self.pagerduty_incident_key_args]
+
+            # Populate values with rule level properties too
+            for i in range(len(incident_key_values)):
+                if incident_key_values[i] is None:
+                    key_value = self.rule.get(self.pagerduty_incident_key_args[i])
+                    if key_value:
+                        incident_key_values[i] = key_value
+
+            incident_key_values = ['<MISSING VALUE>' if val is None else val for val in incident_key_values]
+            return self.pagerduty_incident_key.format(*incident_key_values)
+        else:
+            return self.pagerduty_incident_key
 
     def get_info(self):
         return {'type': 'pagerduty',
