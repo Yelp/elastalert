@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get -y install python-setuptools python2.7 git tox
+RUN apt-get -y install build-essential python-setuptools python2.7 python2.7-dev libssl-dev git tox
 
 RUN easy_install pip
 
