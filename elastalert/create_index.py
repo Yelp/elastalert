@@ -28,9 +28,19 @@ def main():
     parser.add_argument('--index', help='Index name to create')
     parser.add_argument('--old-index', help='Old index name to copy')
     parser.add_argument('--send_get_body_as', default='GET', help='Method for querying Elasticsearch - POST, GET or source')
-    parser.add_argument('--boto-profile', default=None, dest='profile', help='DEPRECATED: (use --profile) Boto profile to use for signing requests')
-    parser.add_argument('--profile', default=None, help='AWS profile to use for signing requests. Optionally use the AWS_DEFAULT_PROFILE environment variable')
-    parser.add_argument('--aws-region', default=None, help='AWS Region to use for signing requests. Optionally use the AWS_DEFAULT_REGION environment variable')
+    parser.add_argument(
+        '--boto-profile',
+        default=None,
+        dest='profile',
+        help='DEPRECATED: (use --profile) Boto profile to use for signing requests')
+    parser.add_argument(
+        '--profile',
+        default=None,
+        help='AWS profile to use for signing requests. Optionally use the AWS_DEFAULT_PROFILE environment variable')
+    parser.add_argument(
+        '--aws-region',
+        default=None,
+        help='AWS Region to use for signing requests. Optionally use the AWS_DEFAULT_REGION environment variable')
     parser.add_argument('--timeout', default=60, help='Elasticsearch request timeout')
     parser.add_argument('--config', default='config.yaml', help='Global config file (default: config.yaml)')
     args = parser.parse_args()
@@ -138,6 +148,7 @@ def main():
         elasticsearch.helpers.reindex(es, old_index, index)
 
     print('Done!')
+
 
 if __name__ == '__main__':
     main()
