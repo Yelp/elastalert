@@ -6,7 +6,7 @@ configparser>=3.3.0r2
 croniter==0.3.8
 cryptography==1.4
 elasticsearch
-exotel==0.1.1
+exotel==0.1.4
 jira==0.32
 jsonschema==2.2.0
 mock==1.0.0
