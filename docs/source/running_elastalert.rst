@@ -20,8 +20,8 @@ First, clone the ElastAlert repository::
 
 Install the module::
 
+    $ pip install "setuptools>=11.3"
     $ python setup.py install
-    $ pip install -r requirements.txt
 
 Depending on the version of Elasticsearch, you may need to manually install the correct version of elasticsearch-py.
 
