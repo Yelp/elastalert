@@ -10,6 +10,7 @@ Requirements
 - ISO8601 or Unix timestamped data
 - Python 2.6 or 2.7
 - pip, see requirements.txt
+- Packages on Ubuntu 14.x: python-pip python-dev libffi-dev libssl-dev
 
 Downloading and Configuring
 ---------------------------
