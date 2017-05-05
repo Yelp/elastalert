@@ -32,7 +32,7 @@ setup(
         'boto3>=1.4.4',
         'configparser>=3.5.0',
         'croniter>=0.3.16',
-        'elasticsearch>=5.3.0',
+        'elasticsearch',
         'exotel>=0.1.3',
         'jira>=1.0.10',
         'jsonschema>=2.6.0',
