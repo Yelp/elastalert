@@ -158,17 +158,36 @@ class ChangeRule(CompareRule):
     required_options = frozenset(['query_key', 'compare_key', 'ignore_null'])
     change_map = {}
     occurrence_time = {}
-
     def compare(self, event):
         key = hashable(lookup_es_key(event, self.rules['query_key']))
-        val = lookup_es_key(event, self.rules['compare_key'])
-        if not isinstance(val, bool) and not val and self.rules['ignore_null']:
-            return False
-        changed = False
+
+	values=[]
+	current_value=""
+	elastalert_logger.info(" Inside Change Rule " + str(self.occurrences))
+	for val in self.rules['compare_key'].split(",") :
+		lookup_value=lookup_es_key(event,val)
+		if lookup_value is not None :
+			values.append(lookup_value)
+			current_value += str(lookup_value)+","
+
+	
+	current_value=current_value[0:-1]
+
+	elastalert_logger.info("  "  + str(values) + " " + current_value)
+
+ 	for val in values : 
+		if not isinstance(val, bool) and not val and self.rules['ignore_null']:
+        		return False
+        
+	changed = False
 
         # If we have seen this key before, compare it to the new value
         if key in self.occurrences:
-            changed = self.occurrences[key] != val
+	    for idx,previous_values in enumerate(self.occurrences[key].split(",")) :
+		elastalert_logger.info(" "  + str(previous_values) + " " + str(values[idx]))
+		changed = int(previous_values) != int(values[idx])
+		if(changed) :
+			break	
             if changed:
                 self.change_map[key] = (self.occurrences[key], val)
 
@@ -177,10 +196,11 @@ class ChangeRule(CompareRule):
                     changed = event[self.rules['timestamp_field']] - self.occurrence_time[key] <= self.rules['timeframe']
 
         # Update the current value and time
-        self.occurrences[key] = val
+	
+        self.occurrences[key] = current_value
         if 'timeframe' in self.rules:
             self.occurrence_time[key] = event[self.rules['timestamp_field']]
-
+	elastalert_logger.info("Final Value " + str(changed))
         return changed
 
     def add_match(self, match):

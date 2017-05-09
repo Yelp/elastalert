@@ -245,7 +245,8 @@ def load_options(rule, conf, filename, args=None):
     if 'compound_aggregation_key' in rule:
         include += rule['compound_aggregation_key']
     if 'compare_key' in rule:
-        include.append(rule['compare_key'])
+	for val in rule['compare_key'].split(',') :	
+        	include.append(val)
     if 'top_count_keys' in rule:
         include += rule['top_count_keys']
     include.append(rule['timestamp_field'])
