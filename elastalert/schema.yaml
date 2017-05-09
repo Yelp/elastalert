@@ -38,14 +38,14 @@ oneOf:
     required: [blacklist, compare_key]
     properties:
       type: {enum: [blacklist]}
-      compare_key: {type: string}
+      compare_key: {'items': {'type': 'string'},'type': ['string', 'array']}
       blacklist: {type: array, items: {type: string}}
 
   - title: Whitelist
     required: [whitelist, compare_key, ignore_null]
     properties:
       type: {enum: [whitelist]}
-      compare_key: {type: string}
+      compare_key: {'items': {'type': 'string'},'type': ['string', 'array']}
       whitelist: {type: array, items: {type: string}}
       ignore_null: {type: boolean}
 
@@ -53,7 +53,7 @@ oneOf:
     required: [query_key, compare_key, ignore_null]
     properties:
       type: {enum: [change]}
-      compare_key: {type: string}
+      compare_key: {'items': {'type': 'string'},'type': ['string', 'array']}
       ignore_null: {type: boolean}
       timeframe: *timeframe
 
@@ -264,3 +264,4 @@ properties:
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
+

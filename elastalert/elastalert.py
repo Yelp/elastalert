@@ -91,6 +91,7 @@ class ElastAlerter():
         self.parse_args(args)
         self.debug = self.args.debug
         self.verbose = self.args.verbose
+
         if self.verbose or self.debug:
             elastalert_logger.setLevel(logging.INFO)
 
@@ -194,7 +195,6 @@ class ElastAlerter():
             query = {'query': {'filtered': es_filters}}
         if sort:
             query['sort'] = [{timestamp_field: {'order': 'desc' if desc else 'asc'}}]
-	#elastalert_logger.info(" Query " + str(query))
         return query
 
     def get_terms_query(self, query, size, field, five=False):
@@ -544,11 +544,10 @@ class ElastAlerter():
             start = self.get_index_start(rule['index'])
         if end is None:
             end = ts_now()
-          
+
         # Reset hit counter and query
         rule_inst = rule['type']
-        #elastalert_logger.info(" inside rule " + rule_inst)
-	index = self.get_index(rule, start, end)
+        index = self.get_index(rule, start, end)
         if rule.get('use_count_query'):
             data = self.get_hits_count(rule, start, end, index)
         elif rule.get('use_terms_query'):
@@ -971,7 +970,7 @@ class ElastAlerter():
                     self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
                     exit(1)
         self.running = True
-        elastalert_logger.info("Starting up Now")
+        elastalert_logger.info("Starting up")
         while self.running:
             next_run = datetime.datetime.utcnow() + self.run_every
 

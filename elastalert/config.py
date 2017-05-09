@@ -236,6 +236,10 @@ def load_options(rule, conf, filename, args=None):
         rule['compound_aggregation_key'] = rule['aggregation_key']
         rule['aggregation_key'] = ','.join(rule['aggregation_key'])
 
+    if isinstance(rule.get('compare_key'), list):
+        rule['compound_compare_key'] = rule['compare_key']
+        rule['compare_key'] = ','.join(rule['compare_key'])
+
     # Add QK, CK and timestamp to include
     include = rule.get('include', ['*'])
     if 'query_key' in rule:
@@ -245,8 +249,7 @@ def load_options(rule, conf, filename, args=None):
     if 'compound_aggregation_key' in rule:
         include += rule['compound_aggregation_key']
     if 'compare_key' in rule:
-	for val in rule['compare_key'].split(',') :	
-        	include.append(val)
+        include.append(rule['compare_key'])
     if 'top_count_keys' in rule:
         include += rule['top_count_keys']
     include.append(rule['timestamp_field'])
