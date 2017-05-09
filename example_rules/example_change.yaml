@@ -6,11 +6,11 @@
 
 # (Optional)
 # Elasticsearch host
-es_host: elasticsearch.example.com
+# es_host: elasticsearch.example.com
 
 # (Optional)
 # Elasticsearch port
-# es_port: 9000
+# es_port: 14900
 
 # (Optional) Connect with SSL to Elasticsearch
 #use_ssl: True
@@ -30,11 +30,11 @@ type: change
 
 # (Required)
 # Index to search, wildcard supported
-index: change-index*
+index: logstash-*
 
 # (Required, change specific)
 # The field to look for changes in
-compare_key: country_name,country_col
+compare_key: country_name
 
 # (Required, change specific)
 # Ignore documents without the compare_key (country_name) field
@@ -47,16 +47,16 @@ query_key: username
 # (Required, change specific)
 # The value of compare_key must change in two events that are less than timeframe apart to trigger an alert
 timeframe:
-  minutes: 2
+  days: 1
 
 # (Required)
 # A list of Elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
 # For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
-filter: []
-#- query:
-#    query_string:
-#      query: "document_type: login"
+filter:
+- query:
+    query_string:
+      query: "document_type: login"
 
 # (Required)
 # The alert is use when a match is found
@@ -66,4 +66,4 @@ alert:
 # (required, email specific)
 # a list of email addresses to send alerts to
 email:
-- "abcd@efg.com"
+- "elastalert@example.com"
