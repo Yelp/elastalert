@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import copy
 import datetime
+import sys
 
 from blist import sortedlist
 from util import add_raw_postfix
@@ -573,7 +574,7 @@ class NewTermsRule(RuleType):
             self.get_all_terms(args)
         except Exception as e:
             # Refuse to start if we cannot get existing terms
-            raise EAException('Error searching for existing terms: %s' % (repr(e)))
+            raise EAException('Error searching for existing terms: %s' % (repr(e))), None, sys.exc_info[2]
 
     def get_all_terms(self, args):
         """ Performs a terms aggregation for each field to get every existing term. """
@@ -630,7 +631,10 @@ class NewTermsRule(RuleType):
                         keys = [bucket['key'] for bucket in buckets]
                         self.seen_values[field] += keys
                 else:
-                    self.seen_values.setdefault(field, [])
+                    if type(field) == list:
+                        self.seen_values.setdefault(tuple(field), [])
+                    else:
+                        self.seen_values.setdefault(field, [])
                 if tmp_start == tmp_end:
                     break
                 tmp_start = tmp_end
