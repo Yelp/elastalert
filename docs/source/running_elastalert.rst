@@ -10,6 +10,7 @@ Requirements
 - ISO8601 or Unix timestamped data
 - Python 2.7
 - pip, see requirements.txt
+- Packages on Ubuntu 14.x: python-pip python-dev libffi-dev libssl-dev
 
 Downloading and Configuring
 ---------------------------
@@ -24,7 +25,8 @@ or you can clone the ElastAlert repository for the most recent changes::
 
 Install the module::
 
-    $ pip install -r requirements.txt
+    $ pip install "setuptools>=11.3"
+    $ python setup.py install
 
 Depending on the version of Elasticsearch, you may need to manually install the correct version of elasticsearch-py.
 
