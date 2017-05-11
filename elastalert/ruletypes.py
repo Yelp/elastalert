@@ -574,7 +574,7 @@ class NewTermsRule(RuleType):
             self.get_all_terms(args)
         except Exception as e:
             # Refuse to start if we cannot get existing terms
-            raise EAException('Error searching for existing terms: %s' % (repr(e))), None, sys.exc_info[2]
+            raise EAException('Error searching for existing terms: %s' % (repr(e))), None, sys.exc_info()[2]
 
     def get_all_terms(self, args):
         """ Performs a terms aggregation for each field to get every existing term. """
