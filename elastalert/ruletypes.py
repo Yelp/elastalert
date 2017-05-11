@@ -630,7 +630,10 @@ class NewTermsRule(RuleType):
                         keys = [bucket['key'] for bucket in buckets]
                         self.seen_values[field] += keys
                 else:
-                    self.seen_values.setdefault(field, [])
+                    if type(field) == list:
+                        self.seen_values.setdefault(tuple(field), [])
+                    else:
+                        self.seen_values.setdefault(field, [])
                 if tmp_start == tmp_end:
                     break
                 tmp_start = tmp_end
