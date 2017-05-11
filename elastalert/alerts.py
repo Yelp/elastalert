@@ -807,7 +807,7 @@ class CommandAlerter(Alerter):
 
 
 class SnsAlerter(Alerter):
-    """send alert using AWS SNS service"""
+    """ Send alert using AWS SNS service """
     required_options = frozenset(['sns_topic_arn'])
 
     def __init__(self, *args):
@@ -833,7 +833,11 @@ class SnsAlerter(Alerter):
             profile_name=self.profile
         )
         sns_client = session.client('sns')
-        sns_client.publish(self.sns_topic_arn, body, subject=self.create_title(matches))
+        sns_client.publish(
+            TopicArn=self.sns_topic_arn,
+            Message=body,
+            Subject=self.create_title(matches)
+        )
         elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
 
 
