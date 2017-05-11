@@ -8,14 +8,18 @@ Requirements
 
 - Elasticsearch
 - ISO8601 or Unix timestamped data
-- Python 2.6 or 2.7
+- Python 2.7
 - pip, see requirements.txt
 - Packages on Ubuntu 14.x: python-pip python-dev libffi-dev libssl-dev
 
 Downloading and Configuring
 ---------------------------
 
-First, clone the ElastAlert repository::
+You can either install the latest released version of ElastAlert using pip::
+
+    $ pip install elastalert
+
+or you can clone the ElastAlert repository for the most recent changes::
 
     $ git clone https://github.com/Yelp/elastalert.git
 

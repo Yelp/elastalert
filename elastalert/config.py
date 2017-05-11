@@ -4,6 +4,7 @@ import datetime
 import hashlib
 import logging
 import os
+import sys
 
 import alerts
 import enhancements
@@ -313,7 +314,7 @@ def load_modules(rule, args=None):
     try:
         rule['type'] = rule['type'](rule, args)
     except (KeyError, EAException) as e:
-        raise EAException('Error initializing rule %s: %s' % (rule['name'], e))
+        raise EAException('Error initializing rule %s: %s' % (rule['name'], e)), None, sys.exc_info[2]
     # Instantiate alert
     rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
 
