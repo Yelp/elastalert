@@ -106,7 +106,7 @@ Rule Configuration Cheat Sheet
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 |      RULE TYPE                                     |   Any  | Blacklist | Whitelist | Change | Frequency | Spike | Flatline |New_term|Cardinality|
 +====================================================+========+===========+===========+========+===========+=======+==========+========+===========+
-| ``compare_key`` (string, no default)               |        |    Req    |   Req     |  Req   |           |       |          |        |           |
+| ``compare_key`` (list of strs, no default)         |        |    Req    |   Req     |  Req   |           |       |          |        |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 |``blacklist`` (list of strs, no default)            |        |    Req    |           |        |           |       |          |        |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
@@ -705,9 +705,9 @@ must change with respect to the last event with the same ``query_key``.
 
 This rule requires three additional options:
 
-``compare_key``: The name of the field to monitor for changes.
+``compare_key``: The names of the field to monitor for changes.Since this is list of strings ,we can have multiple keys
 
-``ignore_null``: If true, events without a ``compare_key`` field will not count as changed.
+``ignore_null``: If true, events without a ``compare_key`` field will not count as changed. Currently this check for all the fields in ``compare_key`` 
 
 ``query_key``: This rule is applied on a per-``query_key`` basis. This field must be present in all of
 the events that are checked.
