@@ -936,8 +936,9 @@ class ElastAlerter():
                         break
 
                 # Initialize the rule that matches rule_file
+                new_rule = self.init_rule(new_rule, False)
                 self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
-                if self.init_rule(new_rule, False):
+                if new_rule:
                     self.rules.append(new_rule)
 
         # Load new rules
