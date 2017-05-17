@@ -23,6 +23,7 @@ from config import load_configuration
 from config import load_rules
 from croniter import croniter
 from elasticsearch.exceptions import ElasticsearchException
+from elasticsearch.exceptions import TransportError
 from enhancements import DropMatchException
 from util import add_raw_postfix
 from util import cronite_datetime_to_timestamp
@@ -135,17 +136,11 @@ class ElastAlerter():
         self.writeback_es = elasticsearch_client(self.conf)
         self.es_version = self.get_version()
 
+        remove = []
         for rule in self.rules:
-            self.modify_rule_for_ES5(rule)
-            # Change top_count_keys to .raw
-            if 'top_count_keys' in rule and rule.get('raw_count_keys', True):
-                keys = rule.get('top_count_keys')
-                if self.is_five():
-                    rule['top_count_keys'] = [key + '.keyword' if not key.endswith('.keyword') else key for key in keys]
-                else:
-                    rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in keys]
-
-            self.init_rule(rule)
+            if not self.init_rule(rule):
+                remove.append(rule)
+        map(self.rules.remove, remove)
 
         if self.args.silence:
             self.silence()
@@ -832,6 +827,22 @@ class ElastAlerter():
 
     def init_rule(self, new_rule, new=True):
         ''' Copies some necessary non-config state from an exiting rule to a new rule. '''
+        try:
+            self.modify_rule_for_ES5(new_rule)
+        except TransportError as e:
+            elastalert_logger.warning('Error connecting to Elasticsearch for rule {}. '
+                                      'The rule has been disabled.'.format(new_rule['name']))
+            self.send_notification_email(exception=e, rule=new_rule)
+            return False
+
+        # Change top_count_keys to .raw
+        if 'top_count_keys' in new_rule and new_rule.get('raw_count_keys', True):
+            keys = new_rule.get('top_count_keys')
+            if self.is_five():
+                new_rule['top_count_keys'] = [key + '.keyword' if not key.endswith('.keyword') else key for key in keys]
+            else:
+                new_rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in keys]
+
         if 'download_dashboard' in new_rule['filter']:
             # Download filters from Kibana and set the rules filters to them
             db_filters = self.filters_from_kibana(new_rule, new_rule['filter']['download_dashboard'])
@@ -852,7 +863,6 @@ class ElastAlerter():
                 if rule['name'] == new_rule['name']:
                     break
             else:
-                logging.warning("Couldn't find existing rule %s, starting from scratch" % (new_rule['name']))
                 rule = blank_rule
 
         copy_properties = ['agg_matches',
@@ -865,8 +875,6 @@ class ElastAlerter():
             if prop not in rule:
                 continue
             new_rule[prop] = rule[prop]
-
-        self.modify_rule_for_ES5(new_rule)
 
         return new_rule
 
@@ -928,11 +936,9 @@ class ElastAlerter():
                         break
 
                 # Initialize the rule that matches rule_file
-                self.rules = [rule if rule['rule_file'] != rule_file else self.init_rule(new_rule, False) for rule in self.rules]
-
-                # If the rule failed to load previously, it needs to be added to self.rules
-                if new_rule['name'] not in [rule['name'] for rule in self.rules]:
-                    self.rules.append(self.init_rule(new_rule))
+                self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
+                if self.init_rule(new_rule, False):
+                    self.rules.append(new_rule)
 
         # Load new rules
         if not self.args.rule:
@@ -945,8 +951,9 @@ class ElastAlerter():
                     self.handle_error('Could not load rule %s: %s' % (rule_file, e))
                     self.send_notification_email(exception=e, rule_file=rule_file)
                     continue
-                elastalert_logger.info('Loaded new rule %s' % (rule_file))
-                self.rules.append(self.init_rule(new_rule))
+                if self.init_rule(new_rule):
+                    elastalert_logger.info('Loaded new rule %s' % (rule_file))
+                    self.rules.append(new_rule)
 
         self.rule_hashes = new_rule_hashes
 
