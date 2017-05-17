@@ -93,7 +93,7 @@ def test_query(ea):
     ea.current_es.search.assert_called_with(body={
         'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}},
         'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True,
-                                            size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
+        size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
 
 
 def test_query_with_fields(ea):
@@ -103,7 +103,7 @@ def test_query_with_fields(ea):
     ea.current_es.search.assert_called_with(body={
         'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}},
         'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True,
-                                            size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
+        size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
 
 
 def test_query_with_unix(ea):
@@ -1061,8 +1061,8 @@ def test_uncaught_exceptions(ea):
     assert len(ea.disabled_rules) == 1
 
     # Changing the file should re-enable it
-    ea.rule_hashes = {'rule1': 'abc'}
-    new_hashes = {'rule1': 'def'}
+    ea.rule_hashes = {'blah.yaml': 'abc'}
+    new_hashes = {'blah.yaml': 'def'}
     with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
         with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
             mock_load.side_effect = [ea.disabled_rules[0]]
