@@ -705,7 +705,8 @@ must change with respect to the last event with the same ``query_key``.
 
 This rule requires three additional options:
 
-``compare_key``: The names of the field to monitor for changes.Since this is list of strings ,we can have multiple keys
+``compare_key``: The names of the field to monitor for changes. Since this is list of strings, we can
+have multiple keys. An alert will trigger if any of the fields change.
 
 ``ignore_null``: If true, events without a ``compare_key`` field will not count as changed. Currently this check for all the fields in ``compare_key`` 
 

@@ -457,7 +457,7 @@ def test_change():
     events[8].pop('second_term')
     events[9]['term'] = 'bad'
     events[9]['second_term'] = 'no'
-    rules = {'compare_key': 'term,second_term',
+    rules = {'compound_compare_key': ['term', 'second_term'],
              'query_key': 'username',
              'ignore_null': True,
              'timestamp_field': '@timestamp'}
