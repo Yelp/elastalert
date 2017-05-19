@@ -735,7 +735,7 @@ class ElastAlerter():
             self.set_starttime(rule, endtime)
 
         rule['original_starttime'] = rule['starttime']
-   
+
         # Check if scheduler is set and rule is okay with scheduler
         if 'scheduler' in rule:
             croniter._datetime_to_timestamp = cronite_datetime_to_timestamp  # For Python 2.6 compatibility
