@@ -735,7 +735,21 @@ class ElastAlerter():
             self.set_starttime(rule, endtime)
 
         rule['original_starttime'] = rule['starttime']
-
+                  
+        # Check if scheduler is set and rule is okay with scheduler
+        if 'scheduler' in rule:
+            croniter._datetime_to_timestamp = cronite_datetime_to_timestamp  # For Python 2.6 compatibility
+            try:
+                iter = croniter(rule['scheduler'], ts_now())
+                alert_time = unix_to_dt(iter.get_next())
+            except Exception as e:
+                self.handle_error("Error parsing scheduler send time Cron format %s" % (e), rule['scheduler'])
+            
+            # Don't run is not scheduled
+            if not alert_time - (self.conf['run_every'] / 2) <= ts_now() <= alert_time + (self.conf['run_every'] / 2) - datetime.timedelta(seconds=1):
+                elastalert_logger.info("Not scheduled time to run task, next time is at %s, sleeping instead" % (alert_time))
+                return 0
+                
         # Don't run if starttime was set to the future
         if ts_now() <= rule['starttime']:
             logging.warning("Attempted to use query start time in the future (%s), sleeping instead" % (starttime))
