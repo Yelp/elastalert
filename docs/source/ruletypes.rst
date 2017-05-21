@@ -105,67 +105,67 @@ Rule Configuration Cheat Sheet
 
 |
 
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|      RULE TYPE                                     |   Any  | Blacklist | Whitelist | Change | Frequency | Spike | Flatline |New_term|Cardinality|
-+====================================================+========+===========+===========+========+===========+=======+==========+========+===========+
-| ``compare_key`` (list of strs, no default)         |        |    Req    |   Req     |  Req   |           |       |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``blacklist`` (list of strs, no default)            |        |    Req    |           |        |           |       |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``whitelist`` (list of strs, no default)            |        |           |   Req     |        |           |       |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``ignore_null`` (boolean, no default)              |        |           |   Req     |  Req   |           |       |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``query_key`` (string, no default)                 |   Opt  |           |           |   Req  |    Opt    |  Opt  |   Opt    |  Req   |  Opt      |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``aggregation_key`` (string, no default)           |   Opt  |           |           |        |           |       |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``summary_table_fields`` (list, no default)        |   Opt  |           |           |        |           |       |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``timeframe`` (time, no default)                   |        |           |           |   Opt  |    Req    |  Req  |   Req    |        |  Req      |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``num_events`` (int, no default)                   |        |           |           |        |    Req    |       |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``attach_related`` (boolean, no default)           |        |           |           |        |    Opt    |       |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``use_count_query`` (boolean, no default)           |        |           |           |        |     Opt   | Opt   | Opt      |        |           |
-|                                                    |        |           |           |        |           |       |          |        |           |
-|``doc_type`` (string, no default)                   |        |           |           |        |           |       |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``use_terms_query`` (boolean, no default)           |        |           |           |        |     Opt   | Opt   |          | Opt    |           |
-|                                                    |        |           |           |        |           |       |          |        |           |
-|``doc_type`` (string, no default)                   |        |           |           |        |           |       |          |        |           |
-|                                                    |        |           |           |        |           |       |          |        |           |
-|``query_key`` (string, no default)                  |        |           |           |        |           |       |          |        |           |
-|                                                    |        |           |           |        |           |       |          |        |           |
-|``terms_size`` (int, default 50)                    |        |           |           |        |           |       |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``spike_height`` (int, no default)                 |        |           |           |        |           |   Req |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``spike_type`` ([up|down|both], no default)         |        |           |           |        |           |   Req |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``alert_on_new_data`` (boolean, default False)      |        |           |           |        |           |   Opt |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``threshold_ref`` (int, no default)                 |        |           |           |        |           |   Opt |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``threshold_cur`` (int, no default)                 |        |           |           |        |           |   Opt |          |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``threshold`` (int, no default)                     |        |           |           |        |           |       |    Req   |        |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``fields`` (string or list, no default)             |        |           |           |        |           |       |          | Req    |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``terms_window_size`` (time, default 30 days)       |        |           |           |        |           |       |          | Opt    |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``window_step_size`` (time, default 1 day)          |        |           |           |        |           |       |          | Opt    |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``alert_on_missing_fields`` (boolean, default False)|        |           |           |        |           |       |          | Opt    |           |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``cardinality_field`` (string, no default)          |        |           |           |        |           |       |          |        |  Req      |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``max_cardinality`` (boolean, no default)           |        |           |           |        |           |       |          |        |  Opt      |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-|``min_cardinality`` (boolean, no default)           |        |           |           |        |           |       |          |        |  Opt      |
-+----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|      RULE TYPE                                     |   Any  | Blacklist | Whitelist | Change | Frequency | Spike | Flatline |New_term|Cardinality|Anomaly|
++====================================================+========+===========+===========+========+===========+=======+==========+========+===========+=======+
+| ``compare_key`` (list of str, no default)          |        |    Req    |   Req     |  Req   |           |       |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``blacklist`` (list of strs, no default)            |        |    Req    |           |        |           |       |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``whitelist`` (list of strs, no default)            |        |           |   Req     |        |           |       |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+| ``ignore_null`` (boolean, no default)              |        |           |   Req     |  Req   |           |       |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+| ``query_key`` (string, no default)                 |   Opt  |           |           |   Req  |    Opt    |  Opt  |   Opt    |  Req   |  Opt      |  Opt  |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+| ``aggregation_key`` (string, no default)           |   Opt  |           |           |        |           |       |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+| ``summary_table_fields`` (list, no default)        |   Opt  |           |           |        |           |       |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+| ``timeframe`` (time, no default)                   |        |           |           |   Opt  |    Req    |  Req  |   Req    |        |  Req      |  Req  |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+| ``num_events`` (int, no default)                   |        |           |           |        |    Req    |       |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+| ``attach_related`` (boolean, no default)           |        |           |           |        |    Opt    |       |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``use_count_query`` (boolean, no default)           |        |           |           |        |     Opt   | Opt   | Opt      |        |           |       |
+|                                                    |        |           |           |        |           |       |          |        |           |       |
+|``doc_type`` (string, no default)                   |        |           |           |        |           |       |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``use_terms_query`` (boolean, no default)           |        |           |           |        |     Opt   | Opt   |          | Opt    |           |       |
+|                                                    |        |           |           |        |           |       |          |        |           |       |
+|``doc_type`` (string, no default)                   |        |           |           |        |           |       |          |        |           |       |
+|                                                    |        |           |           |        |           |       |          |        |           |       |
+|``query_key`` (string, no default)                  |        |           |           |        |           |       |          |        |           |       |
+|                                                    |        |           |           |        |           |       |          |        |           |       |
+|``terms_size`` (int, default 50)                    |        |           |           |        |           |       |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+| ``spike_height`` (int, no default)                 |        |           |           |        |           |   Req |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``spike_type`` ([up|down|both], no default)         |        |           |           |        |           |   Req |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``alert_on_new_data`` (boolean, default False)      |        |           |           |        |           |   Opt |          |        |           |  Opt  |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``threshold_ref`` (int, no default)                 |        |           |           |        |           |   Opt |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``threshold_cur`` (int, no default)                 |        |           |           |        |           |   Opt |          |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``threshold`` (int, no default)                     |        |           |           |        |           |       |    Req   |        |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``fields`` (string or list, no default)             |        |           |           |        |           |       |          | Req    |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``terms_window_size`` (time, default 30 days)       |        |           |           |        |           |       |          | Opt    |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``window_step_size`` (time, default 1 day)          |        |           |           |        |           |       |          | Opt    |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``alert_on_missing_fields`` (boolean, default False)|        |           |           |        |           |       |          | Opt    |           |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``cardinality_field`` (string, no default)          |        |           |           |        |           |       |          |        |  Req      |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``max_cardinality`` (boolean, no default)           |        |           |           |        |           |       |          |        |  Opt      |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
+|``min_cardinality`` (boolean, no default)           |        |           |           |        |           |       |          |        |  Opt      |       |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+-------+
 
 Common Configuration Options
 ============================
@@ -1001,15 +1001,15 @@ Optional:
 Metric Aggregation
 ~~~~~~~~~~~~~~~~~~
 
-``metric_aggregation``: This rule matches when the value of a metric within the calculation window is higher or lower than a threshold. By 
+``metric_aggregation``: This rule matches when the value of a metric within the calculation window is higher or lower than a threshold. By
 default this is ``buffer_time``.
 
 This rule requires:
 
-``metric_agg_key``: This is the name of the field over which the metric value will be calculated. The underlying type of this field must be 
-supported by the specified aggregation type. 
+``metric_agg_key``: This is the name of the field over which the metric value will be calculated. The underlying type of this field must be
+supported by the specified aggregation type.
 
-``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg', 
+``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg',
 'sum', 'cardinality', 'value_count'.
 
 ``doc_type``: Specify the ``_type`` of document to search for.
@@ -1043,6 +1043,39 @@ bucket keys these usually round evenly to nearest minute, hour, day etc (dependi
 allign with the time elastalert runs, (This both avoid calculations on partial data, and ensures the very latest documents are included). 
 See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_offset for a 
 more comprehensive explaination.
+
+Anomaly
+~~~~~~
+
+``anomaly``: This rule matches when the time series exceeds or falls bellow bollinger bands (see https://en.wikipedia.org/wiki/Bollinger_Bands) This
+statistical anomaly detector hunts for `weird things` and then sends an alert. The power of this (simple) method is that it can detect
+novel problems, requiring human intervention to look for root cause.
+
+Using ``N`` sliding reference windows to calculate the moving average of specific ``value_field``, alert raises when
+difference between that mov. avg. and the average of last windows is greater than ``K`` times (2.5 default) STD.
+
+If no ``value_field`` number of events is used, so you can convert any data in a time series, and look for anomaly number of docs within.
+
+This rule requires three additional options:
+
+``anomaly_type``: Alerts when value exceeds upper band (up), falls bellow lower band (down), or both (both)
+
+``Number_windows``: Number of windows to compute moving averages.
+
+``ingnore_empty_window``: When true, windows with no data are skipped.
+
+
+``timeframe``: size of each window.
+
+Optional:
+
+``K``: Number of times to multyple std by ("height" of the bands), default value is 2.5
+
+``query_key``: Counts of documents will be stored independently for each value of ``query_key``.
+
+``alert_on_new_data``: This boolean option is only used if query_key is set. When this is set to true, any new ``query_key`` encountered may trigger an immediate alert
+
+``value_field``: Field name to be used in calculations. I not set use doc count)
 
 Percentage Match
 ~~~~~~~~~~~~~~~~

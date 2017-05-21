@@ -2,6 +2,7 @@
 import copy
 import datetime
 import sys
+from math import sqrt
 
 from blist import sortedlist
 from util import add_raw_postfix
@@ -357,6 +358,43 @@ class EventWindow(object):
         self.data.append(event)
         self.running_count += event[1]
         self.data.rotate(-rotation)
+
+
+class EventWindowWithEmpty(EventWindow):
+    """ A container for hold event counts for rules which need a chronological ordered event window.
+    With empty window features, when working with N windows, not all of them will have events inside
+    """
+
+    def __init__(self, timeframe, onRemoved=None, getTimestamp=new_get_event_ts('@timestamp')):
+        super(EventWindowWithEmpty, self).__init__(timeframe, onRemoved, getTimestamp)
+
+    def append(self, event, backNWindows=None):
+        """ Add an event to the window. Event should be of the form (dict, count).
+        This will also pop the oldest events and call onRemoved on them until the
+        window size is less than timeframe. """
+        if not backNWindows:
+            self.data.add(event)
+            self.running_count += event[1]
+
+        while backNWindows or (len(self.data) > 0 and self.duration() >= self.timeframe):
+            if len(self.data) == 0:
+                oldest = event
+            else:
+                oldest = self.data[0]
+
+            if not backNWindows:
+                backNWindows = int(total_seconds(self.duration()) * 1000) / int(total_seconds(self.timeframe) * 1000)
+                self.data.remove(oldest)
+                self.running_count -= oldest[1]
+            else:
+                backNWindows -= 1
+
+            if backNWindows == 1:
+                self.onRemoved and self.onRemoved(oldest)
+            else:
+                self.onRemoved and self.onRemoved(oldest, backNWindows)
+
+            backNWindows = None
 
 
 class SpikeRule(RuleType):
@@ -1052,3 +1090,278 @@ class PercentageMatchRule(BaseAggregationRule):
         if 'min_percentage' in self.rules and match_percentage < self.rules['min_percentage']:
             return True
         return False
+
+
+# TODO: Use aggregations to fast blasting query time
+# TODO: Permit "use X value" when empty window
+class AnomalyRule(RuleType):
+    """ Detects (statistical) anomalies in your data. A statistical anomaly detector hunts for things that seem off
+    and then sends an alert. The power of this (simple) method is that it can detect novel problems,
+    requiring human intervention to look for root cause.
+
+    Using N sliding windows to calculate the moving average of specific field (or doc_count), alert raises when
+    difference between that mov. avg. and the average of last windows is greater than 'K' times (2.5 default) STD.
+
+    See: https://en.wikipedia.org/wiki/Bollinger_Bands
+    """
+    required_options = frozenset(['timeframe', 'number_windows', 'anomaly_type'])
+
+    def __init__(self, *args):
+        super(AnomalyRule, self).__init__(*args)
+
+        if self.rules['number_windows'] < 2:
+            raise EAException('The value of number_windows would be at least 2')
+
+        self.timeframe = self.rules['timeframe']
+        self.K = self.rules.get('K', 2.5)
+
+        self.ref_windows = [None] * (self.rules['number_windows'] + 1)
+        for i in range(self.rules['number_windows'] + 1):
+            self.ref_windows[i] = {}
+
+        self.cur_windows = {}
+
+        self.ts_field = self.rules.get('timestamp_field', '@timestamp')
+        self.get_ts = new_get_event_ts(self.ts_field)
+        self.first_event = {}
+        self.skip_checks = {}
+
+        self.ref_window_filled = False
+
+        if 'ignore_empty_window' not in self.rules:
+            self.rules['ignore_empty_window'] = True
+
+        if 'value_field' not in self.rules or self.rules['value_field'] == '':
+            self.rules['use_count'] = True
+        else:
+            self.rules['use_count'] = False
+
+        if 'use_count_query' in self.rules:
+            raise EAException('AnomalyRule can´t run with use_count_query')
+
+    def add_count_data(self, data):
+        """ Add count data to the rule. Data should be of the form {ts: count}. """
+        if len(data) > 1:
+            raise EAException('add_count_data can only accept one count at a time')
+        for ts, count in data.iteritems():
+            self.handle_event({self.ts_field: ts}, count, 'all')
+
+    def add_terms_data(self, terms):
+        for timestamp, buckets in terms.iteritems():
+            for bucket in buckets:
+                count = bucket['doc_count']
+                event = {self.ts_field: timestamp,
+                         self.rules['query_key']: bucket['key']}
+                key = bucket['key']
+                self.handle_event(event, count, key)
+
+    def add_data(self, data):
+        for event in data:
+            qk = self.rules.get('query_key', 'all')
+            if qk != 'all':
+                qk = hashable(lookup_es_key(event, qk))
+                if qk is None:
+                    qk = 'other'
+            self.handle_event(event, 1, qk)
+
+    def handle_event(self, event, count, qk='all'):
+        self.first_event.setdefault(qk, event)
+
+        self.ref_windows[0].setdefault(qk, EventWindowWithEmpty(self.timeframe, getTimestamp=self.get_ts))
+
+        for i in range(1, self.rules['number_windows'] + 1):
+            self.ref_windows[i].setdefault(qk, EventWindowWithEmpty(self.timeframe, self.ref_windows[i - 1][qk].append, self.get_ts))
+
+        self.cur_windows.setdefault(qk, EventWindowWithEmpty(self.timeframe, self.ref_windows[self.rules['number_windows']][qk].append,
+                                                             self.get_ts))
+
+        self.cur_windows[qk].append((event, count))
+
+        # Don't alert if ref window has not yet been filled for this key AND
+        if event[self.ts_field] - self.first_event[qk][self.ts_field] < self.rules['timeframe'] * (self.rules['number_windows'] + 1):
+            # ElastAlert has not been running long enough for any alerts OR
+            if not self.ref_window_filled:
+                return
+            # This rule is not using alert_on_new_data (with query_key) OR
+            if not (self.rules.get('query_key') and self.rules.get('alert_on_new_data')):
+                return
+            # An alert for this qk has recently fired
+            if qk in self.skip_checks and event[self.ts_field] < self.skip_checks[qk]:
+                return
+        else:
+            self.ref_window_filled = True
+
+        if (self.ref_windows[self.rules['number_windows']][qk].running_count == 0 and self.rules['ignore_empty_window'] is True):
+            self.ref_window_filled = False
+            return
+        else:
+            if self.find_matches(qk):
+                # skip over placeholder events which have count=0
+                for match, count in self.cur_windows[qk].data:
+                    if count:
+                        break
+
+                self.add_match(match, qk)
+
+    def add_match(self, match, qk):
+        ids = []
+        for x in range(self.ref_windows[self.rules['number_windows']][qk].running_count):
+            ids.append(self.ref_windows[self.rules['number_windows']][qk].data[x][0]['_id'])
+        anomaly_avg = self.mavg_value_field
+        interval_reference = (self.anomaly_inf, self.anomaly_sup)
+        extra_info = {'anomaly_avg': anomaly_avg,
+                      'reference_interval': interval_reference,
+                      'number_events': self.ref_windows[self.rules['number_windows']][qk].running_count,
+                      'ids': ids}
+
+        match = dict(match.items() + extra_info.items())
+
+        super(AnomalyRule, self).add_match(match)
+
+    def find_matches(self, qk):
+        """ Determines if an event spike or dip happening. """
+
+        if self.rules['use_count'] is False:
+
+            mavg_ref_list = self.moving_average(qk)  # avg. of each window
+
+            if len(mavg_ref_list) > 0:
+                # calculate the average of the mavg_ref_list:
+                mavg_ref = self.moving_avg_of_list(mavg_ref_list)  # real moving avg.
+
+                # calculate the standar desviatioin of the avegare list:
+                std_ref_total = self.moving_std_of_list(mavg_ref_list, mavg_ref)  # desviacion tipica de las medias.
+
+                # calculate the avg of the last windows
+                if self.ref_windows[self.rules['number_windows']][qk].running_count != 0:
+                    sum_value_field = 0
+                    for i in range(len(self.ref_windows[self.rules['number_windows']][qk].data)):
+                        sum_value_field += self.ref_windows[self.rules['number_windows']][qk].data[i][0][self.rules['value_field']]
+                    self.mavg_value_field = sum_value_field / float(len(self.ref_windows[self.rules['number_windows']][qk].data))
+                else:
+                    self.mavg_value_field = 0
+
+                # delete self.ref_windows[0]
+                self.clear_windows(qk)
+                self.ref_window_filled = False
+
+                self.anomaly_sup = mavg_ref + self.K * std_ref_total
+                self.anomaly_inf = mavg_ref - self.K * std_ref_total
+
+        if self.rules['use_count'] is True:
+            suma = 0
+            contador = 0
+            suma_cuadrados = 0
+            for i in range(self.rules['number_windows']):
+                if (self.ref_windows[i][qk].running_count != 0 and self.rules['ignore_empty_window'] is True):
+                    suma += self.ref_windows[i][qk].running_count
+                    contador += 1
+
+                if self.rules['ignore_empty_window'] is False:
+                    suma += self.ref_windows[i][qk].running_count
+                    contador += 1
+
+            avg = suma / float(contador)
+
+            for i in range(self.rules['number_windows']):
+                if (self.ref_windows[i][qk].running_count != 0 and self.rules['ignore_empty_window'] is True):
+                    suma_cuadrados += (avg - self.ref_windows[i][qk].running_count) ** 2
+
+                if self.rules['ignore_empty_window'] is False:
+                    suma_cuadrados += (avg - self.ref_windows[i][qk].running_count) ** 2
+
+            std = sqrt(suma_cuadrados / float(contador))
+            self.anomaly_sup = avg + self.K * std
+            self.anomaly_inf = avg - self.K * std
+            self.mavg_value_field = self.ref_windows[self.rules['number_windows']][qk].running_count
+
+        aType = self.rules['anomaly_type']
+        if (self.mavg_value_field > self.anomaly_sup and (aType == 'both' or aType == 'up')):
+            return True
+
+        if (self.mavg_value_field < self.anomaly_inf and (aType == 'both' or aType == 'down')):
+            return True
+
+        return False
+
+    def clear_windows(self, qk):
+        # Reset the state and prevent alerts until windows filled again
+        self.ref_windows[0][qk].clear()
+        self.first_event.pop(qk)
+
+    def get_match_str(self, match):
+        if 'value_field' in self.rules:
+            message = 'An abnormal average (%.5f) for the field %s has ocurred at %s.\n' % (match['anomaly_avg'], self.rules['value_field'],
+                                                                                            pretty_ts(match[self.rules['timestamp_field']],
+                                                                                                      self.rules.get('use_local_time')))
+        else:
+            message = 'An abnormal average of conunts (%.5f) has ocurred at %s.\n' % (match['anomaly_avg'],
+                                                                                      pretty_ts(match[self.rules['timestamp_field']],
+                                                                                                self.rules.get('use_local_time')))
+
+        message += 'Upper and lower bands are: { %.5f , %.5f }\n\n' % (match['reference_interval'][0], match['reference_interval'][1])
+        return message
+
+    def garbage_collect(self, ts):
+        # Windows are sized according to their newest event
+        # This is a placeholder to accurately size windows in the absence of events
+        for qk in self.cur_windows.keys():
+            # If we havn't seen this key in a long time, forget it
+            if qk != 'all' and self.ref_windows[qk].count() == 0 and self.cur_windows[qk].count() == 0:
+                self.cur_windows.pop(qk)
+                self.ref_windows.pop(qk)
+                continue
+
+    def moving_average(self, qk):
+        """ Return a list of the average of the all windows reference and the average of the current window.
+        If the windows is empty of results, window is deleted
+        """
+        # Create the average of each reference windows
+
+        self.avg_ref = [None] * (self.rules['number_windows'])
+
+        for i in range(self.rules['number_windows']):
+            sum_value_field = 0
+            if self.ref_windows[i][qk].running_count != 0:
+                for j in range(self.ref_windows[i][qk].running_count):
+                    sum_value_field += self.ref_windows[i][qk].data[j][0][self.rules['value_field']]
+                self.avg_ref[i] = sum_value_field / float(self.ref_windows[i][qk].running_count)
+
+        for k in range(self.rules['number_windows'] - 1, -1, -1):
+            if (self.avg_ref[k] is None and self.rules['ignore_empty_window'] is True):
+                self.avg_ref.pop(k)
+            if (self.avg_ref[k] is None and self.rules['ignore_empty_window'] is False):
+                self.avg_ref[k] = 0
+
+        return self.avg_ref  # self.avg_cur
+
+    def moving_std_of_list(self, mavg_ref_list, mavg_ref):
+        suma = 0
+        for i in range(len(mavg_ref_list)):
+            suma += (mavg_ref_list[i] - mavg_ref) ** 2
+        self.std_ref_total = sqrt(suma / float(len(mavg_ref_list)))
+
+        return self.std_ref_total
+
+    def moving_avg_of_list(self, mavg_ref_list):
+        mavg_ref = sum(mavg_ref_list) / float(len(mavg_ref_list))
+        return mavg_ref
+
+    # Debug purpose only
+    def logData(self):
+        print 'Iteracion nueva'
+        for j in range(self.rules['number_windows'] + 1):
+            print 'ids de la ventana ref %d %j'
+            if self.ref_windows[j]['all'].running_count != 0:
+                for k in range(self.ref_windows[j]['all'].running_count):
+                    print self.ref_windows[j]['all'].data[k][0]['_id']
+            else:
+                print 'ventana %d esta vacia \n  %j'
+
+        if self.cur_windows['all'].running_count != 0:
+            print 'Ids de la ventana current'
+            for i in range(self.cur_windows['all'].running_count):
+                print self.cur_windows['all'].data[i][0]['_id']
+        else:
+            print 'ventana vacia (current) \n \n'
+        print self.ref_window_filled
