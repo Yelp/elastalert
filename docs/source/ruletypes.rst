@@ -1025,9 +1025,9 @@ main query filter.
 
 This rule also requires at least one of the two following options:
 
-``min_percentage``: If the percentage of matching documents is greater than this number, an alert will be triggered. 
+``min_percentage``: If the percentage of matching documents is less than this number, an alert will be triggered. 
 
-``max_percentage``: If the percentage of matching documents is less than this number, an alert will be triggered.
+``max_percentage``: If the percentage of matching documents is greater than this number, an alert will be triggered.
 
 Optional:
 
