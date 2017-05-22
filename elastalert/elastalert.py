@@ -227,8 +227,8 @@ class ElastAlerter():
                     'aggs': metric_agg_element
                 }
             }
-            if rule.get('sync_window_offset'):
-                aggs_element['offset'] = '+%ss' % (rule['sync_window_offset'])
+            if rule.get('bucket_offset_delta'):
+                aggs_element['interval_aggs']['date_histogram']['offset'] = '+%ss' % (rule['bucket_offset_delta'])
         else:
             aggs_element = metric_agg_element
 
