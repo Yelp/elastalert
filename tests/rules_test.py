@@ -63,6 +63,8 @@ def assert_matches_have(matches, terms):
     for match, term in zip(matches, terms):
         assert term[0] in match
         assert match[term[0]] == term[1]
+        if len(term) > 2:
+            assert match[term[2]] == term[3]
 
 
 def test_any():
@@ -450,36 +452,39 @@ def test_whitelist_dont_ignore_nulls():
 
 
 def test_change():
-    events = hits(10, username='qlo', term='good')
+    events = hits(10, username='qlo', term='good', second_term='yes')
     events[8].pop('term')
+    events[8].pop('second_term')
     events[9]['term'] = 'bad'
-    rules = {'compare_key': 'term',
+    events[9]['second_term'] = 'no'
+    rules = {'compound_compare_key': ['term', 'second_term'],
              'query_key': 'username',
              'ignore_null': True,
              'timestamp_field': '@timestamp'}
     rule = ChangeRule(rules)
     rule.add_data(events)
-    assert_matches_have(rule.matches, [('term', 'bad')])
+    assert_matches_have(rule.matches, [('term', 'bad', 'second_term', 'no')])
 
     # Unhashable QK
-    events2 = hits(10, username=['qlo'], term='good')
+    events2 = hits(10, username=['qlo'], term='good', second_term='yes')
     events2[9]['term'] = 'bad'
+    events2[9]['second_term'] = 'no'
     rule = ChangeRule(rules)
     rule.add_data(events2)
-    assert_matches_have(rule.matches, [('term', 'bad')])
+    assert_matches_have(rule.matches, [('term', 'bad', 'second_term', 'no')])
 
     # Don't ignore nulls
     rules['ignore_null'] = False
     rule = ChangeRule(rules)
     rule.add_data(events)
-    assert_matches_have(rule.matches, [('username', 'qlo'), ('term', 'bad')])
+    assert_matches_have(rule.matches, [('username', 'qlo'), ('term', 'bad', 'second_term', 'no')])
 
     # With timeframe
     rules['timeframe'] = datetime.timedelta(seconds=2)
     rules['ignore_null'] = True
     rule = ChangeRule(rules)
     rule.add_data(events)
-    assert_matches_have(rule.matches, [('term', 'bad')])
+    assert_matches_have(rule.matches, [('term', 'bad', 'second_term', 'no')])
 
     # With timeframe, doesn't match
     events = events[:8] + events[9:]
