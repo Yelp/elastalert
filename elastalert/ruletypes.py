@@ -1204,16 +1204,11 @@ class AnomalyRule(RuleType):
                 self.add_match(match, qk)
 
     def add_match(self, match, qk):
-        ids = []
-        for x in range(self.ref_windows[self.rules['number_windows']][qk].running_count):
-            ids.append(self.ref_windows[self.rules['number_windows']][qk].data[x][0]['_id'])
         anomaly_avg = self.mavg_value_field
         interval_reference = (self.anomaly_inf, self.anomaly_sup)
         extra_info = {'anomaly_avg': anomaly_avg,
                       'reference_interval': interval_reference,
-                      'number_events': self.ref_windows[self.rules['number_windows']][qk].running_count,
-                      'ids': ids}
-
+                      'number_events': self.ref_windows[self.rules['number_windows']][qk].running_count}
         match = dict(match.items() + extra_info.items())
 
         super(AnomalyRule, self).add_match(match)
@@ -1253,21 +1248,15 @@ class AnomalyRule(RuleType):
             contador = 0
             suma_cuadrados = 0
             for i in range(self.rules['number_windows']):
-                if (self.ref_windows[i][qk].running_count != 0 and self.rules['ignore_empty_window'] is True):
+                if ((self.ref_windows[i][qk].running_count != 0 and self.rules['ignore_empty_window'] is True) or
+                        (self.rules['ignore_empty_window'] is False)):
                     suma += self.ref_windows[i][qk].running_count
                     contador += 1
-
-                if self.rules['ignore_empty_window'] is False:
-                    suma += self.ref_windows[i][qk].running_count
-                    contador += 1
-
             avg = suma / float(contador)
 
             for i in range(self.rules['number_windows']):
-                if (self.ref_windows[i][qk].running_count != 0 and self.rules['ignore_empty_window'] is True):
-                    suma_cuadrados += (avg - self.ref_windows[i][qk].running_count) ** 2
-
-                if self.rules['ignore_empty_window'] is False:
+                if ((self.ref_windows[i][qk].running_count != 0 and self.rules['ignore_empty_window'] is True) or
+                        (self.rules['ignore_empty_window'] is False)):
                     suma_cuadrados += (avg - self.ref_windows[i][qk].running_count) ** 2
 
             std = sqrt(suma_cuadrados / float(contador))

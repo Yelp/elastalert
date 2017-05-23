@@ -967,8 +967,7 @@ def test_cardinality_nested_cardinality_field():
 
 
 def test_anomaly_number_window():
-    rules = {'number_data': True,
-             'K': 1,
+    rules = {'K': 1,
              'timeframe': datetime.timedelta(seconds=10),
              'anomaly_type': 'both',
              'timestamp_field': '@timestamp',
@@ -1197,8 +1196,7 @@ def test_anomaly_window_field():
     rule.add_data(data)
     assert len(rule.matches) == 0
 
-    rules = {'number_data': False,
-             'K': 1,
+    rules = {'K': 1,
              'timeframe': datetime.timedelta(seconds=10),
              'anomaly_type': 'up',
              'timestamp_field': '@timestamp',
@@ -1228,8 +1226,7 @@ def test_anomaly_window_field():
     rule.add_data(data)
     assert len(rule.matches) == 1
 
-    rules = {'number_data': False,
-             'K': 1,
+    rules = {'K': 1,
              'timeframe': datetime.timedelta(seconds=10),
              'anomaly_type': 'down',
              'timestamp_field': '@timestamp',
