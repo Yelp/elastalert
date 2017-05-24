@@ -239,7 +239,7 @@ def load_options(rule, conf, filename, args=None):
     if isinstance(rule.get('compare_key'), list):
         rule['compound_compare_key'] = rule['compare_key']
         rule['compare_key'] = ','.join(rule['compare_key'])
-    else:
+    elif 'compare_key' in rule:
         rule['compound_compare_key'] = [rule['compare_key']]
     # Add QK, CK and timestamp to include
     include = rule.get('include', ['*'])
