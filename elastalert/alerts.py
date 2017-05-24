@@ -109,6 +109,7 @@ class BasicMatchString(object):
             if key.startswith('top_events_'):
                 continue
             value_str = unicode(value)
+            value_str.replace('\\n', '\n')
             if type(value) in [list, dict]:
                 try:
                     value_str = self._pretty_print_as_json(value)
