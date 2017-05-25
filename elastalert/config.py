@@ -127,7 +127,10 @@ def load_rule_yaml(filename):
         rule = loaded
         if 'import' in rule:
             # Find the path of the next file.
-            filename = os.path.join(os.path.dirname(filename), rule['import'])
+            if os.path.isabs(rule['import']):
+                filename = rule['import']
+            else:
+                filename = os.path.join(os.path.dirname(filename), rule['import'])
             del(rule['import'])  # or we could go on forever!
         else:
             break
