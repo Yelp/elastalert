@@ -825,6 +825,9 @@ class ElastAlerter():
 
     def init_rule(self, new_rule, new=True):
         ''' Copies some necessary non-config state from an exiting rule to a new rule. '''
+        if not new:
+            self.scheduler.remove_job(job_id=new_rule['name'])
+
         try:
             self.modify_rule_for_ES5(new_rule)
         except TransportError as e:
@@ -873,8 +876,9 @@ class ElastAlerter():
             if prop not in rule:
                 continue
             new_rule[prop] = rule[prop]
-        self.scheduler.add_job(self.handle_rule_execution, 'interval', args=[new_rule] ,seconds=new_rule['run_every'].total_seconds(), id=new_rule['name'], next_run_time=datetime.datetime.now())
-
+                   
+        self.scheduler.add_job(self.handle_rule_execution, 'interval', args=[new_rule] ,seconds=new_rule['run_every'].total_seconds(),id=new_rule['name'])
+            
         return new_rule
 
     @staticmethod
@@ -1014,6 +1018,7 @@ class ElastAlerter():
         if not self.args.pin_rules:
             self.load_rule_changes()
             elastalert_logger.info("Background configuration change check run at %s" % (pretty_ts(ts_now())))
+    
     def handle_rule_execution(self, rule):
       self.thread_data.alerts_sent = 0
       next_run = datetime.datetime.utcnow() + self.run_every
@@ -1027,7 +1032,7 @@ class ElastAlerter():
           endtime = ts_now()
 
       try:
-          num_matches = self.run_rule(rule, endtime, rule['initial_starttime'] )
+          num_matches = self.run_rule(rule, endtime, rule.get('initial_starttime') )
       except EAException as e:
           self.handle_error("Error running rule %s: %s" % (rule['name'], e), {'rule': rule['name']})
       except Exception as e:
@@ -1630,6 +1635,7 @@ class ElastAlerter():
         if self.disable_rules_on_error:
             self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
             self.disabled_rules.append(rule)
+            self.scheduler.pause_job(job_id=rule['name'])
             elastalert_logger.info('Rule %s disabled', rule['name'])
         if self.notify_email:
             self.send_notification_email(exception=exception, rule=rule)
