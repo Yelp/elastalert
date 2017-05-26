@@ -873,7 +873,7 @@ class ElastAlerter():
             if prop not in rule:
                 continue
             new_rule[prop] = rule[prop]
-        self.scheduler.add_job(self.handle_rule_execution, 'interval', args=[new_rule] ,seconds=self.run_every.total_seconds(), id=new_rule['name'], next_run_time=datetime.datetime.now())
+        self.scheduler.add_job(self.handle_rule_execution, 'interval', args=[new_rule] ,seconds=new_rule['run_every'].total_seconds(), id=new_rule['name'], next_run_time=datetime.datetime.now())
 
         return new_rule
 
