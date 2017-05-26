@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from apscheduler.schedulers.background import BackgroundScheduler
 import copy
 import datetime
 import json
@@ -133,7 +134,7 @@ class ElastAlerter():
 
         self.writeback_es = elasticsearch_client(self.conf)
         self.es_version = self.get_version()
-
+        self.scheduler = BackgroundScheduler()
         remove = []
         for rule in self.rules:
             if not self.init_rule(rule):
@@ -872,6 +873,7 @@ class ElastAlerter():
             if prop not in rule:
                 continue
             new_rule[prop] = rule[prop]
+        self.scheduler.add_job(self.handle_rule_execution, 'interval', args=[new_rule] ,seconds=self.run_every.total_seconds(), id=new_rule['name'], next_run_time=datetime.datetime.now())
 
         return new_rule
 
@@ -972,10 +974,13 @@ class ElastAlerter():
                       
         self.running = True
         elastalert_logger.info("Starting up")
+        self.scheduler.add_job(self.handle_pending_alerts,'interval', seconds=self.run_every.total_seconds(), id='_internal_handle_pending_alerts')
+        self.scheduler.add_job(self.handle_config_change, 'interval', seconds=self.run_every.total_seconds(), id='_internal_handle_config_change')
+        self.scheduler.start()
         while self.running:
             next_run = datetime.datetime.utcnow() + self.run_every
 
-            self.run_all_rules()
+            #self.run_all_rules()
 
             # Quit after end_time has been reached
             if self.args.end:
@@ -995,10 +1000,8 @@ class ElastAlerter():
         """ Run each rule one time """
         self.handle_pending_alerts()
 
-        next_run = datetime.datetime.utcnow() + self.run_every
-
         for rule in self.rules:
-          self.handle_rule_execution(rule,next_run)    
+          self.handle_rule_execution(rule)    
 
         self.handle_config_change()
             
@@ -1010,8 +1013,10 @@ class ElastAlerter():
     def handle_config_change(self):
         if not self.args.pin_rules:
             self.load_rule_changes()
-    
-    def handle_rule_execution(self, rule, next_run):
+            elastalert_logger.info("Background configuration change check run at %s" % (pretty_ts(ts_now())))
+    def handle_rule_execution(self, rule):
+      self.thread_data.alerts_sent = 0
+      next_run = datetime.datetime.utcnow() + self.run_every
     # Set endtime based on the rule's delay
       delay = rule.get('query_delay')
       if hasattr(self.args, 'end') and self.args.end:
