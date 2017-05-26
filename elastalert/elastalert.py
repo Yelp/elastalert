@@ -966,6 +966,10 @@ class ElastAlerter():
                 except (TypeError, ValueError):
                     self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
                     exit(1)
+        
+        for rule in self.rules:
+            rule['initial_starttime'] = self.starttime
+                      
         self.running = True
         elastalert_logger.info("Starting up")
         while self.running:
@@ -988,55 +992,64 @@ class ElastAlerter():
             self.sleep_for(sleep_duration)
 
     def run_all_rules(self):
-        self.thread_data.alerts_sent = 0
         """ Run each rule one time """
-        self.send_pending_alerts()
+        self.handle_pending_alerts()
 
         next_run = datetime.datetime.utcnow() + self.run_every
 
         for rule in self.rules:
-            # Set endtime based on the rule's delay
-            delay = rule.get('query_delay')
-            if hasattr(self.args, 'end') and self.args.end:
-                endtime = ts_to_dt(self.args.end)
-            elif delay:
-                endtime = ts_now() - delay
-            else:
-                endtime = ts_now()
+          self.handle_rule_execution(rule,next_run)    
 
-            try:
-                num_matches = self.run_rule(rule, endtime, self.starttime)
-            except EAException as e:
-                self.handle_error("Error running rule %s: %s" % (rule['name'], e), {'rule': rule['name']})
-            except Exception as e:
-                self.handle_uncaught_exception(e, rule)
-            else:
-                old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
-                elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
-                                       " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                            self.thread_data.num_hits, self.thread_data.num_dupes, num_matches, self.thread_data.alerts_sent))
-                self.thread_data.alerts_sent = 0
-
-                if next_run < datetime.datetime.utcnow():
-                    # We were processing for longer than our refresh interval
-                    # This can happen if --start was specified with a large time period
-                    # or if we are running too slow to process events in real time.
-                    logging.warning(
-                        "Querying from %s to %s took longer than %s!" % (
-                            old_starttime,
-                            pretty_ts(endtime, rule.get('use_local_time')),
-                            self.run_every
-                        )
-                    )
-
-            self.remove_old_events(rule)
-
-        # Only force starttime once
-        self.starttime = None
-
+        self.handle_config_change()
+            
+    def handle_pending_alerts(self):
+        self.thread_data.alerts_sent = 0
+        self.send_pending_alerts()
+        elastalert_logger.info("Background alerts thread %s pending alerts sent at %s" % (self.thread_data.alerts_sent, pretty_ts(ts_now())))
+    
+    def handle_config_change(self):
         if not self.args.pin_rules:
             self.load_rule_changes()
+    
+    def handle_rule_execution(self, rule, next_run):
+    # Set endtime based on the rule's delay
+      delay = rule.get('query_delay')
+      if hasattr(self.args, 'end') and self.args.end:
+          endtime = ts_to_dt(self.args.end)
+      elif delay:
+          endtime = ts_now() - delay
+      else:
+          endtime = ts_now()
 
+      try:
+          num_matches = self.run_rule(rule, endtime, rule['initial_starttime'] )
+      except EAException as e:
+          self.handle_error("Error running rule %s: %s" % (rule['name'], e), {'rule': rule['name']})
+      except Exception as e:
+          self.handle_uncaught_exception(e, rule)
+      else:
+          old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
+          elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
+                                 " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
+                                                      self.thread_data.num_hits, self.thread_data.num_dupes, num_matches, self.thread_data.alerts_sent))
+          self.thread_data.alerts_sent = 0
+
+          if next_run < datetime.datetime.utcnow():
+              # We were processing for longer than our refresh interval
+              # This can happen if --start was specified with a large time period
+              # or if we are running too slow to process events in real time.
+              logging.warning(
+                  "Querying from %s to %s took longer than %s!" % (
+                      old_starttime,
+                      pretty_ts(endtime, rule.get('use_local_time')),
+                      self.run_every
+                  )
+              )
+      
+      rule['initial_starttime'] = None
+      
+      self.remove_old_events(rule)
+    
     def stop(self):
         """ Stop an ElastAlert runner that's been started """
         self.running = False
