@@ -939,8 +939,6 @@ class MsTeamsAlerter(Alerter):
         if self.ms_teams_theme_color != '':
             payload['themeColor'] = self.ms_teams_theme_color
 
-        elastalert_logger.info(json.dumps(payload, cls=DateTimeEncoder))
-
         for url in self.ms_teams_webhook_url:
             try:
                 response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
