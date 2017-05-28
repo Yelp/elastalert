@@ -1387,6 +1387,26 @@ text - Message is treated just like a message sent by a user. Can include @menti
 Valid values: html, text.
 Defaults to 'html'.
 
+MS Teams
+~~~~~~~~
+
+MS Teams alerter will send a notification to a predefined Microsoft Teams channel.
+
+The alerter requires the following options:
+
+``ms_teams_webhook_url``: The webhook URL that includes your auth data and the ID of the channel you want to post to. Go to the Connectors
+menu in your channel and configure an Incoming Webhook, then copy the resulting URL. You can use a list of URLs to send to multiple channels.
+
+``ms_teams_alert_summary``: Summary should be configured according to `MS documentation <https://docs.microsoft.com/en-us/outlook/actionable-messages/card-reference>`_, although it seems not displayed by Teams currently.
+
+Optional:
+
+``ms_teams_theme_color``: By default the alert will be posted without any color line. To add color, set this attribute to a HTML color value e.g. ``#ff0000`` for red.
+
+``ms_teams_proxy``: By default ElastAlert will not use a network proxy to send notifications to MS Teams. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``ms_teams_alert_fixed_width``: By default this is ``False`` and the notification will be sent to MS Teams as-is. Teams supports a partial Markdown implementation, which means asterisk, underscore and other characters may be interpreted as Markdown. Currenlty, Teams does not fully implement code blocks. Setting this attribute to ``True`` will enable line by line code blocks. It is recommended to enable this to get clearer notifications in Teams.
+
 Slack
 ~~~~~
 
