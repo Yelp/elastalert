@@ -63,6 +63,7 @@ alerts_mapping = {
     'command': alerts.CommandAlerter,
     'sns': alerts.SnsAlerter,
     'hipchat': alerts.HipChatAlerter,
+    'ms_teams': alerts.MsTeamsAlerter,
     'slack': alerts.SlackAlerter,
     'pagerduty': alerts.PagerDutyAlerter,
     'exotel': alerts.ExotelAlerter,

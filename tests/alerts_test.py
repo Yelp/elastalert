@@ -14,6 +14,7 @@ from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
+from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
 from elastalert.alerts import SimplePostAlerter
 from elastalert.alerts import SlackAlerter
@@ -743,6 +744,79 @@ def test_command():
             alert.alert([match])
     assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
     assert "Non-zero exit code while running command" in str(exception)
+
+
+def test_ms_teams():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'ms_teams_webhook_url': 'http://test.webhook.url',
+        'ms_teams_alert_summary': 'Alert from ElastAlert',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = MsTeamsAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        '@type': 'MessageCard',
+        '@context': 'http://schema.org/extensions',
+        'summary': rule['ms_teams_alert_summary'],
+        'title': rule['alert_subject'],
+        'text': BasicMatchString(rule, match).__str__()
+    }
+    mock_post_request.assert_called_once_with(
+        rule['ms_teams_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_ms_teams_uses_color_and_fixed_width_text():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'ms_teams_webhook_url': 'http://test.webhook.url',
+        'ms_teams_alert_summary': 'Alert from ElastAlert',
+        'ms_teams_alert_fixed_width': True,
+        'ms_teams_theme_color': '#124578',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = MsTeamsAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    body = BasicMatchString(rule, match).__str__()
+    body = body.replace('`', "'")
+    body = "```{0}```".format('```\n\n```'.join(x for x in body.split('\n'))).replace('\n``````', '')
+    expected_data = {
+        '@type': 'MessageCard',
+        '@context': 'http://schema.org/extensions',
+        'summary': rule['ms_teams_alert_summary'],
+        'title': rule['alert_subject'],
+        'themeColor': '#124578',
+        'text': body
+    }
+    mock_post_request.assert_called_once_with(
+        rule['ms_teams_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
 def test_slack_uses_custom_title():
