@@ -1231,7 +1231,11 @@ class AnomalyRule(RuleType):
                 if self.ref_windows[self.rules['number_windows']][qk].running_count != 0:
                     sum_value_field = 0
                     for i in range(len(self.ref_windows[self.rules['number_windows']][qk].data)):
-                        sum_value_field += self.ref_windows[self.rules['number_windows']][qk].data[i][0][self.rules['value_field']]
+                        fields = self.rules['value_field'].split(".")
+                        datum = self.ref_windows[self.rules['number_windows']][qk].data[i][0][fields[0]]
+                        for d in fields[1:]:
+                            datum = datum[d]
+                        sum_value_field += datum
                     self.mavg_value_field = sum_value_field / float(len(self.ref_windows[self.rules['number_windows']][qk].data))
                 else:
                     self.mavg_value_field = 0
@@ -1313,14 +1317,19 @@ class AnomalyRule(RuleType):
             sum_value_field = 0
             if self.ref_windows[i][qk].running_count != 0:
                 for j in range(self.ref_windows[i][qk].running_count):
-                    sum_value_field += self.ref_windows[i][qk].data[j][0][self.rules['value_field']]
+                    fields = self.rules['value_field'].split(".")
+                    datum = self.ref_windows[i][qk].data[j][0][fields[0]]
+                    for d in fields[1:]:
+                        datum = datum[d]
+                    sum_value_field += datum
                 self.avg_ref[i] = sum_value_field / float(self.ref_windows[i][qk].running_count)
 
         for k in range(self.rules['number_windows'] - 1, -1, -1):
-            if (self.avg_ref[k] is None and self.rules['ignore_empty_window'] is True):
-                self.avg_ref.pop(k)
-            if (self.avg_ref[k] is None and self.rules['ignore_empty_window'] is False):
-                self.avg_ref[k] = 0
+            if (self.avg_ref[k] is None):
+                if (self.rules['ignore_empty_window'] is True):
+                    self.avg_ref.pop(k)
+                else:
+                    self.avg_ref[k] = 0
 
         return self.avg_ref  # self.avg_cur
 
