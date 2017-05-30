@@ -996,6 +996,7 @@ class SlackAlerter(Alerter):
                     'color': self.slack_msg_color,
                     'title': self.create_title(matches),
                     'text': body,
+                    'mrkdwn_in': ['text', 'pretext'],
                     'fields': []
                 }
             ]
