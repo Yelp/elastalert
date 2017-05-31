@@ -159,7 +159,7 @@ properties:
   filter :
     type: [array, object]
     items: *filter
-    additionalProperties: false
+    additionalProperties: true
     properties:
         download_dashboard: {type: string}
 
