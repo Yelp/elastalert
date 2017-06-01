@@ -335,6 +335,9 @@ def isyaml(filename):
 
 def get_file_paths(conf, use_rule=None):
     # Passing a filename directly can bypass rules_folder and .yaml checks
+
+    isyaml = lambda filename: filename.endswith('.yaml') or filename.endswith('.yml')
+
     if use_rule and os.path.isfile(use_rule):
         return [use_rule]
     rule_folder = conf['rules_folder']
