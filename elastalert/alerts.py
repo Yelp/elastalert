@@ -1222,7 +1222,7 @@ class ServiceNowAlerter(Alerter):
     ])
 
     def __init__(self, rule):
-        super(GitterAlerter, self).__init__(rule)
+        super(ServiceNowAlerter, self).__init__(rule)
         self.servicenow_rest_url = self.rule['servicenow_rest_url']
         self.servicenow_proxy = self.rule.get('servicenow_proxy', None)
 
