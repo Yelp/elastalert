@@ -915,7 +915,7 @@ def test_msteams_alerter():
         alert.alert([match])
     expected_data = {
         'isMultiline': True,
-        'text': '```{}```'.format(match)
+        'text': alert.create_alert_body([match])
     }
     mock_post_request.assert_called_once_with(
         rule['msteams_webhook_url'],

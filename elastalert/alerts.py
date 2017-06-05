@@ -1298,6 +1298,8 @@ class SimplePostAlerter(Alerter):
 
 
 class MSTeamsAlerter(Alerter):
+    """Alerter for Microsoft teams."""
+
     def __init__(self, rule):
         super(MSTeamsAlerter, self).__init__(rule)
         msteams_webhook_url = self.rule.get('msteams_webhook_url')
@@ -1307,9 +1309,10 @@ class MSTeamsAlerter(Alerter):
         self.msteams_proxy = self.rule.get('msteams_proxy')
 
     def alert(self, matches):
+
         payload = {
             'isMultiline': True,
-            'text': '\n'.join(['```{}```'.format(match) for match in matches])
+            'text': self.create_alert_body(matches)
         }
         headers = {
             "Content-Type": "application/json",
@@ -1318,7 +1321,12 @@ class MSTeamsAlerter(Alerter):
         proxies = {'https': self.msteams_proxy} if self.msteams_proxy else None
         for url in self.msteams_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                response = requests.post(
+                    url,
+                    data=json.dumps(payload, cls=DateTimeEncoder),
+                    headers=headers,
+                    proxies=proxies)
+
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting simple alert: %s" % e)
