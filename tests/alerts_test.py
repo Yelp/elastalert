@@ -17,6 +17,7 @@ from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import PagerDutyAlerter
 from elastalert.alerts import SimplePostAlerter
 from elastalert.alerts import SlackAlerter
+from elastalert.alerts import MSTeamsAlerter
 from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
@@ -889,6 +890,35 @@ def test_simple_alerter():
     }
     mock_post_request.assert_called_once_with(
         rule['simple_webhook_url'],
+        data=mock.ANY,
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
+        proxies=None
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_msteams_alerter():
+    rule = {
+        'name': 'Test MSTeams Rule',
+        'type': 'any',
+        'msteams_webhook_url': 'http://test.webhook.url',
+        'alert_subject': 'Ballmer here',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = SimplePostAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'isMultiline': True,
+        'text': '```{}```'.format(match)
+    }
+    mock_post_request.assert_called_once_with(
+        rule['msteams_webhook_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None

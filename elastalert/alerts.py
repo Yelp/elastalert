@@ -1295,3 +1295,36 @@ class SimplePostAlerter(Alerter):
     def get_info(self):
         return {'type': 'simple',
                 'simple_webhook_url': self.simple_webhook_url}
+
+
+class MSTeamsAlerter(Alerter):
+    def __init__(self, rule):
+        super(MSTeamsAlerter, self).__init__(rule)
+        msteams_webhook_url = self.rule.get('msteams_webhook_url')
+        if isinstance(msteams_webhook_url, basestring):
+            msteams_webhook_url = [msteams_webhook_url]
+        self.msteams_webhook_url = msteams_webhook_url
+        self.msteams_proxy = self.rule.get('msteams_proxy')
+
+
+    def alert(self, matches):
+        payload = {
+            'isMultiline': True,
+            'text': '\n'.join(['```{}```'.format(match) for match in matches])
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json;charset=utf-8"
+        }
+        proxies = {'https': self.msteams_proxy} if self.msteams_proxy else None
+        for url in self.msteams_webhook_url:
+            try:
+                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error posting simple alert: %s" % e)
+        elastalert_logger.info("Simple alert sent")
+
+    def get_info(self):
+        return {'type': 'msteams',
+                'msteams_webhook_url': self.msteams_webhook_url}
