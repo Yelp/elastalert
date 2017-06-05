@@ -906,7 +906,7 @@ def test_msteams_alerter():
         'alert': []
     }
     load_modules(rule)
-    alert = SimplePostAlerter(rule)
+    alert = MSTeamsAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
         'somefield': 'foobarbaz'
