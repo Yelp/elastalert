@@ -1306,7 +1306,6 @@ class MSTeamsAlerter(Alerter):
         self.msteams_webhook_url = msteams_webhook_url
         self.msteams_proxy = self.rule.get('msteams_proxy')
 
-
     def alert(self, matches):
         payload = {
             'isMultiline': True,
