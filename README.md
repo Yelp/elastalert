@@ -44,6 +44,7 @@ Currently, we have support built in for the following alert types:
 - OpsGenie
 - Commands
 - HipChat
+- MS Teams
 - Slack
 - Telegram
 - AWS SNS
