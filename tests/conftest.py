@@ -2,6 +2,7 @@
 import datetime
 
 import mock
+import os
 import pytest
 
 import elastalert.elastalert
@@ -86,3 +87,13 @@ def ea():
     ea.writeback_es.index.return_value = {'_id': 'ABCD'}
     ea.current_es = mock_es_client('', '')
     return ea
+
+
+@pytest.fixture(scope='function')
+def environ():
+    """py.test fixture to get a fresh mutable environment."""
+    old_env = os.environ
+    new_env = dict(old_env.items())
+    os.environ = new_env
+    yield os.environ
+    os.environ = old_env
