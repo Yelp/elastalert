@@ -1,5 +1,13 @@
 # Change Log
 
+
+## Unreleased
+
+### Added
+- Added the ability to expand environment variables in
+  ``use_kibana4_dashboard``, enabling sharing of rules across multiple
+  deployments of ElastAlert and Kibana.
+
 ## v0.1.11 - 2017-04-19
 
 ### Fixed
