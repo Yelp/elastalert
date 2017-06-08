@@ -777,7 +777,7 @@ before a baseline rate has been established. This can be overridden using ``aler
 Optional:
 
 ``threshold_ref``: The minimum number of events that must exist in the reference window for an alert to trigger. For example, if
-``spike_height: 3`` and ``threshold_ref: 10``, than the 'reference' window must contain at least 10 events and the 'current' window at
+``spike_height: 3`` and ``threshold_ref: 10``, then the 'reference' window must contain at least 10 events and the 'current' window at
 least three times that for an alert to be triggered.
 
 ``threshold_cur``: The minimum number of events that must exist in the current window for an alert to trigger. For example, if
