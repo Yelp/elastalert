@@ -1,0 +1,37 @@
+# This is the folder that contains the rule yaml files
+# Any .yaml file will be loaded as a rule
+rules_folder: /etc/elastalert/rules
+
+# How often ElastAlert will query elasticsearch
+# The unit can be anything from weeks to seconds
+run_every:
+  minutes: 5
+
+# ElastAlert will buffer results from the most recent
+# period of time, in case some log sources are not in real time
+buffer_time:
+  minutes: 45
+
+# The elasticsearch hostname for metadata writeback
+# Note that every rule can have it's own elasticsearch host
+es_host: elasticsearch
+
+# The elasticsearch port
+es_port: 9200
+
+# Connect with SSL to elasticsearch
+#use_ssl: True
+
+# Option basic-auth username and password for elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# The index on es_host which is used for metadata storage
+# This can be a unmapped index, but it is reccommended that you run
+# elastalert-create-index to set a mapping
+writeback_index: elastalert_status
+
+# If an alert fails for some reason, ElastAlert will retry
+# sending the alert until this time period has elapsed
+alert_time_limit:
+  days: 2

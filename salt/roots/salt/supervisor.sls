@@ -1,0 +1,2 @@
+supervisor:
+  pkg.installed
