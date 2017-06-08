@@ -28,17 +28,13 @@ The query_string type follows the Lucene query format and can be used for partia
 See http://lucene.apache.org/core/2_9_4/queryparsersyntax.html for more information::
 
     filter:
-    - query:
-        query_string:
+    - query_string:
           query: "username: bob"
-    - query:
-        query_string:
+    - query_string:
           query: "_type: login_logs"
-    - query:
-        query_string:
+    - query_string:
           query: "field: value OR otherfield: othervalue"
-    - query:
-        query_string:
+    - query_string:
            query: "this: that AND these: those"
 
 term
