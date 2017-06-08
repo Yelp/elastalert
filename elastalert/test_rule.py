@@ -14,13 +14,10 @@ import sys
 
 import argparse
 import mock
-import simplejson
-import yaml
+import simplejson as json
 
-import elastalert.config
-from elastalert.config import load_modules
-from elastalert.config import load_options
-from elastalert.config import load_rule_yaml
+from elastalert.config import load_rules
+from staticconf.loader import yaml_loader
 from elastalert.elastalert import ElastAlerter
 from elastalert.util import elasticsearch_client
 from elastalert.util import lookup_es_key
@@ -47,9 +44,8 @@ class MockElastAlerter(object):
     def test_file(self, conf, args):
         """ Loads a rule config file, performs a query over the last day (args.days), lists available keys
         and prints the number of results. """
-        if args.schema_only:
-            return []
 
+        print("Testing rule: ", conf['name'])
         # Set up Elasticsearch client and query
         es_client = elasticsearch_client(conf)
 
@@ -58,7 +54,7 @@ class MockElastAlerter(object):
         except Exception as e:
             print("Error connecting to ElasticSearch:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
-            return None
+            raise e
 
         if is_five:
             ElastAlerter.modify_rule_for_ES5(conf)
@@ -69,13 +65,15 @@ class MockElastAlerter(object):
         query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts, five=is_five)
         index = ElastAlerter.get_index(conf, start_time, end_time)
 
+        if args.show_query:
+            print("Query is: ", json.dumps(query, indent=4))
         # Get one document for schema
         try:
             res = es_client.search(index, size=1, body=query, ignore_unavailable=True)
         except Exception as e:
-            print("Error running your filter:", file=sys.stderr)
+            print("Error running your filter: ", json.dumps(query, indent=4), file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
-            return None
+            raise e
         num_hits = len(res['hits']['hits'])
         if not num_hits:
             return []
@@ -97,7 +95,7 @@ class MockElastAlerter(object):
         except Exception as e:
             print("Error querying Elasticsearch:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
-            return None
+            raise e
 
         num_hits = res['count']
         print("Got %s hits from the last %s day%s" % (num_hits, args.days, 's' if args.days > 1 else ''))
@@ -131,7 +129,7 @@ class MockElastAlerter(object):
             except Exception as e:
                 print("Error running your filter:", file=sys.stderr)
                 print(repr(e)[:2048], file=sys.stderr)
-                return None
+                raise e
             num_hits = len(res['hits']['hits'])
             print("Downloaded %s documents to save" % (num_hits))
             return res['hits']['hits']
@@ -192,18 +190,15 @@ class MockElastAlerter(object):
         elastalert.get_hits = self.mock_hits
         elastalert.elasticsearch_client = mock.Mock()
 
-    def run_elastalert(self, rule, conf, args):
+    def run_elastalert(self, conf, args):
         """ Creates an ElastAlert instance and run's over for a specific rule using either real or mock data. """
 
-        # Load and instantiate rule
-        load_modules(rule)
-        conf['rules'] = [rule]
-
-        # If using mock data, make sure it's sorted and find appropriate time range
-        timestamp_field = rule.get('timestamp_field', '@timestamp')
         if args.json:
             if not self.data:
                 return None
+
+            # If using mock data, make sure it's sorted and find appropriate time range
+            timestamp_field = conf['rules'][0].get('timestamp_field', '@timestamp')
             try:
                 self.data.sort(key=lambda x: x[timestamp_field])
                 starttime = ts_to_dt(self.data[0][timestamp_field])
@@ -211,7 +206,7 @@ class MockElastAlerter(object):
                 endtime = ts_to_dt(endtime) + datetime.timedelta(seconds=1)
             except KeyError as e:
                 print("All documents must have a timestamp and _id: %s" % (e), file=sys.stderr)
-                return None
+                raise e
 
             # Create mock _id for documents if it's missing
             used_ids = []
@@ -229,10 +224,9 @@ class MockElastAlerter(object):
             endtime = ts_now()
             starttime = endtime - datetime.timedelta(days=args.days)
 
-        # Set run_every to cover the entire time range unless count query, terms query or agg query used
-        # This is to prevent query segmenting which unnecessarily slows down tests
-        if not rule.get('use_terms_query') and not rule.get('use_count_query') and not rule.get('aggregation_query_element'):
-            conf['run_every'] = endtime - starttime
+        # Set run_every to cover the entire time range, this is to prevent query segmenting which unnecessarily slows down tests
+        # (see elastalert.get_segment_size())
+        conf['run_every'] = endtime - starttime
 
         # Instantiate ElastAlert to use mock config and special rule
         with mock.patch('elastalert.elastalert.get_rule_hashes'):
@@ -252,63 +246,20 @@ class MockElastAlerter(object):
         client.writeback_es.search.return_value = {"hits": {"hits": []}}
 
         with mock.patch.object(client, 'writeback') as mock_writeback:
-            client.run_rule(rule, endtime, starttime)
+            for rule in conf['rules']:
+                client.run_rule(rule, endtime, starttime)
 
             if mock_writeback.call_count:
                 print("\nWould have written the following documents to writeback index (default is elastalert_status):\n")
                 for call in mock_writeback.call_args_list:
                     print("%s - %s\n" % (call[0][0], call[0][1]))
 
-    def load_conf(self, rules, args):
-        """ Loads a default conf dictionary (from global config file, if provided, or hard-coded mocked data),
-            for initializing rules. Also initializes rules.
-
-            :return: the default rule configuration, a dictionary """
-        if args.config is not None:
-            with open(args.config) as fh:
-                conf = yaml.load(fh)
-        else:
-            if os.path.isfile('config.yaml'):
-                with open('config.yaml') as fh:
-                    conf = yaml.load(fh)
-            else:
-                conf = {}
-
-        # Need to convert these parameters to datetime objects
-        for key in ['buffer_time', 'run_every', 'alert_time_limit', 'old_query_limit']:
-            if key in conf:
-                conf[key] = datetime.timedelta(**conf[key])
-
-        # Mock configuration. This specifies the base values for attributes, unless supplied otherwise.
-        conf_default = {
-            'rules_folder': 'rules',
-            'es_host': 'localhost',
-            'es_port': 14900,
-            'writeback_index': 'wb',
-            'max_query_size': 10000,
-            'alert_time_limit': datetime.timedelta(hours=24),
-            'old_query_limit': datetime.timedelta(weeks=1),
-            'run_every': datetime.timedelta(minutes=5),
-            'disable_rules_on_error': False,
-            'buffer_time': datetime.timedelta(minutes=45),
-            'scroll_keepalive': '30s'
-        }
-
-        for key in conf_default:
-            if key not in conf:
-                conf[key] = conf_default[key]
-        elastalert.config.base_config = copy.deepcopy(conf)
-        load_options(rules, conf, args.file)
-        print("Successfully loaded %s\n" % (rules['name']))
-
-        return conf
-
     def run_rule_test(self):
         """
         Uses args to run the various components of MockElastAlerter such as loading the file, saving data, loading data, and running.
         """
         parser = argparse.ArgumentParser(description='Validate a rule configuration')
-        parser.add_argument('file', metavar='rule', type=str, help='rule configuration filename')
+        parser.add_argument('file', metavar='rule', action='store', type=str, help='rule configuration filename', default=None, nargs='?')
         parser.add_argument('--schema-only', action='store_true', help='Show only schema errors; do not run query')
         parser.add_argument('--days', type=int, default=1, action='store', help='Query the previous N days with this rule')
         parser.add_argument(
@@ -332,25 +283,68 @@ class MockElastAlerter(object):
             dest='count',
             help='Only display the number of documents matching the filter')
         parser.add_argument('--config', action='store', dest='config', help='Global config file.')
+        parser.add_argument('--show-query', action='store_true', help='Display the ES query')
         args = parser.parse_args()
 
-        rule_yaml = load_rule_yaml(args.file)
+        # This is a somewhat hacky to immitate the elsatalert config stuff.
+        psuedoargs = argparse.Namespace()
+        if args.config:
+            setattr(psuedoargs, 'config', args.config)
+        else:
+            setattr(psuedoargs, 'config', 'config.yaml')
 
-        conf = self.load_conf(rule_yaml, args)
+        setattr(psuedoargs, 'rule', args.file)
+
+        # Helper function that provides a default config if none is specified.
+        def frigged_yaml_loader(arg):
+            if arg == 'config.yaml' and not os.path.isfile('config.yaml'):
+                conf_default = {
+                    'rules_folder': 'rules',
+                    'es_host': 'localhost',
+                    'es_port': 14900,
+                    'writeback_index': 'wb',
+                    'max_query_size': 10000,
+                    'alert_time_limit': {'hours': 24},
+                    'old_query_limit': {'weeks': 1},
+                    'run_every': {'minutes': 5},
+                    'disable_rules_on_error': False,
+                    'buffer_time': {'minutes': 45},
+                    'scroll_keepalive': '30s'
+                }
+                return conf_default
+            else:
+                return yaml_loader(arg)
+
+        with mock.patch('elastalert.config.yaml_loader') as mock_open:
+            mock_open.side_effect = frigged_yaml_loader
+            conf = load_rules(psuedoargs)
+
+        if not conf['rules']:
+            raise Exception("No rules found!")
+
+        [print("Successfully loaded: %s" % (rule['name'])) for rule in conf['rules']]
+
+        if args.schema_only:
+            # Stop here.
+            return
 
         if args.json:
             with open(args.json, 'r') as data_file:
-                self.data = simplejson.loads(data_file.read())
+                self.data = json.loads(data_file.read())
         else:
-            hits = self.test_file(copy.deepcopy(rule_yaml), args)
+            hits = []
+            for rule in conf['rules']:
+                hit = self.test_file(copy.deepcopy(rule), args)
+                hits.append(hit)
+
             if hits and args.save:
                 with open(args.save, 'wb') as data_file:
                     # Add _id to _source for dump
                     [doc['_source'].update({'_id': doc['_id']}) for doc in hits]
-                    data_file.write(simplejson.dumps([doc['_source'] for doc in hits], indent='    '))
+                    data_file.write(json.dumps([doc['_source'] for doc in hits], indent='    '))
 
-        if not args.schema_only and not args.count:
-            self.run_elastalert(rule_yaml, conf, args)
+        if not args.count:
+            self.run_elastalert(conf, args)
 
 
 def main():
