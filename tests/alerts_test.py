@@ -131,6 +131,13 @@ def test_email_from_field():
         alert.alert([{'data': {'user': 'qlo'}}])
         assert mock_smtp.mock_calls[4][1][1] == ['qlo@example.com']
 
+    # Found, list
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        mock_smtp.return_value = mock.Mock()
+        alert = EmailAlerter(rule)
+        alert.alert([{'data': {'user': ['qlo', 'foo']}}])
+        assert mock_smtp.mock_calls[4][1][1] == ['qlo@example.com', 'foo@example.com']
+
     # Not found
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
@@ -265,8 +272,8 @@ def test_email_with_cc_and_bcc():
                             'tester@testing.testing'
                         ],
                         mock.ANY
-                    ),
-                    mock.call().close()]
+        ),
+            mock.call().close()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
