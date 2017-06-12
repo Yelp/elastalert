@@ -398,6 +398,8 @@ class EmailAlerter(Alerter):
                     to_addr = [recipient + self.rule['email_add_domain']]
             elif isinstance(recipient, list):
                 to_addr = recipient
+                if 'email_add_domain' in self.rule:
+                    to_addr = [name + self.rule['email_add_domain'] for name in to_addr]
         email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(to_addr)
