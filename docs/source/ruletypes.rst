@@ -1192,7 +1192,7 @@ Optional:
 ``email_from_field``: Use a field from the document that triggered the alert as the recipient. If the field cannot be found,
 the ``email`` value will be used as a default. Note that this field will not be available in every rule type, for example, if
 you have ``use_count_query`` or if it's ``type: flatline``. You can optionally add a domain suffix to the field to generate the
-address using ``email_add_domain``. For example, with the following settings::
+address using ``email_add_domain``. It can be a single recipient or list of recipients. For example, with the following settings::
 
     email_from_field: "data.user"
     email_add_domain: "@example.com"
