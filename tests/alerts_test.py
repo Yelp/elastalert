@@ -845,6 +845,7 @@ def test_slack_uses_custom_title():
                 'color': 'danger',
                 'title': rule['alert_subject'],
                 'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
                 'fields': []
             }
         ],
@@ -885,6 +886,7 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
                 'color': 'danger',
                 'title': rule['name'],
                 'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
                 'fields': []
             }
         ],
@@ -926,6 +928,7 @@ def test_slack_uses_custom_slack_channel():
                 'color': 'danger',
                 'title': rule['name'],
                 'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
                 'fields': []
             }
         ],
