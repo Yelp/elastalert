@@ -1,3 +1,37 @@
+## v0.1.15
+
+### Fixed
+- Fixed a bug where Elastalert would crash on connection error during startup
+- Fixed some typos in documentation
+- Fixed a bug in metric bucket offset calculation
+- Fixed a TypeError in Service Now alerter
+
+### Added
+- Added support for compound compare key in change rules
+- Added support for absolute paths in rule config imports
+- Added Microsoft Teams alerter
+- Added support for markdown in Slack alerts
+- Added error codes to test script
+- Added support for lists in email_from_field
+
+
+## v0.1.14 - 2017-05-11
+
+### Fixed
+- Twilio alerter uses the from number appropriately
+- Fixed a TypeError in SNS alerter
+- Some changes to requirements.txt and setup.py
+- Fixed a TypeError in new term rule
+
+### Added
+- Set a custom pagerduty incident key
+- Preserve traceback in most exceptions
+
+## v0.1.12 - 2017-04-21
+
+### Fixed
+- Fixed a bug causing filters to be ignored when using Elasticsearch 5
+
 # Change Log
 
 ## v0.1.11 - 2017-04-19
