@@ -240,7 +240,7 @@ properties:
   exotel_from_number: {type: string}
 
   ### Twilio
-  twilio_accout_sid: {type: string}
+  twilio_account_sid: {type: string}
   twilio_auth_token: {type: string}
   twilio_to_number: {type: string}
   twilio_from_number: {type: string}
