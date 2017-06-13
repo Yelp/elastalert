@@ -1499,7 +1499,7 @@ Twilio alerter will trigger an incident to a mobile phone as sms from your twili
 
 The alerter requires the following option:
 
-``twilio_accout_sid``: This is sid of your twilio account.
+``twilio_account_sid``: This is sid of your twilio account.
 
 ``twilio_auth_token``: Auth token assosiated with your twilio account.
 
