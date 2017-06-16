@@ -287,6 +287,7 @@ def elasticsearch_client(conf):
                          url_prefix=es_conn_conf['es_url_prefix'],
                          use_ssl=es_conn_conf['use_ssl'],
                          verify_certs=es_conn_conf['verify_certs'],
+                         ca_certs=es_conn_conf['ca_certs'],
                          connection_class=RequestsHttpConnection,
                          http_auth=es_conn_conf['http_auth'],
                          timeout=es_conn_conf['es_conn_timeout'],
@@ -301,6 +302,7 @@ def build_es_conn_config(conf):
     parsed_conf = {}
     parsed_conf['use_ssl'] = os.environ.get('ES_USE_SSL', False)
     parsed_conf['verify_certs'] = True
+    parsed_conf['ca_certs'] = None
     parsed_conf['http_auth'] = None
     parsed_conf['es_username'] = None
     parsed_conf['es_password'] = None
@@ -332,6 +334,9 @@ def build_es_conn_config(conf):
 
     if 'verify_certs' in conf:
         parsed_conf['verify_certs'] = conf['verify_certs']
+
+    if 'ca_certs' in conf:
+        parsed_conf['ca_certs'] = conf['ca_certs']
 
     if 'es_url_prefix' in conf:
         parsed_conf['es_url_prefix'] = conf['es_url_prefix']
