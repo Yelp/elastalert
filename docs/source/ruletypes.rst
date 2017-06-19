@@ -94,6 +94,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``timestamp_format`` (string, default "%Y-%m-%dT%H:%M:%SZ")  |           |
 +--------------------------------------------------------------+           |
+| ``timestamp_format_expr`` (string, no default )              |           |
++--------------------------------------------------------------+           |
 | ``_source_enabled`` (boolean, default True)                  |           |
 +--------------------------------------------------------------+           |
 | ``alert_text_args`` (array of strs)                          |           |
@@ -527,6 +529,20 @@ timestamp_format
 ``timestamp_format``: In case Elasticsearch used custom date format for date type field, this option provides a way to define custom timestamp
 format to match the type used for Elastisearch date type field. This option is only valid if ``timestamp_type`` set to ``custom``.
 (Optional, string, default '%Y-%m-%dT%H:%M:%SZ').
+
+timestamp_format_expr
+^^^^^^^^^^^^^^^^^^^^^
+
+``timestamp_format_expr``: In case Elasticsearch used custom date format for date type field, this option provides a way to adapt the
+value obtained converting a datetime through ``timestamp_format``, when the format cannot match perfectly what defined in Elastisearch.
+When set, this option is evaluated as a Python expression along with a *globals* dictionary containing the original datetime instance
+named ``dt`` and the timestamp to be refined, named ``ts``. The returned value becomes the timestamp obtained from the datetime.
+For example, when the date type field in Elasticsearch uses milliseconds (``yyyy-MM-dd'T'HH:mm:ss.SSS'Z'``) and ``timestamp_format``
+option is ``'%Y-%m-%dT%H:%M:%S.%fZ'``, Elasticsearch would fail to parse query terms as they contain microsecond values - that is
+it gets 6 digits instead of 3 - since the ``%f`` placeholder stands for microseconds for Python *strftime* method calls.
+Setting ``timestamp_format_expr: 'ts[:23] + ts[26:]'`` will truncate the value to milliseconds granting Elasticsearch compatibility.
+This option is only valid if ``timestamp_type`` set to ``custom``.
+(Optional, string, no default).
 
 _source_enabled
 ^^^^^^^^^^^^^^^
