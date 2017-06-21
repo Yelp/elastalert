@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import os
 import datetime
 import logging
 
 import dateutil.parser
 import dateutil.tz
-from auth import Auth
 from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 from six import string_types
+
+from .auth import Auth
 
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')

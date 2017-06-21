@@ -166,7 +166,8 @@ class MockElastAlerter(object):
                 if field != '_id':
                     if not any([re.match(incl.replace('*', '.*'), field) for incl in rule['include']]):
                         fields_to_remove.append(field)
-            map(doc.pop, fields_to_remove)
+            for field in fields_to_remove:
+                doc.pop(fields_to_remove)
 
         # Separate _source and _id, convert timestamps
         resp = [{'_source': doc, '_id': doc['_id']} for doc in docs]
@@ -186,8 +187,7 @@ class MockElastAlerter(object):
                 if qk is None or doc[rule['query_key']] == qk:
                     buckets.setdefault(doc[key], 0)
                     buckets[doc[key]] += 1
-        counts = buckets.items()
-        counts.sort(key=lambda x: x[1], reverse=True)
+        counts = sorted(buckets.items(), key=lambda x: x[1], reverse=True)
         if size:
             counts = counts[:size]
         buckets = [{'key': value, 'doc_count': count} for value, count in counts]

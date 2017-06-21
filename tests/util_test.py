@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 from elastalert.util import lookup_es_key, set_es_key, add_raw_postfix, replace_dots_in_field_names
 
 

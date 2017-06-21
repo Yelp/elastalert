@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 import urllib
 
-from util import EAException
+import six
 
+from .util import EAException
 
 dashboard_temp = {'editable': True,
                   u'failover': False,
@@ -212,9 +214,9 @@ def add_filter(dashboard, es_filter):
             kibana_filter['query'] = es_filter['query_string']['query']
     elif 'term' in es_filter:
         kibana_filter['type'] = 'field'
-        f_field, f_query = es_filter['term'].items()[0]
+        f_field, f_query = next(iter(es_filter['term'].items()))
         # Wrap query in quotes, otherwise certain characters cause Kibana to throw errors
-        if isinstance(f_query, basestring):
+        if isinstance(f_query, six.string_types):
             f_query = '"%s"' % (f_query.replace('"', '\\"'))
         if isinstance(f_query, list):
             # Escape quotes
@@ -227,7 +229,7 @@ def add_filter(dashboard, es_filter):
         kibana_filter['query'] = f_query
     elif 'range' in es_filter:
         kibana_filter['type'] = 'range'
-        f_field, f_range = es_filter['range'].items()[0]
+        f_field, f_range = next(iter(es_filter['range'].items()))
         kibana_filter['field'] = f_field
         kibana_filter.update(f_range)
     else:

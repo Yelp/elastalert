@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import contextlib
 import copy
 import datetime
@@ -8,6 +10,7 @@ import threading
 import elasticsearch
 import mock
 import pytest
+import six
 from elasticsearch.exceptions import ElasticsearchException
 
 from elastalert.enhancements import BaseEnhancement
@@ -20,6 +23,7 @@ from elastalert.util import EAException
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
 from elastalert.util import unix_to_dt
+from six.moves import range
 
 
 START_TIMESTAMP = '2014-09-26T12:34:45Z'
@@ -35,13 +39,13 @@ def _set_hits(ea_inst, hits):
 
 def generate_hits(timestamps, **kwargs):
     hits = []
-    id_iter = xrange(len(timestamps)).__iter__()
+    id_iter = iter(range(len(timestamps)))
     for ts in timestamps:
-        data = {'_id': 'id' + str(id_iter.next()),
+        data = {'_id': 'id' + str(next(id_iter)),
                 '_source': {'@timestamp': ts},
                 '_type': 'logs',
                 '_index': 'idx'}
-        for key, item in kwargs.iteritems():
+        for key, item in six.iteritems(kwargs):
             data['_source'][key] = item
         # emulate process_hits(), add metadata to _source
         for field in ['_id', '_type', '_index']:
@@ -71,7 +75,8 @@ def test_init_rule(ea):
     # Simulate state of a rule just loaded from a file
     ea.rules[0]['minimum_starttime'] = datetime.datetime.now()
     new_rule = copy.copy(ea.rules[0])
-    map(new_rule.pop, ['agg_matches', 'current_aggregate_id', 'processed_hits', 'minimum_starttime'])
+    for key in ['agg_matches', 'current_aggregate_id', 'processed_hits', 'minimum_starttime']:
+        new_rule.pop(key)
 
     # Properties are copied from ea.rules[0]
     ea.rules[0]['starttime'] = '2014-01-02T00:11:22'
@@ -987,7 +992,7 @@ def test_exponential_realert(ea):
     for args in test_values:
         ea.silence_cache[ea.rules[0]['name']] = (args[1], args[2])
         next_alert, exponent = ea.next_alert_time(ea.rules[0], ea.rules[0]['name'], args[0])
-        assert exponent == next_res.next()
+        assert exponent == next(next_res)
 
 
 def test_stop(ea):

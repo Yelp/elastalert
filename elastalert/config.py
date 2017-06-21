@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import copy
 import datetime
 import hashlib
@@ -6,23 +8,25 @@ import logging
 import os
 import sys
 
-import alerts
-import enhancements
 import jsonschema
-import ruletypes
 import yaml
 import yaml.scanner
-from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
-from util import dt_to_ts
-from util import dt_to_ts_with_format
-from util import dt_to_unix
-from util import dt_to_unixms
-from util import EAException
-from util import ts_to_dt
-from util import ts_to_dt_with_format
-from util import unix_to_dt
-from util import unixms_to_dt
+import six
+
+from . import alerts
+from . import enhancements
+from . import ruletypes
+from .opsgenie import OpsGenieAlerter
+from .util import dt_to_ts
+from .util import dt_to_ts_with_format
+from .util import dt_to_unix
+from .util import dt_to_unixms
+from .util import EAException
+from .util import ts_to_dt
+from .util import ts_to_dt_with_format
+from .util import unix_to_dt
+from .util import unixms_to_dt
 
 # schema for rule yaml
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
@@ -93,7 +97,7 @@ def get_module(module_name):
         base_module = __import__(module_path, globals(), locals(), [module_class])
         module = getattr(base_module, module_class)
     except (ImportError, AttributeError, ValueError) as e:
-        raise EAException("Could not import module %s: %s" % (module_name, e)), None, sys.exc_info()[2]
+        six.reraise(EAException("Could not import module %s: %s" % (module_name, e)), None, sys.exc_info()[2])
     return module
 
 
@@ -231,8 +235,8 @@ def load_options(rule, conf, filename, args=None):
     rule.setdefault('hipchat_ignore_ssl_errors', False)
 
     # Make sure we have required options
-    if required_locals - frozenset(rule.keys()):
-        raise EAException('Missing required option(s): %s' % (', '.join(required_locals - frozenset(rule.keys()))))
+    if required_locals - frozenset(list(rule.keys())):
+        raise EAException('Missing required option(s): %s' % (', '.join(required_locals - frozenset(list(rule.keys())))))
 
     if 'include' in rule and type(rule['include']) != list:
         raise EAException('include option must be a list')
@@ -275,7 +279,7 @@ def load_options(rule, conf, filename, args=None):
                     es_filter = es_filter['not']
                 if 'query' in es_filter:
                     es_filter = es_filter['query']
-                if es_filter.keys()[0] not in ('term', 'query_string', 'range'):
+                if list(es_filter.keys())[0] not in ('term', 'query_string', 'range'):
                     raise EAException('generate_kibana_link is incompatible with filters other than term, query_string and range. '
                                       'Consider creating a dashboard and using use_kibana_dashboard instead.')
 
@@ -324,13 +328,13 @@ def load_modules(rule, args=None):
     # Make sure we have required alert and type options
     reqs = rule['type'].required_options
 
-    if reqs - frozenset(rule.keys()):
-        raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(rule.keys()))))
+    if reqs - frozenset(list(rule.keys())):
+        raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(list(rule.keys())))))
     # Instantiate rule
     try:
         rule['type'] = rule['type'](rule, args)
     except (KeyError, EAException) as e:
-        raise EAException('Error initializing rule %s: %s' % (rule['name'], e)), None, sys.exc_info()[2]
+        six.reraise(EAException('Error initializing rule %s: %s' % (rule['name'], e)), None, sys.exc_info()[2])
     # Instantiate alert
     rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
 
@@ -364,10 +368,10 @@ def load_alerts(rule, alert_field):
     def normalize_config(alert):
         """Alert config entries are either "alertType" or {"alertType": {"key": "data"}}.
         This function normalizes them both to the latter format. """
-        if isinstance(alert, basestring):
+        if isinstance(alert, six.string_types):
             return alert, rule
         elif isinstance(alert, dict):
-            name, config = iter(alert.items()).next()
+            name, config = next(iter(alert.items()))
             config_copy = copy.copy(rule)
             config_copy.update(config)  # warning, this (intentionally) mutates the rule dict
             return name, config_copy
@@ -388,12 +392,12 @@ def load_alerts(rule, alert_field):
             alert_field = [alert_field]
 
         alert_field = [normalize_config(x) for x in alert_field]
-        alert_field = sorted(alert_field, key=lambda (a, b): alerts_order.get(a, -1))
+        alert_field = sorted(alert_field, key=lambda a: alerts_order.get(a[0], -1))
         # Convert all alerts into Alerter objects
         alert_field = [create_alert(a, b) for a, b in alert_field]
 
     except (KeyError, EAException) as e:
-        raise EAException('Error initiating alert %s: %s' % (rule['alert'], e)), None, sys.exc_info()[2]
+        six.reraise(EAException('Error initiating alert %s: %s' % (rule['alert'], e)), None, sys.exc_info()[2])
 
     return alert_field
 
@@ -415,8 +419,8 @@ def load_rules(args):
             conf[conf_var] = os.environ[env_var]
 
     # Make sure we have all required globals
-    if required_globals - frozenset(conf.keys()):
-        raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(conf.keys()))))
+    if required_globals - frozenset(list(conf.keys())):
+        raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(list(conf.keys())))))
 
     conf.setdefault('max_query_size', 10000)
     conf.setdefault('scroll_keepalive', '30s')
