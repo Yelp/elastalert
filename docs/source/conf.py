@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import sphinx_rtd_theme
 
 # -*- coding: utf-8 -*-

@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+from __future__ import print_function
+
 import datetime
 import json
 import subprocess
@@ -6,6 +9,8 @@ from contextlib import nested
 
 import mock
 import pytest
+import six
+
 from jira.exceptions import JIRAError
 
 from elastalert.alerts import Alerter
@@ -31,7 +36,7 @@ class mock_rule:
 def test_basic_match_string(ea):
     ea.rules[0]['top_count_keys'] = ['username']
     match = {'@timestamp': '1918-01-17', 'field': 'value', 'top_events_username': {'bob': 10, 'mallory': 5}}
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = six.text_type(BasicMatchString(ea.rules[0], match))
     assert 'anytest' in alert_text
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
@@ -40,32 +45,32 @@ def test_basic_match_string(ea):
 
     # Non serializable objects don't cause errors
     match['non-serializable'] = {open: 10}
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = six.text_type(BasicMatchString(ea.rules[0], match))
 
     # unicode objects dont cause errors
     match['snowman'] = u'☃'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = six.text_type(BasicMatchString(ea.rules[0], match))
 
     # Pretty printed objects
     match.pop('non-serializable')
     match['object'] = {'this': {'that': [1, 2, "3"]}}
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = six.text_type(BasicMatchString(ea.rules[0], match))
     assert '"this": {\n        "that": [\n            1, \n            2, \n            "3"\n        ]\n    }' in alert_text
 
     ea.rules[0]['alert_text'] = 'custom text'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = six.text_type(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'anytest' not in alert_text
 
     ea.rules[0]['alert_text_type'] = 'alert_text_only'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = six.text_type(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'some stuff happened' not in alert_text
     assert 'username' not in alert_text
     assert 'field: value' not in alert_text
 
     ea.rules[0]['alert_text_type'] = 'exclude_fields'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = six.text_type(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
@@ -1081,7 +1086,7 @@ def test_alert_text_kw(ea):
         'field': 'field',
     }
     match = {'@timestamp': '1918-01-17', 'field': 'value'}
-    alert_text = unicode(BasicMatchString(rule, match))
+    alert_text = six.text_type(BasicMatchString(rule, match))
     body = '{field} at {@timestamp}'.format(**match)
     assert body in alert_text
 
@@ -1100,7 +1105,7 @@ def test_alert_text_global_substitution(ea):
         'abc': 'abc from match',
     }
 
-    alert_text = unicode(BasicMatchString(rule, match))
+    alert_text = six.text_type(BasicMatchString(rule, match))
     assert 'Priority: priority from rule' in alert_text
     assert 'Owner: the owner from rule' in alert_text
 
@@ -1126,7 +1131,7 @@ def test_alert_text_kw_global_substitution(ea):
         'abc': 'abc from match',
     }
 
-    alert_text = unicode(BasicMatchString(rule, match))
+    alert_text = six.text_type(BasicMatchString(rule, match))
     assert 'Owner: the owner from rule' in alert_text
     assert 'Foo: foo from rule' in alert_text
 

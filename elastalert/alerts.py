@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
+
 import copy
 import datetime
 import json
@@ -17,6 +19,7 @@ from socket import error
 import boto3
 import requests
 import stomp
+import six
 from exotel import Exotel
 from jira.client import JIRA
 from jira.exceptions import JIRAError
@@ -25,10 +28,12 @@ from staticconf.loader import yaml_loader
 from texttable import Texttable
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
-from util import EAException
-from util import elastalert_logger
-from util import lookup_es_key
-from util import pretty_ts
+from six.moves import range
+
+from .util import EAException
+from .util import elastalert_logger
+from .util import lookup_es_key
+from .util import pretty_ts
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -52,7 +57,7 @@ class BasicMatchString(object):
 
     def _add_custom_alert_text(self):
         missing = '<MISSING VALUE>'
-        alert_text = unicode(self.rule.get('alert_text', ''))
+        alert_text = six.text_type(self.rule.get('alert_text', ''))
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
             alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
@@ -60,7 +65,7 @@ class BasicMatchString(object):
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
-            for i in xrange(len(alert_text_values)):
+            for i in range(len(alert_text_values)):
                 if alert_text_values[i] is None:
                     alert_value = self.rule.get(alert_text_args[i])
                     if alert_value:
@@ -91,7 +96,7 @@ class BasicMatchString(object):
         for key, counts in self.match.items():
             if key.startswith('top_events_'):
                 self.text += '%s:\n' % (key[11:])
-                top_events = counts.items()
+                top_events = list(counts.items())
 
                 if not top_events:
                     self.text += 'No events found.\n'
@@ -103,12 +108,12 @@ class BasicMatchString(object):
                 self.text += '\n'
 
     def _add_match_items(self):
-        match_items = self.match.items()
+        match_items = list(self.match.items())
         match_items.sort(key=lambda x: x[0])
         for key, value in match_items:
             if key.startswith('top_events_'):
                 continue
-            value_str = unicode(value)
+            value_str = six.text_type(value)
             value_str.replace('\\n', '\n')
             if type(value) in [list, dict]:
                 try:
@@ -175,14 +180,14 @@ class Alerter(object):
                     root[i] = self.resolve_rule_reference(item)
         elif type(root) == dict:
             # Make a copy since we may be modifying the contents of the structure we're walking
-            for key, value in root.copy().iteritems():
+            for key, value in six.iteritems(root.copy()):
                 if type(value) == dict or type(value) == list:
                     self.resolve_rule_references(root[key])
                 else:
                     root[key] = self.resolve_rule_reference(value)
 
     def resolve_rule_reference(self, value):
-        strValue = unicode(value)
+        strValue = six.text_type(value)
         if strValue.startswith('$') and strValue.endswith('$') and strValue[1:-1] in self.rule:
             if type(value) == int:
                 return int(self.rule[strValue[1:-1]])
@@ -214,7 +219,7 @@ class Alerter(object):
         return self.create_default_title(matches)
 
     def create_custom_title(self, matches):
-        alert_subject = unicode(self.rule['alert_subject'])
+        alert_subject = six.text_type(self.rule['alert_subject'])
 
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
@@ -223,7 +228,7 @@ class Alerter(object):
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
-            for i in xrange(len(alert_subject_values)):
+            for i in range(len(alert_subject_values)):
                 if alert_subject_values[i] is None:
                     alert_value = self.rule.get(alert_subject_args[i])
                     if alert_value:
@@ -237,7 +242,7 @@ class Alerter(object):
     def create_alert_body(self, matches):
         body = self.get_aggregation_summary_text(matches)
         for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
+            body += six.text_type(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
@@ -260,16 +265,16 @@ class Alerter(object):
 
             # Maintain an aggregate count for each unique key encountered in the aggregation period
             for match in matches:
-                key_tuple = tuple([unicode(lookup_es_key(match, key)) for key in summary_table_fields])
+                key_tuple = tuple([six.text_type(lookup_es_key(match, key)) for key in summary_table_fields])
                 if key_tuple not in match_aggregation:
                     match_aggregation[key_tuple] = 1
                 else:
                     match_aggregation[key_tuple] = match_aggregation[key_tuple] + 1
-            for keys, count in match_aggregation.iteritems():
+            for keys, count in six.iteritems(match_aggregation):
                 text_table.add_row([key for key in keys] + [count])
             text += text_table.draw() + '\n\n'
 
-        return unicode(text)
+        return six.text_type(text)
 
     def create_default_title(self, matches):
         return self.rule['name']
@@ -310,11 +315,11 @@ class StompAlerter(Alerter):
                     '2)Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field']))
                 )
                 fullmessage['match'] = lookup_es_key(match, self.rule['timestamp_field'])
-            elastalert_logger.info(unicode(BasicMatchString(self.rule, match)))
+            elastalert_logger.info(six.text_type(BasicMatchString(self.rule, match)))
 
         fullmessage['alerts'] = alerts
         fullmessage['rule'] = self.rule['name']
-        fullmessage['matching'] = unicode(BasicMatchString(self.rule, match))
+        fullmessage['matching'] = six.text_type(BasicMatchString(self.rule, match))
         fullmessage['alertDate'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         fullmessage['body'] = self.create_alert_body(matches)
 
@@ -346,7 +351,7 @@ class DebugAlerter(Alerter):
                     'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
             else:
                 elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
-            elastalert_logger.info(unicode(BasicMatchString(self.rule, match)))
+            elastalert_logger.info(six.text_type(BasicMatchString(self.rule, match)))
 
     def get_info(self):
         return {'type': 'debug'}
@@ -366,15 +371,15 @@ class EmailAlerter(Alerter):
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
         # Convert email to a list if it isn't already
-        if isinstance(self.rule['email'], basestring):
+        if isinstance(self.rule['email'], six.string_types):
             self.rule['email'] = [self.rule['email']]
         # If there is a cc then also convert it a list if it isn't
         cc = self.rule.get('cc')
-        if cc and isinstance(cc, basestring):
+        if cc and isinstance(cc, six.string_types):
             self.rule['cc'] = [self.rule['cc']]
         # If there is a bcc then also convert it to a list if it isn't
         bcc = self.rule.get('bcc')
-        if bcc and isinstance(bcc, basestring):
+        if bcc and isinstance(bcc, six.string_types):
             self.rule['bcc'] = [self.rule['bcc']]
         add_suffix = self.rule.get('email_add_domain')
         if add_suffix and not add_suffix.startswith('@'):
@@ -391,7 +396,7 @@ class EmailAlerter(Alerter):
         to_addr = self.rule['email']
         if 'email_from_field' in self.rule:
             recipient = lookup_es_key(matches[0], self.rule['email_from_field'])
-            if isinstance(recipient, basestring):
+            if isinstance(recipient, six.string_types):
                 if '@' in recipient:
                     to_addr = [recipient]
                 elif 'email_add_domain' in self.rule:
@@ -558,12 +563,12 @@ class JiraAlerter(Alerter):
             if self.priority is not None:
                 self.jira_args['priority'] = {'id': self.priority_ids[self.priority]}
         except KeyError:
-            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, self.priority_ids.keys()))
+            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, list(self.priority_ids.keys())))
 
     def get_arbitrary_fields(self):
         # This API returns metadata about all the fields defined on the jira server (built-ins and custom ones)
         fields = self.client.fields()
-        for jira_field, value in self.rule.iteritems():
+        for jira_field, value in six.iteritems(self.rule):
             # If we find a field that is not covered by the set that we are aware of, it means it is either:
             # 1. A built-in supported field in JIRA that we don't have on our radar
             # 2. A custom field that a JIRA admin has configured
@@ -676,7 +681,7 @@ class JiraAlerter(Alerter):
             return issues[0]
 
     def comment_on_ticket(self, ticket, match):
-        text = unicode(JiraFormattedMatchString(self.rule, match))
+        text = six.text_type(JiraFormattedMatchString(self.rule, match))
         timestamp = pretty_ts(lookup_es_key(match, self.rule['timestamp_field']))
         comment = "This alert was triggered again at %s\n%s" % (timestamp, text)
         self.client.add_comment(ticket, comment)
@@ -712,11 +717,11 @@ class JiraAlerter(Alerter):
                     except Exception as ex:
                         # Re-raise the exception, preserve the stack-trace, and give some
                         # context as to which watcher failed to be added
-                        raise Exception(
+                        six.reraise(Exception(
                             "Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(
                                 watcher,
                                 ex
-                            )), None, sys.exc_info()[2]
+                            )), None, sys.exc_info()[2])
 
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket using jira_args (%s): %s" % (self.jira_args, e))
@@ -730,7 +735,7 @@ class JiraAlerter(Alerter):
         body = self.description + '\n'
         body += self.get_aggregation_summary_text(matches)
         for match in matches:
-            body += unicode(JiraFormattedMatchString(self.rule, match))
+            body += six.text_type(JiraFormattedMatchString(self.rule, match))
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
         return body
@@ -773,7 +778,7 @@ class CommandAlerter(Alerter):
         self.last_command = []
 
         self.shell = False
-        if isinstance(self.rule['command'], basestring):
+        if isinstance(self.rule['command'], six.string_types):
             self.shell = True
             if '%' in self.rule['command']:
                 logging.warning('Warning! You could be vulnerable to shell injection!')
@@ -911,7 +916,7 @@ class MsTeamsAlerter(Alerter):
     def __init__(self, rule):
         super(MsTeamsAlerter, self).__init__(rule)
         self.ms_teams_webhook_url = self.rule['ms_teams_webhook_url']
-        if isinstance(self.ms_teams_webhook_url, basestring):
+        if isinstance(self.ms_teams_webhook_url, six.string_types):
             self.ms_teams_webhook_url = [self.ms_teams_webhook_url]
         self.ms_teams_proxy = self.rule.get('ms_teams_proxy', None)
         self.ms_teams_alert_summary = self.rule.get('ms_teams_alert_summary', 'ElastAlert Message')
@@ -963,7 +968,7 @@ class SlackAlerter(Alerter):
     def __init__(self, rule):
         super(SlackAlerter, self).__init__(rule)
         self.slack_webhook_url = self.rule['slack_webhook_url']
-        if isinstance(self.slack_webhook_url, basestring):
+        if isinstance(self.slack_webhook_url, six.string_types):
             self.slack_webhook_url = [self.slack_webhook_url]
         self.slack_proxy = self.rule.get('slack_proxy', None)
         self.slack_username_override = self.rule.get('slack_username_override', 'elastalert')
@@ -1108,7 +1113,7 @@ class ExotelAlerter(Alerter):
             if response != 200:
                 raise EAException("Error posting to Exotel, response code is %s" % response)
         except:
-            raise EAException("Error posting to Exotel"), None, sys.exc_info()[2]
+            six.reraise(EAException("Error posting to Exotel"), None, sys.exc_info()[2])
         elastalert_logger.info("Trigger sent to Exotel")
 
     def get_info(self):
@@ -1198,7 +1203,7 @@ class TelegramAlerter(Alerter):
     def alert(self, matches):
         body = u'⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
         for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
+            body += six.text_type(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
@@ -1326,7 +1331,7 @@ class SimplePostAlerter(Alerter):
     def __init__(self, rule):
         super(SimplePostAlerter, self).__init__(rule)
         simple_webhook_url = self.rule.get('simple_webhook_url')
-        if isinstance(simple_webhook_url, basestring):
+        if isinstance(simple_webhook_url, six.string_types):
             simple_webhook_url = [simple_webhook_url]
         self.simple_webhook_url = simple_webhook_url
         self.simple_proxy = self.rule.get('simple_proxy')
