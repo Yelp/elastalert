@@ -25,6 +25,7 @@ from croniter import croniter
 from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.exceptions import TransportError
 from enhancements import DropMatchException
+from ruletypes import FlatlineRule
 from util import add_raw_postfix
 from util import cronite_datetime_to_timestamp
 from util import dt_to_ts
@@ -686,6 +687,9 @@ class ElastAlerter():
 
     def get_query_key_value(self, rule, match):
         # get the value for the match's query_key (or none) to form the key used for the silence_cache.
+        # Flatline ruletype sets "key" instead of the actual query_key
+        if isinstance(FlatlineRule, rule['type']) and 'key' in match:
+            return match['key']
         return self.get_named_key_value(rule, match, 'query_key')
 
     def get_aggregation_key_value(self, rule, match):
