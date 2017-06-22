@@ -689,7 +689,7 @@ class ElastAlerter():
         # get the value for the match's query_key (or none) to form the key used for the silence_cache.
         # Flatline ruletype sets "key" instead of the actual query_key
         if isinstance(rule['type'], FlatlineRule) and 'key' in match:
-            return match['key']
+            return unicode(match['key'])
         return self.get_named_key_value(rule, match, 'query_key')
 
     def get_aggregation_key_value(self, rule, match):
