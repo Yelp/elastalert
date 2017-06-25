@@ -1352,3 +1352,42 @@ class SimplePostAlerter(Alerter):
     def get_info(self):
         return {'type': 'simple',
                 'simple_webhook_url': self.simple_webhook_url}
+
+
+class AdvancedPostAlerter(Alerter):
+    """ Requested elasticsearch indices are sent by HTTP POST. Encoded with JSON. """
+    def __init__(self, rule):
+        super(AdvancedPostAlerter, self).__init__(rule)
+        post_url = self.rule.get('advanced_post_url')
+        if isinstance(post_url, basestring):
+            post_url = [post_url]
+        self.post_url = post_url
+        self.post_proxy = self.rule.get('advanced_post_proxy')
+        self.post_payload = self.rule.get('advanced_post_payload')
+
+    def alert(self, matches):
+        """ Each match will trigger a POST to the specified endpoint(s). """
+        for match in matches:
+            payload = {}
+            for es_item in match.items():
+                for post_key, es_key in self.post_payload.items():
+                    if es_key == es_item[0]:
+                        payload[post_key] = es_item[1]
+
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json;charset=utf-8"
+            }
+            proxies = {'https': self.post_proxy} if self.post_proxy else None
+            for url in self.post_url:
+                try:
+                    response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder),
+                                             headers=headers, proxies=proxies)
+                    response.raise_for_status()
+                except RequestException as e:
+                    raise EAException("Error posting advanced alert: %s" % e)
+            elastalert_logger.info("Advanced alert sent.")
+
+    def get_info(self):
+        return {'type': 'advanced_post',
+                'advanced_webhook_url': self.advanced_webhook_url}
