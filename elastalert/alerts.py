@@ -1352,3 +1352,63 @@ class SimplePostAlerter(Alerter):
     def get_info(self):
         return {'type': 'simple',
                 'simple_webhook_url': self.simple_webhook_url}
+
+class DingtalkAlert(Alerter):
+    required_options = frozenset(['dingtalk_webhook_url','dingtalk_msgtype'])
+
+    def __init__(self, rule):
+        super(DingtalkAlerter, self).__init__(rule)
+        self.dingtalk_webhook_url = self.rule['dingtalk_webhook_url']
+        if isinstance(self.dingtalk_webhook_url, basestring):
+            self.dingtalk_webhook_url = [self.dingtalk_webhook_url]
+        self.dingtalk_username = self.rule.get('dingtalk_username', '')
+        self.dingtalk_proxy = self.rule.get('slack_proxy', None)
+        self.dingtalk_msgtype = self.rule.get('dingtalk_msgtype', '')
+        self.dingtalk_isAtAll = self.rule.get('dingtalk_isAtAll', 'false')
+        self.dingtalk_title = self.rule.get('dingtalk_title', '')
+        self.dingtalk_picurl = self.rule.get('dingtalk_picurl', '')
+        self.dingtalk_messageurl = self.rule.get('dingtalk_messageurl', '')
+
+    def format_body(self, body):
+        body = body.encode('UTF-8')
+        return body
+
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+
+        body = self.format_body(body)
+        headers = {'content-type': 'application/json'}
+        proxies = {'https': self.dingtalk_proxy} if self.dingtalk_proxy else None
+        payload = {
+            "msgtype": self.dingtalk_msgtype,
+            "text": {
+                "content": body
+            },
+            "link": {
+                "text": body,
+                "title": self.dingtalk_title,
+                "picUrl": self.dingtalk_picurl,
+                "messageUrl": self.dingtalk_messageurl
+            },
+            "markdown": {
+                "title": self.dingtalk_title,
+                "text": body
+            },
+            "at": {
+                "atMobiles": self.dingtalk_username,
+                "isAtAll": self.dingtalk_isAtAll
+            }
+        }
+
+        for url in self.dingtalk_webhook_url:
+            try:
+                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error posting to Dingtalk: %s" % e)
+        elastalert_logger.info("Alert sent to Dingtalk")
+
+    def get_info(self):
+        return {'type': 'dingtalk',
+                'dingtalk_webhook_url': self.dingtalk_webhook_url}
