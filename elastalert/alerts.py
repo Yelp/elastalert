@@ -743,8 +743,9 @@ class JiraAlerter(Alerter):
 
     def create_default_title(self, matches, for_search=False):
         # If there is a query_key, use that in the title
+
         if 'query_key' in self.rule and lookup_es_key(matches[0], self.rule['query_key']):
-            title = 'ElastAlert: %s matched %s' % (matches[0][self.rule['query_key']], self.rule['name'])
+            title = 'ElastAlert: %s matched %s' % (lookup_es_key(matches[0], self.rule['query_key']), self.rule['name'])
         else:
             title = 'ElastAlert: %s' % (self.rule['name'])
 
