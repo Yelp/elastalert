@@ -453,7 +453,8 @@ use_kibana4_dashboard
 
 ``use_kibana4_dashboard``: A link to a Kibana 4 dashboard. For example, "https://kibana.example.com/#/dashboard/My-Dashboard".
 This will set the time setting on the dashboard from the match time minus the timeframe, to 10 minutes after the match time.
-Note that this does not support filtering by ``query_key`` like Kibana 3.
+Note that this does not support filtering by ``query_key`` like Kibana 3.  This value can use `$VAR` and `${VAR}` references
+to expand environment variables.
 
 kibana4_start_timedelta
 ^^^^^^^^^^^^^^^^^^^^^^^
