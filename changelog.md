@@ -1,3 +1,16 @@
+# Change Log
+
+## v0.1.16
+
+### Fixed
+- Fixed a bug where JIRA titles might not use query_key values
+- Fixed a bug where flatline alerts don't respect query_key for realert
+- Fixed a typo "twilio_accout_sid"
+
+### Added
+- Added support for env variables in kibana4 dashboard links
+- Added ca_certs option for custom CA support
+
 ## v0.1.15
 
 ### Fixed
@@ -32,15 +45,6 @@
 ### Fixed
 - Fixed a bug causing filters to be ignored when using Elasticsearch 5
 
-# Change Log
-
-
-## Unreleased
-
-### Added
-- Added the ability to expand environment variables in
-  ``use_kibana4_dashboard``, enabling sharing of rules across multiple
-  deployments of ElastAlert and Kibana.
 
 ## v0.1.11 - 2017-04-19
 
