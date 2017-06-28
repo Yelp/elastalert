@@ -1045,7 +1045,7 @@ class PagerDutyAlerter(Alerter):
         headers = {'content-type': 'application/json'}
         payload = {
             'service_key': self.pagerduty_service_key,
-            'description': self.rule['name'],
+            'description': self.create_title(matches),
             'event_type': 'trigger',
             'incident_key': self.get_incident_key(matches),
             'client': self.pagerduty_client_name,
