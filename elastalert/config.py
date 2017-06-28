@@ -111,34 +111,36 @@ def load_configuration(filename, conf, args=None):
 
 
 def load_rule_yaml(filename):
-    rule = {
-        'rule_file': filename,
-    }
+    return add_rule_yaml(filename, {'rule_file': filename})
 
-    while True:
-        try:
-            loaded = yaml_loader(filename)
-        except yaml.scanner.ScannerError as e:
-            raise EAException('Could not parse file %s: %s' % (filename, e))
+def add_rule_yaml(filename, rule):
+    try:
+        loaded = yaml_loader(filename)
+    except yaml.scanner.ScannerError as e:
+        raise EAException('Could not parse file %s: %s' % (filename, e))
 
-        # Special case for merging filters - if both files specify a filter merge (AND) them
-        if 'filter' in rule and 'filter' in loaded:
-            rule['filter'] = loaded['filter'] + rule['filter']
+    # Special case for merging filters - if both files specify a filter merge (AND) them
+    if 'filter' in rule and 'filter' in loaded:
+        rule['filter'] = loaded['filter'] + rule['filter']
 
-        loaded.update(rule)
-        rule = loaded
-        if 'import' in rule:
-            # Find the path of the next file.
-            if os.path.isabs(rule['import']):
-                filename = rule['import']
-            else:
-                filename = os.path.join(os.path.dirname(filename), rule['import'])
-            del(rule['import'])  # or we could go on forever!
-        else:
-            break
+    rule.update(loaded)
+    if 'import' in rule:
+        current_import = rule['import']
+        del(rule['import'])  # or we could go on forever!
+
+        if isinstance(current_import, basestring):
+            add_rule_yaml(rule_file_import_path_to_absolute_path(filename, current_import), rule)
+        elif isinstance(current_import, list):
+            for import_target in current_import:
+                add_rule_yaml(rule_file_import_path_to_absolute_path(filename, import_target), rule)
 
     return rule
 
+def rule_file_import_path_to_absolute_path(currently_parsed_file_path, import_file_path):
+    if os.path.isabs(import_file_path):
+        return import_file_path
+    else:
+        return os.path.join(os.path.dirname(currently_parsed_file_path), import_file_path)
 
 def load_options(rule, conf, filename, args=None):
     """ Converts time objects, sets defaults, and validates some settings.

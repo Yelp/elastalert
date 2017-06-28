@@ -144,7 +144,7 @@ properties:
   use_strftime_index: {type: boolean}
 
   # Optional Settings
-  import: {type: string}
+  import: {type: array, items: {type: string}}
   aggregation: *timeframe
   realert: *timeframe
   exponential_realert: *timeframe
