@@ -144,7 +144,12 @@ properties:
   use_strftime_index: {type: boolean}
 
   # Optional Settings
-  import: {type: array, items: {type: string}}
+  import:
+    anyOf:
+      - type: array
+        items:
+          type: string
+      - type: string
   aggregation: *timeframe
   realert: *timeframe
   exponential_realert: *timeframe

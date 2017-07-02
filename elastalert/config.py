@@ -113,34 +113,48 @@ def load_configuration(filename, conf, args=None):
 def load_rule_yaml(filename):
     return add_rule_yaml(filename, {'rule_file': filename})
 
-def add_rule_yaml(filename, rule):
+
+def add_rule_yaml(filename, parent_rule):
     try:
-        loaded = yaml_loader(filename)
+        loaded_rule = yaml_loader(filename)
     except yaml.scanner.ScannerError as e:
         raise EAException('Could not parse file %s: %s' % (filename, e))
 
-    # Special case for merging filters - if both files specify a filter merge (AND) them
-    if 'filter' in rule and 'filter' in loaded:
-        rule['filter'] = loaded['filter'] + rule['filter']
+    if 'import' in loaded_rule:
+        current_import = loaded_rule['import']
+        del(loaded_rule['import'])  # or we could go on forever!
 
-    rule.update(loaded)
-    if 'import' in rule:
-        current_import = rule['import']
-        del(rule['import'])  # or we could go on forever!
-
+        child_rules = {}
         if isinstance(current_import, basestring):
-            add_rule_yaml(rule_file_import_path_to_absolute_path(filename, current_import), rule)
+            child_rules = add_rule_yaml(rule_file_import_path_to_absolute_path(filename, current_import), child_rules)
         elif isinstance(current_import, list):
             for import_target in current_import:
-                add_rule_yaml(rule_file_import_path_to_absolute_path(filename, import_target), rule)
+                child_rules = add_rule_yaml(rule_file_import_path_to_absolute_path(filename, import_target), child_rules)
+        loaded_rule = merge_rules(loaded_rule, child_rules)
 
-    return rule
+    loaded_rule = merge_rules(parent_rule, loaded_rule)
+    return loaded_rule
+
+
+def merge_rules(parent_rule, child_rule):
+    # Special case for merging filters - if both files specify a filter merge (AND) them
+    merged_filter = None
+    if 'filter' in parent_rule and 'filter' in child_rule:
+        merged_filter = child_rule['filter'] + parent_rule['filter']
+
+    child_rule.update(parent_rule)
+    if merged_filter is not None:
+        child_rule['filter'] = merged_filter
+
+    return child_rule
+
 
 def rule_file_import_path_to_absolute_path(currently_parsed_file_path, import_file_path):
     if os.path.isabs(import_file_path):
         return import_file_path
     else:
         return os.path.join(os.path.dirname(currently_parsed_file_path), import_file_path)
+
 
 def load_options(rule, conf, filename, args=None):
     """ Converts time objects, sets defaults, and validates some settings.
