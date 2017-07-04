@@ -57,6 +57,7 @@ def main():
             data = yaml.load(config_file)
         host = args.host if args.host else data.get('es_host')
         port = args.port if args.port else data.get('es_port')
+        index_settings = data.get('index_settings')
         username = data.get('es_username')
         password = data.get('es_password')
         url_prefix = args.url_prefix if args.url_prefix is not None else data.get('es_url_prefix', '')
@@ -67,6 +68,7 @@ def main():
     else:
         username = None
         password = None
+        index_settings = None
         aws_region = args.aws_region
         host = args.host if args.host else raw_input('Enter Elasticsearch host: ')
         port = args.port if args.port else int(raw_input('Enter Elasticsearch port: '))
@@ -103,6 +105,15 @@ def main():
         url_prefix=url_prefix,
         send_get_body_as=send_get_body_as)
 
+    if index_settings is not None:
+        settings = {'settings': {'index': {}}}
+        if index_settings["shards"] is not None:
+            settings["settings"]["index"]["number_of_shards"] = index_settings["shards"]
+        if index_settings["replicas"] is not None:
+            settings["settings"]["index"]["number_of_replicas"] = index_settings["replicas"]
+    else:
+        settings = None
+
     silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                   'until': {'type': 'date', 'format': 'dateOptionalTime'},
                                                   '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
@@ -132,7 +143,7 @@ def main():
         print('Index ' + index + ' already exists. Skipping index creation.')
         return None
 
-    es.indices.create(index)
+    es.indices.create(index=index, body=settings)
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
     es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
