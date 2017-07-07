@@ -745,6 +745,7 @@ def test_get_starttime(ea):
     endtime = '2015-01-01T00:00:00Z'
     mock_es = mock.Mock()
     mock_es.search.return_value = {'hits': {'hits': [{'_source': {'endtime': endtime}}]}}
+    mock_es.info.return_value = {'version': {'number': '2.0'}}
     ea.writeback_es = mock_es
 
     # 4 days old, will return endtime
