@@ -136,7 +136,7 @@ class ElastAlerter():
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
 
         self.writeback_es = elasticsearch_client(self.conf)
-        self.es_version = self.get_version()
+        self._es_version = None
 
         remove = []
         for rule in self.rules:
@@ -150,6 +150,12 @@ class ElastAlerter():
     def get_version(self):
         info = self.writeback_es.info()
         return info['version']['number']
+
+    @property
+    def es_version(self):
+        if self._es_version is None:
+            self._es_version = self.get_version()
+        return self._es_version
 
     def is_five(self):
         return self.es_version.startswith('5')
