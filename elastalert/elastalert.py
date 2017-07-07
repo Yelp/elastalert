@@ -81,7 +81,7 @@ class ElastAlerter():
         parser.add_argument('--verbose', action='store_true', dest='verbose', help='Increase verbosity without suppressing alerts')
         parser.add_argument('--patience', action='store', dest='timeout',
                             type=parse_duration,
-                            default=datetime.timedelta(seconds=30),
+                            default=datetime.timedelta(),
                             help='Maximum time to wait for ElasticSearch to become responsive.  Usage: '
                             '--patience <units>=<number>. e.g. --patience minutes=5')
         parser.add_argument(
@@ -1015,6 +1015,10 @@ class ElastAlerter():
 
         # Elapsed time is a floating point number of seconds.
         timeout = timeout.total_seconds()
+
+        # Don't poll unless we're asked to.
+        if timeout <= 0.0:
+            return
 
         # Periodically poll ElasticSearch.  Keep going until ElasticSearch is
         # responsive *and* the writeback index exists.
