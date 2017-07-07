@@ -14,6 +14,7 @@ from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
 
+import arrow
 import boto3
 import requests
 import stomp
@@ -462,6 +463,7 @@ class JiraAlerter(Alerter):
     known_field_list = [
         'jira_account_file',
         'jira_assignee',
+        'jira_bump_after_inactivity',
         'jira_bump_in_statuses',
         'jira_bump_not_in_statuses',
         'jira_bump_tickets',
@@ -513,6 +515,7 @@ class JiraAlerter(Alerter):
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
+        self.bump_after_inactivity = self.rule.get('jira_bump_after_inactivity', self.max_age)
         self.watchers = self.rule.get('jira_watchers')
 
         if self.bump_in_statuses and self.bump_not_in_statuses:
@@ -687,6 +690,12 @@ class JiraAlerter(Alerter):
         if self.bump_tickets:
             ticket = self.find_existing_ticket(matches)
             if ticket:
+                inactivity_datetime = arrow.now().replace(days=-self.bump_after_inactivity)
+                if arrow.get(ticket.fields.updated) >= inactivity_datetime:
+                    if self.pipeline is not None:
+                        self.pipeline['jira_ticket'] = None
+                        self.pipeline['jira_server'] = self.server
+                    return None
                 elastalert_logger.info('Commenting on existing ticket %s' % (ticket.key))
                 for match in matches:
                     try:
