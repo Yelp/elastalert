@@ -35,6 +35,7 @@ from util import elastalert_logger
 from util import elasticsearch_client
 from util import format_index
 from util import lookup_es_key
+from util import parse_deadline
 from util import pretty_ts
 from util import replace_dots_in_field_names
 from util import seconds
@@ -1543,10 +1544,7 @@ class ElastAlerter():
             silence_cache_key = self.rules[0]['name'] + "._silence"
 
         try:
-            unit, num = self.args.silence.split('=')
-            silence_time = datetime.timedelta(**{unit: int(num)})
-            # Double conversion to add tzinfo
-            silence_ts = ts_to_dt(dt_to_ts(silence_time + datetime.datetime.utcnow()))
+            silence_ts = parse_deadline(self.args.silence)
         except (ValueError, TypeError):
             logging.error('%s is not a valid time period' % (self.args.silence))
             exit(1)
