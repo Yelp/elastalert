@@ -7,6 +7,7 @@ import os
 import signal
 import sys
 import time
+import timeit
 import traceback
 from email.mime.text import MIMEText
 from smtplib import SMTP
@@ -22,6 +23,7 @@ from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
 from croniter import croniter
+from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.exceptions import TransportError
 from enhancements import DropMatchException
@@ -36,6 +38,7 @@ from util import elasticsearch_client
 from util import format_index
 from util import lookup_es_key
 from util import parse_deadline
+from util import parse_duration
 from util import pretty_ts
 from util import replace_dots_in_field_names
 from util import seconds
@@ -76,6 +79,11 @@ class ElastAlerter():
                                                           'Use "NOW" to start from current time. (Default: present)')
         parser.add_argument('--end', dest='end', help='YYYY-MM-DDTHH:MM:SS Query to this timestamp. (Default: present)')
         parser.add_argument('--verbose', action='store_true', dest='verbose', help='Increase verbosity without suppressing alerts')
+        parser.add_argument('--patience', action='store', dest='timeout',
+                            type=parse_duration,
+                            default=datetime.timedelta(seconds=30),
+                            help='Maximum time to wait for ElasticSearch to become responsive.  Usage: '
+                            '--patience <units>=<number>. e.g. --patience minutes=5')
         parser.add_argument(
             '--pin_rules',
             action='store_true',
@@ -980,6 +988,7 @@ class ElastAlerter():
                 except (TypeError, ValueError):
                     self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
                     exit(1)
+        self.wait_until_responsive(timeout=self.args.timeout)
         self.running = True
         elastalert_logger.info("Starting up")
         while self.running:
@@ -1000,6 +1009,25 @@ class ElastAlerter():
             # Wait before querying again
             sleep_duration = total_seconds(next_run - datetime.datetime.utcnow())
             self.sleep_for(sleep_duration)
+
+    def wait_until_responsive(self, timeout=None, clock=timeit.default_timer):
+        """Wait until ElasticSearch becomes responsive (or too much time passes)."""
+
+        # Elapsed time is a floating point number of seconds.
+        timeout = timeout.total_seconds()
+
+        # Periodically poll ElasticSearch.  Keep going until ElasticSearch is
+        # responsive *and* the writeback index exists.
+        ref = clock()
+        while (timeout is None) or ((clock() - ref) < timeout):
+            try:
+                if self.writeback_es.indices.exists(self.writeback_index):
+                    return
+            except ConnectionError:
+                pass
+            time.sleep(1.0)
+
+        raise Exception('Timed out while waiting for ElasticSearch.')
 
     def run_all_rules(self):
         """ Run each rule one time """

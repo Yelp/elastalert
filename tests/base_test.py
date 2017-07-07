@@ -8,6 +8,7 @@ import threading
 import elasticsearch
 import mock
 import pytest
+from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
 
 from elastalert.enhancements import BaseEnhancement
@@ -989,6 +990,50 @@ def test_exponential_realert(ea):
         ea.silence_cache[ea.rules[0]['name']] = (args[1], args[2])
         next_alert, exponent = ea.next_alert_time(ea.rules[0], ea.rules[0]['name'], args[0])
         assert exponent == next_res.next()
+
+
+def test_wait_until_responsive(ea):
+    """Unblock as soon as ElasticSearch becomes responsive."""
+
+    # Takes a while before becoming responsive.
+    ea.writeback_es.indices.exists.side_effect = [
+        ConnectionError(),  # ES is not yet responsive.
+        False,              # index does not yet exist.
+        True,
+    ]
+
+    clock = mock.MagicMock()
+    clock.side_effect = [0.0, 1.0, 2.0, 3.0, 4.0]
+    timeout = datetime.timedelta(seconds=3.5)
+    with mock.patch('time.sleep') as sleep:
+        ea.wait_until_responsive(timeout=timeout, clock=clock)
+
+    # Sleep as little as we can.
+    sleep.mock_calls == [
+        mock.call(1.0),
+    ]
+
+
+def test_wait_until_responsive_timeout(ea):
+    """Bail out if ElasticSearch doesn't (quickly) become responsive."""
+
+    # Never becomes responsive :-)
+    ea.writeback_es.indices.exists.return_value = False
+
+    clock = mock.MagicMock()
+    clock.side_effect = [0.0, 1.0, 2.0, 3.0]
+    timeout = datetime.timedelta(seconds=2.5)
+    with mock.patch('time.sleep') as sleep:
+        with pytest.raises(Exception) as exc:
+            ea.wait_until_responsive(timeout=timeout, clock=clock)
+        assert str(exc.value) == 'Timed out while waiting for ElasticSearch.'
+
+    # Slept until we passed the deadline.
+    sleep.mock_calls == [
+        mock.call(1.0),
+        mock.call(1.0),
+        mock.call(1.0),
+    ]
 
 
 def test_stop(ea):
