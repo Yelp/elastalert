@@ -1014,19 +1014,51 @@ def test_wait_until_responsive(ea):
     ]
 
 
-def test_wait_until_responsive_timeout(ea):
+def test_wait_until_responsive_timeout_es_not_available(ea, capsys):
     """Bail out if ElasticSearch doesn't (quickly) become responsive."""
 
     # Never becomes responsive :-)
+    ea.writeback_es.ping.return_value = False
     ea.writeback_es.indices.exists.return_value = False
 
     clock = mock.MagicMock()
     clock.side_effect = [0.0, 1.0, 2.0, 3.0]
     timeout = datetime.timedelta(seconds=2.5)
     with mock.patch('time.sleep') as sleep:
-        with pytest.raises(Exception) as exc:
+        with pytest.raises(SystemExit) as exc:
             ea.wait_until_responsive(timeout=timeout, clock=clock)
-        assert str(exc.value) == 'Timed out while waiting for ElasticSearch.'
+        assert exc.value.code == 1
+
+    # Ensure we get useful diagnostics.
+    output, errors = capsys.readouterr()
+    assert 'Could not reach ElasticSearch at "es:14900".' in errors
+
+    # Slept until we passed the deadline.
+    sleep.mock_calls == [
+        mock.call(1.0),
+        mock.call(1.0),
+        mock.call(1.0),
+    ]
+
+
+def test_wait_until_responsive_timeout_index_does_not_exist(ea, capsys):
+    """Bail out if ElasticSearch doesn't (quickly) become responsive."""
+
+    # Never becomes responsive :-)
+    ea.writeback_es.ping.return_value = True
+    ea.writeback_es.indices.exists.return_value = False
+
+    clock = mock.MagicMock()
+    clock.side_effect = [0.0, 1.0, 2.0, 3.0]
+    timeout = datetime.timedelta(seconds=2.5)
+    with mock.patch('time.sleep') as sleep:
+        with pytest.raises(SystemExit) as exc:
+            ea.wait_until_responsive(timeout=timeout, clock=clock)
+        assert exc.value.code == 1
+
+    # Ensure we get useful diagnostics.
+    output, errors = capsys.readouterr()
+    assert 'Writeback index "wb" does not exist, did you run `elastalert-create-index`?' in errors
 
     # Slept until we passed the deadline.
     sleep.mock_calls == [

@@ -1010,7 +1010,7 @@ class ElastAlerter():
             sleep_duration = total_seconds(next_run - datetime.datetime.utcnow())
             self.sleep_for(sleep_duration)
 
-    def wait_until_responsive(self, timeout=None, clock=timeit.default_timer):
+    def wait_until_responsive(self, timeout, clock=timeit.default_timer):
         """Wait until ElasticSearch becomes responsive (or too much time passes)."""
 
         # Elapsed time is a floating point number of seconds.
@@ -1019,7 +1019,7 @@ class ElastAlerter():
         # Periodically poll ElasticSearch.  Keep going until ElasticSearch is
         # responsive *and* the writeback index exists.
         ref = clock()
-        while (timeout is None) or ((clock() - ref) < timeout):
+        while (clock() - ref) < timeout:
             try:
                 if self.writeback_es.indices.exists(self.writeback_index):
                     return
@@ -1027,7 +1027,18 @@ class ElastAlerter():
                 pass
             time.sleep(1.0)
 
-        raise Exception('Timed out while waiting for ElasticSearch.')
+        if self.writeback_es.ping():
+            logging.error(
+                'Writeback index "%s" does not exist, did you run `elastalert-create-index`?',
+                self.writeback_index,
+            )
+        else:
+            logging.error(
+                'Could not reach ElasticSearch at "%s:%d".',
+                self.conf['es_host'],
+                self.conf['es_port'],
+            )
+        exit(1)
 
     def run_all_rules(self):
         """ Run each rule one time """
