@@ -14,6 +14,11 @@ from elastalert.util import ts_to_dt
 mock_info = {'status': 200, 'name': 'foo', 'version': {'number': '2.0'}}
 
 
+class mock_es_indices_client(object):
+    def __init__(self):
+        self.exists = mock.Mock(return_value=True)
+
+
 class mock_es_client(object):
     def __init__(self, host='es', port=14900):
         self.host = host
@@ -24,6 +29,7 @@ class mock_es_client(object):
         self.index = mock.Mock()
         self.delete = mock.Mock()
         self.info = mock.Mock(return_value=mock_info)
+        self.indices = mock_es_indices_client()
 
 
 class mock_ruletype(object):
