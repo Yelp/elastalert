@@ -1375,11 +1375,12 @@ class AdvancedPostAlerter(Alerter):
         self.post_url = post_url
         self.post_proxy = self.rule.get('advanced_post_proxy')
         self.post_payload = self.rule.get('advanced_post_payload')
+        self.post_static_payload = self.rule.get('advanced_post_static_payload')
 
     def alert(self, matches):
         """ Each match will trigger a POST to the specified endpoint(s). """
         for match in matches:
-            payload = {}
+            payload = self.post_static_payload if self.post_static_payload else {}
             for es_item in match.items():
                 for post_key, es_key in self.post_payload.items():
                     if es_key == es_item[0]:

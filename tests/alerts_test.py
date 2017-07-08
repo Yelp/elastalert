@@ -1026,8 +1026,8 @@ def test_advanced_alerter():
         'name': 'Test Advanced Alerter Rule',
         'type': 'any',
         'advanced_post_url': 'http://test.webhook.url',
-        'alert_subject': 'Test Advanced Alerter',
         'advanced_post_payload': {'posted_name': 'somefield'},
+        'advanced_post_static_payload': {'name': 'AdvancedAlerter'},
         'alert': []
     }
     load_modules(rule)
@@ -1039,7 +1039,8 @@ def test_advanced_alerter():
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
     expected_data = {
-        'posted_name': 'foobarbaz'
+        'posted_name': 'foobarbaz',
+        'name': 'AdvancedAlerter'
     }
     mock_post_request.assert_called_once_with(
         rule['advanced_post_url'],
