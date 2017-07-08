@@ -743,8 +743,9 @@ class JiraAlerter(Alerter):
 
     def create_default_title(self, matches, for_search=False):
         # If there is a query_key, use that in the title
-        if 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
-            title = 'ElastAlert: %s matched %s' % (matches[0][self.rule['query_key']], self.rule['name'])
+
+        if 'query_key' in self.rule and lookup_es_key(matches[0], self.rule['query_key']):
+            title = 'ElastAlert: %s matched %s' % (lookup_es_key(matches[0], self.rule['query_key']), self.rule['name'])
         else:
             title = 'ElastAlert: %s' % (self.rule['name'])
 
@@ -1044,7 +1045,7 @@ class PagerDutyAlerter(Alerter):
         headers = {'content-type': 'application/json'}
         payload = {
             'service_key': self.pagerduty_service_key,
-            'description': self.rule['name'],
+            'description': self.create_title(matches),
             'event_type': 'trigger',
             'incident_key': self.get_incident_key(matches),
             'client': self.pagerduty_client_name,
@@ -1116,17 +1117,17 @@ class ExotelAlerter(Alerter):
 
 
 class TwilioAlerter(Alerter):
-    required_options = frozenset(['twilio_accout_sid', 'twilio_auth_token', 'twilio_to_number', 'twilio_from_number'])
+    required_options = frozenset(['twilio_account_sid', 'twilio_auth_token', 'twilio_to_number', 'twilio_from_number'])
 
     def __init__(self, rule):
         super(TwilioAlerter, self).__init__(rule)
-        self.twilio_accout_sid = self.rule['twilio_accout_sid']
+        self.twilio_account_sid = self.rule['twilio_account_sid']
         self.twilio_auth_token = self.rule['twilio_auth_token']
         self.twilio_to_number = self.rule['twilio_to_number']
         self.twilio_from_number = self.rule['twilio_from_number']
 
     def alert(self, matches):
-        client = TwilioClient(self.twilio_accout_sid, self.twilio_auth_token)
+        client = TwilioClient(self.twilio_account_sid, self.twilio_auth_token)
 
         try:
             client.messages.create(body=self.rule['name'],

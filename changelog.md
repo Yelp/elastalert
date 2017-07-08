@@ -1,3 +1,22 @@
+# Change Log
+
+## v0.1.17
+
+### Added
+- Added a --patience flag to allow Elastalert to wait for Elasticsearch to become available
+- Allow custom PagerDuty alert titles via alert_subject
+
+## v0.1.16
+
+### Fixed
+- Fixed a bug where JIRA titles might not use query_key values
+- Fixed a bug where flatline alerts don't respect query_key for realert
+- Fixed a typo "twilio_accout_sid"
+
+### Added
+- Added support for env variables in kibana4 dashboard links
+- Added ca_certs option for custom CA support
+
 ## v0.1.15
 
 ### Fixed
@@ -32,7 +51,6 @@
 ### Fixed
 - Fixed a bug causing filters to be ignored when using Elasticsearch 5
 
-# Change Log
 
 ## v0.1.11 - 2017-04-19
 

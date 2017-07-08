@@ -1104,6 +1104,74 @@ def test_pagerduty_alerter_custom_incident_key_with_args():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
+def test_pagerduty_alerter_custom_alert_subject():
+    rule = {
+        'name': 'Test PD Rule',
+        'type': 'any',
+        'alert_subject': 'Hungry kittens',
+        'pagerduty_service_key': 'magicalbadgers',
+        'pagerduty_client_name': 'ponies inc.',
+        'pagerduty_incident_key': 'custom {0}',
+        'pagerduty_incident_key_args': ['somefield'],
+        'alert': []
+    }
+    load_modules(rule)
+    alert = PagerDutyAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'client': 'ponies inc.',
+        'description': 'Hungry kittens',
+        'details': {
+            'information': 'Test PD Rule\n\n@timestamp: 2017-01-01T00:00:00\nsomefield: foobarbaz\n'
+        },
+        'event_type': 'trigger',
+        'incident_key': 'custom foobarbaz',
+        'service_key': 'magicalbadgers',
+    }
+    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_pagerduty_alerter_custom_alert_subject_with_args():
+    rule = {
+        'name': 'Test PD Rule',
+        'type': 'any',
+        'alert_subject': '{0} kittens',
+        'alert_subject_args': ['somefield'],
+        'pagerduty_service_key': 'magicalbadgers',
+        'pagerduty_client_name': 'ponies inc.',
+        'pagerduty_incident_key': 'custom {0}',
+        'pagerduty_incident_key_args': ['someotherfield'],
+        'alert': []
+    }
+    load_modules(rule)
+    alert = PagerDutyAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'Stinky',
+        'someotherfield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'client': 'ponies inc.',
+        'description': 'Stinky kittens',
+        'details': {
+            'information': 'Test PD Rule\n\n@timestamp: 2017-01-01T00:00:00\nsomefield: Stinky\nsomeotherfield: foobarbaz\n'
+        },
+        'event_type': 'trigger',
+        'incident_key': 'custom foobarbaz',
+        'service_key': 'magicalbadgers',
+    }
+    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
 def test_alert_text_kw(ea):
     rule = ea.rules[0].copy()
     rule['alert_text'] = '{field} at {time}'

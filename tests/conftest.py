@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import datetime
 
+import logging
 import mock
+import os
 import pytest
 
 import elastalert.elastalert
@@ -11,6 +13,28 @@ from elastalert.util import ts_to_dt
 
 
 mock_info = {'status': 200, 'name': 'foo', 'version': {'number': '2.0'}}
+
+
+@pytest.fixture(scope='function', autouse=True)
+def reset_loggers():
+    """Prevent logging handlers from capturing temporary file handles.
+
+    For example, a test that uses the `capsys` fixture and calls
+    `logging.exception()` will initialize logging with a default handler that
+    captures `sys.stderr`.  When the test ends, the file handles will be closed
+    and `sys.stderr` will be returned to its original handle, but the logging
+    will have a dangling reference to the temporary handle used in the `capsys`
+    fixture.
+
+    """
+    logger = logging.getLogger()
+    for handler in logger.handlers:
+        logger.removeHandler(handler)
+
+
+class mock_es_indices_client(object):
+    def __init__(self):
+        self.exists = mock.Mock(return_value=True)
 
 
 class mock_es_client(object):
@@ -23,6 +47,8 @@ class mock_es_client(object):
         self.index = mock.Mock()
         self.delete = mock.Mock()
         self.info = mock.Mock(return_value=mock_info)
+        self.ping = mock.Mock(return_value=True)
+        self.indices = mock_es_indices_client()
 
 
 class mock_ruletype(object):
@@ -86,3 +112,13 @@ def ea():
     ea.writeback_es.index.return_value = {'_id': 'ABCD'}
     ea.current_es = mock_es_client('', '')
     return ea
+
+
+@pytest.fixture(scope='function')
+def environ():
+    """py.test fixture to get a fresh mutable environment."""
+    old_env = os.environ
+    new_env = dict(old_env.items())
+    os.environ = new_env
+    yield os.environ
+    os.environ = old_env
