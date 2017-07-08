@@ -229,15 +229,6 @@ properties:
   slack_parse_override: {enum: [none, full]}
   slack_text_string: {type: string}
   
-  ### Dingtalk
-  dingtalk_webhook_url: *arrayOfstring
-  dingtalk_username: {type: string}
-  dingtalk_msgtype: {type: string}
-  dingtalk_isAtAll: {type: string}
-  dingtalk_title: {type: string}
-  dingtalk_picurl: {type: string}
-  dingtalk_messageurl: {type: string}
-
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
