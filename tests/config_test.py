@@ -6,6 +6,7 @@ import copy
 import datetime
 
 import mock
+import os.path
 import pytest
 
 import elastalert.alerts
@@ -274,6 +275,8 @@ def test_get_file_paths_recursive():
         mock_walk.return_value = walk_paths
         paths = get_file_paths(conf)
 
+    paths = [p.replace(os.path.sep, '/') for p in paths]
+
     assert 'root/rule.yaml' in paths
     assert 'root/folder_a/a.yaml' in paths
     assert 'root/folder_a/ab.yaml' in paths
@@ -291,6 +294,8 @@ def test_get_file_paths():
             mock_path.return_value = True
             mock_list.return_value = files
             paths = get_file_paths(conf)
+
+    paths = [p.replace(os.path.sep, '/') for p in paths]
 
     assert 'root/a.yaml' in paths
     assert 'root/b.yaml' in paths

@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import
+
+import os.path
 
 import six
 from six.moves.urllib.parse import quote
@@ -280,6 +283,7 @@ def filters_from_dashboard(db):
 
 
 def kibana4_dashboard_link(dashboard, starttime, endtime):
+    dashboard = os.path.expandvars(dashboard)
     time_settings = kibana4_time_temp % (starttime, endtime)
     time_settings = quote(time_settings)
     return "%s?_g=%s" % (dashboard, time_settings)
