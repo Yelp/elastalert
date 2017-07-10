@@ -39,9 +39,10 @@ from .util import pretty_ts
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-        else:
-            return json.JSONEncoder.default(self, obj.decode('UTF-8'))
+            obj = obj.isoformat()
+        if isinstance(obj, six.binary_type):
+            obj = obj.decode('utf-8')
+        return obj
 
 
 class BasicMatchString(object):
