@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
-import urllib
 
 import six
+from six.moves.urllib.parse import quote
 
 from .util import EAException
 
@@ -281,5 +281,5 @@ def filters_from_dashboard(db):
 
 def kibana4_dashboard_link(dashboard, starttime, endtime):
     time_settings = kibana4_time_temp % (starttime, endtime)
-    time_settings = urllib.quote(time_settings)
+    time_settings = quote(time_settings)
     return "%s?_g=%s" % (dashboard, time_settings)

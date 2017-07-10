@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-import contextlib
 import copy
 import datetime
 import json
@@ -208,17 +207,17 @@ def test_run_rule_calls_garbage_collect(ea):
     end_time = '2014-09-26T12:00:00Z'
     ea.buffer_time = datetime.timedelta(hours=1)
     ea.run_every = datetime.timedelta(hours=1)
-    with contextlib.nested(mock.patch.object(ea.rules[0]['type'], 'garbage_collect'),
-                           mock.patch.object(ea, 'run_query')) as (mock_gc, mock_get_hits):
+    with mock.patch.object(ea.rules[0]['type'], 'garbage_collect') as mock_gc, \
+            mock.patch.object(ea, 'run_query'):
         ea.run_rule(ea.rules[0], ts_to_dt(end_time), ts_to_dt(start_time))
 
-    # Running ElastAlert every hour for 12 hours, we should see self.garbage_collect called 12 times.
-    assert mock_gc.call_count == 12
+        # Running ElastAlert every hour for 12 hours, we should see self.garbage_collect called 12 times.
+        assert mock_gc.call_count == 12
 
-    # The calls should be spaced 1 hour apart
-    expected_calls = [ts_to_dt(start_time) + datetime.timedelta(hours=i) for i in range(1, 13)]
-    for e in expected_calls:
-        mock_gc.assert_any_call(e)
+        # The calls should be spaced 1 hour apart
+        expected_calls = [ts_to_dt(start_time) + datetime.timedelta(hours=i) for i in range(1, 13)]
+        for e in expected_calls:
+            mock_gc.assert_any_call(e)
 
 
 def run_rule_query_exception(ea, mock_es):
@@ -281,8 +280,8 @@ def test_match_with_enhancements_first(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         with mock.patch.object(ea, 'add_aggregated_alert') as add_alert:
             ea.run_rule(ea.rules[0], END, START)
-    mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
-    assert add_alert.call_count == 1
+            mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
+            assert add_alert.call_count == 1
 
     # Assert that dropmatchexception behaves properly
     mod.process = mock.MagicMock(side_effect=DropMatchException)

@@ -41,7 +41,7 @@ class DateTimeEncoder(json.JSONEncoder):
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
         else:
-            return json.JSONEncoder.default(self, obj)
+            return json.JSONEncoder.default(self, obj.decode('UTF-8'))
 
 
 class BasicMatchString(object):
@@ -878,7 +878,7 @@ class HipChatAlerter(Alerter):
 
         # Use appropriate line ending for text/html
         if self.hipchat_message_format == 'html':
-            body = body.replace('\n', '<br />')
+            body = body.replace(b'\n', b'<br />')
 
         # Post to HipChat
         headers = {'content-type': 'application/json'}
@@ -979,18 +979,18 @@ class SlackAlerter(Alerter):
         self.slack_parse_override = self.rule.get('slack_parse_override', 'none')
         self.slack_text_string = self.rule.get('slack_text_string', '')
 
-    def format_body(self, body):
+    def format_body(self, body_str):
         # https://api.slack.com/docs/formatting
-        body = body.encode('UTF-8')
-        body = body.replace('&', '&amp;')
-        body = body.replace('<', '&lt;')
-        body = body.replace('>', '&gt;')
+        body = body_str.encode('UTF-8')
+        body = body.replace(b'&', b'&amp;')
+        body = body.replace(b'<', b'&lt;')
+        body = body.replace(b'>', b'&gt;')
         return body
 
     def alert(self, matches):
-        body = self.create_alert_body(matches)
+        body_str = self.create_alert_body(matches)
 
-        body = self.format_body(body)
+        body = self.format_body(body_str)
         # post to slack
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
