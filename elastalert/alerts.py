@@ -717,11 +717,11 @@ class JiraAlerter(Alerter):
                     except Exception as ex:
                         # Re-raise the exception, preserve the stack-trace, and give some
                         # context as to which watcher failed to be added
-                        six.reraise(Exception(
+                        six.reraise(EAException, Exception(
                             "Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(
                                 watcher,
                                 ex
-                            )), None, sys.exc_info()[2])
+                            )), sys.exc_info()[2])
 
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket using jira_args (%s): %s" % (self.jira_args, e))
@@ -1114,7 +1114,7 @@ class ExotelAlerter(Alerter):
             if response != 200:
                 raise EAException("Error posting to Exotel, response code is %s" % response)
         except:
-            six.reraise(EAException("Error posting to Exotel"), None, sys.exc_info()[2])
+            six.reraise(EAException, EAException("Error posting to Exotel"), sys.exc_info()[2])
         elastalert_logger.info("Trigger sent to Exotel")
 
     def get_info(self):

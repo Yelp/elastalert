@@ -97,7 +97,7 @@ def get_module(module_name):
         base_module = __import__(module_path, globals(), locals(), [module_class])
         module = getattr(base_module, module_class)
     except (ImportError, AttributeError, ValueError) as e:
-        six.reraise(EAException("Could not import module %s: %s" % (module_name, e)), None, sys.exc_info()[2])
+        six.reraise(EAException, EAException("Could not import module %s: %s" % (module_name, e)), sys.exc_info()[2])
     return module
 
 
@@ -334,7 +334,7 @@ def load_modules(rule, args=None):
     try:
         rule['type'] = rule['type'](rule, args)
     except (KeyError, EAException) as e:
-        six.reraise(EAException('Error initializing rule %s: %s' % (rule['name'], e)), None, sys.exc_info()[2])
+        six.reraise(EAException, EAException('Error initializing rule %s: %s' % (rule['name'], e)), sys.exc_info()[2])
     # Instantiate alert
     rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
 
@@ -397,7 +397,7 @@ def load_alerts(rule, alert_field):
         alert_field = [create_alert(a, b) for a, b in alert_field]
 
     except (KeyError, EAException) as e:
-        six.reraise(EAException('Error initiating alert %s: %s' % (rule['alert'], e)), None, sys.exc_info()[2])
+        six.reraise(EAException, EAException('Error initiating alert %s: %s' % (rule['alert'], e)), sys.exc_info()[2])
 
     return alert_field
 
