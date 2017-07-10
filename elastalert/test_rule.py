@@ -20,6 +20,7 @@ import yaml
 import elastalert.config
 from elastalert.config import load_modules
 from elastalert.config import load_options
+from elastalert.config import load_rule_yaml
 from elastalert.elastalert import ElastAlerter
 from elastalert.util import elasticsearch_client
 from elastalert.util import lookup_es_key
@@ -57,6 +58,8 @@ class MockElastAlerter(object):
         except Exception as e:
             print("Error connecting to ElasticSearch:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
+            if args.stop_error:
+                exit(1)
             return None
 
         if is_five:
@@ -74,6 +77,8 @@ class MockElastAlerter(object):
         except Exception as e:
             print("Error running your filter:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
+            if args.stop_error:
+                exit(1)
             return None
         num_hits = len(res['hits']['hits'])
         if not num_hits:
@@ -83,12 +88,21 @@ class MockElastAlerter(object):
         doc_type = res['hits']['hits'][0]['_type']
 
         # Get a count of all docs
-        count_query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts, sort=False, five=is_five)
+        count_query = ElastAlerter.get_query(
+            conf['filter'],
+            starttime=start_time,
+            endtime=end_time,
+            timestamp_field=ts,
+            sort=False,
+            five=is_five
+        )
         try:
             res = es_client.count(index, doc_type=doc_type, body=count_query, ignore_unavailable=True)
         except Exception as e:
             print("Error querying Elasticsearch:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
+            if args.stop_error:
+                exit(1)
             return None
 
         num_hits = res['count']
@@ -123,6 +137,8 @@ class MockElastAlerter(object):
             except Exception as e:
                 print("Error running your filter:", file=sys.stderr)
                 print(repr(e)[:2048], file=sys.stderr)
+                if args.stop_error:
+                    exit(1)
                 return None
             num_hits = len(res['hits']['hits'])
             print("Downloaded %s documents to save" % (num_hits))
@@ -203,6 +219,8 @@ class MockElastAlerter(object):
                 endtime = ts_to_dt(endtime) + datetime.timedelta(seconds=1)
             except KeyError as e:
                 print("All documents must have a timestamp and _id: %s" % (e), file=sys.stderr)
+                if args.stop_error:
+                    exit(1)
                 return None
 
             # Create mock _id for documents if it's missing
@@ -221,9 +239,9 @@ class MockElastAlerter(object):
             endtime = ts_now()
             starttime = endtime - datetime.timedelta(days=args.days)
 
-        # Set run_every to cover the entire time range unless use_count_query or use_terms_query is set
+        # Set run_every to cover the entire time range unless count query, terms query or agg query used
         # This is to prevent query segmenting which unnecessarily slows down tests
-        if not rule.get('use_terms_query') and not rule.get('use_count_query'):
+        if not rule.get('use_terms_query') and not rule.get('use_count_query') and not rule.get('aggregation_query_element'):
             conf['run_every'] = endtime - starttime
 
         # Instantiate ElastAlert to use mock config and special rule
@@ -248,8 +266,13 @@ class MockElastAlerter(object):
 
             if mock_writeback.call_count:
                 print("\nWould have written the following documents to writeback index (default is elastalert_status):\n")
+                errors = False
                 for call in mock_writeback.call_args_list:
                     print("%s - %s\n" % (call[0][0], call[0][1]))
+                    if call[0][0] == 'elastalert_error':
+                        errors = True
+                if errors and args.stop_error:
+                    exit(1)
 
     def load_conf(self, rules, args):
         """ Loads a default conf dictionary (from global config file, if provided, or hard-coded mocked data),
@@ -290,26 +313,44 @@ class MockElastAlerter(object):
             if key not in conf:
                 conf[key] = conf_default[key]
         elastalert.config.base_config = copy.deepcopy(conf)
-        load_options(rules, conf)
+        load_options(rules, conf, args.file)
         print("Successfully loaded %s\n" % (rules['name']))
 
         return conf
 
     def run_rule_test(self):
-        """ Uses args to run the various components of MockElastAlerter such as loading the file, saving data, loading data, and running. """
+        """
+        Uses args to run the various components of MockElastAlerter such as loading the file, saving data, loading data, and running.
+        """
         parser = argparse.ArgumentParser(description='Validate a rule configuration')
         parser.add_argument('file', metavar='rule', type=str, help='rule configuration filename')
         parser.add_argument('--schema-only', action='store_true', help='Show only schema errors; do not run query')
         parser.add_argument('--days', type=int, default=1, action='store', help='Query the previous N days with this rule')
-        parser.add_argument('--data', type=str, metavar='FILENAME', action='store', dest='json', help='A JSON file containing data to run the rule against')
+        parser.add_argument('--stop-error', action='store_true', help='Stop the entire test right after the first error')
+        parser.add_argument(
+            '--data',
+            type=str,
+            metavar='FILENAME',
+            action='store',
+            dest='json',
+            help='A JSON file containing data to run the rule against')
         parser.add_argument('--alert', action='store_true', help='Use actual alerts instead of debug output')
-        parser.add_argument('--save-json', type=str, metavar='FILENAME', action='store', dest='save', help='A file to which documents from the last day or --days will be saved')
-        parser.add_argument('--count-only', action='store_true', dest='count', help='Only display the number of documents matching the filter')
+        parser.add_argument(
+            '--save-json',
+            type=str,
+            metavar='FILENAME',
+            action='store',
+            dest='save',
+            help='A file to which documents from the last day or --days will be saved')
+        parser.add_argument(
+            '--count-only',
+            action='store_true',
+            dest='count',
+            help='Only display the number of documents matching the filter')
         parser.add_argument('--config', action='store', dest='config', help='Global config file.')
         args = parser.parse_args()
 
-        with open(args.file) as fh:
-            rule_yaml = yaml.load(fh)
+        rule_yaml = load_rule_yaml(args.file)
 
         conf = self.load_conf(rule_yaml, args)
 
@@ -331,6 +372,7 @@ class MockElastAlerter(object):
 def main():
     test_instance = MockElastAlerter()
     test_instance.run_rule_test()
+
 
 if __name__ == '__main__':
     main()

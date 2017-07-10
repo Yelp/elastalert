@@ -1,7 +1,7 @@
 .. _writingalerts:
 
 Adding a New Alerter
-=====================
+====================
 
 Alerters are subclasses of ``Alerter``, found in ``elastalert/alerts.py``. They are given matches
 and perform some action based on that. Your alerter needs to implement two member functions, and will look
@@ -20,7 +20,7 @@ You can import alert types by specifying the type as ``module.file.AlertName``, 
 and file is the name of the python file containing a ``Alerter`` subclass named ``AlertName``.
 
 Basics
--------
+------
 
 The alerter class will be instantiated when ElastAlert starts, and be periodically passed
 matches through the ``alert`` method. ElastAlert also writes back info about the alert into

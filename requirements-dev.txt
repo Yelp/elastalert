@@ -1,8 +1,8 @@
--r requirements.txt
 coverage
-flake8==2.6.2
+flake8
 pre-commit
 pylint<1.4
 pytest
 setuptools
+sphinx_rtd_theme
 tox<2.0

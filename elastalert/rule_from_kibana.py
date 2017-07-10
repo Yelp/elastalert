@@ -34,5 +34,6 @@ def main():
     print("filter:")
     print(yaml.safe_dump(config_filters))
 
+
 if __name__ == '__main__':
     main()

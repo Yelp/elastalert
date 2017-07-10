@@ -6,8 +6,6 @@ import logging
 import subprocess
 import sys
 import warnings
-import stomp
-
 from email.mime.text import MIMEText
 from email.utils import formatdate
 from smtplib import SMTP
@@ -16,16 +14,17 @@ from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
 
-import boto.sns as sns
+import boto3
 import requests
+import stomp
+from exotel import Exotel
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from texttable import Texttable
-from exotel import Exotel
-from twilio import TwilioRestException
-from twilio.rest import TwilioRestClient
+from twilio.base.exceptions import TwilioRestException
+from twilio.rest import Client as TwilioClient
 from util import EAException
 from util import elastalert_logger
 from util import lookup_es_key
@@ -110,6 +109,7 @@ class BasicMatchString(object):
             if key.startswith('top_events_'):
                 continue
             value_str = unicode(value)
+            value_str.replace('\\n', '\n')
             if type(value) in [list, dict]:
                 try:
                     value_str = self._pretty_print_as_json(value)
@@ -251,7 +251,9 @@ class Alerter(object):
                 summary_table_fields = [summary_table_fields]
             # Include a count aggregation so that we can see at a glance how many of each aggregation_key were encountered
             summary_table_fields_with_count = summary_table_fields + ['count']
-            text += "Aggregation resulted in the following data for summary_table_fields ==> {0}:\n\n".format(summary_table_fields_with_count)
+            text += "Aggregation resulted in the following data for summary_table_fields ==> {0}:\n\n".format(
+                summary_table_fields_with_count
+            )
             text_table = Texttable()
             text_table.header(summary_table_fields_with_count)
             match_aggregation = {}
@@ -298,7 +300,9 @@ class StompAlerter(Alerter):
             if qk in match:
                 elastalert_logger.info(
                     'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
-                alerts.append('1)Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
+                alerts.append(
+                    '1)Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field']))
+                )
                 fullmessage['match'] = match[qk]
             else:
                 elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
@@ -372,6 +376,9 @@ class EmailAlerter(Alerter):
         bcc = self.rule.get('bcc')
         if bcc and isinstance(bcc, basestring):
             self.rule['bcc'] = [self.rule['bcc']]
+        add_suffix = self.rule.get('email_add_domain')
+        if add_suffix and not add_suffix.startswith('@'):
+            self.rule['email_add_domain'] = '@' + add_suffix
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
@@ -382,9 +389,20 @@ class EmailAlerter(Alerter):
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
+        if 'email_from_field' in self.rule:
+            recipient = lookup_es_key(matches[0], self.rule['email_from_field'])
+            if isinstance(recipient, basestring):
+                if '@' in recipient:
+                    to_addr = [recipient]
+                elif 'email_add_domain' in self.rule:
+                    to_addr = [recipient + self.rule['email_add_domain']]
+            elif isinstance(recipient, list):
+                to_addr = recipient
+                if 'email_add_domain' in self.rule:
+                    to_addr = [name + self.rule['email_add_domain'] for name in to_addr]
         email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
-        email_msg['To'] = ', '.join(self.rule['email'])
+        email_msg['To'] = ', '.join(to_addr)
         email_msg['From'] = self.from_addr
         email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
         email_msg['Date'] = formatdate()
@@ -417,7 +435,7 @@ class EmailAlerter(Alerter):
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
         self.smtp.close()
 
-        elastalert_logger.info("Sent email to %s" % (self.rule['email']))
+        elastalert_logger.info("Sent email to %s" % (to_addr))
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -694,10 +712,14 @@ class JiraAlerter(Alerter):
                     except Exception as ex:
                         # Re-raise the exception, preserve the stack-trace, and give some
                         # context as to which watcher failed to be added
-                        raise Exception("Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(watcher, ex)), None, sys.exc_info()[2]
+                        raise Exception(
+                            "Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(
+                                watcher,
+                                ex
+                            )), None, sys.exc_info()[2]
 
         except JIRAError as e:
-            raise EAException("Error creating JIRA ticket: %s" % (e))
+            raise EAException("Error creating JIRA ticket using jira_args (%s): %s" % (self.jira_args, e))
         elastalert_logger.info("Opened Jira ticket: %s" % (self.issue))
 
         if self.pipeline is not None:
@@ -721,8 +743,9 @@ class JiraAlerter(Alerter):
 
     def create_default_title(self, matches, for_search=False):
         # If there is a query_key, use that in the title
-        if 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
-            title = 'ElastAlert: %s matched %s' % (matches[0][self.rule['query_key']], self.rule['name'])
+
+        if 'query_key' in self.rule and lookup_es_key(matches[0], self.rule['query_key']):
+            title = 'ElastAlert: %s matched %s' % (lookup_es_key(matches[0], self.rule['query_key']), self.rule['name'])
         else:
             title = 'ElastAlert: %s' % (self.rule['name'])
 
@@ -790,16 +813,17 @@ class CommandAlerter(Alerter):
 
 
 class SnsAlerter(Alerter):
-    """send alert using AWS SNS service"""
+    """ Send alert using AWS SNS service """
     required_options = frozenset(['sns_topic_arn'])
 
     def __init__(self, *args):
         super(SnsAlerter, self).__init__(*args)
         self.sns_topic_arn = self.rule.get('sns_topic_arn', '')
-        self.aws_access_key = self.rule.get('aws_access_key', '')
-        self.aws_secret_key = self.rule.get('aws_secret_key', '')
+        self.aws_access_key_id = self.rule.get('aws_access_key_id')
+        self.aws_secret_access_key = self.rule.get('aws_secret_access_key')
         self.aws_region = self.rule.get('aws_region', 'us-east-1')
-        self.boto_profile = self.rule.get('boto_profile', '')
+        self.profile = self.rule.get('boto_profile', None)  # Deprecated
+        self.profile = self.rule.get('aws_profile', None)
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -808,19 +832,18 @@ class SnsAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
-        # use aws_access_key and aws_secret_key if specified; then use boto profile if specified;
-        # otherwise use instance role
-        if not self.aws_access_key and not self.aws_secret_key:
-            if not self.boto_profile:
-                sns_client = sns.connect_to_region(self.aws_region)
-            else:
-                sns_client = sns.connect_to_region(self.aws_region,
-                                                   profile_name=self.boto_profile)
-        else:
-            sns_client = sns.connect_to_region(self.aws_region,
-                                               aws_access_key_id=self.aws_access_key,
-                                               aws_secret_access_key=self.aws_secret_key)
-        sns_client.publish(self.sns_topic_arn, body, subject=self.create_title(matches))
+        session = boto3.Session(
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            region_name=self.aws_region,
+            profile_name=self.profile
+        )
+        sns_client = session.client('sns')
+        sns_client.publish(
+            TopicArn=self.sns_topic_arn,
+            Message=body,
+            Subject=self.create_title(matches)
+        )
         elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
 
 
@@ -882,6 +905,58 @@ class HipChatAlerter(Alerter):
                 'hipchat_room_id': self.hipchat_room_id}
 
 
+class MsTeamsAlerter(Alerter):
+    """ Creates a Microsoft Teams Conversation Message for each alert """
+    required_options = frozenset(['ms_teams_webhook_url', 'ms_teams_alert_summary'])
+
+    def __init__(self, rule):
+        super(MsTeamsAlerter, self).__init__(rule)
+        self.ms_teams_webhook_url = self.rule['ms_teams_webhook_url']
+        if isinstance(self.ms_teams_webhook_url, basestring):
+            self.ms_teams_webhook_url = [self.ms_teams_webhook_url]
+        self.ms_teams_proxy = self.rule.get('ms_teams_proxy', None)
+        self.ms_teams_alert_summary = self.rule.get('ms_teams_alert_summary', 'ElastAlert Message')
+        self.ms_teams_alert_fixed_width = self.rule.get('ms_teams_alert_fixed_width', False)
+        self.ms_teams_theme_color = self.rule.get('ms_teams_theme_color', '')
+
+    def format_body(self, body):
+        body = body.encode('UTF-8')
+        if self.ms_teams_alert_fixed_width:
+            body = body.replace('`', "'")
+            body = "```{0}```".format('```\n\n```'.join(x for x in body.split('\n'))).replace('\n``````', '')
+        return body
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+
+        body = self.format_body(body)
+        # post to Teams
+        headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.ms_teams_proxy} if self.ms_teams_proxy else None
+        payload = {
+            '@type': 'MessageCard',
+            '@context': 'http://schema.org/extensions',
+            'summary': self.ms_teams_alert_summary,
+            'title': self.create_title(matches),
+            'text': body
+        }
+        if self.ms_teams_theme_color != '':
+            payload['themeColor'] = self.ms_teams_theme_color
+
+        for url in self.ms_teams_webhook_url:
+            try:
+                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error posting to ms teams: %s" % e)
+        elastalert_logger.info("Alert sent to MS Teams")
+
+    def get_info(self):
+        return {'type': 'ms_teams',
+                'ms_teams_webhook_url': self.ms_teams_webhook_url}
+
+
 class SlackAlerter(Alerter):
     """ Creates a Slack room message for each alert """
     required_options = frozenset(['slack_webhook_url'])
@@ -926,6 +1001,7 @@ class SlackAlerter(Alerter):
                     'color': self.slack_msg_color,
                     'title': self.create_title(matches),
                     'text': body,
+                    'mrkdwn_in': ['text', 'pretext'],
                     'fields': []
                 }
             ]
@@ -958,6 +1034,7 @@ class PagerDutyAlerter(Alerter):
         self.pagerduty_service_key = self.rule['pagerduty_service_key']
         self.pagerduty_client_name = self.rule['pagerduty_client_name']
         self.pagerduty_incident_key = self.rule.get('pagerduty_incident_key', '')
+        self.pagerduty_incident_key_args = self.rule.get('pagerduty_incident_key_args', None)
         self.pagerduty_proxy = self.rule.get('pagerduty_proxy', None)
         self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
@@ -968,9 +1045,9 @@ class PagerDutyAlerter(Alerter):
         headers = {'content-type': 'application/json'}
         payload = {
             'service_key': self.pagerduty_service_key,
-            'description': self.rule['name'],
+            'description': self.create_title(matches),
             'event_type': 'trigger',
-            'incident_key': self.pagerduty_incident_key,
+            'incident_key': self.get_incident_key(matches),
             'client': self.pagerduty_client_name,
             'details': {
                 "information": body.encode('UTF-8'),
@@ -980,11 +1057,32 @@ class PagerDutyAlerter(Alerter):
         # set https proxy, if it was provided
         proxies = {'https': self.pagerduty_proxy} if self.pagerduty_proxy else None
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder, ensure_ascii=False), headers=headers, proxies=proxies)
+            response = requests.post(
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder, ensure_ascii=False),
+                headers=headers,
+                proxies=proxies
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to pagerduty: %s" % e)
         elastalert_logger.info("Trigger sent to PagerDuty")
+
+    def get_incident_key(self, matches):
+        if self.pagerduty_incident_key_args:
+            incident_key_values = [lookup_es_key(matches[0], arg) for arg in self.pagerduty_incident_key_args]
+
+            # Populate values with rule level properties too
+            for i in range(len(incident_key_values)):
+                if incident_key_values[i] is None:
+                    key_value = self.rule.get(self.pagerduty_incident_key_args[i])
+                    if key_value:
+                        incident_key_values[i] = key_value
+
+            incident_key_values = ['<MISSING VALUE>' if val is None else val for val in incident_key_values]
+            return self.pagerduty_incident_key.format(*incident_key_values)
+        else:
+            return self.pagerduty_incident_key
 
     def get_info(self):
         return {'type': 'pagerduty',
@@ -1011,7 +1109,7 @@ class ExotelAlerter(Alerter):
             if response != 200:
                 raise EAException("Error posting to Exotel, response code is %s" % response)
         except:
-            raise EAException("Error posting to Exotel")
+            raise EAException("Error posting to Exotel"), None, sys.exc_info()[2]
         elastalert_logger.info("Trigger sent to Exotel")
 
     def get_info(self):
@@ -1019,22 +1117,22 @@ class ExotelAlerter(Alerter):
 
 
 class TwilioAlerter(Alerter):
-    required_options = frozenset(['twilio_accout_sid', 'twilio_auth_token', 'twilio_to_number', 'twilio_from_number'])
+    required_options = frozenset(['twilio_account_sid', 'twilio_auth_token', 'twilio_to_number', 'twilio_from_number'])
 
     def __init__(self, rule):
         super(TwilioAlerter, self).__init__(rule)
-        self.twilio_accout_sid = self.rule['twilio_accout_sid']
+        self.twilio_account_sid = self.rule['twilio_account_sid']
         self.twilio_auth_token = self.rule['twilio_auth_token']
         self.twilio_to_number = self.rule['twilio_to_number']
         self.twilio_from_number = self.rule['twilio_from_number']
 
     def alert(self, matches):
-        client = TwilioRestClient(self.twilio_accout_sid, self.twilio_auth_token)
+        client = TwilioClient(self.twilio_account_sid, self.twilio_auth_token)
 
         try:
             client.messages.create(body=self.rule['name'],
                                    to=self.twilio_to_number,
-                                   from_=self.twilio_to_number)
+                                   from_=self.twilio_from_number)
 
         except TwilioRestException as e:
             raise EAException("Error posting to twilio: %s" % e)
@@ -1168,10 +1266,21 @@ class GitterAlerter(Alerter):
 
 class ServiceNowAlerter(Alerter):
     """ Creates a ServiceNow alert """
-    required_options = set(['username', 'password', 'servicenow_rest_url', 'short_description', 'comments', 'assignment_group', 'category', 'subcategory', 'cmdb_ci', 'caller_id'])
+    required_options = set([
+        'username',
+        'password',
+        'servicenow_rest_url',
+        'short_description',
+        'comments',
+        'assignment_group',
+        'category',
+        'subcategory',
+        'cmdb_ci',
+        'caller_id'
+    ])
 
     def __init__(self, rule):
-        super(GitterAlerter, self).__init__(rule)
+        super(ServiceNowAlerter, self).__init__(rule)
         self.servicenow_rest_url = self.rule['servicenow_rest_url']
         self.servicenow_proxy = self.rule.get('servicenow_proxy', None)
 
@@ -1197,7 +1306,13 @@ class ServiceNowAlerter(Alerter):
             "caller_id": self.rule["caller_id"]
         }
         try:
-            response = requests.post(self.servicenow_rest_url, auth=(self.rule['username'], self.rule['password']), headers=headers, data=json.dumps(payload, cls=DateTimeEncoder), proxies=proxies)
+            response = requests.post(
+                self.servicenow_rest_url,
+                auth=(self.rule['username'], self.rule['password']),
+                headers=headers,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                proxies=proxies
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to ServiceNow: %s" % e)

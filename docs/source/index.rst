@@ -19,6 +19,7 @@ Contents:
    recipes/adding_alerts
    recipes/writing_filters
    recipes/adding_enhancements
+   recipes/signing_requests
 
 Indices and Tables
 ==================

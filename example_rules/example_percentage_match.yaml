@@ -1,0 +1,38 @@
+name: Example Percentage Match
+type: percentage_match
+
+#es_host: localhost
+#es_port: 9200
+
+index: logstash-http-request-*
+description: "95% of all http requests should be successful"
+
+filter:
+- term:
+   _type: http_request
+
+buffer_time:
+  minutes: 5
+
+query_key: Hostname.keyword
+doc_type: http_request
+
+match_bucket_filter:
+- terms:
+    ResponseStatus: [200]
+
+min_percentage: 95
+#max_percentage: 60
+ 
+#bucket_interval:
+#  minutes: 1
+  
+#sync_bucket_interval: true
+#allow_buffer_time_overlap: true
+#use_run_every_query_size: true
+
+# (Required)
+# The alert is use when a match is found
+alert:
+- "debug"
+

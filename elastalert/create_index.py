@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
+import argparse
 import getpass
 import os
 import time
 
-import argparse
 import elasticsearch.helpers
 import yaml
 from auth import Auth
@@ -17,19 +17,30 @@ from elasticsearch.client import IndicesClient
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--host', help='Elasticsearch host')
-    parser.add_argument('--port', type=int, help='Elasticsearch port')
+    parser.add_argument('--host', default=os.environ.get('ES_HOST', None), help='Elasticsearch host')
+    parser.add_argument('--port', default=os.environ.get('ES_PORT', None), type=int, help='Elasticsearch port')
     parser.add_argument('--url-prefix', help='Elasticsearch URL prefix')
     parser.add_argument('--no-auth', action='store_const', const=True, help='Suppress prompt for basic auth')
-    parser.add_argument('--ssl', action='store_true', default=None, help='Use TLS')
+    parser.add_argument('--ssl', action='store_true', default=os.environ.get('ES_USE_SSL', None), help='Use TLS')
     parser.add_argument('--no-ssl', dest='ssl', action='store_false', help='Do not use TLS')
     parser.add_argument('--verify-certs', action='store_true', default=None, help='Verify TLS certificates')
     parser.add_argument('--no-verify-certs', dest='verify_certs', action='store_false', help='Do not verify TLS certificates')
     parser.add_argument('--index', help='Index name to create')
     parser.add_argument('--old-index', help='Old index name to copy')
     parser.add_argument('--send_get_body_as', default='GET', help='Method for querying Elasticsearch - POST, GET or source')
-    parser.add_argument('--boto-profile', default=None, help='Boto profile to use for signing requests')
-    parser.add_argument('--aws-region', default=None, help='AWS Region to use for signing requests')
+    parser.add_argument(
+        '--boto-profile',
+        default=None,
+        dest='profile',
+        help='DEPRECATED: (use --profile) Boto profile to use for signing requests')
+    parser.add_argument(
+        '--profile',
+        default=None,
+        help='AWS profile to use for signing requests. Optionally use the AWS_DEFAULT_PROFILE environment variable')
+    parser.add_argument(
+        '--aws-region',
+        default=None,
+        help='AWS Region to use for signing requests. Optionally use the AWS_DEFAULT_REGION environment variable')
     parser.add_argument('--timeout', default=60, help='Elasticsearch request timeout')
     parser.add_argument('--config', default='config.yaml', help='Global config file (default: config.yaml)')
     args = parser.parse_args()
@@ -79,7 +90,7 @@ def main():
                      username=username,
                      password=password,
                      aws_region=aws_region,
-                     boto_profile=args.boto_profile)
+                     profile_name=args.profile)
 
     es = Elasticsearch(
         host=host,
@@ -141,6 +152,7 @@ def create_index(es, index):
     es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)
     es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping)
     es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping)
+
 
 if __name__ == '__main__':
     main()

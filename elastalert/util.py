@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import logging
+import os
 
 import dateutil.parser
 import dateutil.tz
@@ -208,9 +209,14 @@ def seconds(td):
     return td.seconds + td.days * 24 * 3600
 
 
-def total_seconds(td):
+def total_seconds(dt):
     # For python 2.6 compatability
-    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+    if dt is None:
+        return 0
+    elif hasattr(dt, 'total_seconds'):
+        return dt.total_seconds()
+    else:
+        return (dt.microseconds + (dt.seconds + dt.days * 24 * 3600) * 10**6) / 10**6
 
 
 def dt_to_int(dt):
@@ -276,13 +282,14 @@ def elasticsearch_client(conf):
                                      username=es_conn_conf['es_username'],
                                      password=es_conn_conf['es_password'],
                                      aws_region=es_conn_conf['aws_region'],
-                                     boto_profile=es_conn_conf['boto_profile'])
+                                     profile_name=es_conn_conf['profile'])
 
     return Elasticsearch(host=es_conn_conf['es_host'],
                          port=es_conn_conf['es_port'],
                          url_prefix=es_conn_conf['es_url_prefix'],
                          use_ssl=es_conn_conf['use_ssl'],
                          verify_certs=es_conn_conf['verify_certs'],
+                         ca_certs=es_conn_conf['ca_certs'],
                          connection_class=RequestsHttpConnection,
                          http_auth=es_conn_conf['http_auth'],
                          timeout=es_conn_conf['es_conn_timeout'],
@@ -295,28 +302,34 @@ def build_es_conn_config(conf):
     with properly initialized values for 'es_host', 'es_port', 'use_ssl' and 'http_auth' which
     will be a basicauth username:password formatted string """
     parsed_conf = {}
-    parsed_conf['use_ssl'] = False
+    parsed_conf['use_ssl'] = os.environ.get('ES_USE_SSL', False)
     parsed_conf['verify_certs'] = True
+    parsed_conf['ca_certs'] = None
     parsed_conf['http_auth'] = None
     parsed_conf['es_username'] = None
     parsed_conf['es_password'] = None
     parsed_conf['aws_region'] = None
-    parsed_conf['boto_profile'] = None
-    parsed_conf['es_host'] = conf['es_host']
-    parsed_conf['es_port'] = conf['es_port']
+    parsed_conf['profile'] = None
+    parsed_conf['es_host'] = os.environ.get('ES_HOST', conf['es_host'])
+    parsed_conf['es_port'] = int(os.environ.get('ES_PORT', conf['es_port']))
     parsed_conf['es_url_prefix'] = ''
     parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
     parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
 
     if 'es_username' in conf:
-        parsed_conf['es_username'] = conf['es_username']
-        parsed_conf['es_password'] = conf['es_password']
+        parsed_conf['es_username'] = os.environ.get('ES_USERNAME', conf['es_username'])
+        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD', conf['es_password'])
 
     if 'aws_region' in conf:
         parsed_conf['aws_region'] = conf['aws_region']
 
+    # Deprecated
     if 'boto_profile' in conf:
-        parsed_conf['boto_profile'] = conf['boto_profile']
+        logging.warning('Found deprecated "boto_profile", use "profile" instead!')
+        parsed_conf['profile'] = conf['boto_profile']
+
+    if 'profile' in conf:
+        parsed_conf['profile'] = conf['profile']
 
     if 'use_ssl' in conf:
         parsed_conf['use_ssl'] = conf['use_ssl']
@@ -324,7 +337,22 @@ def build_es_conn_config(conf):
     if 'verify_certs' in conf:
         parsed_conf['verify_certs'] = conf['verify_certs']
 
+    if 'ca_certs' in conf:
+        parsed_conf['ca_certs'] = conf['ca_certs']
+
     if 'es_url_prefix' in conf:
         parsed_conf['es_url_prefix'] = conf['es_url_prefix']
 
     return parsed_conf
+
+
+def parse_duration(value):
+    """Convert ``unit=num`` spec into a ``timedelta`` object."""
+    unit, num = value.split('=')
+    return datetime.timedelta(**{unit: int(num)})
+
+
+def parse_deadline(value):
+    """Convert ``unit=num`` spec into a ``datetime`` object."""
+    duration = parse_duration(value)
+    return ts_now() + duration

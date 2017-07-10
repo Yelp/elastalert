@@ -1,0 +1,35 @@
+name: Metricbeat CPU Spike Rule
+type: metric_aggregation
+
+#es_host: localhost
+#es_port: 9200
+
+index: metricbeat-*
+
+buffer_time:
+  hours: 1
+
+metric_agg_key: system.cpu.user.pct
+metric_agg_type: avg
+query_key: beat.hostname
+doc_type: metricsets
+  
+bucket_interval:
+  minutes: 5
+  
+sync_bucket_interval: true
+#allow_buffer_time_overlap: true
+#use_run_every_query_size: true
+
+min_threshold: 0.1
+max_threshold: 0.8
+
+filter:
+- term:
+    metricset.name: cpu
+
+# (Required)
+# The alert is use when a match is found
+alert:
+- "debug"
+

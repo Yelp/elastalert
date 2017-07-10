@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import copy
 import datetime
+import sys
 
 from blist import sortedlist
 from util import add_raw_postfix
@@ -13,6 +14,7 @@ from util import hashable
 from util import lookup_es_key
 from util import new_get_event_ts
 from util import pretty_ts
+from util import total_seconds
 from util import ts_now
 from util import ts_to_dt
 
@@ -83,13 +85,33 @@ class RuleType(object):
         :param terms: A list of buckets with a key, corresponding to query_key, and the count """
         raise NotImplementedError()
 
+    def add_aggregation_data(self, payload):
+        """ Gets called when a rule has use_terms_query set to True.
+        :param terms: A list of buckets with a key, corresponding to query_key, and the count """
+        raise NotImplementedError()
+
 
 class CompareRule(RuleType):
     """ A base class for matching a specific term by passing it to a compare function """
-    required_options = frozenset(['compare_key'])
+    required_options = frozenset(['compound_compare_key'])
+
+    def expand_entries(self, list_type):
+        """ Expand entries specified in files using the '!file' directive, if there are
+        any, then add everything to a set.
+        """
+        entries_set = set()
+        for entry in self.rules[list_type]:
+            if entry.startswith("!file"):  # - "!file /path/to/list"
+                filename = entry.split()[1]
+                with open(filename, 'r') as f:
+                    for line in f:
+                        entries_set.add(line.rstrip())
+            else:
+                entries_set.add(entry)
+        self.rules[list_type] = entries_set
 
     def compare(self, event):
-        """ An event is a match iff this returns true """
+        """ An event is a match if this returns true """
         raise NotImplementedError()
 
     def add_data(self, data):
@@ -103,6 +125,10 @@ class BlacklistRule(CompareRule):
     """ A CompareRule where the compare function checks a given key against a blacklist """
     required_options = frozenset(['compare_key', 'blacklist'])
 
+    def __init__(self, rules, args=None):
+        super(BlacklistRule, self).__init__(rules, args=None)
+        self.expand_entries('blacklist')
+
     def compare(self, event):
         term = lookup_es_key(event, self.rules['compare_key'])
         if term in self.rules['blacklist']:
@@ -113,6 +139,10 @@ class BlacklistRule(CompareRule):
 class WhitelistRule(CompareRule):
     """ A CompareRule where the compare function checks a given term against a whitelist """
     required_options = frozenset(['compare_key', 'whitelist', 'ignore_null'])
+
+    def __init__(self, rules, args=None):
+        super(WhitelistRule, self).__init__(rules, args=None)
+        self.expand_entries('whitelist')
 
     def compare(self, event):
         term = lookup_es_key(event, self.rules['compare_key'])
@@ -125,32 +155,42 @@ class WhitelistRule(CompareRule):
 
 class ChangeRule(CompareRule):
     """ A rule that will store values for a certain term and match if those values change """
-    required_options = frozenset(['query_key', 'compare_key', 'ignore_null'])
+    required_options = frozenset(['query_key', 'compound_compare_key', 'ignore_null'])
     change_map = {}
     occurrence_time = {}
 
     def compare(self, event):
         key = hashable(lookup_es_key(event, self.rules['query_key']))
-        val = lookup_es_key(event, self.rules['compare_key'])
-        if not isinstance(val, bool) and not val and self.rules['ignore_null']:
-            return False
-        changed = False
+        values = []
+        elastalert_logger.debug(" Previous Values of compare keys  " + str(self.occurrences))
+        for val in self.rules['compound_compare_key']:
+            lookup_value = lookup_es_key(event, val)
+            values.append(lookup_value)
+        elastalert_logger.debug(" Current Values of compare keys   " + str(values))
 
+        changed = False
+        for val in values:
+            if not isinstance(val, bool) and not val and self.rules['ignore_null']:
+                return False
         # If we have seen this key before, compare it to the new value
         if key in self.occurrences:
-            changed = self.occurrences[key] != val
+            for idx, previous_values in enumerate(self.occurrences[key]):
+                elastalert_logger.debug(" " + str(previous_values) + " " + str(values[idx]))
+                changed = previous_values != values[idx]
+                if changed:
+                    break
             if changed:
-                self.change_map[key] = (self.occurrences[key], val)
-
+                self.change_map[key] = (self.occurrences[key], values)
                 # If using timeframe, only return true if the time delta is < timeframe
                 if key in self.occurrence_time:
                     changed = event[self.rules['timestamp_field']] - self.occurrence_time[key] <= self.rules['timeframe']
 
         # Update the current value and time
-        self.occurrences[key] = val
+        elastalert_logger.debug(" Setting current value of compare keys values " + str(values))
+        self.occurrences[key] = values
         if 'timeframe' in self.rules:
             self.occurrence_time[key] = event[self.rules['timestamp_field']]
-
+        elastalert_logger.debug("Final result of comparision between previous and current values " + str(changed))
         return changed
 
     def add_match(self, match):
@@ -162,6 +202,7 @@ class ChangeRule(CompareRule):
         if change:
             extra = {'old_value': change[0],
                      'new_value': change[1]}
+            elastalert_logger.debug("Description of the changed records  " + str(dict(match.items() + extra.items())))
         super(ChangeRule, self).add_match(dict(match.items() + extra.items()))
 
 
@@ -430,8 +471,10 @@ class SpikeRule(RuleType):
         return False
 
     def get_match_str(self, match):
-        message = 'An abnormal number (%d) of events occurred around %s.\n' % (match['spike_count'],
-                                                                               pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time')))
+        message = 'An abnormal number (%d) of events occurred around %s.\n' % (
+            match['spike_count'],
+            pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time'))
+        )
         message += 'Preceding that time, there were only %d events within %s\n\n' % (match['reference_count'], self.rules['timeframe'])
         return message
 
@@ -495,9 +538,11 @@ class FlatlineRule(FrequencyRule):
         ts = match[self.rules['timestamp_field']]
         lt = self.rules.get('use_local_time')
         message = 'An abnormally low number of events occurred around %s.\n' % (pretty_ts(ts, lt))
-        message += 'Between %s and %s, there were less than %s events.\n\n' % (pretty_ts(dt_to_ts(ts_to_dt(ts) - self.rules['timeframe']), lt),
-                                                                               pretty_ts(ts, lt),
-                                                                               self.rules['threshold'])
+        message += 'Between %s and %s, there were less than %s events.\n\n' % (
+            pretty_ts(dt_to_ts(ts_to_dt(ts) - self.rules['timeframe']), lt),
+            pretty_ts(ts, lt),
+            self.rules['threshold']
+        )
         return message
 
     def garbage_collect(self, ts):
@@ -505,7 +550,12 @@ class FlatlineRule(FrequencyRule):
         # to remove events that occurred more than one `timeframe` ago, and call onRemoved on them.
         default = ['all'] if 'query_key' not in self.rules else []
         for key in self.occurrences.keys() or default:
-            self.occurrences.setdefault(key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(({self.ts_field: ts}, 0))
+            self.occurrences.setdefault(
+                key,
+                EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)
+            ).append(
+                ({self.ts_field: ts}, 0)
+            )
             self.first_event.setdefault(key, ts)
             self.check_for_match(key)
 
@@ -535,7 +585,7 @@ class NewTermsRule(RuleType):
             self.get_all_terms(args)
         except Exception as e:
             # Refuse to start if we cannot get existing terms
-            raise EAException('Error searching for existing terms: %s' % (repr(e)))
+            raise EAException('Error searching for existing terms: %s' % (repr(e))), None, sys.exc_info()[2]
 
     def get_all_terms(self, args):
         """ Performs a terms aggregation for each field to get every existing term. """
@@ -592,7 +642,10 @@ class NewTermsRule(RuleType):
                         keys = [bucket['key'] for bucket in buckets]
                         self.seen_values[field] += keys
                 else:
-                    self.seen_values.setdefault(field, [])
+                    if type(field) == list:
+                        self.seen_values.setdefault(tuple(field), [])
+                    else:
+                        self.seen_values.setdefault(field, [])
                 if tmp_start == tmp_end:
                     break
                 tmp_start = tmp_end
@@ -833,3 +886,168 @@ class CardinalityRule(RuleType):
                                                                                                          self.rules['cardinality_field'],
                                                                                                          starttime, endtime))
         return message
+
+
+class BaseAggregationRule(RuleType):
+    def __init__(self, *args):
+        super(BaseAggregationRule, self).__init__(*args)
+        bucket_interval = self.rules.get('bucket_interval')
+        if bucket_interval:
+            if 'seconds' in bucket_interval:
+                self.rules['bucket_interval_period'] = str(bucket_interval['seconds']) + 's'
+            elif 'minutes' in bucket_interval:
+                self.rules['bucket_interval_period'] = str(bucket_interval['minutes']) + 'm'
+            elif 'hours' in bucket_interval:
+                self.rules['bucket_interval_period'] = str(bucket_interval['hours']) + 'h'
+            elif 'days' in bucket_interval:
+                self.rules['bucket_interval_period'] = str(bucket_interval['days']) + 'd'
+            elif 'weeks' in bucket_interval:
+                self.rules['bucket_interval_period'] = str(bucket_interval['weeks']) + 'w'
+            else:
+                raise EAException("Unsupported window size")
+
+            if self.rules.get('use_run_every_query_size'):
+                if total_seconds(self.rules['run_every']) % total_seconds(self.rules['bucket_interval_timedelta']) != 0:
+                    raise EAException("run_every must be evenly divisible by bucket_interval if specified")
+            else:
+                if total_seconds(self.rules['buffer_time']) % total_seconds(self.rules['bucket_interval_timedelta']) != 0:
+                    raise EAException("Buffer_time must be evenly divisible by bucket_interval if specified")
+
+    def generate_aggregation_query(self):
+        raise NotImplementedError()
+
+    def add_aggregation_data(self, payload):
+        for timestamp, payload_data in payload.iteritems():
+            if 'interval_aggs' in payload_data:
+                self.unwrap_interval_buckets(timestamp, None, payload_data['interval_aggs']['buckets'])
+            elif 'bucket_aggs' in payload_data:
+                self.unwrap_term_buckets(timestamp, payload_data['bucket_aggs']['buckets'])
+            else:
+                self.check_matches(timestamp, None, payload_data)
+
+    def unwrap_interval_buckets(self, timestamp, query_key, interval_buckets):
+        for interval_data in interval_buckets:
+            # Use bucket key here instead of start_time for more accurate match timestamp
+            self.check_matches(ts_to_dt(interval_data['key_as_string']), query_key, interval_data)
+
+    def unwrap_term_buckets(self, timestamp, term_buckets):
+        for term_data in term_buckets:
+            if 'interval_aggs' in term_data:
+                self.unwrap_interval_buckets(timestamp, term_data['key'], term_data['interval_aggs']['buckets'])
+            else:
+                self.check_matches(timestamp, term_data['key'], term_data)
+
+    def check_matches(self, timestamp, query_key, aggregation_data):
+        raise NotImplementedError()
+
+
+class MetricAggregationRule(BaseAggregationRule):
+    """ A rule that matches when there is a low number of events given a timeframe. """
+    required_options = frozenset(['metric_agg_key', 'metric_agg_type', 'doc_type'])
+    allowed_aggregations = frozenset(['min', 'max', 'avg', 'sum', 'cardinality', 'value_count'])
+
+    def __init__(self, *args):
+        super(MetricAggregationRule, self).__init__(*args)
+        self.ts_field = self.rules.get('timestamp_field', '@timestamp')
+        if 'max_threshold' not in self.rules and 'min_threshold' not in self.rules:
+            raise EAException("MetricAggregationRule must have at least one of either max_threshold or min_threshold")
+
+        self.metric_key = self.rules['metric_agg_key'] + '_' + self.rules['metric_agg_type']
+
+        if not self.rules['metric_agg_type'] in self.allowed_aggregations:
+            raise EAException("metric_agg_type must be one of %s" % (str(self.allowed_aggregations)))
+
+        self.rules['aggregation_query_element'] = self.generate_aggregation_query()
+
+    def get_match_str(self, match):
+        message = 'Threshold violation, %s:%s %s (min: %s max : %s) \n\n' % (
+            self.rules['metric_agg_type'],
+            self.rules['metric_agg_key'],
+            match[self.metric_key],
+            self.rules.get('min_threshold'),
+            self.rules.get('max_threshold')
+        )
+        return message
+
+    def generate_aggregation_query(self):
+        return {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
+
+    def check_matches(self, timestamp, query_key, aggregation_data):
+        metric_val = aggregation_data[self.metric_key]['value']
+        if self.crossed_thresholds(metric_val):
+            match = {self.rules['timestamp_field']: timestamp,
+                     self.metric_key: metric_val}
+            if query_key is not None:
+                match[self.rules['query_key']] = query_key
+            self.add_match(match)
+
+    def crossed_thresholds(self, metric_value):
+        if metric_value is None:
+            return False
+        if 'max_threshold' in self.rules and metric_value > self.rules['max_threshold']:
+            return True
+        if 'min_threshold' in self.rules and metric_value < self.rules['min_threshold']:
+            return True
+        return False
+
+
+class PercentageMatchRule(BaseAggregationRule):
+    required_options = frozenset(['match_bucket_filter'])
+
+    def __init__(self, *args):
+        super(PercentageMatchRule, self).__init__(*args)
+        self.ts_field = self.rules.get('timestamp_field', '@timestamp')
+        if 'max_percentage' not in self.rules and 'min_percentage' not in self.rules:
+            raise EAException("PercentageMatchRule must have at least one of either min_percentage or max_percentage")
+
+        self.match_bucket_filter = self.rules['match_bucket_filter']
+        self.rules['aggregation_query_element'] = self.generate_aggregation_query()
+
+    def get_match_str(self, match):
+        message = 'Percentage violation, value: %s (min: %s max : %s) \n\n' % (
+            match['percentage'],
+            self.rules.get('min_percentage'),
+            self.rules.get('max_percentage')
+        )
+        return message
+
+    def generate_aggregation_query(self):
+        return {
+            'percentage_match_aggs': {
+                'filters': {
+                    'other_bucket': True,
+                    'filters': {
+                        'match_bucket': {
+                            'bool': {
+                                'must': self.match_bucket_filter
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    def check_matches(self, timestamp, query_key, aggregation_data):
+        match_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['match_bucket']['doc_count']
+        other_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['_other_']['doc_count']
+
+        if match_bucket_count is None or other_bucket_count is None:
+            return
+        else:
+            total_count = other_bucket_count + match_bucket_count
+            if total_count == 0:
+                return
+            else:
+                match_percentage = (match_bucket_count * 1.0) / (total_count * 1.0) * 100
+                if self.percentage_violation(match_percentage):
+                    match = {self.rules['timestamp_field']: timestamp, 'percentage': match_percentage}
+                    if query_key is not None:
+                        match[self.rules['query_key']] = query_key
+                    self.add_match(match)
+
+    def percentage_violation(self, match_percentage):
+        if 'max_percentage' in self.rules and match_percentage > self.rules['max_percentage']:
+            return True
+        if 'min_percentage' in self.rules and match_percentage < self.rules['min_percentage']:
+            return True
+        return False

@@ -8,6 +8,7 @@ import threading
 import elasticsearch
 import mock
 import pytest
+from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
 
 from elastalert.enhancements import BaseEnhancement
@@ -90,14 +91,20 @@ def test_init_rule(ea):
 def test_query(ea):
     ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
+    ea.current_es.search.assert_called_with(body={
+        'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}},
+        'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True,
+        size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
 
 
 def test_query_with_fields(ea):
     ea.rules[0]['_source_enabled'] = False
     ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
     ea.run_query(ea.rules[0], START, END)
-    ea.current_es.search.assert_called_with(body={'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}}, 'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True, size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
+    ea.current_es.search.assert_called_with(body={
+        'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}},
+        'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True,
+        size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
 
 
 def test_query_with_unix(ea):
@@ -107,7 +114,10 @@ def test_query_with_unix(ea):
     ea.run_query(ea.rules[0], START, END)
     start_unix = dt_to_unix(START)
     end_unix = dt_to_unix(END)
-    ea.current_es.search.assert_called_with(body={'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
+    ea.current_es.search.assert_called_with(
+        body={'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}},
+              'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True,
+        size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
 
 
 def test_query_with_unixms(ea):
@@ -117,7 +127,10 @@ def test_query_with_unixms(ea):
     ea.run_query(ea.rules[0], START, END)
     start_unix = dt_to_unixms(START)
     end_unix = dt_to_unixms(END)
-    ea.current_es.search.assert_called_with(body={'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}}, 'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True, size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
+    ea.current_es.search.assert_called_with(
+        body={'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}},
+              'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'], ignore_unavailable=True,
+        size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
 
 
 def test_no_hits(ea):
@@ -453,15 +466,15 @@ def test_agg_with_aggregation_key(ea):
     assert call1['match_body']['key'] == 'Key Value 1'
     assert not call1['alert_sent']
     assert 'aggregate_id' not in call1
-    assert 'aggregate_key' in call1
-    assert call1['aggregate_key'] == 'Key Value 1'
+    assert 'aggregation_key' in call1
+    assert call1['aggregation_key'] == 'Key Value 1'
     assert call1['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
     assert call2['match_body']['key'] == 'Key Value 2'
     assert not call2['alert_sent']
     assert 'aggregate_id' not in call2
-    assert 'aggregate_key' in call2
-    assert call2['aggregate_key'] == 'Key Value 2'
+    assert 'aggregation_key' in call2
+    assert call2['aggregation_key'] == 'Key Value 2'
     assert call2['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
     assert call3['match_body']['key'] == 'Key Value 1'
@@ -469,8 +482,8 @@ def test_agg_with_aggregation_key(ea):
     # Call3 should have it's aggregate_id set to call1's _id
     # It should also have the same alert_time as call1
     assert call3['aggregate_id'] == 'ABCD'
-    assert 'aggregate_key' in call3
-    assert call3['aggregate_key'] == 'Key Value 1'
+    assert 'aggregation_key' in call3
+    assert call3['aggregation_key'] == 'Key Value 1'
     assert call3['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
 
     # First call - Find all pending alerts (only entries without agg_id)
@@ -661,7 +674,8 @@ def test_count(ea):
 
     # Assert that es.count is run against every run_every timeframe between START and END
     start = START
-    query = {'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}}}
+    query = {
+        'query': {'filtered': {'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}}}
     while END - start > ea.run_every:
         end = start + ea.run_every
         query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['lte'] = dt_to_ts(end)
@@ -681,7 +695,11 @@ def run_and_assert_segmented_queries(ea, start, end, segment_size):
 
         # Assert elastalert_status was created for the entire time range
         assert ea.writeback_es.index.call_args_list[-1][1]['body']['starttime'] == dt_to_ts(original_start)
-        assert ea.writeback_es.index.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end)
+        if ea.rules[0].get('aggregation_query_element'):
+            assert ea.writeback_es.index.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end - (original_end - end))
+            assert original_end - end < segment_size
+        else:
+            assert ea.writeback_es.index.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end)
 
 
 def test_query_segmenting(ea):
@@ -706,11 +724,29 @@ def test_query_segmenting(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client'):
         run_and_assert_segmented_queries(ea, START, END, ea.run_every)
 
+    # buffer_time segments with terms queries
+    ea.rules[0].pop('use_terms_query')
+    ea.rules[0]['aggregation_query_element'] = {'term': 'term_val'}
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=30)
+        run_and_assert_segmented_queries(ea, START, END, ea.rules[0]['buffer_time'])
+
+    # partial segment size scenario
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=53)
+        run_and_assert_segmented_queries(ea, START, END, ea.rules[0]['buffer_time'])
+
+    # run every segmenting
+    ea.rules[0]['use_run_every_query_size'] = True
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        run_and_assert_segmented_queries(ea, START, END, ea.run_every)
+
 
 def test_get_starttime(ea):
     endtime = '2015-01-01T00:00:00Z'
     mock_es = mock.Mock()
     mock_es.search.return_value = {'hits': {'hits': [{'_source': {'endtime': endtime}}]}}
+    mock_es.info.return_value = {'version': {'number': '2.0'}}
     ea.writeback_es = mock_es
 
     # 4 days old, will return endtime
@@ -956,6 +992,82 @@ def test_exponential_realert(ea):
         assert exponent == next_res.next()
 
 
+def test_wait_until_responsive(ea):
+    """Unblock as soon as ElasticSearch becomes responsive."""
+
+    # Takes a while before becoming responsive.
+    ea.writeback_es.indices.exists.side_effect = [
+        ConnectionError(),  # ES is not yet responsive.
+        False,              # index does not yet exist.
+        True,
+    ]
+
+    clock = mock.MagicMock()
+    clock.side_effect = [0.0, 1.0, 2.0, 3.0, 4.0]
+    timeout = datetime.timedelta(seconds=3.5)
+    with mock.patch('time.sleep') as sleep:
+        ea.wait_until_responsive(timeout=timeout, clock=clock)
+
+    # Sleep as little as we can.
+    sleep.mock_calls == [
+        mock.call(1.0),
+    ]
+
+
+def test_wait_until_responsive_timeout_es_not_available(ea, capsys):
+    """Bail out if ElasticSearch doesn't (quickly) become responsive."""
+
+    # Never becomes responsive :-)
+    ea.writeback_es.ping.return_value = False
+    ea.writeback_es.indices.exists.return_value = False
+
+    clock = mock.MagicMock()
+    clock.side_effect = [0.0, 1.0, 2.0, 3.0]
+    timeout = datetime.timedelta(seconds=2.5)
+    with mock.patch('time.sleep') as sleep:
+        with pytest.raises(SystemExit) as exc:
+            ea.wait_until_responsive(timeout=timeout, clock=clock)
+        assert exc.value.code == 1
+
+    # Ensure we get useful diagnostics.
+    output, errors = capsys.readouterr()
+    assert 'Could not reach ElasticSearch at "es:14900".' in errors
+
+    # Slept until we passed the deadline.
+    sleep.mock_calls == [
+        mock.call(1.0),
+        mock.call(1.0),
+        mock.call(1.0),
+    ]
+
+
+def test_wait_until_responsive_timeout_index_does_not_exist(ea, capsys):
+    """Bail out if ElasticSearch doesn't (quickly) become responsive."""
+
+    # Never becomes responsive :-)
+    ea.writeback_es.ping.return_value = True
+    ea.writeback_es.indices.exists.return_value = False
+
+    clock = mock.MagicMock()
+    clock.side_effect = [0.0, 1.0, 2.0, 3.0]
+    timeout = datetime.timedelta(seconds=2.5)
+    with mock.patch('time.sleep') as sleep:
+        with pytest.raises(SystemExit) as exc:
+            ea.wait_until_responsive(timeout=timeout, clock=clock)
+        assert exc.value.code == 1
+
+    # Ensure we get useful diagnostics.
+    output, errors = capsys.readouterr()
+    assert 'Writeback index "wb" does not exist, did you run `elastalert-create-index`?' in errors
+
+    # Slept until we passed the deadline.
+    sleep.mock_calls == [
+        mock.call(1.0),
+        mock.call(1.0),
+        mock.call(1.0),
+    ]
+
+
 def test_stop(ea):
     """ The purpose of this test is to make sure that calling ElastAlerter.stop() will break it
     out of a ElastAlerter.start() loop. This method exists to provide a mechanism for running
@@ -1027,8 +1139,8 @@ def test_uncaught_exceptions(ea):
     assert len(ea.disabled_rules) == 1
 
     # Changing the file should re-enable it
-    ea.rule_hashes = {'rule1': 'abc'}
-    new_hashes = {'rule1': 'def'}
+    ea.rule_hashes = {'blah.yaml': 'abc'}
+    new_hashes = {'blah.yaml': 'def'}
     with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
         with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
             mock_load.side_effect = [ea.disabled_rules[0]]

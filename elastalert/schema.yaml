@@ -25,7 +25,7 @@ definitions:
 
   filter: &filter {}
 
-required: [name, type, index, alert]
+required: [type, index, alert]
 type: object
 
 ### Rule Types section
@@ -38,14 +38,14 @@ oneOf:
     required: [blacklist, compare_key]
     properties:
       type: {enum: [blacklist]}
-      compare_key: {type: string}
+      compare_key: {'items': {'type': 'string'},'type': ['string', 'array']}
       blacklist: {type: array, items: {type: string}}
 
   - title: Whitelist
     required: [whitelist, compare_key, ignore_null]
     properties:
       type: {enum: [whitelist]}
-      compare_key: {type: string}
+      compare_key: {'items': {'type': 'string'},'type': ['string', 'array']}
       whitelist: {type: array, items: {type: string}}
       ignore_null: {type: boolean}
 
@@ -53,7 +53,7 @@ oneOf:
     required: [query_key, compare_key, ignore_null]
     properties:
       type: {enum: [change]}
-      compare_key: {type: string}
+      compare_key: {'items': {'type': 'string'},'type': ['string', 'array']}
       ignore_null: {type: boolean}
       timeframe: *timeframe
 
@@ -112,6 +112,18 @@ oneOf:
       cardinality_field: {type: string}
       timeframe: *timeframe
 
+  - title: Metric Aggregation
+    required: [metric_agg_key,metric_agg_type]
+    properties:
+      type: {enum: [metric_aggregation]}
+      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count"]}
+      #timeframe: *timeframe
+
+  - title: Percentage Match
+    required: [match_bucket_filter]
+    properties:
+      type: {enum: [percentage_match]}
+
   - title: Custom Rule from Module
     properties:
       # custom rules include a period in the rule type
@@ -132,6 +144,7 @@ properties:
   use_strftime_index: {type: boolean}
 
   # Optional Settings
+  import: {type: string}
   aggregation: *timeframe
   realert: *timeframe
   exponential_realert: *timeframe
@@ -219,7 +232,7 @@ properties:
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
-  
+
   ### Exotel
   exotel_account_sid: {type: string}
   exotel_auth_token: {type: string}
@@ -227,7 +240,7 @@ properties:
   exotel_from_number: {type: string}
 
   ### Twilio
-  twilio_accout_sid: {type: string}
+  twilio_account_sid: {type: string}
   twilio_auth_token: {type: string}
   twilio_to_number: {type: string}
   twilio_from_number: {type: string}
@@ -251,3 +264,4 @@ properties:
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
+
