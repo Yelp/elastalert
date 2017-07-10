@@ -166,8 +166,10 @@ def test_load_rules():
     with mock.patch('elastalert.config.yaml_loader') as mock_open:
         mock_open.side_effect = [test_config_copy, test_rule_copy]
 
-        with mock.patch('os.listdir') as mock_ls:
-            mock_ls.return_value = ['testrule.yaml']
+        with mock.patch('os.walk') as mock_ls:
+            mock_ls.return_value = [
+                ('', [], ['testrule.yaml']),
+            ]
             rules = load_rules(test_args)
             assert isinstance(rules['rules'][0]['type'], elastalert.ruletypes.RuleType)
             assert isinstance(rules['rules'][0]['alert'][0], elastalert.alerts.Alerter)
@@ -230,8 +232,10 @@ def test_raises_on_missing_config():
 
         with mock.patch('elastalert.config.yaml_loader') as mock_open:
             mock_open.side_effect = [test_config_copy, test_rule_copy]
-            with mock.patch('os.listdir') as mock_ls:
-                mock_ls.return_value = ['testrule.yaml']
+            with mock.patch('os.walk') as mock_ls:
+                mock_ls.return_value = [
+                    ('', [], ['testrule.yaml']),
+                ]
                 with pytest.raises(EAException, message='key %s should be required' % key):
                     rule = load_rules(test_args)
                     print(rule)
