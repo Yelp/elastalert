@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.1.17
+
+### Added
+- Added a --patience flag to allow Elastalert to wait for Elasticsearch to become available
+- Allow custom PagerDuty alert titles via alert_subject
+
 ## v0.1.16
 
 ### Fixed

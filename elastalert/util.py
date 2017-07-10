@@ -345,3 +345,15 @@ def build_es_conn_config(conf):
         parsed_conf['es_url_prefix'] = conf['es_url_prefix']
 
     return parsed_conf
+
+
+def parse_duration(value):
+    """Convert ``unit=num`` spec into a ``timedelta`` object."""
+    unit, num = value.split('=')
+    return datetime.timedelta(**{unit: int(num)})
+
+
+def parse_deadline(value):
+    """Convert ``unit=num`` spec into a ``datetime`` object."""
+    duration = parse_duration(value)
+    return ts_now() + duration
