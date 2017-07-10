@@ -926,11 +926,11 @@ class MsTeamsAlerter(Alerter):
         self.ms_teams_theme_color = self.rule.get('ms_teams_theme_color', '')
 
     def format_body(self, body):
-        body = body.encode('UTF-8')
+        body = body
         if self.ms_teams_alert_fixed_width:
             body = body.replace('`', "'")
             body = "```{0}```".format('```\n\n```'.join(x for x in body.split('\n'))).replace('\n``````', '')
-        return body
+        return body.encode('UTF-8')
 
     def alert(self, matches):
         body = self.create_alert_body(matches)

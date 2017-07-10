@@ -320,7 +320,7 @@ def test_email_with_args():
 
         assert 'testing' in body_text
         assert '<MISSING VALUE>' in body_text
-        assert '☃' in body_text
+        assert u'☃' in body_text
 
         assert 'Reply-To: test@example.com' in body
         assert 'To: testing@test.test' in body
