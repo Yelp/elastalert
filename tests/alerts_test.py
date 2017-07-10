@@ -28,6 +28,12 @@ from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
 
 
+if six.PY2:
+    SEP = ' '
+else:
+    SEP = ''
+
+
 class mock_rule:
     def get_match_str(self, event):
         return str(event)
@@ -55,7 +61,10 @@ def test_basic_match_string(ea):
     match.pop('non-serializable')
     match['object'] = {'this': {'that': [1, 2, "3"]}}
     alert_text = six.text_type(BasicMatchString(ea.rules[0], match))
-    assert '"this": {\n        "that": [\n            1, \n            2, \n            "3"\n        ]\n    }' in alert_text
+    assert ''.join((
+        '"this": {\n        "that": [\n            1,', SEP,
+        '\n            2,', SEP,
+        '\n            "3"\n        ]\n    }')) in alert_text
 
     ea.rules[0]['alert_text'] = 'custom text'
     alert_text = six.text_type(BasicMatchString(ea.rules[0], match))
@@ -84,8 +93,8 @@ def test_jira_formatted_match_string(ea):
     expected_alert_text_snippet = '{code:json}{\n' \
         + tab + '"foo": {\n' \
         + 2 * tab + '"bar": [\n' \
-        + 3 * tab + '"one", \n' \
-        + 3 * tab + '2, \n' \
+        + 3 * tab + '"one",' + SEP + '\n' \
+        + 3 * tab + '2,' + SEP + '\n' \
         + 3 * tab + '"three"\n' \
         + 2 * tab + ']\n' \
         + tab + '}\n' \
