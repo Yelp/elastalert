@@ -56,21 +56,19 @@ def test_import_rules():
         mock_open.return_value = test_rule_copy
 
         # Test that type is imported
-        with mock.patch('__builtin__.__import__') as mock_import:
+        with mock.patch('importlib.import_module') as mock_import:
             mock_import.return_value = elastalert.ruletypes
             load_configuration('test_config', test_config)
         assert mock_import.call_args_list[0][0][0] == 'testing.test'
-        assert mock_import.call_args_list[0][0][3] == ['RuleType']
 
         # Test that alerts are imported
         test_rule_copy = copy.deepcopy(test_rule)
         mock_open.return_value = test_rule_copy
         test_rule_copy['alert'] = 'testing2.test2.Alerter'
-        with mock.patch('__builtin__.__import__') as mock_import:
+        with mock.patch('importlib.import_module') as mock_import:
             mock_import.return_value = elastalert.alerts
             load_configuration('test_config', test_config)
         assert mock_import.call_args_list[0][0][0] == 'testing2.test2'
-        assert mock_import.call_args_list[0][0][3] == ['Alerter']
 
 
 def test_import_import():

@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import copy
 import datetime
 import hashlib
+import importlib
 import logging
 import os
 import sys
@@ -94,7 +95,7 @@ def get_module(module_name):
     Returns object or raises EAException on error. """
     try:
         module_path, module_class = module_name.rsplit('.', 1)
-        base_module = __import__(module_path, globals(), locals(), [module_class])
+        base_module = importlib.import_module(module_path)
         module = getattr(base_module, module_class)
     except (ImportError, AttributeError, ValueError) as e:
         six.reraise(EAException, EAException("Could not import module %s: %s" % (module_name, e)), sys.exc_info()[2])
