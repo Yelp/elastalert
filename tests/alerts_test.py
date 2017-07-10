@@ -10,6 +10,7 @@ import mock
 import pytest
 import six
 
+from base64 import b64decode
 from jira.exceptions import JIRAError
 
 from elastalert.alerts import Alerter
@@ -316,7 +317,9 @@ def test_email_with_args():
 
         body = mock_smtp.mock_calls[4][1][2]
         # Extract the MIME encoded message body
-        body_text = body.split('\n\n')[-1][:-1].decode('base64')
+        body_text = body.split('\n\n')[-1][:-1]
+        body_text = b64decode(body_text.encode('utf-8'))
+        body_text = body_text.decode('utf-8')
 
         assert 'testing' in body_text
         assert '<MISSING VALUE>' in body_text
