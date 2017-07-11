@@ -1335,6 +1335,7 @@ class ServiceNowAlerter(Alerter):
 
 class HTTPPostAlerter(Alerter):
     """ Requested elasticsearch indices are sent by HTTP POST. Encoded with JSON. """
+
     def __init__(self, rule):
         super(HTTPPostAlerter, self).__init__(rule)
         post_url = self.rule.get('http_post_url')
@@ -1342,23 +1343,17 @@ class HTTPPostAlerter(Alerter):
             post_url = [post_url]
         self.post_url = post_url
         self.post_proxy = self.rule.get('http_post_proxy')
-        self.post_payload = self.rule.get('http_post_payload')
-        self.post_static_payload = self.rule.get('http_post_static_payload')
+        self.post_payload = self.rule.get('http_post_payload', {})
+        self.post_static_payload = self.rule.get('http_post_static_payload', {})
+        self.post_all_values = self.rule.get('http_post_all_values', not self.post_payload)
 
     def alert(self, matches):
         """ Each match will trigger a POST to the specified endpoint(s). """
         for match in matches:
-            payload = self.post_static_payload if self.post_static_payload else {}
-            for es_item in match.items():
-                if self.post_payload:
-                    for post_key, es_key in self.post_payload.items():
-                        if es_key == es_item[0]:
-                            payload[post_key] = es_item[1]
-                else:
-                    key = es_item[0]
-                    value = es_item[1]
-                    payload[key] = value
-
+            payload = match if self.post_all_values else {}
+            payload.update(self.post_static_payload)
+            for post_key, es_key in self.post_payload.items():
+                payload[post_key] = lookup_es_key(match, es_key)
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json;charset=utf-8"

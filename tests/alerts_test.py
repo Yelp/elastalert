@@ -12,11 +12,11 @@ from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
 from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
+from elastalert.alerts import HTTPPostAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
-from elastalert.alerts import HTTPPostAlerter
 from elastalert.alerts import SlackAlerter
 from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
@@ -1011,6 +1011,39 @@ def test_http_alerter_with_payload():
     expected_data = {
         'posted_name': 'foobarbaz',
         'name': 'somestaticname'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['http_post_url'],
+        data=mock.ANY,
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
+        proxies=None
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_http_alerter_with_payload_all_values():
+    rule = {
+        'name': 'Test HTTP Post Alerter With Payload',
+        'type': 'any',
+        'http_post_url': 'http://test.webhook.url',
+        'http_post_payload': {'posted_name': 'somefield'},
+        'http_post_static_payload': {'name': 'somestaticname'},
+        'http_post_all_values': True,
+        'alert': []
+    }
+    load_modules(rule)
+    alert = HTTPPostAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'posted_name': 'foobarbaz',
+        'name': 'somestaticname',
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
     }
     mock_post_request.assert_called_once_with(
         rule['http_post_url'],
