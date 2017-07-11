@@ -14,7 +14,6 @@ from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
 
-import arrow
 import boto3
 import requests
 import stomp
@@ -30,6 +29,8 @@ from util import EAException
 from util import elastalert_logger
 from util import lookup_es_key
 from util import pretty_ts
+from util import ts_now
+from util import ts_to_dt
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -690,8 +691,8 @@ class JiraAlerter(Alerter):
         if self.bump_tickets:
             ticket = self.find_existing_ticket(matches)
             if ticket:
-                inactivity_datetime = arrow.now().replace(days=-self.bump_after_inactivity)
-                if arrow.get(ticket.fields.updated) >= inactivity_datetime:
+                inactivity_datetime = ts_now() - datetime.timedelta(days=self.bump_after_inactivity)
+                if ts_to_dt(ticket.fields.updated) >= inactivity_datetime:
                     if self.pipeline is not None:
                         self.pipeline['jira_ticket'] = None
                         self.pipeline['jira_server'] = self.server
