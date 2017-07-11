@@ -16,8 +16,7 @@ from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
-from elastalert.alerts import SimplePostAlerter
-from elastalert.alerts import AdvancedPostAlerter
+from elastalert.alerts import HTTPPostAlerter
 from elastalert.alerts import SlackAlerter
 from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
@@ -952,46 +951,17 @@ def test_slack_uses_custom_slack_channel():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
-def test_simple_alerter():
+def test_http_alerter_with_payload():
     rule = {
-        'name': 'Test Simple Rule',
+        'name': 'Test HTTP Post Alerter With Payload',
         'type': 'any',
-        'simple_webhook_url': 'http://test.webhook.url',
-        'alert_subject': 'Cool subject',
+        'http_post_url': 'http://test.webhook.url',
+        'http_post_payload': {'posted_name': 'somefield'},
+        'http_post_static_payload': {'name': 'somestaticname'},
         'alert': []
     }
     load_modules(rule)
-    alert = SimplePostAlerter(rule)
-    match = {
-        '@timestamp': '2017-01-01T00:00:00',
-        'somefield': 'foobarbaz'
-    }
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-    expected_data = {
-        'rule': rule['name'],
-        'matches': [match]
-    }
-    mock_post_request.assert_called_once_with(
-        rule['simple_webhook_url'],
-        data=mock.ANY,
-        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
-        proxies=None
-    )
-    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-
-
-def test_advanced_alerter():
-    rule = {
-        'name': 'Test Advanced Alerter Rule',
-        'type': 'any',
-        'advanced_post_url': 'http://test.webhook.url',
-        'advanced_post_payload': {'posted_name': 'somefield'},
-        'advanced_post_static_payload': {'name': 'AdvancedAlerter'},
-        'alert': []
-    }
-    load_modules(rule)
-    alert = AdvancedPostAlerter(rule)
+    alert = HTTPPostAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
         'somefield': 'foobarbaz'
@@ -1000,10 +970,40 @@ def test_advanced_alerter():
         alert.alert([match])
     expected_data = {
         'posted_name': 'foobarbaz',
-        'name': 'AdvancedAlerter'
+        'name': 'somestaticname'
     }
     mock_post_request.assert_called_once_with(
-        rule['advanced_post_url'],
+        rule['http_post_url'],
+        data=mock.ANY,
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
+        proxies=None
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_http_alerter_without_payload():
+    rule = {
+        'name': 'Test HTTP Post Alerter Without Payload',
+        'type': 'any',
+        'http_post_url': 'http://test.webhook.url',
+        'http_post_static_payload': {'name': 'somestaticname'},
+        'alert': []
+    }
+    load_modules(rule)
+    alert = HTTPPostAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz',
+        'name': 'somestaticname'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['http_post_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None
