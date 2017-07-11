@@ -1353,7 +1353,7 @@ class SimplePostAlerter(Alerter):
         return {'type': 'simple',
                 'simple_webhook_url': self.simple_webhook_url}
 
-class DingtalkAlert(Alerter):
+class DingtalkAlerter(Alerter):
     required_options = frozenset(['dingtalk_webhook_url','dingtalk_msgtype'])
 
     def __init__(self, rule):
