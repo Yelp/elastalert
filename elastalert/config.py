@@ -472,7 +472,7 @@ def get_rule_hashes(conf, use_rule=None):
 def adjust_deprecated_values(rule):
     # From rename of simple HTTP alerter
     if rule.get('type') == 'simple':
-        rule['type'] = 'http'
+        rule['type'] = 'post'
         if 'simple_proxy' in rule:
             rule['http_post_proxy'] = rule['simple_proxy']
         if 'simple_webhook_url' in rule:
