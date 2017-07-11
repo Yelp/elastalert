@@ -21,6 +21,7 @@ from elastalert.alerts import SlackAlerter
 from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
+from elastalert.util import ts_now
 
 
 class mock_rule:
@@ -494,6 +495,45 @@ def test_jira():
         alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
 
     assert mock_jira.mock_calls == expected
+
+    # Only bump after 3d of inactivity
+    rule['jira_bump_after_inactivity'] = 3
+    mock_issue = mock.Mock()
+
+    # Check ticket is bumped if it is updated 4 days ago
+    mock_issue.fields.updated = str(ts_now() - datetime.timedelta(days=4))
+    with nested(
+        mock.patch('elastalert.alerts.JIRA'),
+        mock.patch('elastalert.alerts.yaml_loader')
+    ) as (mock_jira, mock_open):
+        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+        mock_jira.return_value = mock.Mock()
+        mock_jira.return_value.search_issues.return_value = [mock_issue]
+        mock_jira.return_value.priorities.return_value = [mock_priority]
+        mock_jira.return_value.fields.return_value = []
+
+        alert = JiraAlerter(rule)
+        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+        # Check add_comment is called
+        assert len(mock_jira.mock_calls) == 5
+        assert '().add_comment' == mock_jira.mock_calls[4][0]
+
+    # Check ticket is bumped is not bumped if ticket is updated right now
+    mock_issue.fields.updated = str(ts_now())
+    with nested(
+        mock.patch('elastalert.alerts.JIRA'),
+        mock.patch('elastalert.alerts.yaml_loader')
+    ) as (mock_jira, mock_open):
+        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+        mock_jira.return_value = mock.Mock()
+        mock_jira.return_value.search_issues.return_value = [mock_issue]
+        mock_jira.return_value.priorities.return_value = [mock_priority]
+        mock_jira.return_value.fields.return_value = []
+
+        alert = JiraAlerter(rule)
+        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+        # Only 4 calls for mock_jira since add_comment is not called
+        assert len(mock_jira.mock_calls) == 4
 
 
 def test_jira_arbitrary_field_support():
