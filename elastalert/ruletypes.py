@@ -1019,7 +1019,11 @@ class PercentageMatchRule(BaseAggregationRule):
                     'filters': {
                         'match_bucket': {
                             'bool': {
-                                'must': self.match_bucket_filter
+                                'must': {
+                                    "query_string": {
+                                        "query": self.match_bucket_filter
+                                    }
+                                }
                             }
                         }
                     }
