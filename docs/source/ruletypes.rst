@@ -1618,6 +1618,35 @@ Optional:
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
 
+HTTP POST
+~~~~~~~~~
+
+This alert type will send results to a JSON endpoint using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON will contain al the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
+
+Required:
+
+``http_post_url``: The URL to POST.
+
+Optional:
+
+``http_post_payload``: List of keys:values to use as the content of the POST. Example - ip:clientip will map the value from the clientip index of Elasticsearch to JSON key named ip. If not defined, all the Elasticsearch keys will be sent.
+
+``http_post_static_payload``: Key:value pairs of static parameters to be sent, along with the Elasticsearch results. Put your authentication or other information here.
+
+``http_post_proxy``: URL of proxy, if required.
+
+``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
+
+Example usage::
+
+    alert: post
+    http_post_url: "http://example.com/api"
+    http_post_payload:
+      ip: clientip
+    http_post_static_payload:
+      apikey: abc123
+
+
 Alerter
 ~~~~~~~
 

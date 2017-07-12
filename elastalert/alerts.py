@@ -34,6 +34,8 @@ from .util import EAException
 from .util import elastalert_logger
 from .util import lookup_es_key
 from .util import pretty_ts
+from .util import ts_now
+from .util import ts_to_dt
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -468,6 +470,7 @@ class JiraAlerter(Alerter):
     known_field_list = [
         'jira_account_file',
         'jira_assignee',
+        'jira_bump_after_inactivity',
         'jira_bump_in_statuses',
         'jira_bump_not_in_statuses',
         'jira_bump_tickets',
@@ -519,6 +522,7 @@ class JiraAlerter(Alerter):
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
+        self.bump_after_inactivity = self.rule.get('jira_bump_after_inactivity', self.max_age)
         self.watchers = self.rule.get('jira_watchers')
 
         if self.bump_in_statuses and self.bump_not_in_statuses:
@@ -693,6 +697,12 @@ class JiraAlerter(Alerter):
         if self.bump_tickets:
             ticket = self.find_existing_ticket(matches)
             if ticket:
+                inactivity_datetime = ts_now() - datetime.timedelta(days=self.bump_after_inactivity)
+                if ts_to_dt(ticket.fields.updated) >= inactivity_datetime:
+                    if self.pipeline is not None:
+                        self.pipeline['jira_ticket'] = None
+                        self.pipeline['jira_server'] = self.server
+                    return None
                 elastalert_logger.info('Commenting on existing ticket %s' % (ticket.key))
                 for match in matches:
                     try:
@@ -1329,33 +1339,41 @@ class ServiceNowAlerter(Alerter):
                 'self.servicenow_rest_url': self.servicenow_rest_url}
 
 
-class SimplePostAlerter(Alerter):
+class HTTPPostAlerter(Alerter):
+    """ Requested elasticsearch indices are sent by HTTP POST. Encoded with JSON. """
+
     def __init__(self, rule):
-        super(SimplePostAlerter, self).__init__(rule)
-        simple_webhook_url = self.rule.get('simple_webhook_url')
-        if isinstance(simple_webhook_url, six.string_types):
-            simple_webhook_url = [simple_webhook_url]
-        self.simple_webhook_url = simple_webhook_url
-        self.simple_proxy = self.rule.get('simple_proxy')
+        super(HTTPPostAlerter, self).__init__(rule)
+        post_url = self.rule.get('http_post_url')
+        if isinstance(post_url, six.string_types):
+            post_url = [post_url]
+        self.post_url = post_url
+        self.post_proxy = self.rule.get('http_post_proxy')
+        self.post_payload = self.rule.get('http_post_payload', {})
+        self.post_static_payload = self.rule.get('http_post_static_payload', {})
+        self.post_all_values = self.rule.get('http_post_all_values', not self.post_payload)
 
     def alert(self, matches):
-        payload = {
-            'rule': self.rule['name'],
-            'matches': matches
-        }
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json;charset=utf-8"
-        }
-        proxies = {'https': self.simple_proxy} if self.simple_proxy else None
-        for url in self.simple_webhook_url:
-            try:
-                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
-                response.raise_for_status()
-            except RequestException as e:
-                raise EAException("Error posting simple alert: %s" % e)
-        elastalert_logger.info("Simple alert sent")
+        """ Each match will trigger a POST to the specified endpoint(s). """
+        for match in matches:
+            payload = match if self.post_all_values else {}
+            payload.update(self.post_static_payload)
+            for post_key, es_key in self.post_payload.items():
+                payload[post_key] = lookup_es_key(match, es_key)
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json;charset=utf-8"
+            }
+            proxies = {'https': self.post_proxy} if self.post_proxy else None
+            for url in self.post_url:
+                try:
+                    response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder),
+                                             headers=headers, proxies=proxies)
+                    response.raise_for_status()
+                except RequestException as e:
+                    raise EAException("Error posting HTTP Post alert: %s" % e)
+            elastalert_logger.info("HTTP Post alert sent.")
 
     def get_info(self):
-        return {'type': 'simple',
-                'simple_webhook_url': self.simple_webhook_url}
+        return {'type': 'http_post',
+                'http_post_webhook_url': self.post_url}

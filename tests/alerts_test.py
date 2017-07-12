@@ -17,21 +17,38 @@ from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
 from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
+from elastalert.alerts import HTTPPostAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
-from elastalert.alerts import SimplePostAlerter
 from elastalert.alerts import SlackAlerter
 from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
+from elastalert.util import ts_now
 
 
 if six.PY2:
     SEP = ' '
 else:
     SEP = ''
+
+
+try:
+    # py2
+    from contextlib import nested
+except ImportError:
+    # py3
+    from contextlib import (
+        contextmanager,
+        ExitStack,
+    )
+
+    @contextmanager
+    def nested(*args):
+        with ExitStack() as stack:
+            yield tuple(stack.enter_context(mgr) for mgr in args)
 
 
 class mock_rule:
@@ -503,6 +520,45 @@ def test_jira():
 
     assert mock_jira.mock_calls == expected
 
+    # Only bump after 3d of inactivity
+    rule['jira_bump_after_inactivity'] = 3
+    mock_issue = mock.Mock()
+
+    # Check ticket is bumped if it is updated 4 days ago
+    mock_issue.fields.updated = str(ts_now() - datetime.timedelta(days=4))
+    with nested(
+        mock.patch('elastalert.alerts.JIRA'),
+        mock.patch('elastalert.alerts.yaml_loader')
+    ) as (mock_jira, mock_open):
+        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+        mock_jira.return_value = mock.Mock()
+        mock_jira.return_value.search_issues.return_value = [mock_issue]
+        mock_jira.return_value.priorities.return_value = [mock_priority]
+        mock_jira.return_value.fields.return_value = []
+
+        alert = JiraAlerter(rule)
+        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+        # Check add_comment is called
+        assert len(mock_jira.mock_calls) == 5
+        assert '().add_comment' == mock_jira.mock_calls[4][0]
+
+    # Check ticket is bumped is not bumped if ticket is updated right now
+    mock_issue.fields.updated = str(ts_now())
+    with nested(
+        mock.patch('elastalert.alerts.JIRA'),
+        mock.patch('elastalert.alerts.yaml_loader')
+    ) as (mock_jira, mock_open):
+        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+        mock_jira.return_value = mock.Mock()
+        mock_jira.return_value.search_issues.return_value = [mock_issue]
+        mock_jira.return_value.priorities.return_value = [mock_priority]
+        mock_jira.return_value.fields.return_value = []
+
+        alert = JiraAlerter(rule)
+        alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+        # Only 4 calls for mock_jira since add_comment is not called
+        assert len(mock_jira.mock_calls) == 4
+
 
 def test_jira_arbitrary_field_support():
     description_txt = "Description stuff goes here like a runbook link."
@@ -953,16 +1009,17 @@ def test_slack_uses_custom_slack_channel():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
-def test_simple_alerter():
+def test_http_alerter_with_payload():
     rule = {
-        'name': 'Test Simple Rule',
+        'name': 'Test HTTP Post Alerter With Payload',
         'type': 'any',
-        'simple_webhook_url': 'http://test.webhook.url',
-        'alert_subject': 'Cool subject',
+        'http_post_url': 'http://test.webhook.url',
+        'http_post_payload': {'posted_name': 'somefield'},
+        'http_post_static_payload': {'name': 'somestaticname'},
         'alert': []
     }
     load_modules(rule)
-    alert = SimplePostAlerter(rule)
+    alert = HTTPPostAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
         'somefield': 'foobarbaz'
@@ -970,11 +1027,74 @@ def test_simple_alerter():
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
     expected_data = {
-        'rule': rule['name'],
-        'matches': [match]
+        'posted_name': 'foobarbaz',
+        'name': 'somestaticname'
     }
     mock_post_request.assert_called_once_with(
-        rule['simple_webhook_url'],
+        rule['http_post_url'],
+        data=mock.ANY,
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
+        proxies=None
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_http_alerter_with_payload_all_values():
+    rule = {
+        'name': 'Test HTTP Post Alerter With Payload',
+        'type': 'any',
+        'http_post_url': 'http://test.webhook.url',
+        'http_post_payload': {'posted_name': 'somefield'},
+        'http_post_static_payload': {'name': 'somestaticname'},
+        'http_post_all_values': True,
+        'alert': []
+    }
+    load_modules(rule)
+    alert = HTTPPostAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'posted_name': 'foobarbaz',
+        'name': 'somestaticname',
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['http_post_url'],
+        data=mock.ANY,
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
+        proxies=None
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_http_alerter_without_payload():
+    rule = {
+        'name': 'Test HTTP Post Alerter Without Payload',
+        'type': 'any',
+        'http_post_url': 'http://test.webhook.url',
+        'http_post_static_payload': {'name': 'somestaticname'},
+        'alert': []
+    }
+    load_modules(rule)
+    alert = HTTPPostAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz',
+        'name': 'somestaticname'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['http_post_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None
