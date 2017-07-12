@@ -18,6 +18,8 @@ setup(
     license='Copyright 2014 Yelp',
     classifiers=[
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ],
