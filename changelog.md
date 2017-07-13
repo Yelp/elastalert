@@ -1,5 +1,14 @@
 # Change Log
 
+## v0.1.18
+
+### Added
+- Added a new alerter "post" based on "simple" which makes POSTS JSON to HTTP endpoints
+- Added an option jira_bump_after_inacitivty to prevent ElastAlert commenting on active JIRA tickets
+
+### Removed
+- Removed "simple" alerter, replaced by "post"
+
 ## v0.1.17
 
 ### Added
