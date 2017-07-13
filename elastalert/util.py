@@ -2,7 +2,7 @@
 import os
 import datetime
 import logging
-
+import json
 import dateutil.parser
 import dateutil.tz
 from auth import Auth
@@ -283,7 +283,6 @@ def elasticsearch_client(conf):
                                      profile_name=es_conn_conf['profile'])
 
     return Elasticsearch(host=es_conn_conf['es_host'],
-                         port=es_conn_conf['es_port'],
                          url_prefix=es_conn_conf['es_url_prefix'],
                          use_ssl=es_conn_conf['use_ssl'],
                          verify_certs=es_conn_conf['verify_certs'],
@@ -308,11 +307,17 @@ def build_es_conn_config(conf):
     parsed_conf['es_password'] = None
     parsed_conf['aws_region'] = None
     parsed_conf['profile'] = None
-    parsed_conf['es_host'] = os.environ.get('ES_HOST', conf['es_host'])
-    parsed_conf['es_port'] = int(os.environ.get('ES_PORT', conf['es_port']))
     parsed_conf['es_url_prefix'] = ''
     parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
     parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
+
+    if "es_host" in conf:
+        es_host = os.environ.get('ES_HOST', conf['es_host'])
+
+        if "es_host" in conf:
+            es_port = int(os.environ.get('ES_PORT', conf['es_port']))
+        parsed_conf['es_host'] = parse_host(es_host, es_port)
+
 
     if 'es_username' in conf:
         parsed_conf['es_username'] = os.environ.get('ES_USERNAME', conf['es_username'])
@@ -342,6 +347,20 @@ def build_es_conn_config(conf):
         parsed_conf['es_url_prefix'] = conf['es_url_prefix']
 
     return parsed_conf
+
+
+def parse_host(host, port="9200"):
+    """
+    Convet host str like "host1:port1, host2:port2" to list
+    """
+    if "," in host:
+        host_list = host.split(",")
+        host_list = [x.strip() for x in host_list]
+        return host_list
+    else:
+        return ["{host}:{port}".format(host=host, port=port)]
+
+
 
 
 def parse_duration(value):
