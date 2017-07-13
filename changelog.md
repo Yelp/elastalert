@@ -1,5 +1,14 @@
 # Change Log
 
+## v0.1.18
+
+## Added
+- Added a new alerter "post" which does HTTP posts to a url, replacing the undocumented "simple" alerter
+- Added an option jira_bump_after_inactivity to prevent ElastAlert from commenting on active JIRA tickets
+
+## Removed
+- Removed the "simple" alerter, it was replaced by "post"
+
 ## v0.1.17
 
 ### Added
