@@ -1,0 +1,13 @@
+FROM alpine:latest
+
+RUN apk update && apk upgrade -f && \
+    apk add -f build-base python python-dev py-setuptools openssl-dev git py-tox py-pip libffi-dev && \
+    mkdir -p /home/elastalert
+
+WORKDIR /home/elastalert
+
+ADD . ./
+RUN pip install -r requirements-dev.txt && \
+    python setup.py install 
+
+
