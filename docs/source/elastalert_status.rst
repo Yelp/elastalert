@@ -26,7 +26,7 @@ elastalert_status
 - ``matches``: The number of matches that the rule returned after processing the hits. Note that this does not necessarily mean that alerts were triggered.
 - ``time_taken``: The number of seconds it took for this query to run.
 
-``elastalert_status`` is what ElastAlert will use to determine what time range to query when it first starts to avoid duplicating queries. 
+``elastalert_status`` is what ElastAlert will use to determine what time range to query when it first starts to avoid duplicating queries.
 For each rule, it will start querying from the most recent endtime. If ElastAlert is running in debug mode, it will still attempt to base
 its start time by looking for the most recent search performed, but it will not write the results of any query back to Elasticsearch.
 
@@ -64,7 +64,7 @@ an alert with ``realert`` is triggered, a ``silence`` record will be written wit
 - ``rule_name``: The name of the corresponding rule.
 - ``until``: The timestamp when alerts will begin being sent again.
 - ``exponent``: The exponential factor which multiplies ``realert``. The length of this silence is equal to ``realert`` * 2**exponent. This will
-be 0 unless ``exponential_realert`` is set.
+  be 0 unless ``exponential_realert`` is set.
 
 Whenever an alert is triggered, ElastAlert will check for a matching ``silence`` document, and if the ``until`` timestamp is in the future, it will ignore
-the alert completely. See the :ref:`Running Elastalert <runningelastalert>` section for information on how to silence an alert.
+the alert completely. See the :ref:`Running ElastAlert <runningelastalert>` section for information on how to silence an alert.

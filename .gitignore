@@ -1,13 +1,17 @@
 config.yaml
 .tox/
 .coverage
+.idea/*
+.cache/
 __pycache__/
 *.pyc
 virtualenv_run/
 *.egg-info/
 dist/
 venv/
+env/
 docs/build/
 build/
 
 my_rules
+*.swp

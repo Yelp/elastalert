@@ -3,6 +3,7 @@ import copy
 import datetime
 
 import mock
+import os.path
 import pytest
 
 import elastalert.alerts
@@ -67,6 +68,71 @@ def test_import_rules():
             load_configuration('test_config', test_config)
         assert mock_import.call_args_list[0][0][0] == 'testing2.test2'
         assert mock_import.call_args_list[0][0][3] == ['Alerter']
+
+
+def test_import_import():
+    import_rule = copy.deepcopy(test_rule)
+    del(import_rule['es_host'])
+    del(import_rule['es_port'])
+    import_rule['import'] = 'importme.ymlt'
+    import_me = {
+        'es_host': 'imported_host',
+        'es_port': 12349,
+        'email': 'ignored@email',  # overwritten by the email in import_rule
+    }
+
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [import_rule, import_me]
+        rules = load_configuration('blah.yaml', test_config)
+        assert mock_open.call_args_list[0][0] == ('blah.yaml',)
+        assert mock_open.call_args_list[1][0] == ('importme.ymlt',)
+        assert len(mock_open.call_args_list) == 2
+        assert rules['es_port'] == 12349
+        assert rules['es_host'] == 'imported_host'
+        assert rules['email'] == ['test@test.test']
+        assert rules['filter'] == import_rule['filter']
+
+
+def test_import_absolute_import():
+    import_rule = copy.deepcopy(test_rule)
+    del(import_rule['es_host'])
+    del(import_rule['es_port'])
+    import_rule['import'] = '/importme.ymlt'
+    import_me = {
+        'es_host': 'imported_host',
+        'es_port': 12349,
+        'email': 'ignored@email',  # overwritten by the email in import_rule
+    }
+
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [import_rule, import_me]
+        rules = load_configuration('blah.yaml', test_config)
+        assert mock_open.call_args_list[0][0] == ('blah.yaml',)
+        assert mock_open.call_args_list[1][0] == ('/importme.ymlt',)
+        assert len(mock_open.call_args_list) == 2
+        assert rules['es_port'] == 12349
+        assert rules['es_host'] == 'imported_host'
+        assert rules['email'] == ['test@test.test']
+        assert rules['filter'] == import_rule['filter']
+
+
+def test_import_filter():
+    # Check that if a filter is specified the rules are merged:
+
+    import_rule = copy.deepcopy(test_rule)
+    del(import_rule['es_host'])
+    del(import_rule['es_port'])
+    import_rule['import'] = 'importme.ymlt'
+    import_me = {
+        'es_host': 'imported_host',
+        'es_port': 12349,
+        'filter': [{'term': {'ratchet': 'clank'}}],
+    }
+
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [import_rule, import_me]
+        rules = load_configuration('blah.yaml', test_config)
+        assert rules['filter'] == [{'term': {'ratchet': 'clank'}}, {'term': {'key': 'value'}}]
 
 
 def test_load_inline_alert_rule():
@@ -135,15 +201,22 @@ def test_compound_query_key():
     test_rule_copy = copy.deepcopy(test_rule)
     test_rule_copy.pop('use_count_query')
     test_rule_copy['query_key'] = ['field1', 'field2']
-    load_options(test_rule_copy, test_config)
+    load_options(test_rule_copy, test_config, 'filename.yaml')
     assert 'field1' in test_rule_copy['include']
     assert 'field2' in test_rule_copy['include']
     assert test_rule_copy['query_key'] == 'field1,field2'
     assert test_rule_copy['compound_query_key'] == ['field1', 'field2']
 
 
+def test_name_inference():
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy.pop('name')
+    load_options(test_rule_copy, test_config, 'msmerc woz ere.yaml')
+    assert test_rule_copy['name'] == 'msmerc woz ere'
+
+
 def test_raises_on_missing_config():
-    optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include', 'es_host', 'es_port')
+    optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include', 'es_host', 'es_port', 'name')
     test_rule_copy = copy.deepcopy(test_rule)
     for key in test_rule_copy.keys():
         test_rule_copy = copy.deepcopy(test_rule)
@@ -158,8 +231,9 @@ def test_raises_on_missing_config():
             mock_open.side_effect = [test_config_copy, test_rule_copy]
             with mock.patch('os.listdir') as mock_ls:
                 mock_ls.return_value = ['testrule.yaml']
-                with pytest.raises(EAException):
-                    load_rules(test_args)
+                with pytest.raises(EAException, message='key %s should be required' % key):
+                    rule = load_rules(test_args)
+                    print(rule)
 
 
 def test_raises_on_bad_generate_kibana_filters():
@@ -189,7 +263,7 @@ def test_raises_on_bad_generate_kibana_filters():
                     load_configuration('blah', test_config)
 
 
-def test_get_file_paths():
+def test_get_file_paths_recursive():
     conf = {'scan_subdirectories': True, 'rules_folder': 'root'}
     walk_paths = (('root', ('folder_a', 'folder_b'), ('rule.yaml',)),
                   ('root/folder_a', (), ('a.yaml', 'ab.yaml')),
@@ -198,8 +272,28 @@ def test_get_file_paths():
         mock_walk.return_value = walk_paths
         paths = get_file_paths(conf)
 
+    paths = [p.replace(os.path.sep, '/') for p in paths]
+
     assert 'root/rule.yaml' in paths
     assert 'root/folder_a/a.yaml' in paths
     assert 'root/folder_a/ab.yaml' in paths
     assert 'root/folder_b/b.yaml' in paths
     assert len(paths) == 4
+
+
+def test_get_file_paths():
+    # Check for no subdirectory
+    conf = {'scan_subdirectories': False, 'rules_folder': 'root'}
+    files = ['badfile', 'a.yaml', 'b.yaml']
+
+    with mock.patch('os.listdir') as mock_list:
+        with mock.patch('os.path.isfile') as mock_path:
+            mock_path.return_value = True
+            mock_list.return_value = files
+            paths = get_file_paths(conf)
+
+    paths = [p.replace(os.path.sep, '/') for p in paths]
+
+    assert 'root/a.yaml' in paths
+    assert 'root/b.yaml' in paths
+    assert len(paths) == 2

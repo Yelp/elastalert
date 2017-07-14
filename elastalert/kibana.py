@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os.path
 import urllib
 
 from util import EAException
@@ -180,6 +181,19 @@ def set_index_name(dashboard, name):
     dashboard['index']['default'] = name
 
 
+def set_timestamp_field(dashboard, field):
+    # set the nav timefield if we don't want @timestamp
+    dashboard['nav'][0]['timefield'] = field
+
+    # set the time_field for each of our panels
+    for row in dashboard.get('rows'):
+        for panel in row.get('panels'):
+            panel['time_field'] = field
+
+    # set our filter's  time field
+    dashboard['services']['filter']['list']['0']['field'] = field
+
+
 def add_filter(dashboard, es_filter):
     next_id = max(dashboard['services']['filter']['ids']) + 1
 
@@ -200,7 +214,7 @@ def add_filter(dashboard, es_filter):
     elif 'term' in es_filter:
         kibana_filter['type'] = 'field'
         f_field, f_query = es_filter['term'].items()[0]
-        # Wrap query in quotes, otherwise certain characters cause kibana to throw errors
+        # Wrap query in quotes, otherwise certain characters cause Kibana to throw errors
         if isinstance(f_query, basestring):
             f_query = '"%s"' % (f_query.replace('"', '\\"'))
         if isinstance(f_query, list):
@@ -265,6 +279,7 @@ def filters_from_dashboard(db):
 
 
 def kibana4_dashboard_link(dashboard, starttime, endtime):
+    dashboard = os.path.expandvars(dashboard)
     time_settings = kibana4_time_temp % (starttime, endtime)
     time_settings = urllib.quote(time_settings)
     return "%s?_g=%s" % (dashboard, time_settings)

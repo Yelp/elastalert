@@ -1,15 +1,30 @@
 # -*- coding: utf-8 -*-
+import os
 import datetime
 import logging
 
 import dateutil.parser
 import dateutil.tz
+from auth import Auth
+from elasticsearch import RequestsHttpConnection
+from elasticsearch.client import Elasticsearch
+from six import string_types
 
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
 
 
-def lookup_es_key(lookup_dict, term):
+def new_get_event_ts(ts_field):
+    """ Constructs a lambda that may be called to extract the timestamp field
+    from a given event.
+
+    :returns: A callable function that takes an event and outputs that event's
+    timestamp field.
+    """
+    return lambda event: lookup_es_key(event[0], ts_field)
+
+
+def _find_es_dict_by_key(lookup_dict, term):
     """ Performs iterative dictionary search based upon the following conditions:
 
     1. Subkeys may either appear behind a full stop (.) or at one lookup_dict level lower in the tree.
@@ -25,38 +40,67 @@ def lookup_es_key(lookup_dict, term):
        {'juniper_duo.geoip': {'country_name': 'Democratic People's Republic of Korea'}}
 
     We want a search term of form "key.subkey.subsubkey" to match in all cases.
-    :returns: The value identified by term or None if it cannot be found
+    :returns: A tuple with the first element being the dict that contains the key and the second
+    element which is the last subkey used to access the target specified by the term. None is
+    returned for both if the key can not be found.
     """
     if term in lookup_dict:
-        return lookup_dict[term]
-    else:
-        # If the term does not match immediately, perform iterative lookup:
-        # 1. Split the search term into tokens
-        # 2. Recurrently concatenate these together to traverse deeper into the dictionary,
-        #    clearing the subkey at every successful lookup.
-        #
-        # This greedy approach is correct because subkeys must always appear in order,
-        # preferring full stops and traversal interchangeably.
-        #
-        # Subkeys will NEVER be duplicated between an alias and a traversal.
-        #
-        # For example:
-        #  {'foo.bar': {'bar': 'ray'}} to look up foo.bar will return {'bar': 'ray'}, not 'ray'
-        go_deeper = lookup_dict
-        subkeys = term.split('.')
-        subkey = ''
+        return lookup_dict, term
 
-        while subkeys:
-            subkey += subkeys[0]
-            subkeys = subkeys[1:]
-            if subkey in go_deeper:
-                go_deeper = go_deeper[subkey]
-                subkey = ''
-            else:
-                subkey += '.'
-        if subkey:
-            return None
-        return go_deeper
+    # If the term does not match immediately, perform iterative lookup:
+    # 1. Split the search term into tokens
+    # 2. Recurrently concatenate these together to traverse deeper into the dictionary,
+    #    clearing the subkey at every successful lookup.
+    #
+    # This greedy approach is correct because subkeys must always appear in order,
+    # preferring full stops and traversal interchangeably.
+    #
+    # Subkeys will NEVER be duplicated between an alias and a traversal.
+    #
+    # For example:
+    #  {'foo.bar': {'bar': 'ray'}} to look up foo.bar will return {'bar': 'ray'}, not 'ray'
+    dict_cursor = lookup_dict
+    subkeys = term.split('.')
+    subkey = ''
+
+    while len(subkeys) > 0:
+        subkey += subkeys.pop(0)
+
+        if subkey in dict_cursor:
+            if len(subkeys) == 0:
+                break
+
+            dict_cursor = dict_cursor[subkey]
+            subkey = ''
+        elif len(subkeys) == 0:
+            # If there are no keys left to match, return None values
+            dict_cursor = None
+            subkey = None
+        else:
+            subkey += '.'
+
+    return dict_cursor, subkey
+
+
+def set_es_key(lookup_dict, term, value):
+    """ Looks up the location that the term maps to and sets it to the given value.
+    :returns: True if the value was set successfully, False otherwise.
+    """
+    value_dict, value_key = _find_es_dict_by_key(lookup_dict, term)
+
+    if value_dict is not None:
+        value_dict[value_key] = value
+        return True
+
+    return False
+
+
+def lookup_es_key(lookup_dict, term):
+    """ Performs iterative dictionary search for the given term.
+    :returns: The value identified by term or None if it cannot be found.
+    """
+    value_dict, value_key = _find_es_dict_by_key(lookup_dict, term)
+    return None if value_key is None else value_dict[value_key]
 
 
 def ts_to_dt(timestamp):
@@ -82,6 +126,25 @@ def dt_to_ts(dt):
     # isoformat() uses microsecond accuracy and timezone offsets
     # but we should try to use millisecond accuracy and Z to indicate UTC
     return ts.replace('000+00:00', 'Z').replace('+00:00', 'Z')
+
+
+def ts_to_dt_with_format(timestamp, ts_format):
+    if isinstance(timestamp, datetime.datetime):
+        logging.warning('Expected str timestamp, got datetime')
+        return timestamp
+    dt = datetime.datetime.strptime(timestamp, ts_format)
+    # Implicitly convert local timestamps to UTC
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=dateutil.tz.tzutc())
+    return dt
+
+
+def dt_to_ts_with_format(dt, ts_format):
+    if not isinstance(dt, datetime.datetime):
+        logging.warning('Expected datetime, got %s' % (type(dt)))
+        return dt
+    ts = dt.strftime(ts_format)
+    return ts
 
 
 def ts_now():
@@ -114,8 +177,8 @@ def ts_add(ts, td):
 
 def hashable(obj):
     """ Convert obj to a hashable obj.
-    We use the value of some fields from elasticsearch as keys for dictionaries. This means
-    that whatever elasticsearch returns must be hashable, and it sometimes returns a list or dict."""
+    We use the value of some fields from Elasticsearch as keys for dictionaries. This means
+    that whatever Elasticsearch returns must be hashable, and it sometimes returns a list or dict."""
     if not obj.__hash__:
         return str(obj)
     return obj
@@ -144,9 +207,14 @@ def seconds(td):
     return td.seconds + td.days * 24 * 3600
 
 
-def total_seconds(td):
+def total_seconds(dt):
     # For python 2.6 compatability
-    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+    if dt is None:
+        return 0
+    elif hasattr(dt, 'total_seconds'):
+        return dt.total_seconds()
+    else:
+        return (dt.microseconds + (dt.seconds + dt.days * 24 * 3600) * 10**6) / 10**6
 
 
 def dt_to_int(dt):
@@ -155,11 +223,11 @@ def dt_to_int(dt):
 
 
 def unixms_to_dt(ts):
-    return unix_to_dt(ts / 1000)
+    return unix_to_dt(float(ts) / 1000)
 
 
 def unix_to_dt(ts):
-    dt = datetime.datetime.utcfromtimestamp(ts)
+    dt = datetime.datetime.utcfromtimestamp(float(ts))
     dt = dt.replace(tzinfo=dateutil.tz.tzutc())
     return dt
 
@@ -180,3 +248,109 @@ def cronite_datetime_to_timestamp(self, d):
         d = d.replace(tzinfo=None) - d.utcoffset()
 
     return total_seconds((d - datetime.datetime(1970, 1, 1)))
+
+
+def add_raw_postfix(field, is_five):
+    if is_five:
+        end = '.keyword'
+    else:
+        end = '.raw'
+    if not field.endswith(end):
+        field += end
+    return field
+
+
+def replace_dots_in_field_names(document):
+    """ This method destructively modifies document by replacing any dots in
+    field names with an underscore. """
+    for key, value in list(document.items()):
+        if isinstance(value, dict):
+            value = replace_dots_in_field_names(value)
+        if isinstance(key, string_types) and key.find('.') != -1:
+            del document[key]
+            document[key.replace('.', '_')] = value
+    return document
+
+
+def elasticsearch_client(conf):
+    """ returns an Elasticsearch instance configured using an es_conn_config """
+    es_conn_conf = build_es_conn_config(conf)
+    auth = Auth()
+    es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
+                                     username=es_conn_conf['es_username'],
+                                     password=es_conn_conf['es_password'],
+                                     aws_region=es_conn_conf['aws_region'],
+                                     profile_name=es_conn_conf['profile'])
+
+    return Elasticsearch(host=es_conn_conf['es_host'],
+                         port=es_conn_conf['es_port'],
+                         url_prefix=es_conn_conf['es_url_prefix'],
+                         use_ssl=es_conn_conf['use_ssl'],
+                         verify_certs=es_conn_conf['verify_certs'],
+                         ca_certs=es_conn_conf['ca_certs'],
+                         connection_class=RequestsHttpConnection,
+                         http_auth=es_conn_conf['http_auth'],
+                         timeout=es_conn_conf['es_conn_timeout'],
+                         send_get_body_as=es_conn_conf['send_get_body_as'])
+
+
+def build_es_conn_config(conf):
+    """ Given a conf dictionary w/ raw config properties 'use_ssl', 'es_host', 'es_port'
+    'es_username' and 'es_password', this will return a new dictionary
+    with properly initialized values for 'es_host', 'es_port', 'use_ssl' and 'http_auth' which
+    will be a basicauth username:password formatted string """
+    parsed_conf = {}
+    parsed_conf['use_ssl'] = os.environ.get('ES_USE_SSL', False)
+    parsed_conf['verify_certs'] = True
+    parsed_conf['ca_certs'] = None
+    parsed_conf['http_auth'] = None
+    parsed_conf['es_username'] = None
+    parsed_conf['es_password'] = None
+    parsed_conf['aws_region'] = None
+    parsed_conf['profile'] = None
+    parsed_conf['es_host'] = os.environ.get('ES_HOST', conf['es_host'])
+    parsed_conf['es_port'] = int(os.environ.get('ES_PORT', conf['es_port']))
+    parsed_conf['es_url_prefix'] = ''
+    parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
+    parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
+
+    if 'es_username' in conf:
+        parsed_conf['es_username'] = os.environ.get('ES_USERNAME', conf['es_username'])
+        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD', conf['es_password'])
+
+    if 'aws_region' in conf:
+        parsed_conf['aws_region'] = conf['aws_region']
+
+    # Deprecated
+    if 'boto_profile' in conf:
+        logging.warning('Found deprecated "boto_profile", use "profile" instead!')
+        parsed_conf['profile'] = conf['boto_profile']
+
+    if 'profile' in conf:
+        parsed_conf['profile'] = conf['profile']
+
+    if 'use_ssl' in conf:
+        parsed_conf['use_ssl'] = conf['use_ssl']
+
+    if 'verify_certs' in conf:
+        parsed_conf['verify_certs'] = conf['verify_certs']
+
+    if 'ca_certs' in conf:
+        parsed_conf['ca_certs'] = conf['ca_certs']
+
+    if 'es_url_prefix' in conf:
+        parsed_conf['es_url_prefix'] = conf['es_url_prefix']
+
+    return parsed_conf
+
+
+def parse_duration(value):
+    """Convert ``unit=num`` spec into a ``timedelta`` object."""
+    unit, num = value.split('=')
+    return datetime.timedelta(**{unit: int(num)})
+
+
+def parse_deadline(value):
+    """Convert ``unit=num`` spec into a ``datetime`` object."""
+    duration = parse_duration(value)
+    return ts_now() + duration

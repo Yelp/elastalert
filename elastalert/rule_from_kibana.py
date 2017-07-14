@@ -15,7 +15,8 @@ def main():
     es_host = raw_input("Elasticsearch host: ")
     es_port = raw_input("Elasticsearch port: ")
     db_name = raw_input("Dashboard name: ")
-    es = Elasticsearch(host=es_host, port=es_port)
+    send_get_body_as = raw_input("Method for querying Elasticsearch[GET]: ") or 'GET'
+    es = Elasticsearch(host=es_host, port=es_port, send_get_body_as=send_get_body_as)
     query = {'query': {'term': {'_id': db_name}}}
     res = es.search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
     if not res['hits']['hits']:
@@ -32,6 +33,7 @@ def main():
     print("es_port: %s" % (es_port))
     print("filter:")
     print(yaml.safe_dump(config_filters))
+
 
 if __name__ == '__main__':
     main()

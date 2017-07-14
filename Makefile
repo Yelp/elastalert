@@ -16,9 +16,12 @@ install-hooks:
 test:
 	tox
 
+test-docker:
+	docker-compose --project-name elastalert build tox
+	docker-compose --project-name elastalert run tox
+
 clean:
 	make -C docs clean
 	find . -name '*.pyc' -delete
 	find . -name '__pycache__' -delete
 	rm -rf virtualenv_run .tox .coverage *.egg-info build
-

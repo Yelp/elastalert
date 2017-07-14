@@ -2,11 +2,11 @@
 
 # (Optional)
 # Elasticsearch host
-es_host: localhost
+#es_host: localhost
 
 # (Optional)
 # Elasticsearch port
-es_port: 9200
+#es_port: 9200
 
 # (Required)
 # OpsGenie credentials
@@ -31,10 +31,10 @@ opsgenie_key: ogkey
 opsgenie_tags:
   - "Production"
 
-# (OptionaL) Connect with SSL to elasticsearch
+# (OptionaL) Connect with SSL to Elasticsearch
 #use_ssl: True
 
-# (Optional) basic-auth username and password for elasticsearch
+# (Optional) basic-auth username and password for Elasticsearch
 #es_username: someusername
 #es_password: somepassword
 
@@ -63,7 +63,7 @@ timeframe:
   hours: 2
 
 # (Required)
-# A list of elasticsearch filters used for find events
+# A list of Elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
 # For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
 filter:

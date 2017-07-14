@@ -12,7 +12,7 @@
 # Elasticsearch port
 # es_port: 14900
 
-# (Optional) Connect with SSL to elasticsearch
+# (Optional) Connect with SSL to Elasticsearch
 #use_ssl: True
 
 # (Optional) basic-auth username and password for elasticsearch
@@ -40,7 +40,7 @@ compare_key: country_name
 # Ignore documents without the compare_key (country_name) field
 ignore_null: true
 
-# (Optional, change specific)
+# (Required, change specific)
 # The change must occur in two documents with the same query_key
 query_key: username
 
@@ -50,7 +50,7 @@ timeframe:
   days: 1
 
 # (Required)
-# A list of elasticsearch filters used for find events
+# A list of Elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
 # For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
 filter:

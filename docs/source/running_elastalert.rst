@@ -6,22 +6,37 @@ Running ElastAlert for the First Time
 Requirements
 ------------
 
-- Elasticsearch 1.* or 2.*
+- Elasticsearch
 - ISO8601 or Unix timestamped data
-- Python 2.6 or 2.7
+- Python 2.7
 - pip, see requirements.txt
+- Packages on Ubuntu 14.x: python-pip python-dev libffi-dev libssl-dev
 
 Downloading and Configuring
 ---------------------------
 
-First, clone the ElastAlert repository::
+You can either install the latest released version of ElastAlert using pip::
+
+    $ pip install elastalert
+
+or you can clone the ElastAlert repository for the most recent changes::
 
     $ git clone https://github.com/Yelp/elastalert.git
 
 Install the module::
 
+    $ pip install "setuptools>=11.3"
     $ python setup.py install
-    $ pip install -r requirements.txt
+
+Depending on the version of Elasticsearch, you may need to manually install the correct version of elasticsearch-py.
+
+Elasticsearch 5.0+::
+
+    $ pip install "elasticsearch>=5.0.0"
+
+Elasticsearch 2.X::
+
+    $ pip install "elasticsearch<3.0.0"
 
 Next, open up config.yaml.example. In it, you will find several configuration options. ElastAlert may be run without changing any of these settings.
 
@@ -35,13 +50,17 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``es_port`` is the port corresponding to ``es_host``.
 
-``use_ssl``: Optional; whether or not to connect to ``es_host`` using SSL; set to ``True`` or ``False``.
+``use_ssl``: Optional; whether or not to connect to ``es_host`` using TLS; set to ``True`` or ``False``.
+
+``verify_certs``: Optional; whether or not to verify TLS certificates; set to ``True`` or ``False``. The default is ``True``
 
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``.
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
 
 ``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
+
+``es_send_get_body_as``: Optional; Method for querying Elasticsearch - ``GET``, ``POST`` or ``source``. The default is ``GET``
 
 ``writeback_index`` is the name of the index in which ElastAlert will store data. We will create this index later.
 
@@ -92,7 +111,7 @@ Each rule defines a query to perform, parameters on what triggers a match, and a
 
 ``type``: Each rule has a different type which may take different parameters. The ``frequency`` type means "Alert when more than ``num_events`` occur within ``timeframe``." For information other types, see :ref:`Rule types <ruletypes>`.
 
-``index``: The name of the index(es) to query. If you are using Logstash, by default the indexes will match "logstash-*".
+``index``: The name of the index(es) to query. If you are using Logstash, by default the indexes will match ``"logstash-*"``.
 
 ``num_events``: This parameter is specific to ``frequency`` type and is the threshold for when an alert is triggered.
 
@@ -117,6 +136,15 @@ Running the ``elastalert-test-rule`` tool will test that your config file succes
 
     $ elastalert-test-rule example_rules/example_frequency.yaml
 
+If you want to specify a configuration file to use, you can run it with the config flag.
+
+    $ elastalert-test-rule --config <path-to-config-file> example_rules/example_frequency.yaml.
+
+The configuration preferences will be loaded as follows:
+    1. Configurations specified in the yaml file.
+    2. Configurations specified in the config file, if specified.
+    3. Default configurations, for the tool to run.
+
 See :ref:`the testing section for more details <testing>`
 
 Running ElastAlert
@@ -125,10 +153,10 @@ Running ElastAlert
 There are two ways of invoking ElastAlert. As a daemon, through Supervisor (http://supervisord.org/), or directly with Python. For easier debugging purposes in this tutorial, we will invoke it directly::
 
     $ python -m elastalert.elastalert --verbose --rule example_frequency.yaml  # or use the entry point: elastalert --verbose --rule ...
-    No handlers could be found for logger "elasticsearch"
+    No handlers could be found for logger "Elasticsearch"
     INFO:root:Queried rule Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 hits
-    INFO:elasticsearch:POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]
-    INFO:root:Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits, 0 matches, 0 alerts sent
+    INFO:Elasticsearch:POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]
+    INFO:root:Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits (0 already seen), 0 matches, 0 alerts sent
     INFO:root:Sleeping for 297 seconds
 
 ElastAlert uses the python logging system and ``--verbose`` sets it to display INFO level messages. ``--rule example_frequency.yaml`` specifies the rule to run, otherwise ElastAlert will attempt to load the other rules in the example_rules folder.
@@ -143,9 +171,9 @@ ElastAlert periodically queries the most recent ``buffer_time`` (default 45 minu
 
 This line showing that ElastAlert uploaded a document to the elastalert_status index with information about the query it just made.
 
-``Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits, 0 matches, 0 alerts sent``
+``Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits (0 already seen), 0 matches, 0 alerts sent``
 
-The line means ElastAlert has finished processing the rule. For large time periods, sometimes multiple queries may be run, but their data will be processed together. ``query hits`` is the number of documents that are downloaded from Elasticsearch, ``matches`` is the number of matches the rule type outputted, and ``alerts sent`` is the number of alerts actually sent. This may differ from ``matches`` because of options like ``realert`` and ``aggregation`` or because of an error.
+The line means ElastAlert has finished processing the rule. For large time periods, sometimes multiple queries may be run, but their data will be processed together. ``query hits`` is the number of documents that are downloaded from Elasticsearch, ``already seen`` refers to documents that were already counted in a previous overlapping query and will be ignored, ``matches`` is the number of matches the rule type outputted, and ``alerts sent`` is the number of alerts actually sent. This may differ from ``matches`` because of options like ``realert`` and ``aggregation`` or because of an error.
 
 ``Sleeping for 297 seconds``
 
