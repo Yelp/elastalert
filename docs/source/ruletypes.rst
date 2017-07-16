@@ -1081,7 +1081,7 @@ or
     - email
     - jira
 
-E-mail subject or JIRA issue summary can also be customized by adding an ``alert_subject`` that contains a custom summary.
+E-mail subjects, JIRA issue summaries, and PagerDuty alerts can also be customized by adding an ``alert_subject`` that contains a custom summary.
 It can be further formatted using standard Python formatting syntax::
 
     alert_subject: "Issue {0} occurred at {1}"
@@ -1480,12 +1480,16 @@ The alerter requires the following option:
 
 Optional:
 
-``pagerduty_incident_key``: If not set pagerduty will trigger a new incident for each alert sent. If set to a unique string per rule pagerduty will identify the incident that this event should be applied.
+``alert_subject``: If set, this will be used as the Incident description within PagerDuty. If not set, ElastAlert will default to using the rule name of the alert for the incident.
+
+``alert_subject_args``: If set, and  ``alert_subject`` is a formattable string, ElastAlert will format the incident key based on the provided array of fields from the rule or match.
+
+``pagerduty_incident_key``: If not set PagerDuty will trigger a new incident for each alert sent. If set to a unique string per rule PagerDuty will identify the incident that this event should be applied.
 If there's no open (i.e. unresolved) incident with this key, a new one will be created. If there's already an open incident with a matching key, this event will be appended to that incident's log.
 
 ``pagerduty_incident_key_args``: If set, and ``pagerduty_incident_key`` is a formattable string, Elastalert will format the incident key based on the provided array of fields from the rule or match.
 
-``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
+``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerDuty. Set this option using ``hostname:port`` if you need to use a proxy.
 
 Exotel
 ~~~~~~
@@ -1613,6 +1617,35 @@ Optional:
 ``stomp_destination``: The STOMP destination to use, defaults to /queue/ALERT
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
+
+HTTP POST
+~~~~~~~~~
+
+This alert type will send results to a JSON endpoint using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON will contain al the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
+
+Required:
+
+``http_post_url``: The URL to POST.
+
+Optional:
+
+``http_post_payload``: List of keys:values to use as the content of the POST. Example - ip:clientip will map the value from the clientip index of Elasticsearch to JSON key named ip. If not defined, all the Elasticsearch keys will be sent.
+
+``http_post_static_payload``: Key:value pairs of static parameters to be sent, along with the Elasticsearch results. Put your authentication or other information here.
+
+``http_post_proxy``: URL of proxy, if required.
+
+``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
+
+Example usage::
+
+    alert: post
+    http_post_url: "http://example.com/api"
+    http_post_payload:
+      ip: clientip
+    http_post_static_payload:
+      apikey: abc123
+
 
 Alerter
 ~~~~~~~
