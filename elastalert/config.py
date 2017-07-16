@@ -72,7 +72,7 @@ alerts_mapping = {
     'telegram': alerts.TelegramAlerter,
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
-    'simple': alerts.SimplePostAlerter
+    'post': alerts.HTTPPostAlerter
 }
 # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
 # For example, jira goes before email so the ticket # will be added to the resulting email.
@@ -162,6 +162,7 @@ def load_options(rule, conf, filename, args=None):
     :param rule: A dictionary of parsed YAML from a rule config file.
     :param conf: The global configuration dictionary, used for populating defaults.
     """
+    adjust_deprecated_values(rule)
 
     try:
         rule_schema.validate(rule)
@@ -482,3 +483,14 @@ def get_rule_hashes(conf, use_rule=None):
         with open(rule_file) as fh:
             rule_mod_times[rule_file] = hashlib.sha1(fh.read()).digest()
     return rule_mod_times
+
+
+def adjust_deprecated_values(rule):
+    # From rename of simple HTTP alerter
+    if rule.get('type') == 'simple':
+        rule['type'] = 'post'
+        if 'simple_proxy' in rule:
+            rule['http_post_proxy'] = rule['simple_proxy']
+        if 'simple_webhook_url' in rule:
+            rule['http_post_url'] = rule['simple_webhook_url']
+        logging.warning('"simple" alerter has been renamed "post" and comptability may be removed in a future release.')

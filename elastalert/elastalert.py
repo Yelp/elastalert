@@ -7,6 +7,7 @@ import os
 import signal
 import sys
 import time
+import timeit
 import traceback
 from email.mime.text import MIMEText
 from smtplib import SMTP
@@ -22,6 +23,7 @@ from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
 from croniter import croniter
+from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.exceptions import TransportError
 from enhancements import DropMatchException
@@ -35,6 +37,8 @@ from util import elastalert_logger
 from util import elasticsearch_client
 from util import format_index
 from util import lookup_es_key
+from util import parse_deadline
+from util import parse_duration
 from util import pretty_ts
 from util import replace_dots_in_field_names
 from util import seconds
@@ -75,6 +79,11 @@ class ElastAlerter():
                                                           'Use "NOW" to start from current time. (Default: present)')
         parser.add_argument('--end', dest='end', help='YYYY-MM-DDTHH:MM:SS Query to this timestamp. (Default: present)')
         parser.add_argument('--verbose', action='store_true', dest='verbose', help='Increase verbosity without suppressing alerts')
+        parser.add_argument('--patience', action='store', dest='timeout',
+                            type=parse_duration,
+                            default=datetime.timedelta(),
+                            help='Maximum time to wait for ElasticSearch to become responsive.  Usage: '
+                            '--patience <units>=<number>. e.g. --patience minutes=5')
         parser.add_argument(
             '--pin_rules',
             action='store_true',
@@ -135,7 +144,7 @@ class ElastAlerter():
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
 
         self.writeback_es = elasticsearch_client(self.conf)
-        self.es_version = self.get_version()
+        self._es_version = None
 
         remove = []
         for rule in self.rules:
@@ -149,6 +158,12 @@ class ElastAlerter():
     def get_version(self):
         info = self.writeback_es.info()
         return info['version']['number']
+
+    @property
+    def es_version(self):
+        if self._es_version is None:
+            self._es_version = self.get_version()
+        return self._es_version
 
     def is_five(self):
         return self.es_version.startswith('5')
@@ -973,6 +988,7 @@ class ElastAlerter():
                 except (TypeError, ValueError):
                     self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.starttime))
                     exit(1)
+        self.wait_until_responsive(timeout=self.args.timeout)
         self.running = True
         elastalert_logger.info("Starting up")
         while self.running:
@@ -993,6 +1009,40 @@ class ElastAlerter():
             # Wait before querying again
             sleep_duration = total_seconds(next_run - datetime.datetime.utcnow())
             self.sleep_for(sleep_duration)
+
+    def wait_until_responsive(self, timeout, clock=timeit.default_timer):
+        """Wait until ElasticSearch becomes responsive (or too much time passes)."""
+
+        # Elapsed time is a floating point number of seconds.
+        timeout = timeout.total_seconds()
+
+        # Don't poll unless we're asked to.
+        if timeout <= 0.0:
+            return
+
+        # Periodically poll ElasticSearch.  Keep going until ElasticSearch is
+        # responsive *and* the writeback index exists.
+        ref = clock()
+        while (clock() - ref) < timeout:
+            try:
+                if self.writeback_es.indices.exists(self.writeback_index):
+                    return
+            except ConnectionError:
+                pass
+            time.sleep(1.0)
+
+        if self.writeback_es.ping():
+            logging.error(
+                'Writeback index "%s" does not exist, did you run `elastalert-create-index`?',
+                self.writeback_index,
+            )
+        else:
+            logging.error(
+                'Could not reach ElasticSearch at "%s:%d".',
+                self.conf['es_host'],
+                self.conf['es_port'],
+            )
+        exit(1)
 
     def run_all_rules(self):
         """ Run each rule one time """
@@ -1543,10 +1593,7 @@ class ElastAlerter():
             silence_cache_key = self.rules[0]['name'] + "._silence"
 
         try:
-            unit, num = self.args.silence.split('=')
-            silence_time = datetime.timedelta(**{unit: int(num)})
-            # Double conversion to add tzinfo
-            silence_ts = ts_to_dt(dt_to_ts(silence_time + datetime.datetime.utcnow()))
+            silence_ts = parse_deadline(self.args.silence)
         except (ValueError, TypeError):
             logging.error('%s is not a valid time period' % (self.args.silence))
             exit(1)
