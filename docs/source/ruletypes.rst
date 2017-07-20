@@ -1228,6 +1228,10 @@ STARTTLS.
 ``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. It should be YAML formatted and contain
 two fields, ``user`` and ``password``. If this is not present, no authentication will be attempted.
 
+``smtp_cert_file``: Connect the SMTP host using the given path to a TLS certificate file, default to ``None``.
+
+``smtp_key_file``: Connect the SMTP host using the given path to a TLS key file, default to ``None``.
+
 ``email_reply_to``: This sets the Reply-To header in the email. By default, the from address is ElastAlert@ and the domain will be set
 by the smtp server.
 

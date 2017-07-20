@@ -101,7 +101,7 @@ def test_email():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
@@ -166,7 +166,7 @@ def test_email_with_unicode_strings():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, [u'testing@test.test'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
@@ -193,7 +193,29 @@ def test_email_with_auth():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
+                    mock.call().login('someone', 'hunter2'),
+                    mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
+                    mock.call().close()]
+        assert mock_smtp.mock_calls == expected
+
+
+def test_email_with_cert_key():
+    rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
+            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
+            'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt',
+            'smtp_cert_file': 'dummy/cert.crt', 'smtp_key_file': 'dummy/client.key'}
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock_open.return_value = {'user': 'someone', 'password': 'hunter2'}
+            mock_smtp.return_value = mock.Mock()
+            alert = EmailAlerter(rule)
+
+        alert.alert([{'test_term': 'test_value'}])
+        expected = [mock.call('localhost'),
+                    mock.call().ehlo(),
+                    mock.call().has_extn('STARTTLS'),
+                    mock.call().starttls(certfile='dummy/cert.crt', keyfile='dummy/client.key'),
                     mock.call().login('someone', 'hunter2'),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
                     mock.call().close()]
@@ -212,7 +234,7 @@ def test_email_with_cc():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
@@ -237,7 +259,7 @@ def test_email_with_bcc():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
@@ -262,7 +284,7 @@ def test_email_with_cc_and_bcc():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(
                         mock.ANY,
                         [
@@ -306,7 +328,7 @@ def test_email_with_args():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
