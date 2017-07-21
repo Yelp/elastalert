@@ -864,7 +864,13 @@ class ElastAlerter():
                 string_multi_field_name = '.keyword'
             else:
                 string_multi_field_name = '.raw'
-            new_rule['top_count_keys'] = [key + string_multi_field_name if not key.endswith(string_multi_field_name) else key for key in keys]
+
+            top_count_keys = []
+            for key in keys:
+                if not key.endswith(string_multi_field_name):
+                    key += string_multi_field_name
+                top_count_keys.append(key)
+            new_rule['top_count_keys'] = top_count_keys
 
         if 'download_dashboard' in new_rule['filter']:
             # Download filters from Kibana and set the rules filters to them
