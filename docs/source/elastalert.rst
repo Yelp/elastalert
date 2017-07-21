@@ -179,6 +179,9 @@ The environment variable ``AWS_DEFAULT_PROFILE`` will override this field.
 ``replace_dots_in_field_names``: If ``True``, ElastAlert replaces any dots in field names with an underscore before writing documents to Elasticsearch.
 The default value is ``False``. Elasticsearch 2.0 - 2.3 does not support dots in field names.
 
+``string_multi_field_name``: If set, the suffix to use for the subfield for string multi-fields in Elasticsearch.
+The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticsearch 5.
+
 .. _runningelastalert:
 
 Running ElastAlert
