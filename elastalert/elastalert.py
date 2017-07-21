@@ -142,6 +142,7 @@ class ElastAlerter():
         self.starttime = self.args.start
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
+        self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
@@ -857,10 +858,13 @@ class ElastAlerter():
         # Change top_count_keys to .raw
         if 'top_count_keys' in new_rule and new_rule.get('raw_count_keys', True):
             keys = new_rule.get('top_count_keys')
-            if self.is_five():
-                new_rule['top_count_keys'] = [key + '.keyword' if not key.endswith('.keyword') else key for key in keys]
+            if self.string_multi_field_name:
+                string_multi_field_name = self.string_multi_field_name
+            elif self.is_five():
+                string_multi_field_name = '.keyword'
             else:
-                new_rule['top_count_keys'] = [key + '.raw' if not key.endswith('.raw') else key for key in keys]
+                string_multi_field_name = '.raw'
+            new_rule['top_count_keys'] = [key + string_multi_field_name if not key.endswith(string_multi_field_name) else key for key in keys]
 
         if 'download_dashboard' in new_rule['filter']:
             # Download filters from Kibana and set the rules filters to them
