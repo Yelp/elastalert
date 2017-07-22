@@ -857,7 +857,6 @@ class ElastAlerter():
 
         # Change top_count_keys to .raw
         if 'top_count_keys' in new_rule and new_rule.get('raw_count_keys', True):
-            keys = new_rule.get('top_count_keys')
             if self.string_multi_field_name:
                 string_multi_field_name = self.string_multi_field_name
             elif self.is_five():
@@ -865,12 +864,9 @@ class ElastAlerter():
             else:
                 string_multi_field_name = '.raw'
 
-            top_count_keys = []
-            for key in keys:
+            for i, key in enumerate(new_rule['top_count_keys']):
                 if not key.endswith(string_multi_field_name):
-                    key += string_multi_field_name
-                top_count_keys.append(key)
-            new_rule['top_count_keys'] = top_count_keys
+                    new_rule['top_count_keys'][i] += string_multi_field_name
 
         if 'download_dashboard' in new_rule['filter']:
             # Download filters from Kibana and set the rules filters to them
