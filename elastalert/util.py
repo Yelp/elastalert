@@ -237,7 +237,7 @@ def dt_to_unix(dt):
 
 
 def dt_to_unixms(dt):
-    return dt_to_unix(dt) * 1000
+    return int(dt_to_unix(dt) * 1000)
 
 
 def cronite_datetime_to_timestamp(self, d):
