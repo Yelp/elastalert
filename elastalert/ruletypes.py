@@ -604,7 +604,7 @@ class NewTermsRule(RuleType):
             tmp_start = start
             tmp_end = min(start + step, end)
 
-            time_filter = {self.rules['timestamp_field']: {'lt': dt_to_ts(tmp_end), 'gte': dt_to_ts(tmp_start)}}
+            time_filter = {self.rules['timestamp_field']: {'lt': self.rules['dt_to_ts'](tmp_end), 'gte': self.rules['dt_to_ts'](tmp_start)}}
             query_template['filter'] = {'bool': {'must': [{'range': time_filter}]}}
             query = {'aggs': {'filtered': query_template}}
             # For composite keys, we will need to perform sub-aggregations
@@ -650,7 +650,7 @@ class NewTermsRule(RuleType):
                     break
                 tmp_start = tmp_end
                 tmp_end = min(tmp_start + step, end)
-                time_filter[self.rules['timestamp_field']] = {'lt': dt_to_ts(tmp_end), 'gte': dt_to_ts(tmp_start)}
+                time_filter[self.rules['timestamp_field']] = {'lt': self.rules['dt_to_ts'](tmp_end), 'gte': self.rules['dt_to_ts'](tmp_start)}
 
             for key, values in self.seen_values.iteritems():
                 if not values:
