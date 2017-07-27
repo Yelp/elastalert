@@ -2,7 +2,6 @@
 import os
 import datetime
 import logging
-import json
 import dateutil.parser
 import dateutil.tz
 from auth import Auth
@@ -318,7 +317,6 @@ def build_es_conn_config(conf):
             es_port = int(os.environ.get('ES_PORT', conf['es_port']))
         parsed_conf['es_host'] = parse_host(es_host, es_port)
 
-
     if 'es_username' in conf:
         parsed_conf['es_username'] = os.environ.get('ES_USERNAME', conf['es_username'])
         parsed_conf['es_password'] = os.environ.get('ES_PASSWORD', conf['es_password'])
@@ -359,8 +357,6 @@ def parse_host(host, port="9200"):
         return host_list
     else:
         return ["{host}:{port}".format(host=host, port=port)]
-
-
 
 
 def parse_duration(value):
