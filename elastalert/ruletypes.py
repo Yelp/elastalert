@@ -650,7 +650,8 @@ class NewTermsRule(RuleType):
                     break
                 tmp_start = tmp_end
                 tmp_end = min(tmp_start + step, end)
-                time_filter[self.rules['timestamp_field']] = {'lt': self.rules['dt_to_ts'](tmp_end), 'gte': self.rules['dt_to_ts'](tmp_start)}
+                time_filter[self.rules['timestamp_field']] = {'lt': self.rules['dt_to_ts'](tmp_end),
+                                                              'gte': self.rules['dt_to_ts'](tmp_start)}
 
             for key, values in self.seen_values.iteritems():
                 if not values:
