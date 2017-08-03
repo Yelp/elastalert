@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import argparse
 import copy
 import datetime
 import json
@@ -14,7 +15,6 @@ from smtplib import SMTP
 from smtplib import SMTPException
 from socket import error
 
-import argparse
 import dateutil.tz
 import kibana
 import yaml
@@ -1231,14 +1231,14 @@ class ElastAlerter():
             return None
         return filters
 
-    def alert(self, matches, rule, alert_time=None):
+    def alert(self, matches, rule, alert_time=None, pending=False):
         """ Wraps alerting, Kibana linking and enhancements in an exception handler """
         try:
-            return self.send_alert(matches, rule, alert_time=alert_time)
+            return self.send_alert(matches, rule, alert_time=alert_time, pending=pending)
         except Exception as e:
             self.handle_uncaught_exception(e, rule)
 
-    def send_alert(self, matches, rule, alert_time=None):
+    def send_alert(self, matches, rule, alert_time=None, pending=False):
         """ Send out an alert.
 
         :param matches: A list of matches.
@@ -1281,7 +1281,10 @@ class ElastAlerter():
             if kb_link:
                 matches[0]['kibana_link'] = kb_link
 
-        if not rule.get('run_enhancements_first'):
+        # Enhancements were already run at match time if
+        # run_enhancements_first is set or
+        # pending==True, which means this is a retry of a failed alert
+        if not rule.get('run_enhancements_first') and not pending:
             for enhancement in rule['match_enhancements']:
                 valid_matches = []
                 for match in matches:
@@ -1429,7 +1432,7 @@ class ElastAlerter():
                     matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
                     self.alert(matches, rule, alert_time=alert_time)
                 else:
-                    self.alert([match_body], rule, alert_time=alert_time)
+                    self.alert([match_body], rule, alert_time=alert_time, pending=True)
 
                 if rule['current_aggregate_id']:
                     for qk, agg_id in rule['current_aggregate_id'].iteritems():
