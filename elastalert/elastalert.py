@@ -1231,14 +1231,14 @@ class ElastAlerter():
             return None
         return filters
 
-    def alert(self, matches, rule, alert_time=None, pending=False):
+    def alert(self, matches, rule, alert_time=None, retried=False):
         """ Wraps alerting, Kibana linking and enhancements in an exception handler """
         try:
-            return self.send_alert(matches, rule, alert_time=alert_time, pending=pending)
+            return self.send_alert(matches, rule, alert_time=alert_time, retried=retried)
         except Exception as e:
             self.handle_uncaught_exception(e, rule)
 
-    def send_alert(self, matches, rule, alert_time=None, pending=False):
+    def send_alert(self, matches, rule, alert_time=None, retried=False):
         """ Send out an alert.
 
         :param matches: A list of matches.
@@ -1283,8 +1283,8 @@ class ElastAlerter():
 
         # Enhancements were already run at match time if
         # run_enhancements_first is set or
-        # pending==True, which means this is a retry of a failed alert
-        if not rule.get('run_enhancements_first') and not pending:
+        # retried==True, which means this is a retry of a failed alert
+        if not rule.get('run_enhancements_first') and not retried:
             for enhancement in rule['match_enhancements']:
                 valid_matches = []
                 for match in matches:
@@ -1432,7 +1432,11 @@ class ElastAlerter():
                     matches = [match_body] + [agg_match['match_body'] for agg_match in aggregated_matches]
                     self.alert(matches, rule, alert_time=alert_time)
                 else:
-                    self.alert([match_body], rule, alert_time=alert_time, pending=True)
+                    # If this rule isn't using aggregation, this must be a retry of a failed alert
+                    retried = False
+                    if 'aggregation' not in rule:
+                        retried = True
+                    self.alert([match_body], rule, alert_time=alert_time, retried=retried)
 
                 if rule['current_aggregate_id']:
                     for qk, agg_id in rule['current_aggregate_id'].iteritems():
