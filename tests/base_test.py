@@ -252,6 +252,29 @@ def test_match_with_module(ea):
     mod.process.assert_called_with({'@timestamp': END, 'num_hits': 0, 'num_matches': 1})
 
 
+def test_match_with_module_from_pending(ea):
+    mod = BaseEnhancement(ea.rules[0])
+    mod.process = mock.Mock()
+    ea.rules[0]['match_enhancements'] = [mod]
+    ea.rules[0].pop('aggregation')
+    pending_alert = {'match_body': {'foo': 'bar'}, 'rule_name': ea.rules[0]['name'],
+                     'alert_time': START_TIMESTAMP, '@timestamp': START_TIMESTAMP}
+    # First call, return the pending alert, second, no associated aggregated alerts
+    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': pending_alert}]}},
+                                          {'hits': {'hits': []}}]
+    ea.send_pending_alerts()
+    assert mod.process.call_count == 0
+
+    # If aggregation is set, enhancement IS called
+    pending_alert = {'match_body': {'foo': 'bar'}, 'rule_name': ea.rules[0]['name'],
+                     'alert_time': START_TIMESTAMP, '@timestamp': START_TIMESTAMP}
+    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': pending_alert}]}},
+                                          {'hits': {'hits': []}}]
+    ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
+    ea.send_pending_alerts()
+    assert mod.process.call_count == 1
+
+
 def test_match_with_module_with_agg(ea):
     mod = BaseEnhancement(ea.rules[0])
     mod.process = mock.Mock()
