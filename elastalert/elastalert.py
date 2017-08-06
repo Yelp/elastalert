@@ -1334,12 +1334,19 @@ class ElastAlerter():
                 agg_id = res['_id']
 
     def get_alert_body(self, match, rule, alert_sent, alert_time, alert_exception=None):
-        body = {'match_body': match}
-        body['rule_name'] = rule['name']
+        body = {
+            'match_body': match,
+            'rule_name': rule['name'],
+            'alert_info': rule['alert'][0].get_info(),
+            'alert_sent': alert_sent,
+            'alert_time': alert_time
+        }
+
+        match_time = lookup_es_key(match, rule['timestamp_field'])
+        if match_time is not None:
+            body['match_time'] = match_time
+
         # TODO record info about multiple alerts
-        body['alert_info'] = rule['alert'][0].get_info()
-        body['alert_sent'] = alert_sent
-        body['alert_time'] = alert_time
 
         # If the alert failed to send, record the exception
         if not alert_sent:
