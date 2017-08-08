@@ -518,7 +518,7 @@ class JiraAlerter(Alerter):
         self.bump_tickets = self.rule.get('jira_bump_tickets', False)
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
-        self.bump_after_inactivity = self.rule.get('jira_bump_after_inactivity', self.max_age)
+        self.bump_after_inactivity = self.rule.get('jira_bump_after_inactivity', 0)
         self.watchers = self.rule.get('jira_watchers')
 
         if self.bump_in_statuses and self.bump_not_in_statuses:
