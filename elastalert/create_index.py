@@ -111,6 +111,7 @@ def main():
     es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                 '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'alert_time': {'format': 'dateOptionalTime', 'type': 'date'},
+                                                'match_time': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'match_body': {'enabled': False, 'type': 'object'},
                                                 'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
     past_mapping = {'past_elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},

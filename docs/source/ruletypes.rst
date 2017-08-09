@@ -94,6 +94,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``timestamp_format`` (string, default "%Y-%m-%dT%H:%M:%SZ")  |           |
 +--------------------------------------------------------------+           |
+| ``timestamp_format_expr`` (string, no default )              |           |
++--------------------------------------------------------------+           |
 | ``_source_enabled`` (boolean, default True)                  |           |
 +--------------------------------------------------------------+           |
 | ``alert_text_args`` (array of strs)                          |           |
@@ -219,7 +221,8 @@ import
 
 ``import``: If specified includes all the settings from this yaml file. This allows common config options to be shared. Note that imported files that aren't
 complete rules should not have a ``.yml`` or ``.yaml`` suffix so that ElastAlert doesn't treat them as rules. Filters in imported files are merged (ANDed)
-with any filters in the rule. (Optional, string, no default)
+with any filters in the rule. You can only have one import per rule, though the imported file can import another file, recursively. The filename 
+can be an absolute path or relative to the rules directory. (Optional, string, no default)
 
 use_ssl
 ^^^^^^^
@@ -451,7 +454,8 @@ use_kibana4_dashboard
 
 ``use_kibana4_dashboard``: A link to a Kibana 4 dashboard. For example, "https://kibana.example.com/#/dashboard/My-Dashboard".
 This will set the time setting on the dashboard from the match time minus the timeframe, to 10 minutes after the match time.
-Note that this does not support filtering by ``query_key`` like Kibana 3.
+Note that this does not support filtering by ``query_key`` like Kibana 3.  This value can use `$VAR` and `${VAR}` references
+to expand environment variables.
 
 kibana4_start_timedelta
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -527,6 +531,20 @@ timestamp_format
 ``timestamp_format``: In case Elasticsearch used custom date format for date type field, this option provides a way to define custom timestamp
 format to match the type used for Elastisearch date type field. This option is only valid if ``timestamp_type`` set to ``custom``.
 (Optional, string, default '%Y-%m-%dT%H:%M:%SZ').
+
+timestamp_format_expr
+^^^^^^^^^^^^^^^^^^^^^
+
+``timestamp_format_expr``: In case Elasticsearch used custom date format for date type field, this option provides a way to adapt the
+value obtained converting a datetime through ``timestamp_format``, when the format cannot match perfectly what defined in Elastisearch.
+When set, this option is evaluated as a Python expression along with a *globals* dictionary containing the original datetime instance
+named ``dt`` and the timestamp to be refined, named ``ts``. The returned value becomes the timestamp obtained from the datetime.
+For example, when the date type field in Elasticsearch uses milliseconds (``yyyy-MM-dd'T'HH:mm:ss.SSS'Z'``) and ``timestamp_format``
+option is ``'%Y-%m-%dT%H:%M:%S.%fZ'``, Elasticsearch would fail to parse query terms as they contain microsecond values - that is
+it gets 6 digits instead of 3 - since the ``%f`` placeholder stands for microseconds for Python *strftime* method calls.
+Setting ``timestamp_format_expr: 'ts[:23] + ts[26:]'`` will truncate the value to milliseconds granting Elasticsearch compatibility.
+This option is only valid if ``timestamp_type`` set to ``custom``.
+(Optional, string, no default).
 
 _source_enabled
 ^^^^^^^^^^^^^^^
@@ -1064,7 +1082,7 @@ or
     - email
     - jira
 
-E-mail subject or JIRA issue summary can also be customized by adding an ``alert_subject`` that contains a custom summary.
+E-mail subjects, JIRA issue summaries, and PagerDuty alerts can also be customized by adding an ``alert_subject`` that contains a custom summary.
 It can be further formatted using standard Python formatting syntax::
 
     alert_subject: "Issue {0} occurred at {1}"
@@ -1211,6 +1229,10 @@ STARTTLS.
 ``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. It should be YAML formatted and contain
 two fields, ``user`` and ``password``. If this is not present, no authentication will be attempted.
 
+``smtp_cert_file``: Connect the SMTP host using the given path to a TLS certificate file, default to ``None``.
+
+``smtp_key_file``: Connect the SMTP host using the given path to a TLS key file, default to ``None``.
+
 ``email_reply_to``: This sets the Reply-To header in the email. By default, the from address is ElastAlert@ and the domain will be set
 by the smtp server.
 
@@ -1292,6 +1314,9 @@ Example usage::
 
     jira_bump_in_statuses:
       - Open
+
+``jira_bump_after_inactivity``: If this is set, ElastAlert will only comment on tickets that have been inactive for at least this many days.
+It only applies if ``jira_bump_tickets`` is true. Default is 0 days.
 
 Arbitrary Jira fields:
 
@@ -1463,12 +1488,16 @@ The alerter requires the following option:
 
 Optional:
 
-``pagerduty_incident_key``: If not set pagerduty will trigger a new incident for each alert sent. If set to a unique string per rule pagerduty will identify the incident that this event should be applied.
+``alert_subject``: If set, this will be used as the Incident description within PagerDuty. If not set, ElastAlert will default to using the rule name of the alert for the incident.
+
+``alert_subject_args``: If set, and  ``alert_subject`` is a formattable string, ElastAlert will format the incident key based on the provided array of fields from the rule or match.
+
+``pagerduty_incident_key``: If not set PagerDuty will trigger a new incident for each alert sent. If set to a unique string per rule PagerDuty will identify the incident that this event should be applied.
 If there's no open (i.e. unresolved) incident with this key, a new one will be created. If there's already an open incident with a matching key, this event will be appended to that incident's log.
 
 ``pagerduty_incident_key_args``: If set, and ``pagerduty_incident_key`` is a formattable string, Elastalert will format the incident key based on the provided array of fields from the rule or match.
 
-``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
+``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerDuty. Set this option using ``hostname:port`` if you need to use a proxy.
 
 Exotel
 ~~~~~~
@@ -1499,7 +1528,7 @@ Twilio alerter will trigger an incident to a mobile phone as sms from your twili
 
 The alerter requires the following option:
 
-``twilio_accout_sid``: This is sid of your twilio account.
+``twilio_account_sid``: This is sid of your twilio account.
 
 ``twilio_auth_token``: Auth token assosiated with your twilio account.
 
@@ -1596,6 +1625,35 @@ Optional:
 ``stomp_destination``: The STOMP destination to use, defaults to /queue/ALERT
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
+
+HTTP POST
+~~~~~~~~~
+
+This alert type will send results to a JSON endpoint using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON will contain al the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
+
+Required:
+
+``http_post_url``: The URL to POST.
+
+Optional:
+
+``http_post_payload``: List of keys:values to use as the content of the POST. Example - ip:clientip will map the value from the clientip index of Elasticsearch to JSON key named ip. If not defined, all the Elasticsearch keys will be sent.
+
+``http_post_static_payload``: Key:value pairs of static parameters to be sent, along with the Elasticsearch results. Put your authentication or other information here.
+
+``http_post_proxy``: URL of proxy, if required.
+
+``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
+
+Example usage::
+
+    alert: post
+    http_post_url: "http://example.com/api"
+    http_post_payload:
+      ip: clientip
+    http_post_static_payload:
+      apikey: abc123
+
 
 Alerter
 ~~~~~~~

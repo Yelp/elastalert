@@ -18,6 +18,7 @@ from elastalert.ruletypes import NewTermsRule
 from elastalert.ruletypes import PercentageMatchRule
 from elastalert.ruletypes import SpikeRule
 from elastalert.ruletypes import WhitelistRule
+from elastalert.util import dt_to_ts
 from elastalert.util import EAException
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
@@ -497,7 +498,8 @@ def test_change():
 def test_new_term():
     rules = {'fields': ['a', 'b'],
              'timestamp_field': '@timestamp',
-             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash',
+             'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts}
     mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
                                                                      {'key': 'key2', 'doc_count': 5}]}}}}
 
@@ -567,7 +569,8 @@ def test_new_term_nested_field():
 
     rules = {'fields': ['a', 'b.c'],
              'timestamp_field': '@timestamp',
-             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash',
+             'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts}
     mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
                                                                      {'key': 'key2', 'doc_count': 5}]}}}}
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
@@ -590,7 +593,8 @@ def test_new_term_with_terms():
     rules = {'fields': ['a'],
              'timestamp_field': '@timestamp',
              'es_host': 'example.com', 'es_port': 10, 'index': 'logstash', 'query_key': 'a',
-             'window_step_size': {'days': 2}}
+             'window_step_size': {'days': 2},
+             'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts}
     mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
                                                                      {'key': 'key2', 'doc_count': 5}]}}}}
 
@@ -626,7 +630,8 @@ def test_new_term_with_terms():
 def test_new_term_with_composite_fields():
     rules = {'fields': [['a', 'b', 'c'], ['d', 'e.f']],
              'timestamp_field': '@timestamp',
-             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash',
+             'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts}
 
     mock_res = {
         'aggregations': {

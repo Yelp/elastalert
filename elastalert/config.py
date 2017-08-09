@@ -73,7 +73,8 @@ alerts_mapping = {
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
     'simple': alerts.SimplePostAlerter,
-    'dingtalk': alerts.DingtalkAlerter
+    'dingtalk': alerts.DingtalkAlerter,
+    'post': alerts.HTTPPostAlerter
 }
 # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
 # For example, jira goes before email so the ticket # will be added to the resulting email.
@@ -147,6 +148,7 @@ def load_options(rule, conf, filename, args=None):
     :param rule: A dictionary of parsed YAML from a rule config file.
     :param conf: The global configuration dictionary, used for populating defaults.
     """
+    adjust_deprecated_values(rule)
 
     try:
         rule_schema.validate(rule)
@@ -212,7 +214,12 @@ def load_options(rule, conf, filename, args=None):
             return ts_to_dt_with_format(ts, ts_format=rule['timestamp_format'])
 
         def _dt_to_ts_with_format(dt):
-            return dt_to_ts_with_format(dt, ts_format=rule['timestamp_format'])
+            ts = dt_to_ts_with_format(dt, ts_format=rule['timestamp_format'])
+            if 'timestamp_format_expr' in rule:
+                # eval expression passing 'ts' and 'dt'
+                return eval(rule['timestamp_format_expr'], {'ts': ts, 'dt': dt})
+            else:
+                return ts
 
         rule['ts_to_dt'] = _ts_to_dt_with_format
         rule['dt_to_ts'] = _dt_to_ts_with_format
@@ -462,3 +469,14 @@ def get_rule_hashes(conf, use_rule=None):
         with open(rule_file) as fh:
             rule_mod_times[rule_file] = hashlib.sha1(fh.read()).digest()
     return rule_mod_times
+
+
+def adjust_deprecated_values(rule):
+    # From rename of simple HTTP alerter
+    if rule.get('type') == 'simple':
+        rule['type'] = 'post'
+        if 'simple_proxy' in rule:
+            rule['http_post_proxy'] = rule['simple_proxy']
+        if 'simple_webhook_url' in rule:
+            rule['http_post_url'] = rule['simple_webhook_url']
+        logging.warning('"simple" alerter has been renamed "post" and comptability may be removed in a future release.')
