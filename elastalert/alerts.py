@@ -1375,6 +1375,8 @@ class HTTPPostAlerter(Alerter):
                 'simple_webhook_url': self.simple_webhook_url}
 
 class DingtalkAlerter(Alerter):
+    """ Creates a Dingtalk room message for each alert """
+
     required_options = frozenset(['dingtalk_webhook_url','dingtalk_msgtype'])
 
     def __init__(self, rule):
