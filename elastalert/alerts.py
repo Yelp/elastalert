@@ -1376,8 +1376,7 @@ class HTTPPostAlerter(Alerter):
 
 class DingtalkAlerter(Alerter):
     """ Creates a Dingtalk room message for each alert """
-
-    required_options = frozenset(['dingtalk_webhook_url','dingtalk_msgtype'])
+    required_options = frozenset(['dingtalk_webhook_url', 'dingtalk_msgtype'])
 
     def __init__(self, rule):
         super(DingtalkAlerter, self).__init__(rule)
@@ -1395,7 +1394,6 @@ class DingtalkAlerter(Alerter):
     def format_body(self, body):
         body = body.encode('UTF-8')
         return body
-
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
