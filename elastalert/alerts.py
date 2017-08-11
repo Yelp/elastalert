@@ -245,6 +245,10 @@ class Alerter(object):
                 body += '\n----------------------------------------\n'
         return body
 
+    def get_aggregation_summary_text__maximum_width(self):
+        """Get maximum width allowed for summary text."""
+        return 80
+
     def get_aggregation_summary_text(self, matches):
         text = ''
         if 'aggregation' in self.rule and 'summary_table_fields' in self.rule:
@@ -256,7 +260,7 @@ class Alerter(object):
             text += "Aggregation resulted in the following data for summary_table_fields ==> {0}:\n\n".format(
                 summary_table_fields_with_count
             )
-            text_table = Texttable()
+            text_table = Texttable(max_width=self.get_aggregation_summary_text__maximum_width())
             text_table.header(summary_table_fields_with_count)
             match_aggregation = {}
 
@@ -1009,6 +1013,17 @@ class SlackAlerter(Alerter):
         body = body.replace('<', '&lt;')
         body = body.replace('>', '&gt;')
         return body
+
+    def get_aggregation_summary_text__maximum_width(self):
+        width = super(SlackAlerter, self).get_aggregation_summary_text__maximum_width()
+        # Reduced maximum width for prettier Slack display.
+        return min(width, 75)
+
+    def get_aggregation_summary_text(self, matches):
+        text = super(SlackAlerter, self).get_aggregation_summary_text(matches)
+        if text:
+            text = u'```\n{0}```\n'.format(text)
+        return text
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
