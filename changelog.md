@@ -1,5 +1,19 @@
 # Change Log
 
+## v0.1.19
+
+### Added
+- Added support for populating JIRA fields via fields in the match
+- Added support for using a TLS certificate file for SMTP connections
+- Allow a custom suffix for non-analyzed Elasticsearch fields, like ".raw" or ".keyword"
+- Added match_time to Elastalert alert documents in Elasticsearch
+
+### Fixed
+- Fixed an error in the documentation for rule importing
+- Prevent enhancements from re-running on retried alerts
+- Fixed a bug when using custom timestamp formats and new term rule
+- Lowered jira_bump_after_inactivity default to 0 days
+
 ## v0.1.18
 
 ### Added
