@@ -557,6 +557,40 @@ def test_jira():
         # Only 4 calls for mock_jira since add_comment is not called
         assert len(mock_jira.mock_calls) == 4
 
+        # Test match resolved values
+        rule = {
+            'name': 'test alert',
+            'jira_account_file': 'jirafile',
+            'type': mock_rule(),
+            'owner': 'the_owner',
+            'jira_project': 'testproject',
+            'jira_issuetype': 'testtype',
+            'jira_server': 'jiraserver',
+            'jira_label': 'testlabel',
+            'jira_component': 'testcomponent',
+            'jira_description': "DESC",
+            'jira_watchers': ['testwatcher1', 'testwatcher2'],
+            'timestamp_field': '@timestamp',
+            'jira_affected_user': "#gmail.the_user"
+        }
+        mock_issue = mock.Mock()
+        mock_issue.fields.updated = str(ts_now() - datetime.timedelta(days=4))
+        mock_fields = [
+            {'name': 'affected user', 'id': 'affected_user_id', 'schema': {'type': 'string'}}
+        ]
+        with nested(
+            mock.patch('elastalert.alerts.JIRA'),
+            mock.patch('elastalert.alerts.yaml_loader')
+        ) as (mock_jira, mock_open):
+            mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+            mock_jira.return_value = mock.Mock()
+            mock_jira.return_value.search_issues.return_value = [mock_issue]
+            mock_jira.return_value.fields.return_value = mock_fields
+            mock_jira.return_value.priorities.return_value = [mock_priority]
+            alert = JiraAlerter(rule)
+            alert.alert([{'gmail.the_user': 'jdoe', '@timestamp': '2014-10-31T00:00:00'}])
+            assert mock_jira.mock_calls[4][2]['affected_user_id'] == "jdoe"
+
 
 def test_jira_arbitrary_field_support():
     description_txt = "Description stuff goes here like a runbook link."
