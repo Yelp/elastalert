@@ -503,6 +503,10 @@ class JiraAlerter(Alerter):
         self.project = self.rule['jira_project']
         self.issue_type = self.rule['jira_issuetype']
 
+        # Deferred settings refer to values that can only be resolved when a match
+        # is found and as such loading them will be delayed until we find a match
+        self.deferred_settings = []
+
         # We used to support only a single component. This allows us to maintain backwards compatibility
         # while also giving the user-facing API a more representative name
         self.components = self.rule.get('jira_components', self.rule.get('jira_component'))
@@ -566,6 +570,70 @@ class JiraAlerter(Alerter):
         except KeyError:
             logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, self.priority_ids.keys()))
 
+    def set_jira_arg(self, jira_field, value, fields):
+        # Remove the jira_ part.  Convert underscores to spaces
+        normalized_jira_field = jira_field[5:].replace('_', ' ').lower()
+        # All jira fields should be found in the 'id' or the 'name' field. Therefore, try both just in case
+        for identifier in ['name', 'id']:
+            field = next((f for f in fields if normalized_jira_field == f[identifier].replace('_', ' ').lower()), None)
+            if field:
+                break
+        if not field:
+            # Log a warning to ElastAlert saying that we couldn't find that type?
+            # OR raise and fail to load the alert entirely? Probably the latter...
+            raise Exception("Could not find a definition for the jira field '{0}'".format(normalized_jira_field))
+        arg_name = field['id']
+        # Check the schema information to decide how to set the value correctly
+        # If the schema information is not available, raise an exception since we don't know how to set it
+        # Note this is only the case for two built-in types, id: issuekey and id: thumbnail
+        if not ('schema' in field or 'type' in field['schema']):
+            raise Exception("Could not determine schema information for the jira field '{0}'".format(normalized_jira_field))
+        arg_type = field['schema']['type']
+
+        # Handle arrays of simple types like strings or numbers
+        if arg_type == 'array':
+            # As a convenience, support the scenario wherein the user only provides
+            # a single value for a multi-value field e.g. jira_labels: Only_One_Label
+            if type(value) != list:
+                value = [value]
+            array_items = field['schema']['items']
+            # Simple string types
+            if array_items in ['string', 'date', 'datetime']:
+                # Special case for multi-select custom types (the JIRA metadata says that these are strings, but
+                # in reality, they are required to be provided as an object.
+                if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
+                    self.jira_args[arg_name] = [{'value': v} for v in value]
+                else:
+                    self.jira_args[arg_name] = value
+            elif array_items == 'number':
+                self.jira_args[arg_name] = [int(v) for v in value]
+            # Also attempt to handle arrays of complex types that have to be passed as objects with an identifier 'key'
+            elif array_items == 'option':
+                self.jira_args[arg_name] = [{'value': v} for v in value]
+            else:
+                # Try setting it as an object, using 'name' as the key
+                # This may not work, as the key might actually be 'key', 'id', 'value', or something else
+                # If it works, great!  If not, it will manifest itself as an API error that will bubble up
+                self.jira_args[arg_name] = [{'name': v} for v in value]
+        # Handle non-array types
+        else:
+            # Simple string types
+            if arg_type in ['string', 'date', 'datetime']:
+                # Special case for custom types (the JIRA metadata says that these are strings, but
+                # in reality, they are required to be provided as an object.
+                if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
+                    self.jira_args[arg_name] = {'value': value}
+                else:
+                    self.jira_args[arg_name] = value
+            # Number type
+            elif arg_type == 'number':
+                self.jira_args[arg_name] = int(value)
+            elif arg_type == 'option':
+                self.jira_args[arg_name] = {'value': value}
+            # Complex type
+            else:
+                self.jira_args[arg_name] = {'name': value}
+
     def get_arbitrary_fields(self):
         # This API returns metadata about all the fields defined on the jira server (built-ins and custom ones)
         fields = self.client.fields()
@@ -573,69 +641,10 @@ class JiraAlerter(Alerter):
             # If we find a field that is not covered by the set that we are aware of, it means it is either:
             # 1. A built-in supported field in JIRA that we don't have on our radar
             # 2. A custom field that a JIRA admin has configured
-            if jira_field.startswith('jira_') and jira_field not in self.known_field_list:
-                # Remove the jira_ part.  Convert underscores to spaces
-                normalized_jira_field = jira_field[5:].replace('_', ' ').lower()
-                # All jira fields should be found in the 'id' or the 'name' field. Therefore, try both just in case
-                for identifier in ['name', 'id']:
-                    field = next((f for f in fields if normalized_jira_field == f[identifier].replace('_', ' ').lower()), None)
-                    if field:
-                        break
-                if not field:
-                    # Log a warning to ElastAlert saying that we couldn't find that type?
-                    # OR raise and fail to load the alert entirely? Probably the latter...
-                    raise Exception("Could not find a definition for the jira field '{0}'".format(normalized_jira_field))
-                arg_name = field['id']
-                # Check the schema information to decide how to set the value correctly
-                # If the schema information is not available, raise an exception since we don't know how to set it
-                # Note this is only the case for two built-in types, id: issuekey and id: thumbnail
-                if not ('schema' in field or 'type' in field['schema']):
-                    raise Exception("Could not determine schema information for the jira field '{0}'".format(normalized_jira_field))
-                arg_type = field['schema']['type']
-
-                # Handle arrays of simple types like strings or numbers
-                if arg_type == 'array':
-                    # As a convenience, support the scenario wherein the user only provides
-                    # a single value for a multi-value field e.g. jira_labels: Only_One_Label
-                    if type(value) != list:
-                        value = [value]
-                    array_items = field['schema']['items']
-                    # Simple string types
-                    if array_items in ['string', 'date', 'datetime']:
-                        # Special case for multi-select custom types (the JIRA metadata says that these are strings, but
-                        # in reality, they are required to be provided as an object.
-                        if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
-                            self.jira_args[arg_name] = [{'value': v} for v in value]
-                        else:
-                            self.jira_args[arg_name] = value
-                    elif array_items == 'number':
-                        self.jira_args[arg_name] = [int(v) for v in value]
-                    # Also attempt to handle arrays of complex types that have to be passed as objects with an identifier 'key'
-                    elif array_items == 'option':
-                        self.jira_args[arg_name] = [{'value': v} for v in value]
-                    else:
-                        # Try setting it as an object, using 'name' as the key
-                        # This may not work, as the key might actually be 'key', 'id', 'value', or something else
-                        # If it works, great!  If not, it will manifest itself as an API error that will bubble up
-                        self.jira_args[arg_name] = [{'name': v} for v in value]
-                # Handle non-array types
-                else:
-                    # Simple string types
-                    if arg_type in ['string', 'date', 'datetime']:
-                        # Special case for custom types (the JIRA metadata says that these are strings, but
-                        # in reality, they are required to be provided as an object.
-                        if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
-                            self.jira_args[arg_name] = {'value': value}
-                        else:
-                            self.jira_args[arg_name] = value
-                    # Number type
-                    elif arg_type == 'number':
-                        self.jira_args[arg_name] = int(value)
-                    elif arg_type == 'option':
-                        self.jira_args[arg_name] = {'value': value}
-                    # Complex type
-                    else:
-                        self.jira_args[arg_name] = {'name': value}
+            if jira_field.startswith('jira_') and jira_field not in self.known_field_list and str(value)[:1] != '#':
+                self.set_jira_arg(jira_field, value, fields)
+            if jira_field.startswith('jira_') and jira_field not in self.known_field_list and str(value)[:1] == '#':
+                self.deferred_settings.append(jira_field)
 
     def get_priorities(self):
         """ Creates a mapping of priority index to id. """
@@ -688,6 +697,12 @@ class JiraAlerter(Alerter):
         self.client.add_comment(ticket, comment)
 
     def alert(self, matches):
+        if len(self.deferred_settings) > 0:
+            fields = self.client.fields()
+            for jira_field in self.deferred_settings:
+                value = lookup_es_key(matches[0], self.rule[jira_field][1:])
+                self.set_jira_arg(jira_field, value, fields)
+
         title = self.create_title(matches)
 
         if self.bump_tickets:
