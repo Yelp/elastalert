@@ -10,18 +10,24 @@ import argparse
 import elasticsearch.helpers
 import yaml
 from auth import Auth
+from envparse import Env
 from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 from elasticsearch.client import IndicesClient
+
+
+env = Env(ES_USE_SSL=bool)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default=os.environ.get('ES_HOST', None), help='Elasticsearch host')
     parser.add_argument('--port', default=os.environ.get('ES_PORT', None), type=int, help='Elasticsearch port')
+    parser.add_argument('--username', default=os.environ.get('ES_USERNAME', None), help='Elasticsearch username')
+    parser.add_argument('--password', default=os.environ.get('ES_PASSWORD', None), help='Elasticsearch password')
     parser.add_argument('--url-prefix', help='Elasticsearch URL prefix')
     parser.add_argument('--no-auth', action='store_const', const=True, help='Suppress prompt for basic auth')
-    parser.add_argument('--ssl', action='store_true', default=os.environ.get('ES_USE_SSL', None), help='Use TLS')
+    parser.add_argument('--ssl', action='store_true', default=env('ES_USE_SSL', None), help='Use TLS')
     parser.add_argument('--no-ssl', dest='ssl', action='store_false', help='Do not use TLS')
     parser.add_argument('--verify-certs', action='store_true', default=None, help='Verify TLS certificates')
     parser.add_argument('--no-verify-certs', dest='verify_certs', action='store_false', help='Do not verify TLS certificates')
@@ -57,16 +63,16 @@ def main():
             data = yaml.load(config_file)
         host = args.host if args.host else data.get('es_host')
         port = args.port if args.port else data.get('es_port')
-        username = data.get('es_username')
-        password = data.get('es_password')
+        username = args.username if args.username else data.get('es_username')
+        password = args.passowrd if args.password else data.get('es_password')
         url_prefix = args.url_prefix if args.url_prefix is not None else data.get('es_url_prefix', '')
         use_ssl = args.ssl if args.ssl is not None else data.get('use_ssl')
         verify_certs = args.verify_certs if args.verify_certs is not None else data.get('verify_certs') is not False
         aws_region = data.get('aws_region', None)
         send_get_body_as = data.get('send_get_body_as', 'GET')
     else:
-        username = None
-        password = None
+        username = args.username if args.username else data.get('es_username')
+        password = args.passowrd if args.password else data.get('es_password')
         aws_region = args.aws_region
         host = args.host if args.host else raw_input('Enter Elasticsearch host: ')
         port = args.port if args.port else int(raw_input('Enter Elasticsearch port: '))
@@ -77,7 +83,7 @@ def main():
                             else raw_input('Verify TLS certificates? t/f: ').lower() not in ('f', 'false'))
         else:
             verify_certs = True
-        if args.no_auth is None:
+        if args.no_auth is None and username is None:
             username = raw_input('Enter optional basic-auth username (or leave blank): ')
             password = getpass.getpass('Enter optional basic-auth password (or leave blank): ')
         url_prefix = (args.url_prefix if args.url_prefix is not None
