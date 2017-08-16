@@ -53,6 +53,10 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``verify_certs``: Optional; whether or not to verify TLS certificates; set to ``True`` or ``False``. The default is ``True``
 
+``client_cert``: Optional; path to a PEM certificate to use as the client certificate
+
+``ca_certs``: Optional; path to a CA cert bundle to use to verify SSL connections
+
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``.
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.

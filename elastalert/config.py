@@ -227,6 +227,12 @@ def load_options(rule, conf, filename, args=None):
     else:
         raise EAException('timestamp_type must be one of iso, unix, or unix_ms')
 
+    # Add support for client ssl certificate auth
+    if 'verify_certs' in conf:
+        rule.setdefault('verify_certs', conf.get('verify_certs'))
+        rule.setdefault('ca_certs', conf.get('ca_certs'))
+        rule.setdefault('client_cert', conf.get('client_cert'))
+
     # Set HipChat options from global config
     rule.setdefault('hipchat_msg_color', 'red')
     rule.setdefault('hipchat_domain', 'api.hipchat.com')
