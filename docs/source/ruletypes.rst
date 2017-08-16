@@ -235,6 +235,16 @@ verify_certs
 
 ``verify_certs``: Whether or not to verify TLS certificates. (Optional, boolean, default True)
 
+client_cert
+^^^^^^^^^^^
+
+``client_cert``: Path to a PEM certificate to use as the client certificate (Optional, string, no default)
+
+ca_certs
+^^^^^^^^
+
+``ca_certs``: Path to a CA cert bundle to use to verify SSL connections (Optional, string, no default)
+
 es_username
 ^^^^^^^^^^^
 

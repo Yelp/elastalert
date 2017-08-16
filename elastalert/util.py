@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import os
 import datetime
 import logging
+import os
 
 import dateutil.parser
 import dateutil.tz
@@ -291,7 +291,8 @@ def elasticsearch_client(conf):
                          connection_class=RequestsHttpConnection,
                          http_auth=es_conn_conf['http_auth'],
                          timeout=es_conn_conf['es_conn_timeout'],
-                         send_get_body_as=es_conn_conf['send_get_body_as'])
+                         send_get_body_as=es_conn_conf['send_get_body_as'],
+                         client_cert=es_conn_conf['client_cert'])
 
 
 def build_es_conn_config(conf):
@@ -303,6 +304,7 @@ def build_es_conn_config(conf):
     parsed_conf['use_ssl'] = os.environ.get('ES_USE_SSL', False)
     parsed_conf['verify_certs'] = True
     parsed_conf['ca_certs'] = None
+    parsed_conf['client_cert'] = None
     parsed_conf['http_auth'] = None
     parsed_conf['es_username'] = None
     parsed_conf['es_password'] = None
@@ -337,6 +339,9 @@ def build_es_conn_config(conf):
 
     if 'ca_certs' in conf:
         parsed_conf['ca_certs'] = conf['ca_certs']
+
+    if 'client_cert' in conf:
+        parsed_conf['client_cert'] = conf['client_cert']
 
     if 'es_url_prefix' in conf:
         parsed_conf['es_url_prefix'] = conf['es_url_prefix']
