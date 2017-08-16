@@ -240,6 +240,11 @@ client_cert
 
 ``client_cert``: Path to a PEM certificate to use as the client certificate (Optional, string, no default)
 
+client_key
+^^^^^^^^^^^
+
+``client_key``: Path to a private key file to use as the client key (Optional, string, no default)
+
 ca_certs
 ^^^^^^^^
 

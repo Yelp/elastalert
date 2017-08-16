@@ -232,6 +232,7 @@ def load_options(rule, conf, filename, args=None):
         rule.setdefault('verify_certs', conf.get('verify_certs'))
         rule.setdefault('ca_certs', conf.get('ca_certs'))
         rule.setdefault('client_cert', conf.get('client_cert'))
+        rule.setdefault('client_key', conf.get('client_key'))
 
     # Set HipChat options from global config
     rule.setdefault('hipchat_msg_color', 'red')

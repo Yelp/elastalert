@@ -51,6 +51,7 @@ es_port: 9200
 #verify_certs: True
 #ca_certs: /path/to/cacert.pem
 #client_cert: /path/to/client_cert.pem
+#client_key: /path/to/client_key.key
 
 # The index on es_host which is used for metadata storage
 # This can be a unmapped index, but it is recommended that you run

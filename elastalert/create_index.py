@@ -72,6 +72,7 @@ def main():
         send_get_body_as = data.get('send_get_body_as', 'GET')
         ca_certs = data.get('ca_certs')
         client_cert = data.get('client_cert')
+        client_key = data.get('client_key')
     else:
         username = args.username if args.username else data.get('es_username')
         password = args.passowrd if args.password else data.get('es_password')
@@ -93,6 +94,7 @@ def main():
         send_get_body_as = args.send_get_body_as
         ca_certs = data.get('ca_certs')
         client_cert = data.get('client_cert')
+        client_key = data.get('client_key')
 
     timeout = args.timeout
     auth = Auth()
@@ -112,7 +114,8 @@ def main():
         url_prefix=url_prefix,
         send_get_body_as=send_get_body_as,
         client_cert=client_cert,
-        ca_certs=ca_certs)
+        ca_certs=ca_certs,
+        client_key=client_key)
 
     silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                   'until': {'type': 'date', 'format': 'dateOptionalTime'},
