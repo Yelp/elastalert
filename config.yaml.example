@@ -62,3 +62,53 @@ writeback_index: elastalert_status
 # sending the alert until this time period has elapsed
 alert_time_limit:
   days: 2
+
+# Custom logging configuration
+# If you want to setup your own logging configuration to log into
+# files as well or to Logstash and/or modify log levels, use
+# the configuration below and adjust to your needs.
+# Note: if you run ElastAlert with --verbose/--debug, the log level of
+# the "elastalert" logger is changed to INFO, if not already INFO/DEBUG.
+#logging:
+#  version: 1
+#  incremental: false
+#  disable_existing_loggers: false
+#  formatters:
+#    logline:
+#      format: '%(asctime)s %(levelname)+8s %(name)+20s %(message)s'
+#
+#    handlers:
+#      console:
+#        class: logging.StreamHandler
+#        formatter: logline
+#        level: DEBUG
+#        stream: ext://sys.stderr
+#
+#      file:
+#        class : logging.FileHandler
+#        formatter: logline
+#        level: DEBUG
+#        filename: elastalert.log
+#
+#    loggers:
+#      elastalert:
+#        level: WARN
+#        handlers: []
+#        propagate: true
+#
+#      elasticsearch:
+#        level: WARN
+#        handlers: []
+#        propagate: true
+#
+#      elasticsearch.trace:
+#        level: WARN
+#        handlers: []
+#        propagate: true
+#
+#      '':  # root logger
+#        level: WARN
+#          handlers:
+#            - console
+#            - file
+#        propagate: false

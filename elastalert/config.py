@@ -3,6 +3,7 @@ import copy
 import datetime
 import hashlib
 import logging
+import logging.config
 import os
 import sys
 
@@ -19,6 +20,7 @@ from util import dt_to_ts
 from util import dt_to_ts_with_format
 from util import dt_to_unix
 from util import dt_to_unixms
+from util import elastalert_logger
 from util import EAException
 from util import ts_to_dt
 from util import ts_to_dt_with_format
@@ -452,6 +454,9 @@ def load_rules(args):
     conf = yaml_loader(filename)
     use_rule = args.rule
 
+    # init logging from config and set log levels according to command line options
+    configure_logging(args, conf)
+
     for env_var, conf_var in env_settings.items():
         val = env(env_var, None)
         if val is not None:
@@ -507,6 +512,38 @@ def load_rules(args):
 
     conf['rules'] = rules
     return conf
+
+
+def configure_logging(args, conf):
+    # configure logging from config file if provided
+    if 'logging' in conf:
+        # load new logging config
+        logging.config.dictConfig(conf['logging'])
+
+    if args.verbose and args.debug:
+        elastalert_logger.info(
+            "Note: --debug and --verbose flags are set. --debug takes precedent."
+        )
+
+    # re-enable INFO log level on elastalert_logger in verbose/debug mode
+    # (but don't touch it if it is already set to INFO or below by config)
+    if args.verbose or args.debug:
+        if elastalert_logger.level > logging.INFO or elastalert_logger.level == logging.NOTSET:
+            elastalert_logger.setLevel(logging.INFO)
+
+    if args.debug:
+        elastalert_logger.info(
+            """Note: In debug mode, alerts will be logged to console but NOT actually sent.
+            To send them but remain verbose, use --verbose instead."""
+        )
+
+    if not args.es_debug and 'logging' not in conf:
+        logging.getLogger('elasticsearch').setLevel(logging.WARNING)
+
+    if args.es_debug_trace:
+        tracer = logging.getLogger('elasticsearch.trace')
+        tracer.setLevel(logging.INFO)
+        tracer.addHandler(logging.FileHandler(args.es_debug_trace))
 
 
 def get_rule_hashes(conf, use_rule=None):
