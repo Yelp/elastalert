@@ -416,7 +416,6 @@ def load_rules(args):
 
     for env_var, conf_var in env_settings.items():
         val = env(env_var, None)
-        print("val[%s] = %s" % (env_var, val))
         if val is not None:
             conf[conf_var] = val
 
