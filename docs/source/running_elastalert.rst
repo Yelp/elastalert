@@ -56,6 +56,8 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``client_cert``: Optional; path to a PEM certificate to use as the client certificate
 
+``client_key``: Optional; path to a private key file to use as the client key
+
 ``ca_certs``: Optional; path to a CA cert bundle to use to verify SSL connections
 
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``.
