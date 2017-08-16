@@ -33,6 +33,7 @@ setup(
         'configparser>=3.5.0',
         'croniter>=0.3.16',
         'elasticsearch',
+        'envparse>=0.2.0',
         'exotel>=0.1.3',
         'jira>=1.0.10',
         'jsonschema>=2.6.0',

@@ -12,6 +12,7 @@ import jsonschema
 import ruletypes
 import yaml
 import yaml.scanner
+from envparse import Env
 from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
 from util import dt_to_ts
@@ -37,6 +38,8 @@ env_settings = {'ES_USE_SSL': 'use_ssl',
                 'ES_USERNAME': 'es_username',
                 'ES_HOST': 'es_host',
                 'ES_PORT': 'es_port'}
+
+env = Env(ES_USE_SSL=bool)
 
 # Used to map the names of rules to their classes
 rules_mapping = {
@@ -412,8 +415,10 @@ def load_rules(args):
     use_rule = args.rule
 
     for env_var, conf_var in env_settings.items():
-        if env_var in os.environ:
-            conf[conf_var] = os.environ[env_var]
+        val = env(env_var, None)
+        print("val[%s] = %s" % (env_var, val))
+        if val is not None:
+            conf[conf_var] = val
 
     # Make sure we have all required globals
     if required_globals - frozenset(conf.keys()):

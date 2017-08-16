@@ -3,7 +3,7 @@ import copy
 import datetime
 
 import mock
-import os.path
+import os
 import pytest
 
 import elastalert.alerts
@@ -195,6 +195,38 @@ def test_load_default_host_port():
             # Assert include doesn't contain duplicates
             assert rules['es_port'] == 12345
             assert rules['es_host'] == 'elasticsearch.test'
+
+
+def test_load_ssl_env_false():
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy.pop('es_host')
+    test_rule_copy.pop('es_port')
+    test_config_copy = copy.deepcopy(test_config)
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [test_config_copy, test_rule_copy]
+
+        with mock.patch('os.listdir') as mock_ls:
+            with mock.patch.dict(os.environ, {'ES_USE_SSL': 'false'}):
+                mock_ls.return_value = ['testrule.yaml']
+                rules = load_rules(test_args)
+
+                assert rules['use_ssl'] is False
+
+
+def test_load_ssl_env_true():
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy.pop('es_host')
+    test_rule_copy.pop('es_port')
+    test_config_copy = copy.deepcopy(test_config)
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [test_config_copy, test_rule_copy]
+
+        with mock.patch('os.listdir') as mock_ls:
+            with mock.patch.dict(os.environ, {'ES_USE_SSL': 'true'}):
+                mock_ls.return_value = ['testrule.yaml']
+                rules = load_rules(test_args)
+
+                assert rules['use_ssl'] is True
 
 
 def test_compound_query_key():
