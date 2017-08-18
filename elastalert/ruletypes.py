@@ -667,7 +667,7 @@ class NewTermsRule(RuleType):
                         elastalert_logger.info('Found no values for %s' % (field))
                     continue
                 self.seen_values[key] = list(set(values))
-                elastalert_logger.info('Found %s unique values for %s' % (len(values), key))
+                elastalert_logger.info('Found %s unique values for %s' % (len(set(values)), key))
 
     def flatten_aggregation_hierarchy(self, root, hierarchy_tuple=()):
         """ For nested aggregations, the results come back in the following format:
