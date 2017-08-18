@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
+import argparse
 import getpass
 import os
 import time
 
-import argparse
 import elasticsearch.helpers
 import yaml
 from auth import Auth
@@ -51,8 +51,8 @@ def main():
     parser.add_argument('--config', default='config.yaml', help='Global config file (default: config.yaml)')
     args = parser.parse_args()
 
-    if os.path.isfile('../config.yaml'):
-        filename = '../config.yaml'
+    if os.path.isfile('config.yaml'):
+        filename = 'config.yaml'
     elif os.path.isfile(args.config):
         filename = args.config
     else:
@@ -70,6 +70,9 @@ def main():
         verify_certs = args.verify_certs if args.verify_certs is not None else data.get('verify_certs') is not False
         aws_region = data.get('aws_region', None)
         send_get_body_as = data.get('send_get_body_as', 'GET')
+        ca_certs = data.get('ca_certs')
+        client_cert = data.get('client_cert')
+        client_key = data.get('client_key')
     else:
         username = args.username if args.username else data.get('es_username')
         password = args.passowrd if args.password else data.get('es_password')
@@ -89,6 +92,9 @@ def main():
         url_prefix = (args.url_prefix if args.url_prefix is not None
                       else raw_input('Enter optional Elasticsearch URL prefix (prepends a string to the URL of every request): '))
         send_get_body_as = args.send_get_body_as
+        ca_certs = data.get('ca_certs')
+        client_cert = data.get('client_cert')
+        client_key = data.get('client_key')
 
     timeout = args.timeout
     auth = Auth()
@@ -97,7 +103,6 @@ def main():
                      password=password,
                      aws_region=aws_region,
                      profile_name=args.profile)
-
     es = Elasticsearch(
         host=host,
         port=port,
@@ -107,7 +112,10 @@ def main():
         connection_class=RequestsHttpConnection,
         http_auth=http_auth,
         url_prefix=url_prefix,
-        send_get_body_as=send_get_body_as)
+        send_get_body_as=send_get_body_as,
+        client_cert=client_cert,
+        ca_certs=ca_certs,
+        client_key=client_key)
 
     silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                   'until': {'type': 'date', 'format': 'dateOptionalTime'},
