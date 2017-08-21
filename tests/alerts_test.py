@@ -77,7 +77,7 @@ def test_jira_formatted_match_string(ea):
     match = {'foo': {'bar': ['one', 2, 'three']}, 'top_events_poof': 'phew'}
     alert_text = str(JiraFormattedMatchString(ea.rules[0], match))
     tab = 4 * ' '
-    expected_alert_text_snippet = '{code:json}{\n' \
+    expected_alert_text_snippet = '{code}{\n' \
         + tab + '"foo": {\n' \
         + 2 * tab + '"bar": [\n' \
         + 3 * tab + '"one", \n' \
