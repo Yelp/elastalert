@@ -61,7 +61,8 @@ def ea():
               'max_query_size': 10000,
               'ts_to_dt': ts_to_dt,
               'dt_to_ts': dt_to_ts,
-              '_source_enabled': True}]
+              '_source_enabled': True,
+              'run_every': datetime.timedelta(seconds=15)}]
     conf = {'rules_folder': 'rules',
             'run_every': datetime.timedelta(minutes=10),
             'buffer_time': datetime.timedelta(minutes=5),
@@ -77,12 +78,16 @@ def ea():
     elastalert.elastalert.elasticsearch_client = mock_es_client
     with mock.patch('elastalert.elastalert.get_rule_hashes'):
         with mock.patch('elastalert.elastalert.load_rules') as load_conf:
-            load_conf.return_value = conf
-            ea = elastalert.elastalert.ElastAlerter(['--pin_rules'])
+            with mock.patch('elastalert.elastalert.BackgroundScheduler'):
+                load_conf.return_value = conf
+                ea = elastalert.elastalert.ElastAlerter(['--pin_rules'])
     ea.rules[0]['type'] = mock_ruletype()
     ea.rules[0]['alert'] = [mock_alert()]
     ea.writeback_es = mock_es_client()
     ea.writeback_es.search.return_value = {'hits': {'hits': []}}
     ea.writeback_es.index.return_value = {'_id': 'ABCD'}
     ea.current_es = mock_es_client('', '')
+    ea.thread_data.current_es = ea.current_es
+    ea.thread_data.num_hits = 0
+    ea.thread_data.num_dupes = 0
     return ea
