@@ -1,5 +1,16 @@
 # Change Log
 
+## v0.1.20
+
+### Added
+- Added support for client TLS keys
+
+### Fixed
+- Fixed the formatting of summary tables in Slack
+- Fixed ES_USE_SSL env variable
+- Fixed the unique value count printed by new_term rule type
+- Jira alerter no longer uses the non-existent json code formatter
+
 ## v0.1.19
 
 ### Added
