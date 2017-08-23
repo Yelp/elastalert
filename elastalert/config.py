@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import copy
 import datetime
+import time
 import hashlib
 import logging
 import os
@@ -12,6 +13,8 @@ import jsonschema
 import ruletypes
 import yaml
 import yaml.scanner
+import boto3
+
 from envparse import Env
 from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
@@ -37,7 +40,10 @@ env_settings = {'ES_USE_SSL': 'use_ssl',
                 'ES_PASSWORD': 'es_password',
                 'ES_USERNAME': 'es_username',
                 'ES_HOST': 'es_host',
-                'ES_PORT': 'es_port'}
+                'ES_PORT': 'es_port',
+                'ELASTALERT_S3_BUCKET': 's3_bucket',
+                'ELASTALERT_S3_PREFIX': 's3_prefix',
+                }
 
 env = Env(ES_USE_SSL=bool)
 
@@ -100,27 +106,45 @@ def get_module(module_name):
     return module
 
 
-def load_configuration(filename, conf, args=None):
+def load_configuration(filename, conf, args=None, s3=False):
     """ Load a yaml rule file and fill in the relevant fields with objects.
 
     :param filename: The name of a rule configuration file.
     :param conf: The global configuration dictionary, used for populating defaults.
     :return: The rule configuration, a dictionary.
     """
-    rule = load_rule_yaml(filename)
+    if s3:
+        rule = load_s3_rule_yaml(filename, conf)
+    else:
+        rule = load_rule_yaml(filename)
     load_options(rule, conf, filename, args)
     load_modules(rule, args)
     return rule
 
+def load_s3_rule_yaml(filename, conf):
+    logging.debug("Load rule from s3" + filename)
+    s3client = boto3.client("s3")
+    s3_object = s3client.get_object( 
+                Bucket=conf["s3_bucket"],
+                Key=filename
+                )
+    rule = yaml.load(s3_object["Body"])
+    rule.update({
+        'rule_file': filename,
+        'storage_type': 's3'
+    })
+    return rule
 
 def load_rule_yaml(filename):
     rule = {
         'rule_file': filename,
+        'storage_type': 'local'
     }
 
     while True:
         try:
             loaded = yaml_loader(filename)
+
         except yaml.scanner.ScannerError as e:
             raise EAException('Could not parse file %s: %s' % (filename, e))
 
@@ -467,6 +491,17 @@ def load_rules(args):
         rules.append(rule)
         names.append(rule['name'])
 
+    for s3_object in list_s3_objects(conf):
+        try:
+            rule = load_configuration(s3_object["Key"], conf, args, s3=True)
+            if rule['name'] in names:
+                raise EAException('Duplicate rule named %s' % (rule['name']))
+        except EAException as e:
+            raise EAException('Error loading file %s: %s' % (rule_file, e))
+        rules.append(rule)
+        names.append(rule['name'])
+
+
     conf['rules'] = rules
     return conf
 
@@ -476,7 +511,17 @@ def get_rule_hashes(conf, use_rule=None):
     rule_mod_times = {}
     for rule_file in rule_files:
         with open(rule_file) as fh:
-            rule_mod_times[rule_file] = hashlib.sha1(fh.read()).digest()
+            rule_mod_times[rule_file] = {
+                    "hash": hashlib.sha1(fh.read()).digest(),
+                    "type": "local"
+                    }
+
+    for s3_object in list_s3_objects(conf):
+        rule_mod_times[s3_object['Key']] = {
+                "hash": time.mktime(s3_object['LastModified'].timetuple()),
+                "type": "s3"
+                }
+
     return rule_mod_times
 
 
@@ -489,3 +534,22 @@ def adjust_deprecated_values(rule):
         if 'simple_webhook_url' in rule:
             rule['http_post_url'] = rule['simple_webhook_url']
         logging.warning('"simple" alerter has been renamed "post" and comptability may be removed in a future release.')
+
+
+
+def list_s3_objects(conf):
+    objects = []
+    if conf.get("s3_bucket", False):
+        s3 = boto3.resource('s3')
+        s3client = boto3.client('s3')
+        try:
+            all_objects = s3client.list_objects_v2(
+                    Bucket=conf["s3_bucket"],
+                    Prefix=conf["s3_prefix"])
+            for obj in all_objects["Contents"]:
+                if obj["Key"].endswith(".yaml"): objects.append(obj)
+        except Exception as e:
+            logging.exception("failed to access S3")
+    return objects
+
+
