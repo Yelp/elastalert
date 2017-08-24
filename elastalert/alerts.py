@@ -1077,6 +1077,7 @@ class PagerDutyAlerter(Alerter):
         self.pagerduty_client_name = self.rule['pagerduty_client_name']
         self.pagerduty_incident_key = self.rule.get('pagerduty_incident_key', '')
         self.pagerduty_incident_key_args = self.rule.get('pagerduty_incident_key_args', None)
+        self.pagerduty_event_type = self.rule.get('pagerduty_event_type', 'trigger')
         self.pagerduty_proxy = self.rule.get('pagerduty_proxy', None)
         self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
@@ -1088,7 +1089,7 @@ class PagerDutyAlerter(Alerter):
         payload = {
             'service_key': self.pagerduty_service_key,
             'description': self.create_title(matches),
-            'event_type': 'trigger',
+            'event_type': self.pagerduty_event_type,
             'incident_key': self.get_incident_key(matches),
             'client': self.pagerduty_client_name,
             'details': {
@@ -1108,7 +1109,13 @@ class PagerDutyAlerter(Alerter):
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to pagerduty: %s" % e)
-        elastalert_logger.info("Trigger sent to PagerDuty")
+
+        if self.pagerduty_event_type == 'trigger':
+            elastalert_logger.info("Trigger sent to PagerDuty")
+        elif self.pagerduty_event_type == 'resolve':
+            elastalert_logger.info("Resolve sent to PagerDuty")
+        elif self.pagerduty_event_type == 'acknowledge':
+            elastalert_logger.info("acknowledge sent to PagerDuty")
 
     def get_incident_key(self, matches):
         if self.pagerduty_incident_key_args:
