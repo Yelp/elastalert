@@ -232,6 +232,7 @@ properties:
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
+  pagerduty_event_type: {enum: [none, trigger, resolve, acknowledge]}
 
   ### Exotel
   exotel_account_sid: {type: string}
