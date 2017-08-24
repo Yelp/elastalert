@@ -64,7 +64,7 @@ def main():
         host = args.host if args.host else data.get('es_host')
         port = args.port if args.port else data.get('es_port')
         username = args.username if args.username else data.get('es_username')
-        password = args.passowrd if args.password else data.get('es_password')
+        password = args.password if args.password else data.get('es_password')
         url_prefix = args.url_prefix if args.url_prefix is not None else data.get('es_url_prefix', '')
         use_ssl = args.ssl if args.ssl is not None else data.get('use_ssl')
         verify_certs = args.verify_certs if args.verify_certs is not None else data.get('verify_certs') is not False
@@ -75,7 +75,7 @@ def main():
         client_key = data.get('client_key')
     else:
         username = args.username if args.username else data.get('es_username')
-        password = args.passowrd if args.password else data.get('es_password')
+        password = args.password if args.password else data.get('es_password')
         aws_region = args.aws_region
         host = args.host if args.host else raw_input('Enter Elasticsearch host: ')
         port = args.port if args.port else int(raw_input('Enter Elasticsearch port: '))
