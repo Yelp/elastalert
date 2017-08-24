@@ -1501,6 +1501,8 @@ The alerter requires the following option:
 
 ``pagerduty_client_name``: The name of the monitoring client that is triggering this event.
 
+``pagerduty_event_type``: Any of the following: `trigger`, `resolve`, or `acknowledge`. (Optional, defaults to `trigger`)
+
 Optional:
 
 ``alert_subject``: If set, this will be used as the Incident description within PagerDuty. If not set, ElastAlert will default to using the rule name of the alert for the incident.
