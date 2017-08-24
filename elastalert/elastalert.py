@@ -107,7 +107,7 @@ class ElastAlerter():
 
         if self.debug:
             elastalert_logger.info(
-                "Note: In debug mode, alerts will be logged to console but NOT actually sent. To send them, use --verbose."
+                "Note: In debug mode, alerts will be logged to console but NOT actually sent. To send them, use --verbose instead of --debug."
             )
 
         if not self.args.es_debug:
