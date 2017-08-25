@@ -71,14 +71,16 @@ class ElastAlerter():
             dest='config',
             default="config.yaml",
             help='Global config file (default: config.yaml)')
-        parser.add_argument('--debug', action='store_true', dest='debug', help='Suppresses alerts and prints information instead')
+        parser.add_argument('--debug', action='store_true', dest='debug', help='Suppresses alerts and prints information instead. '
+                                                                               'Not compatible with `--verbose`')
         parser.add_argument('--rule', dest='rule', help='Run only a specific rule (by filename, must still be in rules folder)')
         parser.add_argument('--silence', dest='silence', help='Silence rule for a time period. Must be used with --rule. Usage: '
                                                               '--silence <units>=<number>, eg. --silence hours=2')
         parser.add_argument('--start', dest='start', help='YYYY-MM-DDTHH:MM:SS Start querying from this timestamp.'
                                                           'Use "NOW" to start from current time. (Default: present)')
         parser.add_argument('--end', dest='end', help='YYYY-MM-DDTHH:MM:SS Query to this timestamp. (Default: present)')
-        parser.add_argument('--verbose', action='store_true', dest='verbose', help='Increase verbosity without suppressing alerts')
+        parser.add_argument('--verbose', action='store_true', dest='verbose', help='Increase verbosity without suppressing alerts. '
+                                                                                   'Not compatible with `--debug`')
         parser.add_argument('--patience', action='store', dest='timeout',
                             type=parse_duration,
                             default=datetime.timedelta(),
@@ -102,12 +104,18 @@ class ElastAlerter():
         self.debug = self.args.debug
         self.verbose = self.args.verbose
 
+        if self.verbose and self.debug:
+            elastalert_logger.info(
+                "Note: --debug and --verbose flags are set. --debug takes precedent."
+            )
+
         if self.verbose or self.debug:
             elastalert_logger.setLevel(logging.INFO)
 
         if self.debug:
             elastalert_logger.info(
-                "Note: In debug mode, alerts will be logged to console but NOT actually sent. To send them, use --verbose instead of --debug."
+                """Note: In debug mode, alerts will be logged to console but NOT actually sent.
+                To send them but remain verbose, use --verbose instead."""
             )
 
         if not self.args.es_debug:
