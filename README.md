@@ -28,16 +28,16 @@ This is configured by a set of rules, each of which defines a query, a rule type
 
 Several rule types with common monitoring paradigms are included with ElastAlert:
 
-- "Match where there are X events in Y time" (``frequency`` type)
-- "Match when the rate of events increases or decreases" (``spike`` type)
-- "Match when there are less than X events in Y time" (``flatline`` type)
-- "Match when a certain field matches a blacklist/whitelist" (``blacklist`` and ``whitelist`` type)
-- "Match on any event matching a given filter" (``any`` type)
-- "Match when a field has two different values within some time" (``change`` type)
-- "Match when a never before seen term appears in a field" (``new_term`` type)
-- "Match when the number of unique values for a field is above or below a threshold (``cardinality`` type)
+- Match where there are at least X events in Y time" (``frequency`` type)
+- Match when the rate of events increases or decreases" (``spike`` type)
+- Match when there are less than X events in Y time" (``flatline`` type)
+- Match when a certain field matches a blacklist/whitelist" (``blacklist`` and ``whitelist`` type)
+- Match on any event matching a given filter" (``any`` type)
+- Match when a field has two different values within some time" (``change`` type)
+- Match when a never before seen term appears in a field" (``new_term`` type)
+- Match when the number of unique values for a field is above or below a threshold (``cardinality`` type)
 
-Currently, we have support built in for the following alert types:
+Currently, we have built-in support for the following alert types:
 
 - Email
 - JIRA
