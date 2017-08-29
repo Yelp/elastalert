@@ -337,7 +337,7 @@ class ElastAlerter():
         :param rule: The rule configuration.
         :param starttime: The earliest time to query.
         :param endtime: The latest time to query.
-        :return: A list of hits, bounded by rule['max_query_size'].
+        :return: A list of hits, bounded by rule['max_query_size'] (or self.max_query_size).
         """
         query = self.get_query(
             rule['filter'],
@@ -363,7 +363,7 @@ class ElastAlerter():
                 res = self.current_es.search(
                     scroll=scroll_keepalive,
                     index=index,
-                    size=rule['max_query_size'],
+                    size=rule.get('max_query_size', self.max_query_size),
                     body=query,
                     ignore_unavailable=True,
                     **extra_args
