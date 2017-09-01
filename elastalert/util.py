@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import copy
 import datetime
 import logging
 import os
@@ -364,3 +365,26 @@ def parse_deadline(value):
     """Convert ``unit=num`` spec into a ``datetime`` object."""
     duration = parse_duration(value)
     return ts_now() + duration
+
+
+def flatten_dict(dct, delim='.', prefix='', level=0, max_level=0):
+    ret = {}
+    for key, val in dct.items():
+        if type(val) == dict and (not max_level or level < max_level):
+            ret.update(flatten_dict(val, delim, prefix + key + delim, level + 1, max_level))
+        else:
+            ret[prefix + key] = val
+    return ret
+
+
+def extend_flatten(dct, delim='.', levels=3):
+    """ Flattens a dictionary using a delimiter while also maintaining the original structure.
+    Also contains partially flattening up to a level.
+    Returns a deepcopy of the original dictionary.
+    {'a': {'b': {'c': 'd'}}} ->
+    {'a': {'b': 'c'}, 'a.b': 'c', 'a.b.c': 'd'}
+    """
+    flattened = copy.deepcopy(dct)
+    for x in range(levels):
+        flattened.update(flatten_dict(dct, max_level=x))
+    return flattened
