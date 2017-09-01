@@ -27,6 +27,7 @@ from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
 from util import EAException
 from util import elastalert_logger
+from util import extend_flatten
 from util import lookup_es_key
 from util import pretty_ts
 from util import ts_now
@@ -818,10 +819,11 @@ class CommandAlerter(Alerter):
     def alert(self, matches):
         # Format the command and arguments
         try:
+            flattened_dict = extend_flatten(matches[0])
             if self.new_style_string_format:
-                command = [command_arg.format(match=matches[0]) for command_arg in self.rule['command']]
+                command = [command_arg.format(match=flattened_dict) for command_arg in self.rule['command']]
             else:
-                command = [command_arg % matches[0] for command_arg in self.rule['command']]
+                command = [command_arg % flattened_dict for command_arg in self.rule['command']]
             self.last_command = command
         except KeyError as e:
             raise EAException("Error formatting command: %s" % (e))
