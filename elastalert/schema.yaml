@@ -214,7 +214,7 @@ properties:
 
   ### HipChat
   hipchat_auth_token: {type: string}
-  hipchat_room_id: {type: string}
+  hipchat_room_id: {type: [string, integer]}
   hipchat_domain: {type: string}
   hipchat_ignore_ssl_errors: {type: boolean}
   hipchat_notify: {type: boolean}
