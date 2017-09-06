@@ -1,5 +1,4 @@
 # Elastalert Docker image running on Alpine Linux.
-# Build image with: docker build -t ivankrizsan/elastalert:latest .
 
 FROM alpine
 
