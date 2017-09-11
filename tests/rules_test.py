@@ -1079,6 +1079,7 @@ def test_metric_aggregation():
     rule.check_matches(datetime.datetime.now(), 'qk_val', {'cpu_pct_avg': {'value': 0.95}})
     assert rule.matches[0]['qk'] == 'qk_val'
 
+
 def test_metric_aggregation_complex_query_key():
     rules = {'buffer_time': datetime.timedelta(minutes=5),
              'timestamp_field': '@timestamp',
@@ -1088,8 +1089,14 @@ def test_metric_aggregation_complex_query_key():
              'query_key': 'qk,sub_qk',
              'max_threshold': 0.8}
 
+    query = {"bucket_aggs": {"buckets": [
+        {"cpu_pct_avg": {"value": 0.91}, "key": "sub_qk_val1"},
+        {"cpu_pct_avg": {"value": 0.95}, "key": "sub_qk_val2"},
+        {"cpu_pct_avg": {"value": 0.89}, "key": "sub_qk_val3"}]
+                            }, "key": "qk_val"}
+
     rule = MetricAggregationRule(rules)
-    rule.check_matches(datetime.datetime.now(), 'qk_val', {"bucket_aggs":{"buckets":[{"cpu_pct_avg":{"value":0.91},"key":"sub_qk_val1"},{"cpu_pct_avg":{"value":0.95},"key":"sub_qk_val2"},{"cpu_pct_avg":{"value":0.89},"key":"sub_qk_val3"}]},"key":"qk_val"})
+    rule.check_matches(datetime.datetime.now(), 'qk_val', query)
     assert len(rule.matches) == 3
     assert rule.matches[0]['qk'] == 'qk_val'
     assert rule.matches[1]['qk'] == 'qk_val'

@@ -976,8 +976,6 @@ class MetricAggregationRule(BaseAggregationRule):
 
     def check_matches(self, timestamp, query_key, aggregation_data):
         if "compound_query_key" in self.rules:
-            #self.add_match({'cpu_pct_avg': 0.91, 'qk': 'qk_val', '@timestamp': datetime.datetime.now(), 'sub_qk': 'sub_qk_val1'})
-            #self.add_match({'cpu_pct_avg': 0.95, 'qk': 'qk_val', '@timestamp': datetime.datetime.now(), 'sub_qk': 'sub_qk_val2'})
             self.check_matches_recursive(timestamp, query_key, aggregation_data, self.rules['compound_query_key'], dict())
 
         else:
