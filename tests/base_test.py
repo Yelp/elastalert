@@ -14,6 +14,7 @@ from elasticsearch.exceptions import ElasticsearchException
 from elastalert.enhancements import BaseEnhancement
 from elastalert.enhancements import DropMatchException
 from elastalert.kibana import dashboard_temp
+from elastalert.util import checkRunTime
 from elastalert.util import dt_to_ts
 from elastalert.util import dt_to_unix
 from elastalert.util import dt_to_unixms
@@ -1210,3 +1211,28 @@ def test_remove_old_events(ea):
     ea.remove_old_events(ea.rules[0])
     assert len(ea.rules[0]['processed_hits']) == 2
     assert 'baz' not in ea.rules[0]['processed_hits']
+
+
+def test_not_run_time():
+    # Add run_time info
+    runTime = {
+        "week_day": ["mon", "tue"],
+        "start": "08:00:00",
+        "end": "18:00:00"
+    }
+    assert checkRunTime(runTime, datetime.datetime(2017, 9, 11, 9, 00, 00))
+    assert checkRunTime(runTime, datetime.datetime(2017, 9, 12, 17, 00, 00))
+    assert not checkRunTime(runTime, datetime.datetime(2017, 9, 11, 19, 00, 00))
+    assert not checkRunTime(runTime, datetime.datetime(2017, 9, 13, 9, 00, 00))
+
+    runTime = [{
+        "week_day": ["mon", "tue"],
+        "start": "08:00:00",
+        "end": "18:00:00"
+    },
+        {
+        "start": "20:00:00",
+        "end": "21:00:00"
+    }]
+    assert checkRunTime(runTime, datetime.datetime(2000, 1, 1, 20, 30, 00))
+    assert not checkRunTime(runTime, datetime.datetime(2000, 1, 1, 19, 30, 00))

@@ -101,6 +101,10 @@ Rule Configuration Cheat Sheet
 | ``alert_text_args`` (array of strs)                          |           |
 +--------------------------------------------------------------+           |
 | ``alert_text_kw`` (object)                                   |           |
++--------------------------------------------------------------+           |
+| ``runt_time`` (array of strs)                                |           |
++--------------------------------------------------------------+           |
+| ``run_time_format`` (string, default "%H:%M:%S)              |           |
 +--------------------------------------------------------------+-----------+
 
 |
@@ -571,6 +575,25 @@ see above for more details. (Optional, boolean, default True)
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
 
+run_time
+^^^^^^^^
+
+Configures array of wall clock times (UTC) for running rules. If current time is from ``start`` to ``end``, rule is run, it will be skipped other case.
+Optionally, ``week_day``  ( "mon", "tue", "wed", "thu", "fri", "sat", "sun" ) can be specified.
+
+example: running rule all days from 00:00:00 to 01:00:00 and mondays + fridays from 13:00:00 to 20:00:00
+
+run_time:
+  - start: "00:00:00"
+    end: "01:00:00"
+  - start: "13:00:00"
+    end: "20:00:00"
+    week_day: ["mon", "fri"]
+
+run_time_format
+^^^^^^^^^^^^^^^
+
+Specifies time format for ``start`` and ``end`` properties of ``run_time`` (default "%H:%M:%S")
 
 .. _testing :
 
