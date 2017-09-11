@@ -1265,7 +1265,16 @@ class ElastAlerter():
                     qk = match[rule['query_key']]
                 else:
                     qk = None
-                start = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) - rule.get('timeframe', datetime.timedelta(minutes=10))
+
+                if isinstance(rule['type'], FlatlineRule):
+                    # flatline rule triggers when there have been no events from now()-timeframe to now(),
+                    # so using now()-timeframe will return no results. for now we can just mutliple the timeframe
+                    # by 2, but this could probably be timeframe+run_every to prevent too large of a lookup?
+                    timeframe = datetime.timedelta(seconds=2 * rule.get('timeframe').total_seconds())
+                else:
+                    timeframe = rule.get('timeframe', datetime.timedelta(minutes=10))
+
+                start = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) - timeframe
                 end = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) + datetime.timedelta(minutes=10)
                 keys = rule.get('top_count_keys')
                 counts = self.get_top_counts(rule, start, end, keys, qk=qk)
