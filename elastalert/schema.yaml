@@ -24,6 +24,7 @@ definitions:
       schedule: {type: string}
 
   filter: &filter {}
+  run_time: &run_time {}
 
 required: [type, index, alert]
 type: object
@@ -129,6 +130,20 @@ oneOf:
       # custom rules include a period in the rule type
       type: {pattern: "[.]"}
 
+  - title: Anomaly
+    required: [number_windows, anomaly_type, timeframe]
+    properties:
+      type: {enum: [anomaly]}
+      K: {type: number}
+      anomaly_type: {enum: ["up", "down", "both"]}
+      timeframe: *timeframe
+      doc_type: {type: string}
+      terms_size: {type: integer}
+      alert_on_new_data: {type: boolean}
+      value_field: {type: string}
+      number_windows: {type: number}
+      ignore_empty_window: {type: boolean}
+
 properties:
 
   # Common Settings
@@ -174,6 +189,24 @@ properties:
   match_enhancements: {type: array, items: {type: string}}
   query_key: *arrayOfString
   replace_dots_in_field_names: {type: boolean}
+  run_time_format :
+    type: [ string ]
+  run_time :
+    type: [array, object]
+    items: *run_time
+    properties:
+      week_day:
+        type: [array, string]
+        enum: ["mon","tue", "wed", "thu", "fri", "sat", "sun"]
+      start:
+        type: string
+        format: time
+      end:
+        type: string
+        format: time
+    additionalProperties: false
+    required: ["start","end"]
+
 
   # Alert Content
   alert_text: {type: string} # Python format string
@@ -265,4 +298,3 @@ properties:
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
-

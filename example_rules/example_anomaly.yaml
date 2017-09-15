@@ -1,0 +1,56 @@
+# Alert when the time series exceeds or falls "normal" values, that is, when an "anomaly" is detected.
+
+# (Optional)
+# Elasticsearch host
+# es_host: elasticsearch.example.com
+
+# (Optional)
+# Elasticsearch port
+# es_port: 14900
+
+# (Required)
+# Index to search, wildcard supported
+index: sensor-*
+
+# (OptionaL) Connect with SSL to Elasticsearch
+#use_ssl: True
+
+# (Optional) basic-auth username and password for Elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# (Required)
+# Rule name, must be unique
+name: Example anomaly rule
+
+# (Required)
+# Type of alert.
+# the frequency rule type alerts when num_events events occur with timeframe time
+type: anomaly
+
+# Alerts when value exceeds upper band (up), falls bellow lower band (down), or both (both)
+anomaly_type: both
+
+# Field name to be used in calculations
+value_field: temperature
+
+#This option is only used if query_key is set. When this is set to true, any new
+#query_key encountered may trigger an immediate alert
+alert_on_new_data: false
+
+# Number of times to multyple std by (height of the band)
+K: 3
+
+# Number of windows to compute moving averages.
+number_windows: 10
+
+# When true, windows with no data are skipped.
+ignore_empty_window: true
+
+# The size of each window
+timeframe:
+  minutes: 4
+
+# The alert is use when a match is found
+alert:
+- "debug"

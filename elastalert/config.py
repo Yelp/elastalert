@@ -52,6 +52,7 @@ rules_mapping = {
     'flatline': ruletypes.FlatlineRule,
     'new_term': ruletypes.NewTermsRule,
     'cardinality': ruletypes.CardinalityRule,
+    'anomaly': ruletypes.AnomalyRule,
     'metric_aggregation': ruletypes.MetricAggregationRule,
     'percentage_match': ruletypes.PercentageMatchRule,
 }

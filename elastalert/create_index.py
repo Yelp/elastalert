@@ -10,10 +10,10 @@ import time
 import elasticsearch.helpers
 import yaml
 from auth import Auth
-from envparse import Env
 from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 from elasticsearch.client import IndicesClient
+from envparse import Env
 
 
 env = Env(ES_USE_SSL=bool)
@@ -127,7 +127,8 @@ def main():
                                                 'alert_time': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'match_time': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'match_body': {'enabled': False, 'type': 'object'},
-                                                'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
+                                                'aggregate_id': {'index': 'not_analyzed', 'type': 'string'},
+                                                'seguridad': {'index': 'not_analyzed', 'type': 'string'}}}}
     past_mapping = {'past_elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                        'match_body': {'enabled': False, 'type': 'object'},
                                                        '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},

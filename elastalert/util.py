@@ -167,7 +167,8 @@ def pretty_ts(timestamp, tz=True):
         dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
-    return dt.strftime('%Y-%m-%d %H:%M %Z')
+    # %Z is now deprecated
+    return dt.strftime('%Y-%m-%d %H:%M %z')
 
 
 def ts_add(ts, td):
@@ -364,3 +365,23 @@ def parse_deadline(value):
     """Convert ``unit=num`` spec into a ``datetime`` object."""
     duration = parse_duration(value)
     return ts_now() + duration
+
+
+def checkRunTime(runTime, currentDatetime=ts_now(), runTimeFormat="%H:%M:%S"):
+    if not runTime:
+        return True
+    days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+    currentDayWeek = currentDatetime.weekday()
+    currentTime = currentDatetime.time()
+    if not isinstance(runTime, list):
+        runTime = [runTime]
+    for runTimeRule in runTime:
+        ruleWeekday = runTimeRule.get('week_day')
+
+        if ruleWeekday and not days[currentDayWeek] in ruleWeekday:
+            continue
+        start = datetime.datetime.strptime(runTimeRule['start'], runTimeFormat).time()
+        end = datetime.datetime.strptime(runTimeRule['end'], runTimeFormat).time()
+        if start <= currentTime <= end:
+            return True
+    return False

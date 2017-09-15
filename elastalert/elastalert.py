@@ -29,6 +29,7 @@ from elasticsearch.exceptions import TransportError
 from enhancements import DropMatchException
 from ruletypes import FlatlineRule
 from util import add_raw_postfix
+from util import checkRunTime
 from util import cronite_datetime_to_timestamp
 from util import dt_to_ts
 from util import dt_to_unix
@@ -1065,6 +1066,9 @@ class ElastAlerter():
         next_run = datetime.datetime.utcnow() + self.run_every
 
         for rule in self.rules:
+            if not checkRunTime(rule.get('run_time'), datetime.datetime.now()):
+                elastalert_logger.info("Not ran %s because run_time configuration." % (rule['name']))
+                continue
             # Set endtime based on the rule's delay
             delay = rule.get('query_delay')
             if hasattr(self.args, 'end') and self.args.end:
@@ -1347,7 +1351,8 @@ class ElastAlerter():
             'rule_name': rule['name'],
             'alert_info': rule['alert'][0].get_info(),
             'alert_sent': alert_sent,
-            'alert_time': alert_time
+            'alert_time': alert_time,
+            'description': rule.get('description')
         }
 
         match_time = lookup_es_key(match, rule['timestamp_field'])
