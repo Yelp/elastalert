@@ -1351,7 +1351,8 @@ class ElastAlerter():
             'rule_name': rule['name'],
             'alert_info': rule['alert'][0].get_info(),
             'alert_sent': alert_sent,
-            'alert_time': alert_time
+            'alert_time': alert_time,
+            'description': rule.get('description')
         }
 
         match_time = lookup_es_key(match, rule['timestamp_field'])
