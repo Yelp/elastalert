@@ -210,7 +210,9 @@ class ElastAlerter():
         starttime = to_ts_func(starttime)
         endtime = to_ts_func(endtime)
         filters = copy.copy(filters)
-        es_filters = {'filter': {'bool': {'must': filters}}}
+        must_filters = [x for x in filters if 'must_not' not in x]
+        must_not_filters = [x for x in filters if 'must_not' in x]
+        es_filters = {'filter': {'bool': {'must': must_filters, 'must_not': must_not_filters}}}
         if starttime and endtime:
             es_filters['filter']['bool']['must'].insert(0, {'range': {timestamp_field: {'gt': starttime,
                                                                                         'lte': endtime}}})
