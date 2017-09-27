@@ -877,12 +877,13 @@ class ElastAlerter():
                            'aggregate_alert_time',
                            'processed_hits',
                            'starttime',
-                           'minimum_starttime',
-                           'run_every']
+                           'minimum_starttime']
         for prop in copy_properties:
             if prop not in rule:
                 continue
             new_rule[prop] = rule[prop]
+        if 'run_every' not in new_rule:
+            new_rule['run_every'] = rule['run_every']
 
         self.scheduler.add_job(self.handle_rule_execution, 'interval', args=[new_rule],
                                seconds=new_rule['run_every'].total_seconds(), id=new_rule['name'])
