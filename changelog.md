@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.1.21
+
+### Fixed
+- Fixed an incomplete bug fix for preventing duplicate enhancement runs
+
 ## v0.1.20
 
 ### Added
