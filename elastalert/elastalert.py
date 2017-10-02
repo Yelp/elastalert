@@ -1449,7 +1449,7 @@ class ElastAlerter():
                 else:
                     # If this rule isn't using aggregation, this must be a retry of a failed alert
                     retried = False
-                    if 'aggregation' not in rule:
+                    if not rule.get('aggregation'):
                         retried = True
                     self.alert([match_body], rule, alert_time=alert_time, retried=retried)
 
