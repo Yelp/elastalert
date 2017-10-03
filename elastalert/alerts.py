@@ -1436,7 +1436,7 @@ class StrideAlerter(Alerter):
         self.stride_cloud_id = self.rule['stride_cloud_id']
         self.stride_converstation_id = self.rule['stride_converstation_id']
         self.stride_ignore_ssl_errors = self.rule.get('stride_ignore_ssl_errors', False)
-        self.stride_proxy = self.rule.get('hipchat_proxy', None)
+        self.stride_proxy = self.rule.get('stride_proxy', None)
         self.url = 'https://api.atlassian.com/site/%s/conversation/%s/message' % (
             self.stride_cloud_id, self.stride_converstation_id)
 
