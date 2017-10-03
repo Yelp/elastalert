@@ -1410,3 +1410,72 @@ class HTTPPostAlerter(Alerter):
     def get_info(self):
         return {'type': 'http_post',
                 'http_post_webhook_url': self.post_url}
+
+
+class StrideAlerter(Alerter):
+    """ Creates a Stride conversation message for each alert """
+    required_options = frozenset(
+        ['stride_access_token', 'stride_cloud_id', 'stride_converstation_id'])
+
+    def __init__(self, rule):
+        super(StrideAlerter, self).__init__(rule)
+
+        self.stride_access_token = self.rule['stride_access_token']
+        self.stride_cloud_id = self.rule['stride_cloud_id']
+        self.stride_converstation_id = self.rule['stride_converstation_id']
+        self.stride_ignore_ssl_errors = self.rule.get('stride_ignore_ssl_errors', False)
+        self.stride_proxy = self.rule.get('hipchat_proxy', None)
+        self.url = 'https://api.atlassian.com/site/%s/conversation/%s/message' % (
+            self.stride_cloud_id, self.stride_converstation_id)
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+
+        # Stride sends 400 bad request on messages longer than 10000 characters
+        if (len(body) > 9999):
+            body = body[:9980] + '..(truncated)'
+
+        # Post to Stride
+        headers = {
+            'content-type': 'application/json',
+            'Authorization': 'Bearer {}'.format(self.stride_access_token)
+        }
+
+        # set https proxy, if it was provided
+        proxies = {'https': self.stride_proxy} if self.stride_proxy else None
+        payload = {
+          "body": {
+            "content": [
+              {
+                "content": [
+                  {
+                    "text": body,
+                    "type": "text"
+                  }
+                ],
+                "type": "paragraph"
+              }
+            ],
+            "version": 1,
+            "type": "doc"
+          }
+        }
+
+        try:
+            if self.stride_ignore_ssl_errors:
+                requests.packages.urllib3.disable_warnings()
+            response = requests.post(
+                self.url, data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers, verify=not self.stride_ignore_ssl_errors,
+                proxies=proxies)
+            warnings.resetwarnings()
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Stride: %s" % e)
+        elastalert_logger.info(
+            "Alert sent to Stride converstation %s" % self.stride_converstation_id)
+
+    def get_info(self):
+        return {'type': 'stride',
+                'stride_cloud_id': self.stride_cloud_id,
+                'stride_converstation_id': self.stride_converstation_id}
