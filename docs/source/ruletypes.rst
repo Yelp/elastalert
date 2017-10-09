@@ -1427,6 +1427,24 @@ text - Message is treated just like a message sent by a user. Can include @menti
 Valid values: html, text.
 Defaults to 'html'.
 
+Stride
+~~~~~~~
+
+Stride alerter will send a notification to a predefined Stride room. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following two options:
+
+``stride_access_token``: The randomly generated notification token created by Stride.
+
+``stride_cloud_id``: The site_id associated with the Stride site you want to send the alert to.
+
+``stride_converstation_id``: The converstation_id associated with the Stride converstation you want to send the alert to.
+
+``stride_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
+
+``stride_proxy``: By default ElastAlert will not use a network proxy to send notifications to Stride. Set this option using ``hostname:port`` if you need to use a proxy.
+
+
 MS Teams
 ~~~~~~~~
 
