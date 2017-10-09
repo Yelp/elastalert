@@ -1458,8 +1458,7 @@ def test_stride():
           {
             "content": [
               {
-                "text": body
-                ,
+                "text": body,
                 "type": "text"
               }
             ],
