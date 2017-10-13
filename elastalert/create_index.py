@@ -10,10 +10,10 @@ import time
 import elasticsearch.helpers
 import yaml
 from auth import Auth
-from envparse import Env
 from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 from elasticsearch.client import IndicesClient
+from envparse import Env
 
 
 env = Env(ES_USE_SSL=bool)
@@ -74,8 +74,8 @@ def main():
         client_cert = data.get('client_cert')
         client_key = data.get('client_key')
     else:
-        username = args.username if args.username else data.get('es_username')
-        password = args.password if args.password else data.get('es_password')
+        username = args.username if args.username else None
+        password = args.password if args.password else None
         aws_region = args.aws_region
         host = args.host if args.host else raw_input('Enter Elasticsearch host: ')
         port = args.port if args.port else int(raw_input('Enter Elasticsearch port: '))
@@ -92,9 +92,9 @@ def main():
         url_prefix = (args.url_prefix if args.url_prefix is not None
                       else raw_input('Enter optional Elasticsearch URL prefix (prepends a string to the URL of every request): '))
         send_get_body_as = args.send_get_body_as
-        ca_certs = data.get('ca_certs')
-        client_cert = data.get('client_cert')
-        client_key = data.get('client_key')
+        ca_certs = None
+        client_cert = None
+        client_key = None
 
     timeout = args.timeout
     auth = Auth()
