@@ -44,6 +44,11 @@ from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
 
+import tempfile
+import string
+import re
+from os import listdir
+from os.path import isfile, join
 
 class ElastAlerter():
     """ The main ElastAlert runner. This class holds all state about active rules,
@@ -144,6 +149,40 @@ class ElastAlerter():
 
         if self.args.silence:
             self.silence()
+
+        self.lock_tempdir = tempfile.mkdtemp()
+        elastalert_logger.info("temp dir %s" % (self.lock_tempdir))
+
+    def lockfilename(self,fkey):
+        valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+        return ''.join(c for c in fkey if c in valid_chars)
+    def is_locked(self,fkey):
+        lockf=join(self.lock_tempdir,self.lockfilename(fkey))
+        return isfile(lockf)
+    def unlock(self,fkey):
+        lockf=join(self.lock_tempdir,self.lockfilename(fkey))
+        with open(lockf) as x: f = x.read()
+        os.remove(lockf)
+        return f
+    def lock(self,fkey,match):
+        lockf=join(self.lock_tempdir,self.lockfilename(fkey))
+        with open(lockf,"w") as f:
+            f.write(json.dumps(match))
+    def obsolete_locks(self,rule,matches):
+        files = [f for f in listdir(self.lock_tempdir) if isfile(join(self.lock_tempdir, f))]
+        if not matches:
+            return files
+
+        if not files:
+            return []
+        locks_for_rule= [f for f in files if re.search("^"+rule['name'],f)]
+        hostnames=[m['beat.hostname'] for m in matches ]
+        locks_for_deletion= [f for f in files  if sum([re.search(hostn,f)!=None for hostn in hostnames])==0 ]
+        return locks_for_deletion
+
+    def clear_locks(self,locks_for_deletion):
+        for lock in locks_for_deletion:
+            self.unlock(lock)
 
     def get_version(self):
         info = self.writeback_es.info()
@@ -344,6 +383,7 @@ class ElastAlerter():
                     **extra_args
                 )
                 self.total_hits = int(res['hits']['total'])
+            #elastalert_logger.info(str(res))
             logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
@@ -565,6 +605,7 @@ class ElastAlerter():
         if data is None:
             return False
         elif data:
+            #elastalert_logger.info("Found data %s" % data)
             if rule.get('use_count_query'):
                 rule_inst.add_count_data(data)
             elif rule.get('use_terms_query'):
@@ -573,6 +614,7 @@ class ElastAlerter():
                 rule_inst.add_aggregation_data(data)
             else:
                 rule_inst.add_data(data)
+            #elastalert_logger.info("Found matches %s" % rule_inst.matches)
 
         try:
             if rule.get('scroll_id') and self.num_hits < self.total_hits:
@@ -770,8 +812,16 @@ class ElastAlerter():
 
         # Process any new matches
         num_matches = len(rule['type'].matches)
+           
+        olocks=self.obsolete_locks(rule,rule['type'].matches)
+        for lock in olocks:
+            unlocked_match = self.unlock(lock)
+            um=json.loads(unlocked_match)
+            um.update({"alert_status": "Incident Closed"})
+            self.alert([um],rule)
         while rule['type'].matches:
             match = rule['type'].matches.pop(0)
+            match.update({"alert_status": "Incident Open"})
             match['num_hits'] = self.num_hits
             match['num_matches'] = num_matches
 
@@ -1251,7 +1301,19 @@ class ElastAlerter():
         for alert in rule['alert']:
             alert.pipeline = alert_pipeline
             try:
-                alert.alert(matches)
+                unlocked=matches
+                if "alert_once" in rule and rule["alert_once"]:
+                    locked = []
+                    unlocked = []
+                    for match in matches:
+                        fkey = rule["name"] + match[rule["alert_lock_key"]]
+                        if not self.is_locked(fkey):
+                            unlocked.append(match)
+                            if match["alert_status"] != "Incident Closed":
+                                self.lock(fkey,match)
+                #elastalert_logger.info("unlocked: %s" % (unlocked))
+                if(len(unlocked)>0):
+                    alert.alert(unlocked)
             except EAException as e:
                 self.handle_error('Error while running alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
                 alert_exception = str(e)
@@ -1445,6 +1507,7 @@ class ElastAlerter():
             self.handle_error("Error searching for pending aggregated matches: %s" % (e), {'rule_name': rule['name']})
             return None
 
+        ####elastalert_logger.info('aggregation hits %s' % res['hits']['hits'][0])
         return res['hits']['hits'][0]
 
     def add_aggregated_alert(self, match, rule):
