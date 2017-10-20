@@ -1164,7 +1164,7 @@ With ``alert_text_type: exclude_fields``::
 ruletype_text is the string returned by RuleType.get_match_str.
 
 field_values will contain every key value pair included in the results from Elasticsearch. These fields include "@timestamp" (or the value of ``timestamp_field``),
-every key in ``included``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
+every key in ``include``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
 come from an individual event, usually the one which triggers the alert.
 
 Command
