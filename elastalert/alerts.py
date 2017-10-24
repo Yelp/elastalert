@@ -548,7 +548,7 @@ class JiraAlerter(Alerter):
             self.get_arbitrary_fields()
         except JIRAError as e:
             # JIRAError may contain HTML, pass along only first 1024 chars
-            raise EAException("Error connecting to JIRA: %s" % (str(e)[:1024]))
+            raise EAException("Error connecting to JIRA: %s" % (str(e)[:1024])), None, sys.exc_info()[2]
 
         self.set_priority()
 
