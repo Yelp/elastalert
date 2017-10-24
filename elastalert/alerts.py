@@ -528,6 +528,7 @@ class JiraAlerter(Alerter):
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
         self.bump_after_inactivity = self.rule.get('jira_bump_after_inactivity', 0)
         self.watchers = self.rule.get('jira_watchers')
+        self.client = None
 
         if self.bump_in_statuses and self.bump_not_in_statuses:
             msg = 'Both jira_bump_in_statuses (%s) and jira_bump_not_in_statuses (%s) are set.' % \
@@ -539,6 +540,26 @@ class JiraAlerter(Alerter):
             msg += ' This should be simplified to use only one or the other.'
             logging.warning(msg)
 
+        self.reset_jira_args()
+
+        try:
+            self.client = JIRA(self.server, basic_auth=(self.user, self.password))
+            self.get_priorities()
+            self.get_arbitrary_fields()
+        except JIRAError as e:
+            # JIRAError may contain HTML, pass along only first 1024 chars
+            raise EAException("Error connecting to JIRA: %s" % (str(e)[:1024])), None, sys.exc_info()[2]
+
+        self.set_priority()
+
+    def set_priority(self):
+        try:
+            if self.priority is not None and self.client is not None:
+                self.jira_args['priority'] = {'id': self.priority_ids[self.priority]}
+        except KeyError:
+            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, self.priority_ids.keys()))
+
+    def reset_jira_args(self):
         self.jira_args = {'project': {'key': self.project},
                           'issuetype': {'name': self.issue_type}}
 
@@ -560,19 +581,7 @@ class JiraAlerter(Alerter):
         if self.assignee:
             self.jira_args['assignee'] = {'name': self.assignee}
 
-        try:
-            self.client = JIRA(self.server, basic_auth=(self.user, self.password))
-            self.get_priorities()
-            self.get_arbitrary_fields()
-        except JIRAError as e:
-            # JIRAError may contain HTML, pass along only first 1024 chars
-            raise EAException("Error connecting to JIRA: %s" % (str(e)[:1024]))
-
-        try:
-            if self.priority is not None:
-                self.jira_args['priority'] = {'id': self.priority_ids[self.priority]}
-        except KeyError:
-            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, self.priority_ids.keys()))
+        self.set_priority()
 
     def set_jira_arg(self, jira_field, value, fields):
         # Remove the jira_ part.  Convert underscores to spaces
@@ -639,6 +648,9 @@ class JiraAlerter(Alerter):
                 self.jira_args[arg_name] = {'name': value}
 
     def get_arbitrary_fields(self):
+        # Clear jira_args
+        self.reset_jira_args()
+
         # This API returns metadata about all the fields defined on the jira server (built-ins and custom ones)
         fields = self.client.fields()
         for jira_field, value in self.rule.iteritems():
