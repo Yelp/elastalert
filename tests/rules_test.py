@@ -1153,5 +1153,8 @@ def test_percentage_match():
 
     rules['query_key'] = 'qk'
     rule = PercentageMatchRule(rules)
-    rule.check_matches(datetime.datetime.now(), 'qk_val', create_percentage_match_agg(76, 24))
+    rule.check_matches(datetime.datetime.now(), 'qk_val', create_percentage_match_agg(76.666666667, 24))
     assert rule.matches[0]['qk'] == 'qk_val'
+    assert '76.1589403974' in rule.get_match_str(rule.matches[0])
+    rules['percentage_format_string'] = '%.2f'
+    assert '76.16' in rule.get_match_str(rule.matches[0])
