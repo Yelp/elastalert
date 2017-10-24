@@ -446,7 +446,7 @@ class ElastAlerter():
                 end = '.keyword'
             else:
                 end = '.raw'
-            if rule.get('raw_count_keys', True) and not rule['query_key'].endswith(end) and not rule['five']:
+            if rule.get('raw_count_keys', True) and not rule['query_key'].endswith(end):
                 filter_key = add_raw_postfix(filter_key, rule['five'])
             rule_filter.extend([{'term': {filter_key: qk}}])
         base_query = self.get_query(
@@ -1464,7 +1464,7 @@ class ElastAlerter():
                     self.writeback_es.delete(index=self.writeback_index,
                                              doc_type='elastalert',
                                              id=_id)
-                except:  # TODO: Give this a more relevant exception, try:except: is evil.
+                except ElasticsearchException:  # TODO: Give this a more relevant exception, try:except: is evil.
                     self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
 
         # Send in memory aggregated alerts

@@ -1157,7 +1157,7 @@ class ExotelAlerter(Alerter):
             response = client.sms(self.rule['exotel_from_number'], self.rule['exotel_to_number'], message_body)
             if response != 200:
                 raise EAException("Error posting to Exotel, response code is %s" % response)
-        except:
+        except RequestException:
             raise EAException("Error posting to Exotel"), None, sys.exc_info()[2]
         elastalert_logger.info("Trigger sent to Exotel")
 
