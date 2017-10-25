@@ -1410,3 +1410,61 @@ class HTTPPostAlerter(Alerter):
     def get_info(self):
         return {'type': 'http_post',
                 'http_post_webhook_url': self.post_url}
+
+
+class SparkAlerter(Alerter):
+    """ Creates a Cisco Spark room message for each alert """
+    required_options = frozenset(['spark_access_token', 'spark_room_id'])
+
+    def __init__(self, rule):
+        super(SparkAlerter, self).__init__(rule)
+
+        self.access_token = self.rule.get('spark_access_token')
+        self.room_id = self.rule.get('spark_room_id')
+        self.proxy = self.rule.get('spark_proxy', None)
+        self.url = 'https://api.ciscospark.com/v1/messages'
+
+    def format_body(self, body):
+        body = body.encode('UTF-8')
+        body = body.replace('&', '&amp;')
+        body = body.replace('<', '&lt;')
+        body = body.replace('>', '&gt;')
+        return body
+
+    def get_aggregation_summary_text__maximum_width(self):
+        width = super(SparkAlerter, self).get_aggregation_summary_text__maximum_width()
+        # Reduced maximum width for prettier Spark display.
+        return min(width, 75)
+
+    def get_aggregation_summary_text(self, matches):
+        text = super(SparkAlerter, self).get_aggregation_summary_text(matches)
+        if text:
+            text = u'```\n{0}```\n'.format(text)
+        return text
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+        body = self.format_body(body)
+
+        # post to Spark
+        headers = {'Content-type': 'application/json;charset=utf-8',
+                   'Authorization': 'Bearer {}'.format(self.access_token)}
+
+        # set https proxy, if it was provided
+        proxies = {'https': self.proxy} if self.proxy else None
+        payload = {'roomId': self.room_id,
+                   'text': body}
+
+        try:
+            response = requests.post(self.url,
+                                     data=json.dumps(payload, cls=DateTimeEncoder),
+                                     headers=headers,
+                                     proxies=proxies)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Spark: %s" % e)
+        elastalert_logger.info("Alert sent to Spark")
+
+    def get_info(self):
+        return {'type': 'spark',
+                'spark_room_id': self.room_id}
