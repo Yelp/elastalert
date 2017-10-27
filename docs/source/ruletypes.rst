@@ -1258,6 +1258,8 @@ by the smtp server.
 
 ``bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
 
+``socks5addr``: Socks5 proxy addr to send email, eg: 10.0.0.1:1080
+
 Jira
 ~~~~
 

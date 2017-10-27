@@ -3,6 +3,8 @@ import copy
 import datetime
 import json
 import logging
+import smtplib
+import socks
 import subprocess
 import sys
 import warnings
@@ -387,6 +389,12 @@ class EmailAlerter(Alerter):
         add_suffix = self.rule.get('email_add_domain')
         if add_suffix and not add_suffix.startswith('@'):
             self.rule['email_add_domain'] = '@' + add_suffix
+
+        # set socks5 addr for sending email if set
+        if self.conf['socks5addr'] :
+            tl = self.conf['socks5addr']
+            socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, tl[0], int(tl[1]))
+            socks.wrapmodule(smtplib)
 
     def alert(self, matches):
         body = self.create_alert_body(matches)

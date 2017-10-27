@@ -6,6 +6,8 @@ import json
 import logging
 import os
 import signal
+import smtplib
+import socks
 import sys
 import time
 import timeit
@@ -154,6 +156,12 @@ class ElastAlerter():
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
+
+        # set socks5 addr for sending email if set
+        if self.conf['socks5addr'] :
+            tl = self.conf['socks5addr']
+            socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, tl[0], int(tl[1]))
+            socks.wrapmodule(smtplib)
 
         remove = []
         for rule in self.rules:
