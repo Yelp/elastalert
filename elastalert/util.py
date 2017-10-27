@@ -233,7 +233,7 @@ def unix_to_dt(ts):
 
 
 def dt_to_unix(dt):
-    return total_seconds(dt - datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzutc()))
+    return int(total_seconds(dt - datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzutc())))
 
 
 def dt_to_unixms(dt):
