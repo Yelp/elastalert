@@ -73,6 +73,8 @@ def main():
         ca_certs = data.get('ca_certs')
         client_cert = data.get('client_cert')
         client_key = data.get('client_key')
+        index = args.index if args.index is not None else data.get('writeback_index')
+        old_index = args.old_index if args.old_index is not None else None
     else:
         username = args.username if args.username else None
         password = args.password if args.password else None
@@ -95,6 +97,11 @@ def main():
         ca_certs = None
         client_cert = None
         client_key = None
+        index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
+        if not index:
+            index = 'elastalert_status'
+        old_index = (args.old_index if args.old_index is not None
+                     else raw_input('Name of existing index to copy? (Default None) '))
 
     timeout = args.timeout
     auth = Auth()
@@ -134,13 +141,6 @@ def main():
                                                        'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
     error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False},
                                                          '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
-
-    index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
-    if not index:
-        index = 'elastalert_status'
-
-    old_index = (args.old_index if args.old_index is not None
-                 else raw_input('Name of existing index to copy? (Default None) '))
 
     es_index = IndicesClient(es)
     if es_index.exists(index):
