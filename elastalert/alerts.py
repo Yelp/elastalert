@@ -1549,4 +1549,3 @@ class StrideAlerter(Alerter):
         return {'type': 'stride',
                 'stride_cloud_id': self.stride_cloud_id,
                 'stride_converstation_id': self.stride_converstation_id}
-
