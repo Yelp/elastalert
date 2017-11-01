@@ -1164,7 +1164,7 @@ With ``alert_text_type: exclude_fields``::
 ruletype_text is the string returned by RuleType.get_match_str.
 
 field_values will contain every key value pair included in the results from Elasticsearch. These fields include "@timestamp" (or the value of ``timestamp_field``),
-every key in ``included``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
+every key in ``include``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
 come from an individual event, usually the one which triggers the alert.
 
 Command
@@ -1426,6 +1426,24 @@ html - Message is rendered as HTML and receives no special treatment. Must be va
 text - Message is treated just like a message sent by a user. Can include @mentions, emoticons, pastes, and auto-detected URLs (Twitter, YouTube, images, etc).
 Valid values: html, text.
 Defaults to 'html'.
+
+Stride
+~~~~~~~
+
+Stride alerter will send a notification to a predefined Stride room. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following two options:
+
+``stride_access_token``: The randomly generated notification token created by Stride.
+
+``stride_cloud_id``: The site_id associated with the Stride site you want to send the alert to.
+
+``stride_converstation_id``: The converstation_id associated with the Stride converstation you want to send the alert to.
+
+``stride_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
+
+``stride_proxy``: By default ElastAlert will not use a network proxy to send notifications to Stride. Set this option using ``hostname:port`` if you need to use a proxy.
+
 
 MS Teams
 ~~~~~~~~

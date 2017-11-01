@@ -528,6 +528,7 @@ class JiraAlerter(Alerter):
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
         self.bump_after_inactivity = self.rule.get('jira_bump_after_inactivity', 0)
         self.watchers = self.rule.get('jira_watchers')
+        self.client = None
 
         if self.bump_in_statuses and self.bump_not_in_statuses:
             msg = 'Both jira_bump_in_statuses (%s) and jira_bump_not_in_statuses (%s) are set.' % \
@@ -539,6 +540,26 @@ class JiraAlerter(Alerter):
             msg += ' This should be simplified to use only one or the other.'
             logging.warning(msg)
 
+        self.reset_jira_args()
+
+        try:
+            self.client = JIRA(self.server, basic_auth=(self.user, self.password))
+            self.get_priorities()
+            self.get_arbitrary_fields()
+        except JIRAError as e:
+            # JIRAError may contain HTML, pass along only first 1024 chars
+            raise EAException("Error connecting to JIRA: %s" % (str(e)[:1024])), None, sys.exc_info()[2]
+
+        self.set_priority()
+
+    def set_priority(self):
+        try:
+            if self.priority is not None and self.client is not None:
+                self.jira_args['priority'] = {'id': self.priority_ids[self.priority]}
+        except KeyError:
+            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, self.priority_ids.keys()))
+
+    def reset_jira_args(self):
         self.jira_args = {'project': {'key': self.project},
                           'issuetype': {'name': self.issue_type}}
 
@@ -560,19 +581,7 @@ class JiraAlerter(Alerter):
         if self.assignee:
             self.jira_args['assignee'] = {'name': self.assignee}
 
-        try:
-            self.client = JIRA(self.server, basic_auth=(self.user, self.password))
-            self.get_priorities()
-            self.get_arbitrary_fields()
-        except JIRAError as e:
-            # JIRAError may contain HTML, pass along only first 1024 chars
-            raise EAException("Error connecting to JIRA: %s" % (str(e)[:1024]))
-
-        try:
-            if self.priority is not None:
-                self.jira_args['priority'] = {'id': self.priority_ids[self.priority]}
-        except KeyError:
-            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, self.priority_ids.keys()))
+        self.set_priority()
 
     def set_jira_arg(self, jira_field, value, fields):
         # Remove the jira_ part.  Convert underscores to spaces
@@ -639,6 +648,9 @@ class JiraAlerter(Alerter):
                 self.jira_args[arg_name] = {'name': value}
 
     def get_arbitrary_fields(self):
+        # Clear jira_args
+        self.reset_jira_args()
+
         # This API returns metadata about all the fields defined on the jira server (built-ins and custom ones)
         fields = self.client.fields()
         for jira_field, value in self.rule.iteritems():
@@ -1157,7 +1169,7 @@ class ExotelAlerter(Alerter):
             response = client.sms(self.rule['exotel_from_number'], self.rule['exotel_to_number'], message_body)
             if response != 200:
                 raise EAException("Error posting to Exotel, response code is %s" % response)
-        except:
+        except RequestException:
             raise EAException("Error posting to Exotel"), None, sys.exc_info()[2]
         elastalert_logger.info("Trigger sent to Exotel")
 
@@ -1468,3 +1480,73 @@ class SparkAlerter(Alerter):
     def get_info(self):
         return {'type': 'spark',
                 'spark_room_id': self.room_id}
+
+
+class StrideAlerter(Alerter):
+    """ Creates a Stride conversation message for each alert """
+    required_options = frozenset(
+        ['stride_access_token', 'stride_cloud_id', 'stride_converstation_id'])
+
+    def __init__(self, rule):
+        super(StrideAlerter, self).__init__(rule)
+
+        self.stride_access_token = self.rule['stride_access_token']
+        self.stride_cloud_id = self.rule['stride_cloud_id']
+        self.stride_converstation_id = self.rule['stride_converstation_id']
+        self.stride_ignore_ssl_errors = self.rule.get('stride_ignore_ssl_errors', False)
+        self.stride_proxy = self.rule.get('stride_proxy', None)
+        self.url = 'https://api.atlassian.com/site/%s/conversation/%s/message' % (
+            self.stride_cloud_id, self.stride_converstation_id)
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+
+        # Stride sends 400 bad request on messages longer than 10000 characters
+        if (len(body) > 9999):
+            body = body[:9980] + '..(truncated)'
+
+        # Post to Stride
+        headers = {
+            'content-type': 'application/json',
+            'Authorization': 'Bearer {}'.format(self.stride_access_token)
+        }
+
+        # set https proxy, if it was provided
+        proxies = {'https': self.stride_proxy} if self.stride_proxy else None
+        payload = {
+          "body": {
+            "content": [
+              {
+                "content": [
+                  {
+                    "text": body,
+                    "type": "text"
+                  }
+                ],
+                "type": "paragraph"
+              }
+            ],
+            "version": 1,
+            "type": "doc"
+          }
+        }
+
+        try:
+            if self.stride_ignore_ssl_errors:
+                requests.packages.urllib3.disable_warnings()
+            response = requests.post(
+                self.url, data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers, verify=not self.stride_ignore_ssl_errors,
+                proxies=proxies)
+            warnings.resetwarnings()
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Stride: %s" % e)
+        elastalert_logger.info(
+            "Alert sent to Stride converstation %s" % self.stride_converstation_id)
+
+    def get_info(self):
+        return {'type': 'stride',
+                'stride_cloud_id': self.stride_cloud_id,
+                'stride_converstation_id': self.stride_converstation_id}
+

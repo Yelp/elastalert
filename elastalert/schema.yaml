@@ -220,6 +220,12 @@ properties:
   hipchat_notify: {type: boolean}
   hipchat_from: {type: string}
 
+  ### Stride
+  stride_access_token: {type: string}
+  stride_cloud_id: {type: string}
+  stride_converstation_id: {type: string}
+  stride_ignore_ssl_errors: {type: boolean}
+
   ### Slack
   slack_webhook_url: *arrayOfString
   slack_username_override: {type: string}
@@ -269,4 +275,3 @@ properties:
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
-
