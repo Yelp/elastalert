@@ -343,8 +343,10 @@ def load_modules(rule, args=None):
         rule['type'] = rule['type'](rule, args)
     except (KeyError, EAException) as e:
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e)), None, sys.exc_info()[2]
-    # Instantiate alert
-    rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
+    # Instantiate alerts only if we're not in debug mode
+    # In debug mode alerts are not actually sent so don't bother instantiating them
+    if not args or not args.debug:
+        rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
 
 
 def isyaml(filename):

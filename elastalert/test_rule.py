@@ -204,7 +204,11 @@ class MockElastAlerter(object):
         """ Creates an ElastAlert instance and run's over for a specific rule using either real or mock data. """
 
         # Load and instantiate rule
-        load_modules(rule)
+        # Pass an args containing the context of whether we're alerting or not
+        # It is needed to prevent unnecessary initialization of unused alerters
+        load_modules_args = argparse.Namespace()
+        load_modules_args.debug = not args.alert
+        load_modules(rule, load_modules_args)
         conf['rules'] = [rule]
 
         # If using mock data, make sure it's sorted and find appropriate time range
