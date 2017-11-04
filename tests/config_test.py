@@ -44,6 +44,7 @@ test_rule = {'es_host': 'test_host',
 test_args = mock.Mock()
 test_args.config = 'test_config'
 test_args.rule = None
+test_args.debug = False
 
 
 def test_import_rules():
