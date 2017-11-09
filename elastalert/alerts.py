@@ -297,16 +297,15 @@ class StompAlerter(Alerter):
     required_options = frozenset(
         ['stomp_hostname', 'stomp_hostport', 'stomp_login', 'stomp_password'])
 
-
     def alert(self, matches):
         alerts = []
 
         qk = self.rule.get('query_key', None)
         fullmessage = {}
         for match in matches:
-            resmatch=lookup_es_key(match, qk)
-            
-            if resmatch != None:
+            resmatch = lookup_es_key(match, qk)
+
+            if resmatch is not None:
                 elastalert_logger.info(
                     'Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(match, self.rule['timestamp_field'])))
                 alerts.append(
