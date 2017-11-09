@@ -297,15 +297,6 @@ class StompAlerter(Alerter):
     required_options = frozenset(
         ['stomp_hostname', 'stomp_hostport', 'stomp_login', 'stomp_password'])
 
-    def check_if_match_exists(mes, matchkey):
-        keys = matchkey.split(".")
-        currec = mes
-        for key in keys:
-            if key in currec:
-                currec = currec[key]
-            else:
-                return [False, None]
-        return [True, currec]
 
     def alert(self, matches):
         alerts = []
@@ -313,15 +304,16 @@ class StompAlerter(Alerter):
         qk = self.rule.get('query_key', None)
         fullmessage = {}
         for match in matches:
-            resmatch = check_if_match_exists(match, qk)
-            if resmatch[0]:
+            resmatch=lookup_es_key(match, qk)
+            
+            if resmatch != None:
                 elastalert_logger.info(
-                    'Alert for %s, %s at %s:' % (self.rule['name'], resmatch[1], lookup_es_key(match, self.rule['timestamp_field'])))
+                    'Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(match, self.rule['timestamp_field'])))
                 alerts.append(
-                    '1)Alert for %s, %s at %s:' % (self.rule['name'], resmatch[1], lookup_es_key(
+                    '1)Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(
                         match, self.rule['timestamp_field']))
                 )
-                fullmessage['match'] = resmatch[1]
+                fullmessage['match'] = resmatch
             else:
                 elastalert_logger.info('Alert for %s at %s:' % (
                     self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
