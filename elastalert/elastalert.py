@@ -176,7 +176,7 @@ class ElastAlerter():
 
     def is_five(self):
         """actually `is_five` means version >= 5 now"""
-        version = self.es.info()['version']['number'][0:1]
+        version = self.es_version[0:1]
         return int(version) >= 5
 
     @staticmethod
