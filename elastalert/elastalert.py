@@ -918,7 +918,8 @@ class ElastAlerter():
     def modify_rule_for_ES5(new_rule):
         # Get ES version per rule
         rule_es = elasticsearch_client(new_rule)
-        if rule_es.info()['version']['number'].startswith('5'):
+        version = rule_es.info()['version']['number'][0:1]
+        if int(version) >= 5:
             new_rule['five'] = True
         else:
             new_rule['five'] = False
