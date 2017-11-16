@@ -940,6 +940,17 @@ def test_rule_changes(ea):
     assert len(ea.rules) == 3
     assert not any(['new' in rule for rule in ea.rules])
 
+    # A new rule with is_enabled=False wont load
+    new_hashes = copy.copy(new_hashes)
+    new_hashes.update({'rules/rule4.yaml': 'asdf'})
+    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
+        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'is_enabled': False, 'rule_file': 'rules/rule4.yaml'}
+            mock_hashes.return_value = new_hashes
+            ea.load_rule_changes()
+    assert len(ea.rules) == 3
+    assert not any(['new' in rule for rule in ea.rules])
+
     # An old rule which didn't load gets reloaded
     new_hashes = copy.copy(new_hashes)
     new_hashes['rules/rule4.yaml'] = 'qwerty'
