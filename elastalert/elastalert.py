@@ -175,7 +175,9 @@ class ElastAlerter():
         return self._es_version
 
     def is_five(self):
-        return self.es_version.startswith('5')
+        """actually `is_five` means version >= 5 now"""
+        version = self.es.info()['version']['number'][0:1]
+        return int(version) >= 5
 
     @staticmethod
     def get_index(rule, starttime=None, endtime=None):
