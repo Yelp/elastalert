@@ -286,14 +286,18 @@ class FrequencyRule(RuleType):
                                                                          endtime)
         return message
 
-
 class AnyRule(RuleType):
     """ A rule that will match on any input data """
+    def add_terms_data(self, terms):
+        for timestamp, buckets in terms.iteritems():
+            for bucket in buckets:
+                event = {self.rules['timestamp_field']: timestamp,
+                          self.rules['query_key']: bucket['key'], 'count': bucket['doc_count']}
+                self.add_match(event)
 
     def add_data(self, data):
         for datum in data:
             self.add_match(datum)
-
 
 class EventWindow(object):
     """ A container for hold event counts for rules which need a chronological ordered event window. """
