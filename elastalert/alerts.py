@@ -3,6 +3,8 @@ import copy
 import datetime
 import json
 import logging
+import logging.handlers
+
 import subprocess
 import sys
 import warnings
@@ -12,6 +14,7 @@ from smtplib import SMTP
 from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
+import socket
 from socket import error
 
 import boto3
@@ -125,7 +128,8 @@ class BasicMatchString(object):
             return json.dumps(blob, cls=DateTimeEncoder, sort_keys=True, indent=4, ensure_ascii=False)
         except UnicodeDecodeError:
             # This blob contains non-unicode, so lets pretend it's Latin-1 to show something
-            return json.dumps(blob, cls=DateTimeEncoder, sort_keys=True, indent=4, encoding='Latin-1', ensure_ascii=False)
+            return json.dumps(blob, cls=DateTimeEncoder, sort_keys=True, indent=4, encoding='Latin-1',
+                              ensure_ascii=False)
 
     def __str__(self):
         self.text = ''
@@ -307,7 +311,8 @@ class StompAlerter(Alerter):
 
             if resmatch is not None:
                 elastalert_logger.info(
-                    'Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(match, self.rule['timestamp_field'])))
+                    'Alert for %s, %s at %s:' % (
+                    self.rule['name'], resmatch, lookup_es_key(match, self.rule['timestamp_field'])))
                 alerts.append(
                     '1)Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(
                         match, self.rule['timestamp_field']))
@@ -357,9 +362,11 @@ class DebugAlerter(Alerter):
         for match in matches:
             if qk in match:
                 elastalert_logger.info(
-                    'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
+                    'Alert for %s, %s at %s:' % (
+                    self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
             else:
-                elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
+                elastalert_logger.info(
+                    'Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
             elastalert_logger.info(unicode(BasicMatchString(self.rule, match)))
 
     def get_info(self):
@@ -431,7 +438,8 @@ class EmailAlerter(Alerter):
         try:
             if self.smtp_ssl:
                 if self.smtp_port:
-                    self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port, keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
+                    self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port, keyfile=self.smtp_key_file,
+                                         certfile=self.smtp_cert_file)
                 else:
                     self.smtp = SMTP_SSL(self.smtp_host, keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
             else:
@@ -608,7 +616,8 @@ class JiraAlerter(Alerter):
         # If the schema information is not available, raise an exception since we don't know how to set it
         # Note this is only the case for two built-in types, id: issuekey and id: thumbnail
         if not ('schema' in field or 'type' in field['schema']):
-            raise Exception("Could not determine schema information for the jira field '{0}'".format(normalized_jira_field))
+            raise Exception(
+                "Could not determine schema information for the jira field '{0}'".format(normalized_jira_field))
         arg_type = field['schema']['type']
 
         # Handle arrays of simple types like strings or numbers
@@ -622,7 +631,8 @@ class JiraAlerter(Alerter):
             if array_items in ['string', 'date', 'datetime']:
                 # Special case for multi-select custom types (the JIRA metadata says that these are strings, but
                 # in reality, they are required to be provided as an object.
-                if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
+                if 'custom' in field['schema'] and field['schema'][
+                    'custom'] in self.custom_string_types_with_special_handling:
                     self.jira_args[arg_name] = [{'value': v} for v in value]
                 else:
                     self.jira_args[arg_name] = value
@@ -642,7 +652,8 @@ class JiraAlerter(Alerter):
             if arg_type in ['string', 'date', 'datetime']:
                 # Special case for custom types (the JIRA metadata says that these are strings, but
                 # in reality, they are required to be provided as an object.
-                if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
+                if 'custom' in field['schema'] and field['schema'][
+                    'custom'] in self.custom_string_types_with_special_handling:
                     self.jira_args[arg_name] = {'value': value}
                 else:
                     self.jira_args[arg_name] = value
@@ -764,7 +775,7 @@ class JiraAlerter(Alerter):
                         # Re-raise the exception, preserve the stack-trace, and give some
                         # context as to which watcher failed to be added
                         raise Exception(
-                            "Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(
+                            "Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}".format(
                                 watcher,
                                 ex
                             )), None, sys.exc_info()[2]
@@ -997,7 +1008,8 @@ class MsTeamsAlerter(Alerter):
 
         for url in self.ms_teams_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
+                                         proxies=proxies)
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting to ms teams: %s" % e)
@@ -1075,7 +1087,8 @@ class SlackAlerter(Alerter):
 
         for url in self.slack_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
+                                         proxies=proxies)
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting to slack: %s" % e)
@@ -1242,7 +1255,8 @@ class VictorOpsAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
+                                     proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to VictorOps: %s" % e)
@@ -1285,7 +1299,8 @@ class TelegramAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
+                                     proxies=proxies)
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -1322,7 +1337,8 @@ class GitterAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.gitter_webhook_url, json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.gitter_webhook_url, json.dumps(payload, cls=DateTimeEncoder), headers=headers,
+                                     proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Gitter: %s" % e)
@@ -1464,21 +1480,21 @@ class StrideAlerter(Alerter):
         # set https proxy, if it was provided
         proxies = {'https': self.stride_proxy} if self.stride_proxy else None
         payload = {
-          "body": {
-            "content": [
-              {
+            "body": {
                 "content": [
-                  {
-                    "text": body,
-                    "type": "text"
-                  }
+                    {
+                        "content": [
+                            {
+                                "text": body,
+                                "type": "text"
+                            }
+                        ],
+                        "type": "paragraph"
+                    }
                 ],
-                "type": "paragraph"
-              }
-            ],
-            "version": 1,
-            "type": "doc"
-          }
+                "version": 1,
+                "type": "doc"
+            }
         }
 
         try:
@@ -1499,3 +1515,75 @@ class StrideAlerter(Alerter):
         return {'type': 'stride',
                 'stride_cloud_id': self.stride_cloud_id,
                 'stride_converstation_id': self.stride_converstation_id}
+
+
+class SyslogAlerter(Alerter):
+    @staticmethod
+    def _string_to_level(log_level):
+        """ Convert a commandline string to a proper log level
+        @param log_level command line log level argument
+        @return logging.LEVEL       the logging.LEVEL object to return
+        """
+        if log_level == "CRITICAL":
+            return logging.CRITICAL
+        if log_level == "ERROR":
+            return logging.ERROR
+        if log_level == "WARNING":
+            return logging.WARNING
+        if log_level == "INFO":
+            return logging.INFO
+        if log_level == "DEBUG":
+            return logging.DEBUG
+        return logging.NOTSET
+
+    # By setting required_options to a set of strings
+    # You can ensure that the rule config file specifies all
+    # of the options. Otherwise, ElastAlert will throw an exception
+    # when trying to load the rule.
+    required_options = {'syslog_host'}
+
+    def __init__(self, rule):
+        super(SyslogAlerter, self).__init__(rule)
+        self.syslog_host = self.rule['syslog_host']
+
+        if 'syslog_port' in self.rule:
+            self.syslog_port = self.rule['syslog_port']
+        else:
+            self.syslog_port = 514
+
+        if 'syslog_protocol' in self.rule and self.rule['syslog_protocol'] == 'tcp':
+            self.syslog_protocol = socket.SOCK_STREAM
+        else:
+            self.syslog_protocol = socket.SOCK_DGRAM
+
+        if 'syslog_port' in self.rule:
+            self.syslog_level = self.rule['syslog_level']
+        else:
+            self.syslog_level = SyslogAlerter._string_to_level("WARNING")
+
+        if 'syslog_facility' in self.rule:
+            self.syslog_facility = self.rule['syslog_facility']
+        else:
+            self.syslog_facility = 16
+
+    # Alert is called
+    def alert(self, matches):
+        syslogger = logging.getLogger('SyslogLogger')
+        syslogger.setLevel(self.syslog_level)
+        handler = logging.handlers.SysLogHandler(address=(self.syslog_host, self.syslog_port),
+                                                 facility=self.syslog_facility,socktype=self.syslog_protocol)
+        syslogger.addHandler(handler)
+        # Matches is a list of match dictionaries.
+        # It contains more than one match when the alert has
+        # the aggregation option set
+        for match in matches:
+            elastalert_logger.info("[SyslogAlerter] Trying to process... \n" + json.dumps(match))
+            match_string = str(BasicMatchString(self.rule, match))
+            syslogger.log(self.syslog_level, match_string)
+
+    # get_info is called after an alert is sent to get data that is written back
+    # to Elasticsearch in the field "alert_info"
+    # It should return a dict of information relevant to what the alert does
+    def get_info(self):
+        return {'type': 'Syslog Alerter',
+                'output_server': self.syslog_host}
