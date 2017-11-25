@@ -311,8 +311,7 @@ class StompAlerter(Alerter):
 
             if resmatch is not None:
                 elastalert_logger.info(
-                    'Alert for %s, %s at %s:' % (
-                    self.rule['name'], resmatch, lookup_es_key(match, self.rule['timestamp_field'])))
+                    'Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(match, self.rule['timestamp_field'])))
                 alerts.append(
                     '1)Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(
                         match, self.rule['timestamp_field']))
@@ -362,8 +361,7 @@ class DebugAlerter(Alerter):
         for match in matches:
             if qk in match:
                 elastalert_logger.info(
-                    'Alert for %s, %s at %s:' % (
-                    self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
+                    'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
             else:
                 elastalert_logger.info(
                     'Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
@@ -631,8 +629,7 @@ class JiraAlerter(Alerter):
             if array_items in ['string', 'date', 'datetime']:
                 # Special case for multi-select custom types (the JIRA metadata says that these are strings, but
                 # in reality, they are required to be provided as an object.
-                if 'custom' in field['schema'] and field['schema'][
-                    'custom'] in self.custom_string_types_with_special_handling:
+                if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
                     self.jira_args[arg_name] = [{'value': v} for v in value]
                 else:
                     self.jira_args[arg_name] = value
@@ -652,8 +649,7 @@ class JiraAlerter(Alerter):
             if arg_type in ['string', 'date', 'datetime']:
                 # Special case for custom types (the JIRA metadata says that these are strings, but
                 # in reality, they are required to be provided as an object.
-                if 'custom' in field['schema'] and field['schema'][
-                    'custom'] in self.custom_string_types_with_special_handling:
+                if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
                     self.jira_args[arg_name] = {'value': value}
                 else:
                     self.jira_args[arg_name] = value
@@ -1556,7 +1552,7 @@ class SyslogAlerter(Alerter):
         else:
             self.syslog_protocol = socket.SOCK_DGRAM
 
-        if 'syslog_port' in self.rule:
+        if 'syslog_level' in self.rule:
             self.syslog_level = self.rule['syslog_level']
         else:
             self.syslog_level = SyslogAlerter._string_to_level("WARNING")
@@ -1571,7 +1567,7 @@ class SyslogAlerter(Alerter):
         syslogger = logging.getLogger('SyslogLogger')
         syslogger.setLevel(self.syslog_level)
         handler = logging.handlers.SysLogHandler(address=(self.syslog_host, self.syslog_port),
-                                                 facility=self.syslog_facility,socktype=self.syslog_protocol)
+                                                 facility=self.syslog_facility, socktype=self.syslog_protocol)
         syslogger.addHandler(handler)
         # Matches is a list of match dictionaries.
         # It contains more than one match when the alert has
