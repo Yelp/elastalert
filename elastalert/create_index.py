@@ -135,8 +135,6 @@ def main():
     error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False},
                                                          '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
 
-
-
     index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
     if not index:
         index = 'elastalert_status'

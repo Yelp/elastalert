@@ -1372,7 +1372,7 @@ class ElastAlerter():
             writeback_index = 'elastalert_silence'
         elif writeback_index == 'past_elastalert':
             writeback_index = 'elastalert_past'
-        
+            
         if self.replace_dots_in_field_names:
             writeback_body = replace_dots_in_field_names(body)
         else:
