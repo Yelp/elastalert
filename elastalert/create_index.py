@@ -90,7 +90,7 @@ def main():
             username = raw_input('Enter optional basic-auth username (or leave blank): ')
             password = getpass.getpass('Enter optional basic-auth password (or leave blank): ')
         url_prefix = (args.url_prefix if args.url_prefix is not None
-                      else raw_input('Enter optional Elasticsearch URL prefix (prepends a string to the URL of every request): '))
+                      else raw_input('Enter optional Elasticsearch URL prefix (prepends a keyword to the URL of every request): '))
         send_get_body_as = args.send_get_body_as
         ca_certs = None
         client_cert = None
@@ -117,23 +117,25 @@ def main():
         ca_certs=ca_certs,
         client_key=client_key)
 
-    silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
+    silence_mapping = {'silence': {'properties': {'rule_name': { 'type': 'keyword'},
                                                   'until': {'type': 'date', 'format': 'dateOptionalTime'},
                                                   '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
-    ess_mapping = {'elastalert_status': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
+    ess_mapping = {'elastalert_status': {'properties': {'rule_name': { 'type': 'keyword'},
                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
-    es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
+    es_mapping = {'elastalert': {'properties': {'rule_name': { 'type': 'keyword'},
                                                 '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'alert_time': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'match_time': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'match_body': {'enabled': False, 'type': 'object'},
-                                                'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
-    past_mapping = {'past_elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
+                                                'aggregate_id': { 'type': 'keyword'}}}}
+    past_mapping = {'past_elastalert': {'properties': {'rule_name': { 'type': 'keyword'},
                                                        'match_body': {'enabled': False, 'type': 'object'},
                                                        '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
-                                                       'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
+                                                       'aggregate_id': { 'type': 'keyword'}}}}
     error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False},
                                                          '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
+	
+		# mappings = { 'mappings' : 
 
     index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
     if not index:
@@ -147,14 +149,18 @@ def main():
         print('Index ' + index + ' already exists. Skipping index creation.')
         return None
 
-    es.indices.create(index)
+    es.indices.create('elastalert')
+    es.indices.create('elastalert_status')
+    es.indices.create('elastalert_silence')
+    es.indices.create('elastalert_error')
+    es.indices.create('elastalert_past')
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
-    es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
-    es.indices.put_mapping(index=index, doc_type='elastalert_status', body=ess_mapping)
-    es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)
-    es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping)
-    es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping)
+    es.indices.put_mapping(index='elastalert', doc_type='elastalert', body=es_mapping)
+    es.indices.put_mapping(index='elastalert_status', doc_type='elastalert_status', body=ess_mapping)
+    es.indices.put_mapping(index='elastalert_silence', doc_type='silence', body=silence_mapping)
+    es.indices.put_mapping(index='elastalert_error', doc_type='elastalert_error', body=error_mapping)
+    es.indices.put_mapping(index='elastalert_past', doc_type='past_elastalert', body=past_mapping)
     print('New index %s created' % index)
 
     if old_index:
