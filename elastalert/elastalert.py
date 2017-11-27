@@ -1367,13 +1367,12 @@ class ElastAlerter():
 
     def writeback(self, doc_type, body):
         # ES 2.0 - 2.3 does not support dots in field names.
-		
         writeback_index = doc_type
         if writeback_index == 'silence':
-		    writeback_index = 'elastalert_silence'
+            writeback_index = 'elastalert_silence'
         elif writeback_index == 'past_elastalert':
-		    writeback_index = 'elastalert_past'
-		
+            writeback_index = 'elastalert_past'
+        
         if self.replace_dots_in_field_names:
             writeback_body = replace_dots_in_field_names(body)
         else:
