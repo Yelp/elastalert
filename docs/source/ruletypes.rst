@@ -1504,7 +1504,7 @@ The alerter requires the following two options:
 
 ``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#botfather
 
-``telegram_room_id``: Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+``telegram_room_id``: Unique identifier for the target chat or username of the target channel using telegram chat_id (in the format "-xxxxxxxx")
 
 Optional:
 
