@@ -1576,6 +1576,8 @@ class SyslogAlerter(Alerter):
             elastalert_logger.info("[SyslogAlerter] Trying to process... \n" + json.dumps(match))
             match_string = str(BasicMatchString(self.rule, match))
             syslogger.log(self.syslog_level, match_string)
+        handler.close()
+
 
     # get_info is called after an alert is sent to get data that is written back
     # to Elasticsearch in the field "alert_info"
