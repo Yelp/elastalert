@@ -262,6 +262,8 @@ class Alerter(object):
             )
             text_table = Texttable(max_width=self.get_aggregation_summary_text__maximum_width())
             text_table.header(summary_table_fields_with_count)
+            # Format all fields as 'text' to avoid long numbers being shown as scientific notation
+            text_table.set_cols_dtype(['t' for i in summary_table_fields_with_count])
             match_aggregation = {}
 
             # Maintain an aggregate count for each unique key encountered in the aggregation period
