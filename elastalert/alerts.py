@@ -1573,11 +1573,15 @@ class SyslogAlerter(Alerter):
         # It contains more than one match when the alert has
         # the aggregation option set
         for match in matches:
-            elastalert_logger.info("[SyslogAlerter] Trying to process... \n" + json.dumps(match))
+            elastalert_logger.debug("[SyslogAlerter] Trying to process... \n" + json.dumps(match))
             match_string = str(BasicMatchString(self.rule, match))
             syslogger.log(self.syslog_level, match_string)
-        handler.close()
-
+        #Delete the old handler that won't be used anymore
+        tmp_handlers = syslogger.handlers
+        for h in tmp_handlers:
+            if type(h)  == logging.handlers.SysLogHandler:
+                elastalert_logger.debug("[SyslogAlerter] deleting handler.. %s", str(h))
+                syslogger.removeHandler(h)
 
     # get_info is called after an alert is sent to get data that is written back
     # to Elasticsearch in the field "alert_info"
