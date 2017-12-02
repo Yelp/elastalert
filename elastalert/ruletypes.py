@@ -594,7 +594,7 @@ class NewTermsRule(RuleType):
         window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
         field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
         query_template = {"aggs": {"values": {"terms": field_name}}}
-        if args and args.start:
+        if args and hasattr(args, 'start'):
             end = ts_to_dt(args.start)
         else:
             end = ts_now()
