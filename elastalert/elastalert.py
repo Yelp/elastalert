@@ -947,6 +947,8 @@ class ElastAlerter():
                 # Rule file was changed, reload rule
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
+                    if 'is_enabled' in new_rule and not new_rule['is_enabled']:
+                        continue
                 except EAException as e:
                     message = 'Could not load rule %s: %s' % (rule_file, e)
                     self.handle_error(message)
@@ -980,6 +982,8 @@ class ElastAlerter():
             for rule_file in set(new_rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
+                    if 'is_enabled' in new_rule and not new_rule['is_enabled']:
+                        continue
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
                         raise EAException("A rule with the name %s already exists" % (new_rule['name']))
                 except EAException as e:

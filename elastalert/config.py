@@ -462,6 +462,9 @@ def load_rules(args):
     for rule_file in rule_files:
         try:
             rule = load_configuration(rule_file, conf, args)
+            # By setting "is_enabled: False" in rule file, a rule is easily disabled
+            if 'is_enabled' in rule and not rule['is_enabled']:
+                continue
             if rule['name'] in names:
                 raise EAException('Duplicate rule named %s' % (rule['name']))
         except EAException as e:
