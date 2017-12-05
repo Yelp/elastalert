@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import datetime
-
 import logging
-import mock
 import os
+
+import mock
 import pytest
 
 import elastalert.elastalert
@@ -47,6 +47,7 @@ class mock_es_client(object):
         self.index = mock.Mock()
         self.delete = mock.Mock()
         self.info = mock.Mock(return_value=mock_info)
+        self.transport = mock.Mock()
         self.ping = mock.Mock(return_value=True)
         self.indices = mock_es_indices_client()
 

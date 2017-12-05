@@ -117,6 +117,30 @@ def main():
         ca_certs=ca_certs,
         client_key=client_key)
 
+    index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
+    if not index:
+        index = 'elastalert_status'
+
+    old_index = (args.old_index if args.old_index is not None
+                 else raw_input('Name of existing index to copy? (Default None) '))
+
+    es_index = IndicesClient(es)
+    if es_index.exists(index):
+        print('Index ' + index + ' already exists. Skipping index creation.')
+        return None
+
+    create_index(es, index)
+    print('New index %s created' % index)
+
+    if old_index:
+        print("Copying all data from old index '{0}' to new index '{1}'".format(old_index, index))
+        # Use the defaults for chunk_size, scroll, scan_kwargs, and bulk_kwargs
+        elasticsearch.helpers.reindex(es, old_index, index)
+
+    print('Done!')
+
+
+def create_index(es, index):
     silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                   'until': {'type': 'date', 'format': 'dateOptionalTime'},
                                                   '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
@@ -135,18 +159,6 @@ def main():
     error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False},
                                                          '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
 
-    index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
-    if not index:
-        index = 'elastalert_status'
-
-    old_index = (args.old_index if args.old_index is not None
-                 else raw_input('Name of existing index to copy? (Default None) '))
-
-    es_index = IndicesClient(es)
-    if es_index.exists(index):
-        print('Index ' + index + ' already exists. Skipping index creation.')
-        return None
-
     es.indices.create(index)
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
@@ -155,14 +167,6 @@ def main():
     es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)
     es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping)
     es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping)
-    print('New index %s created' % index)
-
-    if old_index:
-        print("Copying all data from old index '{0}' to new index '{1}'".format(old_index, index))
-        # Use the defaults for chunk_size, scroll, scan_kwargs, and bulk_kwargs
-        elasticsearch.helpers.reindex(es, old_index, index)
-
-    print('Done!')
 
 
 if __name__ == '__main__':
