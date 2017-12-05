@@ -1048,7 +1048,7 @@ def test_wait_until_responsive(ea):
     ]
 
 
-def test_wait_until_responsive_timeout_es_not_available(ea, caplog):
+def test_wait_until_responsive_timeout_es_not_available(ea, capsys):
     """Bail out if ElasticSearch doesn't (quickly) become responsive."""
 
     # Never becomes responsive :-)
@@ -1064,7 +1064,8 @@ def test_wait_until_responsive_timeout_es_not_available(ea, caplog):
         assert exc.value.code == 1
 
     # Ensure we get useful diagnostics.
-    assert 'Could not reach ElasticSearch at "es:14900".' in caplog.text
+    output, errors = capsys.readouterr()
+    assert 'Could not reach ElasticSearch at "es:14900".' in errors
 
     # Slept until we passed the deadline.
     sleep.mock_calls == [
@@ -1074,7 +1075,7 @@ def test_wait_until_responsive_timeout_es_not_available(ea, caplog):
     ]
 
 
-def test_wait_until_responsive_timeout_index_does_not_exist(ea, caplog):
+def test_wait_until_responsive_timeout_index_does_not_exist(ea, capsys):
     """Bail out if ElasticSearch doesn't (quickly) become responsive."""
 
     # Never becomes responsive :-)
@@ -1090,7 +1091,8 @@ def test_wait_until_responsive_timeout_index_does_not_exist(ea, caplog):
         assert exc.value.code == 1
 
     # Ensure we get useful diagnostics.
-    assert 'Writeback index "wb" does not exist, did you run `elastalert-create-index`?' in caplog.text
+    output, errors = capsys.readouterr()
+    assert 'Writeback index "wb" does not exist, did you run `elastalert-create-index`?' in errors
 
     # Slept until we passed the deadline.
     sleep.mock_calls == [
