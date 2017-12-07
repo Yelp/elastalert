@@ -704,9 +704,11 @@ class JiraAlerter(Alerter):
         date = (datetime.datetime.now() - datetime.timedelta(days=self.max_age)).strftime('%Y-%m-%d')
         jql = 'project=%s AND summary~"%s" and created >= "%s"' % (self.project, title, date)
         if self.bump_in_statuses:
-            jql = '%s and status in (%s)' % (jql, ','.join(self.bump_in_statuses))
+            jql = '%s and status in (%s)' % (jql, ','.join(["\"%s\"" % status if ' ' in status else status for status
+                                                            in self.bump_in_statuses]))
         if self.bump_not_in_statuses:
-            jql = '%s and status not in (%s)' % (jql, ','.join(self.bump_not_in_statuses))
+            jql = '%s and status not in (%s)' % (jql, ','.join(["\"%s\"" % status if ' ' in status else status
+                                                                for status in self.bump_not_in_statuses]))
         try:
             issues = self.client.search_issues(jql)
         except JIRAError as e:
