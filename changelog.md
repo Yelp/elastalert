@@ -1,5 +1,34 @@
 # Change Log
 
+## v0.1.24
+
+### Fixed
+- Pinned pytest
+- create-index reads index name from config.yaml
+- top_count_keys now works for context on a flatline rule type
+- Fixed JIRA behavior for issues with statuses that have spaces in the name
+
+## v0.1.22
+
+### Added
+- Added Stride alerter
+- Allow custom string formatters for aggregation percentage
+- Added a field to disable rules from config
+- Added support for subaggregations for the metric rule type
+
+### Fixed
+- Fixed a bug causing create-index to fail if missing config.yaml
+- Fixed a bug when using ES5 with query_key and top_count_keys
+- Allow enhancements to set and clear arbitrary JIRA fields
+- Fixed a bug causing timestamps to be formatted in scientific notation
+- Stop attempting to initialize alerters in debug mode
+- Changed default alert ordering so that JIRA tickets end up in other alerts
+- Fixed a bug when using Stomp alerter with complex query_key
+- Fixed a bug preventing hipchat room ID from being an integer
+- Fixed a bug causing duplicate alerts when using spike with alert_on_new_data
+- Minor fixes to summary table formatting
+- Fixed elastalert-test-rule when using new term rule type
+
 ## v0.1.21
 
 ### Fixed
