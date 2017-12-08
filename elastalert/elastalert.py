@@ -96,7 +96,8 @@ class ElastAlerter():
             '--es_debug_trace',
             action='store',
             dest='es_debug_trace',
-            help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file')
+            help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file. Note that '
+                 'this will incorrectly display localhost:9200 as the host/port')
         self.args = parser.parse_args(args)
 
     def __init__(self, args):
