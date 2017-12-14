@@ -219,6 +219,7 @@ properties:
   hipchat_ignore_ssl_errors: {type: boolean}
   hipchat_notify: {type: boolean}
   hipchat_from: {type: string}
+  hipchat_mentions: {type: array, items: {type: string}}
 
   ### Stride
   stride_access_token: {type: string}
