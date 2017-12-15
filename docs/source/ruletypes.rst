@@ -1431,6 +1431,13 @@ text - Message is treated just like a message sent by a user. Can include @menti
 Valid values: html, text.
 Defaults to 'html'.
 
+``hipchat_mentions``: When using a ``html`` message format, it's not possible to mentions specific users using the ``@user`` syntax.
+In that case, you can set ``hipchat_mentions`` to a list of users which will be first mentioned using a single text message, then the normal ElastAlert message will be sent to Hipchat.
+If set, it will mention the users, no matter if the original message format is set to HTML or text.
+Valid values: list of strings.
+Defaults to ``[]``.
+
+
 Stride
 ~~~~~~~
 
