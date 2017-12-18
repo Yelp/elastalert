@@ -946,6 +946,22 @@ class HipChatAlerter(Alerter):
         try:
             if self.hipchat_ignore_ssl_errors:
                 requests.packages.urllib3.disable_warnings()
+
+            if self.rule.get('hipchat_mentions', []):
+                ping_users = self.rule.get('hipchat_mentions', [])
+                ping_msg = payload.copy()
+                ping_msg['message'] = "ping {}".format(
+                        ", ".join("@{}".format(user) for user in ping_users)
+                )
+                ping_msg['message_format'] = "text"
+
+                response = requests.post(
+                        self.url,
+                        data=json.dumps(ping_msg, cls=DateTimeEncoder),
+                        headers=headers,
+                        verify=not self.hipchat_ignore_ssl_errors,
+                        proxies=proxies)
+
             response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
                                      verify=not self.hipchat_ignore_ssl_errors,
                                      proxies=proxies)
