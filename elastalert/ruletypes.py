@@ -812,8 +812,9 @@ class NewTermsRule(RuleType):
                         self.seen_values[field].append(bucket['key'])
 
     def is_five(self):
-        version = self.es.info()['version']['number']
-        return version.startswith('5')
+        """actually `is_five` means version >= 5 now"""
+        version = self.es.info()['version']['number'][0:1]
+        return int(version) >= 5
 
 
 class CardinalityRule(RuleType):
