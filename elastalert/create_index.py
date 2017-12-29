@@ -126,21 +126,26 @@ def main():
 
     silence_mapping = {'silence': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                   'until': {'type': 'date', 'format': 'dateOptionalTime'},
-                                                  '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
+                                                  '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
+                                                  'description': {'index': 'not_analyzed', 'type': 'string'}}}}
     ess_mapping = {'elastalert_status': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
-                                                        '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
+                                                        '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
+                                                        'description': {'index': 'not_analyzed', 'type': 'string'}}}}
     es_mapping = {'elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                 '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'alert_time': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'match_time': {'format': 'dateOptionalTime', 'type': 'date'},
                                                 'match_body': {'enabled': False, 'type': 'object'},
-                                                'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
+                                                'aggregate_id': {'index': 'not_analyzed', 'type': 'string'},
+                                                'description': {'index': 'not_analyzed', 'type': 'string'}}}}
     past_mapping = {'past_elastalert': {'properties': {'rule_name': {'index': 'not_analyzed', 'type': 'string'},
                                                        'match_body': {'enabled': False, 'type': 'object'},
                                                        '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
-                                                       'aggregate_id': {'index': 'not_analyzed', 'type': 'string'}}}}
+                                                       'aggregate_id': {'index': 'not_analyzed', 'type': 'string'},
+                                                       'description': {'index': 'not_analyzed', 'type': 'string'}}}}
     error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False},
-                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
+                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
+                                                         'description': {'index': 'not_analyzed', 'type': 'string'}}}}
 
     es_index = IndicesClient(es)
     if es_index.exists(index):

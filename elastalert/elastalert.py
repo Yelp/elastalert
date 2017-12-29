@@ -819,7 +819,7 @@ class ElastAlerter():
 
             if rule['realert']:
                 next_alert, exponent = self.next_alert_time(rule, silence_cache_key, ts_now())
-                self.set_realert(silence_cache_key, next_alert, exponent)
+                self.set_realert(silence_cache_key, next_alert, exponent, rule.get('description', ''))
 
             if rule.get('run_enhancements_first'):
                 try:
@@ -850,7 +850,8 @@ class ElastAlerter():
                 'matches': num_matches,
                 'hits': self.num_hits,
                 '@timestamp': ts_now(),
-                'time_taken': time_taken}
+                'time_taken': time_taken,
+                'description': rule.get('description', '')}
         self.writeback('elastalert_status', body)
 
         return num_matches
@@ -1362,7 +1363,8 @@ class ElastAlerter():
             'rule_name': rule['name'],
             'alert_info': rule['alert'][0].get_info(),
             'alert_sent': alert_sent,
-            'alert_time': alert_time
+            'alert_time': alert_time,
+            'description': rule.get('description', '')
         }
 
         match_time = lookup_es_key(match, rule['timestamp_field'])
@@ -1647,12 +1649,13 @@ class ElastAlerter():
 
         elastalert_logger.info('Success. %s will be silenced until %s' % (silence_cache_key, silence_ts))
 
-    def set_realert(self, silence_cache_key, timestamp, exponent):
+    def set_realert(self, silence_cache_key, timestamp, exponent, description=''):
         """ Write a silence to Elasticsearch for silence_cache_key until timestamp. """
         body = {'exponent': exponent,
                 'rule_name': silence_cache_key,
                 '@timestamp': ts_now(),
-                'until': timestamp}
+                'until': timestamp,
+                'description': description}
 
         self.silence_cache[silence_cache_key] = (timestamp, exponent)
         return self.writeback('silence', body)
