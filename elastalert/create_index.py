@@ -123,15 +123,15 @@ def main():
         client_cert=client_cert,
         ca_certs=ca_certs,
         client_key=client_key)
-    
-    esversion=es.info()["version"]["number"]
-    print("Elastic Version:"+esversion.split(".")[0])
-    elasticversion=int(esversion.split(".")[0])
-    if(elasticversion>5):
-        mapping={'type':'keyword'}
+
+    esversion = es.info()["version"]["number"]
+    print("Elastic Version:" + esversion.split(".")[0])
+    elasticversion = int(esversion.split(".")[0])
+    if(elasticversion > 5):
+        mapping = {'type': 'keyword'}
     else:
-        mapping={'index': 'not_analyzed', 'type': 'string'}
-    
+        mapping = {'index': 'not_analyzed', 'type': 'string'}
+
     print("Mapping used for string:"+str(mapping))
 
     silence_mapping = {'silence': {'properties': {'rule_name': mapping,
@@ -157,7 +157,7 @@ def main():
         print('Index ' + index + ' already exists. Skipping index creation.')
         return None
 
-    if (elasticversion>5):
+    if (elasticversion > 5):
         es.indices.create(index)
         es.indices.create(index+'_status')
         es.indices.create(index+'_silence')
@@ -165,11 +165,11 @@ def main():
         es.indices.create(index+'_past')
     else:
         es.indices.create(index)
-        
+
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
     print(es_mapping)
-    if(elasticversion>5):
+    if(elasticversion > 5):
         es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
         es.indices.put_mapping(index=index+'_status', doc_type='elastalert_status', body=ess_mapping)
         es.indices.put_mapping(index=index+'_silence', doc_type='silence', body=silence_mapping)
