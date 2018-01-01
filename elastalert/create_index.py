@@ -18,6 +18,7 @@ from envparse import Env
 
 env = Env(ES_USE_SSL=bool)
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default=os.environ.get('ES_HOST', None), help='Elasticsearch host')
