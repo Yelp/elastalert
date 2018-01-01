@@ -127,6 +127,7 @@ def main():
     esversion = es.info()["version"]["number"]
     print("Elastic Version:" + esversion.split(".")[0])
     elasticversion = int(esversion.split(".")[0])
+
     if(elasticversion > 5):
         mapping = {'type': 'keyword'}
     else:
