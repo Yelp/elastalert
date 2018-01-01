@@ -218,7 +218,6 @@ class ElastAlerter():
         if starttime and endtime:
             es_filters['filter']['bool']['must'].insert(0, {'range': {timestamp_field: {'gt': starttime,
                                                                                         'lte': endtime}}})
-
         if five:
             query = {'query': {'bool': es_filters}}
         else:
@@ -265,7 +264,6 @@ class ElastAlerter():
         if query_key is not None:
             for idx, key in reversed(list(enumerate(query_key.split(',')))):
                 aggs_element = {'bucket_aggs': {'terms': {'field': key, 'size': terms_size}, 'aggs': aggs_element}}
-
         
         if not rule['five']:
             query_element['filtered'].update({'aggs': aggs_element})
@@ -355,7 +353,6 @@ class ElastAlerter():
             to_ts_func=rule['dt_to_ts'],
             five=rule['five'],
         )
-
         extra_args = {'_source_include': rule['include']}
         scroll_keepalive = rule.get('scroll_keepalive', self.scroll_keepalive)
         if not rule.get('_source_enabled'):
@@ -380,14 +377,12 @@ class ElastAlerter():
                 self.total_hits = int(res['hits']['total'])
             logging.debug(str(res))
         except ElasticsearchException as e:
-            print("TOTO-"*10)
             # Elasticsearch sometimes gives us GIGANTIC error messages
             # (so big that they will fill the entire terminal buffer)
             if len(str(e)) > 1024:
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
             self.handle_error('Error running query: %s' % (e), {'rule': rule['name'], 'query': query})
             return None
-        
         hits = res['hits']['hits']
         self.num_hits += len(hits)
         lt = rule.get('use_local_time')
