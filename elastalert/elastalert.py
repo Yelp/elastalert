@@ -176,10 +176,10 @@ class ElastAlerter():
         return self._es_version
 
     def is_atleastfive(self):
-        return int(self.es_version.split(".")[0])>=5
+        return int(self.es_version.split(".")[0]) >= 5
 
     def is_atleastsix(self):
-        return int(self.es_version.split(".")[0])>=6
+        return int(self.es_version.split(".")[0]) >= 6
 
     @staticmethod
     def get_index(rule, starttime=None, endtime=None):
@@ -264,7 +264,7 @@ class ElastAlerter():
         if query_key is not None:
             for idx, key in reversed(list(enumerate(query_key.split(',')))):
                 aggs_element = {'bucket_aggs': {'terms': {'field': key, 'size': terms_size}, 'aggs': aggs_element}}
-        
+
         if not rule['five']:
             query_element['filtered'].update({'aggs': aggs_element})
             aggs_query = {'aggs': query_element}
@@ -630,11 +630,11 @@ class ElastAlerter():
 
         try:
             if self.is_atleastsix():
-                res = self.writeback_es.search(index=self.writeback_index+"_status", doc_type='elastalert_status',
-                                           size=1, body=query, _source_include=['endtime', 'rule_name'])
+                res = self.writeback_es.search(index=self.writeback_index + "_status", doc_type='elastalert_status',
+                                               size=1, body=query, _source_include=['endtime', 'rule_name'])
             else:
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert_status',
-                                           size=1, body=query, _source_include=['endtime', 'rule_name'])
+                                               size=1, body=query, _source_include=['endtime', 'rule_name'])
             if res['hits']['hits']:
                 endtime = ts_to_dt(res['hits']['hits'][0]['_source']['endtime'])
 
@@ -645,7 +645,6 @@ class ElastAlerter():
                     return None
         except (ElasticsearchException, KeyError) as e:
             self.handle_error('Error querying for last run: %s' % (e), {'rule': rule['name']})
-        
 
     def set_starttime(self, rule, endtime):
         """ Given a rule and an endtime, sets the appropriate starttime for it. """
@@ -925,7 +924,7 @@ class ElastAlerter():
     def modify_rule_for_ES5(new_rule):
         # Get ES version per rule
         rule_es = elasticsearch_client(new_rule)
-        if int(rule_es.info()['version']['number'].split(".")[0])>=5:
+        if int(rule_es.info()['version']['number'].split(".")[0]) >= 5:
             new_rule['five'] = True
         else:
             new_rule['five'] = False
@@ -1393,7 +1392,7 @@ class ElastAlerter():
             elif writeback_index == 'past_elastalert':
                 writeback_index = 'elastalert_past'
         else:
-            writeback_index=self.writeback_index
+            writeback_index = self.writeback_index
 
         # ES 2.0 - 2.3 does not support dots in field names.
         if self.replace_dots_in_field_names:
@@ -1693,11 +1692,11 @@ class ElastAlerter():
 
         try:
             if(self.is_atleastsix()):
-                res = self.writeback_es.search(index=self.writeback_index+'_silence', doc_type='silence',
-                                           size=1, body=query, _source_include=['until', 'exponent'])
+                res = self.writeback_es.search(index=self.writeback_index + '_silence', doc_type='silence',
+                                               size=1, body=query, _source_include=['until', 'exponent'])
             else:
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='silence',
-                                           size=1, body=query, _source_include=['until', 'exponent'])
+                                               size=1, body=query, _source_include=['until', 'exponent'])
         except ElasticsearchException as e:
             self.handle_error("Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
 
