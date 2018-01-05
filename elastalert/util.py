@@ -64,6 +64,9 @@ def _find_es_dict_by_key(lookup_dict, term):
     subkey = ''
 
     while len(subkeys) > 0:
+        if not dict_cursor:
+            return {}, None
+
         subkey += subkeys.pop(0)
 
         if subkey in dict_cursor:
