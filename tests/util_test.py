@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
-from elastalert.util import lookup_es_key, set_es_key, add_raw_postfix, replace_dots_in_field_names
-from elastalert.util import (
-    parse_deadline,
-    parse_duration,
-)
+from datetime import datetime
+from datetime import timedelta
+
 import mock
 import pytest
-from datetime import (
-    datetime,
-    timedelta,
-)
 from dateutil.parser import parse as dt
+
+from elastalert.util import add_raw_postfix
+from elastalert.util import lookup_es_key
+from elastalert.util import parse_deadline
+from elastalert.util import parse_duration
+from elastalert.util import replace_dots_in_field_names
+from elastalert.util import set_es_key
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
-    ('hours=2',    timedelta(hours=2)),
+    ('hours=2', timedelta(hours=2)),
     ('minutes=30', timedelta(minutes=30)),
     ('seconds=45', timedelta(seconds=45)),
 ])
@@ -24,7 +25,7 @@ def test_parse_duration(spec, expected_delta):
 
 
 @pytest.mark.parametrize('spec, expected_deadline', [
-    ('hours=2',    dt('2017-07-07T12:00:00.000Z')),
+    ('hours=2', dt('2017-07-07T12:00:00.000Z')),
     ('minutes=30', dt('2017-07-07T10:30:00.000Z')),
     ('seconds=45', dt('2017-07-07T10:00:45.000Z')),
 ])
@@ -64,11 +65,14 @@ def test_looking_up_missing_keys(ea):
         'Message': '12345',
         'Fields': {
             'severity': 'large',
-            'user': 'jimmay'
+            'user': 'jimmay',
+            'null': None
         }
     }
 
     assert lookup_es_key(record, 'Fields.ts') is None
+
+    assert lookup_es_key(record, 'Fields.null.foo') is None
 
 
 def test_looking_up_nested_keys(ea):
