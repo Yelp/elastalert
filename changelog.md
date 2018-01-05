@@ -1,5 +1,20 @@
 # Change Log
 
+## v0.1.26
+
+### Added
+- Added support for Elasticsearch 6
+- Added support for mentions in Hipchat
+
+### Fixed
+- Fixed an issue where a nested field lookup would crash if one of the intermediate fields was null
+
+## v0.1.25
+
+### Fixed
+- Fixed a bug causing new term rule to break unless you passed a start time
+- Add a slight clarification on the localhost:9200 reported in es_debug_trace
+
 ## v0.1.24
 
 ### Fixed
