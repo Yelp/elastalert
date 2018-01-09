@@ -1242,6 +1242,7 @@ class VictorOpsAlerter(Alerter):
         self.victorops_api_key = self.rule['victorops_api_key']
         self.victorops_routing_key = self.rule['victorops_routing_key']
         self.victorops_message_type = self.rule['victorops_message_type']
+        self.victorops_entity_id = self.rule.get('victorops_entity_id', None)
         self.victorops_entity_display_name = self.rule.get('victorops_entity_display_name', 'no entity display name')
         self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (
             self.victorops_api_key, self.victorops_routing_key)
@@ -1260,6 +1261,8 @@ class VictorOpsAlerter(Alerter):
             "monitoring_tool": "ElastAlert",
             "state_message": body
         }
+        if self.victorops_entity_id:
+            payload["entity_id"] = self.victorops_entity_id
 
         try:
             response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
