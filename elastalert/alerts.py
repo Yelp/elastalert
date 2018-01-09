@@ -14,6 +14,7 @@ from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
+from HTMLParser import HTMLParser
 
 import boto3
 import requests
@@ -1466,8 +1467,41 @@ class HTTPPostAlerter(Alerter):
                 'http_post_webhook_url': self.post_url}
 
 
+class StrideHTMLParser(HTMLParser):
+    """Parse html into stride's fabric structure"""
+
+    def __init__(self):
+        """
+        Define a couple markup place holders.
+        """
+        self.content = []
+        self.mark = None
+        HTMLParser.__init__(self)
+
+    def handle_starttag(self, tag, attrs):
+        """Identify and verify starting tag is fabric compatible."""
+        if tag == 'b' or tag == 'strong':
+            self.mark = dict(type='strong')
+        if tag == 'u':
+            self.mark = dict(type='underline')
+        if tag == 'a':
+            self.mark = dict(type='link', attrs=dict(attrs))
+
+    def handle_endtag(self, tag):
+        """Clear mark on endtag."""
+        self.mark = None
+
+    def handle_data(self, data):
+        """Construct data node for our data."""
+        node = dict(type='text', text=data)
+        if self.mark:
+            node['marks'] = [self.mark]
+        self.content.append(node)
+
+
 class StrideAlerter(Alerter):
     """ Creates a Stride conversation message for each alert """
+
     required_options = frozenset(
         ['stride_access_token', 'stride_cloud_id', 'stride_converstation_id'])
 
@@ -1485,9 +1519,9 @@ class StrideAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
-        # Stride sends 400 bad request on messages longer than 10000 characters
-        if (len(body) > 9999):
-            body = body[:9980] + '..(truncated)'
+        # parse body with StrideHTMLParser
+        parser = StrideHTMLParser()
+        parser.feed(body)
 
         # Post to Stride
         headers = {
@@ -1497,23 +1531,29 @@ class StrideAlerter(Alerter):
 
         # set https proxy, if it was provided
         proxies = {'https': self.stride_proxy} if self.stride_proxy else None
-        payload = {
-          "body": {
-            "content": [
-              {
-                "content": [
-                  {
-                    "text": body,
-                    "type": "text"
-                  }
-                ],
-                "type": "paragraph"
-              }
-            ],
-            "version": 1,
-            "type": "doc"
-          }
-        }
+
+        # build stride json payload
+        # https://developer.atlassian.com/cloud/stride/apis/document/structure/
+        payload = dict(
+            body=dict(
+                version=1,
+                type="doc",
+                content=[
+                    dict(
+                        type="panel",
+                        attrs=dict(
+                            panelType="warning"
+                        ),
+                        content=[
+                            dict(
+                                type='paragraph',
+                                content=parser.content
+                            )
+                        ]
+                    )
+                ]
+            )
+        )
 
         try:
             if self.stride_ignore_ssl_errors:
