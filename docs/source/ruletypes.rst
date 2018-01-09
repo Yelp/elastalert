@@ -1598,9 +1598,9 @@ The alerter requires the following options:
 
 Optional:
 
-``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents thoughout the alert lifecycle. If not definied, VictorOps will assign a random string to each alert.
+``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents thoughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
 
-``victorops_entity_display_name``: Human-readable name of alerting entity to summerise incidents without affecting the life-cycle workflow.
+``victorops_entity_display_name``: Human-readable name of alerting entity to summerize incidents without affecting the life-cycle workflow.
 
 ``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
 
