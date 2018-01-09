@@ -1452,23 +1452,28 @@ def test_stride():
     body = "{0}\n\n@timestamp: {1}\nsomefield: {2}\n".format(
         rule['name'], match['@timestamp'], match['somefield']
     )
-    expected_data = {
-      "body": {
-        "content": [
-          {
-            "content": [
-              {
-                "text": body,
-                "type": "text"
-              }
-            ],
-            "type": "paragraph"
-          }
-        ],
-        "version": 1,
-        "type": "doc"
-      }
-    }
+    expected_data = dict(
+        body=dict(
+            version=1,
+            type="doc",
+            content=[
+                dict(
+                    type="panel",
+                    attrs=dict(
+                        panelType="warning"
+                    ),
+                    content=[
+                        dict(
+                            type='paragraph',
+                            content=[
+                                dict(type='text', text=body)
+                            ]
+                        )
+                    ]
+                )
+            ]
+        )
+    )
 
     mock_post_request.assert_called_once_with(
         alert.url,
