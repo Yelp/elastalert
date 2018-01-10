@@ -273,3 +273,10 @@ properties:
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
+
+  ### Syslog
+  syslog_host: {type: string}
+  syslog_port: {type: integer}
+  syslog_protocol: {enum: ["tcp", "udp"]}
+  syslog_level: {enum: ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]}
+  syslog_facility: {type: integer}

@@ -53,6 +53,8 @@ Currently, we have built-in support for the following alert types:
 - Exotel
 - Twilio
 - Gitter
+- ServiceNow
+- Syslog
 
 Additional rule types and alerts can be easily imported or written.
 
