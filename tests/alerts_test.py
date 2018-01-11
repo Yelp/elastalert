@@ -1450,7 +1450,7 @@ def test_stride():
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
 
-    body = "{0}\n\n@timestamp: {1}\nsomefield: {2}\n".format(
+    body = "{0}\n\n@timestamp: {1}\nsomefield: {2}".format(
         rule['name'], match['@timestamp'], match['somefield']
     )
     expected_data = dict(
