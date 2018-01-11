@@ -16,7 +16,7 @@ def main():
     es_port = raw_input("Elasticsearch port: ")
     db_name = raw_input("Dashboard name: ")
     send_get_body_as = raw_input("Method for querying Elasticsearch[GET]: ") or 'GET'
-    es = Elasticsearch(host=es_host, port=es_port, send_get_body_as=send_get_body_as)
+    es = Elasticsearch(host=es_host, port=es_port, send_get_body_as=send_get_body_as, use_ssl=True)
     query = {'query': {'term': {'_id': db_name}}}
     res = es.search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
     if not res['hits']['hits']:
