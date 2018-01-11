@@ -199,6 +199,18 @@ class ElastAlerter():
         else:
             return index
 
+    def get_six_index(self, doc_type):
+        writeback_index = self.writeback_index
+        if doc_type == 'silence':
+            writeback_index += '_silence'
+        elif doc_type == 'past_elastalert':
+            writeback_index += '_past'
+        elif doc_type == 'elastalert_status':
+            writeback_index += '_status'
+        elif doc_type == 'elastalert_error':
+            writeback_index += '_error'
+        return writeback_index
+
     @staticmethod
     def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False,
                   five=False):
@@ -630,7 +642,8 @@ class ElastAlerter():
 
         try:
             if self.is_atleastsix():
-                res = self.writeback_es.search(index=self.writeback_index + "_status", doc_type='elastalert_status',
+                index = self.get_six_index('elastalert_status')
+                res = self.writeback_es.search(index=index, doc_type='elastalert_status',
                                                size=1, body=query, _source_include=['endtime', 'rule_name'])
             else:
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert_status',
@@ -1384,15 +1397,9 @@ class ElastAlerter():
         return body
 
     def writeback(self, doc_type, body):
-
+        writeback_index = self.writeback_index
         if(self.is_atleastsix()):
-            writeback_index = doc_type
-            if writeback_index == 'silence':
-                writeback_index = 'elastalert_silence'
-            elif writeback_index == 'past_elastalert':
-                writeback_index = 'elastalert_past'
-        else:
-            writeback_index = self.writeback_index
+            writeback_index = self.get_six_index(doc_type)
 
         # ES 2.0 - 2.3 does not support dots in field names.
         if self.replace_dots_in_field_names:
@@ -1692,7 +1699,8 @@ class ElastAlerter():
 
         try:
             if(self.is_atleastsix()):
-                res = self.writeback_es.search(index=self.writeback_index + '_silence', doc_type='silence',
+                index = self.get_six_index('silence')
+                res = self.writeback_es.search(index=index, doc_type='silence',
                                                size=1, body=query, _source_include=['until', 'exponent'])
             else:
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='silence',
