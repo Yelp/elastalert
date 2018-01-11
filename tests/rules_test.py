@@ -184,6 +184,33 @@ def test_freq_terms():
     assert rule.matches[1].get('username') == 'userA'
 
 
+def test_freq_query_key_value_length():
+    rules = {'num_events': 10,
+             'timeframe': datetime.timedelta(hours=1),
+             'query_key': 'username',
+             'query_key_value_length': 5}
+    rule = FrequencyRule(rules)
+
+    terms1 = {ts_to_dt('2014-01-01T00:01:00Z'): [{'key': 'userA-1', 'doc_count': 1},
+                                                 {'key': 'userB-1', 'doc_count': 5}]}
+    terms2 = {ts_to_dt('2014-01-01T00:10:00Z'): [{'key': 'userA-2', 'doc_count': 8},
+                                                 {'key': 'userB-2', 'doc_count': 5}]}
+    terms3 = {ts_to_dt('2014-01-01T00:25:00Z'): [{'key': 'userA-3', 'doc_count': 3},
+                                                 {'key': 'userB-3', 'doc_count': 0}]}
+    # Initial data
+    rule.add_terms_data(terms1)
+    assert len(rule.matches) == 0
+
+    # Match for userB
+    rule.add_terms_data(terms2)
+    assert len(rule.matches) == 1
+    assert rule.matches[0].get('username') == 'userB'
+
+    # Match for userA
+    rule.add_terms_data(terms3)
+    assert len(rule.matches) == 2
+    assert rule.matches[1].get('username') == 'userA'
+
 def test_eventwindow():
     timeframe = datetime.timedelta(minutes=10)
     window = EventWindow(timeframe)
