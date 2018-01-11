@@ -118,6 +118,8 @@ Rule Configuration Cheat Sheet
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``query_key`` (string, no default)                 |   Opt  |           |           |   Req  |    Opt    |  Opt  |   Opt    |  Req   |  Opt      |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
+| ``query_key_value_length`` (int, default 10000)    |        |           |           |        |    Opt    |       |          |        |           |
++----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``aggregation_key`` (string, no default)           |   Opt  |           |           |        |           |       |          |        |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``summary_table_fields`` (list, no default)        |   Opt  |           |           |        |           |       |          |        |           |
@@ -520,6 +522,11 @@ additional alerts for ``{'username': 'bob'}`` will be ignored while other userna
 ``query_key`` will be grouped together. A list of fields may also be used, which will create a compound query key. This compound key is
 treated as if it were a single field whose value is the component values, or "None", joined by commas. A new field with the key
 "field1,field2,etc" will be created in each document and may conflict with existing fields of the same name.
+
+query_key_value_length
+^^^^^^^^^^^^^^^^^^^^^^
+
+``query_key_value_length``: Omitting a ``query_key`` value for aggregate result easily. The default is ``10000``.
 
 aggregation_key
 ^^^^^^^^^^^^^^^
