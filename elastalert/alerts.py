@@ -1503,7 +1503,7 @@ class StrideAlerter(Alerter):
             self.stride_cloud_id, self.stride_converstation_id)
 
     def alert(self, matches):
-        body = self.create_alert_body(matches)
+        body = self.create_alert_body(matches).strip()
 
         # parse body with StrideHTMLParser
         parser = StrideHTMLParser()
