@@ -211,6 +211,7 @@ def test_freq_query_key_value_length():
     assert len(rule.matches) == 2
     assert rule.matches[1].get('username') == 'userA'
 
+
 def test_eventwindow():
     timeframe = datetime.timedelta(minutes=10)
     window = EventWindow(timeframe)
