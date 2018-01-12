@@ -1453,28 +1453,13 @@ def test_stride_plain_text():
     body = "{0}\n\n@timestamp: {1}\nsomefield: {2}".format(
         rule['name'], match['@timestamp'], match['somefield']
     )
-    expected_data = dict(
-        body=dict(
-            version=1,
-            type="doc",
-            content=[
-                dict(
-                    type="panel",
-                    attrs=dict(
-                        panelType="warning"
-                    ),
-                    content=[
-                        dict(
-                            type='paragraph',
-                            content=[
-                                dict(type='text', text=body)
-                            ]
-                        )
-                    ]
-                )
-            ]
-        )
-    )
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': body}
+            ]}
+        ]}
+    ]}}
 
     mock_post_request.assert_called_once_with(
         alert.url,
@@ -1511,35 +1496,15 @@ def test_stride_underline_text():
         alert.alert([match])
 
     body = "Underline Text"
-    expected_data = dict(
-        body=dict(
-            version=1,
-            type="doc",
-            content=[
-                dict(
-                    type="panel",
-                    attrs=dict(
-                        panelType="warning"
-                    ),
-                    content=[
-                        dict(
-                            type='paragraph',
-                            content=[
-                                dict(
-                                    type='text', text=body,
-                                    marks=[
-                                        dict(
-                                            type='underline'
-                                        )
-                                    ]
-                                )
-                            ]
-                        )
-                    ]
-                )
-            ]
-        )
-    )
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': body, 'marks': [
+                    {'type': 'underline'}
+                ]}
+            ]}
+        ]}
+    ]}}
 
     mock_post_request.assert_called_once_with(
         alert.url,
@@ -1576,35 +1541,15 @@ def test_stride_bold_text():
         alert.alert([match])
 
     body = "Bold Text"
-    expected_data = dict(
-        body=dict(
-            version=1,
-            type="doc",
-            content=[
-                dict(
-                    type="panel",
-                    attrs=dict(
-                        panelType="warning"
-                    ),
-                    content=[
-                        dict(
-                            type='paragraph',
-                            content=[
-                                dict(
-                                    type='text', text=body,
-                                    marks=[
-                                        dict(
-                                            type='strong'
-                                        )
-                                    ]
-                                )
-                            ]
-                        )
-                    ]
-                )
-            ]
-        )
-    )
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': body, 'marks': [
+                    {'type': 'strong'}
+                ]}
+            ]}
+        ]}
+    ]}}
 
     mock_post_request.assert_called_once_with(
         alert.url,
@@ -1641,35 +1586,15 @@ def test_stride_strong_text():
         alert.alert([match])
 
     body = "Bold Text"
-    expected_data = dict(
-        body=dict(
-            version=1,
-            type="doc",
-            content=[
-                dict(
-                    type="panel",
-                    attrs=dict(
-                        panelType="warning"
-                    ),
-                    content=[
-                        dict(
-                            type='paragraph',
-                            content=[
-                                dict(
-                                    type='text', text=body,
-                                    marks=[
-                                        dict(
-                                            type='strong'
-                                        )
-                                    ]
-                                )
-                            ]
-                        )
-                    ]
-                )
-            ]
-        )
-    )
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': body, 'marks': [
+                    {'type': 'strong'}
+                ]}
+            ]}
+        ]}
+    ]}}
 
     mock_post_request.assert_called_once_with(
         alert.url,
@@ -1706,38 +1631,15 @@ def test_stride_hyperlink():
         alert.alert([match])
 
     body = "Link"
-    expected_data = dict(
-        body=dict(
-            version=1,
-            type="doc",
-            content=[
-                dict(
-                    type="panel",
-                    attrs=dict(
-                        panelType="warning"
-                    ),
-                    content=[
-                        dict(
-                            type='paragraph',
-                            content=[
-                                dict(
-                                    type='text', text=body,
-                                    marks=[
-                                        dict(
-                                            type='link',
-                                            attrs=dict(
-                                                href='http://stride.com'
-                                            )
-                                        )
-                                    ]
-                                )
-                            ]
-                        )
-                    ]
-                )
-            ]
-        )
-    )
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': body, 'marks': [
+                    {'type': 'link', 'attrs': {'href': 'http://stride.com'}}
+                ]}
+            ]}
+        ]}
+    ]}}
 
     mock_post_request.assert_called_once_with(
         alert.url,
@@ -1773,49 +1675,19 @@ def test_stride_html():
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
 
-    expected_data = dict(
-        body=dict(
-            version=1,
-            type="doc",
-            content=[
-                dict(
-                    type="panel",
-                    attrs=dict(
-                        panelType="warning"
-                    ),
-                    content=[
-                        dict(
-                            type='paragraph',
-                            content=[
-                                dict(
-                                    type='text', text='Alert',
-                                    marks=[
-                                        dict(
-                                            type='strong'
-                                        )
-                                    ]
-                                ),
-                                dict(
-                                    type='text', text=': we found something. '
-                                ),
-                                dict(
-                                    type='text', text='Link',
-                                    marks=[
-                                        dict(
-                                            type='link',
-                                            attrs=dict(
-                                                href='http://stride.com'
-                                            )
-                                        )
-                                    ]
-                                )
-                            ]
-                        )
-                    ]
-                )
-            ]
-        )
-    )
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': 'Alert', 'marks': [
+                    {'type': 'strong'}
+                ]},
+                {'type': 'text', 'text': ': we found something. '},
+                {'type': 'text', 'text': 'Link', 'marks': [
+                    {'type': 'link', 'attrs': {'href': 'http://stride.com'}}
+                ]}
+            ]}
+        ]}
+    ]}}
 
     mock_post_request.assert_called_once_with(
         alert.url,
