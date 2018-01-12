@@ -1520,26 +1520,11 @@ class StrideAlerter(Alerter):
 
         # build stride json payload
         # https://developer.atlassian.com/cloud/stride/apis/document/structure/
-        payload = dict(
-            body=dict(
-                version=1,
-                type="doc",
-                content=[
-                    dict(
-                        type="panel",
-                        attrs=dict(
-                            panelType="warning"
-                        ),
-                        content=[
-                            dict(
-                                type='paragraph',
-                                content=parser.content
-                            )
-                        ]
-                    )
-                ]
-            )
-        )
+        payload = {'body': {'version': 1, 'type': "doc", 'content': [
+            {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+                {'type': 'paragraph', 'content': parser.content}
+            ]}
+        ]}}
 
         try:
             if self.stride_ignore_ssl_errors:
