@@ -53,7 +53,7 @@ class BasicMatchString(object):
             self.text += '\n'
 
     def _add_custom_alert_text(self):
-        missing = '<MISSING VALUE>'
+        missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
         alert_text = unicode(self.rule.get('alert_text', ''))
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
@@ -231,7 +231,8 @@ class Alerter(object):
                     if alert_value:
                         alert_subject_values[i] = alert_value
 
-            alert_subject_values = ['<MISSING VALUE>' if val is None else val for val in alert_subject_values]
+            missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
+            alert_subject_values = [missing if val is None else val for val in alert_subject_values]
             return alert_subject.format(*alert_subject_values)
 
         return alert_subject
@@ -1168,7 +1169,8 @@ class PagerDutyAlerter(Alerter):
                     if key_value:
                         incident_key_values[i] = key_value
 
-            incident_key_values = ['<MISSING VALUE>' if val is None else val for val in incident_key_values]
+            missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
+            incident_key_values = [missing if val is None else val for val in incident_key_values]
             return self.pagerduty_incident_key.format(*incident_key_values)
         else:
             return self.pagerduty_incident_key
