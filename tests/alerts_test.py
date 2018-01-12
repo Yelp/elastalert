@@ -319,7 +319,8 @@ def test_email_with_args():
         'alert_subject': 'Test alert for {0} {1}',
         'alert_subject_args': ['test_term', 'test.term'],
         'alert_text': 'Test alert for {0} and {1} {2}',
-        'alert_text_args': ['test_arg1', 'test_arg2', 'test.arg3']
+        'alert_text_args': ['test_arg1', 'test_arg2', 'test.arg3'],
+        'alert_missing_value': '<CUSTOM MISSING VALUE>'
     }
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
@@ -339,7 +340,7 @@ def test_email_with_args():
         body_text = body.split('\n\n')[-1][:-1].decode('base64')
 
         assert 'testing' in body_text
-        assert '<MISSING VALUE>' in body_text
+        assert '<CUSTOM MISSING VALUE>' in body_text
         assert '☃' in body_text
 
         assert 'Reply-To: test@example.com' in body
