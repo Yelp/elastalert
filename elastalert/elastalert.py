@@ -200,6 +200,9 @@ class ElastAlerter():
             return index
 
     def get_six_index(self, doc_type):
+        """ In ES6, you cannot have multiple _types per index,
+        therefore we use self.writeback_index as the prefix for the actual
+        index name, based on doc_type. """
         writeback_index = self.writeback_index
         if doc_type == 'silence':
             writeback_index += '_silence'
