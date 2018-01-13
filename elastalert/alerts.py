@@ -1314,7 +1314,7 @@ class TelegramAlerter(Alerter):
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
-            raise EAException("Error posting to Telegram: %s" % (e.response.text))
+            raise EAException("Error posting to Telegram: %s. Details: %s" % (e, "" if e.response is None else e.response.text))
 
         elastalert_logger.info(
             "Alert sent to Telegram room %s" % self.telegram_room_id)
