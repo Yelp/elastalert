@@ -1045,6 +1045,7 @@ class SlackAlerter(Alerter):
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
         self.slack_parse_override = self.rule.get('slack_parse_override', 'none')
         self.slack_text_string = self.rule.get('slack_text_string', '')
+        self.slack_disable_format_body = self.rule.get('slack_disable_format_body', False)
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1068,7 +1069,8 @@ class SlackAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
-        body = self.format_body(body)
+        if not self.slack_disable_format_body:
+            body = self.format_body(body)
         # post to slack
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided

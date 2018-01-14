@@ -1503,6 +1503,8 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
 
+``slack_disable_format_body``: By default ElastAlert will format slack body automatically. Set this option ``True`` if you want to disable formatting.
+
 Telegram
 ~~~~~~~~
 Telegram alerter will send a notification to a predefined Telegram username or channel. The body of the notification is formatted the same as with other alerters.

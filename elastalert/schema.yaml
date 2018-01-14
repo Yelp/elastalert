@@ -235,6 +235,7 @@ properties:
   slack_msg_color: {enum: [good, warning, danger]}
   slack_parse_override: {enum: [none, full]}
   slack_text_string: {type: string}
+  slack_disable_format_body: {type: boolean}
 
   ### PagerDuty
   pagerduty_service_key: {type: string}
