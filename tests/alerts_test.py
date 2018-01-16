@@ -1048,12 +1048,12 @@ def test_slack_uses_custom_slack_channel():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
-def test_slack_disable_format_body():
+def test_slack_disable_escape_body():
     rule = {
         'name': 'Test Rule',
         'type': 'any',
         'slack_webhook_url': ['http://please.dontgohere.slack'],
-        'slack_disable_format_body': True,
+        'slack_disable_escape_body': True,
         'alert': []
     }
     load_modules(rule)

@@ -1045,14 +1045,15 @@ class SlackAlerter(Alerter):
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
         self.slack_parse_override = self.rule.get('slack_parse_override', 'none')
         self.slack_text_string = self.rule.get('slack_text_string', '')
-        self.slack_disable_format_body = self.rule.get('slack_disable_format_body', False)
+        self.slack_disable_escape_body = self.rule.get('slack_disable_escape_body', False)
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
         body = body.encode('UTF-8')
-        body = body.replace('&', '&amp;')
-        body = body.replace('<', '&lt;')
-        body = body.replace('>', '&gt;')
+        if not self.slack_disable_escape_body:
+            body = body.replace('&', '&amp;')
+            body = body.replace('<', '&lt;')
+            body = body.replace('>', '&gt;')
         return body
 
     def get_aggregation_summary_text__maximum_width(self):
@@ -1069,8 +1070,7 @@ class SlackAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
-        if not self.slack_disable_format_body:
-            body = self.format_body(body)
+        body = self.format_body(body)
         # post to slack
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
