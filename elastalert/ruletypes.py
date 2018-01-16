@@ -120,6 +120,14 @@ class CompareRule(RuleType):
         for event in data:
             if self.compare(event):
                 self.add_match(event)
+				
+	def init_occurrences(self, es_res):
+	    """ If rule has the parameter 'check_last_occurrences', this method will be used to let elastalert know the last compare keys value for each query key """
+        raise NotImplementedError()
+
+    def add_occurrence(self, key, values, timeframe=None):
+	    """ Update the occurrences variable with the query key and compare keys value """
+        raise NotImplementedError()
 
 
 class BlacklistRule(CompareRule):
@@ -188,9 +196,10 @@ class ChangeRule(CompareRule):
 
         # Update the current value and time
         elastalert_logger.debug(" Setting current value of compare keys values " + str(values))
-        self.occurrences[key] = values
+        event_timeframe = None
         if 'timeframe' in self.rules:
-            self.occurrence_time[key] = event[self.rules['timestamp_field']]
+            event_timeframe = event[self.rules['timestamp_field']]
+        self.add_occurrence(key, values, event_timeframe)
         elastalert_logger.debug("Final result of comparision between previous and current values " + str(changed))
         return changed
 
@@ -206,6 +215,30 @@ class ChangeRule(CompareRule):
             elastalert_logger.debug("Description of the changed records  " + str(dict(match.items() + extra.items())))
         super(ChangeRule, self).add_match(dict(match.items() + extra.items()))
 
+    def init_occurrences(self, es_res):
+        for event in es_res['aggregations'][self.rules['query_key']]['buckets']:
+
+            event_key = event['key']
+
+            sources = event['top_hit']['hits']['hits'][0]['_source']
+            event_values = []
+            for val in self.rules['compound_compare_key']:
+                #if compare key was valid (i.e. exists on elasticsearch)
+                if val in sources:
+                    event_values.append(sources[val])
+                else:
+                    event_values.append(None)
+                    key_msg = "None" if event_key == None else event_key
+                    elastalert_logger.info("Compare key '" + val + "' not existing for last document with query key '" + key_msg + "'.")
+            event_timeframe = None
+            if 'timeframe' in self.rules:
+                event_timeframe = self.rules['ts_to_dt'](sources[self.rules['timestamp_field']])
+            self.add_occurrence(event_key, event_values, event_timeframe)
+
+    def add_occurrence(self, key, values, event_timeframe=None):
+        self.occurrences[key] = values
+        if event_timeframe != None:
+            self.occurrence_time[key] = event_timeframe
 
 class FrequencyRule(RuleType):
     """ A rule that matches if num_events number of events occur within a timeframe """

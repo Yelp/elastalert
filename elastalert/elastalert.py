@@ -861,6 +861,70 @@ class ElastAlerter():
         self.writeback('elastalert_status', body)
 
         return num_matches
+		
+    def init_change_rule_occurrences(self, rule):
+        """Check backwards until timeframe, if defined, or the last 10 minutes to update the rule's occurences variable with the latest compare key value for the key values."""
+        try:
+
+            query_key = rule.get("query_key")
+            compare_key = rule.get("compare_key")
+            timeframe = rule.get("timeframe", datetime.timedelta(minutes=10))
+            timeframe = ts_now() - timeframe
+            timestamp = rule.get("timestamp_field")
+            size_query = rule.get('max_query_size', self.max_query_size)
+            index_query = self.get_index(rule, timeframe, ts_now())
+            filters = rule['filter']
+            self.current_es = elasticsearch_client(rule)
+            query_rule = self.get_query(filters, starttime=timeframe, endtime=ts_now(), timestamp_field=timestamp, to_ts_func=rule['dt_to_ts'], desc=True, five=rule['five'])
+
+            query_rule['size'] = 1
+
+            include = [query_key+".keyword",
+                      timestamp]
+            for v in compare_key.split(","):
+                include.append(v)
+
+
+            query_rule['aggs'] = {
+                query_key: {
+                    "terms": {
+                        "size": size_query,
+                        "field": query_key+".keyword"
+                    },
+
+                    "aggs": {
+                        "top_hit": {
+                            "top_hits": {
+                                "sort": [{
+                                    timestamp: {
+                                        "order": "desc"
+                                    }}
+                                ],
+                                "_source": {
+                                    "includes": include
+                                },
+                                "size": 1
+                            }
+                        }
+                    }
+                }
+            }
+
+            query_rule['_source'] = include
+
+            res = self.current_es.search(
+                    index=index_query,
+                    size=size_query,
+                    body = query_rule
+                )
+
+        except ElasticsearchException as e:
+            return False
+
+        self.total_hits = int(res['hits']['total'])
+        rule_inst = rule['type']
+        rule_inst.init_occurrences(res)
+        return True
 
     def init_rule(self, new_rule, new=True):
         ''' Copies some necessary non-config state from an exiting rule to a new rule. '''
@@ -917,6 +981,10 @@ class ElastAlerter():
             if prop not in rule:
                 continue
             new_rule[prop] = rule[prop]
+
+        #If the rule has a parameter to check time backwards until timeframe for events.
+        if "check_last_occurrences" in new_rule and new_rule.get("check_last_occurrences", False):
+            self.init_change_rule_occurrences(new_rule)
 
         return new_rule
 
