@@ -120,7 +120,8 @@ Loading Filters Directly From Kibana 3
 There are two ways to load filters directly from a Kibana 3 dashboard. You can set your filter to::
 
     filter:
-      download_dashboard: "My Dashboard Name"
+     - term:
+          download_dashboard: "My Dashboard Name"
 
 and when ElastAlert starts, it will download the dashboard schema from Elasticsearch and use the filters from that.
 However, if the dashboard name changes or if there is connectivity problems when ElastAlert starts, the rule will not load and
