@@ -101,6 +101,8 @@ Rule Configuration Cheat Sheet
 | ``alert_text_args`` (array of strs)                          |           |
 +--------------------------------------------------------------+           |
 | ``alert_text_kw`` (object)                                   |           |
++--------------------------------------------------------------+           |
+| ``alert_missing_value`` (string, default "<MISSING VALUE>")  |           |
 +--------------------------------------------------------------+-----------+
 
 |
@@ -1118,7 +1120,7 @@ It is mandatory to enclose the ``@timestamp`` field in quotes since in YAML form
 
 In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter.
 
-If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``<MISSING VALUE>`` in place of its expected value. This will also occur if ``use_count_query`` is set to true.
+If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``alert_missing_value`` in place of its expected value. This will also occur if ``use_count_query`` is set to true.
 
 Alert Content
 ~~~~~~~~~~~~~
@@ -1135,7 +1137,7 @@ There are several ways to format the body text of the various types of events. I
 
 Similarly to ``alert_subject``, ``alert_text`` can be further formatted using standard Python formatting syntax.
 The field names whose values will be used as the arguments can be passed with ``alert_text_args`` or ``alert_text_kw``.
-You may also refer to any top-level rule property in the ``alert_subject_args``, ``alert_text_args``, and ``alert_text_kw fields``.  However, if the matched document has a key with the same name, that will take preference over the rule property.
+You may also refer to any top-level rule property in the ``alert_subject_args``, ``alert_text_args``, ``alert_missing_value``, and ``alert_text_kw fields``.  However, if the matched document has a key with the same name, that will take preference over the rule property.
 
 By default::
 

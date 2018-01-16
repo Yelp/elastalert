@@ -180,6 +180,7 @@ properties:
   alert_text_args: {type: array, items: {type: string}}
   alert_text_kw: {type: object}
   alert_text_type: {enum: [alert_text_only, exclude_fields]}
+  alert_missing_value: {type: string}
   timestamp_field: {type: string}
   field: {}
 
