@@ -1,5 +1,9 @@
 # Change Log
 
+## v.0.1.27
+
+- Fixed a failed creation of elastalert indicies when using Elasticsearch 6
+
 ## v0.1.26
 
 ### Added
