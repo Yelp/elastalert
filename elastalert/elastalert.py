@@ -861,7 +861,7 @@ class ElastAlerter():
         self.writeback('elastalert_status', body)
 
         return num_matches
-		
+
     def init_change_rule_occurrences(self, rule):
         """Check backwards until timeframe, if defined, or the last 10 minutes to update the rule's occurences variable with the latest compare key value for the key values."""
         try:
@@ -880,7 +880,7 @@ class ElastAlerter():
             query_rule['size'] = 1
 
             include = [query_key+".keyword",
-                      timestamp]
+                       timestamp]
             for v in compare_key.split(","):
                 include.append(v)
 
@@ -913,9 +913,9 @@ class ElastAlerter():
             query_rule['_source'] = include
 
             res = self.current_es.search(
-                    index=index_query,
-                    size=size_query,
-                    body = query_rule
+                index=index_query,
+                size=size_query,
+                body=query_rule
                 )
 
         except ElasticsearchException as e:

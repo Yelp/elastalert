@@ -120,13 +120,13 @@ class CompareRule(RuleType):
         for event in data:
             if self.compare(event):
                 self.add_match(event)
-				
-	def init_occurrences(self, es_res):
-	    """ If rule has the parameter 'check_last_occurrences', this method will be used to let elastalert know the last compare keys value for each query key """
+
+    def init_occurrences(self, es_res):
+        """ If rule has the parameter 'check_last_occurrences', this method will be used to let elastalert know the last compare keys value for each query key """
         raise NotImplementedError()
 
     def add_occurrence(self, key, values, timeframe=None):
-	    """ Update the occurrences variable with the query key and compare keys value """
+        """ Update the occurrences variable with the query key and compare keys value """
         raise NotImplementedError()
 
 
@@ -228,7 +228,7 @@ class ChangeRule(CompareRule):
                     event_values.append(sources[val])
                 else:
                     event_values.append(None)
-                    key_msg = "None" if event_key == None else event_key
+                    key_msg = "None" if event_key is None else event_key
                     elastalert_logger.info("Compare key '" + val + "' not existing for last document with query key '" + key_msg + "'.")
             event_timeframe = None
             if 'timeframe' in self.rules:
@@ -237,7 +237,7 @@ class ChangeRule(CompareRule):
 
     def add_occurrence(self, key, values, event_timeframe=None):
         self.occurrences[key] = values
-        if event_timeframe != None:
+        if event_timeframe is not None:
             self.occurrence_time[key] = event_timeframe
 
 class FrequencyRule(RuleType):
