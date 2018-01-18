@@ -122,7 +122,9 @@ class CompareRule(RuleType):
                 self.add_match(event)
 
     def init_occurrences(self, es_res):
-        """ If rule has the parameter 'check_last_occurrences', this method will be used to let elastalert know the last compare keys value for each query key """
+        """ If rule has the parameter 'check_last_occurrences', 
+        this method will be used to let elastalert know the last
+        compare keys value for each query key """
         raise NotImplementedError()
 
     def add_occurrence(self, key, values, timeframe=None):
@@ -223,7 +225,7 @@ class ChangeRule(CompareRule):
             sources = event['top_hit']['hits']['hits'][0]['_source']
             event_values = []
             for val in self.rules['compound_compare_key']:
-                #if compare key was valid (i.e. exists on elasticsearch)
+                # if compare key was valid (i.e. exists on elasticsearch)
                 if val in sources:
                     event_values.append(sources[val])
                 else:
@@ -239,6 +241,7 @@ class ChangeRule(CompareRule):
         self.occurrences[key] = values
         if event_timeframe is not None:
             self.occurrence_time[key] = event_timeframe
+
 
 class FrequencyRule(RuleType):
     """ A rule that matches if num_events number of events occur within a timeframe """

@@ -863,7 +863,10 @@ class ElastAlerter():
         return num_matches
 
     def init_change_rule_occurrences(self, rule):
-        """Check backwards until timeframe, if defined, or the last 10 minutes to update the rule's occurences variable with the latest compare key value for the key values."""
+        """ Check backwards until timeframe, if defined,
+        or the last 10 minutes to update the rule's occurences
+        variable with the latest compare key value for the key values. """
+
         try:
 
             query_key = rule.get("query_key")
@@ -875,7 +878,9 @@ class ElastAlerter():
             index_query = self.get_index(rule, timeframe, ts_now())
             filters = rule['filter']
             self.current_es = elasticsearch_client(rule)
-            query_rule = self.get_query(filters, starttime=timeframe, endtime=ts_now(), timestamp_field=timestamp, to_ts_func=rule['dt_to_ts'], desc=True, five=rule['five'])
+            query_rule = self.get_query(filters, starttime=timeframe, endtime=ts_now(),
+                                        timestamp_field=timestamp, to_ts_func=rule['dt_to_ts'],
+                                        desc=True, five=rule['five'])
 
             query_rule['size'] = 1
 
@@ -883,7 +888,6 @@ class ElastAlerter():
                        timestamp]
             for v in compare_key.split(","):
                 include.append(v)
-
 
             query_rule['aggs'] = {
                 query_key: {
@@ -919,6 +923,7 @@ class ElastAlerter():
                 )
 
         except ElasticsearchException as e:
+            elastalert_logger.debug(e)
             return False
 
         self.total_hits = int(res['hits']['total'])
@@ -982,7 +987,8 @@ class ElastAlerter():
                 continue
             new_rule[prop] = rule[prop]
 
-        #If the rule has a parameter to check time backwards until timeframe for events.
+        # If the rule has a parameter to check time backwards until timeframe for events.
+        # Usefull for the ChangeRule rule.
         if "check_last_occurrences" in new_rule and new_rule.get("check_last_occurrences", False):
             self.init_change_rule_occurrences(new_rule)
 
