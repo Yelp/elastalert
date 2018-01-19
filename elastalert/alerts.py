@@ -33,6 +33,7 @@ from util import pretty_ts
 from util import ts_now
 from util import ts_to_dt
 
+
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
         if hasattr(obj, 'isoformat'):
@@ -307,7 +308,7 @@ class StompAlerter(Alerter):
 
         fullmessage = {}
         for match in matches:
-            if qk != None:
+            if qk is not None:
                 resmatch = lookup_es_key(match, qk)
             else:
                 resmatch = None
