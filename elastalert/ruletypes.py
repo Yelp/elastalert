@@ -1036,10 +1036,11 @@ class PercentageMatchRule(BaseAggregationRule):
 
     def get_match_str(self, match):
         percentage_format_string = self.rules.get('percentage_format_string', None)
-        message = 'Percentage violation, value: %s (min: %s max : %s) \n\n' % (
+        message = 'Percentage violation, value: %s (min: %s max : %s) of %s items\n\n' % (
             percentage_format_string % (match['percentage']) if percentage_format_string else match['percentage'],
             self.rules.get('min_percentage'),
-            self.rules.get('max_percentage')
+            self.rules.get('max_percentage'),
+            match['denominator']
         )
         return message
 
@@ -1072,7 +1073,7 @@ class PercentageMatchRule(BaseAggregationRule):
             else:
                 match_percentage = (match_bucket_count * 1.0) / (total_count * 1.0) * 100
                 if self.percentage_violation(match_percentage):
-                    match = {self.rules['timestamp_field']: timestamp, 'percentage': match_percentage}
+                    match = {self.rules['timestamp_field']: timestamp, 'percentage': match_percentage, 'denominator': total_count}
                     if query_key is not None:
                         match[self.rules['query_key']] = query_key
                     self.add_match(match)
