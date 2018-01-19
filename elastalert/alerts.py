@@ -1568,7 +1568,7 @@ class FlowdockAlerter(Alerter):
     def __init__(self, rule):
         super(FlowdockAlerter, self).__init__(rule)
         self.url = 'https://api.flowdock.com/messages'
-        self.flowdock_proxy_server = self.rule.get('flowdock_proxy_server', None)
+        self.flowdock_proxy = self.rule.get('flowdock_proxy', None)
         self.flowdock_ignore_ssl_errors = self.rule.get('flowdock_ignore_ssl_errors', True)
 
         self.flowdock_flow_token = self.rule['flowdock_flow_token']
@@ -1592,7 +1592,7 @@ class FlowdockAlerter(Alerter):
         # Post to Flowdock
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
-        proxies = {'https': self.flowdock_proxy_server} if self.flowdock_proxy_server else None
+        proxies = {'https': self.flowdock_proxy} if self.flowdock_proxy else None
         payload = {
             'flow_token': self.flowdock_flow_token,
             'event': self.flowdock_event,

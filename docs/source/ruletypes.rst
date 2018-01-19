@@ -1660,6 +1660,37 @@ Optional:
 
 ``servicenow_proxy``: By default ElastAlert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy.
 
+Flowdock
+~~~~~~~
+
+Flowdock alerter will send a notification to the flow that is associated with the supplied flow token. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``flowdock_flow_token``: The randomly generated authentication token created by Flowdock. Go to https://www.flowdock.com/api/how-to-integrate and follow steps 1-3 in order to obtain a valid flow token.
+
+``flowdock_author_name``: The name to be used by ElastAlert when publishing activity to Flowdock.
+
+``flowdock_thread_title``: The title of the activity thread that related activity will be published to. Does not have to exist already.
+
+
+Optional:
+
+``flowdock_proxy``: By default ElastAlert will not use a network proxy to send notifications to Flowdock. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``flowdock_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
+
+``flowdock_event``: The type of event to be generated in Flowdock. Any of the following: ``activity`` (default), ``message``.
+
+``flowdock_tags``: List of tags for message. User tags start with @, hashtags start with #. Example: ``['@user', '#tag']``
+
+``flowdock_thread_fields``: Key/value properties for the thread. Value can contain HTML 'a' tags. Example: ``[{'label': 'lbl', 'value': 'val'}]``
+
+``flowdock_thread_ext_url``: External URL that this thread represents.
+
+``flowdock_thread_status_value``: Text to be set in the Flowdock activity status badge. Must be used with ``flowdock_thread_status_color``.
+
+``flowdock_thread_status_color``: Color to be used in the Flowdock activity status badge. Any of the following: ``red``, ``green``, ``yellow``, ``cyan``, ``orange``, ``grey``, ``black``, ``lime``, ``purple``, ``blue``
 
 Debug
 ~~~~~
