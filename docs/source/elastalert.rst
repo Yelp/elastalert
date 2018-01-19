@@ -223,7 +223,10 @@ or its subdirectories.
 
 ``--es_debug`` will enable logging for all queries made to Elasticsearch.
 
-``--es_debug_trace`` will enable logging curl commands for all queries made to Elasticsearch to a file.
+``--es_debug_trace <trace.log>`` will enable logging curl commands for all queries made to Elasticsearch to the
+specified log file. ``--es_debug_trace`` is passed through to `elasticsearch.py
+<http://elasticsearch-py.readthedocs.io/en/master/index.html#logging>`_ which logs `localhost:9200`
+instead of the actual ``es_host``:``es_port``.
 
 ``--end <timestamp>`` will force ElastAlert to stop querying after the given time, instead of the default,
 querying to the present time. This really only makes sense when running standalone. The timestamp is formatted

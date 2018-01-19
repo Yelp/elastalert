@@ -64,6 +64,9 @@ def _find_es_dict_by_key(lookup_dict, term):
     subkey = ''
 
     while len(subkeys) > 0:
+        if not dict_cursor:
+            return {}, None
+
         subkey += subkeys.pop(0)
 
         if subkey in dict_cursor:
@@ -233,7 +236,7 @@ def unix_to_dt(ts):
 
 
 def dt_to_unix(dt):
-    return total_seconds(dt - datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzutc()))
+    return int(total_seconds(dt - datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzutc())))
 
 
 def dt_to_unixms(dt):

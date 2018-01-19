@@ -96,7 +96,8 @@ class ElastAlerter():
             '--es_debug_trace',
             action='store',
             dest='es_debug_trace',
-            help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file')
+            help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file. Note that '
+                 'this will incorrectly display localhost:9200 as the host/port')
         self.args = parser.parse_args(args)
 
     def __init__(self, args):
@@ -174,8 +175,11 @@ class ElastAlerter():
             self._es_version = self.get_version()
         return self._es_version
 
-    def is_five(self):
-        return self.es_version.startswith('5')
+    def is_atleastfive(self):
+        return int(self.es_version.split(".")[0]) >= 5
+
+    def is_atleastsix(self):
+        return int(self.es_version.split(".")[0]) >= 6
 
     @staticmethod
     def get_index(rule, starttime=None, endtime=None):
@@ -194,6 +198,21 @@ class ElastAlerter():
                 return index[:format_start] + '*' + index[format_end:]
         else:
             return index
+
+    def get_six_index(self, doc_type):
+        """ In ES6, you cannot have multiple _types per index,
+        therefore we use self.writeback_index as the prefix for the actual
+        index name, based on doc_type. """
+        writeback_index = self.writeback_index
+        if doc_type == 'silence':
+            writeback_index += '_silence'
+        elif doc_type == 'past_elastalert':
+            writeback_index += '_past'
+        elif doc_type == 'elastalert_status':
+            writeback_index += '_status'
+        elif doc_type == 'elastalert_error':
+            writeback_index += '_error'
+        return writeback_index
 
     @staticmethod
     def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False,
@@ -258,7 +277,8 @@ class ElastAlerter():
             aggs_element = metric_agg_element
 
         if query_key is not None:
-            aggs_element = {'bucket_aggs': {'terms': {'field': query_key, 'size': terms_size}, 'aggs': aggs_element}}
+            for idx, key in reversed(list(enumerate(query_key.split(',')))):
+                aggs_element = {'bucket_aggs': {'terms': {'field': key, 'size': terms_size}, 'aggs': aggs_element}}
 
         if not rule['five']:
             query_element['filtered'].update({'aggs': aggs_element})
@@ -339,6 +359,7 @@ class ElastAlerter():
         :param endtime: The latest time to query.
         :return: A list of hits, bounded by rule['max_query_size'] (or self.max_query_size).
         """
+
         query = self.get_query(
             rule['filter'],
             starttime,
@@ -377,7 +398,6 @@ class ElastAlerter():
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
             self.handle_error('Error running query: %s' % (e), {'rule': rule['name'], 'query': query})
             return None
-
         hits = res['hits']['hits']
         self.num_hits += len(hits)
         lt = rule.get('use_local_time')
@@ -446,7 +466,7 @@ class ElastAlerter():
                 end = '.keyword'
             else:
                 end = '.raw'
-            if rule.get('raw_count_keys', True) and not rule['query_key'].endswith(end) and not rule['five']:
+            if rule.get('raw_count_keys', True) and not rule['query_key'].endswith(end):
                 filter_key = add_raw_postfix(filter_key, rule['five'])
             rule_filter.extend([{'term': {filter_key: qk}}])
         base_query = self.get_query(
@@ -619,13 +639,18 @@ class ElastAlerter():
         """
         sort = {'sort': {'@timestamp': {'order': 'desc'}}}
         query = {'filter': {'term': {'rule_name': '%s' % (rule['name'])}}}
-        if self.is_five():
+        if self.is_atleastfive():
             query = {'query': {'bool': query}}
         query.update(sort)
 
         try:
-            res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert_status',
-                                           size=1, body=query, _source_include=['endtime', 'rule_name'])
+            if self.is_atleastsix():
+                index = self.get_six_index('elastalert_status')
+                res = self.writeback_es.search(index=index, doc_type='elastalert_status',
+                                               size=1, body=query, _source_include=['endtime', 'rule_name'])
+            else:
+                res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert_status',
+                                               size=1, body=query, _source_include=['endtime', 'rule_name'])
             if res['hits']['hits']:
                 endtime = ts_to_dt(res['hits']['hits'][0]['_source']['endtime'])
 
@@ -867,7 +892,7 @@ class ElastAlerter():
         if 'top_count_keys' in new_rule and new_rule.get('raw_count_keys', True):
             if self.string_multi_field_name:
                 string_multi_field_name = self.string_multi_field_name
-            elif self.is_five():
+            elif self.is_atleastfive():
                 string_multi_field_name = '.keyword'
             else:
                 string_multi_field_name = '.raw'
@@ -915,7 +940,7 @@ class ElastAlerter():
     def modify_rule_for_ES5(new_rule):
         # Get ES version per rule
         rule_es = elasticsearch_client(new_rule)
-        if rule_es.info()['version']['number'].startswith('5'):
+        if int(rule_es.info()['version']['number'].split(".")[0]) >= 5:
             new_rule['five'] = True
         else:
             new_rule['five'] = False
@@ -946,6 +971,8 @@ class ElastAlerter():
                 # Rule file was changed, reload rule
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
+                    if 'is_enabled' in new_rule and not new_rule['is_enabled']:
+                        continue
                 except EAException as e:
                     message = 'Could not load rule %s: %s' % (rule_file, e)
                     self.handle_error(message)
@@ -979,6 +1006,8 @@ class ElastAlerter():
             for rule_file in set(new_rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
+                    if 'is_enabled' in new_rule and not new_rule['is_enabled']:
+                        continue
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
                         raise EAException("A rule with the name %s already exists" % (new_rule['name']))
                 except EAException as e:
@@ -1265,7 +1294,16 @@ class ElastAlerter():
                     qk = match[rule['query_key']]
                 else:
                     qk = None
-                start = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) - rule.get('timeframe', datetime.timedelta(minutes=10))
+
+                if isinstance(rule['type'], FlatlineRule):
+                    # flatline rule triggers when there have been no events from now()-timeframe to now(),
+                    # so using now()-timeframe will return no results. for now we can just mutliple the timeframe
+                    # by 2, but this could probably be timeframe+run_every to prevent too large of a lookup?
+                    timeframe = datetime.timedelta(seconds=2 * rule.get('timeframe').total_seconds())
+                else:
+                    timeframe = rule.get('timeframe', datetime.timedelta(minutes=10))
+
+                start = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) - timeframe
                 end = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) + datetime.timedelta(minutes=10)
                 keys = rule.get('top_count_keys')
                 counts = self.get_top_counts(rule, start, end, keys, qk=qk)
@@ -1362,6 +1400,10 @@ class ElastAlerter():
         return body
 
     def writeback(self, doc_type, body):
+        writeback_index = self.writeback_index
+        if(self.is_atleastsix()):
+            writeback_index = self.get_six_index(doc_type)
+
         # ES 2.0 - 2.3 does not support dots in field names.
         if self.replace_dots_in_field_names:
             writeback_body = replace_dots_in_field_names(body)
@@ -1381,7 +1423,7 @@ class ElastAlerter():
             writeback_body['@timestamp'] = dt_to_ts(ts_now())
 
         try:
-            res = self.writeback_es.index(index=self.writeback_index,
+            res = self.writeback_es.index(index=writeback_index,
                                           doc_type=doc_type, body=body)
             return res
         except ElasticsearchException as e:
@@ -1399,7 +1441,7 @@ class ElastAlerter():
         time_filter = {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
                                                 'to': dt_to_ts(ts_now())}}}
         sort = {'sort': {'alert_time': {'order': 'asc'}}}
-        if self.is_five():
+        if self.is_atleastfive():
             query = {'query': {'bool': {'must': inner_query, 'filter': time_filter}}}
         else:
             query = {'query': inner_query, 'filter': time_filter}
@@ -1449,7 +1491,7 @@ class ElastAlerter():
                 else:
                     # If this rule isn't using aggregation, this must be a retry of a failed alert
                     retried = False
-                    if 'aggregation' not in rule:
+                    if not rule.get('aggregation'):
                         retried = True
                     self.alert([match_body], rule, alert_time=alert_time, retried=retried)
 
@@ -1464,7 +1506,7 @@ class ElastAlerter():
                     self.writeback_es.delete(index=self.writeback_index,
                                              doc_type='elastalert',
                                              id=_id)
-                except:  # TODO: Give this a more relevant exception, try:except: is evil.
+                except ElasticsearchException:  # TODO: Give this a more relevant exception, try:except: is evil.
                     self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
 
         # Send in memory aggregated alerts
@@ -1513,7 +1555,7 @@ class ElastAlerter():
                                      'must_not': [{'exists': {'field': 'aggregate_id'}}]}}}
         if aggregation_key_value:
             query['filter']['bool']['must'].append({'term': {'aggregation_key': aggregation_key_value}})
-        if self.is_five():
+        if self.is_atleastfive():
             query = {'query': {'bool': query}}
         query['sort'] = {'alert_time': {'order': 'desc'}}
         try:
@@ -1652,15 +1694,20 @@ class ElastAlerter():
             return False
         query = {'term': {'rule_name': rule_name}}
         sort = {'sort': {'until': {'order': 'desc'}}}
-        if self.is_five():
+        if self.is_atleastfive():
             query = {'query': query}
         else:
             query = {'filter': query}
         query.update(sort)
 
         try:
-            res = self.writeback_es.search(index=self.writeback_index, doc_type='silence',
-                                           size=1, body=query, _source_include=['until', 'exponent'])
+            if(self.is_atleastsix()):
+                index = self.get_six_index('silence')
+                res = self.writeback_es.search(index=index, doc_type='silence',
+                                               size=1, body=query, _source_include=['until', 'exponent'])
+            else:
+                res = self.writeback_es.search(index=self.writeback_index, doc_type='silence',
+                                               size=1, body=query, _source_include=['until', 'exponent'])
         except ElasticsearchException as e:
             self.handle_error("Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
 

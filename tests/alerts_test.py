@@ -18,6 +18,7 @@ from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
 from elastalert.alerts import SlackAlerter
+from elastalert.alerts import StrideAlerter
 from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
@@ -318,7 +319,8 @@ def test_email_with_args():
         'alert_subject': 'Test alert for {0} {1}',
         'alert_subject_args': ['test_term', 'test.term'],
         'alert_text': 'Test alert for {0} and {1} {2}',
-        'alert_text_args': ['test_arg1', 'test_arg2', 'test.arg3']
+        'alert_text_args': ['test_arg1', 'test_arg2', 'test.arg3'],
+        'alert_missing_value': '<CUSTOM MISSING VALUE>'
     }
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
@@ -338,7 +340,7 @@ def test_email_with_args():
         body_text = body.split('\n\n')[-1][:-1].decode('base64')
 
         assert 'testing' in body_text
-        assert '<MISSING VALUE>' in body_text
+        assert '<CUSTOM MISSING VALUE>' in body_text
         assert '☃' in body_text
 
         assert 'Reply-To: test@example.com' in body
@@ -1427,3 +1429,56 @@ def test_resolving_rule_references(ea):
     assert 'the_owner' == alert.rule['list_of_things'][1]
     assert 'the_owner' == alert.rule['list_of_things'][2][1]
     assert 'the_owner' == alert.rule['nested_dict']['nested_owner']
+
+
+def test_stride():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'stride_access_token': 'token',
+        'stride_cloud_id': 'cloud_id',
+        'stride_converstation_id': 'converstation_id',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = StrideAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    body = "{0}\n\n@timestamp: {1}\nsomefield: {2}\n".format(
+        rule['name'], match['@timestamp'], match['somefield']
+    )
+    expected_data = {
+      "body": {
+        "content": [
+          {
+            "content": [
+              {
+                "text": body,
+                "type": "text"
+              }
+            ],
+            "type": "paragraph"
+          }
+        ],
+        "version": 1,
+        "type": "doc"
+      }
+    }
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'content-type': 'application/json',
+            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
+        verify=True,
+        proxies=None
+    )
+    assert expected_data == json.loads(
+        mock_post_request.call_args_list[0][1]['data'])

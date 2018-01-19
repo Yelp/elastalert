@@ -180,6 +180,7 @@ properties:
   alert_text_args: {type: array, items: {type: string}}
   alert_text_kw: {type: object}
   alert_text_type: {enum: [alert_text_only, exclude_fields]}
+  alert_missing_value: {type: string}
   timestamp_field: {type: string}
   field: {}
 
@@ -214,11 +215,18 @@ properties:
 
   ### HipChat
   hipchat_auth_token: {type: string}
-  hipchat_room_id: {type: string}
+  hipchat_room_id: {type: [string, integer]}
   hipchat_domain: {type: string}
   hipchat_ignore_ssl_errors: {type: boolean}
   hipchat_notify: {type: boolean}
   hipchat_from: {type: string}
+  hipchat_mentions: {type: array, items: {type: string}}
+
+  ### Stride
+  stride_access_token: {type: string}
+  stride_cloud_id: {type: string}
+  stride_converstation_id: {type: string}
+  stride_ignore_ssl_errors: {type: boolean}
 
   ### Slack
   slack_webhook_url: *arrayOfString
@@ -250,6 +258,7 @@ properties:
   victorops_api_key: {type: string}
   victorops_routing_key: {type: string}
   victorops_message_type: {enum: [INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY]}
+  victorops_entity_id: {type: string}
   victorops_entity_display_name: {type: string}
 
   ### Telegram
@@ -265,4 +274,3 @@ properties:
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
-

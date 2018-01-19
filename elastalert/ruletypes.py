@@ -54,7 +54,8 @@ class RuleType(object):
         ts = self.rules.get('timestamp_field')
         if ts in event:
             event[ts] = dt_to_ts(event[ts])
-        self.matches.append(event)
+
+        self.matches.append(copy.deepcopy(event))
 
     def get_match_str(self, match):
         """ Returns a string that gives more context about a match.
@@ -404,7 +405,6 @@ class SpikeRule(RuleType):
 
     def clear_windows(self, qk, event):
         # Reset the state and prevent alerts until windows filled again
-        self.cur_windows[qk].clear()
         self.ref_windows[qk].clear()
         self.first_event.pop(qk)
         self.skip_checks[qk] = event[self.ts_field] + self.rules['timeframe'] * 2
@@ -593,7 +593,7 @@ class NewTermsRule(RuleType):
         window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
         field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
         query_template = {"aggs": {"values": {"terms": field_name}}}
-        if args and args.start:
+        if args and hasattr(args, 'start') and args.start:
             end = ts_to_dt(args.start)
         else:
             end = ts_now()
@@ -974,13 +974,43 @@ class MetricAggregationRule(BaseAggregationRule):
         return {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
 
     def check_matches(self, timestamp, query_key, aggregation_data):
-        metric_val = aggregation_data[self.metric_key]['value']
-        if self.crossed_thresholds(metric_val):
-            match = {self.rules['timestamp_field']: timestamp,
-                     self.metric_key: metric_val}
-            if query_key is not None:
-                match[self.rules['query_key']] = query_key
-            self.add_match(match)
+        if "compound_query_key" in self.rules:
+            self.check_matches_recursive(timestamp, query_key, aggregation_data, self.rules['compound_query_key'], dict())
+
+        else:
+            metric_val = aggregation_data[self.metric_key]['value']
+            if self.crossed_thresholds(metric_val):
+                match = {self.rules['timestamp_field']: timestamp,
+                         self.metric_key: metric_val}
+                if query_key is not None:
+                    match[self.rules['query_key']] = query_key
+                self.add_match(match)
+
+    def check_matches_recursive(self, timestamp, query_key, aggregation_data, compound_keys, match_data):
+        if len(compound_keys) < 1:
+            # shouldn't get to this point, but checking for safety
+            return
+
+        match_data[compound_keys[0]] = aggregation_data['key']
+        if 'bucket_aggs' in aggregation_data:
+            for result in aggregation_data['bucket_aggs']['buckets']:
+                self.check_matches_recursive(timestamp,
+                                             query_key,
+                                             result,
+                                             compound_keys[1:],
+                                             match_data)
+
+        else:
+            metric_val = aggregation_data[self.metric_key]['value']
+            if self.crossed_thresholds(metric_val):
+                match_data[self.rules['timestamp_field']] = timestamp
+                match_data[self.metric_key] = metric_val
+
+                # add compound key to payload to allow alerts to trigger for every unique occurence
+                compound_value = [match_data[key] for key in self.rules['compound_query_key']]
+                match_data[self.rules['query_key']] = ",".join(compound_value)
+
+                self.add_match(match_data)
 
     def crossed_thresholds(self, metric_value):
         if metric_value is None:
@@ -1005,8 +1035,9 @@ class PercentageMatchRule(BaseAggregationRule):
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
 
     def get_match_str(self, match):
+        percentage_format_string = self.rules.get('percentage_format_string', None)
         message = 'Percentage violation, value: %s (min: %s max : %s) of %s items\n\n' % (
-            match['percentage'],
+            percentage_format_string % (match['percentage']) if percentage_format_string else match['percentage'],
             self.rules.get('min_percentage'),
             self.rules.get('max_percentage'),
             match['denominator']

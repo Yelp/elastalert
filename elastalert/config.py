@@ -66,6 +66,7 @@ alerts_mapping = {
     'command': alerts.CommandAlerter,
     'sns': alerts.SnsAlerter,
     'hipchat': alerts.HipChatAlerter,
+    'stride': alerts.StrideAlerter,
     'ms_teams': alerts.MsTeamsAlerter,
     'slack': alerts.SlackAlerter,
     'pagerduty': alerts.PagerDutyAlerter,
@@ -342,8 +343,10 @@ def load_modules(rule, args=None):
         rule['type'] = rule['type'](rule, args)
     except (KeyError, EAException) as e:
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e)), None, sys.exc_info()[2]
-    # Instantiate alert
-    rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
+    # Instantiate alerts only if we're not in debug mode
+    # In debug mode alerts are not actually sent so don't bother instantiating them
+    if not args or not args.debug:
+        rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
 
 
 def isyaml(filename):
@@ -399,7 +402,7 @@ def load_alerts(rule, alert_field):
             alert_field = [alert_field]
 
         alert_field = [normalize_config(x) for x in alert_field]
-        alert_field = sorted(alert_field, key=lambda (a, b): alerts_order.get(a, -1))
+        alert_field = sorted(alert_field, key=lambda (a, b): alerts_order.get(a, 1))
         # Convert all alerts into Alerter objects
         alert_field = [create_alert(a, b) for a, b in alert_field]
 
@@ -459,6 +462,9 @@ def load_rules(args):
     for rule_file in rule_files:
         try:
             rule = load_configuration(rule_file, conf, args)
+            # By setting "is_enabled: False" in rule file, a rule is easily disabled
+            if 'is_enabled' in rule and not rule['is_enabled']:
+                continue
             if rule['name'] in names:
                 raise EAException('Duplicate rule named %s' % (rule['name']))
         except EAException as e:

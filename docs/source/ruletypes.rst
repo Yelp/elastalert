@@ -101,6 +101,8 @@ Rule Configuration Cheat Sheet
 | ``alert_text_args`` (array of strs)                          |           |
 +--------------------------------------------------------------+           |
 | ``alert_text_kw`` (object)                                   |           |
++--------------------------------------------------------------+           |
+| ``alert_missing_value`` (string, default "<MISSING VALUE>")  |           |
 +--------------------------------------------------------------+-----------+
 
 |
@@ -1076,6 +1078,10 @@ evaluated separately against the threshold(s).
   
 ``sync_bucket_interval``: See ``sync_bucket_interval`` in  Metric Aggregation rule
 
+``percentage_format_string``: An optional format string to apply to the percentage value in the alert match text. Must be a valid python format string.
+For example, "%.2f" will round it to 2 decimal places.
+See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
+
 .. _alerts:
 
 Alerts
@@ -1114,7 +1120,7 @@ It is mandatory to enclose the ``@timestamp`` field in quotes since in YAML form
 
 In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter.
 
-If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``<MISSING VALUE>`` in place of its expected value. This will also occur if ``use_count_query`` is set to true.
+If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``alert_missing_value`` in place of its expected value. This will also occur if ``use_count_query`` is set to true.
 
 Alert Content
 ~~~~~~~~~~~~~
@@ -1131,7 +1137,7 @@ There are several ways to format the body text of the various types of events. I
 
 Similarly to ``alert_subject``, ``alert_text`` can be further formatted using standard Python formatting syntax.
 The field names whose values will be used as the arguments can be passed with ``alert_text_args`` or ``alert_text_kw``.
-You may also refer to any top-level rule property in the ``alert_subject_args``, ``alert_text_args``, and ``alert_text_kw fields``.  However, if the matched document has a key with the same name, that will take preference over the rule property.
+You may also refer to any top-level rule property in the ``alert_subject_args``, ``alert_text_args``, ``alert_missing_value``, and ``alert_text_kw fields``.  However, if the matched document has a key with the same name, that will take preference over the rule property.
 
 By default::
 
@@ -1164,7 +1170,7 @@ With ``alert_text_type: exclude_fields``::
 ruletype_text is the string returned by RuleType.get_match_str.
 
 field_values will contain every key value pair included in the results from Elasticsearch. These fields include "@timestamp" (or the value of ``timestamp_field``),
-every key in ``included``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
+every key in ``include``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
 come from an individual event, usually the one which triggers the alert.
 
 Command
@@ -1427,6 +1433,31 @@ text - Message is treated just like a message sent by a user. Can include @menti
 Valid values: html, text.
 Defaults to 'html'.
 
+``hipchat_mentions``: When using a ``html`` message format, it's not possible to mentions specific users using the ``@user`` syntax.
+In that case, you can set ``hipchat_mentions`` to a list of users which will be first mentioned using a single text message, then the normal ElastAlert message will be sent to Hipchat.
+If set, it will mention the users, no matter if the original message format is set to HTML or text.
+Valid values: list of strings.
+Defaults to ``[]``.
+
+
+Stride
+~~~~~~~
+
+Stride alerter will send a notification to a predefined Stride room. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following two options:
+
+``stride_access_token``: The randomly generated notification token created by Stride.
+
+``stride_cloud_id``: The site_id associated with the Stride site you want to send the alert to.
+
+``stride_converstation_id``: The converstation_id associated with the Stride converstation you want to send the alert to.
+
+``stride_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
+
+``stride_proxy``: By default ElastAlert will not use a network proxy to send notifications to Stride. Set this option using ``hostname:port`` if you need to use a proxy.
+
+
 MS Teams
 ~~~~~~~~
 
@@ -1482,7 +1513,7 @@ The alerter requires the following two options:
 
 ``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#botfather
 
-``telegram_room_id``: Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+``telegram_room_id``: Unique identifier for the target chat or username of the target channel using telegram chat_id (in the format "-xxxxxxxx")
 
 Optional:
 
@@ -1569,7 +1600,9 @@ The alerter requires the following options:
 
 Optional:
 
-``victorops_entity_display_name``: Human-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
+``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents thoughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
+
+``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
 
 ``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
 
