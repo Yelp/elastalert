@@ -2,6 +2,7 @@
 import copy
 import datetime
 import json
+import time
 import logging
 import subprocess
 import sys
@@ -304,23 +305,27 @@ class StompAlerter(Alerter):
         alerts = []
 
         qk = self.rule.get('query_key', None)
+
         fullmessage = {}
         for match in matches:
-            resmatch = lookup_es_key(match, qk)
+            if qk is not None:
+                resmatch = lookup_es_key(match, qk)
+            else:
+                resmatch = None
 
             if resmatch is not None:
                 elastalert_logger.info(
                     'Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(match, self.rule['timestamp_field'])))
                 alerts.append(
-                    '1)Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(
+                    'Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(
                         match, self.rule['timestamp_field']))
                 )
                 fullmessage['match'] = resmatch
             else:
-                elastalert_logger.info('Alert for %s at %s:' % (
+                elastalert_logger.info('Rule %s generated an alert at %s:' % (
                     self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
                 alerts.append(
-                    '2)Alert for %s at %s:' % (self.rule['name'], lookup_es_key(
+                    'Rule %s generated an alert at %s:' % (self.rule['name'], lookup_es_key(
                         match, self.rule['timestamp_field']))
                 )
                 fullmessage['match'] = lookup_es_key(
@@ -329,10 +334,14 @@ class StompAlerter(Alerter):
 
         fullmessage['alerts'] = alerts
         fullmessage['rule'] = self.rule['name']
+        fullmessage['rule_file'] = self.rule['rule_file']
+
         fullmessage['matching'] = unicode(BasicMatchString(self.rule, match))
         fullmessage['alertDate'] = datetime.datetime.now(
         ).strftime("%Y-%m-%d %H:%M:%S")
         fullmessage['body'] = self.create_alert_body(matches)
+
+        fullmessage['matches'] = matches
 
         self.stomp_hostname = self.rule.get('stomp_hostname', 'localhost')
         self.stomp_hostport = self.rule.get('stomp_hostport', '61613')
@@ -345,6 +354,8 @@ class StompAlerter(Alerter):
 
         conn.start()
         conn.connect(self.stomp_login, self.stomp_password)
+        # Ensures that the CONNECTED frame is received otherwise, the disconnect call will fail.
+        time.sleep(1)
         conn.send(self.stomp_destination, json.dumps(fullmessage))
         conn.disconnect()
 
