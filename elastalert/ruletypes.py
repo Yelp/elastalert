@@ -122,7 +122,7 @@ class CompareRule(RuleType):
                 self.add_match(event)
 
     def init_occurrences(self, es_res):
-        """ If rule has the parameter 'check_last_occurrences', 
+        """ If rule has the parameter 'check_last_occurrences',
         this method will be used to let elastalert know the last
         compare keys value for each query key """
         raise NotImplementedError()
