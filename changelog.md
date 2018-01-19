@@ -1,8 +1,24 @@
 # Change Log
 
-## v.0.1.27
+## v0.1.28
 
+### Added
+- Added support for Stride formatting of simple HTML tags
+- Added support for custom titles in Opsgenie alerts
+- Added a denominator to percentage match based alerts
+
+### Fixed
+- Fixed a bug with Stomp alerter connections
+- Removed escaping of some characaters in Slack messages
+
+## v0.1.27
+
+# Added
+- Added support for a value other than <MISSING VALUE> in formatted alerts
+
+### Fixed
 - Fixed a failed creation of elastalert indicies when using Elasticsearch 6
+- Truncate Telegram alerts to avoid API errors
 
 ## v0.1.26
 
