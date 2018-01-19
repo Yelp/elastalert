@@ -1714,3 +1714,17 @@ Example usage::
 
     jira_priority: $priority$
     jira_alert_owner: $owner$
+
+
+Spark
+~~~~~
+
+Spark alerter will send a notification to a predefined Spark room. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``spark_access_token``: The randomly generated notification token created by Spark.
+
+``spark_room_id``: The Spark room id to send the alert message to.
+
+``spark_proxy``: By default ElastAlert will not use a network proxy to send notifications to Spark. Set this option using ``hostname:port`` if you need to use a proxy.

@@ -18,6 +18,7 @@ from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
 from elastalert.alerts import SlackAlerter
+from elastalert.alerts import SparkAlerter
 from elastalert.alerts import StrideAlerter
 from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
@@ -1478,6 +1479,39 @@ def test_stride():
             'content-type': 'application/json',
             'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
         verify=True,
+        proxies=None
+    )
+    assert expected_data == json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_spark_alerter():
+    rule = {
+        'name': 'Test Spark Alerter',
+        'type': 'any',
+        'spark_access_token': 'testaccesstoken',
+        'spark_room_id': 'testroomid',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = SparkAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'roomId': rule['spark_room_id'],
+        'text': BasicMatchString(rule, match).__str__()
+    }
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'Content-type': 'application/json;charset=utf-8',
+            'Authorization': 'Bearer {}'.format(rule['spark_access_token'])},
         proxies=None
     )
     assert expected_data == json.loads(

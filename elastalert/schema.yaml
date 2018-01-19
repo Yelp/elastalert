@@ -237,6 +237,10 @@ properties:
   slack_parse_override: {enum: [none, full]}
   slack_text_string: {type: string}
 
+  ### Spark
+  spark_access_token: {type: string}
+  spark_room_id: {type: string}
+
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
