@@ -1558,3 +1558,80 @@ class StrideAlerter(Alerter):
         return {'type': 'stride',
                 'stride_cloud_id': self.stride_cloud_id,
                 'stride_converstation_id': self.stride_converstation_id}
+
+
+class FlowdockAlerter(Alerter):
+    """ Creates a Flowdock notification for each alert """
+
+    required_options = set(['flowdock_flow_token', 'flowdock_author_name', 'flowdock_thread_title'])
+
+    def __init__(self, rule):
+        super(FlowdockAlerter, self).__init__(rule)
+        self.url = 'https://api.flowdock.com/messages'
+        self.flowdock_proxy_server = self.rule.get('flowdock_proxy_server', None)
+        self.flowdock_ignore_ssl_errors = self.rule.get('flowdock_ignore_ssl_errors', True)
+
+        self.flowdock_flow_token = self.rule['flowdock_flow_token']
+        self.flowdock_external_thread_id = self.rule['flowdock_external_thread_id']
+        self.flowdock_author_name = self.rule['flowdock_author_name']
+
+        self.flowdock_event = self.rule.get('flowdock_event', 'activity')
+        self.flowdock_tags = [tag.strip() for tag in self.rule.get('flowdock_tags', [])]
+        self.flowdock_thread_title = self.rule.get('flowdock_thread_title', None)
+        self.flowdock_thread_body = self.rule.get('flowdock_thread_body', None)
+        self.flowdock_thread_fields = self.rule.get('flowdock_thread_fields', [])
+        self.flowdock_thread_ext_url = self.rule.get('flowdock_thread_ext_url', None)
+        self.flowdock_thread_status_color = self.rule.get('flowdock_thread_status_color', None)
+        self.flowdock_thread_status_value = self.rule.get('flowdock_thread_status_value', None)
+
+    # Alert is called
+    def alert(self, matches):
+        title = self.create_title(matches)
+        body = self.create_alert_body(matches)
+
+        # Post to Flowdock
+        headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.flowdock_proxy_server} if self.flowdock_proxy_server else None
+        payload = {
+            'flow_token': self.flowdock_flow_token,
+            'event': self.flowdock_event,
+            'author': {
+                'name': self.flowdock_author_name
+            },
+            'title': title,
+            'body': body.replace('\n', '<br />'),
+            'external_thread_id': self.flowdock_external_thread_id,
+            'thread': {
+                'title': self.flowdock_thread_title,
+                'body': self.flowdock_thread_body,
+                'fields': self.flowdock_thread_fields,
+                'external_url': self.flowdock_thread_ext_url,
+                'status': None
+            },
+            'tags': self.flowdock_tags
+        }
+
+        if self.flowdock_thread_status_color and self.flowdock_thread_status_value:
+            payload['thread']['status'] = {
+                'color': self.flowdock_thread_status_color,
+                'value': self.flowdock_thread_status_value
+            }
+
+        try:
+            if self.flowdock_ignore_ssl_errors:
+                requests.packages.urllib3.disable_warnings()
+
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
+                                     verify=not self.flowdock_ignore_ssl_errors,
+                                     proxies=proxies)
+            warnings.resetwarnings()
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Flowdock: %s" % e)
+        elastalert_logger.info("Alert sent to Flowdock")
+
+    def get_info(self):
+        return {'type': 'flowdock',
+                'flowdock_author_name': self.flowdock_author_name,
+                'flowdock_thread_title': self.flowdock_thread_title}
