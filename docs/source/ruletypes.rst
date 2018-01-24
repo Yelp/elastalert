@@ -1167,6 +1167,12 @@ With ``alert_text_type: exclude_fields``::
 
                           {top_counts}
 
+With ``alert_text_type: aggregation_summary_only``::
+
+    body                = rule_name
+
+                          aggregation_summary
++
 ruletype_text is the string returned by RuleType.get_match_str.
 
 field_values will contain every key value pair included in the results from Elasticsearch. These fields include "@timestamp" (or the value of ``timestamp_field``),
