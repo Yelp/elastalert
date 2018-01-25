@@ -940,6 +940,9 @@ default 50, unique terms.
 ``query_key``: With flatline rule, ``query_key`` means that an alert will be triggered if any value of ``query_key`` has been seen at least once
 and then falls below the threshold.
 
+``forget_keys``: Only valid when used with ``query_key``. If this is set to true, ElastAlert will "forget" about the ``query_key`` value that
+triggers an alert, therefore preventing any more alerts for it until it's seen again.
+
 New Term
 ~~~~~~~~
 
