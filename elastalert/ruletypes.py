@@ -527,12 +527,17 @@ class FlatlineRule(FrequencyRule):
             event.update(key=key, count=count)
             self.add_match(event)
 
-            # After adding this match, leave the occurrences windows alone since it will
-            # be pruned in the next add_data or garbage_collect, but reset the first_event
-            # so that alerts continue to fire until the threshold is passed again.
-            least_recent_ts = self.get_ts(self.occurrences[key].data[0])
-            timeframe_ago = most_recent_ts - self.rules['timeframe']
-            self.first_event[key] = min(least_recent_ts, timeframe_ago)
+            if not self.rules.get('forget_keys'):
+                # After adding this match, leave the occurrences windows alone since it will
+                # be pruned in the next add_data or garbage_collect, but reset the first_event
+                # so that alerts continue to fire until the threshold is passed again.
+                least_recent_ts = self.get_ts(self.occurrences[key].data[0])
+                timeframe_ago = most_recent_ts - self.rules['timeframe']
+                self.first_event[key] = min(least_recent_ts, timeframe_ago)
+            else:
+                # Forget about this key until we see it again
+                self.first_event.pop(key)
+                self.occurrences.pop(key)
 
     def get_match_str(self, match):
         ts = match[self.rules['timestamp_field']]
