@@ -229,12 +229,14 @@ class FrequencyRule(RuleType):
         self.check_for_match('all')
 
     def add_terms_data(self, terms):
+        qkv_length = self.rules.get('query_key_value_length', 10000)
         for timestamp, buckets in terms.iteritems():
             for bucket in buckets:
+                bucket_key_value = bucket.get('key', '')[0:qkv_length]
                 event = ({self.ts_field: timestamp,
-                          self.rules['query_key']: bucket['key']}, bucket['doc_count'])
-                self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
-                self.check_for_match(bucket['key'])
+                          self.rules['query_key']: bucket_key_value}, bucket['doc_count'])
+                self.occurrences.setdefault(bucket_key_value, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
+                self.check_for_match(bucket_key_value)
 
     def add_data(self, data):
         if 'query_key' in self.rules:
