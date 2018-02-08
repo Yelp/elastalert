@@ -62,3 +62,8 @@ writeback_index: elastalert_status
 # sending the alert until this time period has elapsed
 alert_time_limit:
   days: 2
+
+# If set, this URL will be pinged after each run. Configure your preferred cron
+# monitor service to be alerted if ElastAlert itself stopped running.
+#ping_url: https://your-cron-monitor-service.io/your-service-ping-key
+
