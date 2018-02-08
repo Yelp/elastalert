@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import random
+import requests
 import signal
 import sys
 import threading
@@ -150,6 +151,7 @@ class ElastAlerter(object):
         self.old_query_limit = self.conf['old_query_limit']
         self.disable_rules_on_error = self.conf['disable_rules_on_error']
         self.notify_email = self.conf.get('notify_email', [])
+        self.ping_url = self.conf.get('ping_url')
         self.from_addr = self.conf.get('from_addr', 'ElastAlert')
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
@@ -1177,6 +1179,9 @@ class ElastAlerter(object):
             # Show disabled rules
             if self.show_disabled_rules:
                 elastalert_logger.info("Disabled rules are: %s" % (str(self.get_disabled_rules())))
+
+            if self.ping_url is not None:
+                requests.get(self.ping_url)
 
             # Wait before querying again
             sleep_duration = total_seconds(next_run - datetime.datetime.utcnow())
