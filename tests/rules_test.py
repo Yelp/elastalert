@@ -878,6 +878,34 @@ def test_flatline_query_key():
     assert set(['key1', 'key2', 'key3']) == set([m['key'] for m in rule.matches if m['@timestamp'] == timestamp])
 
 
+def test_flatline_forget_query_key():
+    rules = {'timeframe': datetime.timedelta(seconds=30),
+             'threshold': 1,
+             'query_key': 'qk',
+             'forget_keys': True,
+             'timestamp_field': '@timestamp'}
+
+    rule = FlatlineRule(rules)
+
+    # Adding two separate query keys, the flatline rule should trigger for both
+    rule.add_data(hits(1, qk='key1'))
+    assert rule.matches == []
+
+    # This will be run at the end of the hits
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:00:11Z'))
+    assert rule.matches == []
+
+    # Key1 should not alert
+    timestamp = '2014-09-26T12:00:45Z'
+    rule.garbage_collect(ts_to_dt(timestamp))
+    assert len(rule.matches) == 1
+    rule.matches = []
+
+    # key1 was forgotten, so no more matches
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:01:11Z'))
+    assert rule.matches == []
+
+
 def test_cardinality_max():
     rules = {'max_cardinality': 4,
              'timeframe': datetime.timedelta(minutes=10),
@@ -1145,7 +1173,7 @@ def test_metric_aggregation_complex_query_key():
         {"cpu_pct_avg": {"value": 0.91}, "key": "sub_qk_val1"},
         {"cpu_pct_avg": {"value": 0.95}, "key": "sub_qk_val2"},
         {"cpu_pct_avg": {"value": 0.89}, "key": "sub_qk_val3"}]
-                            }, "key": "qk_val"}
+    }, "key": "qk_val"}
 
     rule = MetricAggregationRule(rules)
     rule.check_matches(datetime.datetime.now(), 'qk_val', query)
