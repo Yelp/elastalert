@@ -19,6 +19,7 @@ import dateutil.tz
 import kibana
 import yaml
 from alerts import DebugAlerter
+from alerts import BasicMatchString
 from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
@@ -1381,6 +1382,7 @@ class ElastAlerter():
 
     def get_alert_body(self, match, rule, alert_sent, alert_time, alert_exception=None):
         body = {
+            'alert_text': unicode(BasicMatchString(rule, match)),
             'match_body': match,
             'rule_name': rule['name'],
             'rule_type': type(rule['type']).__name__,
