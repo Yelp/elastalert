@@ -202,8 +202,7 @@ class ChangeRule(CompareRule):
         extra = {}
         if change:
             extra = {'old_value': change[0],
-                     'new_value': change[1],
-                     'ea_field': self.rules['query_key'}
+                     'new_value': change[1]}
             elastalert_logger.debug("Description of the changed records  " + str(dict(match.items() + extra.items())))
         super(ChangeRule, self).add_match(dict(match.items() + extra.items()))
 
