@@ -14,7 +14,7 @@ from elastalert.config import load_modules
 from elastalert.config import load_options
 from elastalert.config import load_rules
 from elastalert.util import EAException
-
+from elastalert.config import import_rules
 
 test_config = {'rules_folder': 'test_folder',
                'run_every': {'minutes': 10},
@@ -92,6 +92,9 @@ def test_import_import():
         assert rules['es_host'] == 'imported_host'
         assert rules['email'] == ['test@test.test']
         assert rules['filter'] == import_rule['filter']
+
+        # check global import_rule dependency
+        assert import_rules == {'blah.yaml': ['importme.ymlt']}
 
 
 def test_import_absolute_import():
