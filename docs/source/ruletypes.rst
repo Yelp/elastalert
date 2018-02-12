@@ -1702,6 +1702,14 @@ Required:
 
 Optional:
 
+``http_post_username``: Username for HTTP basic authentication
+
+``http_post_password``: Password for HTTP basic authentication
+
+``http_post_headers``: List of keys:values to be included as HTTP Headers
+
+``http_post_ignore_ssl_errors``: if set to True -- SSL validation errors will be ignored. by default False.
+
 ``http_post_payload``: List of keys:values to use as the content of the POST. Example - ip:clientip will map the value from the clientip index of Elasticsearch to JSON key named ip. If not defined, all the Elasticsearch keys will be sent.
 
 ``http_post_static_payload``: Key:value pairs of static parameters to be sent, along with the Elasticsearch results. Put your authentication or other information here.
@@ -1714,6 +1722,9 @@ Example usage::
 
     alert: post
     http_post_url: "http://example.com/api"
+    http_post_headers:
+      Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+    http_post_ignore_ssl_errors: True
     http_post_payload:
       ip: clientip
     http_post_static_payload:

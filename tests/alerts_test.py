@@ -1072,9 +1072,11 @@ def test_http_alerter_with_payload():
     }
     mock_post_request.assert_called_once_with(
         rule['http_post_url'],
+        auth=None,
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
-        proxies=None
+        proxies=None,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1105,9 +1107,11 @@ def test_http_alerter_with_payload_all_values():
     }
     mock_post_request.assert_called_once_with(
         rule['http_post_url'],
+        auth=None,
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
-        proxies=None
+        proxies=None,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1135,9 +1139,11 @@ def test_http_alerter_without_payload():
     }
     mock_post_request.assert_called_once_with(
         rule['http_post_url'],
+        auth=None,
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
-        proxies=None
+        proxies=None,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 

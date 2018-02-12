@@ -1438,6 +1438,10 @@ class HTTPPostAlerter(Alerter):
         if isinstance(post_url, basestring):
             post_url = [post_url]
         self.post_url = post_url
+        self.http_user = self.rule.get('http_post_username')
+        self.http_password = self.rule.get('http_post_password')
+        self.http_headers = self.rule.get('http_post_headers', {})
+        self.http_post_ignore_ssl_errors = self.rule.get('http_post_ignore_ssl_errors', False)
         self.post_proxy = self.rule.get('http_post_proxy')
         self.post_payload = self.rule.get('http_post_payload', {})
         self.post_static_payload = self.rule.get('http_post_static_payload', {})
@@ -1454,11 +1458,17 @@ class HTTPPostAlerter(Alerter):
                 "Content-Type": "application/json",
                 "Accept": "application/json;charset=utf-8"
             }
+            for header_name, header_value in self.http_headers.items():
+                headers[header_name] = header_value
+            auth = (self.http_user, self.http_password) if self.http_user and self.http_password else None
             proxies = {'https': self.post_proxy} if self.post_proxy else None
             for url in self.post_url:
                 try:
+                    if self.http_post_ignore_ssl_errors:
+                        requests.packages.urllib3.disable_warnings()
                     response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder),
-                                             headers=headers, proxies=proxies)
+                                             headers=headers, proxies=proxies, auth=auth,
+                                             verify=not self.http_post_ignore_ssl_errors)
                     response.raise_for_status()
                 except RequestException as e:
                     raise EAException("Error posting HTTP Post alert: %s" % e)
