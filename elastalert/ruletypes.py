@@ -98,7 +98,7 @@ class CompareRule(RuleType):
 
     def expand_entries(self, list_type):
         """ Expand entries specified in files using the '!file' directive, if there are
-        any, then add everything to a set.
+        any, then add everything to a single regex.
         """
         entries_set = set()
         for entry in self.rules[list_type]:
@@ -109,7 +109,7 @@ class CompareRule(RuleType):
                         entries_set.add(line.rstrip())
             else:
                 entries_set.add(entry)
-        self.rules[list_type] = entries_set
+        self.rules[list_type] = re.compile(r'^(?:%s)$' % '|'.join(entries_set))
 
     def compare(self, event):
         """ An event is a match if this returns true """
@@ -132,7 +132,7 @@ class BlacklistRule(CompareRule):
 
     def compare(self, event):
         term = lookup_es_key(event, self.rules['compare_key'])
-        if term in self.rules['blacklist']:
+        if self.rules['blacklist'].match(term):
             return True
         return False
 
@@ -149,7 +149,7 @@ class WhitelistRule(CompareRule):
         term = lookup_es_key(event, self.rules['compare_key'])
         if term is None:
             return not self.rules['ignore_null']
-        if term not in self.rules['whitelist']:
+        if not self.rules['whitelist'].match(term):
             return True
         return False
 
