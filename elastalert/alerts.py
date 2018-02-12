@@ -1060,6 +1060,7 @@ class SlackAlerter(Alerter):
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
         self.slack_parse_override = self.rule.get('slack_parse_override', 'none')
         self.slack_text_string = self.rule.get('slack_text_string', '')
+        self.slack_alert_fields = self.rule.get('slack_alert_fields', '')
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1075,6 +1076,14 @@ class SlackAlerter(Alerter):
         if text:
             text = u'```\n{0}```\n'.format(text)
         return text
+
+    def populate_fields(self, matches):
+        alert_fields = []
+        for arg in self.slack_alert_fields:
+            arg = copy.copy(arg)
+            arg['value'] = lookup_es_key(matches[0], arg['value'])
+            alert_fields.append(arg)
+        return alert_fields
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
@@ -1099,6 +1108,11 @@ class SlackAlerter(Alerter):
                 }
             ]
         }
+
+        # if we have defined fields, populate noteable fields for the alert
+        if self.slack_alert_fields != '':
+            payload['attachments'][0]['fields'] = self.populate_fields(matches)
+
         if self.slack_icon_url_override != '':
             payload['icon_url'] = self.slack_icon_url_override
         else:
