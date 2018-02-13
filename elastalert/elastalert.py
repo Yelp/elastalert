@@ -5,6 +5,7 @@ import datetime
 import json
 import logging
 import os
+import requests
 import signal
 import sys
 import time
@@ -137,6 +138,7 @@ class ElastAlerter():
         self.old_query_limit = self.conf['old_query_limit']
         self.disable_rules_on_error = self.conf['disable_rules_on_error']
         self.notify_email = self.conf.get('notify_email', [])
+        self.ping_url = self.conf.get('ping_url')
         self.from_addr = self.conf.get('from_addr', 'ElastAlert')
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
@@ -1048,6 +1050,12 @@ class ElastAlerter():
 
             if next_run < datetime.datetime.utcnow():
                 continue
+
+            if self.ping_url is not None:
+                try:
+                    requests.get(self.ping_url, timeout=5)
+                except Exception as e:
+                    elastalert_logger.warn("Error when calling ping_url: {}".format(e))
 
             # Wait before querying again
             sleep_duration = total_seconds(next_run - datetime.datetime.utcnow())
