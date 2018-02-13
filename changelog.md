@@ -1,5 +1,14 @@
 # Change Log
 
+## v0.1.29
+
+###
+- Added a feature forget_keys to prevent realerting when using flatline with query_key
+- Added a new alert_text_type, aggregation_summary_only
+
+### Fixed
+- Fixed incorrect documentation about es_conn_timeout default
+
 ## v0.1.28
 
 ### Added

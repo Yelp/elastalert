@@ -41,6 +41,9 @@ env_settings = {'ES_USE_SSL': 'use_ssl',
 
 env = Env(ES_USE_SSL=bool)
 
+# import rule dependency
+import_rules = {}
+
 # Used to map the names of rules to their classes
 rules_mapping = {
     'frequency': ruletypes.FrequencyRule,
@@ -119,6 +122,7 @@ def load_rule_yaml(filename):
         'rule_file': filename,
     }
 
+    import_rules.pop(filename, None)  # clear `filename` dependency
     while True:
         try:
             loaded = yaml_loader(filename)
@@ -134,9 +138,14 @@ def load_rule_yaml(filename):
         if 'import' in rule:
             # Find the path of the next file.
             if os.path.isabs(rule['import']):
-                filename = rule['import']
+                import_filename = rule['import']
             else:
-                filename = os.path.join(os.path.dirname(filename), rule['import'])
+                import_filename = os.path.join(os.path.dirname(filename), rule['import'])
+            # set dependencies
+            rules = import_rules.get(filename, [])
+            rules.append(import_filename)
+            import_rules[filename] = rules
+            filename = import_filename
             del(rule['import'])  # or we could go on forever!
         else:
             break
@@ -481,9 +490,18 @@ def get_rule_hashes(conf, use_rule=None):
     rule_files = get_file_paths(conf, use_rule)
     rule_mod_times = {}
     for rule_file in rule_files:
-        with open(rule_file) as fh:
-            rule_mod_times[rule_file] = hashlib.sha1(fh.read()).digest()
+        rule_mod_times[rule_file] = get_rulefile_hash(rule_file)
     return rule_mod_times
+
+
+def get_rulefile_hash(rule_file):
+    rulefile_hash = ''
+    if os.path.exists(rule_file):
+        with open(rule_file) as fh:
+            rulefile_hash = hashlib.sha1(fh.read()).digest()
+        for import_rule_file in import_rules.get(rule_file, []):
+            rulefile_hash += get_rulefile_hash(import_rule_file)
+    return rulefile_hash
 
 
 def adjust_deprecated_values(rule):
