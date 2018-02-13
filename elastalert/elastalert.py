@@ -1181,7 +1181,10 @@ class ElastAlerter(object):
                 elastalert_logger.info("Disabled rules are: %s" % (str(self.get_disabled_rules())))
 
             if self.ping_url is not None:
-                requests.get(self.ping_url)
+                try:
+                    requests.get(self.ping_url, timeout=5)
+                except Exception as e:
+                    elastalert_logger.warn("Error when calling ping_url: {}".format(e))
 
             # Wait before querying again
             sleep_duration = total_seconds(next_run - datetime.datetime.utcnow())
