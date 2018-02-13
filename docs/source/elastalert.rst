@@ -174,6 +174,8 @@ unless overwritten in the rule config. The default is "localhost".
 
 ``email_reply_to``: This sets the Reply-To header in emails. The default is the recipient address.
 
+``ping_url``: Ping (connect) this URL on each ElastAlert run. Use it with any external 'cron monitor' service to watch if ElastAlert dies.
+
 ``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon Elasticsearch Service. It'll use instance role keys to sign the requests.
 The environment variable ``AWS_DEFAULT_REGION`` will override this field.
 
