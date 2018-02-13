@@ -940,6 +940,9 @@ default 50, unique terms.
 ``query_key``: With flatline rule, ``query_key`` means that an alert will be triggered if any value of ``query_key`` has been seen at least once
 and then falls below the threshold.
 
+``forget_keys``: Only valid when used with ``query_key``. If this is set to true, ElastAlert will "forget" about the ``query_key`` value that
+triggers an alert, therefore preventing any more alerts for it until it's seen again.
+
 New Term
 ~~~~~~~~
 
@@ -1167,6 +1170,12 @@ With ``alert_text_type: exclude_fields``::
 
                           {top_counts}
 
+With ``alert_text_type: aggregation_summary_only``::
+
+    body                = rule_name
+
+                          aggregation_summary
++
 ruletype_text is the string returned by RuleType.get_match_str.
 
 field_values will contain every key value pair included in the results from Elasticsearch. These fields include "@timestamp" (or the value of ``timestamp_field``),
