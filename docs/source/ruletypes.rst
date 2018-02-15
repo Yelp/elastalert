@@ -84,7 +84,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``priority`` (int, default 2)                                |           |
 +--------------------------------------------------------------+           |
-| ``import`` (string)                                          |           |
+| ``import`` (string or array of strs)                         |           |
 |                                                              |           |
 | IGNORED IF ``use_count_query`` or ``use_terms_query`` is true|           |
 +--------------------------------------------------------------+           +
@@ -224,7 +224,7 @@ import
 ``import``: If specified includes all the settings from this yaml file. This allows common config options to be shared. Note that imported files that aren't
 complete rules should not have a ``.yml`` or ``.yaml`` suffix so that ElastAlert doesn't treat them as rules. Filters in imported files are merged (ANDed)
 with any filters in the rule. You can only have one import per rule, though the imported file can import another file, recursively. The filename
-can be an absolute path or relative to the rules directory. (Optional, string, no default)
+can be an absolute path or relative to the rules directory. (Optional, string or array of strs, no default)
 
 use_ssl
 ^^^^^^^
