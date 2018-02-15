@@ -94,7 +94,7 @@ def test_import_import():
         assert rules['filter'] == import_rule['filter']
 
         # check global import_rule dependency
-        assert import_rules == {'blah.yaml': ['importme.ymlt']}
+        assert 'importme.ymlt' in import_rules['blah.yaml']
 
 
 def test_multi_imports():
@@ -121,6 +121,10 @@ def test_multi_imports():
         assert len(mock_open.call_args_list) == 3
         assert rules['es_port'] == 12349
         assert rules['es_host'] == 'imported_host'
+
+        # check global import_rule dependency
+        assert 'import_me_1.ymlt' in import_rules['blah.yaml']
+        assert 'import_me_2.ymlt' in import_rules['blah.yaml']
 
 
 def test_import_absolute_import():

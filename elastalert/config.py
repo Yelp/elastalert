@@ -120,33 +120,6 @@ def load_configuration(filename, conf, args=None):
 def load_rule_yaml(filename):
     return add_rule_yaml(filename, {'rule_file': filename})
 
-    import_rules.pop(filename, None)  # clear `filename` dependency
-    while True:
-        try:
-            loaded = yaml_loader(filename)
-        except yaml.scanner.ScannerError as e:
-            raise EAException('Could not parse file %s: %s' % (filename, e))
-
-        # Special case for merging filters - if both files specify a filter merge (AND) them
-        if 'filter' in rule and 'filter' in loaded:
-            rule['filter'] = loaded['filter'] + rule['filter']
-
-        loaded.update(rule)
-        rule = loaded
-        if 'import' in rule:
-            # Find the path of the next file.
-            if os.path.isabs(rule['import']):
-                import_filename = rule['import']
-            else:
-                import_filename = os.path.join(os.path.dirname(filename), rule['import'])
-            # set dependencies
-            rules = import_rules.get(filename, [])
-            rules.append(import_filename)
-            import_rules[filename] = rules
-            filename = import_filename
-            del(rule['import'])  # or we could go on forever!
-        else:
-            break
 
 def add_rule_yaml(filename, parent_rule):
     try:
@@ -159,12 +132,18 @@ def add_rule_yaml(filename, parent_rule):
         del(loaded_rule['import'])  # or we could go on forever!
 
         child_rules = {}
+        child_rule_files = import_rules.get(filename, [])
         if isinstance(current_import, basestring):
-            child_rules = add_rule_yaml(rule_file_import_path_to_absolute_path(filename, current_import), child_rules)
+            child_rule_file = rule_file_import_path_to_absolute_path(filename, current_import)
+            child_rules = add_rule_yaml(child_rule_file, child_rules)
+            child_rule_files.append(child_rule_file)
         elif isinstance(current_import, list):
             for import_target in current_import:
+                child_rule_file = rule_file_import_path_to_absolute_path(filename, import_target)
                 child_rules = add_rule_yaml(rule_file_import_path_to_absolute_path(filename, import_target), child_rules)
+                child_rule_files.append(child_rule_file)
         loaded_rule = merge_rules(loaded_rule, child_rules)
+        import_rules[filename] = child_rule_files
 
     loaded_rule = merge_rules(parent_rule, loaded_rule)
     return loaded_rule
