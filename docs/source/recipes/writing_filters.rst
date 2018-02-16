@@ -21,6 +21,8 @@ Every result that matches these filters will be passed to the rule for processin
 Common Filter Types:
 --------------------
 
+Most of the time, filtering can be accomplished in several different ways. For example, you can do filtering using both query strings or terms. Read https://www.elastic.co/guide/en/elasticsearch/guide/current/term-vs-full-text.html for more info.
+
 query_string
 ************
 
