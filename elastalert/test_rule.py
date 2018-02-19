@@ -243,8 +243,25 @@ class MockElastAlerter(object):
             for doc in self.data:
                 doc.update({'_id': doc.get('_id', get_id())})
         else:
-            endtime = ts_now()
-            starttime = endtime - datetime.timedelta(days=args.days)
+            if args.end:
+                if args.end == 'NOW':
+                    endtime = ts_now()
+                else:
+                    try:
+                        endtime = ts_to_dt(args.end)
+                    except (TypeError, ValueError):
+                        self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (args.end))
+                        exit(1)
+            else:
+                endtime = ts_now()
+            if args.start:
+                try:
+                    starttime = ts_to_dt(args.start)
+                except (TypeError, ValueError):
+                    self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (args.start))
+                    exit(1)
+            else:
+                starttime = endtime - datetime.timedelta(days=args.days)
 
         # Set run_every to cover the entire time range unless count query, terms query or agg query used
         # This is to prevent query segmenting which unnecessarily slows down tests
@@ -333,6 +350,9 @@ class MockElastAlerter(object):
         parser.add_argument('file', metavar='rule', type=str, help='rule configuration filename')
         parser.add_argument('--schema-only', action='store_true', help='Show only schema errors; do not run query')
         parser.add_argument('--days', type=int, default=1, action='store', help='Query the previous N days with this rule')
+        parser.add_argument('--start', dest='start', help='YYYY-MM-DDTHH:MM:SS Start querying from this timestamp.')
+        parser.add_argument('--end', dest='end', help='YYYY-MM-DDTHH:MM:SS Query to this timestamp. (Default: present) '
+                                                      'Use "NOW" to start from current time. (Default: present)')
         parser.add_argument('--stop-error', action='store_true', help='Stop the entire test right after the first error')
         parser.add_argument(
             '--data',
