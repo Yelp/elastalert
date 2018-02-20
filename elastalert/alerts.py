@@ -19,6 +19,7 @@ from HTMLParser import HTMLParser
 import boto3
 import requests
 import stomp
+import pika
 from exotel import Exotel
 from jira.client import JIRA
 from jira.exceptions import JIRAError
@@ -296,6 +297,42 @@ class Alerter(object):
             raise EAException('Account file must have user and password fields')
         self.user = account_conf['user']
         self.password = account_conf['password']
+
+class RabbitMQAlerter(Alerter):
+    """ Publishes a message to RabbitMQ for each alert """
+    required_options = frozenset(['rabbitmq_url', 'rabbitmq_exchange', 'rabbitmq_key'])
+
+    def __init__(self, rule):
+        super(RabbitMQAlerter, self).__init__(rule)
+        self.rabbitmq_url = self.rule.get('rabbitmq_url', 'amqp://guest:guest@localhost:5672')
+	self.rabbitmq_exchange = self.rule.get('rabbitmq_exchange', 'default')
+	self.rabbitmq_exchange_type = self.rule.get('rabbitmq_exchange_type', 'direct')
+	self.rabbitmq_key = self.rule.get('rabbitmq_key', 'default')
+	self.rabbitmq_durable = self.rule.get('rabbitmq_durable', None)
+	self.rabbitmq_vhost = self.rule.get('rabbitmq_vhost', None)
+	self.rabbitmq_persistent = self.rule.get('rabbitmq_persistent', None)
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+
+        # Setup connection to RabbitMQ
+        parameters = pika.URLParameters(rabbitmq_url . "/%2F")
+        connection = pika.BlockingConnection(parameters)
+        channel = connection.channel()
+        channel.basic_publish(exchange=rabbitmq_exchange, routing_key=rabbitmq_key, body=body)
+        connection.close()
+
+        elastalert_logger.info("Alert sent to RabbitMQ")
+
+    def get_info(self):
+        return {'type': 'rabbitmq',
+                'rabbitmq_url': self.rabbitmq_url,
+		'rabbitmq_exchange': self.rabbitmq_exchange,
+		'rabbitmq_exchange_type': self.rabbitmq_exchange_type,
+		'rabbitmq_key': self.rabbitmq_key,
+		'rabbitmq_durable': self.rabbitmq_durable,
+		'rabbitmq_vhost': self.rabbitmq_vhost,
+		'rabbitmq_persistent': self.rabbitmq_persistent}
 
 
 class StompAlerter(Alerter):
