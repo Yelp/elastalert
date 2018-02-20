@@ -316,7 +316,7 @@ class RabbitMQAlerter(Alerter):
         body = self.create_alert_body(matches)
 
         # Setup connection to RabbitMQ
-        parameters = pika.URLParameters(rabbitmq_url . "/%2F")
+        parameters = pika.URLParameters(rabbitmq_url + "/%2F")
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
         channel.basic_publish(exchange=rabbitmq_exchange, routing_key=rabbitmq_key, body=body)
