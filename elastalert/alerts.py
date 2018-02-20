@@ -300,11 +300,14 @@ class Alerter(object):
 
 class RabbitMQAlerter(Alerter):
     """ Publishes a message to RabbitMQ for each alert """
-    required_options = frozenset(['rabbitmq_url', 'rabbitmq_exchange', 'rabbitmq_key'])
+    required_options = frozenset(['rabbitmq_host', 'rabbitmq_port', 'rabbitmq_user', 'rabbitmq_pass', 'rabbitmq_vhost', 'rabbitmq_exchange', 'rabbitmq_key'])
 
     def __init__(self, rule):
         super(RabbitMQAlerter, self).__init__(rule)
-        self.rabbitmq_url = self.rule.get('rabbitmq_url', 'amqp://guest:guest@localhost:5672')
+        self.rabbitmq_host = self.rule.get('rabbitmq_host', 'localhost')
+        self.rabbitmq_port = self.rule.get('rabbitmq_port', '5672')
+        self.rabbitmq_user = self.rule.get('rabbitmq_user', None)
+        self.rabbitmq_pass = self.rule.get('rabbitmq_pass', None)
 	self.rabbitmq_exchange = self.rule.get('rabbitmq_exchange', 'default')
 	self.rabbitmq_exchange_type = self.rule.get('rabbitmq_exchange_type', 'direct')
 	self.rabbitmq_key = self.rule.get('rabbitmq_key', 'default')
@@ -316,17 +319,21 @@ class RabbitMQAlerter(Alerter):
         body = self.create_alert_body(matches)
 
         # Setup connection to RabbitMQ
-        parameters = pika.URLParameters(self.rabbitmq_url + "/%2F")
+        credentials = pika.PlainCredentials(self.rabbitmq_user, self.rabbitmq_pass)
+        paramters = pika.ConnectionParameters(self.rabbitmq_host, self.rabbitmq_port, self.rabbitmq_vhost, credentials)
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
-        channel.basic_publish(exchange=self.rabbitmq_exchange, routing_key=self.rabbitmq_key, body=body, virtual_host=self.rabbitmq_vhost)
+        channel.basic_publish(exchange=self.rabbitmq_exchange, routing_key=self.rabbitmq_key, body=body)
         connection.close()
 
         elastalert_logger.info("Alert sent to RabbitMQ")
 
     def get_info(self):
         return {'type': 'rabbitmq',
-                'rabbitmq_url': self.rabbitmq_url,
+                'rabbitmq_host': self.rabbitmq_host,
+                'rabbitmq_port': self.rabbitmq_port,
+                'rabbitmq_user': self.rabbitmq_user,
+                'rabbitmq_pass': self.rabbitmq_pass,
 		'rabbitmq_exchange': self.rabbitmq_exchange,
 		'rabbitmq_exchange_type': self.rabbitmq_exchange_type,
 		'rabbitmq_key': self.rabbitmq_key,
