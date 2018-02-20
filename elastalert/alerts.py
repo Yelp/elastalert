@@ -319,7 +319,7 @@ class RabbitMQAlerter(Alerter):
         parameters = pika.URLParameters(self.rabbitmq_url + "/%2F")
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
-        channel.basic_publish(exchange=self.rabbitmq_exchange, routing_key=self.rabbitmq_key, body=body)
+        channel.basic_publish(exchange=self.rabbitmq_exchange, routing_key=self.rabbitmq_key, body=body, virtual_host=self.rabbitmq_vhost)
         connection.close()
 
         elastalert_logger.info("Alert sent to RabbitMQ")
