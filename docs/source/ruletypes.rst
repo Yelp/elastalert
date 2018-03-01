@@ -1501,7 +1501,7 @@ Slack alerter will send a notification to a predefined Slack channel. The body o
 The alerter requires the following option:
 
 ``slack_webhook_url``: The webhook URL that includes your auth data and the ID of the channel (room) you want to post to. Go to the Incoming Webhooks
-section in your Slack account https://XXXXX.slack.com/services/new/incoming-webhook , choose the channel, click 'Add Incoming Webhooks Integration'
+section in your Slack account https://my.slack.com/services/new/incoming-webhook , choose the channel, click 'Add Incoming Webhooks Integration'
 and copy the resulting URL. You can use a list of URLs to send to multiple channels.
 
 Optional:
