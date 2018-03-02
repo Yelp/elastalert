@@ -1719,6 +1719,44 @@ Example usage::
     http_post_static_payload:
       apikey: abc123
 
+ RabbitMQ
+ ~~~~~~~~
+
+ RabbitMQ alerter will send a notification to a RabbitMQ host. Message contents can be customized using the alert modifiers, see examples below.
+
+ The alerter requires the following option:
+
+ ``rabbitmq_host``: The RabbitMQ hostname to send your alert to. This can be an IP address or a hostname.
+
+ ``rabbitmq_port``: The port of your RabbitMQ server.
+
+ ``rabbitmq_user``: The username to connect to your RabbitMQ server.
+
+ ``rabbitmq_pass``: The password to connect to your RabbitMQ server.
+
+ ``rabbitmq_vhost``: The virtualhost of your RabbitMQ server.
+
+ ``rabbitmq_exchange``: The exchange name within your RabbitMQ server to submit the alert to.
+
+Example usage::
+	alert: rabbitmq
+	rabbitmq_host: myhost.example.com
+	rabbitmq_port: 5621
+	rabbitmq_user: guest
+	rabbitmq_pass: guest
+	rabbitmq_vhost: default
+	rabbitmq_exchange: elastalert
+
+Example of sending JSON formatted alerts to rabbitmq::
+	alert_text: '{{"@uuid": "{0}", "@timestamp": "{1}", "collection": "elasticsearch.winlogbeat.wineventlog", "type": "{2}", "beat.name": "{3}", "computer_name": "{4}", "log_name": "{5}", "rule_name": "Log Event" }}'
+	 alert_text_type: alert_text_only
+	 alert_text_args:
+		 - '@uuid'
+		 - '@timestamp'
+		 - type
+		 - beat.name
+		 - computer_name
+		 - log_name
 
 Alerter
 ~~~~~~~
