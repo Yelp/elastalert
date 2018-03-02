@@ -298,11 +298,12 @@ class Alerter(object):
         self.user = account_conf['user']
         self.password = account_conf['password']
 
+
 class RabbitMQAlerter(Alerter):
     """ Publishes a message to RabbitMQ for each alert """
-
-    required_options = frozenset(['rabbitmq_host', 'rabbitmq_port', 'rabbitmq_user', 'rabbitmq_pass',
-        'rabbitmq_vhost', 'rabbitmq_exchange', 'rabbitmq_key'])
+    required_options = frozenset(
+            ['rabbitmq_host', 'rabbitmq_port', 'rabbitmq_user', 'rabbitmq_pass',
+                'rabbitmq_vhost', 'rabbitmq_exchange', 'rabbitmq_key'])
 
     def __init__(self, rule):
         super(RabbitMQAlerter, self).__init__(rule)
@@ -321,7 +322,7 @@ class RabbitMQAlerter(Alerter):
 
         credentials = pika.PlainCredentials(self.rabbitmq_user, self.rabbitmq_pass)
         connection = pika.BlockingConnection(pika.ConnectionParameters(self.rabbitmq_host, self.rabbitmq_port,
-            self.rabbitmq_vhost, credentials))
+                                                                       self.rabbitmq_vhost, credentials))
         channel = connection.channel()
         channel.basic_publish(exchange=self.rabbitmq_exchange, routing_key=self.rabbitmq_key, body=body)
         connection.close()
@@ -335,7 +336,8 @@ class RabbitMQAlerter(Alerter):
                 'rabbitmq_pass': self.rabbitmq_pass,
                 'rabbitmq_exchange': self.rabbitmq_exchange,
                 'rabbitmq_key': self.rabbitmq_key,
-                'rabbitmq_vhost': self.rabbitmq_vhost
+                'rabbitmq_vhost': self.rabbitmq_vhost}
+
 
 class StompAlerter(Alerter):
     """ The stomp alerter publishes alerts via stomp to a broker. """
