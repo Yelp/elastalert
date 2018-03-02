@@ -335,7 +335,7 @@ class RabbitMQAlerter(Alerter):
                 'rabbitmq_pass': self.rabbitmq_pass,
                 'rabbitmq_exchange': self.rabbitmq_exchange,
                 'rabbitmq_key': self.rabbitmq_key,
-                'rabbitmq_vhost': self.rabbitmq_vhost,
+                'rabbitmq_vhost': self.rabbitmq_vhost
 
 class StompAlerter(Alerter):
     """ The stomp alerter publishes alerts via stomp to a broker. """
