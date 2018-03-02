@@ -300,7 +300,9 @@ class Alerter(object):
 
 class RabbitMQAlerter(Alerter):
     """ Publishes a message to RabbitMQ for each alert """
-    required_options = frozenset(['rabbitmq_host', 'rabbitmq_port', 'rabbitmq_user', 'rabbitmq_pass', 'rabbitmq_vhost', 'rabbitmq_exchange', 'rabbitmq_key'])
+
+    required_options = frozenset(['rabbitmq_host', 'rabbitmq_port', 'rabbitmq_user', 'rabbitmq_pass',
+        'rabbitmq_vhost', 'rabbitmq_exchange', 'rabbitmq_key'])
 
     def __init__(self, rule):
         super(RabbitMQAlerter, self).__init__(rule)
@@ -308,19 +310,18 @@ class RabbitMQAlerter(Alerter):
         self.rabbitmq_port = self.rule.get('rabbitmq_port', '5672')
         self.rabbitmq_user = self.rule.get('rabbitmq_user', None)
         self.rabbitmq_pass = self.rule.get('rabbitmq_pass', None)
-	self.rabbitmq_exchange = self.rule.get('rabbitmq_exchange', 'default')
-	self.rabbitmq_exchange_type = self.rule.get('rabbitmq_exchange_type', 'direct')
-	self.rabbitmq_key = self.rule.get('rabbitmq_key', 'default')
-	self.rabbitmq_durable = self.rule.get('rabbitmq_durable', None)
-	self.rabbitmq_vhost = self.rule.get('rabbitmq_vhost', None)
-	self.rabbitmq_persistent = self.rule.get('rabbitmq_persistent', None)
+        self.rabbitmq_exchange = self.rule.get('rabbitmq_exchange', 'default')
+        self.rabbitmq_key = self.rule.get('rabbitmq_key', 'default')
+        self.rabbitmq_vhost = self.rule.get('rabbitmq_vhost', None)
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
         """ Setup connection to RabbitMQ """
+
         credentials = pika.PlainCredentials(self.rabbitmq_user, self.rabbitmq_pass)
-        connection = pika.BlockingConnection(pika.ConnectionParameters(self.rabbitmq_host, self.rabbitmq_port, self.rabbitmq_vhost, credentials))
+        connection = pika.BlockingConnection(pika.ConnectionParameters(self.rabbitmq_host, self.rabbitmq_port,
+            self.rabbitmq_vhost, credentials))
         channel = connection.channel()
         channel.basic_publish(exchange=self.rabbitmq_exchange, routing_key=self.rabbitmq_key, body=body)
         connection.close()
@@ -332,13 +333,9 @@ class RabbitMQAlerter(Alerter):
                 'rabbitmq_port': self.rabbitmq_port,
                 'rabbitmq_user': self.rabbitmq_user,
                 'rabbitmq_pass': self.rabbitmq_pass,
-		'rabbitmq_exchange': self.rabbitmq_exchange,
-		'rabbitmq_exchange_type': self.rabbitmq_exchange_type,
-		'rabbitmq_key': self.rabbitmq_key,
-		'rabbitmq_durable': self.rabbitmq_durable,
-		'rabbitmq_vhost': self.rabbitmq_vhost,
-		'rabbitmq_persistent': self.rabbitmq_persistent}
-
+                'rabbitmq_exchange': self.rabbitmq_exchange,
+                'rabbitmq_key': self.rabbitmq_key,
+                'rabbitmq_vhost': self.rabbitmq_vhost,
 
 class StompAlerter(Alerter):
     """ The stomp alerter publishes alerts via stomp to a broker. """

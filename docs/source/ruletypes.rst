@@ -1738,6 +1738,8 @@ Example usage::
 
  ``rabbitmq_exchange``: The exchange name within your RabbitMQ server to submit the alert to.
 
+ ``rabbitmq_key``: The key to use with your RabbitMQ server.
+
 Example usage::
 	alert: rabbitmq
 	rabbitmq_host: myhost.example.com
@@ -1746,6 +1748,7 @@ Example usage::
 	rabbitmq_pass: guest
 	rabbitmq_vhost: default
 	rabbitmq_exchange: elastalert
+    rabbitmq_key: mykey
 
 Example of sending JSON formatted alerts to rabbitmq::
 	alert_text: '{{"@uuid": "{0}", "@timestamp": "{1}", "collection": "elasticsearch.winlogbeat.wineventlog", "type": "{2}", "beat.name": "{3}", "computer_name": "{4}", "log_name": "{5}", "rule_name": "Log Event" }}'
