@@ -36,9 +36,8 @@ def _set_hits(ea_inst, hits):
 
 def generate_hits(timestamps, **kwargs):
     hits = []
-    id_iter = xrange(len(timestamps)).__iter__()
-    for ts in timestamps:
-        data = {'_id': 'id' + str(id_iter.next()),
+    for i, ts in enumerate(timestamps):
+        data = {'_id': 'id{}'.format(i),
                 '_source': {'@timestamp': ts},
                 '_type': 'logs',
                 '_index': 'idx'}
