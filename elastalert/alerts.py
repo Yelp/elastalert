@@ -66,8 +66,8 @@ class BasicMatchString(object):
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
-            for i in xrange(len(alert_text_values)):
-                if alert_text_values[i] is None:
+            for i, text_value in enumerate(alert_text_values):
+                if text_value is None:
                     alert_value = self.rule.get(alert_text_args[i])
                     if alert_value:
                         alert_text_values[i] = alert_value
@@ -229,8 +229,8 @@ class Alerter(object):
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
-            for i in xrange(len(alert_subject_values)):
-                if alert_subject_values[i] is None:
+            for i, subject_value in enumerate(alert_subject_values):
+                if subject_value is None:
                     alert_value = self.rule.get(alert_subject_args[i])
                     if alert_value:
                         alert_subject_values[i] = alert_value

@@ -104,8 +104,8 @@ class OpsGenieAlerter(Alerter):
         if self.opsgenie_subject_args:
             opsgenie_subject_values = [lookup_es_key(matches[0], arg) for arg in self.opsgenie_subject_args]
 
-            for i in xrange(len(opsgenie_subject_values)):
-                if opsgenie_subject_values[i] is None:
+            for i, subject_value in enumerate(opsgenie_subject_values):
+                if subject_value is None:
                     alert_value = self.rule.get(self.opsgenie_subject_args[i])
                     if alert_value:
                         opsgenie_subject_values[i] = alert_value
