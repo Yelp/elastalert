@@ -68,6 +68,7 @@ alerts_mapping = {
     'debug': alerts.DebugAlerter,
     'command': alerts.CommandAlerter,
     'sns': alerts.SnsAlerter,
+    'ses': alerts.SesAlerter,
     'hipchat': alerts.HipChatAlerter,
     'stride': alerts.StrideAlerter,
     'ms_teams': alerts.MsTeamsAlerter,

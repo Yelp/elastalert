@@ -917,6 +917,105 @@ class SnsAlerter(Alerter):
         elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
 
 
+class SesAlerter(Alerter):
+    """ Sends an email alert using AWS SES """
+    required_options = frozenset(['email'])
+
+    def __init__(self, *args):
+        super(SesAlerter, self).__init__(*args)
+
+        # Convert email to a list if it isn't already
+        if isinstance(self.rule['email'], basestring):
+            self.rule['email'] = [self.rule['email']]
+        # If there is a cc then also convert it a list if it isn't
+        cc = self.rule.get('cc')
+        if cc and isinstance(cc, basestring):
+            self.rule['cc'] = [self.rule['cc']]
+        # If there is a bcc then also convert it to a list if it isn't
+        bcc = self.rule.get('bcc')
+        if bcc and isinstance(bcc, basestring):
+            self.rule['bcc'] = [self.rule['bcc']]
+        # If there is a email_reply_to then also convert it to a list if it isn't
+        reply_to = self.rule.get('email_reply_to')
+        if reply_to and isinstance(reply_to, basestring):
+            self.rule['email_reply_to'] = [self.rule['email_reply_to']]
+
+        add_suffix = self.rule.get('email_add_domain')
+        if add_suffix and not add_suffix.startswith('@'):
+            self.rule['email_add_domain'] = '@' + add_suffix
+
+        self.from_addr = self.rule.get('from_addr', 'ElastAlert')
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+
+        # Add JIRA ticket if it exists
+        if self.pipeline is not None and 'jira_ticket' in self.pipeline:
+            url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
+            body += '\nJIRA ticket: %s' % (url)
+
+        to_addr = self.rule['email']
+        if 'email_from_field' in self.rule:
+            recipient = lookup_es_key(matches[0], self.rule['email_from_field'])
+            if isinstance(recipient, basestring):
+                if '@' in recipient:
+                    to_addr = [recipient]
+                elif 'email_add_domain' in self.rule:
+                    to_addr = [recipient + self.rule['email_add_domain']]
+            elif isinstance(recipient, list):
+                to_addr = recipient
+                if 'email_add_domain' in self.rule:
+                    to_addr = [name + self.rule['email_add_domain'] for name in to_addr]
+
+        session = boto3.Session(
+            aws_access_key_id=self.rule.get('aws_access_key_id'),
+            aws_secret_access_key=self.rule.get('aws_secret_access_key'),
+            aws_session_token=self.rule.get('aws_session_token'),
+            region_name=self.rule.get('aws_region'),
+            profile_name=self.rule.get('aws_profile'),
+        )
+        client = session.client('ses')
+        try:
+            client.send_email(
+                Source=self.from_addr,
+                Destination={
+                    'ToAddresses': to_addr,
+                    'CcAddresses': self.rule.get('cc', []),
+                    'BccAddresses': self.rule.get('bcc', []),
+                },
+                Message={
+                    'Subject': {
+                        'Data': self.create_title(matches),
+                    },
+                    'Body': {
+                        'Text': {
+                            'Charset': 'UTF-8',
+                            'Data': body.encode('UTF-8'),
+                        }
+                    }
+                },
+                ReplyToAddresses=self.rule.get('email_reply_to', []))
+        except Exception as e:
+            raise EAException("Error sending email: %s" % (e,))
+
+        elastalert_logger.info("Sent email to %s" % (to_addr,))
+
+    def create_default_title(self, matches):
+        subject = 'ElastAlert: %s' % (self.rule['name'])
+
+        # If the rule has a query_key, add that value plus timestamp to subject
+        if 'query_key' in self.rule:
+            qk = matches[0].get(self.rule['query_key'])
+            if qk:
+                subject += ' - %s' % (qk)
+
+        return subject
+
+    def get_info(self):
+        return {'type': 'ses',
+                'recipients': self.rule['email']}
+
+
 class HipChatAlerter(Alerter):
     """ Creates a HipChat room notification for each alert """
     required_options = frozenset(['hipchat_auth_token', 'hipchat_room_id'])
