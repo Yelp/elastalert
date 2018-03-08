@@ -1369,13 +1369,14 @@ class ElastAlerter():
                 alert_sent = True
 
         # Write the alert(s) to ES
+        writeback_index = None if not rule['writeback_index'] else self.get_index(rule['writeback_index'])
         agg_id = None
         for match in matches:
             alert_body = self.get_alert_body(match, rule, alert_sent, alert_time, alert_exception)
             # Set all matches to aggregate together
             if agg_id:
                 alert_body['aggregate_id'] = agg_id
-            res = self.writeback('elastalert', alert_body)
+            res = self.writeback('elastalert', alert_body, writeback_index)
             if res and not agg_id:
                 agg_id = res['_id']
 
@@ -1399,9 +1400,9 @@ class ElastAlerter():
             body['alert_exception'] = alert_exception
         return body
 
-    def writeback(self, doc_type, body):
-        writeback_index = self.writeback_index
-        if(self.is_atleastsix()):
+    def writeback(self, doc_type, body, index=None):
+        writeback_index = self.writeback_index if index is None else index
+        if self.is_atleastsix():
             writeback_index = self.get_six_index(doc_type)
 
         # ES 2.0 - 2.3 does not support dots in field names.
@@ -1636,7 +1637,8 @@ class ElastAlerter():
             alert_body['aggregate_id'] = agg_id
         if aggregation_key_value:
             alert_body['aggregation_key'] = aggregation_key_value
-        res = self.writeback('elastalert', alert_body)
+        writeback_index = None if not rule['writeback_index'] else self.get_index(rule['writeback_index'])
+        res = self.writeback('elastalert', alert_body, writeback_index)
 
         # If new aggregation, save _id
         if res and not agg_id:

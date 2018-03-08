@@ -170,6 +170,9 @@ def main():
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
 
+    # @TODO Also force ES v6 type indices
+    # @TODO Add alert specific index
+    # @TODO Add alert template for writeback_index suffixes
     if(elasticversion > 5):
         es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
         es.indices.put_mapping(index=index+'_status', doc_type='elastalert_status', body=ess_mapping)
