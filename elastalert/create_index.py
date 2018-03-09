@@ -174,11 +174,12 @@ def main():
     # @TODO Add alert specific index
     # @TODO Add alert template for writeback_index suffixes
     if(elasticversion > 5):
-        es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
         es.indices.put_mapping(index=index+'_status', doc_type='elastalert_status', body=ess_mapping)
         es.indices.put_mapping(index=index+'_silence', doc_type='silence', body=silence_mapping)
         es.indices.put_mapping(index=index+'_error', doc_type='elastalert_error', body=error_mapping)
         es.indices.put_mapping(index=index+'_past', doc_type='past_elastalert', body=past_mapping)
+        es.indices.put_template(name='elastalert', body={'index_patterns': ['elastalert_*'],
+                                                         'aliases': {index: {}}, 'mappings': es_mapping})
         print('New index %s created' % index)
     else:
         es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
@@ -186,6 +187,8 @@ def main():
         es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)
         es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping)
         es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping)
+        es.indices.put_template(name='elastalert', body={'template': 'elastalert_*',
+                                                         'aliases': {index: {}}, 'mappings': es_mapping})
         print('New index %s created' % index)
 
     if old_index:
