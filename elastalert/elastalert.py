@@ -1495,14 +1495,14 @@ class ElastAlerter(object):
                 alert_sent = True
 
         # Write the alert(s) to ES
-        writeback_index = None if not rule['writeback_index'] else self.get_index(rule['writeback_index'])
+        writeback_index_suffix = None if not rule['writeback_index'] else self.get_index(rule['writeback_index'])
         agg_id = None
         for match in matches:
             alert_body = self.get_alert_body(match, rule, alert_sent, alert_time, alert_exception)
             # Set all matches to aggregate together
             if agg_id:
                 alert_body['aggregate_id'] = agg_id
-            res = self.writeback('elastalert', alert_body, writeback_index)
+            res = self.writeback('elastalert', alert_body, writeback_index_suffix)
             if res and not agg_id:
                 agg_id = res['_id']
 
@@ -1532,8 +1532,9 @@ class ElastAlerter(object):
             body['alert_exception'] = alert_exception
         return body
 
-    def writeback(self, doc_type, body, index=None):
-        writeback_index = self.writeback_index if index is None else index
+    def writeback(self, doc_type, body, index_suffix=None):
+        if index_suffix is not None:
+            writeback_index = self.get_six_index(doc_type) + '_' + index_suffix
         if self.is_atleastsix():
             writeback_index = self.get_six_index(doc_type)
 
@@ -1776,8 +1777,8 @@ class ElastAlerter(object):
             alert_body['aggregate_id'] = agg_id
         if aggregation_key_value:
             alert_body['aggregation_key'] = aggregation_key_value
-        writeback_index = None if not rule['writeback_index'] else self.get_index(rule['writeback_index'])
-        res = self.writeback('elastalert', alert_body, writeback_index)
+        writeback_index_suffix = None if not rule['writeback_index'] else self.get_index(rule['writeback_index'])
+        res = self.writeback('elastalert', alert_body, writeback_index_suffix)
 
         # If new aggregation, save _id
         if res and not agg_id:
