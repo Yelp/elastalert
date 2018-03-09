@@ -199,6 +199,19 @@ class ElastAlerter():
         else:
             return index
 
+    @staticmethod
+    def get_writeback_index(rule):
+        if 'writeback_index' not in rule:
+            return None
+        elif '%' not in rule['writeback_index']:
+            return rule['writeback_index']
+        else:
+            index = rule['writeback_index']
+            format_start = index.find('%')
+            format_end = index.rfind('%') + 2
+            ts = datetime.datetime.utcnow().strftime(index[format_start:format_end])
+            return index[:format_start] + ts + index[format_end:]
+
     def get_six_index(self, doc_type):
         """ In ES6, you cannot have multiple _types per index,
         therefore we use self.writeback_index as the prefix for the actual
@@ -1369,7 +1382,7 @@ class ElastAlerter():
                 alert_sent = True
 
         # Write the alert(s) to ES
-        writeback_index_suffix = None if not rule['writeback_index'] else self.get_index(rule['writeback_index'])
+        writeback_index_suffix = self.get_writeback_index(rule)
         agg_id = None
         for match in matches:
             alert_body = self.get_alert_body(match, rule, alert_sent, alert_time, alert_exception)
@@ -1401,9 +1414,10 @@ class ElastAlerter():
         return body
 
     def writeback(self, doc_type, body, index_suffix=None):
+        writeback_index = self.writeback_index
         if index_suffix is not None:
-            writeback_index = self.get_six_index(doc_type) + '_' + index_suffix
-        if self.is_atleastsix():
+            writeback_index = writeback_index + '_' + index_suffix
+        elif self.is_atleastsix():
             writeback_index = self.get_six_index(doc_type)
 
         # ES 2.0 - 2.3 does not support dots in field names.
@@ -1638,8 +1652,7 @@ class ElastAlerter():
             alert_body['aggregate_id'] = agg_id
         if aggregation_key_value:
             alert_body['aggregation_key'] = aggregation_key_value
-        writeback_index_suffix = None if not rule['writeback_index'] else self.get_index(rule['writeback_index'])
-        res = self.writeback('elastalert', alert_body, writeback_index_suffix)
+        res = self.writeback('elastalert', alert_body, self.get_writeback_index(rule))
 
         # If new aggregation, save _id
         if res and not agg_id:
