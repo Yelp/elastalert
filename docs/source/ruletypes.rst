@@ -1669,7 +1669,19 @@ Optional:
 
 ``servicenow_proxy``: By default ElastAlert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy.
 
-.. TODO: LIST NEW PARAMS
+``caller_id``: Used to log the ticket under another name than user making request.
+
+``impact``: Used to specify the impact of the incident created.
+
+``urgency``: Used to specify the urgency of the incident created.
+
+``u_originating_group``: The originating group the incident is for.
+
+``u_division``: The Division the incident is specified for.
+
+``contact_type``: The preferred contact method.
+
+``opened_by``: Specifies the user that opened it.
 
 
 Debug
