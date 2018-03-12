@@ -1413,6 +1413,7 @@ class ServiceNowAlerter(Alerter):
             "impact": self.rule["impact"],
             "urgency": self.rule["urgency"],
             "u_originating_group": self.rule["u_originating_group"],
+            "u_division": self.rule["u_division"],
             "contact_type": self.rule["contact_type"],
             "opened_by": self.rule["opened_by"]
         }
