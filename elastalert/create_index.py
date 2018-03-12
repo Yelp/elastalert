@@ -32,6 +32,7 @@ def main():
     parser.add_argument('--verify-certs', action='store_true', default=None, help='Verify TLS certificates')
     parser.add_argument('--no-verify-certs', dest='verify_certs', action='store_false', help='Do not verify TLS certificates')
     parser.add_argument('--index', help='Index name to create')
+    parser.add_argument('--alias', help='Alias name to create')
     parser.add_argument('--old-index', help='Old index name to copy')
     parser.add_argument('--send_get_body_as', default='GET', help='Method for querying Elasticsearch - POST, GET or source')
     parser.add_argument(
@@ -74,6 +75,7 @@ def main():
         client_cert = data.get('client_cert')
         client_key = data.get('client_key')
         index = args.index if args.index is not None else data.get('writeback_index')
+        alias = args.alias if args.alias is not None else data.get('writeback_alias')
         old_index = args.old_index if args.old_index is not None else None
     else:
         username = args.username if args.username else None
@@ -100,6 +102,9 @@ def main():
         index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
         if not index:
             index = 'elastalert_status'
+        alias = args.alias if args.alias is not None else raw_input('New alias name? (Default elastalert_alerts) ')
+        if not alias:
+            alias = 'elastalert_alias'
         old_index = (args.old_index if args.old_index is not None
                      else raw_input('Name of existing index to copy? (Default None) '))
 
@@ -128,7 +133,7 @@ def main():
     print("Elastic Version:" + esversion.split(".")[0])
     elasticversion = int(esversion.split(".")[0])
 
-    if(elasticversion > 5):
+    if elasticversion > 5:
         mapping = {'type': 'keyword'}
     else:
         mapping = {'index': 'not_analyzed', 'type': 'string'}
@@ -158,7 +163,7 @@ def main():
         print('Index ' + index + ' already exists. Skipping index creation.')
         return None
 
-    if (elasticversion > 5):
+    if elasticversion > 5:
         es.indices.create(index)
         es.indices.create(index+'_status')
         es.indices.create(index+'_silence')
@@ -170,16 +175,15 @@ def main():
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
 
-    # @TODO Also force ES v6 type indices
-    # @TODO Add alert specific index
-    # @TODO Add alert template for writeback_index suffixes
-    if(elasticversion > 5):
+    if elasticversion > 5:
+        es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
         es.indices.put_mapping(index=index+'_status', doc_type='elastalert_status', body=ess_mapping)
         es.indices.put_mapping(index=index+'_silence', doc_type='silence', body=silence_mapping)
         es.indices.put_mapping(index=index+'_error', doc_type='elastalert_error', body=error_mapping)
         es.indices.put_mapping(index=index+'_past', doc_type='past_elastalert', body=past_mapping)
+        es.indices.put_alias(index=index, name=alias)
         es.indices.put_template(name='elastalert', body={'index_patterns': ['elastalert_*'],
-                                                         'aliases': {index: {}}, 'mappings': es_mapping})
+                                                         'aliases': {alias: {}}, 'mappings': es_mapping})
         print('New index %s created' % index)
     else:
         es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
@@ -187,8 +191,9 @@ def main():
         es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)
         es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping)
         es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping)
+        es.indices.put_alias(index=index, name=alias, body={'filter': {'term': {'_type': 'elastalert'}}})
         es.indices.put_template(name='elastalert', body={'template': 'elastalert_*',
-                                                         'aliases': {index: {}}, 'mappings': es_mapping})
+                                                         'aliases': {alias: {}}, 'mappings': es_mapping})
         print('New index %s created' % index)
 
     if old_index:

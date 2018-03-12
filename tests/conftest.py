@@ -95,6 +95,7 @@ def ea():
             'es_host': 'es',
             'es_port': 14900,
             'writeback_index': 'wb',
+            'writeback_alias': 'wb_a',
             'rules': rules,
             'max_query_size': 10000,
             'old_query_limit': datetime.timedelta(weeks=1),
