@@ -238,8 +238,8 @@ properties:
   slack_text_string: {type: string}
 
   ### ServiceNow
-  impact: {type: string}
-  urgency: {type: string}
+  impact: {type: [string, integer]}
+  urgency: {type: [string, integer]}
   u_originating_group: {type: string}
   contact_type: {type: string}
   opened_by: {type: string}
