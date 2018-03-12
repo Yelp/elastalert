@@ -1669,6 +1669,8 @@ Optional:
 
 ``servicenow_proxy``: By default ElastAlert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy.
 
+.. TODO: LIST NEW PARAMS
+
 
 Debug
 ~~~~~
