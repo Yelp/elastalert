@@ -118,6 +118,7 @@ class ElastAlerter(object):
         self.scroll_keepalive = self.conf['scroll_keepalive']
         self.rules = self.conf['rules']
         self.writeback_index = self.conf['writeback_index']
+        self.writeback_alias = self.conf['writeback_alias']
         self.run_every = self.conf['run_every']
         self.alert_time_limit = self.conf['alert_time_limit']
         self.old_query_limit = self.conf['old_query_limit']
@@ -1146,7 +1147,7 @@ class ElastAlerter(object):
         ref = clock()
         while (clock() - ref) < timeout:
             try:
-                if self.writeback_es.indices.exists(self.writeback_index):
+                if self.writeback_es.indices.exists(self.writeback_alias):
                     return
             except ConnectionError:
                 pass
@@ -1154,8 +1155,8 @@ class ElastAlerter(object):
 
         if self.writeback_es.ping():
             logging.error(
-                'Writeback index "%s" does not exist, did you run `elastalert-create-index`?',
-                self.writeback_index,
+                'Writeback alias "%s" does not exist, did you run `elastalert-create-index`?',
+                self.writeback_alias,
             )
         else:
             logging.error(
@@ -1495,14 +1496,13 @@ class ElastAlerter(object):
                 alert_sent = True
 
         # Write the alert(s) to ES
-        writeback_index_suffix = self.get_writeback_index(rule)
         agg_id = None
         for match in matches:
             alert_body = self.get_alert_body(match, rule, alert_sent, alert_time, alert_exception)
             # Set all matches to aggregate together
             if agg_id:
                 alert_body['aggregate_id'] = agg_id
-            res = self.writeback('elastalert', alert_body, writeback_index_suffix)
+            res = self.writeback('elastalert', alert_body, rule)
             if res and not agg_id:
                 agg_id = res['_id']
 
@@ -1532,12 +1532,8 @@ class ElastAlerter(object):
             body['alert_exception'] = alert_exception
         return body
 
-    def writeback(self, doc_type, body, index_suffix=None):
-        writeback_index = self.writeback_index
-        if index_suffix is not None:
-            writeback_index = writeback_index + '_' + index_suffix
-        elif self.is_atleastsix():
-            writeback_index = self.get_six_index(doc_type)
+    def writeback(self, doc_type, body, rule=None):
+        writeback_index = self.get_writeback_index(doc_type, rule)
 
         # ES 2.0 - 2.3 does not support dots in field names.
         if self.replace_dots_in_field_names:
@@ -1600,6 +1596,7 @@ class ElastAlerter(object):
         pending_alerts = self.find_recent_pending_alerts(self.alert_time_limit)
         for alert in pending_alerts:
             _id = alert['_id']
+            _index = alert['_index']
             alert = alert['_source']
             try:
                 rule_name = alert.pop('rule_name')
@@ -1778,7 +1775,7 @@ class ElastAlerter(object):
             alert_body['aggregate_id'] = agg_id
         if aggregation_key_value:
             alert_body['aggregation_key'] = aggregation_key_value
-        res = self.writeback('elastalert', alert_body, self.get_writeback_index(rule))
+        res = self.writeback('elastalert', alert_body, rule)
 
         # If new aggregation, save _id
         if res and not agg_id:
