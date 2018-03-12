@@ -1410,12 +1410,11 @@ class ServiceNowAlerter(Alerter):
             "subcategory": self.rule['subcategory'],
             "cmdb_ci": self.rule['cmdb_ci'],
             "caller_id": self.rule["caller_id"],
-            "priority": self.rule["priority"],
             "impact": self.rule["impact"],
             "urgency": self.rule["urgency"],
-            "u_division": self.rule["u_division"],
             "u_originating_group": self.rule["u_originating_group"],
-            "contact_type": self.rule["contact_type"]
+            "contact_type": self.rule["contact_type"],
+            "opened_by": self.rule["opened_by"]
         }
         try:
             response = requests.post(
