@@ -1416,6 +1416,30 @@ Optional:
 
 ``profile``: The AWS profile to use. If none specified, the default will be used.
 
+
+SES
+~~~
+
+The SES alerter is similar to Email alerter but uses AWS SES to send emails. The SES alerter can use AWS credentials
+from the rule yaml, standard AWS config files or environment variables.
+
+SES requires one option:
+
+``email``: An address or list of addresses to sent the alert to.
+
+Optional:
+
+``aws_access_key``: An access key to connect to SES with.
+
+``aws_secret_key``: The secret key associated with the access key.
+
+``aws_region``: The AWS region in which the SES resource is located. Default is us-east-1
+
+``profile``: The AWS profile to use. If none specified, the default will be used.
+
+``email_reply_to``, ``from_addr``, ``cc``, ``bcc``: See Email alerter.
+
+
 HipChat
 ~~~~~~~
 
