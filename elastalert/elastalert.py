@@ -446,8 +446,8 @@ class ElastAlerter():
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
             # (so big that they will fill the entire terminal buffer)
-            if len(str(e)) > 1024:
-                e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
+            # if len(str(e)) > 1024:
+            #     e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
             self.handle_error('Error running count query: %s' % (e), {'rule': rule['name'], 'query': query})
             return None
 
