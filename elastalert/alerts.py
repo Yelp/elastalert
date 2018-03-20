@@ -155,7 +155,7 @@ class JiraFormattedMatchString(BasicMatchString):
 
 
 class RocketChatFormattedMatchString(BasicMatchString):
-   def _add_match_items(self):
+    def _add_match_items(self):
         match_items = dict([(x, y) for x, y in self.match.items() if not x.startswith('top_events_')])
         json_blob = self._pretty_print_as_json(match_items)
         preformatted_text = u'```json\n{0}```\n'.format(json_blob)
@@ -1164,7 +1164,7 @@ class RocketChatAlerter(Alerter):
         body = self.format_body(body)
         headers = {'content-type': 'application/json'}
         proxies = {'https': self.rocket_chat_proxy} if self.rocket_chat_proxy else None
-	payload = {
+        payload = {
             'username': self.rocket_chat_username_override,
             'text': body,
         }
@@ -1182,7 +1182,9 @@ class RocketChatAlerter(Alerter):
             elastalert_logger.info("Alert sent to Rocket.Chat")
 
     def get_info(self):
-        return {'type': 'rocketchat', 'rocket_chat_username_override': self.rocket_chat_username_override, 'rocket_chat_webhook_url': self.rocket_chat_webhook_url}
+        return {'type': 'rocketchat',
+                'rocket_chat_username_override': self.rocket_chat_username_override,
+                'rocket_chat_webhook_url': self.rocket_chat_webhook_url}
 
 
 class PagerDutyAlerter(Alerter):
