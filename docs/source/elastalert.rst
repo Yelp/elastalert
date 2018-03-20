@@ -38,6 +38,7 @@ Currently, we have support built in for these alert types:
 - SNS
 - HipChat
 - Slack
+- RocketChat
 - Telegram
 - Debug
 - Stomp

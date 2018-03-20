@@ -1520,6 +1520,28 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
 
+RocketChat
+~~~~~
+
+Rocket.Chat alerter will send a notification to a predefined channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following option:
+
+``rocket_chat_webhook_url``: The webhook URL that includes your auth data and the ID of the channel (room) you want to post to. You can use a list of URLs to send to multiple channels.
+
+Optional:
+
+``rocket_chat_username_override``: By default RocketChat will use username defined in Integration when posting to the channel. Use this option to change it (free text).
+
+``rocket_chat_emoji_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
+ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If rocket_chat_icon_url_override parameter is provided, emoji is ignored.
+
+``rocket_chat_icon_url_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can provide icon_url to use custom image.
+Provide absolute address of the pciture, for example: http://some.address.com/image.jpg .
+
+``rocket_chat_proxy``: By default ElastAlert will not use a network proxy to send notifications to RocketChat. Set this option using ``hostname:port`` if you need to use a proxy.
+
+
 Telegram
 ~~~~~~~~
 Telegram alerter will send a notification to a predefined Telegram username or channel. The body of the notification is formatted the same as with other alerters.
