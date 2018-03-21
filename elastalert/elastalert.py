@@ -667,20 +667,25 @@ class ElastAlerter():
 
         # This means we are starting fresh
         if 'starttime' not in rule:
-            # Try to get the last run from Elasticsearch
-            last_run_end = self.get_starttime(rule)
-            if last_run_end:
-                rule['starttime'] = last_run_end
-                self.adjust_start_time_for_overlapping_agg_query(rule)
-                self.adjust_start_time_for_interval_sync(rule, endtime)
-                rule['minimum_starttime'] = rule['starttime']
-                return None
+            if not rule.get('scan_entire_timeframe'):
+                # Try to get the last run from Elasticsearch
+                last_run_end = self.get_starttime(rule)
+                if last_run_end:
+                    rule['starttime'] = last_run_end
+                    self.adjust_start_time_for_overlapping_agg_query(rule)
+                    self.adjust_start_time_for_interval_sync(rule, endtime)
+                    rule['minimum_starttime'] = rule['starttime']
+                    return None
 
         # Use buffer for normal queries, or run_every increments otherwise
+        # or, if scan_entire_timeframe, use timeframe
 
         if not rule.get('use_count_query') and not rule.get('use_terms_query'):
-            buffer_time = rule.get('buffer_time', self.buffer_time)
-            buffer_delta = endtime - buffer_time
+            if not rule.get('scan_entire_timeframe'):
+                buffer_time = rule.get('buffer_time', self.buffer_time)
+                buffer_delta = endtime - buffer_time
+            else:
+                buffer_delta = endtime - rule['timeframe']
             # If we started using a previous run, don't go past that
             if 'minimum_starttime' in rule and rule['minimum_starttime'] > buffer_delta:
                 rule['starttime'] = rule['minimum_starttime']
@@ -695,8 +700,11 @@ class ElastAlerter():
             self.adjust_start_time_for_interval_sync(rule, endtime)
 
         else:
-            # Query from the end of the last run, if it exists, otherwise a run_every sized window
-            rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
+            if not rule.get('scan_entire_timeframe'):
+                # Query from the end of the last run, if it exists, otherwise a run_every sized window
+                rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
+            else:
+                rule['starttime'] = rule.get('previous_endtime', endtime - rule['timeframe'])
 
     def adjust_start_time_for_overlapping_agg_query(self, rule):
         if rule.get('aggregation_query_element'):
