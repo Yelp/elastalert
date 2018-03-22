@@ -319,6 +319,9 @@ def load_options(rule, conf, filename, args=None):
                                 'The index will be formatted like %s' % (token,
                                                                          datetime.datetime.now().strftime(rule.get('index'))))
 
+    if rule.get('scan_entire_timeframe') and not rule.get('timeframe'):
+        raise EAException('scan_entire_timeframe can only be used if there is a timeframe specified')
+
 
 def load_modules(rule, args=None):
     """ Loads things that could be modules. Enhancements, alerts and rule type. """

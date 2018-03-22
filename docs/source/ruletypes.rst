@@ -84,6 +84,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``priority`` (int, default 2)                                |           |
 +--------------------------------------------------------------+           |
+| ``scan_entire_timeframe`` (bool, default False)              |           |
++--------------------------------------------------------------+           |
 | ``import`` (string)                                          |           |
 |                                                              |           |
 | IGNORED IF ``use_count_query`` or ``use_terms_query`` is true|           |
@@ -576,7 +578,9 @@ scan_entire_timeframe
 
 ``scan_entire_timeframe``: If true, when ElastAlert starts, it will always start querying at the current time minus the timeframe.
 ``timeframe`` must exist in the rule. This may be useful, for example, if you are using a flatline rule type with a large timeframe,
-and you want to be sure that if ElastAlert restarts, you can still get alerts. This may cause duplicate alerts for some rule types.
+and you want to be sure that if ElastAlert restarts, you can still get alerts. This may cause duplicate alerts for some rule types,
+for example, Frequency can alert multiple times in a single timeframe, and if ElastAlert were to restart with this setting, it may
+scan the same range again, triggering duplicate alerts.
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
 
