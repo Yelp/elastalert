@@ -1174,7 +1174,7 @@ def test_wait_until_responsive_timeout_index_does_not_exist(ea, capsys):
 
     # Ensure we get useful diagnostics.
     output, errors = capsys.readouterr()
-    assert 'Writeback index "wb" does not exist, did you run `elastalert-create-index`?' in errors
+    assert 'Writeback alias "wb_a" does not exist, did you run `elastalert-create-index`?' in errors
 
     # Slept until we passed the deadline.
     sleep.mock_calls == [
