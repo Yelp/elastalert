@@ -260,7 +260,7 @@ def test_match_with_module_from_pending(ea):
     pending_alert = {'match_body': {'foo': 'bar'}, 'rule_name': ea.rules[0]['name'],
                      'alert_time': START_TIMESTAMP, '@timestamp': START_TIMESTAMP}
     # First call, return the pending alert, second, no associated aggregated alerts
-    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': pending_alert}]}},
+    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': pending_alert}]}},
                                           {'hits': {'hits': []}}]
     ea.send_pending_alerts()
     assert mod.process.call_count == 0
@@ -268,7 +268,7 @@ def test_match_with_module_from_pending(ea):
     # If aggregation is set, enhancement IS called
     pending_alert = {'match_body': {'foo': 'bar'}, 'rule_name': ea.rules[0]['name'],
                      'alert_time': START_TIMESTAMP, '@timestamp': START_TIMESTAMP}
-    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': pending_alert}]}},
+    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': pending_alert}]}},
                                           {'hits': {'hits': []}}]
     ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
     ea.send_pending_alerts()
@@ -346,9 +346,9 @@ def test_agg_matchtime(ea):
     # First call - Find all pending alerts (only entries without agg_id)
     # Second call - Find matches with agg_id == 'ABCD'
     # Third call - Find matches with agg_id == 'CDEF'
-    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': call1},
-                                                             {'_id': 'CDEF', '_source': call3}]}},
-                                          {'hits': {'hits': [{'_id': 'BCDE', '_source': call2}]}},
+    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': call1},
+                                                             {'_id': 'CDEF', '_index': 'wb', '_source': call3}]}},
+                                          {'hits': {'hits': [{'_id': 'BCDE', '_index': 'wb', '_source': call2}]}},
                                           {'hits': {'total': 0, 'hits': []}}]
 
     with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es:
@@ -512,9 +512,9 @@ def test_agg_with_aggregation_key(ea):
     # First call - Find all pending alerts (only entries without agg_id)
     # Second call - Find matches with agg_id == 'ABCD'
     # Third call - Find matches with agg_id == 'CDEF'
-    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': call1},
-                                                             {'_id': 'CDEF', '_source': call2}]}},
-                                          {'hits': {'hits': [{'_id': 'BCDE', '_source': call3}]}},
+    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': call1},
+                                                             {'_id': 'CDEF', '_index': 'wb', '_source': call2}]}},
+                                          {'hits': {'hits': [{'_id': 'BCDE', '_index': 'wb', '_source': call3}]}},
                                           {'hits': {'total': 0, 'hits': []}}]
 
     with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es:
@@ -1092,7 +1092,7 @@ def test_wait_until_responsive_timeout_index_does_not_exist(ea, capsys):
 
     # Ensure we get useful diagnostics.
     output, errors = capsys.readouterr()
-    assert 'Writeback index "wb" does not exist, did you run `elastalert-create-index`?' in errors
+    assert 'Writeback alias "wb_a" does not exist, did you run `elastalert-create-index`?' in errors
 
     # Slept until we passed the deadline.
     sleep.mock_calls == [
