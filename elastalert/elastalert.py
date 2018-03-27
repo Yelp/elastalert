@@ -1391,7 +1391,7 @@ class ElastAlerter():
         body = {
             'match_body': match,
             'rule_name': rule['name'],
-            'alert_info': rule['alert'][0].get_info(),
+            'alert_info': rule['alert'][0].get_info() if not self.debug else {},
             'alert_sent': alert_sent,
             'alert_time': alert_time
         }
