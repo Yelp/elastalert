@@ -1561,7 +1561,7 @@ class StrideAlerter(Alerter):
                 'stride_cloud_id': self.stride_cloud_id,
                 'stride_converstation_id': self.stride_converstation_id}
 class LineNotifyAlerter(Alerter):
-    """ Created a Line Notify for each alert """ 
+    """ Created a Line Notify for each alert """
     required_option = frozenset(["linenotify_access_token"])
 
     def __init__(self, rule):
@@ -1576,7 +1576,7 @@ class LineNotifyAlerter(Alerter):
             "Authorization": "Bearer {}".format(self.linenotify_access_token)
         }
         payload = {
-            "message":body        
+            "message": body 
         }
         try:
             response = requests.post("https://notify-api.line.me/api/notify", data=payload, headers=headers)
@@ -1586,4 +1586,4 @@ class LineNotifyAlerter(Alerter):
         elastalert_logger.info("Alert sent to Line Notify")
 
     def get_info(self):
-        return {"type": "linenotify","linenotify_access_token": self.linenotify_access_token}
+        return {"type": "linenotify", "linenotify_access_token": self.linenotify_access_token}
