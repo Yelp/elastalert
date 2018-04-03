@@ -15,3 +15,4 @@ build/
 .pytest_cache/
 my_rules
 *.swp
+*~
