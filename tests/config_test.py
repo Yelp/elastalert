@@ -233,6 +233,22 @@ def test_load_ssl_env_true():
                 assert rules['use_ssl'] is True
 
 
+def test_load_url_prefix_env():
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy.pop('es_host')
+    test_rule_copy.pop('es_port')
+    test_config_copy = copy.deepcopy(test_config)
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [test_config_copy, test_rule_copy]
+
+        with mock.patch('os.listdir') as mock_ls:
+            with mock.patch.dict(os.environ, {'ES_URL_PREFIX': 'es/'}):
+                mock_ls.return_value = ['testrule.yaml']
+                rules = load_rules(test_args)
+
+                assert rules['es_url_prefix'] == 'es/'
+
+
 def test_load_disabled_rules():
     test_rule_copy = copy.deepcopy(test_rule)
     test_rule_copy['is_enabled'] = False
