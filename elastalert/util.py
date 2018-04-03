@@ -108,7 +108,6 @@ def lookup_es_key(lookup_dict, term):
 
 def ts_to_dt(timestamp):
     if isinstance(timestamp, datetime.datetime):
-        logging.warning('Expected str timestamp, got datetime')
         return timestamp
     dt = dateutil.parser.parse(timestamp)
     # Implicitly convert local timestamps to UTC
@@ -133,7 +132,6 @@ def dt_to_ts(dt):
 
 def ts_to_dt_with_format(timestamp, ts_format):
     if isinstance(timestamp, datetime.datetime):
-        logging.warning('Expected str timestamp, got datetime')
         return timestamp
     dt = datetime.datetime.strptime(timestamp, ts_format)
     # Implicitly convert local timestamps to UTC
