@@ -79,6 +79,7 @@ alerts_mapping = {
     'telegram': alerts.TelegramAlerter,
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
+    'alerta': alerts.AlertaAlerter,
     'post': alerts.HTTPPostAlerter
 }
 # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
