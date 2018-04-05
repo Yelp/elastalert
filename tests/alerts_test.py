@@ -771,7 +771,6 @@ def test_kibana(ea):
     # Included fields active in table
     assert dashboard['rows'][1]['panels'][0]['fields'] == ['@timestamp']
 
-   
 
 def test_command():
     # Test command as list with a formatted arg
@@ -1704,12 +1703,12 @@ def test_stride_html():
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
 
-        
+
 def test_alerta_replace_string_from_match(ea):
     match = {
-        'name':'mySystem' , 
-        'temperature':'45', 
-        'sensor':'outsideSensor'
+        'name': 'mySystem',
+        'temperature': '45',
+        'sensor': 'outsideSensor'
         }
     rule = {
             'name': 'Test Alerta rule!',
@@ -1718,26 +1717,40 @@ def test_alerta_replace_string_from_match(ea):
 
     alert = AlertaAlerter(rule)
     alert.match_dictionary = match
-    
-    assert alert.replace_string_from_match("%(name)s is online %(noKey)s" ) == "mySystem is online <MISSING VALUE>"
-    assert alert.replace_string_from_match("Sensor %(sensor)s in the %(noPlace)s has temp %(temperature)s") == 'Sensor outsideSensor in the <MISSING VALUE> has temp 45'
-    assert alert.replace_string_from_match("Actuator %(noKey)s in the %(noPlace)s has temp %(noKey)s" ) == 'Actuator <MISSING VALUE> in the <MISSING VALUE> has temp <MISSING VALUE>'
-    
+
+    expected_outputs = [
+                        "mySystem is online <MISSING VALUE>",
+                        'Sensor outsideSensor in the <MISSING VALUE> has temp 45',
+                        'Actuator <MISSING VALUE> in the <MISSING VALUE> has temp <MISSING VALUE>']
+    old_style_strings = [
+                        "%(name)s is online %(noKey)s",
+                        "Sensor %(sensor)s in the %(noPlace)s has temp %(temperature)s",
+                        "Actuator %(noKey)s in the %(noPlace)s has temp %(noKey)s"]
+
+    assert alert.replace_string_from_match(old_style_strings[0]) == expected_outputs[0]
+    assert alert.replace_string_from_match(old_style_strings[1]) == expected_outputs[1]
+    assert alert.replace_string_from_match(old_style_strings[2]) == expected_outputs[2]
+
     alert.use_new_string_format = True
-    
-    assert alert.replace_string_from_match("{match[name]} is online {match[noKey]}" ) == "mySystem is online <MISSING VALUE>"
-    assert alert.replace_string_from_match("Sensor {match[sensor]} in the {match[noPlace]} has temp {match[temperature]}") == 'Sensor outsideSensor in the <MISSING VALUE> has temp 45'
-    assert alert.replace_string_from_match("Actuator {match[noKey]} in the {match[noPlace]} has temp {match[noKey]}" ) == 'Actuator <MISSING VALUE> in the <MISSING VALUE> has temp <MISSING VALUE>'
- 
+    new_style_strings = [
+                        "{match[name]} is online {match[noKey]}",
+                        "Sensor {match[sensor]} in the {match[noPlace]} has temp {match[temperature]}",
+                        "Actuator {match[noKey]} in the {match[noPlace]} has temp {match[noKey]}"]
+
+    assert alert.replace_string_from_match(new_style_strings[0]) == expected_outputs[0]
+    assert alert.replace_string_from_match(new_style_strings[1]) == expected_outputs[1]
+    assert alert.replace_string_from_match(new_style_strings[2]) == expected_outputs[2]
+
+
 def test_alerta_no_auth(ea):
     rule = {
             'name': 'Test Alerta rule!',
             'alerta_api_url': 'http://elastalerthost:8080/api/alert',
             'timeframe': datetime.timedelta(hours=1),
             'timestamp_field': '@timestamp',
-            'alerta_attributes_keys':   ["hostname",   "TimestampEvent",    "senderIP" ],
-            'alerta_attributes_values': ["%(key)s",    "%(logdate)s",       "%(sender_ip)s"  ],
-            'alerta_correlate': ["ProbeUP","ProbeDOWN"],
+            'alerta_attributes_keys': ["hostname",   "TimestampEvent",    "senderIP"],
+            'alerta_attributes_values': ["%(key)s",    "%(logdate)s",       "%(sender_ip)s"],
+            'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
             'alerta_event': "ProbeUP",
             'alerta_group': "Health",
             'alerta_origin': "Elastalert",
@@ -1749,35 +1762,35 @@ def test_alerta_no_auth(ea):
             }
 
     match = {
-            '@timestamp': '2014-10-10T00:00:00', 
+            '@timestamp': '2014-10-10T00:00:00',
             # 'key': ---- missing field on purpose, to verify that simply the text is left empty
             # 'logdate': ---- missing field on purpose, to verify that simply the text is left empty
             'sender_ip': '1.1.1.1',
             'hostname': 'aProbe'
             }
-        
+
     load_modules(rule)
     alert = AlertaAlerter(rule)
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
 
     expected_data = {
-        "origin": "Elastalert", 
-        "customer": "", 
-        "resource": "elastalert", 
-        "severity": "debug", 
-        "service": ["elastalert"], 
-        "tags": [], 
-        "text": "Probe aProbe is UP at <MISSING VALUE> GMT", 
-        "value": "UP", 
-        "createTime": "2014-10-10T00:00:00.000000Z", 
-        "environment": "Production", 
-        "rawData": "Test Alerta rule!\n\n@timestamp: 2014-10-10T00:00:00\nhostname: aProbe\nsender_ip: 1.1.1.1\n", 
-        "timeout": 86400, 
-        "correlate": ["ProbeUP", "ProbeDOWN"], 
-        "group": "Health", 
-        "attributes": {"senderIP": "1.1.1.1", "hostname": "<MISSING VALUE>", "TimestampEvent": "<MISSING VALUE>"}, 
-        "type": "elastalert", 
+        "origin": "Elastalert",
+        "customer": "",
+        "resource": "elastalert",
+        "severity": "debug",
+        "service": ["elastalert"],
+        "tags": [],
+        "text": "Probe aProbe is UP at <MISSING VALUE> GMT",
+        "value": "UP",
+        "createTime": "2014-10-10T00:00:00.000000Z",
+        "environment": "Production",
+        "rawData": "Test Alerta rule!\n\n@timestamp: 2014-10-10T00:00:00\nhostname: aProbe\nsender_ip: 1.1.1.1\n",
+        "timeout": 86400,
+        "correlate": ["ProbeUP", "ProbeDOWN"],
+        "group": "Health",
+        "attributes": {"senderIP": "1.1.1.1", "hostname": "<MISSING VALUE>", "TimestampEvent": "<MISSING VALUE>"},
+        "type": "elastalert",
         "event": "ProbeUP"
         }
 
@@ -1785,10 +1798,11 @@ def test_alerta_no_auth(ea):
         alert.url,
         data=mock.ANY,
         headers={
-            'content-type': 'application/json' }
+            'content-type': 'application/json'}
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
+
 
 def test_alerta_auth(ea):
     rule = {
@@ -1807,16 +1821,15 @@ def test_alerta_auth(ea):
             'sender_ip': '1.1.1.1',
             'hostname': 'aProbe'
             }
-            
+
     load_modules(rule)
     alert = AlertaAlerter(rule)
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
-        
+
     mock_post_request.assert_called_once_with(
         alert.url,
         data=mock.ANY,
         headers={
-            'content-type': 'application/json' ,
+            'content-type': 'application/json',
             'Authorization': 'Key {}'.format(rule['alerta_api_key'])})
-

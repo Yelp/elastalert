@@ -33,7 +33,8 @@ from util import elastalert_logger
 from util import lookup_es_key
 from util import pretty_ts
 from util import ts_now
-from util import ts_to_dt 
+from util import ts_to_dt
+
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -45,7 +46,6 @@ class DateTimeEncoder(json.JSONEncoder):
 
 class BasicMatchString(object):
     """ Creates a string containing fields in match for the given rule. """
-
     def __init__(self, rule, match):
         self.rule = rule
         self.match = match
@@ -855,7 +855,7 @@ class CommandAlerter(Alerter):
             self.new_style_string_format = True
 
     def alert(self, matches):
-         # Format the command and arguments
+        # Format the command and arguments
         try:
             if self.new_style_string_format:
                 command = [command_arg.format(match=matches[0]) for command_arg in self.rule['command']]
@@ -864,7 +864,7 @@ class CommandAlerter(Alerter):
             self.last_command = command
         except KeyError as e:
             raise EAException("Error formatting command: %s" % (e))
-        
+
         # Run command and pipe data
         try:
             subp = subprocess.Popen(command, stdin=subprocess.PIPE, shell=self.shell)
@@ -1438,7 +1438,7 @@ class AlertaAlerter(Alerter):
 
         self.url = self.rule.get('alerta_api_url', None)
 
-        #Fill up default values
+        # Fill up default values
         self.api_key = self.rule.get('alerta_api_key', None)
         self.severity = self.rule.get('alerta_severity', 'warning')
         self.resource = self.rule.get('alerta_resource', 'elastalert')
@@ -1448,17 +1448,17 @@ class AlertaAlerter(Alerter):
         self.timeout = self.rule.get('alerta_timeout', 86400)
         self.use_match_timestamp = self.rule.get('alerta_use_match_timestamp', False)
         self.use_qk_as_resource = self.rule.get('alerta_use_qk_as_resource', False)
-        self.text= self.rule.get('alerta_text', 'elastalert')
-        self.type= self.rule.get('alerta_type', 'elastalert')
-        self.event=  self.rule.get('alerta_event', 'elastalert')
+        self.text = self.rule.get('alerta_text', 'elastalert')
+        self.type = self.rule.get('alerta_type', 'elastalert')
+        self.event = self.rule.get('alerta_event', 'elastalert')
         self.correlate = self.rule.get('alerta_correlate', [])
         self.tags = self.rule.get('alerta_tags', [])
-        self.group = self.rule.get('alerta_group','')
-        self.customer = self.rule.get('alerta_customer','')
+        self.group = self.rule.get('alerta_group', '')
+        self.customer = self.rule.get('alerta_customer', '')
         self.attributes_keys = self.rule.get('alerta_attributes_keys', [])
         self.attributes_values = self.rule.get('alerta_attributes_values', [])
         self.value = self.rule.get('alerta_value', '')
-        self.use_new_string_format = self.rule.get('alerta_new_style_string_format',False)
+        self.use_new_string_format = self.rule.get('alerta_new_style_string_format', False)
 
     def alert(self, matches):
 
@@ -1467,10 +1467,9 @@ class AlertaAlerter(Alerter):
         else:
             createTime = ts_to_dt(lookup_es_key(matches[0], self.rule['timestamp_field'])).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
-        
         self.resolve_match_fields(matches[0])
 
-        #Override the resource if requested
+        # Override the resource if requested
         if self.use_qk_as_resource and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
             self.resource = lookup_es_key(matches[0], self.rule['query_key'])
 
@@ -1481,10 +1480,9 @@ class AlertaAlerter(Alerter):
             headers['Authorization'] = 'Key %s' % (self.rule['alerta_api_key'])
 
         if self.text == '':
-            self.text =  self.rule['type'].get_match_str(matches[0])
+            self.text = self.rule['type'].get_match_str(matches[0])
         if self.event == '':
             self.event = self.create_default_title(matches)
-
 
         # set https proxy, if it was provided
         payload = {
@@ -1494,7 +1492,6 @@ class AlertaAlerter(Alerter):
             'severity': self.severity,
             'text': self.text,
             'environment': self.environment,
-            'severity': self.severity,
             'group': self.group,
             'service': self.service,
             'timeout': self.timeout,
@@ -1502,16 +1499,14 @@ class AlertaAlerter(Alerter):
             'correlate': self.correlate,
             'tags': self.tags,
             'customer': self.customer,
-            'type' : self.type,
-            'value' : self.value,
+            'type': self.type,
+            'value': self.value,
             'attributes': dict(zip(self.attributes_keys, self.attributes_values)),
             'rawData': self.create_alert_body(matches),
         }
 
         try:
-            response = requests.post(self.url, data = json.dumps(payload, cls=DateTimeEncoder), headers=headers)
-
-            #print(json.dumps(payload, cls=DateTimeEncoder))
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers)
 
             response.raise_for_status()
         except RequestException as e:
@@ -1533,13 +1528,13 @@ class AlertaAlerter(Alerter):
         return {'type': 'alerta',
                 'alerta_url': self.url}
 
-    def resolve_match_fields(self,match):
+    def resolve_match_fields(self, match):
         """
             For the values that could have references to fields on the match, resolve those references
         """
-        
+
         self.match_dictionary = match
-        
+
         self.resource = self.replace_string_from_match(self.resource)
         self.environment = self.replace_string_from_match(self.environment)
         self.origin = self.replace_string_from_match(self.origin)
@@ -1547,48 +1542,52 @@ class AlertaAlerter(Alerter):
         self.event = self.replace_string_from_match(self.event)
         self.text = self.replace_string_from_match(self.text)
         self.value = self.replace_string_from_match(self.value)
-        alerta_service =  [ self.replace_string_from_match(a_service) for a_service in self.service ]
+        alerta_service = [self.replace_string_from_match(a_service) for a_service in self.service]
         self.service = alerta_service
-        alerta_tags = [ self.replace_string_from_match(a_tag) for a_tag in self.tags ]
+        alerta_tags = [self.replace_string_from_match(a_tag) for a_tag in self.tags]
         self.tags = alerta_tags
-        alerta_correlate = [ self.replace_string_from_match(an_event) for an_event in self.correlate ]
+        alerta_correlate = [self.replace_string_from_match(an_event) for an_event in self.correlate]
         self.correlate = alerta_correlate
-        alerta_attributes_values = [ self.replace_string_from_match(a_value) for a_value in self.attributes_values ]
+        alerta_attributes_values = [self.replace_string_from_match(a_value) for a_value in self.attributes_values]
         self.attributes_values = alerta_attributes_values
-        
-    def replace_string_from_match(self, string ):
+
+    def replace_string_from_match(self, string):
         """
-            Given a python string that may contain references to fields on the match dictionary, the string is completed using the corresponding values.
-            However, if the referenced field is not found on the dictionary, it is replaced by a default string.
-            Strings can be formatted using the old-style format ('%(field)s') or the new-style format ('{match[field]}'), according to 'use_new_string_format'
+            Given a python string that may contain references to fields on the match dictionary,
+                the strings are replaced using the corresponding values.
+            However, if the referenced field is not found on the dictionary,
+                it is replaced by a default string.
+            Strings can be formatted using the old-style format ('%(field)s') or
+                the new-style format ('{match[field]}'), according to 'use_new_string_format'.
 
             :param python_string: A string that may contain references to values of the 'match' dictionary.
             :param match_dictio: A dictionary with the values to replace where referenced by keys in the string.
             :param use_new_string_format: If True, the string is expected to use the new-style format '{match[field]}'
-            
-            The text used when the reference field is not used is determined by the rule's argument 'alert_missing_value', or '<MISSING VALUE>' by default
+
+            The text used when the reference field is not used is determined
+                by the rule's argument 'alert_missing_value', or '<MISSING VALUE>' by default.
         """
         missing_text = self.rule.get('alert_missing_value', '<MISSING VALUE>')
-        
+
         if self.use_new_string_format:
             match_field_regex = re.compile('.*({match\[(\w+)\]}).*')
             match_field_definition_regex = re.compile('{match\[(\w+)\]}')
         else:
             match_field_regex = re.compile('.*(%\(\w+\)s).*')
             match_field_definition_regex = re.compile('%\((\w+)\)s')
-        
+
         while True:
             regex_match = match_field_regex.search(string)
             if regex_match is not None:
-                match_field =   regex_match.group(1)
+                match_field = regex_match.group(1)
                 regex_match = match_field_definition_regex.search(match_field)
                 if regex_match is not None:
                     match_field_key = regex_match.group(1)
-                    match_field_value = lookup_es_key(self.match_dictionary, match_field_key )
+                    match_field_value = lookup_es_key(self.match_dictionary, match_field_key)
                     match_field_value = missing_text if match_field_value is None else match_field_value
-                    string = string.replace(match_field,match_field_value)
+                    string = string.replace(match_field, match_field_value)
                 else:
-                    string = string.replace(match_field,missing_text)
+                    string = string.replace(match_field, missing_text)
             else:
                 break
         return string
