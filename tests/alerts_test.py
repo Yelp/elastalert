@@ -1703,7 +1703,7 @@ def test_stride_html():
         mock_post_request.call_args_list[0][1]['data'])
 
 
-def test_hipchat_body_size_limit():
+def test_hipchat_body_size_limit_text():
     rule = {
         'name': 'Test Rule',
         'type': 'any',
@@ -1725,7 +1725,34 @@ def test_hipchat_body_size_limit():
         '@timestamp': '2018-01-01T00:00:00',
         'message': 'foo bar\n' * 5000,
     }
+    body = alert.create_alert_body([match])
+
+    assert len(body) <= 10000
+
+
+def test_hipchat_body_size_limit_html():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'hipchat_auth_token': 'token',
+        'hipchat_room_id': 'room_id',
+        'hipchat_message_format': 'html',
+        'alert_subject': 'Cool subject',
+        'alert_text': 'Alert: we found something.\n\n{message}',
+        'alert_text_type': 'alert_text_only',
+        'alert': [],
+        'alert_text_kw': {
+            '@timestamp': 'time',
+            'message': 'message',
+        },
+    }
+    load_modules(rule)
+    alert = HipChatAlerter(rule)
+    match = {
+        '@timestamp': '2018-01-01T00:00:00',
+        'message': 'foo bar\n' * 5000,
+    }
 
     body = alert.create_alert_body([match])
 
-    assert len(body) < 10000
+    assert len(body) <= 10000
