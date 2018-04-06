@@ -935,8 +935,8 @@ class HipChatAlerter(Alerter):
             self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
         self.hipchat_proxy = self.rule.get('hipchat_proxy', None)
 
-    def alert(self, matches):
-        body = self.create_alert_body(matches)
+    def create_alert_body(self, matches):
+        body = super(HipChatAlerter, self).create_alert_body(matches)
 
         # HipChat sends 400 bad request on messages longer than 10000 characters
         if (len(body) > 9999):
@@ -945,6 +945,11 @@ class HipChatAlerter(Alerter):
         # Use appropriate line ending for text/html
         if self.hipchat_message_format == 'html':
             body = body.replace('\n', '<br />')
+
+        return body
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
 
         # Post to HipChat
         headers = {'content-type': 'application/json'}
