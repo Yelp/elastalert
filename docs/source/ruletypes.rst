@@ -106,7 +106,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``alert_missing_value`` (string, default "<MISSING VALUE>")  |           |
 +--------------------------------------------------------------+           |
-| ``is_enabled`` (boolean, default true)                       |           |
+| ``is_enabled`` (boolean, default True)                       |           |
 +--------------------------------------------------------------+-----------+
 
 |
