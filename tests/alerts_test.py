@@ -1833,3 +1833,66 @@ def test_alerta_auth(ea):
         headers={
             'content-type': 'application/json',
             'Authorization': 'Key {}'.format(rule['alerta_api_key'])})
+
+
+def test_alerta_new_style(ea):
+    rule = {
+            'name': 'Test Alerta rule!',
+            'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+            'timeframe': datetime.timedelta(hours=1),
+            'timestamp_field': '@timestamp',
+            'alerta_attributes_keys': ["hostname",   "TimestampEvent",    "senderIP"],
+            'alerta_attributes_values': ["{match[hostname]}",    "{match[logdate]}",       "{match[sender_ip]}"],
+            'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
+            'alerta_event': "ProbeUP",
+            'alerta_group': "Health",
+            'alerta_origin': "Elastalert",
+            'alerta_severity': "debug",
+            'alerta_text':  "Probe {match[hostname]} is UP at {match[logdate]} GMT",
+            'alerta_value': "UP",
+            'alerta_new_style_string_format': True,
+            'type': 'any',
+            'alert': 'alerta'
+            }
+
+    match = {
+            '@timestamp': '2014-10-10T00:00:00',
+            # 'key': ---- missing field on purpose, to verify that simply the text is left empty
+            # 'logdate': ---- missing field on purpose, to verify that simply the text is left empty
+            'sender_ip': '1.1.1.1',
+            'hostname': 'aProbe'
+            }
+
+    load_modules(rule)
+    alert = AlertaAlerter(rule)
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        "origin": "Elastalert",
+        "customer": "",
+        "resource": "elastalert",
+        "severity": "debug",
+        "service": ["elastalert"],
+        "tags": [],
+        "text": "Probe aProbe is UP at <MISSING VALUE> GMT",
+        "value": "UP",
+        "createTime": "2014-10-10T00:00:00.000000Z",
+        "environment": "Production",
+        "rawData": "Test Alerta rule!\n\n@timestamp: 2014-10-10T00:00:00\nhostname: aProbe\nsender_ip: 1.1.1.1\n",
+        "timeout": 86400,
+        "correlate": ["ProbeUP", "ProbeDOWN"],
+        "group": "Health",
+        "attributes": {"senderIP": "1.1.1.1", "hostname": "aProbe", "TimestampEvent": "<MISSING VALUE>"},
+        "type": "elastalert",
+        "event": "ProbeUP"
+        }
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'content-type': 'application/json'}
+    )
+    assert expected_data == json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
