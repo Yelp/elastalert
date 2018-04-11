@@ -2,19 +2,19 @@
 import copy
 import datetime
 import json
-import time
 import logging
 import subprocess
 import sys
+import time
 import warnings
 from email.mime.text import MIMEText
 from email.utils import formatdate
+from HTMLParser import HTMLParser
 from smtplib import SMTP
 from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
-from HTMLParser import HTMLParser
 
 import boto3
 import requests
@@ -569,6 +569,7 @@ class JiraAlerter(Alerter):
         try:
             self.client = JIRA(self.server, basic_auth=(self.user, self.password))
             self.get_priorities()
+            self.jira_fields = self.client.fields()
             self.get_arbitrary_fields()
         except JIRAError as e:
             # JIRAError may contain HTML, pass along only first 1024 chars
@@ -675,14 +676,12 @@ class JiraAlerter(Alerter):
         # Clear jira_args
         self.reset_jira_args()
 
-        # This API returns metadata about all the fields defined on the jira server (built-ins and custom ones)
-        fields = self.client.fields()
         for jira_field, value in self.rule.iteritems():
             # If we find a field that is not covered by the set that we are aware of, it means it is either:
             # 1. A built-in supported field in JIRA that we don't have on our radar
             # 2. A custom field that a JIRA admin has configured
             if jira_field.startswith('jira_') and jira_field not in self.known_field_list and str(value)[:1] != '#':
-                self.set_jira_arg(jira_field, value, fields)
+                self.set_jira_arg(jira_field, value, self.jira_fields)
             if jira_field.startswith('jira_') and jira_field not in self.known_field_list and str(value)[:1] == '#':
                 self.deferred_settings.append(jira_field)
 
@@ -739,6 +738,8 @@ class JiraAlerter(Alerter):
         self.client.add_comment(ticket, comment)
 
     def alert(self, matches):
+        # Reset arbitrary fields to pick up changes
+        self.get_arbitrary_fields()
         if len(self.deferred_settings) > 0:
             fields = self.client.fields()
             for jira_field in self.deferred_settings:
@@ -966,16 +967,16 @@ class HipChatAlerter(Alerter):
                 ping_users = self.rule.get('hipchat_mentions', [])
                 ping_msg = payload.copy()
                 ping_msg['message'] = "ping {}".format(
-                        ", ".join("@{}".format(user) for user in ping_users)
+                    ", ".join("@{}".format(user) for user in ping_users)
                 )
                 ping_msg['message_format'] = "text"
 
                 response = requests.post(
-                        self.url,
-                        data=json.dumps(ping_msg, cls=DateTimeEncoder),
-                        headers=headers,
-                        verify=not self.hipchat_ignore_ssl_errors,
-                        proxies=proxies)
+                    self.url,
+                    data=json.dumps(ping_msg, cls=DateTimeEncoder),
+                    headers=headers,
+                    verify=not self.hipchat_ignore_ssl_errors,
+                    proxies=proxies)
 
             response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
                                      verify=not self.hipchat_ignore_ssl_errors,
