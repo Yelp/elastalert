@@ -1776,7 +1776,6 @@ def test_alerta_no_auth(ea):
 
     expected_data = {
         "origin": "Elastalert",
-        "customer": "",
         "resource": "elastalert",
         "severity": "debug",
         "service": ["elastalert"],
@@ -1870,7 +1869,6 @@ def test_alerta_new_style(ea):
 
     expected_data = {
         "origin": "Elastalert",
-        "customer": "",
         "resource": "elastalert",
         "severity": "debug",
         "service": ["elastalert"],

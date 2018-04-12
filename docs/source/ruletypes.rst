@@ -1709,6 +1709,8 @@ Alerta alerter will post an alert in the Alerta server instance through the aler
 The default values will work with a local Alerta server installation with authorization disabled.
 See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on the Alerta alert json format.
 
+For Alerta 5.0
+
 Required:
 
 ``alerta_api_url``: API server URL. 
@@ -1739,11 +1741,7 @@ Optional:
 
 ``alerta_use_match_timestamp``: If true will use the timestamp of the first match as the createTime of the alert, otherwise the current time is used. Default False. 
 
-``alerta_ssl``: If true alerts will be sent over https to the alerta server api.
-
 ``alerta_event``: Can make reference to parts of the match to build the event name. Defaults to "elastalert".
-
-``alerta_customer``: No Default.
 
 ``alerta_text``: Python-style string can be used to make reference to parts of the match. Defaults to "elastalert".
 

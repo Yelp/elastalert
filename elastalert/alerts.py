@@ -1455,7 +1455,6 @@ class AlertaAlerter(Alerter):
         self.correlate = self.rule.get('alerta_correlate', [])
         self.tags = self.rule.get('alerta_tags', [])
         self.group = self.rule.get('alerta_group', '')
-        self.customer = self.rule.get('alerta_customer', '')
         self.attributes_keys = self.rule.get('alerta_attributes_keys', [])
         self.attributes_values = self.rule.get('alerta_attributes_values', [])
         self.value = self.rule.get('alerta_value', '')
@@ -1499,7 +1498,6 @@ class AlertaAlerter(Alerter):
             'createTime': createTime,
             'correlate': self.correlate,
             'tags': self.tags,
-            'customer': self.customer,
             'type': self.type,
             'value': self.value,
             'attributes': dict(zip(self.attributes_keys, self.attributes_values)),
