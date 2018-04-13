@@ -1474,13 +1474,12 @@ class AlertaAlerter(Alerter):
         alerta_payload = self.get_json_payload(matches[0])
 
         try:
-            print ("Alerta Payload = " + alerta_payload)
+
             response = requests.post(self.url, data=alerta_payload, headers=headers)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Alerta: %s" % e)
         elastalert_logger.info("Alert sent to Alerta")
-        elastalert_logger.debug("Alert sent to Alerta is " + alerta_payload)
 
     def create_default_title(self, matches):
         title = '%s' % (self.rule['name'])
@@ -1514,7 +1513,7 @@ class AlertaAlerter(Alerter):
         alerta_event = self.create_default_title([match]) if alerta_event == '' else alerta_event
 
         timestamp_field = self.rule.get('timestamp_field', '@timestamp')
-        match_timestamp = lookup_es_key([match], timestamp_field)
+        match_timestamp = lookup_es_key(match, timestamp_field)
         if match_timestamp is None:
             match_timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         if self.use_match_timestamp:

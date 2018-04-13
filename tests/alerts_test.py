@@ -1704,7 +1704,7 @@ def test_stride_html():
         mock_post_request.call_args_list[0][1]['data'])
 
 
-def test_alerta_replace_string_from_match(ea):
+def test_alerta_resolve_string(ea):
     match = {
         'name': 'mySystem',
         'temperature': '45',
@@ -1716,7 +1716,6 @@ def test_alerta_replace_string_from_match(ea):
             }
 
     alert = AlertaAlerter(rule)
-    alert.match_dictionary = match
 
     expected_outputs = [
                         "mySystem is online <MISSING VALUE>",
@@ -1727,9 +1726,9 @@ def test_alerta_replace_string_from_match(ea):
                         "Sensor %(sensor)s in the %(noPlace)s has temp %(temperature)s",
                         "Actuator %(noKey)s in the %(noPlace)s has temp %(noKey)s"]
 
-    assert alert.replace_string_from_match(old_style_strings[0]) == expected_outputs[0]
-    assert alert.replace_string_from_match(old_style_strings[1]) == expected_outputs[1]
-    assert alert.replace_string_from_match(old_style_strings[2]) == expected_outputs[2]
+    assert alert.resolve_string(old_style_strings[0], match) == expected_outputs[0]
+    assert alert.resolve_string(old_style_strings[1], match) == expected_outputs[1]
+    assert alert.resolve_string(old_style_strings[2], match) == expected_outputs[2]
 
     alert.use_new_string_format = True
     new_style_strings = [
@@ -1737,9 +1736,9 @@ def test_alerta_replace_string_from_match(ea):
                         "Sensor {match[sensor]} in the {match[noPlace]} has temp {match[temperature]}",
                         "Actuator {match[noKey]} in the {match[noPlace]} has temp {match[noKey]}"]
 
-    assert alert.replace_string_from_match(new_style_strings[0]) == expected_outputs[0]
-    assert alert.replace_string_from_match(new_style_strings[1]) == expected_outputs[1]
-    assert alert.replace_string_from_match(new_style_strings[2]) == expected_outputs[2]
+    assert alert.resolve_string(new_style_strings[0], match) == expected_outputs[0]
+    assert alert.resolve_string(new_style_strings[1], match) == expected_outputs[1]
+    assert alert.resolve_string(new_style_strings[2], match) == expected_outputs[2]
 
 
 def test_alerta_no_auth(ea):
@@ -1747,7 +1746,7 @@ def test_alerta_no_auth(ea):
             'name': 'Test Alerta rule!',
             'alerta_api_url': 'http://elastalerthost:8080/api/alert',
             'timeframe': datetime.timedelta(hours=1),
-            'timestamp_field': '@timestamp',
+            'timestamp_field': u'@timestamp',
             'alerta_attributes_keys': ["hostname",   "TimestampEvent",    "senderIP"],
             'alerta_attributes_values': ["%(key)s",    "%(logdate)s",       "%(sender_ip)s"],
             'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
@@ -1758,11 +1757,12 @@ def test_alerta_no_auth(ea):
             'alerta_text':  "Probe %(hostname)s is UP at %(logdate)s GMT",
             'alerta_value': "UP",
             'type': 'any',
+            'alerta_use_match_timestamp': True,
             'alert': 'alerta'
             }
 
     match = {
-            '@timestamp': '2014-10-10T00:00:00',
+            u'@timestamp': '2014-10-10T00:00:00',
             # 'key': ---- missing field on purpose, to verify that simply the text is left empty
             # 'logdate': ---- missing field on purpose, to verify that simply the text is left empty
             'sender_ip': '1.1.1.1',
@@ -1812,6 +1812,7 @@ def test_alerta_auth(ea):
             'timestamp_field': '@timestamp',
             'alerta_severity': "debug",
             'type': 'any',
+            'alerta_use_match_timestamp': True,
             'alert': 'alerta'
             }
 
@@ -1851,6 +1852,7 @@ def test_alerta_new_style(ea):
             'alerta_value': "UP",
             'alerta_new_style_string_format': True,
             'type': 'any',
+            'alerta_use_match_timestamp': True,
             'alert': 'alerta'
             }
 
