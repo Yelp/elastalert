@@ -1460,97 +1460,94 @@ class AlertaAlerter(Alerter):
         self.value = self.rule.get('alerta_value', '')
         self.use_new_string_format = self.rule.get('alerta_new_style_string_format', False)
 
+        self.missing_text = self.rule.get('alert_missing_value', '<MISSING VALUE>')
+
     def alert(self, matches):
-
-        if self.use_match_timestamp and lookup_es_key(matches[0], self.rule['timestamp_field']):
-            createTime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        else:
-            createTime = ts_to_dt(lookup_es_key(matches[0], self.rule['timestamp_field'])).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-
-        self.resolve_match_fields(matches[0])
-
         # Override the resource if requested
         if self.use_qk_as_resource and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
             self.resource = lookup_es_key(matches[0], self.rule['query_key'])
 
-        # post to Alerta
         headers = {'content-type': 'application/json'}
-
         if self.api_key is not None:
             headers['Authorization'] = 'Key %s' % (self.rule['alerta_api_key'])
 
-        if self.text == '':
-            self.text = self.rule['type'].get_match_str(matches[0])
-        if self.event == '':
-            self.event = self.create_default_title(matches)
-
-        # set https proxy, if it was provided
-        payload = {
-            'resource': self.resource,
-            'event': self.event,
-            'origin': self.origin,
-            'severity': self.severity,
-            'text': self.text,
-            'environment': self.environment,
-            'group': self.group,
-            'service': self.service,
-            'timeout': self.timeout,
-            'createTime': createTime,
-            'correlate': self.correlate,
-            'tags': self.tags,
-            'type': self.type,
-            'value': self.value,
-            'attributes': dict(zip(self.attributes_keys, self.attributes_values)),
-            'rawData': self.create_alert_body(matches),
-        }
+        alerta_payload = self.get_json_payload(matches[0])
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers)
-
+            print ("Alerta Payload = " + alerta_payload)
+            response = requests.post(self.url, data=alerta_payload, headers=headers)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Alerta: %s" % e)
         elastalert_logger.info("Alert sent to Alerta")
+        elastalert_logger.debug("Alert sent to Alerta is " + alerta_payload)
 
     def create_default_title(self, matches):
         title = '%s' % (self.rule['name'])
-
         # If the rule has a query_key, add that value plus timestamp to subject
         if 'query_key' in self.rule:
             qk = matches[0].get(self.rule['query_key'])
             if qk:
                 title += '.%s' % (qk)
-
         return title
 
     def get_info(self):
         return {'type': 'alerta',
                 'alerta_url': self.url}
 
-    def resolve_match_fields(self, match):
+    def get_json_payload(self, match):
         """
-            For the values that could have references to fields on the match, resolve those references
+            Builds the API Create Alert body, as in
+            http://alerta.readthedocs.io/en/latest/api/reference.html#create-an-alert
+
+            For the values that could have references to fields on the match, resolve those references.
+
         """
 
-        self.match_dictionary = match
+        alerta_service = [self.resolve_string(a_service, match) for a_service in self.service]
+        alerta_tags = [self.resolve_string(a_tag, match) for a_tag in self.tags]
+        alerta_correlate = [self.resolve_string(an_event, match) for an_event in self.correlate]
+        alerta_attributes_values = [self.resolve_string(a_value, match) for a_value in self.attributes_values]
+        alerta_text = self.resolve_string(self.text, match)
+        alerta_text = self.rule['type'].get_match_str([match]) if alerta_text == '' else alerta_text
+        alerta_event = self.resolve_string(self.event, match)
+        alerta_event = self.create_default_title([match]) if alerta_event == '' else alerta_event
 
-        self.resource = self.replace_string_from_match(self.resource)
-        self.environment = self.replace_string_from_match(self.environment)
-        self.origin = self.replace_string_from_match(self.origin)
-        self.group = self.replace_string_from_match(self.group)
-        self.event = self.replace_string_from_match(self.event)
-        self.text = self.replace_string_from_match(self.text)
-        self.value = self.replace_string_from_match(self.value)
-        alerta_service = [self.replace_string_from_match(a_service) for a_service in self.service]
-        self.service = alerta_service
-        alerta_tags = [self.replace_string_from_match(a_tag) for a_tag in self.tags]
-        self.tags = alerta_tags
-        alerta_correlate = [self.replace_string_from_match(an_event) for an_event in self.correlate]
-        self.correlate = alerta_correlate
-        alerta_attributes_values = [self.replace_string_from_match(a_value) for a_value in self.attributes_values]
-        self.attributes_values = alerta_attributes_values
+        timestamp_field = self.rule.get('timestamp_field', '@timestamp')
+        match_timestamp = lookup_es_key([match], timestamp_field)
+        if match_timestamp is None:
+            match_timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        if self.use_match_timestamp:
+            createTime = ts_to_dt(match_timestamp).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        else:
+            createTime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
-    def replace_string_from_match(self, string):
+        alerta_payload_dict = {
+            'resource': self.resolve_string(self.resource, match),
+            'severity': self.severity,
+            'timeout': self.timeout,
+            'createTime': createTime,
+            'type': self.type,
+            'environment': self.resolve_string(self.environment, match),
+            'origin': self.resolve_string(self.origin, match),
+            'group': self.resolve_string(self.group, match),
+            'event': alerta_event,
+            'text': alerta_text,
+            'value': self.resolve_string(self.value, match),
+            'service': alerta_service,
+            'tags': alerta_tags,
+            'correlate': alerta_correlate,
+            'attributes': dict(zip(self.attributes_keys,  alerta_attributes_values)),
+            'rawData': self.create_alert_body([match]),
+        }
+
+        try:
+            payload = json.dumps(alerta_payload_dict, cls=DateTimeEncoder)
+        except Exception as e:
+            raise Exception("Error building Alerta request: %s" % e)
+        return payload
+
+    def resolve_string(self, string, match):
         """
             Given a python string that may contain references to fields on the match dictionary,
                 the strings are replaced using the corresponding values.
@@ -1566,7 +1563,6 @@ class AlertaAlerter(Alerter):
             The text used when the reference field is not used is determined
                 by the rule's argument 'alert_missing_value', or '<MISSING VALUE>' by default.
         """
-        missing_text = self.rule.get('alert_missing_value', '<MISSING VALUE>')
 
         if self.use_new_string_format:
             match_field_regex = re.compile('.*({match\[(\w+)\]}).*')
@@ -1582,11 +1578,11 @@ class AlertaAlerter(Alerter):
                 regex_match = match_field_definition_regex.search(match_field)
                 if regex_match is not None:
                     match_field_key = regex_match.group(1)
-                    match_field_value = lookup_es_key(self.match_dictionary, match_field_key)
-                    match_field_value = missing_text if match_field_value is None else match_field_value
+                    match_field_value = lookup_es_key(match, match_field_key)
+                    match_field_value = self.missing_text if match_field_value is None else match_field_value
                     string = string.replace(match_field, match_field_value)
                 else:
-                    string = string.replace(match_field, missing_text)
+                    string = string.replace(match_field, self.missing_text)
             else:
                 break
         return string
