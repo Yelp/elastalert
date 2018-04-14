@@ -275,3 +275,16 @@ properties:
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
+
+  ### Flowdock
+  flowdock_flow_token: {type: string}
+  flowdock_author_name: {type: string}
+  flowdock_thread_title: {type: string}
+  flowdock_proxy: {type: string}
+  flowdock_ignore_ssl_errors: {type: boolean}
+  flowdock_event: {type: string}
+  flowdock_tags: {type: array, items: {type: string}}
+  flowdock_thread_fields: {type: array, items: {type: object}}
+  flowdock_thread_ext_url: {type: string}
+  flowdock_thread_status_color: {enum: [red, green, yellow, cyan, orange, grey, black, lime, purple, blue]}
+  flowdock_thread_status_value: {type: string}
