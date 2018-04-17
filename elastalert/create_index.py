@@ -162,6 +162,9 @@ def main():
     if es_index.exists(index):
         print('Index ' + index + ' already exists. Skipping index creation.')
         return None
+    elif es_index.exists_template(index):
+        print('Template ' + index + ' already exists. Deleting in preparation for creating indexes.')
+        es_index.delete_template(index)
 
     if elasticversion > 5:
         es.indices.create(index)
