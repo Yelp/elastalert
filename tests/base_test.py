@@ -851,6 +851,16 @@ def test_set_starttime(ea):
     ea.set_starttime(ea.rules[0], end)
     assert ea.rules[0]['starttime'] == ea.rules[0]['previous_endtime']
 
+    # scan_entire_timeframe
+    ea.rules[0].pop('previous_endtime')
+    ea.rules[0].pop('starttime')
+    ea.rules[0]['timeframe'] = datetime.timedelta(days=3)
+    ea.rules[0]['scan_entire_timeframe'] = True
+    with mock.patch.object(ea, 'get_starttime') as mock_gs:
+        mock_gs.return_value = None
+        ea.set_starttime(ea.rules[0], end)
+    assert ea.rules[0]['starttime'] == end - datetime.timedelta(days=3)
+
 
 def test_kibana_dashboard(ea):
     match = {'@timestamp': '2014-10-11T00:00:00'}
