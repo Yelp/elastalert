@@ -42,7 +42,6 @@ setup(
         'python-dateutil>=2.6.0,<2.7.0',
         'PyYAML>=3.12',
         'requests>=2.10.0',
-        'simplejson>=3.10.0',
         'stomp.py>=4.1.17',
         'texttable>=0.8.8',
         'twilio>=6.0.0,<6.1',

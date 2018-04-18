@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import copy
 import datetime
+import json
 import logging
 import os
 import random
@@ -14,7 +15,6 @@ import sys
 
 import argparse
 import mock
-import simplejson
 import yaml
 
 import elastalert.config
@@ -360,14 +360,14 @@ class MockElastAlerter(object):
 
         if args.json:
             with open(args.json, 'r') as data_file:
-                self.data = simplejson.loads(data_file.read())
+                self.data = json.loads(data_file.read())
         else:
             hits = self.test_file(copy.deepcopy(rule_yaml), args)
             if hits and args.save:
                 with open(args.save, 'wb') as data_file:
                     # Add _id to _source for dump
                     [doc['_source'].update({'_id': doc['_id']}) for doc in hits]
-                    data_file.write(simplejson.dumps([doc['_source'] for doc in hits], indent='    '))
+                    data_file.write(json.dumps([doc['_source'] for doc in hits], indent='    '))
 
         if not args.schema_only and not args.count:
             self.run_elastalert(rule_yaml, conf, args)
