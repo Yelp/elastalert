@@ -1267,8 +1267,9 @@ an email would be sent to ``qlo@example.com``
 ``smtp_ssl``: Connect the SMTP host using TLS, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
 STARTTLS.
 
-``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. It should be YAML formatted and contain
-two fields, ``user`` and ``password``. If this is not present, no authentication will be attempted.
+``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. The path can be either absolute or relative
+to the given rule. It should be YAML formatted and contain two fields, ``user`` and ``password``. If this is not present,
+no authentication will be attempted.
 
 ``smtp_cert_file``: Connect the SMTP host using the given path to a TLS certificate file, default to ``None``.
 
