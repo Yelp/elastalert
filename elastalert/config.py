@@ -79,6 +79,7 @@ alerts_mapping = {
     'telegram': alerts.TelegramAlerter,
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
+    'alerta': alerts.AlertaAlerter,
     'post': alerts.HTTPPostAlerter,
     'linenotify': alerts.LineNotifyAlerter
 }
