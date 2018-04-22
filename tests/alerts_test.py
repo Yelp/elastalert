@@ -1707,8 +1707,9 @@ def test_stride_html():
 def test_alerta_resolve_string(ea):
     match = {
         'name': 'mySystem',
-        'temperature': '45',
-        'sensor': 'outsideSensor'
+        'temperature': 45,
+        'humidity': 80.56,
+        'sensors': ['outsideSensor', 'insideSensor']
         }
     rule = {
             'name': 'Test Alerta rule!',
@@ -1719,11 +1720,11 @@ def test_alerta_resolve_string(ea):
 
     expected_outputs = [
                         "mySystem is online <MISSING VALUE>",
-                        'Sensor outsideSensor in the <MISSING VALUE> has temp 45',
-                        'Actuator <MISSING VALUE> in the <MISSING VALUE> has temp <MISSING VALUE>']
+                        "Sensors ['outsideSensor', 'insideSensor'] in the <MISSING VALUE> have temp 45 and 80.56 humidity",
+                        "Actuator <MISSING VALUE> in the <MISSING VALUE> has temp <MISSING VALUE>"]
     old_style_strings = [
                         "%(name)s is online %(noKey)s",
-                        "Sensor %(sensor)s in the %(noPlace)s has temp %(temperature)s",
+                        "Sensors %(sensors)s in the %(noPlace)s have temp %(temperature)s and %(humidity)s humidity",
                         "Actuator %(noKey)s in the %(noPlace)s has temp %(noKey)s"]
 
     assert alert.resolve_string(old_style_strings[0], match) == expected_outputs[0]
@@ -1733,7 +1734,7 @@ def test_alerta_resolve_string(ea):
     alert.use_new_string_format = True
     new_style_strings = [
                         "{match[name]} is online {match[noKey]}",
-                        "Sensor {match[sensor]} in the {match[noPlace]} has temp {match[temperature]}",
+                        "Sensors {match[sensors]} in the {match[noPlace]} have temp {match[temperature]} and {match[humidity]} humidity",
                         "Actuator {match[noKey]} in the {match[noPlace]} has temp {match[noKey]}"]
 
     assert alert.resolve_string(new_style_strings[0], match) == expected_outputs[0]

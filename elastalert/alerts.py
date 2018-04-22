@@ -1579,10 +1579,9 @@ class AlertaAlerter(Alerter):
                     match_field_key = regex_match.group(1)
                     match_field_value = lookup_es_key(match, match_field_key)
                     match_field_value = self.missing_text if match_field_value is None else match_field_value
-                    if type(match_field_value) is list and len(match_field_value) > 0:
-                        match_field_value = match_field_value[0]
+
                     try:
-                        string = string.replace(match_field, match_field_value)
+                        string = string.replace(match_field, str(match_field_value))
                     except Exception:
                         string = string.replace(match_field, self.missing_text)
                 else:
