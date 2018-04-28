@@ -1,0 +1,79 @@
+# Alert when there is a sudden spike in the volume of events
+
+# (Optional)
+# Elasticsearch host
+# es_host: elasticsearch.example.com
+
+# (Optional)
+# Elasticsearch port
+# es_port: 14900
+
+# (Optional) Connect with SSL to Elasticsearch
+#use_ssl: True
+
+# (Optional) basic-auth username and password for Elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# (Required)
+# Rule name, must be unique
+name: Event spike
+
+# (Required)
+# Type of alert.
+# the spike rule type compares the number of events within two sliding windows to each other
+type: spike
+
+# (Required)
+# Index to search, wildcard supported
+index: rpn_module_info*
+field_value: messages
+
+timestamp_type: unix_ms
+
+# (Required one of _cur or _ref, spike specific)
+# The minimum number of events that will trigger an alert
+# For example, if there are only 2 events between 12:00 and 2:00, and 20 between 2:00 and 4:00
+# _cur is 2 and _ref is 20, and the alert WILL fire because 20 is greater than threshold_cur
+threshold_cur: 5
+#threshold_ref: 5
+
+# (Required, spike specific)
+# The size of the window used to determine average event frequency
+# We use two sliding windows each of size timeframe
+# To measure the 'reference' rate and the current rate
+timeframe:
+  seconds: 30
+
+# (Required, spike specific)
+# The spike rule matches when the current window contains spike_height times more
+# events than the reference window
+spike_height: 1.2
+
+# (Required, spike specific)
+# The direction of the spike
+# 'up' matches only spikes, 'down' matches only troughs
+# 'both' matches both spikes and troughs
+spike_type: "up"
+query_key: module
+
+# (Required)
+# A list of Elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter:
+- query:
+    query_string:
+#      query: "messages:* AND module: Skeleton"
+      query: "messages:*"
+
+# (Required)
+# The alert is use when a match is found
+alert:
+  - "stomp"
+
+stomp_hostname: app.rpinum.be
+stomp_hostport: 61613
+stomp_login: admin
+stomp_password: ictcs-s4robair
+stomp_destination: ELASTALERTSPIKE
