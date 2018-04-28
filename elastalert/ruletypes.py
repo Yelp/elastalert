@@ -510,7 +510,7 @@ class SpikeRule(RuleType):
         return False
 
     def get_match_str(self, match):
-        if self.field_value == None:
+        if self.field_value is None:
             message = 'An abnormal number (%d) of events occurred around %s.\n' % (
                 match['spike_count'],
                 pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time'))
