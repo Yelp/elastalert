@@ -419,8 +419,8 @@ class SpikeRule(RuleType):
             if qk != 'all':
                 qk = hashable(lookup_es_key(event, qk))
                 if qk is None:
-                    qk = 'other'            
-            if self.field_value != None:
+                    qk = 'other'
+            if self.field_value is not None:
                 if self.field_value in event:
                     count = event[self.field_value]
                     self.handle_event(event, count, qk)
@@ -454,8 +454,8 @@ class SpikeRule(RuleType):
                 return
         else:
             self.ref_window_filled_once = True
-        
-        if self.field_value != None:
+
+        if self.field_value is not None:
             if self.find_matches(self.ref_windows[qk].mean(), self.cur_windows[qk].mean()):
                 # skip over placeholder events
                 for match, count in self.cur_windows[qk].data:
@@ -475,7 +475,7 @@ class SpikeRule(RuleType):
 
     def add_match(self, match, qk):
         extra_info = {}
-        if self.field_value == None:
+        if self.field_value is None:
             spike_count = self.cur_windows[qk].count()
             reference_count = self.ref_windows[qk].count()
         else:
@@ -491,11 +491,11 @@ class SpikeRule(RuleType):
     def find_matches(self, ref, cur):
         """ Determines if an event spike or dip happening. """
         # Apply threshold limits
-        if self.field_value == None:
+        if self.field_value is None:
             if (cur < self.rules.get('threshold_cur', 0) or
                     ref < self.rules.get('threshold_ref', 0)):
                 return False
-        elif ref == None or ref == 0 or cur == 0:
+        elif ref is None or ref == 0 or cur == 0:
             return False
 
         spike_up, spike_down = False, False
@@ -536,7 +536,7 @@ class SpikeRule(RuleType):
                 self.cur_windows.pop(qk)
                 self.ref_windows.pop(qk)
                 continue
-            placeholder = {self.ts_field: ts,"placeholder":True}
+            placeholder = {self.ts_field: ts, "placeholder": True}
             # The placeholder may trigger an alert, in which case, qk will be expected
             if qk != 'all':
                 placeholder.update({self.rules['query_key']: qk})
