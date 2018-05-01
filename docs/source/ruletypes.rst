@@ -1358,6 +1358,20 @@ Example usage::
 
     jira_bump_in_statuses:
       - Open
+      
+``jira_bump_only``: Only update if a ticket is found to bump.  This skips ticket creation for rules where you only want to affect existing tickets.
+
+Example usage::
+
+    jira_bump_only: true
+
+``jira_transition_to``: If ``jira_bump_tickets`` is true, Transition this ticket to the given Status when bumping. Must match the text of your JIRA implemenation's Status field.
+
+Example usage::
+
+    jira_transition_to: 'Fixed'
+
+
 
 ``jira_bump_after_inactivity``: If this is set, ElastAlert will only comment on tickets that have been inactive for at least this many days.
 It only applies if ``jira_bump_tickets`` is true. Default is 0 days.
