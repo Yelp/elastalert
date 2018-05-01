@@ -293,8 +293,10 @@ class Alerter(object):
         :param account_file: Path to the file which contains user and password information.
         It can be either an absolute file path or one that is relative to the given rule.
         """
-        account_file_path = account_file if os.path.isabs(account_file) else \
-                            os.path.join(os.path.dirname(self.rule['rule_file']), account_file)
+        if os.path.isabs(account_file):
+            account_file_path = account_file
+        else:
+            os.path.join(os.path.dirname(self.rule['rule_file']), account_file)
         account_conf = yaml_loader(account_file_path)
         if 'user' not in account_conf or 'password' not in account_conf:
             raise EAException('Account file must have user and password fields')

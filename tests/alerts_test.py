@@ -184,7 +184,8 @@ def test_email_with_unicode_strings():
 def test_email_with_auth():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
-            'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt'}
+            'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt',
+            'rule_file': '/tmp/foo.yaml'}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
             mock_open.return_value = {'user': 'someone', 'password': 'hunter2'}
@@ -206,7 +207,7 @@ def test_email_with_cert_key():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
             'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt',
-            'smtp_cert_file': 'dummy/cert.crt', 'smtp_key_file': 'dummy/client.key'}
+            'smtp_cert_file': 'dummy/cert.crt', 'smtp_key_file': 'dummy/client.key', 'rule_file': '/tmp/foo.yaml'}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
             mock_open.return_value = {'user': 'someone', 'password': 'hunter2'}
@@ -434,7 +435,8 @@ def test_jira():
         'jira_watchers': ['testwatcher1', 'testwatcher2'],
         'timestamp_field': '@timestamp',
         'alert_subject': 'Issue {0} occurred at {1}',
-        'alert_subject_args': ['test_term', '@timestamp']
+        'alert_subject_args': ['test_term', '@timestamp'],
+        'rule_file': '/tmp/foo.yaml'
     }
 
     mock_priority = mock.Mock(id='5')
@@ -574,7 +576,8 @@ def test_jira():
             'jira_description': "DESC",
             'jira_watchers': ['testwatcher1', 'testwatcher2'],
             'timestamp_field': '@timestamp',
-            'jira_affected_user': "#gmail.the_user"
+            'jira_affected_user': "#gmail.the_user",
+            'rule_file': '/tmp/foo.yaml'
         }
         mock_issue = mock.Mock()
         mock_issue.fields.updated = str(ts_now() - datetime.timedelta(days=4))
@@ -621,7 +624,8 @@ def test_jira_arbitrary_field_support():
         'jira_arbitrary_complex_array_field_provided_as_single_value': 'arbitrary_complex_value_in_array_field',
         'timestamp_field': '@timestamp',
         'alert_subject': 'Issue {0} occurred at {1}',
-        'alert_subject_args': ['test_term', '@timestamp']
+        'alert_subject_args': ['test_term', '@timestamp'],
+        'rule_file': '/tmp/foo.yaml'
     }
 
     mock_priority = mock.MagicMock(id='5')
