@@ -1365,7 +1365,7 @@ Example usage::
 
     jira_bump_only: true
 
-``jira_transition_to``: If ``jira_bump_tickets`` is true, Transition this ticket to the given Status when bumping. Must match the text of your JIRA implemenation's Status field.
+``jira_transition_to``: If ``jira_bump_tickets`` is true, Transition this ticket to the given Status when bumping. Must match the text of your JIRA implementation's Status field.
 
 Example usage::
 
