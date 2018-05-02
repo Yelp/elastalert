@@ -790,7 +790,7 @@ class JiraAlerter(Alerter):
                     try:
                         self.transition_ticket(ticket)
                     except JIRAError as e:
-                        logging.exception("Error while tranitioning ticket %s: %s" % (ticket, e))
+                        logging.exception("Error while transitioning ticket %s: %s" % (ticket, e))
 
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
