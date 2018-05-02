@@ -753,7 +753,6 @@ class JiraAlerter(Alerter):
             if t['name'] == self.transition:
                 self.client.transition_issue(ticket, t['id'])
 
-
     def alert(self, matches):
         # Reset arbitrary fields to pick up changes
         self.get_arbitrary_fields()
