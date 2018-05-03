@@ -49,6 +49,7 @@ def main():
         help='AWS Region to use for signing requests. Optionally use the AWS_DEFAULT_REGION environment variable')
     parser.add_argument('--timeout', default=60, help='Elasticsearch request timeout')
     parser.add_argument('--config', default='config.yaml', help='Global config file (default: config.yaml)')
+    parser.add_argument('--recreate', type=bool, default=False, help='Force re-creation of the index (this will cause data loss).')
     args = parser.parse_args()
 
     if os.path.isfile('config.yaml'):
@@ -135,37 +136,111 @@ def main():
 
     print("Mapping used for string:"+str(mapping))
 
-    silence_mapping = {'silence': {'properties': {'rule_name': mapping,
-                                                  'until': {'type': 'date', 'format': 'dateOptionalTime'},
-                                                  '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
-    ess_mapping = {'elastalert_status': {'properties': {'rule_name': mapping,
-                                                        '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
-    es_mapping = {'elastalert': {'properties': {'rule_name': mapping,
-                                                '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
-                                                'alert_time': {'format': 'dateOptionalTime', 'type': 'date'},
-                                                'match_time': {'format': 'dateOptionalTime', 'type': 'date'},
-                                                'match_body': {'enabled': False, 'type': 'object'},
-                                                'aggregate_id': mapping}}}
-    past_mapping = {'past_elastalert': {'properties': {'rule_name': mapping,
-                                                       'match_body': {'enabled': False, 'type': 'object'},
-                                                       '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'},
-                                                       'aggregate_id': mapping}}}
-    error_mapping = {'elastalert_error': {'properties': {'data': {'type': 'object', 'enabled': False},
-                                                         '@timestamp': {'format': 'dateOptionalTime', 'type': 'date'}}}}
+    silence_mapping = {
+        'silence': {
+            'properties': {
+                'rule_name': mapping,
+                'until': {
+                    'type': 'date',
+                    'format': 'dateOptionalTime',
+                },
+                '@timestamp': {
+                    'type': 'date',
+                    'format': 'dateOptionalTime',
+                },
+            },
+        },
+    }
+    ess_mapping = {
+        'elastalert_status': {
+            'properties': {
+                'rule_name': mapping,
+                '@timestamp': {
+                    'type': 'date',
+                    'format': 'dateOptionalTime',
+                },
+            },
+        },
+    }
+    es_mapping = {
+        'elastalert': {
+            'properties': {
+                'rule_name': mapping,
+                '@timestamp': {
+                    'type': 'date',
+                    'format': 'dateOptionalTime',
+                },
+                'alert_time': {
+                    'type': 'date',
+                    'format': 'dateOptionalTime',
+                },
+                'match_time': {
+                    'type': 'date',
+                    'format': 'dateOptionalTime',
+                },
+                'match_body': {
+                    'type': 'object',
+                    'enabled': False,
+                },
+                'aggregate_id': mapping,
+            },
+        },
+    }
+    past_mapping = {
+        'past_elastalert': {
+            'properties': {
+                'rule_name': mapping,
+                'match_body': {
+                    'type': 'object',
+                    'enabled': False,
+                },
+                '@timestamp': {
+                    'type': 'date',
+                    'format': 'dateOptionalTime',
+                },
+                'aggregate_id': mapping,
+            },
+        },
+    }
+    error_mapping = {
+        'elastalert_error': {
+            'properties': {
+                'data': {
+                    'type': 'object',
+                    'enabled': False,
+                },
+                '@timestamp': {
+                    'type': 'date',
+                    'format': 'dateOptionalTime',
+                },
+            },
+        },
+    }
 
     es_index = IndicesClient(es)
-    if es_index.exists(index):
-        print('Index ' + index + ' already exists. Skipping index creation.')
-        return None
+    if not args.recreate:
+        if es_index.exists(index):
+            print('Index ' + index + ' already exists. Skipping index creation.')
+            return None
 
+    # (Re-)Create indices.
     if (elasticversion > 5):
-        es.indices.create(index)
-        es.indices.create(index+'_status')
-        es.indices.create(index+'_silence')
-        es.indices.create(index+'_error')
-        es.indices.create(index+'_past')
+        index_names = (
+            index,
+            index + '_status',
+            index + '_silence',
+            index + '_error',
+            index + '_past',
+        )
     else:
-        es.indices.create(index)
+        index_names = (
+            index,
+        )
+    for index_name in index_names:
+        if es_index.exists(index):
+            print('Deleting index ' + index_name + '.')
+            es_index.delete(index_name)
+        es_index.create(index_name)
 
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)

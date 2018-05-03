@@ -2,19 +2,21 @@
 import copy
 import datetime
 import json
-import time
 import logging
+import os
 import subprocess
 import sys
+import time
 import warnings
+import re
 from email.mime.text import MIMEText
 from email.utils import formatdate
+from HTMLParser import HTMLParser
 from smtplib import SMTP
 from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
-from HTMLParser import HTMLParser
 
 import boto3
 import requests
@@ -45,7 +47,6 @@ class DateTimeEncoder(json.JSONEncoder):
 
 class BasicMatchString(object):
     """ Creates a string containing fields in match for the given rule. """
-
     def __init__(self, rule, match):
         self.rule = rule
         self.match = match
@@ -289,9 +290,14 @@ class Alerter(object):
     def get_account(self, account_file):
         """ Gets the username and password from an account file.
 
-        :param account_file: Name of the file which contains user and password information.
+        :param account_file: Path to the file which contains user and password information.
+        It can be either an absolute file path or one that is relative to the given rule.
         """
-        account_conf = yaml_loader(account_file)
+        if os.path.isabs(account_file):
+            account_file_path = account_file
+        else:
+            account_file_path = os.path.join(os.path.dirname(self.rule['rule_file']), account_file)
+        account_conf = yaml_loader(account_file_path)
         if 'user' not in account_conf or 'password' not in account_conf:
             raise EAException('Account file must have user and password fields')
         self.user = account_conf['user']
@@ -497,6 +503,7 @@ class JiraAlerter(Alerter):
         'jira_bump_after_inactivity',
         'jira_bump_in_statuses',
         'jira_bump_not_in_statuses',
+        'jira_bump_only',
         'jira_bump_tickets',
         'jira_component',
         'jira_components',
@@ -509,6 +516,7 @@ class JiraAlerter(Alerter):
         'jira_priority',
         'jira_project',
         'jira_server',
+        'jira_transition_to',
         'jira_watchers',
     ]
 
@@ -551,6 +559,8 @@ class JiraAlerter(Alerter):
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
         self.bump_after_inactivity = self.rule.get('jira_bump_after_inactivity', 0)
+        self.bump_only = self.rule.get('jira_bump_only', False)
+        self.transition = self.rule.get('jira_transition_to', False)
         self.watchers = self.rule.get('jira_watchers')
         self.client = None
 
@@ -569,6 +579,7 @@ class JiraAlerter(Alerter):
         try:
             self.client = JIRA(self.server, basic_auth=(self.user, self.password))
             self.get_priorities()
+            self.jira_fields = self.client.fields()
             self.get_arbitrary_fields()
         except JIRAError as e:
             # JIRAError may contain HTML, pass along only first 1024 chars
@@ -675,14 +686,12 @@ class JiraAlerter(Alerter):
         # Clear jira_args
         self.reset_jira_args()
 
-        # This API returns metadata about all the fields defined on the jira server (built-ins and custom ones)
-        fields = self.client.fields()
         for jira_field, value in self.rule.iteritems():
             # If we find a field that is not covered by the set that we are aware of, it means it is either:
             # 1. A built-in supported field in JIRA that we don't have on our radar
             # 2. A custom field that a JIRA admin has configured
             if jira_field.startswith('jira_') and jira_field not in self.known_field_list and str(value)[:1] != '#':
-                self.set_jira_arg(jira_field, value, fields)
+                self.set_jira_arg(jira_field, value, self.jira_fields)
             if jira_field.startswith('jira_') and jira_field not in self.known_field_list and str(value)[:1] == '#':
                 self.deferred_settings.append(jira_field)
 
@@ -738,7 +747,15 @@ class JiraAlerter(Alerter):
         comment = "This alert was triggered again at %s\n%s" % (timestamp, text)
         self.client.add_comment(ticket, comment)
 
+    def transition_ticket(self, ticket):
+        transitions = self.client.transitions(ticket)
+        for t in transitions:
+            if t['name'] == self.transition:
+                self.client.transition_issue(ticket, t['id'])
+
     def alert(self, matches):
+        # Reset arbitrary fields to pick up changes
+        self.get_arbitrary_fields()
         if len(self.deferred_settings) > 0:
             fields = self.client.fields()
             for jira_field in self.deferred_settings:
@@ -762,10 +779,25 @@ class JiraAlerter(Alerter):
                         self.comment_on_ticket(ticket, match)
                     except JIRAError as e:
                         logging.exception("Error while commenting on ticket %s: %s" % (ticket, e))
+                    if self.labels:
+                        for l in self.labels:
+                            try:
+                                ticket.fields.labels.append(l)
+                            except JIRAError as e:
+                                logging.exception("Error while appending labels to ticket %s: %s" % (ticket, e))
+                if self.transition:
+                    elastalert_logger.info('Transitioning existing ticket %s' % (ticket.key))
+                    try:
+                        self.transition_ticket(ticket)
+                    except JIRAError as e:
+                        logging.exception("Error while transitioning ticket %s: %s" % (ticket, e))
+
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
                     self.pipeline['jira_server'] = self.server
                 return None
+        if self.bump_only:
+            return None
 
         self.jira_args['summary'] = title
         self.jira_args['description'] = self.create_alert_body(matches)
@@ -978,16 +1010,16 @@ class HipChatAlerter(Alerter):
                 ping_users = self.rule.get('hipchat_mentions', [])
                 ping_msg = payload.copy()
                 ping_msg['message'] = "ping {}".format(
-                        ", ".join("@{}".format(user) for user in ping_users)
+                    ", ".join("@{}".format(user) for user in ping_users)
                 )
                 ping_msg['message_format'] = "text"
 
                 response = requests.post(
-                        self.url,
-                        data=json.dumps(ping_msg, cls=DateTimeEncoder),
-                        headers=headers,
-                        verify=not self.hipchat_ignore_ssl_errors,
-                        proxies=proxies)
+                    self.url,
+                    data=json.dumps(ping_msg, cls=DateTimeEncoder),
+                    headers=headers,
+                    verify=not self.hipchat_ignore_ssl_errors,
+                    proxies=proxies)
 
             response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
                                      verify=not self.hipchat_ignore_ssl_errors,
@@ -1439,6 +1471,167 @@ class ServiceNowAlerter(Alerter):
     def get_info(self):
         return {'type': 'ServiceNow',
                 'self.servicenow_rest_url': self.servicenow_rest_url}
+
+
+class AlertaAlerter(Alerter):
+    """ Creates an Alerta event for each alert """
+    required_options = frozenset(['alerta_api_url'])
+
+    def __init__(self, rule):
+        super(AlertaAlerter, self).__init__(rule)
+
+        self.url = self.rule.get('alerta_api_url', None)
+
+        # Fill up default values
+        self.api_key = self.rule.get('alerta_api_key', None)
+        self.severity = self.rule.get('alerta_severity', 'warning')
+        self.resource = self.rule.get('alerta_resource', 'elastalert')
+        self.environment = self.rule.get('alerta_environment', 'Production')
+        self.origin = self.rule.get('alerta_origin', 'elastalert')
+        self.service = self.rule.get('alerta_service', ['elastalert'])
+        self.timeout = self.rule.get('alerta_timeout', 86400)
+        self.use_match_timestamp = self.rule.get('alerta_use_match_timestamp', False)
+        self.use_qk_as_resource = self.rule.get('alerta_use_qk_as_resource', False)
+        self.text = self.rule.get('alerta_text', 'elastalert')
+        self.type = self.rule.get('alerta_type', 'elastalert')
+        self.event = self.rule.get('alerta_event', 'elastalert')
+        self.correlate = self.rule.get('alerta_correlate', [])
+        self.tags = self.rule.get('alerta_tags', [])
+        self.group = self.rule.get('alerta_group', '')
+        self.attributes_keys = self.rule.get('alerta_attributes_keys', [])
+        self.attributes_values = self.rule.get('alerta_attributes_values', [])
+        self.value = self.rule.get('alerta_value', '')
+        self.use_new_string_format = self.rule.get('alerta_new_style_string_format', False)
+
+        self.missing_text = self.rule.get('alert_missing_value', '<MISSING VALUE>')
+
+    def alert(self, matches):
+        # Override the resource if requested
+        if self.use_qk_as_resource and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
+            self.resource = lookup_es_key(matches[0], self.rule['query_key'])
+
+        headers = {'content-type': 'application/json'}
+        if self.api_key is not None:
+            headers['Authorization'] = 'Key %s' % (self.rule['alerta_api_key'])
+
+        alerta_payload = self.get_json_payload(matches[0])
+
+        try:
+
+            response = requests.post(self.url, data=alerta_payload, headers=headers)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Alerta: %s" % e)
+        elastalert_logger.info("Alert sent to Alerta")
+
+    def create_default_title(self, matches):
+        title = '%s' % (self.rule['name'])
+        # If the rule has a query_key, add that value plus timestamp to subject
+        if 'query_key' in self.rule:
+            qk = matches[0].get(self.rule['query_key'])
+            if qk:
+                title += '.%s' % (qk)
+        return title
+
+    def get_info(self):
+        return {'type': 'alerta',
+                'alerta_url': self.url}
+
+    def get_json_payload(self, match):
+        """
+            Builds the API Create Alert body, as in
+            http://alerta.readthedocs.io/en/latest/api/reference.html#create-an-alert
+
+            For the values that could have references to fields on the match, resolve those references.
+
+        """
+
+        alerta_service = [self.resolve_string(a_service, match) for a_service in self.service]
+        alerta_tags = [self.resolve_string(a_tag, match) for a_tag in self.tags]
+        alerta_correlate = [self.resolve_string(an_event, match) for an_event in self.correlate]
+        alerta_attributes_values = [self.resolve_string(a_value, match) for a_value in self.attributes_values]
+        alerta_text = self.resolve_string(self.text, match)
+        alerta_text = self.rule['type'].get_match_str([match]) if alerta_text == '' else alerta_text
+        alerta_event = self.resolve_string(self.event, match)
+        alerta_event = self.create_default_title([match]) if alerta_event == '' else alerta_event
+
+        timestamp_field = self.rule.get('timestamp_field', '@timestamp')
+        match_timestamp = lookup_es_key(match, timestamp_field)
+        if match_timestamp is None:
+            match_timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        if self.use_match_timestamp:
+            createTime = ts_to_dt(match_timestamp).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        else:
+            createTime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+        alerta_payload_dict = {
+            'resource': self.resolve_string(self.resource, match),
+            'severity': self.severity,
+            'timeout': self.timeout,
+            'createTime': createTime,
+            'type': self.type,
+            'environment': self.resolve_string(self.environment, match),
+            'origin': self.resolve_string(self.origin, match),
+            'group': self.resolve_string(self.group, match),
+            'event': alerta_event,
+            'text': alerta_text,
+            'value': self.resolve_string(self.value, match),
+            'service': alerta_service,
+            'tags': alerta_tags,
+            'correlate': alerta_correlate,
+            'attributes': dict(zip(self.attributes_keys,  alerta_attributes_values)),
+            'rawData': self.create_alert_body([match]),
+        }
+
+        try:
+            payload = json.dumps(alerta_payload_dict, cls=DateTimeEncoder)
+        except Exception as e:
+            raise Exception("Error building Alerta request: %s" % e)
+        return payload
+
+    def resolve_string(self, string, match):
+        """
+            Given a python string that may contain references to fields on the match dictionary,
+                the strings are replaced using the corresponding values.
+            However, if the referenced field is not found on the dictionary,
+                it is replaced by a default string.
+            Strings can be formatted using the old-style format ('%(field)s') or
+                the new-style format ('{match[field]}'), according to 'use_new_string_format'.
+
+            :param python_string: A string that may contain references to values of the 'match' dictionary.
+            :param match_dictio: A dictionary with the values to replace where referenced by keys in the string.
+            :param use_new_string_format: If True, the string is expected to use the new-style format '{match[field]}'
+
+            The text used when the reference field is not used is determined
+                by the rule's argument 'alert_missing_value', or '<MISSING VALUE>' by default.
+        """
+
+        if self.use_new_string_format:
+            match_field_regex = re.compile('.*({match\[([\w\.@]+)\]}).*')
+            match_field_definition_regex = re.compile('{match\[([\w\.@]+)\]}')
+        else:
+            match_field_regex = re.compile('.*(%\(([\w\.@]+)\)s).*')
+            match_field_definition_regex = re.compile('%\((([\w\.@]+))\)s')
+
+        while True:
+            regex_match = match_field_regex.search(string)
+            if regex_match is not None:
+                match_field = regex_match.group(1)
+                regex_match = match_field_definition_regex.search(match_field)
+                if regex_match is not None:
+                    match_field_key = regex_match.group(1)
+                    match_field_value = lookup_es_key(match, match_field_key)
+                    match_field_value = self.missing_text if match_field_value is None else match_field_value
+
+                    try:
+                        string = string.replace(match_field, str(match_field_value))
+                    except Exception:
+                        string = string.replace(match_field, self.missing_text)
+                else:
+                    string = string.replace(match_field, self.missing_text)
+            else:
+                break
+        return string
 
 
 class HTTPPostAlerter(Alerter):
