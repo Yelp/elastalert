@@ -503,6 +503,7 @@ class JiraAlerter(Alerter):
         'jira_bump_after_inactivity',
         'jira_bump_in_statuses',
         'jira_bump_not_in_statuses',
+        'jira_bump_only',
         'jira_bump_tickets',
         'jira_component',
         'jira_components',
@@ -515,6 +516,7 @@ class JiraAlerter(Alerter):
         'jira_priority',
         'jira_project',
         'jira_server',
+        'jira_transition_to',
         'jira_watchers',
     ]
 
@@ -557,6 +559,8 @@ class JiraAlerter(Alerter):
         self.bump_not_in_statuses = self.rule.get('jira_bump_not_in_statuses')
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
         self.bump_after_inactivity = self.rule.get('jira_bump_after_inactivity', 0)
+        self.bump_only = self.rule.get('jira_bump_only', False)
+        self.transition = self.rule.get('jira_transition_to', False)
         self.watchers = self.rule.get('jira_watchers')
         self.client = None
 
@@ -743,6 +747,12 @@ class JiraAlerter(Alerter):
         comment = "This alert was triggered again at %s\n%s" % (timestamp, text)
         self.client.add_comment(ticket, comment)
 
+    def transition_ticket(self, ticket):
+        transitions = self.client.transitions(ticket)
+        for t in transitions:
+            if t['name'] == self.transition:
+                self.client.transition_issue(ticket, t['id'])
+
     def alert(self, matches):
         # Reset arbitrary fields to pick up changes
         self.get_arbitrary_fields()
@@ -769,10 +779,25 @@ class JiraAlerter(Alerter):
                         self.comment_on_ticket(ticket, match)
                     except JIRAError as e:
                         logging.exception("Error while commenting on ticket %s: %s" % (ticket, e))
+                    if self.labels:
+                        for l in self.labels:
+                            try:
+                                ticket.fields.labels.append(l)
+                            except JIRAError as e:
+                                logging.exception("Error while appending labels to ticket %s: %s" % (ticket, e))
+                if self.transition:
+                    elastalert_logger.info('Transitioning existing ticket %s' % (ticket.key))
+                    try:
+                        self.transition_ticket(ticket)
+                    except JIRAError as e:
+                        logging.exception("Error while transitioning ticket %s: %s" % (ticket, e))
+
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
                     self.pipeline['jira_server'] = self.server
                 return None
+        if self.bump_only:
+            return None
 
         self.jira_args['summary'] = title
         self.jira_args['description'] = self.create_alert_body(matches)
