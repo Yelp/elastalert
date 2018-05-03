@@ -8,6 +8,7 @@ import mock
 import pytest
 from jira.exceptions import JIRAError
 
+from elastalert.alerts import AlertaAlerter
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
 from elastalert.alerts import CommandAlerter
@@ -20,10 +21,8 @@ from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
 from elastalert.alerts import SlackAlerter
 from elastalert.alerts import StrideAlerter
-from elastalert.alerts import AlertaAlerter
 from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
-
 from elastalert.util import ts_add
 from elastalert.util import ts_now
 
@@ -1770,22 +1769,22 @@ def test_alerta_resolve_string(ea):
         'temperature': 45,
         'humidity': 80.56,
         'sensors': ['outsideSensor', 'insideSensor']
-        }
+    }
     rule = {
-            'name': 'Test Alerta rule!',
-            'alerta_api_url': 'http://elastalerthost:8080/api/alert'
-            }
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert'
+    }
 
     alert = AlertaAlerter(rule)
 
     expected_outputs = [
-                        "mySystem is online <MISSING VALUE>",
-                        "Sensors ['outsideSensor', 'insideSensor'] in the <MISSING VALUE> have temp 45 and 80.56 humidity",
-                        "Actuator <MISSING VALUE> in the <MISSING VALUE> has temp <MISSING VALUE>"]
+        "mySystem is online <MISSING VALUE>",
+        "Sensors ['outsideSensor', 'insideSensor'] in the <MISSING VALUE> have temp 45 and 80.56 humidity",
+        "Actuator <MISSING VALUE> in the <MISSING VALUE> has temp <MISSING VALUE>"]
     old_style_strings = [
-                        "%(name)s is online %(noKey)s",
-                        "Sensors %(sensors)s in the %(noPlace)s have temp %(temperature)s and %(humidity)s humidity",
-                        "Actuator %(noKey)s in the %(noPlace)s has temp %(noKey)s"]
+        "%(name)s is online %(noKey)s",
+        "Sensors %(sensors)s in the %(noPlace)s have temp %(temperature)s and %(humidity)s humidity",
+        "Actuator %(noKey)s in the %(noPlace)s has temp %(noKey)s"]
 
     assert alert.resolve_string(old_style_strings[0], match) == expected_outputs[0]
     assert alert.resolve_string(old_style_strings[1], match) == expected_outputs[1]
@@ -1793,9 +1792,9 @@ def test_alerta_resolve_string(ea):
 
     alert.use_new_string_format = True
     new_style_strings = [
-                        "{match[name]} is online {match[noKey]}",
-                        "Sensors {match[sensors]} in the {match[noPlace]} have temp {match[temperature]} and {match[humidity]} humidity",
-                        "Actuator {match[noKey]} in the {match[noPlace]} has temp {match[noKey]}"]
+        "{match[name]} is online {match[noKey]}",
+        "Sensors {match[sensors]} in the {match[noPlace]} have temp {match[temperature]} and {match[humidity]} humidity",
+        "Actuator {match[noKey]} in the {match[noPlace]} has temp {match[noKey]}"]
 
     assert alert.resolve_string(new_style_strings[0], match) == expected_outputs[0]
     assert alert.resolve_string(new_style_strings[1], match) == expected_outputs[1]
@@ -1804,31 +1803,31 @@ def test_alerta_resolve_string(ea):
 
 def test_alerta_no_auth(ea):
     rule = {
-            'name': 'Test Alerta rule!',
-            'alerta_api_url': 'http://elastalerthost:8080/api/alert',
-            'timeframe': datetime.timedelta(hours=1),
-            'timestamp_field': u'@timestamp',
-            'alerta_attributes_keys': ["hostname",   "TimestampEvent",    "senderIP"],
-            'alerta_attributes_values': ["%(key)s",    "%(logdate)s",       "%(sender_ip)s"],
-            'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
-            'alerta_event': "ProbeUP",
-            'alerta_group': "Health",
-            'alerta_origin': "Elastalert",
-            'alerta_severity': "debug",
-            'alerta_text':  "Probe %(hostname)s is UP at %(logdate)s GMT",
-            'alerta_value': "UP",
-            'type': 'any',
-            'alerta_use_match_timestamp': True,
-            'alert': 'alerta'
-            }
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+        'timeframe': datetime.timedelta(hours=1),
+        'timestamp_field': u'@timestamp',
+        'alerta_attributes_keys': ["hostname", "TimestampEvent", "senderIP"],
+        'alerta_attributes_values': ["%(key)s", "%(logdate)s", "%(sender_ip)s"],
+        'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
+        'alerta_event': "ProbeUP",
+        'alerta_group': "Health",
+        'alerta_origin': "Elastalert",
+        'alerta_severity': "debug",
+        'alerta_text': "Probe %(hostname)s is UP at %(logdate)s GMT",
+        'alerta_value': "UP",
+        'type': 'any',
+        'alerta_use_match_timestamp': True,
+        'alert': 'alerta'
+    }
 
     match = {
-            u'@timestamp': '2014-10-10T00:00:00',
-            # 'key': ---- missing field on purpose, to verify that simply the text is left empty
-            # 'logdate': ---- missing field on purpose, to verify that simply the text is left empty
-            'sender_ip': '1.1.1.1',
-            'hostname': 'aProbe'
-            }
+        u'@timestamp': '2014-10-10T00:00:00',
+        # 'key': ---- missing field on purpose, to verify that simply the text is left empty
+        # 'logdate': ---- missing field on purpose, to verify that simply the text is left empty
+        'sender_ip': '1.1.1.1',
+        'hostname': 'aProbe'
+    }
 
     load_modules(rule)
     alert = AlertaAlerter(rule)
@@ -1852,7 +1851,7 @@ def test_alerta_no_auth(ea):
         "attributes": {"senderIP": "1.1.1.1", "hostname": "<MISSING VALUE>", "TimestampEvent": "<MISSING VALUE>"},
         "type": "elastalert",
         "event": "ProbeUP"
-        }
+    }
 
     mock_post_request.assert_called_once_with(
         alert.url,
@@ -1866,22 +1865,22 @@ def test_alerta_no_auth(ea):
 
 def test_alerta_auth(ea):
     rule = {
-            'name': 'Test Alerta rule!',
-            'alerta_api_url': 'http://elastalerthost:8080/api/alert',
-            'alerta_api_key': '123456789ABCDEF',
-            'timeframe': datetime.timedelta(hours=1),
-            'timestamp_field': '@timestamp',
-            'alerta_severity': "debug",
-            'type': 'any',
-            'alerta_use_match_timestamp': True,
-            'alert': 'alerta'
-            }
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+        'alerta_api_key': '123456789ABCDEF',
+        'timeframe': datetime.timedelta(hours=1),
+        'timestamp_field': '@timestamp',
+        'alerta_severity': "debug",
+        'type': 'any',
+        'alerta_use_match_timestamp': True,
+        'alert': 'alerta'
+    }
 
     match = {
-            '@timestamp': '2014-10-10T00:00:00',
-            'sender_ip': '1.1.1.1',
-            'hostname': 'aProbe'
-            }
+        '@timestamp': '2014-10-10T00:00:00',
+        'sender_ip': '1.1.1.1',
+        'hostname': 'aProbe'
+    }
 
     load_modules(rule)
     alert = AlertaAlerter(rule)
@@ -1898,32 +1897,32 @@ def test_alerta_auth(ea):
 
 def test_alerta_new_style(ea):
     rule = {
-            'name': 'Test Alerta rule!',
-            'alerta_api_url': 'http://elastalerthost:8080/api/alert',
-            'timeframe': datetime.timedelta(hours=1),
-            'timestamp_field': '@timestamp',
-            'alerta_attributes_keys': ["hostname",   "TimestampEvent",    "senderIP"],
-            'alerta_attributes_values': ["{match[hostname]}",    "{match[logdate]}",       "{match[sender_ip]}"],
-            'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
-            'alerta_event': "ProbeUP",
-            'alerta_group': "Health",
-            'alerta_origin': "Elastalert",
-            'alerta_severity': "debug",
-            'alerta_text':  "Probe {match[hostname]} is UP at {match[logdate]} GMT",
-            'alerta_value': "UP",
-            'alerta_new_style_string_format': True,
-            'type': 'any',
-            'alerta_use_match_timestamp': True,
-            'alert': 'alerta'
-            }
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+        'timeframe': datetime.timedelta(hours=1),
+        'timestamp_field': '@timestamp',
+        'alerta_attributes_keys': ["hostname", "TimestampEvent", "senderIP"],
+        'alerta_attributes_values': ["{match[hostname]}", "{match[logdate]}", "{match[sender_ip]}"],
+        'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
+        'alerta_event': "ProbeUP",
+        'alerta_group': "Health",
+        'alerta_origin': "Elastalert",
+        'alerta_severity': "debug",
+        'alerta_text': "Probe {match[hostname]} is UP at {match[logdate]} GMT",
+        'alerta_value': "UP",
+        'alerta_new_style_string_format': True,
+        'type': 'any',
+        'alerta_use_match_timestamp': True,
+        'alert': 'alerta'
+    }
 
     match = {
-            '@timestamp': '2014-10-10T00:00:00',
-            # 'key': ---- missing field on purpose, to verify that simply the text is left empty
-            # 'logdate': ---- missing field on purpose, to verify that simply the text is left empty
-            'sender_ip': '1.1.1.1',
-            'hostname': 'aProbe'
-            }
+        '@timestamp': '2014-10-10T00:00:00',
+        # 'key': ---- missing field on purpose, to verify that simply the text is left empty
+        # 'logdate': ---- missing field on purpose, to verify that simply the text is left empty
+        'sender_ip': '1.1.1.1',
+        'hostname': 'aProbe'
+    }
 
     load_modules(rule)
     alert = AlertaAlerter(rule)
@@ -1947,7 +1946,7 @@ def test_alerta_new_style(ea):
         "attributes": {"senderIP": "1.1.1.1", "hostname": "aProbe", "TimestampEvent": "<MISSING VALUE>"},
         "type": "elastalert",
         "event": "ProbeUP"
-        }
+    }
 
     mock_post_request.assert_called_once_with(
         alert.url,
