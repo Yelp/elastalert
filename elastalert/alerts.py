@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import collections
 import copy
 import datetime
 import json
@@ -8,7 +9,6 @@ import subprocess
 import sys
 import time
 import warnings
-import re
 from email.mime.text import MIMEText
 from email.utils import formatdate
 from HTMLParser import HTMLParser
@@ -31,6 +31,7 @@ from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
 from util import EAException
 from util import elastalert_logger
+from util import flatten_dict
 from util import lookup_es_key
 from util import pretty_ts
 from util import ts_now
@@ -47,6 +48,7 @@ class DateTimeEncoder(json.JSONEncoder):
 
 class BasicMatchString(object):
     """ Creates a string containing fields in match for the given rule. """
+
     def __init__(self, rule, match):
         self.rule = rule
         self.match = match
@@ -1501,13 +1503,12 @@ class AlertaAlerter(Alerter):
         self.attributes_keys = self.rule.get('alerta_attributes_keys', [])
         self.attributes_values = self.rule.get('alerta_attributes_values', [])
         self.value = self.rule.get('alerta_value', '')
-        self.use_new_string_format = self.rule.get('alerta_new_style_string_format', False)
 
         self.missing_text = self.rule.get('alert_missing_value', '<MISSING VALUE>')
 
     def alert(self, matches):
         # Override the resource if requested
-        if self.use_qk_as_resource and 'query_key' in self.rule and self.rule['query_key'] in matches[0]:
+        if self.use_qk_as_resource and 'query_key' in self.rule and lookup_es_key(matches[0], self.rule['query_key']):
             self.resource = lookup_es_key(matches[0], self.rule['query_key'])
 
         headers = {'content-type': 'application/json'}
@@ -1579,7 +1580,7 @@ class AlertaAlerter(Alerter):
             'service': alerta_service,
             'tags': alerta_tags,
             'correlate': alerta_correlate,
-            'attributes': dict(zip(self.attributes_keys,  alerta_attributes_values)),
+            'attributes': dict(zip(self.attributes_keys, alerta_attributes_values)),
             'rawData': self.create_alert_body([match]),
         }
 
@@ -1600,37 +1601,23 @@ class AlertaAlerter(Alerter):
 
             :param python_string: A string that may contain references to values of the 'match' dictionary.
             :param match_dictio: A dictionary with the values to replace where referenced by keys in the string.
-            :param use_new_string_format: If True, the string is expected to use the new-style format '{match[field]}'
 
             The text used when the reference field is not used is determined
                 by the rule's argument 'alert_missing_value', or '<MISSING VALUE>' by default.
         """
-
-        if self.use_new_string_format:
-            match_field_regex = re.compile('.*({match\[([\w\.@]+)\]}).*')
-            match_field_definition_regex = re.compile('{match\[([\w\.@]+)\]}')
-        else:
-            match_field_regex = re.compile('.*(%\(([\w\.@]+)\)s).*')
-            match_field_definition_regex = re.compile('%\((([\w\.@]+))\)s')
-
+        flat_match = flatten_dict(match)
+        dd_match = collections.defaultdict(lambda: self.missing_text, flat_match)
+        dd_match['_missing_value'] = self.missing_text
         while True:
-            regex_match = match_field_regex.search(string)
-            if regex_match is not None:
-                match_field = regex_match.group(1)
-                regex_match = match_field_definition_regex.search(match_field)
-                if regex_match is not None:
-                    match_field_key = regex_match.group(1)
-                    match_field_value = lookup_es_key(match, match_field_key)
-                    match_field_value = self.missing_text if match_field_value is None else match_field_value
-
-                    try:
-                        string = string.replace(match_field, str(match_field_value))
-                    except Exception:
-                        string = string.replace(match_field, self.missing_text)
-                else:
-                    string = string.replace(match_field, self.missing_text)
-            else:
+            try:
+                string = string.format(**dd_match)
+                string = string % dd_match
                 break
+            except KeyError as e:
+                if '{%s}' % e.message not in string:
+                    break
+                string = string.replace('{%s}' % e.message, '{_missing_value}')
+
         return string
 
 

@@ -366,3 +366,13 @@ def parse_deadline(value):
     """Convert ``unit=num`` spec into a ``datetime`` object."""
     duration = parse_duration(value)
     return ts_now() + duration
+
+
+def flatten_dict(dct, delim='.', prefix=''):
+    ret = {}
+    for key, val in dct.items():
+        if type(val) == dict:
+            ret.update(flatten_dict(val, prefix=prefix + key + delim))
+        else:
+            ret[prefix + key] = val
+    return ret
