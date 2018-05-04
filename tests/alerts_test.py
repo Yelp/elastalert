@@ -1790,7 +1790,6 @@ def test_alerta_resolve_string(ea):
     assert alert.resolve_string(old_style_strings[1], match) == expected_outputs[1]
     assert alert.resolve_string(old_style_strings[2], match) == expected_outputs[2]
 
-    alert.use_new_string_format = True
     new_style_strings = [
         "{match[name]} is online {match[noKey]}",
         "Sensors {match[sensors]} in the {match[noPlace]} have temp {match[temperature]} and {match[humidity]} humidity",
@@ -1902,13 +1901,13 @@ def test_alerta_new_style(ea):
         'timeframe': datetime.timedelta(hours=1),
         'timestamp_field': '@timestamp',
         'alerta_attributes_keys': ["hostname", "TimestampEvent", "senderIP"],
-        'alerta_attributes_values': ["{match[hostname]}", "{match[logdate]}", "{match[sender_ip]}"],
+        'alerta_attributes_values': ["{hostname}", "{logdate}", "{sender_ip}"],
         'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
         'alerta_event': "ProbeUP",
         'alerta_group': "Health",
         'alerta_origin': "Elastalert",
         'alerta_severity': "debug",
-        'alerta_text': "Probe {match[hostname]} is UP at {match[logdate]} GMT",
+        'alerta_text': "Probe {hostname} is UP at {logdate} GMT",
         'alerta_value': "UP",
         'alerta_new_style_string_format': True,
         'type': 'any',
