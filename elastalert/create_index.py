@@ -134,7 +134,7 @@ def main():
     else:
         mapping = {'index': 'not_analyzed', 'type': 'string'}
 
-    print("Mapping used for string:"+str(mapping))
+    print("Mapping used for string:" + str(mapping))
 
     silence_mapping = {
         'silence': {
@@ -237,7 +237,7 @@ def main():
             index,
         )
     for index_name in index_names:
-        if es_index.exists(index):
+        if es_index.exists(index_name):
             print('Deleting index ' + index_name + '.')
             es_index.delete(index_name)
         es_index.create(index_name)
@@ -247,10 +247,10 @@ def main():
 
     if(elasticversion > 5):
         es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
-        es.indices.put_mapping(index=index+'_status', doc_type='elastalert_status', body=ess_mapping)
-        es.indices.put_mapping(index=index+'_silence', doc_type='silence', body=silence_mapping)
-        es.indices.put_mapping(index=index+'_error', doc_type='elastalert_error', body=error_mapping)
-        es.indices.put_mapping(index=index+'_past', doc_type='past_elastalert', body=past_mapping)
+        es.indices.put_mapping(index=index + '_status', doc_type='elastalert_status', body=ess_mapping)
+        es.indices.put_mapping(index=index + '_silence', doc_type='silence', body=silence_mapping)
+        es.indices.put_mapping(index=index + '_error', doc_type='elastalert_error', body=error_mapping)
+        es.indices.put_mapping(index=index + '_past', doc_type='past_elastalert', body=past_mapping)
         print('New index %s created' % index)
     else:
         es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
