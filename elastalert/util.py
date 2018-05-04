@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import collections
 import datetime
 import logging
 import os
@@ -376,3 +377,32 @@ def flatten_dict(dct, delim='.', prefix=''):
         else:
             ret[prefix + key] = val
     return ret
+
+
+def resolve_string(string, match, missing_text='<MISSING VALUE>'):
+    """
+        Given a python string that may contain references to fields on the match dictionary,
+            the strings are replaced using the corresponding values.
+        However, if the referenced field is not found on the dictionary,
+            it is replaced by a default string.
+        Strings can be formatted using the old-style format ('%(field)s') or
+            the new-style format ('{match[field]}').
+
+        :param string: A string that may contain references to values of the 'match' dictionary.
+        :param match: A dictionary with the values to replace where referenced by keys in the string.
+        :param missing_text: The default text to replace a formatter with if the field doesnt exist.
+    """
+    flat_match = flatten_dict(match)
+    dd_match = collections.defaultdict(lambda: missing_text, flat_match)
+    dd_match['_missing_value'] = missing_text
+    while True:
+        try:
+            string = string.format(**dd_match)
+            string = string % dd_match
+            break
+        except KeyError as e:
+            if '{%s}' % e.message not in string:
+                break
+            string = string.replace('{%s}' % e.message, '{_missing_value}')
+
+    return string
