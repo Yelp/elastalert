@@ -25,6 +25,7 @@ class OpsGenieAlerter(Alerter):
         self.custom_message = self.rule.get('opsgenie_message')
         self.opsgenie_subject = self.rule.get('opsgenie_subject')
         self.opsgenie_subject_args = self.rule.get('opsgenie_subject_args')
+        self.opsgenie_resolve_alert = self.rule.get('resolve_alert', None)
         self.alias = self.rule.get('opsgenie_alias')
         self.opsgenie_proxy = self.rule.get('opsgenie_proxy', None)
         self.priority = self.rule.get('opsgenie_priority')
@@ -131,3 +132,31 @@ class OpsGenieAlerter(Alerter):
             ret['teams'] = self.teams
 
         return ret
+
+    def resolve(self):
+        if self.opsgenie_resolve_alert == True:
+            #build opsgenie result, use alias to resolv open alerts 
+            post = {'note' : 'OK-Elastalert Auto Resolving'}
+
+            logging.debug(json.dumps(post))
+
+            headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey {}'.format(self.api_key),
+            }
+            # set https proxy, if it was provided
+            proxies = {'https': self.opsgenie_proxy} if self.opsgenie_proxy else None
+
+            try:
+                r = requests.post(self.to_addr.__add__('/').__add__(self.alias).__add__('/close?identifierType=alias'), json=post, headers=headers, proxies=proxies)
+
+                logging.debug('request response: {0}'.format(r))
+                if r.status_code != 202:
+                    elastalert_logger.info("Error response from {0} \n "
+                                           "API Response: {1}".format(self.to_addr, r))
+                    r.raise_for_status()
+                elastalert_logger.info("Auto Resolve Alert sent to OpsGenie")
+            except Exception as err:
+                raise EAException("Error sending alert: {0}".format(err))
+        else:
+            elastalert_logger.info("Alert not sent to Opsgenie as resolve alert is not set")
