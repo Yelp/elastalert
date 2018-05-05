@@ -26,8 +26,8 @@ type: spike
 
 # (Required)
 # Index to search, wildcard supported
-index: rpn_module_info*
-field_value: messages
+index: docker*
+field_value: cpu_percent
 
 timestamp_type: unix_ms
 
@@ -43,19 +43,22 @@ threshold_cur: 5
 # We use two sliding windows each of size timeframe
 # To measure the 'reference' rate and the current rate
 timeframe:
-  seconds: 30
+  seconds: 120
 
 # (Required, spike specific)
 # The spike rule matches when the current window contains spike_height times more
 # events than the reference window
-spike_height: 1.2
+spike_height: 1.5
 
 # (Required, spike specific)
 # The direction of the spike
 # 'up' matches only spikes, 'down' matches only troughs
 # 'both' matches both spikes and troughs
 spike_type: "up"
-query_key: module
+#query_key: module
+query_key: name
+
+
 
 # (Required)
 # A list of Elasticsearch filters used for find events
@@ -65,15 +68,17 @@ filter:
 - query:
     query_string:
 #      query: "messages:* AND module: Skeleton"
-      query: "messages:*"
+#      query: "messages:*"
+      query: "*"
+
 
 # (Required)
 # The alert is use when a match is found
 alert:
   - "stomp"
 
-stomp_hostname: app.rpinum.be
+stomp_hostname: bad
 stomp_hostport: 61613
 stomp_login: admin
-stomp_password: ictcs-s4robair
+stomp_password: nopass
 stomp_destination: ELASTALERTSPIKE
