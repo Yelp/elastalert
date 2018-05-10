@@ -392,7 +392,7 @@ class SpikeRule(RuleType):
         self.skip_checks = {}
 
         self.field_value = self.rules.get('field_value')
-        
+
         self.ref_window_filled_once = False
 
     def add_count_data(self, data):
