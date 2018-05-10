@@ -824,6 +824,12 @@ before a baseline rate has been established. This can be overridden using ``aler
 
 Optional:
 
+``field_value``: When set, uses the value of the field in the document and not the number of matching documents. 
+This is useful to monitor for example a temperature sensor and raise an alarm if the temperature grows too fast.
+Note that the means of the field on the reference and current windows are used to determine if the ``spike_height`` value is reached.
+Note also that the threshold parameters are ignored in thi smode.
+
+
 ``threshold_ref``: The minimum number of events that must exist in the reference window for an alert to trigger. For example, if
 ``spike_height: 3`` and ``threshold_ref: 10``, then the 'reference' window must contain at least 10 events and the 'current' window at
 least three times that for an alert to be triggered.
