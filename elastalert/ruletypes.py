@@ -343,7 +343,7 @@ class EventWindow(object):
                     datasum += dat[1]
                     datalen += 1
             if datalen > 0:
-                return datasum / datalen
+                return datasum / float(datalen)
             return None
         else:
             return None
@@ -391,10 +391,8 @@ class SpikeRule(RuleType):
         self.first_event = {}
         self.skip_checks = {}
 
-        self.field_value = None
-        if "field_value" in self.rules:
-            self.field_value = self.rules["field_value"]
-
+        self.field_value = self.rules.get('field_value')
+        
         self.ref_window_filled_once = False
 
     def add_count_data(self, data):
@@ -422,8 +420,14 @@ class SpikeRule(RuleType):
                     qk = 'other'
             if self.field_value is not None:
                 if self.field_value in event:
-                    count = event[self.field_value]
-                    self.handle_event(event, count, qk)
+                    count = lookup_es_key(event, self.field_value)
+                    if count is not None:
+                        try:
+                            count = int(count)
+                        except ValueError:
+                            elastalert_logger.warn('{} is not a number: {}'.format(self.field_value, count))
+                        else:
+                            self.handle_event(event, count, qk)
             else:
                 self.handle_event(event, 1, qk)
 
@@ -495,7 +499,7 @@ class SpikeRule(RuleType):
             if (cur < self.rules.get('threshold_cur', 0) or
                     ref < self.rules.get('threshold_ref', 0)):
                 return False
-        elif ref is None or ref == 0 or cur == 0:
+        elif ref is None or ref == 0 or cur is None or cur == 0:
             return False
 
         spike_up, spike_down = False, False
