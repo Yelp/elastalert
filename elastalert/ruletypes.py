@@ -333,6 +333,21 @@ class EventWindow(object):
         """ Count the number of events in the window. """
         return self.running_count
 
+    def mean(self):
+        """ Compute the mean of the value_field in the window. """
+        if len(self.data) > 0:
+            datasum = 0
+            datalen = 0
+            for dat in self.data:
+                if "placeholder" not in dat[0]:
+                    datasum += dat[1]
+                    datalen += 1
+            if datalen > 0:
+                return datasum / float(datalen)
+            return None
+        else:
+            return None
+
     def __iter__(self):
         return iter(self.data)
 
@@ -376,6 +391,8 @@ class SpikeRule(RuleType):
         self.first_event = {}
         self.skip_checks = {}
 
+        self.field_value = self.rules.get('field_value')
+
         self.ref_window_filled_once = False
 
     def add_count_data(self, data):
@@ -401,7 +418,18 @@ class SpikeRule(RuleType):
                 qk = hashable(lookup_es_key(event, qk))
                 if qk is None:
                     qk = 'other'
-            self.handle_event(event, 1, qk)
+            if self.field_value is not None:
+                if self.field_value in event:
+                    count = lookup_es_key(event, self.field_value)
+                    if count is not None:
+                        try:
+                            count = int(count)
+                        except ValueError:
+                            elastalert_logger.warn('{} is not a number: {}'.format(self.field_value, count))
+                        else:
+                            self.handle_event(event, count, qk)
+            else:
+                self.handle_event(event, 1, qk)
 
     def clear_windows(self, qk, event):
         # Reset the state and prevent alerts until windows filled again
@@ -431,19 +459,32 @@ class SpikeRule(RuleType):
         else:
             self.ref_window_filled_once = True
 
-        if self.find_matches(self.ref_windows[qk].count(), self.cur_windows[qk].count()):
-            # skip over placeholder events which have count=0
-            for match, count in self.cur_windows[qk].data:
-                if count:
-                    break
+        if self.field_value is not None:
+            if self.find_matches(self.ref_windows[qk].mean(), self.cur_windows[qk].mean()):
+                # skip over placeholder events
+                for match, count in self.cur_windows[qk].data:
+                    if "placeholder" not in match:
+                        break
+                self.add_match(match, qk)
+                self.clear_windows(qk, match)
+        else:
+            if self.find_matches(self.ref_windows[qk].count(), self.cur_windows[qk].count()):
+                # skip over placeholder events which have count=0
+                for match, count in self.cur_windows[qk].data:
+                    if count:
+                        break
 
-            self.add_match(match, qk)
-            self.clear_windows(qk, match)
+                self.add_match(match, qk)
+                self.clear_windows(qk, match)
 
     def add_match(self, match, qk):
         extra_info = {}
-        spike_count = self.cur_windows[qk].count()
-        reference_count = self.ref_windows[qk].count()
+        if self.field_value is None:
+            spike_count = self.cur_windows[qk].count()
+            reference_count = self.ref_windows[qk].count()
+        else:
+            spike_count = self.cur_windows[qk].mean()
+            reference_count = self.ref_windows[qk].mean()
         extra_info = {'spike_count': spike_count,
                       'reference_count': reference_count}
 
@@ -453,10 +494,12 @@ class SpikeRule(RuleType):
 
     def find_matches(self, ref, cur):
         """ Determines if an event spike or dip happening. """
-
         # Apply threshold limits
-        if (cur < self.rules.get('threshold_cur', 0) or
-                ref < self.rules.get('threshold_ref', 0)):
+        if self.field_value is None:
+            if (cur < self.rules.get('threshold_cur', 0) or
+                    ref < self.rules.get('threshold_ref', 0)):
+                return False
+        elif ref is None or ref == 0 or cur is None or cur == 0:
             return False
 
         spike_up, spike_down = False, False
@@ -471,11 +514,21 @@ class SpikeRule(RuleType):
         return False
 
     def get_match_str(self, match):
-        message = 'An abnormal number (%d) of events occurred around %s.\n' % (
-            match['spike_count'],
-            pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time'))
-        )
-        message += 'Preceding that time, there were only %d events within %s\n\n' % (match['reference_count'], self.rules['timeframe'])
+        if self.field_value is None:
+            message = 'An abnormal number (%d) of events occurred around %s.\n' % (
+                match['spike_count'],
+                pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time'))
+            )
+            message += 'Preceding that time, there were only %d events within %s\n\n' % (match['reference_count'], self.rules['timeframe'])
+        else:
+            message = 'An abnormal average value (%.2f) of field \'%s\' occurred around %s.\n' % (
+                match['spike_count'],
+                self.field_value,
+                pretty_ts(match[self.rules['timestamp_field']],
+                          self.rules.get('use_local_time'))
+            )
+            message += 'Preceding that time, the field had an average value of (%.2f) within %s\n\n' % (
+                match['reference_count'], self.rules['timeframe'])
         return message
 
     def garbage_collect(self, ts):
@@ -487,7 +540,7 @@ class SpikeRule(RuleType):
                 self.cur_windows.pop(qk)
                 self.ref_windows.pop(qk)
                 continue
-            placeholder = {self.ts_field: ts}
+            placeholder = {self.ts_field: ts, "placeholder": True}
             # The placeholder may trigger an alert, in which case, qk will be expected
             if qk != 'all':
                 placeholder.update({self.rules['query_key']: qk})
