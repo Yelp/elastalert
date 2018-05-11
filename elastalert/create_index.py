@@ -13,6 +13,7 @@ from auth import Auth
 from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 from elasticsearch.client import IndicesClient
+from elasticsearch.exceptions import NotFoundError
 from envparse import Env
 
 
@@ -239,7 +240,11 @@ def main():
     for index_name in index_names:
         if es_index.exists(index_name):
             print('Deleting index ' + index_name + '.')
-            es_index.delete(index_name)
+            try:
+                es_index.delete(index_name)
+            except NotFoundError:
+                # Why does this ever occur?? It shouldn't. But it does.
+                pass
         es_index.create(index_name)
 
     # To avoid a race condition. TODO: replace this with a real check
