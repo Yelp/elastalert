@@ -653,6 +653,8 @@ class NewTermsRule(RuleType):
         query_template = {"aggs": {"values": {"terms": field_name}}}
         if args and hasattr(args, 'start') and args.start:
             end = ts_to_dt(args.start)
+        elif 'start_date' in self.rules:
+            end = ts_to_dt(self.rules['start_date'])
         else:
             end = ts_now()
         start = end - window_size
