@@ -1,5 +1,17 @@
 # Change Log
 
+# v0.1.31
+
+### Added
+- Added ability to add start date to new term rule
+
+### Fixed
+- Fixed a bug in create_index which would try to delete a nonexistent index
+- Apply filters to new term rule all terms query
+- Support Elasticsearch 6 for new term rule
+- Fixed is_enabled not working on rule changes
+
+
 # v0.1.30
 
 ### Added
