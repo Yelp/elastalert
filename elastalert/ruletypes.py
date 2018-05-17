@@ -665,6 +665,11 @@ class NewTermsRule(RuleType):
             time_filter = {self.rules['timestamp_field']: {'lt': self.rules['dt_to_ts'](tmp_end), 'gte': self.rules['dt_to_ts'](tmp_start)}}
             query_template['filter'] = {'bool': {'must': [{'range': time_filter}]}}
             query = {'aggs': {'filtered': query_template}}
+
+            if 'filter' in self.rules:
+                for item in self.rules['filter']:
+                    query_template['filter']['bool']['must'].append(item)
+
             # For composite keys, we will need to perform sub-aggregations
             if type(field) == list:
                 self.seen_values.setdefault(tuple(field), [])
