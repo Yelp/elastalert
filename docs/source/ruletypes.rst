@@ -105,6 +105,8 @@ Rule Configuration Cheat Sheet
 | ``alert_text_kw`` (object)                                   |           |
 +--------------------------------------------------------------+           |
 | ``alert_missing_value`` (string, default "<MISSING VALUE>")  |           |
++--------------------------------------------------------------+           |
+| ``is_enabled`` (boolean, default True)                       |           |
 +--------------------------------------------------------------+-----------+
 
 |
@@ -751,10 +753,10 @@ must change with respect to the last event with the same ``query_key``.
 
 This rule requires three additional options:
 
-``compare_key``: The names of the field to monitor for changes. Since this is list of strings, we can
+``compare_key``: The names of the field to monitor for changes. Since this is a list of strings, we can
 have multiple keys. An alert will trigger if any of the fields change.
 
-``ignore_null``: If true, events without a ``compare_key`` field will not count as changed. Currently this check for all the fields in ``compare_key``
+``ignore_null``: If true, events without a ``compare_key`` field will not count as changed. Currently this checks for all the fields in ``compare_key``
 
 ``query_key``: This rule is applied on a per-``query_key`` basis. This field must be present in all of
 the events that are checked.
@@ -821,6 +823,12 @@ before a baseline rate has been established. This can be overridden using ``aler
 
 
 Optional:
+
+``field_value``: When set, uses the value of the field in the document and not the number of matching documents. 
+This is useful to monitor for example a temperature sensor and raise an alarm if the temperature grows too fast.
+Note that the means of the field on the reference and current windows are used to determine if the ``spike_height`` value is reached.
+Note also that the threshold parameters are ignored in this smode.
+
 
 ``threshold_ref``: The minimum number of events that must exist in the reference window for an alert to trigger. For example, if
 ``spike_height: 3`` and ``threshold_ref: 10``, then the 'reference' window must contain at least 10 events and the 'current' window at
@@ -1267,8 +1275,9 @@ an email would be sent to ``qlo@example.com``
 ``smtp_ssl``: Connect the SMTP host using TLS, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
 STARTTLS.
 
-``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. It should be YAML formatted and contain
-two fields, ``user`` and ``password``. If this is not present, no authentication will be attempted.
+``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. The path can be either absolute or relative
+to the given rule. It should be YAML formatted and contain two fields, ``user`` and ``password``. If this is not present,
+no authentication will be attempted.
 
 ``smtp_cert_file``: Connect the SMTP host using the given path to a TLS certificate file, default to ``None``.
 
@@ -1355,6 +1364,20 @@ Example usage::
 
     jira_bump_in_statuses:
       - Open
+
+``jira_bump_only``: Only update if a ticket is found to bump.  This skips ticket creation for rules where you only want to affect existing tickets.
+
+Example usage::
+
+    jira_bump_only: true
+
+``jira_transition_to``: If ``jira_bump_tickets`` is true, Transition this ticket to the given Status when bumping. Must match the text of your JIRA implementation's Status field.
+
+Example usage::
+
+    jira_transition_to: 'Fixed'
+
+
 
 ``jira_bump_after_inactivity``: If this is set, ElastAlert will only comment on tickets that have been inactive for at least this many days.
 It only applies if ``jira_bump_tickets`` is true. Default is 0 days.
@@ -1701,6 +1724,76 @@ Optional:
 ``stomp_destination``: The STOMP destination to use, defaults to /queue/ALERT
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
+
+Alerta
+~~~~~~
+
+Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint.
+The default values will work with a local Alerta server installation with authorization disabled.
+See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on the Alerta alert json format.
+
+For Alerta 5.0
+
+Required:
+
+``alerta_api_url``: API server URL.
+
+Optional:
+
+``alerta_api_key``: This is the api key for alerta server if required. Default behaviour is that no Authorization header sent with the request.
+
+``alerta_resource``: The resource name of the generated alert. Defaults to "elastalert". Can be a reference to a part of the match.
+
+``alerta_service``: A list of service tags for the generated alert. Defaults to "elastalert".  Can be a reference to a part of the match.
+
+``alerta_severity``: The severity level of the alert. Defaults to "warning".
+
+``alerta_origin``: The origin field for the generated alert. Defaults to "elastalert".  Can be a reference to a part of the match.
+
+``alerta_environment``: The environment field for the generated alert. Defaults to "Production".  Can be a reference to a part of the match.
+
+``alerta_group``: The group field for the generated alert. No Default. Can be a reference to a part of the match.
+
+``alerta_timeout``: The time in seconds before this alert will expire (in Alerta). Default 84600 (1 Day).
+
+``alerta_correlate``: A list of alerta events that this one correlates with. Default is an empty list. Can make reference to a part of the match to build the event name.
+
+``alerta_tags``: A list of alerta tags. Default is an empty list.  Can be a reference to a part of the match.
+
+``alerta_use_qk_as_resource``: If true and query_key is present this will override alerta_resource field with the query key value (Can be useful if query_key is a hostname).
+
+``alerta_use_match_timestamp``: If true will use the timestamp of the first match as the createTime of the alert, otherwise the current time is used. Default False.
+
+``alerta_event``: Can make reference to parts of the match to build the event name. Defaults to "elastalert".
+
+``alerta_text``: Python-style string can be used to make reference to parts of the match. Defaults to "elastalert".
+
+``alerta_type``: Defaults to "elastalert".
+
+``alerta_value``: Can be a reference to a part of the match. No Default.
+
+``alerta_attributes_keys``: List of key names for the Alerta Attributes dictionary
+
+``alerta_attributes_values``: List of values for the Alerta Attributes dictionary, corresponding in order to the described keys. Can be a reference to a part of the match.
+
+.. info::
+
+    The optional values use Python-like string syntax ``{<field>}`` or ``%(<field>)s`` to access parts of the match, similar to the CommandAlerter. Ie: "Alert for {clientip}"
+    If the referenced value is not found in the match, it is replaced by ``<MISSING VALUE>`` or the text indicated by the rule in ``alert_missing_value``.
+
+Example usage using old-style format::
+
+    alert:
+      - alerta
+    alerta_api_url: "http://youralertahost/api/alert"
+    alerta_attributes_keys:   ["hostname",   "TimestampEvent",  "senderIP" ]
+    alerta_attributes_values: ["%(key)s",    "%(logdate)s",     "%(sender_ip)s"  ]
+    alerta_correlate: ["ProbeUP","ProbeDOWN"]
+    alerta_event: "ProbeUP"
+    alerta_text:  "Probe %(hostname)s is UP at %(logdate)s GMT"
+    alerta_value: "UP"
+
+
 
 HTTP POST
 ~~~~~~~~~

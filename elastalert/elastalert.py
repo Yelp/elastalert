@@ -982,6 +982,9 @@ class ElastAlerter():
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
+                        elastalert_logger.info('Rule file %s is now disabled.' % (rule_file))
+                        # Remove this rule if it's been disabled
+                        self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
                         continue
                 except EAException as e:
                     message = 'Could not load rule %s: %s' % (rule_file, e)

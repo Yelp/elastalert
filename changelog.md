@@ -1,8 +1,38 @@
 # Change Log
 
+# v0.1.31
+
+### Added
+- Added ability to add start date to new term rule
+
+### Fixed
+- Fixed a bug in create_index which would try to delete a nonexistent index
+- Apply filters to new term rule all terms query
+- Support Elasticsearch 6 for new term rule
+- Fixed is_enabled not working on rule changes
+
+
+# v0.1.30
+
+### Added
+- Alerta alerter
+- Added support for transitioning JIRA issues
+- Option to recreate index in elastalert-create-index
+
+### Fixed
+- Update jira_ custom fields before each alert if they were modified
+- Use json instead of simplejson
+- Allow for relative path for smtp_auth_file
+- Fixed some grammar issues
+- Better code formatting of index mappings
+- Better formatting and size limit for HipChat HTML
+- Fixed gif link in readme for kibana plugin
+- Fixed elastalert-test-rule with Elasticsearch > 4
+- Added documentation for is_enabled option
+
 ## v0.1.29
 
-###
+### Added
 - Added a feature forget_keys to prevent realerting when using flatline with query_key
 - Added a new alert_text_type, aggregation_summary_only
 
