@@ -133,10 +133,10 @@ class MockElastAlerter(object):
                 print("top_count_key %s may be missing" % (term), file=sys.stderr)
         print('')  # Newline
 
-        # Download up to 10,000 documents to save
+        # Download up to max_query_size (defaults to 10,000) documents to save
         if args.save and not args.count:
             try:
-                res = es_client.search(index, size=10000, body=query, ignore_unavailable=True)
+                res = es_client.search(index, size=args.max_query_size, body=query, ignore_unavailable=True)
             except Exception as e:
                 print("Error running your filter:", file=sys.stderr)
                 print(repr(e)[:2048], file=sys.stderr)
@@ -370,6 +370,17 @@ class MockElastAlerter(object):
             dest='save',
             help='A file to which documents from the last day or --days will be saved')
         parser.add_argument(
+            '--use-downloaded',
+            action='store_true',
+            dest='use_downloaded',
+            help='Use the downloaded '
+        )
+        parser.add_argument(
+            '--max-query-size',
+            action='store',
+            dest='max_query_size',
+            help='Maximum size of any query')
+        parser.add_argument(
             '--count-only',
             action='store_true',
             dest='count',
@@ -391,6 +402,10 @@ class MockElastAlerter(object):
                     # Add _id to _source for dump
                     [doc['_source'].update({'_id': doc['_id']}) for doc in hits]
                     data_file.write(json.dumps([doc['_source'] for doc in hits], indent='    '))
+            if args.use_downloaded:
+                args.json = args.save
+                with open(args.json, 'r') as data_file:
+                    self.data = json.loads(data_file.read())
 
         if not args.schema_only and not args.count:
             self.run_elastalert(rule_yaml, conf, args)
