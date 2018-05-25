@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import signal
+import socket
 import sys
 import time
 import timeit
@@ -48,6 +49,9 @@ from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
+from raven import Client
+from raven.conf import setup_logging
+from raven.handlers.logging import SentryHandler
 
 
 class ElastAlerter():
@@ -126,6 +130,16 @@ class ElastAlerter():
             tracer = logging.getLogger('elasticsearch.trace')
             tracer.setLevel(logging.INFO)
             tracer.addHandler(logging.FileHandler(self.args.es_debug_trace))
+
+        if os.environ.get('SENTRY_DSN') is not None:
+            sentry = Client(
+                dsn=os.getenv('SENTRY_DSN'),
+                name=os.environ.get('HOST', socket.getfqdn())
+            )
+            handler = SentryHandler(sentry)
+            handler.setLevel(logging.WARNING)
+            setup_logging(handler)
+            elastalert_logger.info("Configured errors reporting to Sentry: %s" % os.getenv('SENTRY_DSN'))
 
         self.conf = load_rules(self.args)
         self.max_query_size = self.conf['max_query_size']
