@@ -1402,8 +1402,6 @@ class ElastAlerter():
             'alert_sent': alert_sent,
             'alert_time': alert_time
         }
-        if 'name' in match:
-            body['name'] = match['name']
 
         match_time = lookup_es_key(match, rule['timestamp_field'])
         if match_time is not None:
