@@ -725,6 +725,17 @@ def run_and_assert_segmented_queries(ea, start, end, segment_size):
             assert ea.writeback_es.index.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end)
 
 
+def test_query_segmenting_reset_num_hits(ea):
+    # Tests that num_hits gets reset every time run_query is run
+    def assert_num_hits_reset():
+        assert ea.num_hits == 0
+        ea.num_hits += 10
+    with mock.patch.object(ea, 'run_query') as mock_run_query:
+        mock_run_query.side_effect = assert_num_hits_reset()
+        ea.run_rule(ea.rules[0], END, START)
+    assert mock_run_query.call_count > 1
+
+
 def test_query_segmenting(ea):
     # buffer_time segments with normal queries
     ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=53)
@@ -733,8 +744,6 @@ def test_query_segmenting(ea):
     with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es_init:
         mock_es_init.return_value = mock_es
         run_and_assert_segmented_queries(ea, START, END, ea.rules[0]['buffer_time'])
-    # Assert that num_hits correctly includes the 1 hit per query
-    assert ea.num_hits == ea.current_es.search.call_count
 
     # run_every segments with count queries
     ea.rules[0]['use_count_query'] = True
