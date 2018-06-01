@@ -739,10 +739,7 @@ def test_query_segmenting_reset_num_hits(ea):
 def test_query_segmenting(ea):
     # buffer_time segments with normal queries
     ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=53)
-    mock_es = mock.Mock()
-    mock_es.search.side_effect = _duplicate_hits_generator([START_TIMESTAMP])
-    with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es_init:
-        mock_es_init.return_value = mock_es
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
         run_and_assert_segmented_queries(ea, START, END, ea.rules[0]['buffer_time'])
 
     # run_every segments with count queries
