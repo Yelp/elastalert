@@ -1,5 +1,14 @@
 # Change Log
 
+# v0.1.32
+
+### Added
+- Add support for setting ES url prefix via environment var
+- Add support for using native Slack fields in alerts
+
+### Fixed
+- Fixed a bug that would could scrolling queries to sometimes terminate early
+
 # v0.1.31
 
 ### Added
