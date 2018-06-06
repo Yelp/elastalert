@@ -824,7 +824,7 @@ before a baseline rate has been established. This can be overridden using ``aler
 
 Optional:
 
-``field_value``: When set, uses the value of the field in the document and not the number of matching documents. 
+``field_value``: When set, uses the value of the field in the document and not the number of matching documents.
 This is useful to monitor for example a temperature sensor and raise an alarm if the temperature grows too fast.
 Note that the means of the field on the reference and current windows are used to determine if the ``spike_height`` value is reached.
 Note also that the threshold parameters are ignored in this smode.
@@ -1225,6 +1225,9 @@ Optional:
 
 ``pipe_match_json``: If true, the match will be converted to JSON and passed to stdin of the command. Note that this will cause ElastAlert to block
 until the command exits or sends an EOF to stdout.
+
+``pipe_alert_text``: If true, the standard alert body text will be passed to stdin of the command. Note that this will cause ElastAlert to block
+until the command exits or sends an EOF to stdout. It cannot be used at the same time as ``pipe_match_json``.
 
 Example usage using old-style format::
 
