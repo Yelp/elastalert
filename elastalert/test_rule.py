@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import copy
 import datetime
+import json
 import logging
 import os
 import random
@@ -14,7 +15,6 @@ import sys
 
 import argparse
 import mock
-import simplejson
 import yaml
 
 import elastalert.config
@@ -54,7 +54,7 @@ class MockElastAlerter(object):
         es_client = elasticsearch_client(conf)
 
         try:
-            is_five = es_client.info()['version']['number'].startswith('5')
+            ElastAlerter.modify_rule_for_ES5(conf)
         except Exception as e:
             print("Error connecting to ElasticSearch:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
@@ -62,13 +62,16 @@ class MockElastAlerter(object):
                 exit(1)
             return None
 
-        if is_five:
-            ElastAlerter.modify_rule_for_ES5(conf)
-
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()
         ts = conf.get('timestamp_field', '@timestamp')
-        query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts, five=is_five)
+        query = ElastAlerter.get_query(
+            conf['filter'],
+            starttime=start_time,
+            endtime=end_time,
+            timestamp_field=ts,
+            five=conf['five']
+        )
         index = ElastAlerter.get_index(conf, start_time, end_time)
 
         # Get one document for schema
@@ -94,7 +97,7 @@ class MockElastAlerter(object):
             endtime=end_time,
             timestamp_field=ts,
             sort=False,
-            five=is_five
+            five=conf['five']
         )
         try:
             res = es_client.count(index, doc_type=doc_type, body=count_query, ignore_unavailable=True)
@@ -361,14 +364,14 @@ class MockElastAlerter(object):
 
         if args.json:
             with open(args.json, 'r') as data_file:
-                self.data = simplejson.loads(data_file.read())
+                self.data = json.loads(data_file.read())
         else:
             hits = self.test_file(copy.deepcopy(rule_yaml), args)
             if hits and args.save:
                 with open(args.save, 'wb') as data_file:
                     # Add _id to _source for dump
                     [doc['_source'].update({'_id': doc['_id']}) for doc in hits]
-                    data_file.write(simplejson.dumps([doc['_source'] for doc in hits], indent='    '))
+                    data_file.write(json.dumps([doc['_source'] for doc in hits], indent='    '))
 
         if not args.schema_only and not args.count:
             self.run_elastalert(rule_yaml, conf, args)

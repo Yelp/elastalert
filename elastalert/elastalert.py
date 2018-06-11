@@ -672,20 +672,25 @@ class ElastAlerter():
 
         # This means we are starting fresh
         if 'starttime' not in rule:
-            # Try to get the last run from Elasticsearch
-            last_run_end = self.get_starttime(rule)
-            if last_run_end:
-                rule['starttime'] = last_run_end
-                self.adjust_start_time_for_overlapping_agg_query(rule)
-                self.adjust_start_time_for_interval_sync(rule, endtime)
-                rule['minimum_starttime'] = rule['starttime']
-                return None
+            if not rule.get('scan_entire_timeframe'):
+                # Try to get the last run from Elasticsearch
+                last_run_end = self.get_starttime(rule)
+                if last_run_end:
+                    rule['starttime'] = last_run_end
+                    self.adjust_start_time_for_overlapping_agg_query(rule)
+                    self.adjust_start_time_for_interval_sync(rule, endtime)
+                    rule['minimum_starttime'] = rule['starttime']
+                    return None
 
         # Use buffer for normal queries, or run_every increments otherwise
+        # or, if scan_entire_timeframe, use timeframe
 
         if not rule.get('use_count_query') and not rule.get('use_terms_query'):
-            buffer_time = rule.get('buffer_time', self.buffer_time)
-            buffer_delta = endtime - buffer_time
+            if not rule.get('scan_entire_timeframe'):
+                buffer_time = rule.get('buffer_time', self.buffer_time)
+                buffer_delta = endtime - buffer_time
+            else:
+                buffer_delta = endtime - rule['timeframe']
             # If we started using a previous run, don't go past that
             if 'minimum_starttime' in rule and rule['minimum_starttime'] > buffer_delta:
                 rule['starttime'] = rule['minimum_starttime']
@@ -700,8 +705,11 @@ class ElastAlerter():
             self.adjust_start_time_for_interval_sync(rule, endtime)
 
         else:
-            # Query from the end of the last run, if it exists, otherwise a run_every sized window
-            rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
+            if not rule.get('scan_entire_timeframe'):
+                # Query from the end of the last run, if it exists, otherwise a run_every sized window
+                rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
+            else:
+                rule['starttime'] = rule.get('previous_endtime', endtime - rule['timeframe'])
 
     def adjust_start_time_for_overlapping_agg_query(self, rule):
         if rule.get('aggregation_query_element'):
@@ -802,6 +810,7 @@ class ElastAlerter():
         # Run the rule. If querying over a large time period, split it up into segments
         self.num_hits = 0
         self.num_dupes = 0
+        self.cumulative_hits = 0
         segment_size = self.get_segment_size(rule)
 
         tmp_endtime = rule['starttime']
@@ -810,6 +819,8 @@ class ElastAlerter():
             tmp_endtime = tmp_endtime + segment_size
             if not self.run_query(rule, rule['starttime'], tmp_endtime):
                 return 0
+            self.cumulative_hits += self.num_hits
+            self.num_hits = 0
             rule['starttime'] = tmp_endtime
             rule['type'].garbage_collect(tmp_endtime)
 
@@ -876,7 +887,7 @@ class ElastAlerter():
                 'endtime': endtime,
                 'starttime': rule['original_starttime'],
                 'matches': num_matches,
-                'hits': self.num_hits,
+                'hits': max(self.num_hits, self.cumulative_hits),
                 '@timestamp': ts_now(),
                 'time_taken': time_taken}
         self.writeback('elastalert_status', body)
@@ -977,6 +988,9 @@ class ElastAlerter():
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
+                        elastalert_logger.info('Rule file %s is now disabled.' % (rule_file))
+                        # Remove this rule if it's been disabled
+                        self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
                         continue
                 except EAException as e:
                     message = 'Could not load rule %s: %s' % (rule_file, e)
@@ -1116,9 +1130,10 @@ class ElastAlerter():
                 self.handle_uncaught_exception(e, rule)
             else:
                 old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
+                total_hits = max(self.num_hits, self.cumulative_hits)
                 elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
                                        " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                            self.num_hits, self.num_dupes, num_matches, self.alerts_sent))
+                                                            total_hits, self.num_dupes, num_matches, self.alerts_sent))
                 self.alerts_sent = 0
 
                 if next_run < datetime.datetime.utcnow():
@@ -1388,7 +1403,7 @@ class ElastAlerter():
         body = {
             'match_body': match,
             'rule_name': rule['name'],
-            'alert_info': rule['alert'][0].get_info(),
+            'alert_info': rule['alert'][0].get_info() if not self.debug else {},
             'alert_sent': alert_sent,
             'alert_time': alert_time
         }

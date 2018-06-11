@@ -174,6 +174,7 @@ properties:
   match_enhancements: {type: array, items: {type: string}}
   query_key: *arrayOfString
   replace_dots_in_field_names: {type: boolean}
+  scan_entire_timeframe: {type: boolean}
 
   # Alert Content
   alert_text: {type: string} # Python format string
@@ -270,6 +271,28 @@ properties:
   gitter_webhook_url: {type: string}
   gitter_proxy: {type: string}
   gitter_msg_level: {enum: [info, error]}
+
+  ### Alerta
+  alerta_api_url: {type: string}
+  alerta_api_key: {type: string}
+  alerta_severity: {enum: [unknown, security, debug, informational, ok, normal, cleared, indeterminate, warning, minor, major, critical]}
+  alerta_resource: {type: string}   # Python format string
+  alerta_environment: {type: string}  # Python format string
+  alerta_origin: {type: string}   # Python format string
+  alerta_group: {type: string}  # Python format string
+  alerta_service: {type: array, items: {type: string}}  # Python format string
+  alerta_service: {type: array, items: {type: string}}  # Python format string
+  alerta_correlate: {type: array, items: {type: string}}  # Python format string
+  alerta_tags: {type: array, items: {type: string}}   # Python format string
+  alerta_event: {type: string} # Python format string
+  alerta_customer: {type: string}
+  alerta_text: {type: string} # Python format string
+  alerta_type: {type: string} 
+  alerta_value: {type: string} # Python format string
+  alerta_attributes_keys: {type: array, items: {type: string}}  
+  alerta_attributes_values: {type: array, items: {type: string}}  # Python format string
+  alerta_new_style_string_format: {type: boolean}
+
 
   ### Simple
   simple_webhook_url: *arrayOfString

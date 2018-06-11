@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import collections
 import datetime
 import logging
 import os
@@ -46,7 +47,6 @@ def _find_es_dict_by_key(lookup_dict, term):
     """
     if term in lookup_dict:
         return lookup_dict, term
-
     # If the term does not match immediately, perform iterative lookup:
     # 1. Split the search term into tokens
     # 2. Recurrently concatenate these together to traverse deeper into the dictionary,
@@ -108,7 +108,6 @@ def lookup_es_key(lookup_dict, term):
 
 def ts_to_dt(timestamp):
     if isinstance(timestamp, datetime.datetime):
-        logging.warning('Expected str timestamp, got datetime')
         return timestamp
     dt = dateutil.parser.parse(timestamp)
     # Implicitly convert local timestamps to UTC
@@ -133,7 +132,6 @@ def dt_to_ts(dt):
 
 def ts_to_dt_with_format(timestamp, ts_format):
     if isinstance(timestamp, datetime.datetime):
-        logging.warning('Expected str timestamp, got datetime')
         return timestamp
     dt = datetime.datetime.strptime(timestamp, ts_format)
     # Implicitly convert local timestamps to UTC
@@ -253,8 +251,8 @@ def cronite_datetime_to_timestamp(self, d):
     return total_seconds((d - datetime.datetime(1970, 1, 1)))
 
 
-def add_raw_postfix(field, is_five):
-    if is_five:
+def add_raw_postfix(field, is_five_or_above):
+    if is_five_or_above:
         end = '.keyword'
     else:
         end = '.raw'
@@ -367,3 +365,42 @@ def parse_deadline(value):
     """Convert ``unit=num`` spec into a ``datetime`` object."""
     duration = parse_duration(value)
     return ts_now() + duration
+
+
+def flatten_dict(dct, delim='.', prefix=''):
+    ret = {}
+    for key, val in dct.items():
+        if type(val) == dict:
+            ret.update(flatten_dict(val, prefix=prefix + key + delim))
+        else:
+            ret[prefix + key] = val
+    return ret
+
+
+def resolve_string(string, match, missing_text='<MISSING VALUE>'):
+    """
+        Given a python string that may contain references to fields on the match dictionary,
+            the strings are replaced using the corresponding values.
+        However, if the referenced field is not found on the dictionary,
+            it is replaced by a default string.
+        Strings can be formatted using the old-style format ('%(field)s') or
+            the new-style format ('{match[field]}').
+
+        :param string: A string that may contain references to values of the 'match' dictionary.
+        :param match: A dictionary with the values to replace where referenced by keys in the string.
+        :param missing_text: The default text to replace a formatter with if the field doesnt exist.
+    """
+    flat_match = flatten_dict(match)
+    dd_match = collections.defaultdict(lambda: missing_text, flat_match)
+    dd_match['_missing_value'] = missing_text
+    while True:
+        try:
+            string = string.format(**dd_match)
+            string = string % dd_match
+            break
+        except KeyError as e:
+            if '{%s}' % e.message not in string:
+                break
+            string = string.replace('{%s}' % e.message, '{_missing_value}')
+
+    return string
