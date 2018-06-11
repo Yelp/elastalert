@@ -357,6 +357,8 @@ class MockElastAlerter(object):
         )
         parser.add_argument(
             '--max-query-size',
+            type=int,
+            default=10000,
             action='store',
             dest='max_query_size',
             help='Maximum size of any query')
@@ -383,9 +385,12 @@ class MockElastAlerter(object):
                     [doc['_source'].update({'_id': doc['_id']}) for doc in hits]
                     data_file.write(json.dumps([doc['_source'] for doc in hits], indent='    '))
             if args.use_downloaded:
-                args.json = args.save
-                with open(args.json, 'r') as data_file:
-                    self.data = json.loads(data_file.read())
+                if hits:
+                    args.json = args.save
+                    with open(args.json, 'r') as data_file:
+                        self.data = json.loads(data_file.read())
+                else:
+                    self.data = []
 
         if not args.schema_only and not args.count:
             self.run_elastalert(rule_yaml, conf, args)
