@@ -824,7 +824,7 @@ before a baseline rate has been established. This can be overridden using ``aler
 
 Optional:
 
-``field_value``: When set, uses the value of the field in the document and not the number of matching documents. 
+``field_value``: When set, uses the value of the field in the document and not the number of matching documents.
 This is useful to monitor for example a temperature sensor and raise an alarm if the temperature grows too fast.
 Note that the means of the field on the reference and current windows are used to determine if the ``spike_height`` value is reached.
 Note also that the threshold parameters are ignored in this smode.
@@ -1385,6 +1385,12 @@ It only applies if ``jira_bump_tickets`` is true. Default is 0 days.
 Arbitrary Jira fields:
 
 ElastAlert supports setting any arbitrary JIRA field that your jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your JIRA server, internally, the field is represented as ``customfield_1111``. In elastalert, you may refer to either the public facing name OR the internal representation.
+
+In addition, if you would like to use a field in the alert as the value for a custom JIRA field, use the field name plus a # symbol in front. For example, if you wanted to set a custom JIRA field called "user" to the value of the field "username" from the match, you would use the following.
+
+Example::
+
+    jira_user: "#username"
 
 Example usage::
 
