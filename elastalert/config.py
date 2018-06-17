@@ -12,6 +12,7 @@ import jsonschema
 import ruletypes
 import yaml
 import yaml.scanner
+from envparse import Env
 from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
 from util import dt_to_ts
@@ -36,7 +37,13 @@ env_settings = {'ES_USE_SSL': 'use_ssl',
                 'ES_PASSWORD': 'es_password',
                 'ES_USERNAME': 'es_username',
                 'ES_HOST': 'es_host',
-                'ES_PORT': 'es_port'}
+                'ES_PORT': 'es_port',
+                'ES_URL_PREFIX': 'es_url_prefix'}
+
+env = Env(ES_USE_SSL=bool)
+
+# import rule dependency
+import_rules = {}
 
 # Used to map the names of rules to their classes
 rules_mapping = {
@@ -63,6 +70,7 @@ alerts_mapping = {
     'command': alerts.CommandAlerter,
     'sns': alerts.SnsAlerter,
     'hipchat': alerts.HipChatAlerter,
+    'stride': alerts.StrideAlerter,
     'ms_teams': alerts.MsTeamsAlerter,
     'slack': alerts.SlackAlerter,
     'pagerduty': alerts.PagerDutyAlerter,
@@ -72,6 +80,7 @@ alerts_mapping = {
     'telegram': alerts.TelegramAlerter,
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
+    'alerta': alerts.AlertaAlerter,
     'post': alerts.HTTPPostAlerter
 }
 # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
@@ -99,7 +108,6 @@ def get_module(module_name):
 
 def load_configuration(filename, conf, args=None):
     """ Load a yaml rule file and fill in the relevant fields with objects.
-
     :param filename: The name of a rule configuration file.
     :param conf: The global configuration dictionary, used for populating defaults.
     :return: The rule configuration, a dictionary.
@@ -111,54 +119,43 @@ def load_configuration(filename, conf, args=None):
 
 
 def load_rule_yaml(filename):
-    return add_rule_yaml(filename, {'rule_file': filename})
+    rule = {
+        'rule_file': filename,
+    }
 
+    import_rules.pop(filename, None)  # clear `filename` dependency
+    while True:
+        try:
+            loaded = yaml_loader(filename)
+        except yaml.scanner.ScannerError as e:
+            raise EAException('Could not parse file %s: %s' % (filename, e))
 
-def add_rule_yaml(filename, parent_rule):
-    try:
-        loaded_rule = yaml_loader(filename)
-    except yaml.scanner.ScannerError as e:
-        raise EAException('Could not parse file %s: %s' % (filename, e))
+        # Special case for merging filters - if both files specify a filter merge (AND) them
+        if 'filter' in rule and 'filter' in loaded:
+            rule['filter'] = loaded['filter'] + rule['filter']
 
-    if 'import' in loaded_rule:
-        current_import = loaded_rule['import']
-        del(loaded_rule['import'])  # or we could go on forever!
+        loaded.update(rule)
+        rule = loaded
+        if 'import' in rule:
+            # Find the path of the next file.
+            if os.path.isabs(rule['import']):
+                import_filename = rule['import']
+            else:
+                import_filename = os.path.join(os.path.dirname(filename), rule['import'])
+            # set dependencies
+            rules = import_rules.get(filename, [])
+            rules.append(import_filename)
+            import_rules[filename] = rules
+            filename = import_filename
+            del(rule['import'])  # or we could go on forever!
+        else:
+            break
 
-        child_rules = {}
-        if isinstance(current_import, basestring):
-            child_rules = add_rule_yaml(rule_file_import_path_to_absolute_path(filename, current_import), child_rules)
-        elif isinstance(current_import, list):
-            for import_target in current_import:
-                child_rules = add_rule_yaml(rule_file_import_path_to_absolute_path(filename, import_target), child_rules)
-        loaded_rule = merge_rules(loaded_rule, child_rules)
-
-    loaded_rule = merge_rules(parent_rule, loaded_rule)
-    return loaded_rule
-
-
-def merge_rules(parent_rule, child_rule):
-    # Special case for merging filters - if both files specify a filter merge (AND) them
-    merged_filter = None
-    if 'filter' in parent_rule and 'filter' in child_rule:
-        merged_filter = child_rule['filter'] + parent_rule['filter']
-
-    child_rule.update(parent_rule)
-    if merged_filter is not None:
-        child_rule['filter'] = merged_filter
-
-    return child_rule
-
-
-def rule_file_import_path_to_absolute_path(currently_parsed_file_path, import_file_path):
-    if os.path.isabs(import_file_path):
-        return import_file_path
-    else:
-        return os.path.join(os.path.dirname(currently_parsed_file_path), import_file_path)
+    return rule
 
 
 def load_options(rule, conf, filename, args=None):
     """ Converts time objects, sets defaults, and validates some settings.
-
     :param rule: A dictionary of parsed YAML from a rule config file.
     :param conf: The global configuration dictionary, used for populating defaults.
     """
@@ -240,6 +237,13 @@ def load_options(rule, conf, filename, args=None):
     else:
         raise EAException('timestamp_type must be one of iso, unix, or unix_ms')
 
+    # Add support for client ssl certificate auth
+    if 'verify_certs' in conf:
+        rule.setdefault('verify_certs', conf.get('verify_certs'))
+        rule.setdefault('ca_certs', conf.get('ca_certs'))
+        rule.setdefault('client_cert', conf.get('client_cert'))
+        rule.setdefault('client_key', conf.get('client_key'))
+
     # Set HipChat options from global config
     rule.setdefault('hipchat_msg_color', 'red')
     rule.setdefault('hipchat_domain', 'api.hipchat.com')
@@ -315,6 +319,9 @@ def load_options(rule, conf, filename, args=None):
                                 'The index will be formatted like %s' % (token,
                                                                          datetime.datetime.now().strftime(rule.get('index'))))
 
+    if rule.get('scan_entire_timeframe') and not rule.get('timeframe'):
+        raise EAException('scan_entire_timeframe can only be used if there is a timeframe specified')
+
 
 def load_modules(rule, args=None):
     """ Loads things that could be modules. Enhancements, alerts and rule type. """
@@ -348,8 +355,10 @@ def load_modules(rule, args=None):
         rule['type'] = rule['type'](rule, args)
     except (KeyError, EAException) as e:
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e)), None, sys.exc_info()[2]
-    # Instantiate alert
-    rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
+    # Instantiate alerts only if we're not in debug mode
+    # In debug mode alerts are not actually sent so don't bother instantiating them
+    if not args or not args.debug:
+        rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
 
 
 def isyaml(filename):
@@ -405,7 +414,7 @@ def load_alerts(rule, alert_field):
             alert_field = [alert_field]
 
         alert_field = [normalize_config(x) for x in alert_field]
-        alert_field = sorted(alert_field, key=lambda (a, b): alerts_order.get(a, -1))
+        alert_field = sorted(alert_field, key=lambda (a, b): alerts_order.get(a, 1))
         # Convert all alerts into Alerter objects
         alert_field = [create_alert(a, b) for a, b in alert_field]
 
@@ -418,7 +427,6 @@ def load_alerts(rule, alert_field):
 def load_rules(args):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
     config file and then each rule found in rules_folder.
-
     :param args: The parsed arguments to ElastAlert
     :return: The global configuration, a dictionary.
     """
@@ -428,8 +436,9 @@ def load_rules(args):
     use_rule = args.rule
 
     for env_var, conf_var in env_settings.items():
-        if env_var in os.environ:
-            conf[conf_var] = os.environ[env_var]
+        val = env(env_var, None)
+        if val is not None:
+            conf[conf_var] = val
 
     # Make sure we have all required globals
     if required_globals - frozenset(conf.keys()):
@@ -464,6 +473,9 @@ def load_rules(args):
     for rule_file in rule_files:
         try:
             rule = load_configuration(rule_file, conf, args)
+            # By setting "is_enabled: False" in rule file, a rule is easily disabled
+            if 'is_enabled' in rule and not rule['is_enabled']:
+                continue
             if rule['name'] in names:
                 raise EAException('Duplicate rule named %s' % (rule['name']))
         except EAException as e:
@@ -480,9 +492,18 @@ def get_rule_hashes(conf, use_rule=None):
     rule_files = get_file_paths(conf, use_rule)
     rule_mod_times = {}
     for rule_file in rule_files:
-        with open(rule_file) as fh:
-            rule_mod_times[rule_file] = hashlib.sha1(fh.read()).digest()
+        rule_mod_times[rule_file] = get_rulefile_hash(rule_file)
     return rule_mod_times
+
+
+def get_rulefile_hash(rule_file):
+    rulefile_hash = ''
+    if os.path.exists(rule_file):
+        with open(rule_file) as fh:
+            rulefile_hash = hashlib.sha1(fh.read()).digest()
+        for import_rule_file in import_rules.get(rule_file, []):
+            rulefile_hash += get_rulefile_hash(import_rule_file)
+    return rulefile_hash
 
 
 def adjust_deprecated_values(rule):
