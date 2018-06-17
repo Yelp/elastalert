@@ -6,7 +6,7 @@ env:
 - TOXENV=py27
 install:
 - pip install tox
-- pip install --upgrade urllib3
+- pip install urllib3
 script: make test
 deploy:
   provider: pypi
