@@ -1,5 +1,147 @@
 # Change Log
 
+# v0.1.32
+
+### Added
+- Add support for setting ES url prefix via environment var
+- Add support for using native Slack fields in alerts
+
+### Fixed
+- Fixed a bug that would could scrolling queries to sometimes terminate early
+
+# v0.1.31
+
+### Added
+- Added ability to add start date to new term rule
+
+### Fixed
+- Fixed a bug in create_index which would try to delete a nonexistent index
+- Apply filters to new term rule all terms query
+- Support Elasticsearch 6 for new term rule
+- Fixed is_enabled not working on rule changes
+
+
+# v0.1.30
+
+### Added
+- Alerta alerter
+- Added support for transitioning JIRA issues
+- Option to recreate index in elastalert-create-index
+
+### Fixed
+- Update jira_ custom fields before each alert if they were modified
+- Use json instead of simplejson
+- Allow for relative path for smtp_auth_file
+- Fixed some grammar issues
+- Better code formatting of index mappings
+- Better formatting and size limit for HipChat HTML
+- Fixed gif link in readme for kibana plugin
+- Fixed elastalert-test-rule with Elasticsearch > 4
+- Added documentation for is_enabled option
+
+## v0.1.29
+
+### Added
+- Added a feature forget_keys to prevent realerting when using flatline with query_key
+- Added a new alert_text_type, aggregation_summary_only
+
+### Fixed
+- Fixed incorrect documentation about es_conn_timeout default
+
+## v0.1.28
+
+### Added
+- Added support for Stride formatting of simple HTML tags
+- Added support for custom titles in Opsgenie alerts
+- Added a denominator to percentage match based alerts
+
+### Fixed
+- Fixed a bug with Stomp alerter connections
+- Removed escaping of some characaters in Slack messages
+
+## v0.1.27
+
+# Added
+- Added support for a value other than <MISSING VALUE> in formatted alerts
+
+### Fixed
+- Fixed a failed creation of elastalert indicies when using Elasticsearch 6
+- Truncate Telegram alerts to avoid API errors
+
+## v0.1.26
+
+### Added
+- Added support for Elasticsearch 6
+- Added support for mentions in Hipchat
+
+### Fixed
+- Fixed an issue where a nested field lookup would crash if one of the intermediate fields was null
+
+## v0.1.25
+
+### Fixed
+- Fixed a bug causing new term rule to break unless you passed a start time
+- Add a slight clarification on the localhost:9200 reported in es_debug_trace
+
+## v0.1.24
+
+### Fixed
+- Pinned pytest
+- create-index reads index name from config.yaml
+- top_count_keys now works for context on a flatline rule type
+- Fixed JIRA behavior for issues with statuses that have spaces in the name
+
+## v0.1.22
+
+### Added
+- Added Stride alerter
+- Allow custom string formatters for aggregation percentage
+- Added a field to disable rules from config
+- Added support for subaggregations for the metric rule type
+
+### Fixed
+- Fixed a bug causing create-index to fail if missing config.yaml
+- Fixed a bug when using ES5 with query_key and top_count_keys
+- Allow enhancements to set and clear arbitrary JIRA fields
+- Fixed a bug causing timestamps to be formatted in scientific notation
+- Stop attempting to initialize alerters in debug mode
+- Changed default alert ordering so that JIRA tickets end up in other alerts
+- Fixed a bug when using Stomp alerter with complex query_key
+- Fixed a bug preventing hipchat room ID from being an integer
+- Fixed a bug causing duplicate alerts when using spike with alert_on_new_data
+- Minor fixes to summary table formatting
+- Fixed elastalert-test-rule when using new term rule type
+
+## v0.1.21
+
+### Fixed
+- Fixed an incomplete bug fix for preventing duplicate enhancement runs
+
+## v0.1.20
+
+### Added
+- Added support for client TLS keys
+
+### Fixed
+- Fixed the formatting of summary tables in Slack
+- Fixed ES_USE_SSL env variable
+- Fixed the unique value count printed by new_term rule type
+- Jira alerter no longer uses the non-existent json code formatter
+
+## v0.1.19
+
+### Added
+- Added support for populating JIRA fields via fields in the match
+- Added support for using a TLS certificate file for SMTP connections
+- Allow a custom suffix for non-analyzed Elasticsearch fields, like ".raw" or ".keyword"
+- Added match_time to Elastalert alert documents in Elasticsearch
+
+### Fixed
+- Fixed an error in the documentation for rule importing
+- Prevent enhancements from re-running on retried alerts
+- Fixed a bug when using custom timestamp formats and new term rule
+- Lowered jira_bump_after_inactivity default to 0 days
+
 ## v0.1.18
 
 ### Added
