@@ -46,6 +46,13 @@ es_port: 9200
 #es_username: someusername
 #es_password: somepassword
 
+# Use SSL authentication with client certificates client_cert must be
+# a pem file containing both cert and key for client
+#verify_certs: True
+#ca_certs: /path/to/cacert.pem
+#client_cert: /path/to/client_cert.pem
+#client_key: /path/to/client_key.key
+
 # The index on es_host which is used for metadata storage
 # This can be a unmapped index, but it is recommended that you run
 # elastalert-create-index to set a mapping
