@@ -174,12 +174,14 @@ properties:
   match_enhancements: {type: array, items: {type: string}}
   query_key: *arrayOfString
   replace_dots_in_field_names: {type: boolean}
+  scan_entire_timeframe: {type: boolean}
 
   # Alert Content
   alert_text: {type: string} # Python format string
   alert_text_args: {type: array, items: {type: string}}
   alert_text_kw: {type: object}
-  alert_text_type: {enum: [alert_text_only, exclude_fields]}
+  alert_text_type: {enum: [alert_text_only, exclude_fields, aggregation_summary_only]}
+  alert_missing_value: {type: string}
   timestamp_field: {type: string}
   field: {}
 
@@ -214,11 +216,18 @@ properties:
 
   ### HipChat
   hipchat_auth_token: {type: string}
-  hipchat_room_id: {type: string}
+  hipchat_room_id: {type: [string, integer]}
   hipchat_domain: {type: string}
   hipchat_ignore_ssl_errors: {type: boolean}
   hipchat_notify: {type: boolean}
   hipchat_from: {type: string}
+  hipchat_mentions: {type: array, items: {type: string}}
+
+  ### Stride
+  stride_access_token: {type: string}
+  stride_cloud_id: {type: string}
+  stride_converstation_id: {type: string}
+  stride_ignore_ssl_errors: {type: boolean}
 
   ### Slack
   slack_webhook_url: *arrayOfString
@@ -232,6 +241,7 @@ properties:
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
+  pagerduty_event_type: {enum: [none, trigger, resolve, acknowledge]}
 
   ### Exotel
   exotel_account_sid: {type: string}
@@ -249,6 +259,7 @@ properties:
   victorops_api_key: {type: string}
   victorops_routing_key: {type: string}
   victorops_message_type: {enum: [INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY]}
+  victorops_entity_id: {type: string}
   victorops_entity_display_name: {type: string}
 
   ### Telegram
@@ -261,7 +272,28 @@ properties:
   gitter_proxy: {type: string}
   gitter_msg_level: {enum: [info, error]}
 
+  ### Alerta
+  alerta_api_url: {type: string}
+  alerta_api_key: {type: string}
+  alerta_severity: {enum: [unknown, security, debug, informational, ok, normal, cleared, indeterminate, warning, minor, major, critical]}
+  alerta_resource: {type: string}   # Python format string
+  alerta_environment: {type: string}  # Python format string
+  alerta_origin: {type: string}   # Python format string
+  alerta_group: {type: string}  # Python format string
+  alerta_service: {type: array, items: {type: string}}  # Python format string
+  alerta_service: {type: array, items: {type: string}}  # Python format string
+  alerta_correlate: {type: array, items: {type: string}}  # Python format string
+  alerta_tags: {type: array, items: {type: string}}   # Python format string
+  alerta_event: {type: string} # Python format string
+  alerta_customer: {type: string}
+  alerta_text: {type: string} # Python format string
+  alerta_type: {type: string} 
+  alerta_value: {type: string} # Python format string
+  alerta_attributes_keys: {type: array, items: {type: string}}  
+  alerta_attributes_values: {type: array, items: {type: string}}  # Python format string
+  alerta_new_style_string_format: {type: boolean}
+
+
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
-

@@ -8,16 +8,19 @@ import mock
 import pytest
 from jira.exceptions import JIRAError
 
+from elastalert.alerts import AlertaAlerter
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
 from elastalert.alerts import CommandAlerter
 from elastalert.alerts import EmailAlerter
+from elastalert.alerts import HipChatAlerter
 from elastalert.alerts import HTTPPostAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
 from elastalert.alerts import SlackAlerter
+from elastalert.alerts import StrideAlerter
 from elastalert.config import load_modules
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
@@ -77,7 +80,7 @@ def test_jira_formatted_match_string(ea):
     match = {'foo': {'bar': ['one', 2, 'three']}, 'top_events_poof': 'phew'}
     alert_text = str(JiraFormattedMatchString(ea.rules[0], match))
     tab = 4 * ' '
-    expected_alert_text_snippet = '{code:json}{\n' \
+    expected_alert_text_snippet = '{code}{\n' \
         + tab + '"foo": {\n' \
         + 2 * tab + '"bar": [\n' \
         + 3 * tab + '"one", \n' \
@@ -101,7 +104,7 @@ def test_email():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
@@ -166,7 +169,7 @@ def test_email_with_unicode_strings():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, [u'testing@test.test'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
@@ -182,7 +185,8 @@ def test_email_with_unicode_strings():
 def test_email_with_auth():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
-            'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt'}
+            'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt',
+            'rule_file': '/tmp/foo.yaml'}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
             mock_open.return_value = {'user': 'someone', 'password': 'hunter2'}
@@ -193,7 +197,29 @@ def test_email_with_auth():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
+                    mock.call().login('someone', 'hunter2'),
+                    mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
+                    mock.call().close()]
+        assert mock_smtp.mock_calls == expected
+
+
+def test_email_with_cert_key():
+    rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
+            'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
+            'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt',
+            'smtp_cert_file': 'dummy/cert.crt', 'smtp_key_file': 'dummy/client.key', 'rule_file': '/tmp/foo.yaml'}
+    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+        with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock_open.return_value = {'user': 'someone', 'password': 'hunter2'}
+            mock_smtp.return_value = mock.Mock()
+            alert = EmailAlerter(rule)
+
+        alert.alert([{'test_term': 'test_value'}])
+        expected = [mock.call('localhost'),
+                    mock.call().ehlo(),
+                    mock.call().has_extn('STARTTLS'),
+                    mock.call().starttls(certfile='dummy/cert.crt', keyfile='dummy/client.key'),
                     mock.call().login('someone', 'hunter2'),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
                     mock.call().close()]
@@ -212,7 +238,7 @@ def test_email_with_cc():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
@@ -237,7 +263,7 @@ def test_email_with_bcc():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
@@ -262,7 +288,7 @@ def test_email_with_cc_and_bcc():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(
                         mock.ANY,
                         [
@@ -296,7 +322,8 @@ def test_email_with_args():
         'alert_subject': 'Test alert for {0} {1}',
         'alert_subject_args': ['test_term', 'test.term'],
         'alert_text': 'Test alert for {0} and {1} {2}',
-        'alert_text_args': ['test_arg1', 'test_arg2', 'test.arg3']
+        'alert_text_args': ['test_arg1', 'test_arg2', 'test.arg3'],
+        'alert_missing_value': '<CUSTOM MISSING VALUE>'
     }
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
@@ -306,7 +333,7 @@ def test_email_with_args():
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
-                    mock.call().starttls(),
+                    mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
                     mock.call().close()]
         assert mock_smtp.mock_calls == expected
@@ -316,7 +343,7 @@ def test_email_with_args():
         body_text = body.split('\n\n')[-1][:-1].decode('base64')
 
         assert 'testing' in body_text
-        assert '<MISSING VALUE>' in body_text
+        assert '<CUSTOM MISSING VALUE>' in body_text
         assert '☃' in body_text
 
         assert 'Reply-To: test@example.com' in body
@@ -347,7 +374,7 @@ def test_email_query_key_in_subject():
 
 def test_opsgenie_basic():
     rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
-            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v1/json/alert',
+            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
             'opsgenie_recipients': ['lytics'], 'type': mock_rule()}
     with mock.patch('requests.post') as mock_post:
 
@@ -356,19 +383,19 @@ def test_opsgenie_basic():
         print("mock_post: {0}".format(mock_post._mock_call_args_list))
         mcal = mock_post._mock_call_args_list
         print('mcal: {0}'.format(mcal[0]))
-        assert mcal[0][0][0] == ('https://api.opsgenie.com/v1/json/alert')
+        assert mcal[0][0][0] == ('https://api.opsgenie.com/v2/alerts')
 
         assert mock_post.called
 
-        assert mcal[0][1]['json']['apiKey'] == 'ogkey'
+        assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
-        assert mcal[0][1]['json']['recipients'] == ['lytics']
+        assert mcal[0][1]['json']['responders'] == [{'id': 'lytics', 'type': 'user'}]
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
 
 
 def test_opsgenie_frequency():
     rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
-            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v1/json/alert',
+            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
             'opsgenie_recipients': ['lytics'], 'type': mock_rule(),
             'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
             'alert': 'opsgenie'}
@@ -382,13 +409,13 @@ def test_opsgenie_frequency():
         print("mock_post: {0}".format(mock_post._mock_call_args_list))
         mcal = mock_post._mock_call_args_list
         print('mcal: {0}'.format(mcal[0]))
-        assert mcal[0][0][0] == ('https://api.opsgenie.com/v1/json/alert')
+        assert mcal[0][0][0] == ('https://api.opsgenie.com/v2/alerts')
 
         assert mock_post.called
 
-        assert mcal[0][1]['json']['apiKey'] == 'ogkey'
+        assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
-        assert mcal[0][1]['json']['recipients'] == ['lytics']
+        assert mcal[0][1]['json']['responders'] == [{'id': 'lytics', 'type': 'user'}]
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
 
@@ -409,7 +436,8 @@ def test_jira():
         'jira_watchers': ['testwatcher1', 'testwatcher2'],
         'timestamp_field': '@timestamp',
         'alert_subject': 'Issue {0} occurred at {1}',
-        'alert_subject_args': ['test_term', '@timestamp']
+        'alert_subject_args': ['test_term', '@timestamp'],
+        'rule_file': '/tmp/foo.yaml'
     }
 
     mock_priority = mock.Mock(id='5')
@@ -535,6 +563,41 @@ def test_jira():
         # Only 4 calls for mock_jira since add_comment is not called
         assert len(mock_jira.mock_calls) == 4
 
+        # Test match resolved values
+        rule = {
+            'name': 'test alert',
+            'jira_account_file': 'jirafile',
+            'type': mock_rule(),
+            'owner': 'the_owner',
+            'jira_project': 'testproject',
+            'jira_issuetype': 'testtype',
+            'jira_server': 'jiraserver',
+            'jira_label': 'testlabel',
+            'jira_component': 'testcomponent',
+            'jira_description': "DESC",
+            'jira_watchers': ['testwatcher1', 'testwatcher2'],
+            'timestamp_field': '@timestamp',
+            'jira_affected_user': "#gmail.the_user",
+            'rule_file': '/tmp/foo.yaml'
+        }
+        mock_issue = mock.Mock()
+        mock_issue.fields.updated = str(ts_now() - datetime.timedelta(days=4))
+        mock_fields = [
+            {'name': 'affected user', 'id': 'affected_user_id', 'schema': {'type': 'string'}}
+        ]
+        with nested(
+            mock.patch('elastalert.alerts.JIRA'),
+            mock.patch('elastalert.alerts.yaml_loader')
+        ) as (mock_jira, mock_open):
+            mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+            mock_jira.return_value = mock.Mock()
+            mock_jira.return_value.search_issues.return_value = [mock_issue]
+            mock_jira.return_value.fields.return_value = mock_fields
+            mock_jira.return_value.priorities.return_value = [mock_priority]
+            alert = JiraAlerter(rule)
+            alert.alert([{'gmail.the_user': 'jdoe', '@timestamp': '2014-10-31T00:00:00'}])
+            assert mock_jira.mock_calls[4][2]['affected_user_id'] == "jdoe"
+
 
 def test_jira_arbitrary_field_support():
     description_txt = "Description stuff goes here like a runbook link."
@@ -562,7 +625,8 @@ def test_jira_arbitrary_field_support():
         'jira_arbitrary_complex_array_field_provided_as_single_value': 'arbitrary_complex_value_in_array_field',
         'timestamp_field': '@timestamp',
         'alert_subject': 'Issue {0} occurred at {1}',
-        'alert_subject_args': ['test_term', '@timestamp']
+        'alert_subject_args': ['test_term', '@timestamp'],
+        'rule_file': '/tmp/foo.yaml'
     }
 
     mock_priority = mock.MagicMock(id='5')
@@ -1245,6 +1309,42 @@ def test_pagerduty_alerter_custom_alert_subject_with_args():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
+def test_pagerduty_alerter_custom_alert_subject_with_args_specifying_trigger():
+    rule = {
+        'name': 'Test PD Rule',
+        'type': 'any',
+        'alert_subject': '{0} kittens',
+        'alert_subject_args': ['somefield'],
+        'pagerduty_service_key': 'magicalbadgers',
+        'pagerduty_event_type': 'trigger',
+        'pagerduty_client_name': 'ponies inc.',
+        'pagerduty_incident_key': 'custom {0}',
+        'pagerduty_incident_key_args': ['someotherfield'],
+        'alert': []
+    }
+    load_modules(rule)
+    alert = PagerDutyAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'Stinkiest',
+        'someotherfield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'client': 'ponies inc.',
+        'description': 'Stinkiest kittens',
+        'details': {
+            'information': 'Test PD Rule\n\n@timestamp: 2017-01-01T00:00:00\nsomefield: Stinkiest\nsomeotherfield: foobarbaz\n'
+        },
+        'event_type': 'trigger',
+        'incident_key': 'custom foobarbaz',
+        'service_key': 'magicalbadgers',
+    }
+    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
 def test_alert_text_kw(ea):
     rule = ea.rules[0].copy()
     rule['alert_text'] = '{field} at {time}'
@@ -1335,3 +1435,486 @@ def test_resolving_rule_references(ea):
     assert 'the_owner' == alert.rule['list_of_things'][1]
     assert 'the_owner' == alert.rule['list_of_things'][2][1]
     assert 'the_owner' == alert.rule['nested_dict']['nested_owner']
+
+
+def test_stride_plain_text():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'stride_access_token': 'token',
+        'stride_cloud_id': 'cloud_id',
+        'stride_converstation_id': 'converstation_id',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = StrideAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    body = "{0}\n\n@timestamp: {1}\nsomefield: {2}".format(
+        rule['name'], match['@timestamp'], match['somefield']
+    )
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': body}
+            ]}
+        ]}
+    ]}}
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'content-type': 'application/json',
+            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
+        verify=True,
+        proxies=None
+    )
+    assert expected_data == json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_stride_underline_text():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'stride_access_token': 'token',
+        'stride_cloud_id': 'cloud_id',
+        'stride_converstation_id': 'converstation_id',
+        'alert_subject': 'Cool subject',
+        'alert_text': '<u>Underline Text</u>',
+        'alert_text_type': 'alert_text_only',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = StrideAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    body = "Underline Text"
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': body, 'marks': [
+                    {'type': 'underline'}
+                ]}
+            ]}
+        ]}
+    ]}}
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'content-type': 'application/json',
+            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
+        verify=True,
+        proxies=None
+    )
+    assert expected_data == json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_stride_bold_text():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'stride_access_token': 'token',
+        'stride_cloud_id': 'cloud_id',
+        'stride_converstation_id': 'converstation_id',
+        'alert_subject': 'Cool subject',
+        'alert_text': '<b>Bold Text</b>',
+        'alert_text_type': 'alert_text_only',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = StrideAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    body = "Bold Text"
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': body, 'marks': [
+                    {'type': 'strong'}
+                ]}
+            ]}
+        ]}
+    ]}}
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'content-type': 'application/json',
+            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
+        verify=True,
+        proxies=None
+    )
+    assert expected_data == json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_stride_strong_text():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'stride_access_token': 'token',
+        'stride_cloud_id': 'cloud_id',
+        'stride_converstation_id': 'converstation_id',
+        'alert_subject': 'Cool subject',
+        'alert_text': '<strong>Bold Text</strong>',
+        'alert_text_type': 'alert_text_only',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = StrideAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    body = "Bold Text"
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': body, 'marks': [
+                    {'type': 'strong'}
+                ]}
+            ]}
+        ]}
+    ]}}
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'content-type': 'application/json',
+            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
+        verify=True,
+        proxies=None
+    )
+    assert expected_data == json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_stride_hyperlink():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'stride_access_token': 'token',
+        'stride_cloud_id': 'cloud_id',
+        'stride_converstation_id': 'converstation_id',
+        'alert_subject': 'Cool subject',
+        'alert_text': '<a href="http://stride.com">Link</a>',
+        'alert_text_type': 'alert_text_only',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = StrideAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    body = "Link"
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': body, 'marks': [
+                    {'type': 'link', 'attrs': {'href': 'http://stride.com'}}
+                ]}
+            ]}
+        ]}
+    ]}}
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'content-type': 'application/json',
+            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
+        verify=True,
+        proxies=None
+    )
+    assert expected_data == json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_stride_html():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'stride_access_token': 'token',
+        'stride_cloud_id': 'cloud_id',
+        'stride_converstation_id': 'converstation_id',
+        'alert_subject': 'Cool subject',
+        'alert_text': '<b>Alert</b>: we found something. <a href="http://stride.com">Link</a>',
+        'alert_text_type': 'alert_text_only',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = StrideAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
+        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
+            {'type': 'paragraph', 'content': [
+                {'type': 'text', 'text': 'Alert', 'marks': [
+                    {'type': 'strong'}
+                ]},
+                {'type': 'text', 'text': ': we found something. '},
+                {'type': 'text', 'text': 'Link', 'marks': [
+                    {'type': 'link', 'attrs': {'href': 'http://stride.com'}}
+                ]}
+            ]}
+        ]}
+    ]}}
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'content-type': 'application/json',
+            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
+        verify=True,
+        proxies=None
+    )
+    assert expected_data == json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_hipchat_body_size_limit_text():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'hipchat_auth_token': 'token',
+        'hipchat_room_id': 'room_id',
+        'hipchat_message_format': 'text',
+        'alert_subject': 'Cool subject',
+        'alert_text': 'Alert: we found something.\n\n{message}',
+        'alert_text_type': 'alert_text_only',
+        'alert': [],
+        'alert_text_kw': {
+            '@timestamp': 'time',
+            'message': 'message',
+        },
+    }
+    load_modules(rule)
+    alert = HipChatAlerter(rule)
+    match = {
+        '@timestamp': '2018-01-01T00:00:00',
+        'message': 'foo bar\n' * 5000,
+    }
+    body = alert.create_alert_body([match])
+
+    assert len(body) <= 10000
+
+
+def test_hipchat_body_size_limit_html():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'hipchat_auth_token': 'token',
+        'hipchat_room_id': 'room_id',
+        'hipchat_message_format': 'html',
+        'alert_subject': 'Cool subject',
+        'alert_text': 'Alert: we found something.\n\n{message}',
+        'alert_text_type': 'alert_text_only',
+        'alert': [],
+        'alert_text_kw': {
+            '@timestamp': 'time',
+            'message': 'message',
+        },
+    }
+    load_modules(rule)
+    alert = HipChatAlerter(rule)
+    match = {
+        '@timestamp': '2018-01-01T00:00:00',
+        'message': 'foo bar\n' * 5000,
+    }
+
+    body = alert.create_alert_body([match])
+
+    assert len(body) <= 10000
+
+
+def test_alerta_no_auth(ea):
+    rule = {
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+        'timeframe': datetime.timedelta(hours=1),
+        'timestamp_field': u'@timestamp',
+        'alerta_attributes_keys': ["hostname", "TimestampEvent", "senderIP"],
+        'alerta_attributes_values': ["%(key)s", "%(logdate)s", "%(sender_ip)s"],
+        'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
+        'alerta_event': "ProbeUP",
+        'alerta_group': "Health",
+        'alerta_origin': "Elastalert",
+        'alerta_severity': "debug",
+        'alerta_text': "Probe %(hostname)s is UP at %(logdate)s GMT",
+        'alerta_value': "UP",
+        'type': 'any',
+        'alerta_use_match_timestamp': True,
+        'alert': 'alerta'
+    }
+
+    match = {
+        u'@timestamp': '2014-10-10T00:00:00',
+        # 'key': ---- missing field on purpose, to verify that simply the text is left empty
+        # 'logdate': ---- missing field on purpose, to verify that simply the text is left empty
+        'sender_ip': '1.1.1.1',
+        'hostname': 'aProbe'
+    }
+
+    load_modules(rule)
+    alert = AlertaAlerter(rule)
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        "origin": "Elastalert",
+        "resource": "elastalert",
+        "severity": "debug",
+        "service": ["elastalert"],
+        "tags": [],
+        "text": "Probe aProbe is UP at <MISSING VALUE> GMT",
+        "value": "UP",
+        "createTime": "2014-10-10T00:00:00.000000Z",
+        "environment": "Production",
+        "rawData": "Test Alerta rule!\n\n@timestamp: 2014-10-10T00:00:00\nhostname: aProbe\nsender_ip: 1.1.1.1\n",
+        "timeout": 86400,
+        "correlate": ["ProbeUP", "ProbeDOWN"],
+        "group": "Health",
+        "attributes": {"senderIP": "1.1.1.1", "hostname": "<MISSING VALUE>", "TimestampEvent": "<MISSING VALUE>"},
+        "type": "elastalert",
+        "event": "ProbeUP"
+    }
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'content-type': 'application/json'}
+    )
+    assert expected_data == json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_alerta_auth(ea):
+    rule = {
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+        'alerta_api_key': '123456789ABCDEF',
+        'timeframe': datetime.timedelta(hours=1),
+        'timestamp_field': '@timestamp',
+        'alerta_severity': "debug",
+        'type': 'any',
+        'alerta_use_match_timestamp': True,
+        'alert': 'alerta'
+    }
+
+    match = {
+        '@timestamp': '2014-10-10T00:00:00',
+        'sender_ip': '1.1.1.1',
+        'hostname': 'aProbe'
+    }
+
+    load_modules(rule)
+    alert = AlertaAlerter(rule)
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'content-type': 'application/json',
+            'Authorization': 'Key {}'.format(rule['alerta_api_key'])})
+
+
+def test_alerta_new_style(ea):
+    rule = {
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+        'timeframe': datetime.timedelta(hours=1),
+        'timestamp_field': '@timestamp',
+        'alerta_attributes_keys': ["hostname", "TimestampEvent", "senderIP"],
+        'alerta_attributes_values': ["{hostname}", "{logdate}", "{sender_ip}"],
+        'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
+        'alerta_event': "ProbeUP",
+        'alerta_group': "Health",
+        'alerta_origin': "Elastalert",
+        'alerta_severity': "debug",
+        'alerta_text': "Probe {hostname} is UP at {logdate} GMT",
+        'alerta_value': "UP",
+        'alerta_new_style_string_format': True,
+        'type': 'any',
+        'alerta_use_match_timestamp': True,
+        'alert': 'alerta'
+    }
+
+    match = {
+        '@timestamp': '2014-10-10T00:00:00',
+        # 'key': ---- missing field on purpose, to verify that simply the text is left empty
+        # 'logdate': ---- missing field on purpose, to verify that simply the text is left empty
+        'sender_ip': '1.1.1.1',
+        'hostname': 'aProbe'
+    }
+
+    load_modules(rule)
+    alert = AlertaAlerter(rule)
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        "origin": "Elastalert",
+        "resource": "elastalert",
+        "severity": "debug",
+        "service": ["elastalert"],
+        "tags": [],
+        "text": "Probe aProbe is UP at <MISSING VALUE> GMT",
+        "value": "UP",
+        "createTime": "2014-10-10T00:00:00.000000Z",
+        "environment": "Production",
+        "rawData": "Test Alerta rule!\n\n@timestamp: 2014-10-10T00:00:00\nhostname: aProbe\nsender_ip: 1.1.1.1\n",
+        "timeout": 86400,
+        "correlate": ["ProbeUP", "ProbeDOWN"],
+        "group": "Health",
+        "attributes": {"senderIP": "1.1.1.1", "hostname": "aProbe", "TimestampEvent": "<MISSING VALUE>"},
+        "type": "elastalert",
+        "event": "ProbeUP"
+    }
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={
+            'content-type': 'application/json'}
+    )
+    assert expected_data == json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
