@@ -93,6 +93,10 @@ def test_import_import():
         assert rules['email'] == ['test@test.test']
         assert rules['filter'] == import_rule['filter']
 
+        # check global import_rule dependency
+        assert import_rules == {'blah.yaml': ['importme.ymlt']}
+
+
 def test_import_absolute_import():
     import_rule = copy.deepcopy(test_rule)
     del(import_rule['es_host'])
