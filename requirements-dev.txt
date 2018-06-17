@@ -6,3 +6,4 @@ pytest
 setuptools
 sphinx_rtd_theme
 tox<2.0
+urllib3<1.23
