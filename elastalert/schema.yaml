@@ -144,12 +144,7 @@ properties:
   use_strftime_index: {type: boolean}
 
   # Optional Settings
-  import:
-    anyOf:
-      - type: array
-        items:
-          type: string
-      - type: string
+  import: {type: string}
   aggregation: *timeframe
   realert: *timeframe
   exponential_realert: *timeframe
@@ -269,4 +264,3 @@ properties:
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
-

@@ -92,33 +92,6 @@ def test_import_import():
         assert rules['email'] == ['test@test.test']
         assert rules['filter'] == import_rule['filter']
 
-
-def test_multi_imports():
-    import_rule = copy.deepcopy(test_rule)
-    del(import_rule['es_host'])
-    del(import_rule['es_port'])
-    import_rule['import'] = [
-        'import_me_1.ymlt',
-        'import_me_2.ymlt',
-    ]
-    import_me_1 = {
-        'es_host': 'imported_host',
-    }
-    import_me_2 = {
-        'es_port': 12349,
-    }
-
-    with mock.patch('elastalert.config.yaml_loader') as mock_open:
-        mock_open.side_effect = [import_rule, import_me_1, import_me_2]
-        rules = load_configuration('blah.yaml', test_config)
-        assert mock_open.call_args_list[0][0] == ('blah.yaml',)
-        assert mock_open.call_args_list[1][0] == ('import_me_1.ymlt',)
-        assert mock_open.call_args_list[2][0] == ('import_me_2.ymlt',)
-        assert len(mock_open.call_args_list) == 3
-        assert rules['es_port'] == 12349
-        assert rules['es_host'] == 'imported_host'
-
-
 def test_import_absolute_import():
     import_rule = copy.deepcopy(test_rule)
     del(import_rule['es_host'])
