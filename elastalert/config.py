@@ -138,10 +138,10 @@ def load_rule_yaml(filename):
         rule = loaded
         if 'import' in rule:
             # Find the path of the next file.
-            if os.path.isabs(rule['import']):
-                import_filename = rule['import']
-            else:
-                import_filename = os.path.join(os.path.dirname(filename), rule['import'])
+            #if os.path.isabs(rule['import']):
+            #    import_filename = rule['import']
+            #else:
+            import_filename = os.path.join(os.path.dirname(filename), rule['import'])
             # set dependencies
             rules = import_rules.get(filename, [])
             rules.append(import_filename)
