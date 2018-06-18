@@ -54,7 +54,7 @@ class MockElastAlerter(object):
         es_client = elasticsearch_client(conf)
 
         try:
-            is_five = es_client.info()['version']['number'].startswith('6')
+            ElastAlerter.modify_rule_for_ES5(conf)
         except Exception as e:
             print("Error connecting to ElasticSearch:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
