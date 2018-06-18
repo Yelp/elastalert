@@ -108,7 +108,6 @@ def get_module(module_name):
 
 def load_configuration(filename, conf, args=None):
     """ Load a yaml rule file and fill in the relevant fields with objects.
-
     :param filename: The name of a rule configuration file.
     :param conf: The global configuration dictionary, used for populating defaults.
     :return: The rule configuration, a dictionary.
@@ -139,10 +138,10 @@ def load_rule_yaml(filename):
         rule = loaded
         if 'import' in rule:
             # Find the path of the next file.
-            if os.path.isabs(rule['import']):
-                import_filename = rule['import']
-            else:
-                import_filename = os.path.join(os.path.dirname(filename), rule['import'])
+            #if os.path.isabs(rule['import']):
+            #    import_filename = rule['import']
+            #else:
+            import_filename = os.path.join(os.path.dirname(filename), rule['import'])
             # set dependencies
             rules = import_rules.get(filename, [])
             rules.append(import_filename)
@@ -157,7 +156,6 @@ def load_rule_yaml(filename):
 
 def load_options(rule, conf, filename, args=None):
     """ Converts time objects, sets defaults, and validates some settings.
-
     :param rule: A dictionary of parsed YAML from a rule config file.
     :param conf: The global configuration dictionary, used for populating defaults.
     """
@@ -429,7 +427,6 @@ def load_alerts(rule, alert_field):
 def load_rules(args):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
     config file and then each rule found in rules_folder.
-
     :param args: The parsed arguments to ElastAlert
     :return: The global configuration, a dictionary.
     """
