@@ -12,6 +12,7 @@ import jsonschema
 import ruletypes
 import yaml
 import yaml.scanner
+from envparse import Env
 from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
 from util import dt_to_ts
@@ -36,7 +37,13 @@ env_settings = {'ES_USE_SSL': 'use_ssl',
                 'ES_PASSWORD': 'es_password',
                 'ES_USERNAME': 'es_username',
                 'ES_HOST': 'es_host',
-                'ES_PORT': 'es_port'}
+                'ES_PORT': 'es_port',
+                'ES_URL_PREFIX': 'es_url_prefix'}
+
+env = Env(ES_USE_SSL=bool)
+
+# import rule dependency
+import_rules = {}
 
 # Used to map the names of rules to their classes
 rules_mapping = {
@@ -63,6 +70,7 @@ alerts_mapping = {
     'command': alerts.CommandAlerter,
     'sns': alerts.SnsAlerter,
     'hipchat': alerts.HipChatAlerter,
+    'stride': alerts.StrideAlerter,
     'ms_teams': alerts.MsTeamsAlerter,
     'slack': alerts.SlackAlerter,
     'pagerduty': alerts.PagerDutyAlerter,
@@ -72,6 +80,7 @@ alerts_mapping = {
     'telegram': alerts.TelegramAlerter,
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
+    'alerta': alerts.AlertaAlerter,
     'post': alerts.HTTPPostAlerter
 }
 # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
@@ -240,6 +249,13 @@ def load_options(rule, conf, filename, args=None):
     else:
         raise EAException('timestamp_type must be one of iso, unix, or unix_ms')
 
+    # Add support for client ssl certificate auth
+    if 'verify_certs' in conf:
+        rule.setdefault('verify_certs', conf.get('verify_certs'))
+        rule.setdefault('ca_certs', conf.get('ca_certs'))
+        rule.setdefault('client_cert', conf.get('client_cert'))
+        rule.setdefault('client_key', conf.get('client_key'))
+
     # Set HipChat options from global config
     rule.setdefault('hipchat_msg_color', 'red')
     rule.setdefault('hipchat_domain', 'api.hipchat.com')
@@ -315,6 +331,9 @@ def load_options(rule, conf, filename, args=None):
                                 'The index will be formatted like %s' % (token,
                                                                          datetime.datetime.now().strftime(rule.get('index'))))
 
+    if rule.get('scan_entire_timeframe') and not rule.get('timeframe'):
+        raise EAException('scan_entire_timeframe can only be used if there is a timeframe specified')
+
 
 def load_modules(rule, args=None):
     """ Loads things that could be modules. Enhancements, alerts and rule type. """
@@ -348,8 +367,10 @@ def load_modules(rule, args=None):
         rule['type'] = rule['type'](rule, args)
     except (KeyError, EAException) as e:
         raise EAException('Error initializing rule %s: %s' % (rule['name'], e)), None, sys.exc_info()[2]
-    # Instantiate alert
-    rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
+    # Instantiate alerts only if we're not in debug mode
+    # In debug mode alerts are not actually sent so don't bother instantiating them
+    if not args or not args.debug:
+        rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
 
 
 def isyaml(filename):
@@ -405,7 +426,7 @@ def load_alerts(rule, alert_field):
             alert_field = [alert_field]
 
         alert_field = [normalize_config(x) for x in alert_field]
-        alert_field = sorted(alert_field, key=lambda (a, b): alerts_order.get(a, -1))
+        alert_field = sorted(alert_field, key=lambda (a, b): alerts_order.get(a, 1))
         # Convert all alerts into Alerter objects
         alert_field = [create_alert(a, b) for a, b in alert_field]
 
@@ -428,8 +449,9 @@ def load_rules(args):
     use_rule = args.rule
 
     for env_var, conf_var in env_settings.items():
-        if env_var in os.environ:
-            conf[conf_var] = os.environ[env_var]
+        val = env(env_var, None)
+        if val is not None:
+            conf[conf_var] = val
 
     # Make sure we have all required globals
     if required_globals - frozenset(conf.keys()):
@@ -464,6 +486,9 @@ def load_rules(args):
     for rule_file in rule_files:
         try:
             rule = load_configuration(rule_file, conf, args)
+            # By setting "is_enabled: False" in rule file, a rule is easily disabled
+            if 'is_enabled' in rule and not rule['is_enabled']:
+                continue
             if rule['name'] in names:
                 raise EAException('Duplicate rule named %s' % (rule['name']))
         except EAException as e:
@@ -480,9 +505,18 @@ def get_rule_hashes(conf, use_rule=None):
     rule_files = get_file_paths(conf, use_rule)
     rule_mod_times = {}
     for rule_file in rule_files:
-        with open(rule_file) as fh:
-            rule_mod_times[rule_file] = hashlib.sha1(fh.read()).digest()
+        rule_mod_times[rule_file] = get_rulefile_hash(rule_file)
     return rule_mod_times
+
+
+def get_rulefile_hash(rule_file):
+    rulefile_hash = ''
+    if os.path.exists(rule_file):
+        with open(rule_file) as fh:
+            rulefile_hash = hashlib.sha1(fh.read()).digest()
+        for import_rule_file in import_rules.get(rule_file, []):
+            rulefile_hash += get_rulefile_hash(import_rule_file)
+    return rulefile_hash
 
 
 def adjust_deprecated_values(rule):
