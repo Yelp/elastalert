@@ -18,6 +18,7 @@ from elastalert.ruletypes import NewTermsRule
 from elastalert.ruletypes import PercentageMatchRule
 from elastalert.ruletypes import SpikeRule
 from elastalert.ruletypes import WhitelistRule
+from elastalert.util import dt_to_ts
 from elastalert.util import EAException
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
@@ -406,6 +407,58 @@ def test_spike_terms():
     assert rule.matches[0]['username'] == 'userD'
 
 
+def test_spike_terms_query_key_alert_on_new_data():
+    rules = {'spike_height': 1.5,
+             'timeframe': datetime.timedelta(minutes=10),
+             'spike_type': 'both',
+             'use_count_query': False,
+             'timestamp_field': 'ts',
+             'query_key': 'username',
+             'use_term_query': True,
+             'alert_on_new_data': True}
+
+    terms1 = {ts_to_dt('2014-01-01T00:01:00Z'): [{'key': 'userA', 'doc_count': 10}]}
+    terms2 = {ts_to_dt('2014-01-01T00:06:00Z'): [{'key': 'userA', 'doc_count': 10}]}
+    terms3 = {ts_to_dt('2014-01-01T00:11:00Z'): [{'key': 'userA', 'doc_count': 10}]}
+    terms4 = {ts_to_dt('2014-01-01T00:21:00Z'): [{'key': 'userA', 'doc_count': 20}]}
+    terms5 = {ts_to_dt('2014-01-01T00:26:00Z'): [{'key': 'userA', 'doc_count': 20}]}
+    terms6 = {ts_to_dt('2014-01-01T00:31:00Z'): [{'key': 'userA', 'doc_count': 20}]}
+    terms7 = {ts_to_dt('2014-01-01T00:36:00Z'): [{'key': 'userA', 'doc_count': 20}]}
+    terms8 = {ts_to_dt('2014-01-01T00:41:00Z'): [{'key': 'userA', 'doc_count': 20}]}
+
+    rule = SpikeRule(rules)
+
+    # Initial input
+    rule.add_terms_data(terms1)
+    assert len(rule.matches) == 0
+
+    # No spike for UserA because windows not filled
+    rule.add_terms_data(terms2)
+    assert len(rule.matches) == 0
+
+    rule.add_terms_data(terms3)
+    assert len(rule.matches) == 0
+
+    rule.add_terms_data(terms4)
+    assert len(rule.matches) == 0
+
+    # Spike
+    rule.add_terms_data(terms5)
+    assert len(rule.matches) == 1
+
+    rule.matches[:] = []
+
+    # There will be no more spikes since all terms have the same doc_count
+    rule.add_terms_data(terms6)
+    assert len(rule.matches) == 0
+
+    rule.add_terms_data(terms7)
+    assert len(rule.matches) == 0
+
+    rule.add_terms_data(terms8)
+    assert len(rule.matches) == 0
+
+
 def test_blacklist():
     events = [{'@timestamp': ts_to_dt('2014-09-26T12:34:56Z'), 'term': 'good'},
               {'@timestamp': ts_to_dt('2014-09-26T12:34:57Z'), 'term': 'bad'},
@@ -497,7 +550,8 @@ def test_change():
 def test_new_term():
     rules = {'fields': ['a', 'b'],
              'timestamp_field': '@timestamp',
-             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash',
+             'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts}
     mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
                                                                      {'key': 'key2', 'doc_count': 5}]}}}}
 
@@ -567,7 +621,8 @@ def test_new_term_nested_field():
 
     rules = {'fields': ['a', 'b.c'],
              'timestamp_field': '@timestamp',
-             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash',
+             'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts}
     mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
                                                                      {'key': 'key2', 'doc_count': 5}]}}}}
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
@@ -590,7 +645,8 @@ def test_new_term_with_terms():
     rules = {'fields': ['a'],
              'timestamp_field': '@timestamp',
              'es_host': 'example.com', 'es_port': 10, 'index': 'logstash', 'query_key': 'a',
-             'window_step_size': {'days': 2}}
+             'window_step_size': {'days': 2},
+             'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts}
     mock_res = {'aggregations': {'filtered': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
                                                                      {'key': 'key2', 'doc_count': 5}]}}}}
 
@@ -626,7 +682,8 @@ def test_new_term_with_terms():
 def test_new_term_with_composite_fields():
     rules = {'fields': [['a', 'b', 'c'], ['d', 'e.f']],
              'timestamp_field': '@timestamp',
-             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash'}
+             'es_host': 'example.com', 'es_port': 10, 'index': 'logstash',
+             'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts}
 
     mock_res = {
         'aggregations': {
@@ -819,6 +876,34 @@ def test_flatline_query_key():
     rule.garbage_collect(ts_to_dt(timestamp))
     assert len(rule.matches) == 5
     assert set(['key1', 'key2', 'key3']) == set([m['key'] for m in rule.matches if m['@timestamp'] == timestamp])
+
+
+def test_flatline_forget_query_key():
+    rules = {'timeframe': datetime.timedelta(seconds=30),
+             'threshold': 1,
+             'query_key': 'qk',
+             'forget_keys': True,
+             'timestamp_field': '@timestamp'}
+
+    rule = FlatlineRule(rules)
+
+    # Adding two separate query keys, the flatline rule should trigger for both
+    rule.add_data(hits(1, qk='key1'))
+    assert rule.matches == []
+
+    # This will be run at the end of the hits
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:00:11Z'))
+    assert rule.matches == []
+
+    # Key1 should not alert
+    timestamp = '2014-09-26T12:00:45Z'
+    rule.garbage_collect(ts_to_dt(timestamp))
+    assert len(rule.matches) == 1
+    rule.matches = []
+
+    # key1 was forgotten, so no more matches
+    rule.garbage_collect(ts_to_dt('2014-09-26T12:01:11Z'))
+    assert rule.matches == []
 
 
 def test_cardinality_max():
@@ -1075,6 +1160,30 @@ def test_metric_aggregation():
     assert rule.matches[0]['qk'] == 'qk_val'
 
 
+def test_metric_aggregation_complex_query_key():
+    rules = {'buffer_time': datetime.timedelta(minutes=5),
+             'timestamp_field': '@timestamp',
+             'metric_agg_type': 'avg',
+             'metric_agg_key': 'cpu_pct',
+             'compound_query_key': ['qk', 'sub_qk'],
+             'query_key': 'qk,sub_qk',
+             'max_threshold': 0.8}
+
+    query = {"bucket_aggs": {"buckets": [
+        {"cpu_pct_avg": {"value": 0.91}, "key": "sub_qk_val1"},
+        {"cpu_pct_avg": {"value": 0.95}, "key": "sub_qk_val2"},
+        {"cpu_pct_avg": {"value": 0.89}, "key": "sub_qk_val3"}]
+    }, "key": "qk_val"}
+
+    rule = MetricAggregationRule(rules)
+    rule.check_matches(datetime.datetime.now(), 'qk_val', query)
+    assert len(rule.matches) == 3
+    assert rule.matches[0]['qk'] == 'qk_val'
+    assert rule.matches[1]['qk'] == 'qk_val'
+    assert rule.matches[0]['sub_qk'] == 'sub_qk_val1'
+    assert rule.matches[1]['sub_qk'] == 'sub_qk_val2'
+
+
 def test_percentage_match():
     rules = {'match_bucket_filter': {'term': 'term_val'},
              'buffer_time': datetime.timedelta(minutes=5),
@@ -1124,5 +1233,8 @@ def test_percentage_match():
 
     rules['query_key'] = 'qk'
     rule = PercentageMatchRule(rules)
-    rule.check_matches(datetime.datetime.now(), 'qk_val', create_percentage_match_agg(76, 24))
+    rule.check_matches(datetime.datetime.now(), 'qk_val', create_percentage_match_agg(76.666666667, 24))
     assert rule.matches[0]['qk'] == 'qk_val'
+    assert '76.1589403974' in rule.get_match_str(rule.matches[0])
+    rules['percentage_format_string'] = '%.2f'
+    assert '76.16' in rule.get_match_str(rule.matches[0])

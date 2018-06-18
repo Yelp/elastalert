@@ -115,15 +115,21 @@ The environment variable ``ES_USE_SSL`` will override this field.
 
 ``verify_certs``: Optional; whether or not to verify TLS certificates; set to ``True`` or ``False``. The default is ``True``.
 
+``client_cert``: Optional; path to a PEM certificate to use as the client certificate.
+
+``client_key``: Optional; path to a private key file to use as the client key.
+
+``ca_certs``: Optional; path to a CA cert bundle to use to verify SSL connections
+
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``. The environment variable ``ES_USERNAME`` will override this field.
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``. The environment variable ``ES_PASSWORD`` will override this field.
 
-``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.  The environment variable ``ES_URL_PREFIX`` will override this field.
 
 ``es_send_get_body_as``: Optional; Method for querying Elasticsearch - ``GET``, ``POST`` or ``source``. The default is ``GET``
 
-``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``10``.
+``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``20``.
 
 ``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all
 files in this folder, and all subdirectories, that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
@@ -179,6 +185,9 @@ The environment variable ``AWS_DEFAULT_PROFILE`` will override this field.
 ``replace_dots_in_field_names``: If ``True``, ElastAlert replaces any dots in field names with an underscore before writing documents to Elasticsearch.
 The default value is ``False``. Elasticsearch 2.0 - 2.3 does not support dots in field names.
 
+``string_multi_field_name``: If set, the suffix to use for the subfield for string multi-fields in Elasticsearch.
+The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticsearch 5.
+
 .. _runningelastalert:
 
 Running ElastAlert
@@ -192,7 +201,10 @@ Several arguments are available when running ElastAlert:
 
 ``--debug`` will run ElastAlert in debug mode. This will increase the logging verboseness, change
 all alerts to ``DebugAlerter``, which prints alerts and suppresses their normal action, and skips writing
-search and alert metadata back to Elasticsearch.
+search and alert metadata back to Elasticsearch. Not compatible with `--verbose`.
+
+``--verbose`` will increase the logging verboseness, which allows you to see information about the state
+of queries. Not compatible with `--debug`.
 
 ``--start <timestamp>`` will force ElastAlert to begin querying from the given time, instead of the default,
 querying from the present. The timestamp should be ISO8601, e.g.  ``YYYY-MM-DDTHH:MM:SS`` (UTC) or with timezone
@@ -209,12 +221,12 @@ or its subdirectories.
 ``--rule``. <unit> is one of days, weeks, hours, minutes or seconds. <number> is an integer. For example,
 ``--rule noisy_rule.yaml --silence hours=4`` will stop noisy_rule from generating any alerts for 4 hours.
 
-``--verbose`` will increase the logging verboseness, which allows you to see information about the state
-of queries.
-
 ``--es_debug`` will enable logging for all queries made to Elasticsearch.
 
-``--es_debug_trace`` will enable logging curl commands for all queries made to Elasticsearch to a file.
+``--es_debug_trace <trace.log>`` will enable logging curl commands for all queries made to Elasticsearch to the
+specified log file. ``--es_debug_trace`` is passed through to `elasticsearch.py
+<http://elasticsearch-py.readthedocs.io/en/master/index.html#logging>`_ which logs `localhost:9200`
+instead of the actual ``es_host``:``es_port``.
 
 ``--end <timestamp>`` will force ElastAlert to stop querying after the given time, instead of the default,
 querying to the present time. This really only makes sense when running standalone. The timestamp is formatted
