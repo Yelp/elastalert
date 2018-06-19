@@ -27,6 +27,7 @@ class OpsGenieAlerter(Alerter):
         self.opsgenie_subject_args = self.rule.get('opsgenie_subject_args')
         self.alias = self.rule.get('opsgenie_alias')
         self.opsgenie_proxy = self.rule.get('opsgenie_proxy', None)
+        self.priority = self.rule.get('opsgenie_priority')
 
     def _fill_responders(self, responders, type_):
         return [{'id': r, 'type': type_} for r in responders]
@@ -55,6 +56,11 @@ class OpsGenieAlerter(Alerter):
         post['description'] = body
         post['source'] = 'ElastAlert'
         post['tags'] = self.tags
+        if self.priority and self.priority not in ('P1', 'P2', 'P3', 'P4', 'P5'):
+            logging.warn("Priority level does not appear to be specified correctly. \
+                         Please make sure to set it to a value between P1 and P5")
+        else:
+            post['priority'] = self.priority
 
         if self.alias is not None:
             post['alias'] = self.alias.format(**matches[0])
