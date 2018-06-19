@@ -1437,6 +1437,7 @@ Optional:
 
 ``opsgenie_subject_args``: A list of fields to use to format ``opsgenie_subject`` if it contains formaters.
 
+``opsgenie_priority``: Set the OpsGenie priority level. Possible values are P1, P2, P3, P4, P5.
 
 SNS
 ~~~
