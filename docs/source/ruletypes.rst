@@ -1226,6 +1226,9 @@ Optional:
 ``pipe_match_json``: If true, the match will be converted to JSON and passed to stdin of the command. Note that this will cause ElastAlert to block
 until the command exits or sends an EOF to stdout.
 
+``pipe_alert_text``: If true, the standard alert body text will be passed to stdin of the command. Note that this will cause ElastAlert to block
+until the command exits or sends an EOF to stdout. It cannot be used at the same time as ``pipe_match_json``.
+
 Example usage using old-style format::
 
     alert:
