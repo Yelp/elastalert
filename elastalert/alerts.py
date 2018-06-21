@@ -439,7 +439,10 @@ class EmailAlerter(Alerter):
                 to_addr = recipient
                 if 'email_add_domain' in self.rule:
                     to_addr = [name + self.rule['email_add_domain'] for name in to_addr]
-        email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
+        if self.rule.get('email_format') == 'html':
+            email_msg = MIMEText(body.encode('UTF-8'), 'html', _charset='UTF-8')
+        else:
+            email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(to_addr)
         email_msg['From'] = self.from_addr
