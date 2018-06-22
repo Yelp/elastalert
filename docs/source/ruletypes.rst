@@ -1296,6 +1296,9 @@ by the smtp server.
 
 ``bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
 
+``email_format``: If set to ``html``, the email's MIME type will be set to HTML, and HTML content should correctly render. If you use this,
+you need to put your own HTML into ``alert_text`` and use ``alert_text_type: alert_text_only``.
+
 Jira
 ~~~~
 
