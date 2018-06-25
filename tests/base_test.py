@@ -1238,107 +1238,45 @@ def test_remove_old_events(ea):
     assert 'baz' not in ea.rules[0]['processed_hits']
 
 
-def test_query_with_blacklist_filter_es(ea):
+def test_query_with_whitelist_filter_es(ea):
     ea.rules[0]['_source_enabled'] = False
     ea.rules[0]['five'] = False
     ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
     ea.rules[0]['compare_key'] = "username"
+    ea.rules[0]['whitelist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+    new_rule = copy.copy(ea.rules[0])
+    ea.init_rule(new_rule, True)
+    assert 'NOT username:"xudan1" AND NOT username:"xudan12" AND NOT username:"aa1"' \
+           in new_rule['filter'][-1]['query']['query_string']['query']
+
+
+def test_query_with_whitelist_filter_es_five(ea):
+    ea.es_version = '6.2'
+    ea.rules[0]['_source_enabled'] = False
+    ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
+    ea.rules[0]['compare_key'] = "username"
+    ea.rules[0]['whitelist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+    new_rule = copy.copy(ea.rules[0])
+    ea.init_rule(new_rule, True)
+    assert 'NOT username:"xudan1" AND NOT username:"xudan12" AND NOT username:"aa1"' in new_rule['filter'][-1]['query_string']['query']
+
+
+def test_query_with_blacklist_filter_es(ea):
+    ea.rules[0]['_source_enabled'] = False
+    ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
+    ea.rules[0]['compare_key'] = "username"
     ea.rules[0]['blacklist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
-
-    ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
-    ea.run_query(ea.rules[0], START, END)
-
-    ea.current_es.search.assert_called_with(body={
-        'query': {
-            'filtered': {
-                'filter': {
-                    'bool': {
-                        'must': [{
-                            'range': {
-                                '@timestamp': {
-                                    'lte': END_TIMESTAMP,
-                                    'gt': START_TIMESTAMP}}}, {
-                                'query_string': {'query': 'baz '
-                                                          'AND username:xudan1 AND username:xudan12 '
-                                                          'AND username:aa1 AND username:bb1'}}]}}}},
-        'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True,
-        size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
+    new_rule = copy.copy(ea.rules[0])
+    ea.init_rule(new_rule, True)
+    assert 'username:"xudan1" OR username:"xudan12" OR username:"aa1"' in new_rule['filter'][-1]['query']['query_string']['query']
 
 
 def test_query_with_blacklist_filter_es_five(ea):
-    """ Tests es 5 and no query_string combination for adding blacklist terms to query."""
+    ea.es_version = '6.2'
     ea.rules[0]['_source_enabled'] = False
-    ea.rules[0]['five'] = True
-    ea.rules[0]['compare_key'] = "username"
-    ea.rules[0]['blacklist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
-
-    ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
-    ea.run_query(ea.rules[0], START, END)
-
-    ea.current_es.search.assert_called_with(body={
-        'query': {
-            'bool': {
-                'filter': {
-                    'bool': {
-                        'must': [{
-                            'range': {
-                                '@timestamp': {
-                                    'lte': END_TIMESTAMP,
-                                    'gt': START_TIMESTAMP}}}, {
-                            'query_string': {
-                                'query': 'username:xudan1 AND username:xudan12 '
-                                         'AND username:aa1 AND username:bb1'}}]}}}},
-        'sort': [{'@timestamp': {'order': 'asc'}}], 'stored_fields': ['@timestamp']}, index='idx',
-        ignore_unavailable=True, size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
-
-
-def test_query_with_whitelist_filter(ea):
-    ea.rules[0]['_source_enabled'] = False
-    ea.rules[0]['five'] = False
-    ea.rules[0]['compare_key'] = "username"
-    ea.rules[0]['whitelist'] = ['xudan1', 'xudan12', 'aa1']
-
-    ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
-    ea.run_query(ea.rules[0], START, END)
-
-    ea.current_es.search.assert_called_with(body={
-        'query': {
-            'filtered': {
-                'filter': {
-                    'bool': {
-                        'must': [{
-                            'range': {
-                                '@timestamp': {
-                                    'lte': END_TIMESTAMP,
-                                    'gt': START_TIMESTAMP}}}, {
-                            'query_string': {'query': 'NOT username:xudan1 '
-                                                      'AND NOT username:xudan12 AND NOT username:aa1'}}]}}}},
-        'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True,
-        size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
-
-
-def test_query_with_whitelist_filter_five(ea):
-    ea.rules[0]['_source_enabled'] = False
-    ea.rules[0]['five'] = True
     ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
     ea.rules[0]['compare_key'] = "username"
-    ea.rules[0]['whitelist'] = ['xudan1', 'xudan12', 'aa1']
-
-    ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
-    ea.run_query(ea.rules[0], START, END)
-
-    ea.current_es.search.assert_called_with(body={
-        'query': {
-            'bool': {
-                'filter': {
-                    'bool': {
-                        'must': [{
-                            'range': {
-                                '@timestamp': {
-                                    'lte': END_TIMESTAMP,
-                                    'gt': START_TIMESTAMP}}}, {
-                            'query_string': {'query': 'baz '
-                                                      'AND NOT username:xudan1 '
-                                                      'AND NOT username:xudan12 AND NOT username:aa1'}}]}}}},
-        'sort': [{'@timestamp': {'order': 'asc'}}], 'stored_fields': ['@timestamp']}, index='idx',
-        ignore_unavailable=True, size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
+    ea.rules[0]['blacklist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+    new_rule = copy.copy(ea.rules[0])
+    ea.init_rule(new_rule, True)
+    assert 'username:"xudan1" OR username:"xudan12" OR username:"aa1"' in new_rule['filter'][-1]['query_string']['query']
