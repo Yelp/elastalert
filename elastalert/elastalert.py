@@ -589,8 +589,6 @@ class ElastAlerter():
         if end is None:
             end = ts_now()
 
-        self.enhance_filter(rule)
-
         # Reset hit counter and query
         rule_inst = rule['type']
         index = self.get_index(rule, start, end)
@@ -780,56 +778,27 @@ class ElastAlerter():
         :param rule:
         :return:
         """
+        if not rule.get('filter_by_list', True):
+            return
         if 'blacklist' in rule:
-            self.enhance_filter_with_blacklist(rule)
+            listname = 'blacklist'
         elif 'whitelist' in rule:
-            self.enhance_filter_with_whitelist(rule)
-
-    def enhance_filter_with_blacklist(self, rule):
-        filters = rule['filter']
-        query_str_filter = self.get_query_string_filter(filters)
-        query_str_filter['query_string']['query'] = self.extend_query(query_str_filter, rule['compare_key'],
-                                                                      rule['blacklist'], True)
-        filters.append(query_str_filter)
-
-        logging.debug("Enhanced filter with blacklist terms " + str(query_str_filter))
-
-    def enhance_filter_with_whitelist(self, rule):
-        filters = rule['filter']
-        query_str_filter = self.get_query_string_filter(filters)
-        query_str_filter['query_string']['query'] = self.extend_query(query_str_filter, rule['compare_key'],
-                                                                      rule['whitelist'], False)
-        filters.append(query_str_filter)
-
-        logging.debug("Enhanced filter with whitelist terms " + str(query_str_filter))
-
-    def get_query_string_filter(self, filters):
-        query_str_filter = None
-        for es_filter in filters:
-            if 'query_string' in es_filter:
-                query_str_filter = es_filter
-
-        if query_str_filter:
-            filters.remove(query_str_filter)
+            listname = 'whitelist'
         else:
-            query_str_filter = {"query_string": {"query": ""}}
-        return query_str_filter
+            return
 
-    def extend_query(self, query_str_filter, compare_key, additional_terms, should_include=False):
-
-        query = query_str_filter['query_string']['query']
-        additional_terms = [(compare_key + ":" + term) for term in additional_terms]
-
-        if not should_include and len(query) == 0:
-            return "NOT " + " AND NOT ".join(additional_terms)
+        filters = rule['filter']
+        additional_terms = [(rule['compare_key'] + ':"' + term + '"') for term in rule[listname]]
+        if listname == 'whitelist':
+            query = "NOT " + " AND NOT ".join(additional_terms)
         else:
-            if len(query) >= 1:
-                all_terms = [query] + additional_terms
-            else:
-                all_terms = additional_terms
-        sep = " AND " if should_include else " AND NOT "
-
-        return sep.join(t for t in all_terms)
+            query = " OR ".join(additional_terms)
+        query_str_filter = {'query_string': {'query': query}}
+        if self.is_atleastfive():
+            filters.append(query_str_filter)
+        else:
+            filters.append({'query': query_str_filter})
+        logging.debug("Enhanced filter with {} terms: {}".format(listname, str(query_str_filter)))
 
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
@@ -958,6 +927,8 @@ class ElastAlerter():
                                       'The rule has been disabled.'.format(new_rule['name']))
             self.send_notification_email(exception=e, rule=new_rule)
             return False
+
+        self.enhance_filter(new_rule)
 
         # Change top_count_keys to .raw
         if 'top_count_keys' in new_rule and new_rule.get('raw_count_keys', True):
