@@ -1236,3 +1236,109 @@ def test_remove_old_events(ea):
     ea.remove_old_events(ea.rules[0])
     assert len(ea.rules[0]['processed_hits']) == 2
     assert 'baz' not in ea.rules[0]['processed_hits']
+
+
+def test_query_with_blacklist_filter_es(ea):
+    ea.rules[0]['_source_enabled'] = False
+    ea.rules[0]['five'] = False
+    ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
+    ea.rules[0]['compare_key'] = "username"
+    ea.rules[0]['blacklist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+
+    ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
+    ea.run_query(ea.rules[0], START, END)
+
+    ea.current_es.search.assert_called_with(body={
+        'query': {
+            'filtered': {
+                'filter': {
+                    'bool': {
+                        'must': [{
+                            'range': {
+                                '@timestamp': {
+                                    'lte': END_TIMESTAMP,
+                                    'gt': START_TIMESTAMP}}}, {
+                                'query_string': {'query': 'baz '
+                                                          'AND username:xudan1 AND username:xudan12 '
+                                                          'AND username:aa1 AND username:bb1'}}]}}}},
+        'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True,
+        size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
+
+
+def test_query_with_blacklist_filter_es_five(ea):
+    """ Tests es 5 and no query_string combination for adding blacklist terms to query."""
+    ea.rules[0]['_source_enabled'] = False
+    ea.rules[0]['five'] = True
+    ea.rules[0]['compare_key'] = "username"
+    ea.rules[0]['blacklist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+
+    ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
+    ea.run_query(ea.rules[0], START, END)
+
+    ea.current_es.search.assert_called_with(body={
+        'query': {
+            'bool': {
+                'filter': {
+                    'bool': {
+                        'must': [{
+                            'range': {
+                                '@timestamp': {
+                                    'lte': END_TIMESTAMP,
+                                    'gt': START_TIMESTAMP}}}, {
+                            'query_string': {
+                                'query': 'username:xudan1 AND username:xudan12 '
+                                         'AND username:aa1 AND username:bb1'}}]}}}},
+        'sort': [{'@timestamp': {'order': 'asc'}}], 'stored_fields': ['@timestamp']}, index='idx',
+        ignore_unavailable=True, size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
+
+
+def test_query_with_whitelist_filter(ea):
+    ea.rules[0]['_source_enabled'] = False
+    ea.rules[0]['five'] = False
+    ea.rules[0]['compare_key'] = "username"
+    ea.rules[0]['whitelist'] = ['xudan1', 'xudan12', 'aa1']
+
+    ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
+    ea.run_query(ea.rules[0], START, END)
+
+    ea.current_es.search.assert_called_with(body={
+        'query': {
+            'filtered': {
+                'filter': {
+                    'bool': {
+                        'must': [{
+                            'range': {
+                                '@timestamp': {
+                                    'lte': END_TIMESTAMP,
+                                    'gt': START_TIMESTAMP}}}, {
+                            'query_string': {'query': 'NOT username:xudan1 '
+                                                      'AND NOT username:xudan12 AND NOT username:aa1'}}]}}}},
+        'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True,
+        size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
+
+
+def test_query_with_whitelist_filter_five(ea):
+    ea.rules[0]['_source_enabled'] = False
+    ea.rules[0]['five'] = True
+    ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
+    ea.rules[0]['compare_key'] = "username"
+    ea.rules[0]['whitelist'] = ['xudan1', 'xudan12', 'aa1']
+
+    ea.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
+    ea.run_query(ea.rules[0], START, END)
+
+    ea.current_es.search.assert_called_with(body={
+        'query': {
+            'bool': {
+                'filter': {
+                    'bool': {
+                        'must': [{
+                            'range': {
+                                '@timestamp': {
+                                    'lte': END_TIMESTAMP,
+                                    'gt': START_TIMESTAMP}}}, {
+                            'query_string': {'query': 'baz '
+                                                      'AND NOT username:xudan1 '
+                                                      'AND NOT username:xudan12 AND NOT username:aa1'}}]}}}},
+        'sort': [{'@timestamp': {'order': 'asc'}}], 'stored_fields': ['@timestamp']}, index='idx',
+        ignore_unavailable=True, size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])

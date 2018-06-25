@@ -353,7 +353,6 @@ class ElastAlerter():
 
     def get_hits(self, rule, starttime, endtime, index, scroll=False):
         """ Query Elasticsearch for the given rule and return the results.
-
         :param rule: The rule configuration.
         :param starttime: The earliest time to query.
         :param endtime: The latest time to query.
@@ -590,6 +589,8 @@ class ElastAlerter():
         if end is None:
             end = ts_now()
 
+        self.enhance_filter(rule)
+
         # Reset hit counter and query
         rule_inst = rule['type']
         index = self.get_index(rule, start, end)
@@ -770,6 +771,65 @@ class ElastAlerter():
             key_value = None
 
         return key_value
+
+    def enhance_filter(self, rule):
+        """ If there is a blacklist or whitelist in rule then we add it to the filter.
+        It adds it as a query_string. If there is already an query string its is appended
+        with blacklist or whitelist.
+
+        :param rule:
+        :return:
+        """
+        if 'blacklist' in rule:
+            self.enhance_filter_with_blacklist(rule)
+        elif 'whitelist' in rule:
+            self.enhance_filter_with_whitelist(rule)
+
+    def enhance_filter_with_blacklist(self, rule):
+        filters = rule['filter']
+        query_str_filter = self.get_query_string_filter(filters)
+        query_str_filter['query_string']['query'] = self.extend_query(query_str_filter, rule['compare_key'],
+                                                                      rule['blacklist'], True)
+        filters.append(query_str_filter)
+
+        logging.debug("Enhanced filter with blacklist terms " + str(query_str_filter))
+
+    def enhance_filter_with_whitelist(self, rule):
+        filters = rule['filter']
+        query_str_filter = self.get_query_string_filter(filters)
+        query_str_filter['query_string']['query'] = self.extend_query(query_str_filter, rule['compare_key'],
+                                                                      rule['whitelist'], False)
+        filters.append(query_str_filter)
+
+        logging.debug("Enhanced filter with whitelist terms " + str(query_str_filter))
+
+    def get_query_string_filter(self, filters):
+        query_str_filter = None
+        for es_filter in filters:
+            if 'query_string' in es_filter:
+                query_str_filter = es_filter
+
+        if query_str_filter:
+            filters.remove(query_str_filter)
+        else:
+            query_str_filter = {"query_string": {"query": ""}}
+        return query_str_filter
+
+    def extend_query(self, query_str_filter, compare_key, additional_terms, should_include=False):
+
+        query = query_str_filter['query_string']['query']
+        additional_terms = [(compare_key + ":" + term) for term in additional_terms]
+
+        if not should_include and len(query) == 0:
+            return "NOT " + " AND NOT ".join(additional_terms)
+        else:
+            if len(query) >= 1:
+                all_terms = [query] + additional_terms
+            else:
+                all_terms = additional_terms
+        sep = " AND " if should_include else " AND NOT "
+
+        return sep.join(t for t in all_terms)
 
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
