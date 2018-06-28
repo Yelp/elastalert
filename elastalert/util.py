@@ -185,17 +185,22 @@ def hashable(obj):
     return obj
 
 
-def format_index(index, start, end):
+def format_index(index, start, end, add_extra=False):
     """ Takes an index, specified using strftime format, start and end time timestamps,
     and outputs a wildcard based index string to match all possible timestamps. """
     # Convert to UTC
     start -= start.utcoffset()
     end -= end.utcoffset()
-
-    indexes = []
+    original_start = start
+    indexes = set()
     while start.date() <= end.date():
-        indexes.append(start.strftime(index))
+        indexes.add(start.strftime(index))
         start += datetime.timedelta(days=1)
+    num = len(indexes)
+    if add_extra:
+        while len(indexes) == num:
+            original_start -= datetime.timedelta(days=1)
+            indexes.add(original_start.strftime(index))
 
     return ','.join(indexes)
 

@@ -108,6 +108,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``is_enabled`` (boolean, default True)                       |           |
 +--------------------------------------------------------------+-----------+
+| ``search_extra_index`` (boolean, default False)              |           |
++--------------------------------------------------------------+-----------+
 
 |
 
@@ -285,6 +287,13 @@ If a query spans multiple days, the formatted indexes will be concatenated with 
 as narrowing the number of indexes searched, compared to using a wildcard, may be significantly faster. For example, if ``index`` is
 ``logstash-%Y.%m.%d``, the query url will be similar to ``elasticsearch.example.com/logstash-2015.02.03/...`` or
 ``elasticsearch.example.com/logstash-2015.02.03,logstash-2015.02.04/...``.
+
+search_extra_index
+^^^^^^^^^^^^^^^^^^
+
+``search_extra_index``: If this is true, ElastAlert will add an extra index on the early side onto each search. For example, if it's querying
+completely within 2018-06-28, it will actually use 2018-06-27,2018-06-28. This can be useful if your timestamp_field is not what's being used
+to generate the index names. If that's the case, sometimes a query would not have been using the right index.
 
 aggregation
 ^^^^^^^^^^^

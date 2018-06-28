@@ -188,9 +188,10 @@ class ElastAlerter():
         is set but starttime and endtime are not provided, it will replace all format
         tokens with a wildcard. """
         index = rule['index']
+        add_extra = rule.get('search_extra_index', False)
         if rule.get('use_strftime_index'):
             if starttime and endtime:
-                return format_index(index, starttime, endtime)
+                return format_index(index, starttime, endtime, add_extra)
             else:
                 # Replace the substring containing format characters with a *
                 format_start = index.find('%')
