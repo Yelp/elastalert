@@ -1685,18 +1685,18 @@ class StrideAlerter(Alerter):
     """ Creates a Stride conversation message for each alert """
 
     required_options = frozenset(
-        ['stride_access_token', 'stride_cloud_id', 'stride_converstation_id'])
+        ['stride_access_token', 'stride_cloud_id', 'stride_conversation_id'])
 
     def __init__(self, rule):
         super(StrideAlerter, self).__init__(rule)
 
         self.stride_access_token = self.rule['stride_access_token']
         self.stride_cloud_id = self.rule['stride_cloud_id']
-        self.stride_converstation_id = self.rule['stride_converstation_id']
+        self.stride_conversation_id = self.rule['stride_conversation_id']
         self.stride_ignore_ssl_errors = self.rule.get('stride_ignore_ssl_errors', False)
         self.stride_proxy = self.rule.get('stride_proxy', None)
         self.url = 'https://api.atlassian.com/site/%s/conversation/%s/message' % (
-            self.stride_cloud_id, self.stride_converstation_id)
+            self.stride_cloud_id, self.stride_conversation_id)
 
     def alert(self, matches):
         body = self.create_alert_body(matches).strip()
@@ -1734,9 +1734,9 @@ class StrideAlerter(Alerter):
         except RequestException as e:
             raise EAException("Error posting to Stride: %s" % e)
         elastalert_logger.info(
-            "Alert sent to Stride converstation %s" % self.stride_converstation_id)
+            "Alert sent to Stride conversation %s" % self.stride_conversation_id)
 
     def get_info(self):
         return {'type': 'stride',
                 'stride_cloud_id': self.stride_cloud_id,
-                'stride_converstation_id': self.stride_converstation_id}
+                'stride_conversation_id': self.stride_conversation_id}
