@@ -192,19 +192,19 @@ def format_index(index, start, end, add_extra=False):
     start -= start.utcoffset()
     end -= end.utcoffset()
     original_start = start
-    indexes = set()
+    indices = set()
     while start.date() <= end.date():
-        indexes.add(start.strftime(index))
+        indices.add(start.strftime(index))
         start += datetime.timedelta(days=1)
-    num = len(indexes)
+    num = len(indices)
     if add_extra:
-        while len(indexes) == num:
+        while len(indices) == num:
             original_start -= datetime.timedelta(days=1)
             new_index = original_start.strftime(index)
             assert new_index != index, "You cannot use a static index with search_extra_index"
-            indexes.add(new_index)
+            indices.add(new_index)
 
-    return ','.join(indexes)
+    return ','.join(indices)
 
 
 class EAException(Exception):

@@ -180,6 +180,7 @@ def test_resolve_string(ea):
 
 def test_format_index():
     pattern = 'logstash-%Y.%m.%d'
+    pattern2 = 'logstash-%Y.%W'
     date = dt('2018-06-25T12:00:00Z')
     date2 = dt('2018-06-26T12:00:00Z')
     assert sorted(format_index(pattern, date, date).split(',')) == ['logstash-2018.06.25']
@@ -187,3 +188,4 @@ def test_format_index():
     assert sorted(format_index(pattern, date, date2, True).split(',')) == ['logstash-2018.06.24',
                                                                            'logstash-2018.06.25',
                                                                            'logstash-2018.06.26']
+    assert sorted(format_index(pattern2, date, date2, True).split(',')) == ['logstash-2018.25', 'logstash-2018.26']
