@@ -200,7 +200,9 @@ def format_index(index, start, end, add_extra=False):
     if add_extra:
         while len(indexes) == num:
             original_start -= datetime.timedelta(days=1)
-            indexes.add(original_start.strftime(index))
+            new_index = original_start.strftime(index)
+            assert new_index != index, "You cannot use a static index with search_extra_index"
+            indexes.add(new_index)
 
     return ','.join(indexes)
 
