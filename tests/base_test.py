@@ -987,7 +987,7 @@ def test_strf_index(ea):
     end = ts_to_dt('2015-01-02T16:15:14Z')
     assert ea.get_index(ea.rules[0], start, end) == 'logstash-2015.01.02'
     end = ts_to_dt('2015-01-03T01:02:03Z')
-    assert ea.get_index(ea.rules[0], start, end) == 'logstash-2015.01.02,logstash-2015.01.03'
+    assert set(ea.get_index(ea.rules[0], start, end).split(',')) == set(['logstash-2015.01.02', 'logstash-2015.01.03'])
 
     # Test formatting for wildcard
     assert ea.get_index(ea.rules[0]) == 'logstash-*'
