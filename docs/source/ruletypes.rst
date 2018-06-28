@@ -1513,7 +1513,7 @@ The alerter requires the following two options:
 
 ``stride_cloud_id``: The site_id associated with the Stride site you want to send the alert to.
 
-``stride_converstation_id``: The converstation_id associated with the Stride converstation you want to send the alert to.
+``stride_conversation_id``: The conversation_id associated with the Stride conversation you want to send the alert to.
 
 ``stride_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
 
