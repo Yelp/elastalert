@@ -865,7 +865,7 @@ class ElastAlerter():
         num_matches = len(rule['type'].matches)
         while rule['type'].matches:
             match = rule['type'].matches.pop(0)
-            match['num_hits'] = self.num_hits
+            match['num_hits'] = self.cumulative_hits
             match['num_matches'] = num_matches
 
             # If realert is set, silence the rule for that duration
