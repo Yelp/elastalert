@@ -1192,23 +1192,53 @@ class PagerDutyAlerter(Alerter):
         self.pagerduty_incident_key_args = self.rule.get('pagerduty_incident_key_args', None)
         self.pagerduty_event_type = self.rule.get('pagerduty_event_type', 'trigger')
         self.pagerduty_proxy = self.rule.get('pagerduty_proxy', None)
-        self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
+
+        self.pagerduty_api_version = self.rule.get('pagerduty_api_version', 'v1')
+        self.pagerduty_v2_payload_class = self.rule.get('pagerduty_v2_payload_class', '')
+        self.pagerduty_v2_payload_component = self.rule.get('pagerduty_v2_payload_component', '')
+        self.pagerduty_v2_payload_group = self.rule.get('pagerduty_v2_payload_group', '')
+        self.pagerduty_v2_payload_severity = self.rule.get('pagerduty_v2_payload_severity', 'critical')
+        self.pagerduty_v2_payload_source = self.rule.get('pagerduty_v2_payload_source', 'ElastAlert')
+
+        if self.pagerduty_api_version == 'v2':
+            self.url = 'https://events.pagerduty.com/v2/enqueue'
+        else:
+            self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
         # post to pagerduty
         headers = {'content-type': 'application/json'}
-        payload = {
-            'service_key': self.pagerduty_service_key,
-            'description': self.create_title(matches),
-            'event_type': self.pagerduty_event_type,
-            'incident_key': self.get_incident_key(matches),
-            'client': self.pagerduty_client_name,
-            'details': {
-                "information": body.encode('UTF-8'),
-            },
-        }
+        if self.pagerduty_api_version == 'v2':
+            payload = {
+                'routing_key': self.pagerduty_service_key,
+                'event_action': self.pagerduty_event_type,
+                'dedup_key': self.get_incident_key(matches),
+                'client': self.pagerduty_client_name,
+                'payload': {
+                    'class': self.pagerduty_v2_payload_class,
+                    'component': self.pagerduty_v2_payload_component,
+                    'group': self.pagerduty_v2_payload_group,
+                    'severity': self.pagerduty_v2_payload_severity,
+                    'source': self.pagerduty_v2_payload_source,
+                    'summary': self.create_title(matches),
+                    'custom_details': {
+                        'information': body.encode('UTF-8'),
+                    },
+                },
+            }
+        else:
+            payload = {
+                'service_key': self.pagerduty_service_key,
+                'description': self.create_title(matches),
+                'event_type': self.pagerduty_event_type,
+                'incident_key': self.get_incident_key(matches),
+                'client': self.pagerduty_client_name,
+                'details': {
+                    "information": body.encode('UTF-8'),
+                },
+            }
 
         # set https proxy, if it was provided
         proxies = {'https': self.pagerduty_proxy} if self.pagerduty_proxy else None
