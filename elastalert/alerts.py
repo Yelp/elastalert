@@ -1621,6 +1621,7 @@ class HTTPPostAlerter(Alerter):
         self.post_static_payload = self.rule.get('http_post_static_payload', {})
         self.post_all_values = self.rule.get('http_post_all_values', not self.post_payload)
         self.post_http_headers = self.rule.get('http_post_headers', {})
+        self.timeout = self.rule.get('http_post_timeout', 10)
 
     def alert(self, matches):
         """ Each match will trigger a POST to the specified endpoint(s). """
@@ -1638,7 +1639,7 @@ class HTTPPostAlerter(Alerter):
             for url in self.post_url:
                 try:
                     response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder),
-                                             headers=headers, proxies=proxies)
+                                             headers=headers, proxies=proxies, timeout=self.timeout)
                     response.raise_for_status()
                 except RequestException as e:
                     raise EAException("Error posting HTTP Post alert: %s" % e)
