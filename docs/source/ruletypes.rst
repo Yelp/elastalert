@@ -1621,6 +1621,24 @@ If there's no open (i.e. unresolved) incident with this key, a new one will be c
 
 ``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerDuty. Set this option using ``hostname:port`` if you need to use a proxy.
 
+V2 API Options (Optional):
+
+These options are specific to the PagerDuty V2 API
+
+See https://v2.developer.pagerduty.com/docs/send-an-event-events-api-v2
+
+``pagerduty_api_version``: Defaults to `v1`.  Set to `v2` to enable the PagerDuty V2 Event API.
+
+``pagerduty_v2_payload_class``: Sets the class of the payload. (the event type in PagerDuty)
+
+``pagerduty_v2_payload_component``: Sets the component of the payload. (what program/interface/etc the event came from)
+
+``pagerduty_v2_payload_group``: Sets the logical grouping (e.g. app-stack)
+
+``pagerduty_v2_payload_severity``: Sets the severity of the page. (defaults to `critical`, valid options: `critical`, `error`, `warning`, `info`)
+
+``pagerduty_v2_payload_source``: Sets the source of the event, preferably the hostname or fqdn.
+
 Exotel
 ~~~~~~
 
