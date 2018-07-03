@@ -1223,14 +1223,12 @@ This alert requires one option:
 string, the command is executed through the shell.
 
 Strings can be formatted using the old-style format (``%``) or the new-style format (``.format()``). When the old-style format is used, fields are accessed
-using ``%(field_name)s``. When the new-style format is used, fields are accessed using ``{match[field_name]}``. New-style formatting allows accessing nested
-fields (e.g., ``{match[field_1_name][field_2_name]}``).
+using ``%(field_name)s``, or ``%(field.subfield)s``. When the new-style format is used, fields are accessed using ``{field_name}``. New-style formatting allows accessing nested
+fields (e.g., ``{field_1[subfield]}``).
 
 In an aggregated alert, these fields come from the first match.
 
 Optional:
-
-``new_style_string_format``: If True, arguments are formatted using ``.format()`` rather than ``%``. The default is False.
 
 ``pipe_match_json``: If true, the match will be converted to JSON and passed to stdin of the command. Note that this will cause ElastAlert to block
 until the command exits or sends an EOF to stdout.
