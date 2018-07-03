@@ -152,30 +152,36 @@ def test_resolve_string(ea):
         'name': 'mySystem',
         'temperature': 45,
         'humidity': 80.56,
-        'sensors': ['outsideSensor', 'insideSensor']
+        'sensors': ['outsideSensor', 'insideSensor'],
+        'foo': {'bar': 'baz'}
     }
 
     expected_outputs = [
         "mySystem is online <MISSING VALUE>",
         "Sensors ['outsideSensor', 'insideSensor'] in the <MISSING VALUE> have temp 45 and 80.56 humidity",
-        "Actuator <MISSING VALUE> in the <MISSING VALUE> has temp <MISSING VALUE>"]
+        "Actuator <MISSING VALUE> in the <MISSING VALUE> has temp <MISSING VALUE>",
+        'Something baz']
     old_style_strings = [
         "%(name)s is online %(noKey)s",
         "Sensors %(sensors)s in the %(noPlace)s have temp %(temperature)s and %(humidity)s humidity",
-        "Actuator %(noKey)s in the %(noPlace)s has temp %(noKey)s"]
+        "Actuator %(noKey)s in the %(noPlace)s has temp %(noKey)s",
+        'Something %(foo.bar)s']
 
     assert resolve_string(old_style_strings[0], match) == expected_outputs[0]
     assert resolve_string(old_style_strings[1], match) == expected_outputs[1]
     assert resolve_string(old_style_strings[2], match) == expected_outputs[2]
+    assert resolve_string(old_style_strings[3], match) == expected_outputs[3]
 
     new_style_strings = [
         "{name} is online {noKey}",
         "Sensors {sensors} in the {noPlace} have temp {temperature} and {humidity} humidity",
-        "Actuator {noKey} in the {noPlace} has temp {noKey}"]
+        "Actuator {noKey} in the {noPlace} has temp {noKey}",
+        "Something {foo[bar]}"]
 
     assert resolve_string(new_style_strings[0], match) == expected_outputs[0]
     assert resolve_string(new_style_strings[1], match) == expected_outputs[1]
     assert resolve_string(new_style_strings[2], match) == expected_outputs[2]
+    assert resolve_string(new_style_strings[3], match) == expected_outputs[3]
 
 
 def test_format_index():
