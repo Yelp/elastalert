@@ -1006,6 +1006,17 @@ than regular searching if there is a large number of documents. If this is used,
 ``query_key`` to that field. Also, note that ``terms_size`` (the number of buckets returned per query) defaults to 50. This means
 that if a new term appears but there are at least 50 terms which appear more frequently, it will not be found.
 
+.. note::
+
+  When using use_terms_query, make sure that the field you are using is not analyzed. If it is, the results of each terms
+  query may return tokens rather than full values. ElastAlert will by default turn on use_keyword_postfix, which attempts
+  to use the non-analyzed version (.keyword or .raw) to gather initial terms. These will not match the partial values and
+  result in false positives.
+
+``use_keyword_postfix``: If true, ElastAlert will automatically try to add .keyword (ES5+) or .raw to the fields when making an
+initial query. These are non-analyzed fields added by Logstash. If the field used is analyzed, the initial query will return
+only the tokenized values, potentially causing false positives. Defaults to true.
+
 Cardinality
 ~~~~~~~~~~~
 
