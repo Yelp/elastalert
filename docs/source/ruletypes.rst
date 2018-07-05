@@ -1134,7 +1134,36 @@ or
     - email
     - jira
 
-E-mail subjects, JIRA issue summaries, and PagerDuty alerts can also be customized by adding an ``alert_subject`` that contains a custom summary.
+Options for each alerter can either defined at the top level of the YAML file, or nested within the alert name, allowing for different settings
+for multiple of the same alerter. For example, consider sending multiple emails, but with different 'To' and 'From' fields:
+
+.. code-block:: yaml
+
+    alert:
+     - email
+    email_from: "no-reply@example.com"
+    email: "customer@example.com"
+
+versus
+
+.. code-block:: yaml
+
+    alert:
+     - email:
+         email_from: "no-reply@example.com"
+         email: "customer@example.com"
+     - email:
+         email_from: "elastalert@example.com""
+         email: "devs@example.com"
+
+If multiple of the same alerter type are used, top level settings will be used as the default and inline settings will override those
+for each alerter.
+
+Alert Subject
+~~~~~~~~~~~~~
+
+E-mail subjects, JIRA issue summaries, PagerDuty alerts, or any alerter that has a "subject" can be customized by adding an ``alert_subject``
+that contains a custom summary.
 It can be further formatted using standard Python formatting syntax::
 
     alert_subject: "Issue {0} occurred at {1}"
