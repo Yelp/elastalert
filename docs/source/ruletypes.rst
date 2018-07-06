@@ -108,6 +108,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``is_enabled`` (boolean, default True)                       |           |
 +--------------------------------------------------------------+-----------+
+| ``search_extra_index`` (boolean, default False)              |           |
++--------------------------------------------------------------+-----------+
 
 |
 
@@ -285,6 +287,13 @@ If a query spans multiple days, the formatted indexes will be concatenated with 
 as narrowing the number of indexes searched, compared to using a wildcard, may be significantly faster. For example, if ``index`` is
 ``logstash-%Y.%m.%d``, the query url will be similar to ``elasticsearch.example.com/logstash-2015.02.03/...`` or
 ``elasticsearch.example.com/logstash-2015.02.03,logstash-2015.02.04/...``.
+
+search_extra_index
+^^^^^^^^^^^^^^^^^^
+
+``search_extra_index``: If this is true, ElastAlert will add an extra index on the early side onto each search. For example, if it's querying
+completely within 2018-06-28, it will actually use 2018-06-27,2018-06-28. This can be useful if your timestamp_field is not what's being used
+to generate the index names. If that's the case, sometimes a query would not have been using the right index.
 
 aggregation
 ^^^^^^^^^^^
@@ -824,7 +833,7 @@ before a baseline rate has been established. This can be overridden using ``aler
 
 Optional:
 
-``field_value``: When set, uses the value of the field in the document and not the number of matching documents. 
+``field_value``: When set, uses the value of the field in the document and not the number of matching documents.
 This is useful to monitor for example a temperature sensor and raise an alarm if the temperature grows too fast.
 Note that the means of the field on the reference and current windows are used to determine if the ``spike_height`` value is reached.
 Note also that the threshold parameters are ignored in this smode.
@@ -1125,7 +1134,36 @@ or
     - email
     - jira
 
-E-mail subjects, JIRA issue summaries, and PagerDuty alerts can also be customized by adding an ``alert_subject`` that contains a custom summary.
+Options for each alerter can either defined at the top level of the YAML file, or nested within the alert name, allowing for different settings
+for multiple of the same alerter. For example, consider sending multiple emails, but with different 'To' and 'From' fields:
+
+.. code-block:: yaml
+
+    alert:
+     - email
+    email_from: "no-reply@example.com"
+    email: "customer@example.com"
+
+versus
+
+.. code-block:: yaml
+
+    alert:
+     - email:
+         email_from: "no-reply@example.com"
+         email: "customer@example.com"
+     - email:
+         email_from: "elastalert@example.com""
+         email: "devs@example.com"
+
+If multiple of the same alerter type are used, top level settings will be used as the default and inline settings will override those
+for each alerter.
+
+Alert Subject
+~~~~~~~~~~~~~
+
+E-mail subjects, JIRA issue summaries, PagerDuty alerts, or any alerter that has a "subject" can be customized by adding an ``alert_subject``
+that contains a custom summary.
 It can be further formatted using standard Python formatting syntax::
 
     alert_subject: "Issue {0} occurred at {1}"
@@ -1226,6 +1264,9 @@ Optional:
 ``pipe_match_json``: If true, the match will be converted to JSON and passed to stdin of the command. Note that this will cause ElastAlert to block
 until the command exits or sends an EOF to stdout.
 
+``pipe_alert_text``: If true, the standard alert body text will be passed to stdin of the command. Note that this will cause ElastAlert to block
+until the command exits or sends an EOF to stdout. It cannot be used at the same time as ``pipe_match_json``.
+
 Example usage using old-style format::
 
     alert:
@@ -1292,6 +1333,9 @@ by the smtp server.
 ``cc``: This adds the CC emails to the list of recipients. By default, this is left empty.
 
 ``bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
+
+``email_format``: If set to ``html``, the email's MIME type will be set to HTML, and HTML content should correctly render. If you use this,
+you need to put your own HTML into ``alert_text`` and use ``alert_text_type: alert_text_only``.
 
 Jira
 ~~~~
@@ -1386,6 +1430,12 @@ Arbitrary Jira fields:
 
 ElastAlert supports setting any arbitrary JIRA field that your jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your JIRA server, internally, the field is represented as ``customfield_1111``. In elastalert, you may refer to either the public facing name OR the internal representation.
 
+In addition, if you would like to use a field in the alert as the value for a custom JIRA field, use the field name plus a # symbol in front. For example, if you wanted to set a custom JIRA field called "user" to the value of the field "username" from the match, you would use the following.
+
+Example::
+
+    jira_user: "#username"
+
 Example usage::
 
     jira_arbitrary_singular_field: My Name
@@ -1428,6 +1478,7 @@ Optional:
 
 ``opsgenie_subject_args``: A list of fields to use to format ``opsgenie_subject`` if it contains formaters.
 
+``opsgenie_priority``: Set the OpsGenie priority level. Possible values are P1, P2, P3, P4, P5.
 
 SNS
 ~~~
@@ -1500,7 +1551,7 @@ The alerter requires the following two options:
 
 ``stride_cloud_id``: The site_id associated with the Stride site you want to send the alert to.
 
-``stride_converstation_id``: The converstation_id associated with the Stride converstation you want to send the alert to.
+``stride_conversation_id``: The conversation_id associated with the Stride conversation you want to send the alert to.
 
 ``stride_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
 
@@ -1598,6 +1649,24 @@ If there's no open (i.e. unresolved) incident with this key, a new one will be c
 ``pagerduty_incident_key_args``: If set, and ``pagerduty_incident_key`` is a formattable string, Elastalert will format the incident key based on the provided array of fields from the rule or match.
 
 ``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerDuty. Set this option using ``hostname:port`` if you need to use a proxy.
+
+V2 API Options (Optional):
+
+These options are specific to the PagerDuty V2 API
+
+See https://v2.developer.pagerduty.com/docs/send-an-event-events-api-v2
+
+``pagerduty_api_version``: Defaults to `v1`.  Set to `v2` to enable the PagerDuty V2 Event API.
+
+``pagerduty_v2_payload_class``: Sets the class of the payload. (the event type in PagerDuty)
+
+``pagerduty_v2_payload_component``: Sets the component of the payload. (what program/interface/etc the event came from)
+
+``pagerduty_v2_payload_group``: Sets the logical grouping (e.g. app-stack)
+
+``pagerduty_v2_payload_severity``: Sets the severity of the page. (defaults to `critical`, valid options: `critical`, `error`, `warning`, `info`)
+
+``pagerduty_v2_payload_source``: Sets the source of the event, preferably the hostname or fqdn.
 
 Exotel
 ~~~~~~

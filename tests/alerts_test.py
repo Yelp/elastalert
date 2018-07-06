@@ -1174,7 +1174,52 @@ def test_pagerduty_alerter():
         'incident_key': '',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with('https://events.pagerduty.com/generic/2010-04-15/create_event.json',
+                                              data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_pagerduty_alerter_v2():
+    rule = {
+        'name': 'Test PD Rule',
+        'type': 'any',
+        'pagerduty_service_key': 'magicalbadgers',
+        'pagerduty_client_name': 'ponies inc.',
+        'pagerduty_api_version': 'v2',
+        'pagerduty_v2_payload_class': 'ping failure',
+        'pagerduty_v2_payload_component': 'mysql',
+        'pagerduty_v2_payload_group': 'app-stack',
+        'pagerduty_v2_payload_severity': 'error',
+        'pagerduty_v2_payload_source': 'mysql.host.name',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = PagerDutyAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'client': 'ponies inc.',
+        'payload': {
+            'class': 'ping failure',
+            'component': 'mysql',
+            'group': 'app-stack',
+            'severity': 'error',
+            'source': 'mysql.host.name',
+            'summary': 'Test PD Rule',
+            'custom_details': {
+                'information': 'Test PD Rule\n\n@timestamp: 2017-01-01T00:00:00\nsomefield: foobarbaz\n'
+            },
+        },
+        'event_action': 'trigger',
+        'dedup_key': '',
+        'routing_key': 'magicalbadgers',
+    }
+    mock_post_request.assert_called_once_with('https://events.pagerduty.com/v2/enqueue',
+                                              data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1443,7 +1488,7 @@ def test_stride_plain_text():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert': []
     }
@@ -1486,7 +1531,7 @@ def test_stride_underline_text():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert_text': '<u>Underline Text</u>',
         'alert_text_type': 'alert_text_only',
@@ -1531,7 +1576,7 @@ def test_stride_bold_text():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert_text': '<b>Bold Text</b>',
         'alert_text_type': 'alert_text_only',
@@ -1576,7 +1621,7 @@ def test_stride_strong_text():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert_text': '<strong>Bold Text</strong>',
         'alert_text_type': 'alert_text_only',
@@ -1621,7 +1666,7 @@ def test_stride_hyperlink():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert_text': '<a href="http://stride.com">Link</a>',
         'alert_text_type': 'alert_text_only',
@@ -1666,7 +1711,7 @@ def test_stride_html():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert_text': '<b>Alert</b>: we found something. <a href="http://stride.com">Link</a>',
         'alert_text_type': 'alert_text_only',

@@ -66,8 +66,8 @@ class BasicMatchString(object):
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
-            for i in xrange(len(alert_text_values)):
-                if alert_text_values[i] is None:
+            for i, text_value in enumerate(alert_text_values):
+                if text_value is None:
                     alert_value = self.rule.get(alert_text_args[i])
                     if alert_value:
                         alert_text_values[i] = alert_value
@@ -229,8 +229,8 @@ class Alerter(object):
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
-            for i in xrange(len(alert_subject_values)):
-                if alert_subject_values[i] is None:
+            for i, subject_value in enumerate(alert_subject_values):
+                if subject_value is None:
                     alert_value = self.rule.get(alert_subject_args[i])
                     if alert_value:
                         alert_subject_values[i] = alert_value
@@ -439,7 +439,10 @@ class EmailAlerter(Alerter):
                 to_addr = recipient
                 if 'email_add_domain' in self.rule:
                     to_addr = [name + self.rule['email_add_domain'] for name in to_addr]
-        email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
+        if self.rule.get('email_format') == 'html':
+            email_msg = MIMEText(body.encode('UTF-8'), 'html', _charset='UTF-8')
+        else:
+            email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(to_addr)
         email_msg['From'] = self.from_addr
@@ -902,6 +905,9 @@ class CommandAlerter(Alerter):
             if self.rule.get('pipe_match_json'):
                 match_json = json.dumps(matches, cls=DateTimeEncoder) + '\n'
                 stdout, stderr = subp.communicate(input=match_json)
+            elif self.rule.get('pipe_alert_text'):
+                alert_text = self.create_alert_body(matches)
+                stdout, stderr = subp.communicate(input=alert_text)
             if self.rule.get("fail_on_non_zero_exit", False) and subp.wait():
                 raise EAException("Non-zero exit code while running command %s" % (' '.join(command)))
         except OSError as e:
@@ -1186,23 +1192,53 @@ class PagerDutyAlerter(Alerter):
         self.pagerduty_incident_key_args = self.rule.get('pagerduty_incident_key_args', None)
         self.pagerduty_event_type = self.rule.get('pagerduty_event_type', 'trigger')
         self.pagerduty_proxy = self.rule.get('pagerduty_proxy', None)
-        self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
+
+        self.pagerduty_api_version = self.rule.get('pagerduty_api_version', 'v1')
+        self.pagerduty_v2_payload_class = self.rule.get('pagerduty_v2_payload_class', '')
+        self.pagerduty_v2_payload_component = self.rule.get('pagerduty_v2_payload_component', '')
+        self.pagerduty_v2_payload_group = self.rule.get('pagerduty_v2_payload_group', '')
+        self.pagerduty_v2_payload_severity = self.rule.get('pagerduty_v2_payload_severity', 'critical')
+        self.pagerduty_v2_payload_source = self.rule.get('pagerduty_v2_payload_source', 'ElastAlert')
+
+        if self.pagerduty_api_version == 'v2':
+            self.url = 'https://events.pagerduty.com/v2/enqueue'
+        else:
+            self.url = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
         # post to pagerduty
         headers = {'content-type': 'application/json'}
-        payload = {
-            'service_key': self.pagerduty_service_key,
-            'description': self.create_title(matches),
-            'event_type': self.pagerduty_event_type,
-            'incident_key': self.get_incident_key(matches),
-            'client': self.pagerduty_client_name,
-            'details': {
-                "information": body.encode('UTF-8'),
-            },
-        }
+        if self.pagerduty_api_version == 'v2':
+            payload = {
+                'routing_key': self.pagerduty_service_key,
+                'event_action': self.pagerduty_event_type,
+                'dedup_key': self.get_incident_key(matches),
+                'client': self.pagerduty_client_name,
+                'payload': {
+                    'class': self.pagerduty_v2_payload_class,
+                    'component': self.pagerduty_v2_payload_component,
+                    'group': self.pagerduty_v2_payload_group,
+                    'severity': self.pagerduty_v2_payload_severity,
+                    'source': self.pagerduty_v2_payload_source,
+                    'summary': self.create_title(matches),
+                    'custom_details': {
+                        'information': body.encode('UTF-8'),
+                    },
+                },
+            }
+        else:
+            payload = {
+                'service_key': self.pagerduty_service_key,
+                'description': self.create_title(matches),
+                'event_type': self.pagerduty_event_type,
+                'incident_key': self.get_incident_key(matches),
+                'client': self.pagerduty_client_name,
+                'details': {
+                    "information": body.encode('UTF-8'),
+                },
+            }
 
         # set https proxy, if it was provided
         proxies = {'https': self.pagerduty_proxy} if self.pagerduty_proxy else None
@@ -1679,18 +1715,18 @@ class StrideAlerter(Alerter):
     """ Creates a Stride conversation message for each alert """
 
     required_options = frozenset(
-        ['stride_access_token', 'stride_cloud_id', 'stride_converstation_id'])
+        ['stride_access_token', 'stride_cloud_id', 'stride_conversation_id'])
 
     def __init__(self, rule):
         super(StrideAlerter, self).__init__(rule)
 
         self.stride_access_token = self.rule['stride_access_token']
         self.stride_cloud_id = self.rule['stride_cloud_id']
-        self.stride_converstation_id = self.rule['stride_converstation_id']
+        self.stride_conversation_id = self.rule['stride_conversation_id']
         self.stride_ignore_ssl_errors = self.rule.get('stride_ignore_ssl_errors', False)
         self.stride_proxy = self.rule.get('stride_proxy', None)
         self.url = 'https://api.atlassian.com/site/%s/conversation/%s/message' % (
-            self.stride_cloud_id, self.stride_converstation_id)
+            self.stride_cloud_id, self.stride_conversation_id)
 
     def alert(self, matches):
         body = self.create_alert_body(matches).strip()
@@ -1728,9 +1764,9 @@ class StrideAlerter(Alerter):
         except RequestException as e:
             raise EAException("Error posting to Stride: %s" % e)
         elastalert_logger.info(
-            "Alert sent to Stride converstation %s" % self.stride_converstation_id)
+            "Alert sent to Stride conversation %s" % self.stride_conversation_id)
 
     def get_info(self):
         return {'type': 'stride',
                 'stride_cloud_id': self.stride_cloud_id,
-                'stride_converstation_id': self.stride_converstation_id}
+                'stride_conversation_id': self.stride_conversation_id}

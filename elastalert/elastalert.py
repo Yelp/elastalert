@@ -77,7 +77,7 @@ class ElastAlerter():
         parser.add_argument('--rule', dest='rule', help='Run only a specific rule (by filename, must still be in rules folder)')
         parser.add_argument('--silence', dest='silence', help='Silence rule for a time period. Must be used with --rule. Usage: '
                                                               '--silence <units>=<number>, eg. --silence hours=2')
-        parser.add_argument('--start', dest='start', help='YYYY-MM-DDTHH:MM:SS Start querying from this timestamp.'
+        parser.add_argument('--start', dest='start', help='YYYY-MM-DDTHH:MM:SS Start querying from this timestamp. '
                                                           'Use "NOW" to start from current time. (Default: present)')
         parser.add_argument('--end', dest='end', help='YYYY-MM-DDTHH:MM:SS Query to this timestamp. (Default: present)')
         parser.add_argument('--verbose', action='store_true', dest='verbose', help='Increase verbosity without suppressing alerts. '
@@ -190,9 +190,10 @@ class ElastAlerter():
         is set but starttime and endtime are not provided, it will replace all format
         tokens with a wildcard. """
         index = rule['index']
+        add_extra = rule.get('search_extra_index', False)
         if rule.get('use_strftime_index'):
             if starttime and endtime:
-                return format_index(index, starttime, endtime)
+                return format_index(index, starttime, endtime, add_extra)
             else:
                 # Replace the substring containing format characters with a *
                 format_start = index.find('%')
@@ -355,7 +356,6 @@ class ElastAlerter():
 
     def get_hits(self, rule, starttime, endtime, index, scroll=False):
         """ Query Elasticsearch for the given rule and return the results.
-
         :param rule: The rule configuration.
         :param starttime: The earliest time to query.
         :param endtime: The latest time to query.
@@ -773,6 +773,36 @@ class ElastAlerter():
 
         return key_value
 
+    def enhance_filter(self, rule):
+        """ If there is a blacklist or whitelist in rule then we add it to the filter.
+        It adds it as a query_string. If there is already an query string its is appended
+        with blacklist or whitelist.
+
+        :param rule:
+        :return:
+        """
+        if not rule.get('filter_by_list', True):
+            return
+        if 'blacklist' in rule:
+            listname = 'blacklist'
+        elif 'whitelist' in rule:
+            listname = 'whitelist'
+        else:
+            return
+
+        filters = rule['filter']
+        additional_terms = [(rule['compare_key'] + ':"' + term + '"') for term in rule[listname]]
+        if listname == 'whitelist':
+            query = "NOT " + " AND NOT ".join(additional_terms)
+        else:
+            query = " OR ".join(additional_terms)
+        query_str_filter = {'query_string': {'query': query}}
+        if self.is_atleastfive():
+            filters.append(query_str_filter)
+        else:
+            filters.append({'query': query_str_filter})
+        logging.debug("Enhanced filter with {} terms: {}".format(listname, str(query_str_filter)))
+
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
 
@@ -838,7 +868,7 @@ class ElastAlerter():
         num_matches = len(rule['type'].matches)
         while rule['type'].matches:
             match = rule['type'].matches.pop(0)
-            match['num_hits'] = self.num_hits
+            match['num_hits'] = self.cumulative_hits
             match['num_matches'] = num_matches
 
             # If realert is set, silence the rule for that duration
@@ -900,6 +930,8 @@ class ElastAlerter():
                                       'The rule has been disabled.'.format(new_rule['name']))
             self.send_notification_email(exception=e, rule=new_rule)
             return False
+
+        self.enhance_filter(new_rule)
 
         # Change top_count_keys to .raw
         if 'top_count_keys' in new_rule and new_rule.get('raw_count_keys', True):
