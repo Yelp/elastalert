@@ -398,12 +398,13 @@ def resolve_string(string, match, missing_text='<MISSING VALUE>'):
         :param missing_text: The default text to replace a formatter with if the field doesnt exist.
     """
     flat_match = flatten_dict(match)
+    flat_match.update(match)
     dd_match = collections.defaultdict(lambda: missing_text, flat_match)
     dd_match['_missing_value'] = missing_text
     while True:
         try:
-            string = string.format(**dd_match)
             string = string % dd_match
+            string = string.format(**dd_match)
             break
         except KeyError as e:
             if '{%s}' % e.message not in string:
