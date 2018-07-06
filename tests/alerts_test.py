@@ -1080,7 +1080,8 @@ def test_http_alerter_with_payload():
         rule['http_post_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1113,7 +1114,8 @@ def test_http_alerter_with_payload_all_values():
         rule['http_post_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1143,7 +1145,8 @@ def test_http_alerter_without_payload():
         rule['http_post_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
