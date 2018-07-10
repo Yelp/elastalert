@@ -635,10 +635,16 @@ class NewTermsRule(RuleType):
             raise EAException("fields must not be an empty list")
         if type(self.fields) != list:
             self.fields = [self.fields]
-        if self.rules.get('use_terms_query') and (
-            len(self.fields) != 1 or len(self.fields) == 1 and type(self.fields[0]) == list
-        ):
+        if self.rules.get('use_terms_query') and \
+                (len(self.fields) != 1 or (len(self.fields) == 1 and type(self.fields[0]) == list)):
             raise EAException("use_terms_query can only be used with a single non-composite field")
+        if self.rules.get('use_terms_query'):
+            if self.rules.get('query_key') != self.fields:
+                raise EAException('If use_terms_query is specified, you cannot specify different query_key and fields')
+            if not self.rules.get('query_key').endswith('.keyword') and not self.rules.get('query_key').endswith('.raw'):
+                if self.rules.get('use_keyword_postfix', True):
+                    elastalert_logger.warn('Warning: If query_key is a non-keyword field, you must set '
+                                           'use_keyword_postfix to false, or add .keyword/.raw to your query_key.')
         try:
             self.get_all_terms(args)
         except Exception as e:
@@ -678,7 +684,10 @@ class NewTermsRule(RuleType):
                 level = query_template['aggs']
                 # Iterate on each part of the composite key and add a sub aggs clause to the elastic search query
                 for i, sub_field in enumerate(field):
-                    level['values']['terms']['field'] = add_raw_postfix(sub_field, self.is_five_or_above())
+                    if self.rules.get('use_keyword_postfix', True):
+                        level['values']['terms']['field'] = add_raw_postfix(sub_field, self.is_five_or_above())
+                    else:
+                        level['values']['terms']['field'] = sub_field
                     if i < len(field) - 1:
                         # If we have more fields after the current one, then set up the next nested structure
                         level['values']['aggs'] = {'values': {'terms': copy.deepcopy(field_name)}}
@@ -686,7 +695,10 @@ class NewTermsRule(RuleType):
             else:
                 self.seen_values.setdefault(field, [])
                 # For non-composite keys, only a single agg is needed
-                field_name['field'] = add_raw_postfix(field, self.is_five_or_above())
+                if self.rules.get('use_keyword_postfix', True):
+                    field_name['field'] = add_raw_postfix(field, self.is_five_or_above())
+                else:
+                    field_name['field'] = field
 
             # Query the entire time range in small chunks
             while tmp_start < end:
