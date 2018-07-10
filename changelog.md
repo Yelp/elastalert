@@ -10,11 +10,13 @@
 - Add ability to query the adjacent index if timestamp_field not used for index timestamping
 - Add support for pagerduty v2
 - Add option to turn off .raw/.keyword field postfixing in new term rule
+- Added --use-downloaded feature for elastalert-test-rule
 
 ### Fixed
 - Fixed a bug that caused num_hits in matches to sometimes be erroneously small
 - Fixed an issue with HTTP Post alerter that could cause it to hang indefinitely
 - Fixed some issues with string formatting for various alerters
+- Fixed a couple of incorrect parts of the documentation
 
 # v0.1.32
 
