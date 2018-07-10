@@ -1141,7 +1141,7 @@ for multiple of the same alerter. For example, consider sending multiple emails,
 
     alert:
      - email
-    email_from: "no-reply@example.com"
+    from_addr: "no-reply@example.com"
     email: "customer@example.com"
 
 versus
@@ -1150,10 +1150,10 @@ versus
 
     alert:
      - email:
-         email_from: "no-reply@example.com"
+         from_addr: "no-reply@example.com"
          email: "customer@example.com"
      - email:
-         email_from: "elastalert@example.com""
+         from_addr: "elastalert@example.com""
          email: "devs@example.com"
 
 If multiple of the same alerter type are used, top level settings will be used as the default and inline settings will override those
