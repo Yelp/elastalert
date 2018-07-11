@@ -26,6 +26,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
+from config import load_conf
 from croniter import croniter
 from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
@@ -112,11 +113,37 @@ class ElastAlerter(object):
         self.debug = self.args.debug
         self.verbose = self.args.verbose
 
+<<<<<<< HEAD
         self.conf = load_rules(self.args)
         print len(self.conf['rules']), 'rules loaded'
+=======
+        if self.verbose and self.debug:
+            elastalert_logger.info(
+                "Note: --debug and --verbose flags are set. --debug takes precedent."
+            )
+
+        if self.verbose or self.debug:
+            elastalert_logger.setLevel(logging.INFO)
+
+        if self.debug:
+            elastalert_logger.info(
+                """Note: In debug mode, alerts will be logged to console but NOT actually sent.
+                To send them but remain verbose, use --verbose instead."""
+            )
+
+        if not self.args.es_debug:
+            logging.getLogger('elasticsearch').setLevel(logging.WARNING)
+
+        if self.args.es_debug_trace:
+            tracer = logging.getLogger('elasticsearch.trace')
+            tracer.setLevel(logging.INFO)
+            tracer.addHandler(logging.FileHandler(self.args.es_debug_trace))
+
+        self.conf = load_conf(self.args)
+>>>>>>> 000ce74... Extracting out rule loading so that rules can be stored in others other than on disk
         self.max_query_size = self.conf['max_query_size']
         self.scroll_keepalive = self.conf['scroll_keepalive']
-        self.rules = self.conf['rules']
+        self.rules = self.conf['rules_loader'].load_all(self.conf, self.args)
         self.writeback_index = self.conf['writeback_index']
         self.writeback_alias = self.conf['writeback_alias']
         self.run_every = self.conf['run_every']
@@ -129,7 +156,7 @@ class ElastAlerter(object):
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.buffer_time = self.conf['buffer_time']
         self.silence_cache = {}
-        self.rule_hashes = get_rule_hashes(self.conf, self.args.rule)
+        self.rule_hashes = self.conf['rules_loader'].get_hashes(self.conf, self.args)
         self.starttime = self.args.start
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
@@ -1016,9 +1043,10 @@ class ElastAlerter(object):
         new_rule['filter'] = new_filters
 
     def load_rule_changes(self):
-        ''' Using the modification times of rule config files, syncs the running rules
-        to match the files in rules_folder by removing, adding or reloading rules. '''
-        new_rule_hashes = get_rule_hashes(self.conf, self.args.rule)
+        """ Using the modification times of rule config files, syncs the running rules
+            to match the files in rules_folder by removing, adding or reloading rules. """
+        rules_loader = self.conf['rules_loader']
+        new_rule_hashes = rules_loader.get_hashes(self.conf, self.args.rule)
 
         # Check each current rule for changes
         for rule_file, hash_value in self.rule_hashes.iteritems():
@@ -1030,10 +1058,14 @@ class ElastAlerter(object):
             if hash_value != new_rule_hashes[rule_file]:
                 # Rule file was changed, reload rule
                 try:
+<<<<<<< HEAD
                     new_rule = load_configuration(rule_file, self.conf)
                     if (not new_rule):
                         logging.error('Invalid rule file skipped: %s' % rule_file)
                         continue
+=======
+                    new_rule = rules_loader.load_configuration(rule_file, self.conf)
+>>>>>>> 000ce74... Extracting out rule loading so that rules can be stored in others other than on disk
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         elastalert_logger.info('Rule file %s is now disabled.' % (rule_file))
                         # Remove this rule if it's been disabled
@@ -1043,12 +1075,20 @@ class ElastAlerter(object):
                     message = 'Could not load rule %s: %s' % (rule_file, e)
                     self.handle_error(message)
                     # Want to send email to address specified in the rule. Try and load the YAML to find it.
+<<<<<<< HEAD
                     with open(rule_file) as f:
                         try:
                             rule_yaml = yaml.load(f, Loader=yaml.FullLoader)
                         except yaml.scanner.ScannerError:
                             self.send_notification_email(exception=e)
                             continue
+=======
+                    try:
+                        rule_yaml = rules_loader.load_yaml(rule_file)
+                    except EAException:
+                        self.send_notification_email(exception=e)
+                        continue
+>>>>>>> 000ce74... Extracting out rule loading so that rules can be stored in others other than on disk
 
                     self.send_notification_email(exception=e, rule=rule_yaml)
                     continue
@@ -1071,10 +1111,14 @@ class ElastAlerter(object):
         if not self.args.rule:
             for rule_file in set(new_rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
+<<<<<<< HEAD
                     new_rule = load_configuration(rule_file, self.conf)
                     if (not new_rule):
                         logging.error('Invalid rule file skipped: %s' % rule_file)
                         continue
+=======
+                    new_rule = rules_loader.load_configuration(rule_file, self.conf)
+>>>>>>> 000ce74... Extracting out rule loading so that rules can be stored in others other than on disk
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         continue
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
