@@ -257,6 +257,10 @@ class Alerter(object):
 
     def get_aggregation_summary_text(self, matches):
         text = ''
+        summary_prefix = None
+        if 'summary_prefix' in self.rule and self.rule['summary_prefix']:
+            summary_prefix = self.rule['summary_prefix']
+            text = '{{{0}}}'.format(summary_prefix)
         if 'aggregation' in self.rule and 'summary_table_fields' in self.rule:
             summary_table_fields = self.rule['summary_table_fields']
             if not isinstance(summary_table_fields, list):
@@ -282,6 +286,8 @@ class Alerter(object):
             for keys, count in match_aggregation.iteritems():
                 text_table.add_row([key for key in keys] + [count])
             text += text_table.draw() + '\n\n'
+            if summary_prefix:
+                text += '{{{0}}}'.format(summary_prefix)
 
         return unicode(text)
 
