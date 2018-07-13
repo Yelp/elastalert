@@ -256,9 +256,9 @@ class Alerter(object):
         return 80
 
     def get_aggregation_summary_text(self, matches):
-        text = self.rule.get('summary_prefix', '')
+        text = ''
         if 'aggregation' in self.rule and 'summary_table_fields' in self.rule:
-            summary_table_fields = self.rule['summary_table_fields']
+            text = self.rule.get('summary_prefix', '')
             if not isinstance(summary_table_fields, list):
                 summary_table_fields = [summary_table_fields]
             # Include a count aggregation so that we can see at a glance how many of each aggregation_key were encountered
