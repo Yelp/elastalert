@@ -31,8 +31,7 @@ from util import unixms_to_dt
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml')), Loader=yaml.FullLoader))
 
 # Required global (config.yaml) and local (rule.yaml)  configuration options
-required_globals = frozenset(['run_every', 'rules_folder', 'es_host', 'es_port', 'writeback_index',
-                              'writeback_alias', 'buffer_time'])
+required_globals = frozenset(['run_every', 'rules_folder', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
 required_locals = frozenset(['alert', 'type', 'name', 'index'])
 
 # Settings that can be derived from ENV variables
@@ -476,6 +475,7 @@ def load_rules(args):
     if required_globals - frozenset(conf.keys()):
         raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(conf.keys()))))
 
+    conf.setdefault('writeback_alias', 'elastalert_alerts')
     conf.setdefault('max_query_size', 10000)
     conf.setdefault('scroll_keepalive', '30s')
     conf.setdefault('max_scrolling_count', 0)
