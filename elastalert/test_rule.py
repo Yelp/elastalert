@@ -8,19 +8,14 @@ import copy
 import datetime
 import json
 import logging
-import os
 import random
 import re
 import string
 import sys
 
 import mock
-import yaml
 
-import elastalert.config
-from elastalert.config import load_modules
-from elastalert.config import load_options
-from elastalert.config import load_rule_yaml
+from elastalert.config import load_conf
 from elastalert.elastalert import ElastAlerter
 from elastalert.util import elasticsearch_client
 from elastalert.util import lookup_es_key
@@ -224,7 +219,7 @@ class MockElastAlerter(object):
         # It is needed to prevent unnecessary initialization of unused alerters
         load_modules_args = argparse.Namespace()
         load_modules_args.debug = not args.alert
-        load_modules(rule, load_modules_args)
+        conf['rules_loader'].load_modules(rule, load_modules_args)
         conf['rules'] = [rule]
 
         # If using mock data, make sure it's sorted and find appropriate time range
@@ -428,9 +423,25 @@ class MockElastAlerter(object):
         parser.add_argument('--config', action='store', dest='config', help='Global config file.')
         args = parser.parse_args()
 
-        rule_yaml = load_rule_yaml(args.file)
+        # rule_yaml = load_rule_yaml(args.file)
 
-        conf = self.load_conf(rule_yaml, args)
+        # conf = self.load_conf(rule_yaml, args)
+        overrides = {
+            'rules_folder': 'rules',
+            'es_host': 'localhost',
+            'es_port': 14900,
+            'writeback_index': 'wb',
+            'max_query_size': 10000,
+            'alert_time_limit': datetime.timedelta(hours=24),
+            'old_query_limit': datetime.timedelta(weeks=1),
+            'run_every': datetime.timedelta(minutes=5),
+            'disable_rules_on_error': False,
+            'buffer_time': datetime.timedelta(minutes=45),
+            'scroll_keepalive': '30s'
+        }
+        conf = load_conf(args, overrides)
+        rule_yaml = conf['rules_loader'].get_yaml(args.file)
+        conf['rules_loader'].load_options(rule_yaml, conf, args.file)
 
         if args.json:
             with open(args.json, 'r') as data_file:

@@ -6,7 +6,7 @@ import logging.config
 import os
 import sys
 
-import ruleloaders
+import loaders
 from envparse import Env
 from staticconf.loader import yaml_loader
 from util import dt_to_ts
@@ -15,12 +15,13 @@ from util import dt_to_unix
 from util import dt_to_unixms
 from util import elastalert_logger
 from util import EAException
+from util import get_module
 
 # schema for rule yaml
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml')), Loader=yaml.FullLoader))
 
 # Required global (config.yaml) configuration options
-required_globals = frozenset(['run_every', 'rules_folder', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
+required_globals = frozenset(['run_every', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
 
 # Settings that can be derived from ENV variables
 env_settings = {'ES_USE_SSL': 'use_ssl',
@@ -34,29 +35,16 @@ env = Env(ES_USE_SSL=bool)
 
 # Used to map the names of rule loaders to their classes
 loader_mapping = {
-    'file': ruleloaders.FileRulesLoader
+    'file': loaders.FileRulesLoader,
 }
 
 
-def get_module(module_name):
-    """ Loads a module and returns a specific object.
-    module_name should 'module.file.object'.
-    Returns object or raises EAException on error. """
-    sys.path.append(os.getcwd())
-    try:
-        module_path, module_class = module_name.rsplit('.', 1)
-        base_module = __import__(module_path, globals(), locals(), [module_class])
-        module = getattr(base_module, module_class)
-    except (ImportError, AttributeError, ValueError) as e:
-        raise EAException("Could not import module %s: %s" % (module_name, e)), None, sys.exc_info()[2]
-    return module
-
-
-def load_conf(args):
+def load_conf(args, overrides=None):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
         config file and then each rule found in rules_folder.
 
         :param args: The parsed arguments to ElastAlert
+        :param overrides: Dictionary of conf values to override
         :return: The global configuration, a dictionary.
         """
     filename = args.config
@@ -69,6 +57,9 @@ def load_conf(args):
         val = env(env_var, None)
         if val is not None:
             conf[conf_var] = val
+
+    for key, value in (overrides if overrides is not None else []):
+        conf[key] = value
 
     # Make sure we have all required globals
     if required_globals - frozenset(conf.keys()):
@@ -101,5 +92,10 @@ def load_conf(args):
     rules_loader_class = loader_mapping.get(conf['rules_loader']) or get_module(conf['rules_loader'])
     rules_loader = rules_loader_class(conf)
     conf['rules_loader'] = rules_loader
+    # Make sure we have all the required globals for the loader
+    # Make sure we have all required globals
+    if rules_loader.required_globals - frozenset(conf.keys()):
+        raise EAException(
+            '%s must contain %s' % (filename, ', '.join(rules_loader.required_globals - frozenset(conf.keys()))))
 
     return conf

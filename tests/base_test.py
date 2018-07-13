@@ -988,10 +988,10 @@ def test_rule_changes(ea):
                   'rules/rule3.yaml': 'XXX',
                   'rules/rule2.yaml': '!@#$'}
 
-    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
-        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
-            mock_load.side_effect = [{'filter': [], 'name': 'rule2', 'rule_file': 'rules/rule2.yaml', 'run_every': re},
-                                     {'filter': [], 'name': 'rule3', 'rule_file': 'rules/rule3.yaml', 'run_every': re}]
+    with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
+        with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
+            mock_load.side_effect = [{'filter': [], 'name': 'rule2', 'rule_file': 'rules/rule2.yaml'},
+                                     {'filter': [], 'name': 'rule3', 'rule_file': 'rules/rule3.yaml'}]
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
 
@@ -1009,8 +1009,8 @@ def test_rule_changes(ea):
     # A new rule with a conflicting name wont load
     new_hashes = copy.copy(new_hashes)
     new_hashes.update({'rules/rule4.yaml': 'asdf'})
-    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
-        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+    with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
+        with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
             with mock.patch.object(ea, 'send_notification_email') as mock_send:
                 mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff',
                                           'rule_file': 'rules/rule4.yaml'}
@@ -1023,10 +1023,9 @@ def test_rule_changes(ea):
     # A new rule with is_enabled=False wont load
     new_hashes = copy.copy(new_hashes)
     new_hashes.update({'rules/rule4.yaml': 'asdf'})
-    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
-        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
-            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'is_enabled': False,
-                                      'rule_file': 'rules/rule4.yaml'}
+    with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
+        with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
+            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'is_enabled': False, 'rule_file': 'rules/rule4.yaml'}
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
     assert len(ea.rules) == 3
@@ -1035,8 +1034,8 @@ def test_rule_changes(ea):
     # An old rule which didn't load gets reloaded
     new_hashes = copy.copy(new_hashes)
     new_hashes['rules/rule4.yaml'] = 'qwerty'
-    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
-        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+    with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
+        with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
             mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
@@ -1257,8 +1256,8 @@ def test_uncaught_exceptions(ea):
     # Changing the file should re-enable it
     ea.rule_hashes = {'blah.yaml': 'abc'}
     new_hashes = {'blah.yaml': 'def'}
-    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
-        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+    with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
+        with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
             mock_load.side_effect = [ea.disabled_rules[0]]
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()

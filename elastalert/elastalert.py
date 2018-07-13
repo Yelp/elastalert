@@ -143,7 +143,7 @@ class ElastAlerter(object):
 >>>>>>> 000ce74... Extracting out rule loading so that rules can be stored in others other than on disk
         self.max_query_size = self.conf['max_query_size']
         self.scroll_keepalive = self.conf['scroll_keepalive']
-        self.rules = self.conf['rules_loader'].load_all(self.conf, self.args)
+        self.rules = self.conf['rules_loader'].load(self.conf, self.args)
         self.writeback_index = self.conf['writeback_index']
         self.writeback_alias = self.conf['writeback_alias']
         self.run_every = self.conf['run_every']
