@@ -144,7 +144,7 @@ class ElastAlerter():
         self.current_es_addr = None
         self.buffer_time = self.conf['buffer_time']
         self.silence_cache = {}
-        self.rule_hashes = self.conf['rules_loader'].get_hashes(self.conf, self.args)
+        self.rule_hashes = self.conf['rules_loader'].get_hashes(self.conf, self.args.rule)
         self.starttime = self.args.start
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
