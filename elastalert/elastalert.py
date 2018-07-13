@@ -127,7 +127,7 @@ class ElastAlerter():
         self.conf = load_conf(self.args)
         self.max_query_size = self.conf['max_query_size']
         self.scroll_keepalive = self.conf['scroll_keepalive']
-        self.rules = self.conf['rules_loader'].load_all(self.conf, self.args)
+        self.rules = self.conf['rules_loader'].load(self.conf, self.args)
         self.writeback_index = self.conf['writeback_index']
         self.run_every = self.conf['run_every']
         self.alert_time_limit = self.conf['alert_time_limit']

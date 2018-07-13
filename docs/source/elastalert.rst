@@ -131,9 +131,12 @@ The environment variable ``ES_USE_SSL`` will override this field.
 
 ``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``20``.
 
+``rules_loader``: Optional; sets the loader class to be used by ElastAlert to retrieve rules and hashes.
+Defaults to ``FileRulesLoader`` if not set.
+
 ``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all
 files in this folder, and all subdirectories, that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
-or remove rules based on their respective config files.
+or remove rules based on their respective config files. (only required when using ``FileRulesLoader``).
 
 ``scan_subdirectories``: Optional; Sets whether or not ElastAlert should recursively descend the rules directory - ``true`` or ``false``. The default is ``true``
 

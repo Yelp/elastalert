@@ -21,7 +21,7 @@ from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
 from elastalert.alerts import SlackAlerter
 from elastalert.alerts import StrideAlerter
-from elastalert.config import load_modules
+from elastalert.loaders import FileRulesLoader
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
 from elastalert.util import ts_now
@@ -866,7 +866,8 @@ def test_ms_teams():
         'alert_subject': 'Cool subject',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = MsTeamsAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -902,7 +903,8 @@ def test_ms_teams_uses_color_and_fixed_width_text():
         'alert_subject': 'Cool subject',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = MsTeamsAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -938,7 +940,8 @@ def test_slack_uses_custom_title():
         'alert_subject': 'Cool subject',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -979,7 +982,8 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
         'slack_webhook_url': ['http://please.dontgohere.slack'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1021,7 +1025,8 @@ def test_slack_uses_custom_slack_channel():
         'slack_channel_override': '#test-alert',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1064,7 +1069,8 @@ def test_http_alerter_with_payload():
         'http_post_static_payload': {'name': 'somestaticname'},
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = HTTPPostAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1095,7 +1101,8 @@ def test_http_alerter_with_payload_all_values():
         'http_post_all_values': True,
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = HTTPPostAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1126,7 +1133,8 @@ def test_http_alerter_without_payload():
         'http_post_static_payload': {'name': 'somestaticname'},
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = HTTPPostAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1156,7 +1164,8 @@ def test_pagerduty_alerter():
         'pagerduty_client_name': 'ponies inc.',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1187,7 +1196,8 @@ def test_pagerduty_alerter_custom_incident_key():
         'pagerduty_incident_key': 'custom key',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1219,7 +1229,8 @@ def test_pagerduty_alerter_custom_incident_key_with_args():
         'pagerduty_incident_key_args': ['somefield'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1252,7 +1263,8 @@ def test_pagerduty_alerter_custom_alert_subject():
         'pagerduty_incident_key_args': ['somefield'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1286,7 +1298,8 @@ def test_pagerduty_alerter_custom_alert_subject_with_args():
         'pagerduty_incident_key_args': ['someotherfield'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1322,7 +1335,8 @@ def test_pagerduty_alerter_custom_alert_subject_with_args_specifying_trigger():
         'pagerduty_incident_key_args': ['someotherfield'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1447,7 +1461,8 @@ def test_stride_plain_text():
         'alert_subject': 'Cool subject',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1492,7 +1507,8 @@ def test_stride_underline_text():
         'alert_text_type': 'alert_text_only',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1537,7 +1553,8 @@ def test_stride_bold_text():
         'alert_text_type': 'alert_text_only',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1582,7 +1599,8 @@ def test_stride_strong_text():
         'alert_text_type': 'alert_text_only',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1627,7 +1645,8 @@ def test_stride_hyperlink():
         'alert_text_type': 'alert_text_only',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1672,7 +1691,8 @@ def test_stride_html():
         'alert_text_type': 'alert_text_only',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1724,7 +1744,8 @@ def test_hipchat_body_size_limit_text():
             'message': 'message',
         },
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = HipChatAlerter(rule)
     match = {
         '@timestamp': '2018-01-01T00:00:00',
@@ -1751,7 +1772,8 @@ def test_hipchat_body_size_limit_html():
             'message': 'message',
         },
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = HipChatAlerter(rule)
     match = {
         '@timestamp': '2018-01-01T00:00:00',
@@ -1791,7 +1813,8 @@ def test_alerta_no_auth(ea):
         'hostname': 'aProbe'
     }
 
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = AlertaAlerter(rule)
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
@@ -1844,7 +1867,8 @@ def test_alerta_auth(ea):
         'hostname': 'aProbe'
     }
 
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = AlertaAlerter(rule)
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
@@ -1886,7 +1910,8 @@ def test_alerta_new_style(ea):
         'hostname': 'aProbe'
     }
 
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = AlertaAlerter(rule)
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])

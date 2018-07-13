@@ -14,7 +14,7 @@ import yaml
 import yaml.scanner
 from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
-from config import get_module
+from util import get_module
 from util import dt_to_ts
 from util import dt_to_ts_with_format
 from util import dt_to_unix
@@ -29,6 +29,9 @@ from util import unixms_to_dt
 class RulesLoader(object):
     # import rule dependency
     import_rules = {}
+
+    # Required global (config.yaml) configuration options for the loader
+    required_globals = frozenset([])
 
     # Required local (rule.yaml) configuration options
     required_locals = frozenset(['alert', 'type', 'name', 'index'])
@@ -83,48 +86,98 @@ class RulesLoader(object):
 
     def __init__(self, conf):
         # schema for rule yaml
-        self.rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
+        self.rule_schema = jsonschema.Draft4Validator(
+            yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
 
         self.base_config = copy.deepcopy(conf)
 
-    def load_all(self, conf, args):
+    def load(self, conf, args=None):
         """
-        Load all the rules and return them.
-        :param conf: Configuration dict
-        :param args: Arguments dict
+        Discover and load all the rules as defined in the conf and args.
+        :param dict conf: Configuration dict
+        :param dict args: Arguments dict
         :return: List of rules
+        :rtype: list
+        """
+        names = []
+        use_rule = None if args is None else args.rule
+
+        # Load each rule configuration file
+        rules = []
+        rule_files = self.get_names(conf, use_rule)
+        for rule_file in rule_files:
+            try:
+                rule = self.load_configuration(rule_file, conf, args)
+                # By setting "is_enabled: False" in rule file, a rule is easily disabled
+                if 'is_enabled' in rule and not rule['is_enabled']:
+                    continue
+                if rule['name'] in names:
+                    raise EAException('Duplicate rule named %s' % (rule['name']))
+            except EAException as e:
+                raise EAException('Error loading file %s: %s' % (rule_file, e))
+
+            rules.append(rule)
+            names.append(rule['name'])
+
+        return rules
+
+    def get_names(self, conf, use_rule=None):
+        """
+        Return a list of rule names that can be passed to `get_yaml` to retrieve.
+        :param dict conf: Configuration dict
+        :param str use_rule: Limit to only specified rule
+        :return: A list of rule names
+        :rtype: list
         """
         raise NotImplementedError()
 
     def get_hashes(self, conf, use_rule=None):
         """
-        Get hashes of the rules.
-        :param conf: Configuration dict
-        :param use_rule: Limit to only specified rule
+        Discover and get the hashes of all the rules as defined in the conf.
+        :param dict conf: Configuration
+        :param str use_rule: Limit to only specified rule
         :return: Dict of rule name to hash
+        :rtype: dict
         """
         raise NotImplementedError()
 
     def get_yaml(self, filename):
         """
         Get and parse the yaml of the specified rule.
-        :param filename: Rule to get the yaml
+        :param str filename: Rule to get the yaml
         :return: Rule YAML dict
+        :rtype: dict
         """
         raise NotImplementedError()
 
     def get_import_rule(self, rule):
         """
-        :param rule: Rule dict
+        Retrieve the name of the rule to import.
+        :param dict rule: Rule dict
         :return: rule name that will all `get_yaml` to retrieve the yaml of the rule
+        :rtype: str
         """
-        raise NotImplementedError()
+        return rule['import']
+
+    def load_configuration(self, filename, conf, args=None):
+        """ Load a yaml rule file and fill in the relevant fields with objects.
+
+        :param str filename: The name of a rule configuration file.
+        :param dict conf: The global configuration dictionary, used for populating defaults.
+        :param dict args: Arguments
+        :return: The rule configuration, a dictionary.
+        """
+        rule = self.load_yaml(filename)
+        self.load_options(rule, conf, filename, args)
+        self.load_modules(rule, args)
+        return rule
 
     def load_yaml(self, filename):
         """
         Load the rule including all dependency rules.
-        :param filename: Rule to load
+        :param str filename: Rule to load
         :return: Loaded rule dict
+        :rtype: dict
         """
         rule = {
             'rule_file': filename,
@@ -364,19 +417,6 @@ class RulesLoader(object):
         if not args or not args.debug:
             rule['alert'] = self.load_alerts(rule, alert_field=rule['alert'])
 
-    def load_configuration(self, filename, conf, args=None):
-        """ Load a yaml rule file and fill in the relevant fields with objects.
-
-        :param filename: The name of a rule configuration file.
-        :param conf: The global configuration dictionary, used for populating defaults.
-        :param args: Arguments
-        :return: The rule configuration, a dictionary.
-        """
-        rule = self.load_yaml(filename)
-        self.load_options(rule, conf, filename, args)
-        self.load_modules(rule, args)
-        return rule
-
     def load_alerts(self, rule, alert_field):
         def normalize_config(alert):
             """Alert config entries are either "alertType" or {"alertType": {"key": "data"}}.
@@ -429,55 +469,17 @@ class RulesLoader(object):
 
 
 class FileRulesLoader(RulesLoader):
-    def load_all(self, conf, args):
-        names = []
-        use_rule = args.rule
 
-        # Load each rule configuration file
-        rules = []
-        rule_files = self.__get_file_paths(conf, use_rule)
-        for rule_file in rule_files:
-            try:
-                rule = self.load_configuration(rule_file, conf, args)
-                # By setting "is_enabled: False" in rule file, a rule is easily disabled
-                if 'is_enabled' in rule and not rule['is_enabled']:
-                    continue
-                if rule['name'] in names:
-                    raise EAException('Duplicate rule named %s' % (rule['name']))
-            except EAException as e:
-                raise EAException('Error loading file %s: %s' % (rule_file, e))
+    # Required global (config.yaml) configuration options for the loader
+    required_globals = frozenset(['rules_folder'])
 
-            rules.append(rule)
-            names.append(rule['name'])
-
-        return rules
-
-    def get_hashes(self, conf, use_rule=None):
-        rule_files = self.__get_file_paths(conf, use_rule)
-        rule_mod_times = {}
-        for rule_file in rule_files:
-            rule_mod_times[rule_file] = self.__get_rule_file_hash(rule_file)
-        return rule_mod_times
-
-    def get_yaml(self, filename):
-        try:
-            return yaml_loader(filename)
-        except yaml.scanner.ScannerError as e:
-            raise EAException('Could not parse file %s: %s' % (filename, e))
-
-    def get_import_rule(self, rule):
-        if os.path.isabs(rule['import']):
-            return rule['import']
-        else:
-            return os.path.join(os.path.dirname(rule['rule_file']), rule['import'])
-
-    def __get_file_paths(self, conf, use_rule=None):
+    def get_names(self, conf, use_rule=None):
         # Passing a filename directly can bypass rules_folder and .yaml checks
         if use_rule and os.path.isfile(use_rule):
             return [use_rule]
         rule_folder = conf['rules_folder']
         rule_files = []
-        if conf['scan_subdirectories']:
+        if 'scan_subdirectories' in conf and conf['scan_subdirectories']:
             for root, folders, files in os.walk(rule_folder):
                 for filename in files:
                     if use_rule and use_rule != filename:
@@ -491,13 +493,38 @@ class FileRulesLoader(RulesLoader):
                     rule_files.append(fullpath)
         return rule_files
 
-    def __get_rule_file_hash(self, rule_file):
+    def get_hashes(self, conf, use_rule=None):
+        rule_files = self.get_names(conf, use_rule)
+        rule_mod_times = {}
+        for rule_file in rule_files:
+            rule_mod_times[rule_file] = self.get_rule_file_hash(rule_file)
+        return rule_mod_times
+
+    def get_yaml(self, filename):
+        try:
+            return yaml_loader(filename)
+        except yaml.scanner.ScannerError as e:
+            raise EAException('Could not parse file %s: %s' % (filename, e))
+
+    def get_import_rule(self, rule):
+        """
+        Allow for relative paths to the import rule.
+        :param dict rule:
+        :return: Path the import rule
+        :rtype: str
+        """
+        if os.path.isabs(rule['import']):
+            return rule['import']
+        else:
+            return os.path.join(os.path.dirname(rule['rule_file']), rule['import'])
+
+    def get_rule_file_hash(self, rule_file):
         rule_file_hash = ''
         if os.path.exists(rule_file):
             with open(rule_file) as fh:
                 rule_file_hash = hashlib.sha1(fh.read()).digest()
             for import_rule_file in self.import_rules.get(rule_file, []):
-                rule_file_hash += self.__get_rule_file_hash(import_rule_file)
+                rule_file_hash += self.get_rule_file_hash(import_rule_file)
         return rule_file_hash
 
     @staticmethod

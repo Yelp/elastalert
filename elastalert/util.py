@@ -3,6 +3,7 @@ import collections
 import datetime
 import logging
 import os
+import sys
 
 import dateutil.parser
 import dateutil.tz
@@ -13,6 +14,19 @@ from six import string_types
 
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
+
+
+def get_module(module_name):
+    """ Loads a module and returns a specific object.
+    module_name should 'module.file.object'.
+    Returns object or raises EAException on error. """
+    try:
+        module_path, module_class = module_name.rsplit('.', 1)
+        base_module = __import__(module_path, globals(), locals(), [module_class])
+        module = getattr(base_module, module_class)
+    except (ImportError, AttributeError, ValueError) as e:
+        raise EAException("Could not import module %s: %s" % (module_name, e)), None, sys.exc_info()[2]
+    return module
 
 
 def new_get_event_ts(ts_field):
