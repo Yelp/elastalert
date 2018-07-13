@@ -39,12 +39,12 @@ loader_mapping = {
 }
 
 
-def load_conf(args, overrides=None):
+def load_conf(args, defaults=None):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
         config file and then each rule found in rules_folder.
 
         :param args: The parsed arguments to ElastAlert
-        :param overrides: Dictionary of conf values to override
+        :param defaults: Dictionary of conf values to override
         :return: The global configuration, a dictionary.
         """
     filename = args.config
@@ -58,8 +58,9 @@ def load_conf(args, overrides=None):
         if val is not None:
             conf[conf_var] = val
 
-    for key, value in (overrides if overrides is not None else []):
-        conf[key] = value
+    for key, value in (defaults.iteritems() if defaults is not None else []):
+        if key not in conf:
+            conf[key] = value
 
     # Make sure we have all required globals
     if required_globals - frozenset(conf.keys()):

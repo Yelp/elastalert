@@ -220,7 +220,6 @@ class MockElastAlerter(object):
         load_modules_args = argparse.Namespace()
         load_modules_args.debug = not args.alert
         conf['rules_loader'].load_modules(rule, load_modules_args)
-        conf['rules'] = [rule]
 
         # If using mock data, make sure it's sorted and find appropriate time range
         timestamp_field = rule.get('timestamp_field', '@timestamp')
@@ -286,13 +285,15 @@ class MockElastAlerter(object):
             conf['run_every'] = endtime - starttime
 
         # Instantiate ElastAlert to use mock config and special rule
-        with mock.patch('elastalert.elastalert.get_rule_hashes'):
-            with mock.patch('elastalert.elastalert.load_rules') as load_conf:
-                load_conf.return_value = conf
-                if args.alert:
-                    client = ElastAlerter(['--verbose'])
-                else:
-                    client = ElastAlerter(['--debug'])
+        with mock.patch.object(conf['rules_loader'], 'get_hashes'):
+            with mock.patch.object(conf['rules_loader'], 'load') as load_rules:
+                load_rules.return_value = [rule]
+                with mock.patch('elastalert.elastalert.load_conf') as load_conf:
+                    load_conf.return_value = conf
+                    if args.alert:
+                        client = ElastAlerter(['--verbose'])
+                    else:
+                        client = ElastAlerter(['--debug'])
 
         # Replace get_hits_* functions to use mock data
         if args.json:
@@ -423,23 +424,20 @@ class MockElastAlerter(object):
         parser.add_argument('--config', action='store', dest='config', help='Global config file.')
         args = parser.parse_args()
 
-        # rule_yaml = load_rule_yaml(args.file)
-
-        # conf = self.load_conf(rule_yaml, args)
-        overrides = {
+        defaults = {
             'rules_folder': 'rules',
             'es_host': 'localhost',
             'es_port': 14900,
             'writeback_index': 'wb',
             'max_query_size': 10000,
-            'alert_time_limit': datetime.timedelta(hours=24),
-            'old_query_limit': datetime.timedelta(weeks=1),
-            'run_every': datetime.timedelta(minutes=5),
+            'alert_time_limit': {'hours': 24},
+            'old_query_limit': {'weeks': 1},
+            'run_every': {'minutes': 5},
             'disable_rules_on_error': False,
-            'buffer_time': datetime.timedelta(minutes=45),
+            'buffer_time': {'minutes': 45},
             'scroll_keepalive': '30s'
         }
-        conf = load_conf(args, overrides)
+        conf = load_conf(args, defaults)
         rule_yaml = conf['rules_loader'].get_yaml(args.file)
         conf['rules_loader'].load_options(rule_yaml, conf, args.file)
 
