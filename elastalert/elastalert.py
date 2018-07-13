@@ -213,12 +213,7 @@ class ElastAlerter():
                 elif doc_type == 'elastalert_error':
                     writeback_index += '_error'
         else:
-            suffix = rule['writeback_suffix']
-            if '%' in rule['writeback_suffix']:
-                format_start = suffix.find('%')
-                format_end = suffix.rfind('%') + 2
-                ts = datetime.datetime.utcnow().strftime(suffix[format_start:format_end])
-                suffix = suffix[:format_start] + ts + suffix[format_end:]
+            suffix = datetime.datetime.utcnow().strftime(rule['writeback_suffix'])
             writeback_index += '_' + suffix
 
         return writeback_index
