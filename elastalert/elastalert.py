@@ -125,9 +125,10 @@ class ElastAlerter():
             tracer.addHandler(logging.FileHandler(self.args.es_debug_trace))
 
         self.conf = load_conf(self.args)
+        self.rules_loader = self.conf['rules_loader']
         self.max_query_size = self.conf['max_query_size']
         self.scroll_keepalive = self.conf['scroll_keepalive']
-        self.rules = self.conf['rules_loader'].load(self.conf, self.args)
+        self.rules = self.rules_loader.load(self.conf, self.args)
         self.writeback_index = self.conf['writeback_index']
         self.run_every = self.conf['run_every']
         self.alert_time_limit = self.conf['alert_time_limit']
@@ -144,7 +145,7 @@ class ElastAlerter():
         self.current_es_addr = None
         self.buffer_time = self.conf['buffer_time']
         self.silence_cache = {}
-        self.rule_hashes = self.conf['rules_loader'].get_hashes(self.conf, self.args.rule)
+        self.rule_hashes = self.rules_loader.get_hashes(self.conf, self.args.rule)
         self.starttime = self.args.start
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
@@ -998,8 +999,7 @@ class ElastAlerter():
     def load_rule_changes(self):
         """ Using the modification times of rule config files, syncs the running rules
             to match the files in rules_folder by removing, adding or reloading rules. """
-        rules_loader = self.conf['rules_loader']
-        new_rule_hashes = rules_loader.get_hashes(self.conf, self.args.rule)
+        new_rule_hashes = self.rules_loader.get_hashes(self.conf, self.args.rule)
 
         # Check each current rule for changes
         for rule_file, hash_value in self.rule_hashes.iteritems():
@@ -1011,7 +1011,7 @@ class ElastAlerter():
             if hash_value != new_rule_hashes[rule_file]:
                 # Rule file was changed, reload rule
                 try:
-                    new_rule = rules_loader.load_configuration(rule_file, self.conf)
+                    new_rule = self.rules_loader.load_configuration(rule_file, self.conf)
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         elastalert_logger.info('Rule file %s is now disabled.' % (rule_file))
                         # Remove this rule if it's been disabled
@@ -1022,7 +1022,7 @@ class ElastAlerter():
                     self.handle_error(message)
                     # Want to send email to address specified in the rule. Try and load the YAML to find it.
                     try:
-                        rule_yaml = rules_loader.load_yaml(rule_file)
+                        rule_yaml = self.rules_loader.load_yaml(rule_file)
                     except EAException:
                         self.send_notification_email(exception=e)
                         continue
@@ -1048,7 +1048,7 @@ class ElastAlerter():
         if not self.args.rule:
             for rule_file in set(new_rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
-                    new_rule = rules_loader.load_configuration(rule_file, self.conf)
+                    new_rule = self.rules_loader.load_configuration(rule_file, self.conf)
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         continue
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
