@@ -1,5 +1,21 @@
 # Change Log
 
+# v0.1.33
+
+### Added
+- Added ability to pipe alert text to a command
+- Add --start and --end support for elastalert-test-rule
+- Added ability to turn blacklist/whitelist files into queries for better performance
+- Allow setting of OpsGenie priority
+- Add ability to query the adjacent index if timestamp_field not used for index timestamping
+- Add support for pagerduty v2
+- Add option to turn off .raw/.keyword field postfixing in new term rule
+
+### Fixed
+- Fixed a bug that caused num_hits in matches to sometimes be erroneously small
+- Fixed an issue with HTTP Post alerter that could cause it to hang indefinitely
+- Fixed some issues with string formatting for various alerters
+
 # v0.1.32
 
 ### Added
