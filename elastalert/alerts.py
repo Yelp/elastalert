@@ -259,6 +259,7 @@ class Alerter(object):
         text = ''
         if 'aggregation' in self.rule and 'summary_table_fields' in self.rule:
             text = self.rule.get('summary_prefix', '')
+            summary_table_fields = self.rule['summary_table_fields']
             if not isinstance(summary_table_fields, list):
                 summary_table_fields = [summary_table_fields]
             # Include a count aggregation so that we can see at a glance how many of each aggregation_key were encountered
