@@ -1353,7 +1353,8 @@ def test_pagerduty_alerter_v2():
         'pagerduty_v2_payload_source': 'mysql.host.name',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
