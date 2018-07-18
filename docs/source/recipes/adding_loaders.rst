@@ -38,12 +38,14 @@ Now, in a file named ``mongo_loader.py``, add
 
     from pymongo import MongoClient
     from elastalert.loaders import RulesLoader
+    import yaml
 
     class MongoRulesLoader(RulesLoader):
         def __init__(self, conf):
             super(MongoRulesLoader, self).__init__(conf)
             self.client = MongoClient(conf['mongo_url'])
-            self.db     = client[conf['mongo_db']]
+            self.db = self.client[conf['mongo_db']]
+            self.cache = {}
 
         def get_names(self, conf, use_rule=None):
             if use_rule:
@@ -52,11 +54,10 @@ Now, in a file named ``mongo_loader.py``, add
             rules = []
             self.cache = {}
             for rule in self.db.rules.find():
-                self.cache[rule.name] = rule.yaml
-                rules.append(rule.yaml)
+                self.cache[rule['name']] = yaml.load(rule['yaml'])
+                rules.append(rule['name'])
 
             return rules
-
 
         def get_hashes(self, conf, use_rule=None):
             if use_rule:
@@ -65,8 +66,8 @@ Now, in a file named ``mongo_loader.py``, add
             hashes = {}
             self.cache = {}
             for rule in self.db.rules.find():
-                self.cache[rule.name] = rule.yaml
-                hashes[rule.name] = rule.hash
+                self.cache[rule['name']] = rule['yaml']
+                hashes[rule['name']] = rule['hash']
 
             return hashes
 
@@ -74,7 +75,7 @@ Now, in a file named ``mongo_loader.py``, add
             if rule in self.cache:
                 return self.cache[rule]
 
-            self.cache[rule] = self.db.rules.find_one({'name': rule}).yaml
+            self.cache[rule] = yaml.load(self.db.rules.find_one({'name': rule})['yaml'])
             return self.cache[rule]
 
 Finally, you need to specify in your ElastAlert configuration file that MongoRulesLoader should be used instead of the
