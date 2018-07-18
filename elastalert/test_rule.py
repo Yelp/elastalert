@@ -355,7 +355,10 @@ class MockElastAlerter(object):
             'buffer_time': {'minutes': 45},
             'scroll_keepalive': '30s'
         }
-        conf = load_conf(args, defaults)
+        overwrites = {
+            'rules_loader': 'file',
+        }
+        conf = load_conf(args, defaults, overwrites)
         rule_yaml = conf['rules_loader'].get_yaml(args.file)
         conf['rules_loader'].load_options(rule_yaml, conf, args.file)
 
