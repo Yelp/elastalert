@@ -168,7 +168,7 @@ def pretty_ts(timestamp, tz=True):
         dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
-    return dt.strftime('%Y-%m-%d %H:%M %Z')
+    return dt.strftime('%Y-%m-%d %H:%M:%S %Z')
 
 
 def ts_add(ts, td):
