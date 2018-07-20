@@ -216,6 +216,7 @@ class FrequencyRule(RuleType):
         self.ts_field = self.rules.get('timestamp_field', '@timestamp')
         self.get_ts = new_get_event_ts(self.ts_field)
         self.attach_related = self.rules.get('attach_related', False)
+        self.count_events = self.rules.get('count_events', False)
 
     def add_count_data(self, data):
         """ Add count data to the rule. Data should be of the form {ts: count}. """
@@ -262,12 +263,24 @@ class FrequencyRule(RuleType):
         # Match if, after removing old events, we hit num_events.
         # the 'end' parameter depends on whether this was called from the
         # middle or end of an add_data call and is used in subclasses
+
+        # Ignore if called while adding events to calculate how many occurrences really happened
+        if self.count_events and not end:
+            return
         if self.occurrences[key].count() >= self.rules['num_events']:
             event = self.occurrences[key].data[-1][0]
             if self.attach_related:
                 event['related_events'] = [data[0] for data in self.occurrences[key].data[:-1]]
-            self.add_match(event)
+            self.add_match_and_counts(event, key)
             self.occurrences.pop(key)
+
+    def add_match_and_counts(self, match, key):
+        num_count = self.occurrences[key].count()
+        extra_info = {('num_%s' % key): num_count}
+
+        match = dict(match.items() + extra_info.items())
+
+        self.add_match(match)
 
     def garbage_collect(self, timestamp):
         """ Remove all occurrence data that is beyond the timeframe away """
