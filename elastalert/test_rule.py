@@ -70,6 +70,7 @@ class MockElastAlerter(object):
             starttime=start_time,
             endtime=end_time,
             timestamp_field=ts,
+            to_ts_func=conf['dt_to_ts'],
             five=conf['five']
         )
         index = ElastAlerter.get_index(conf, start_time, end_time)
@@ -96,6 +97,7 @@ class MockElastAlerter(object):
             starttime=start_time,
             endtime=end_time,
             timestamp_field=ts,
+            to_ts_func=conf['dt_to_ts'],
             sort=False,
             five=conf['five']
         )
