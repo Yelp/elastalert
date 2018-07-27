@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 import argparse
 import copy
@@ -11,8 +12,8 @@ import time
 import timeit
 import traceback
 from email.mime.text import MIMEText
-from smtplib import SMTP
 from smtplib import SMTPException
+from smtplib import SMTPAuthenticationError
 from socket import error
 
 import dateutil.tz
@@ -48,6 +49,7 @@ from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
+from util import build_smtp_connection
 
 
 class ElastAlerter():
@@ -1824,10 +1826,13 @@ class ElastAlerter():
         email['Reply-To'] = self.conf.get('email_reply_to', email['To'])
 
         try:
-            smtp = SMTP(self.smtp_host)
+            smtp = build_smtp_connection(self.conf)
             smtp.sendmail(self.from_addr, recipients, email.as_string())
+            smtp.close()
         except (SMTPException, error) as e:
             self.handle_error('Error connecting to SMTP host: %s' % (e), {'email_body': email_body})
+        except (SMTPAuthenticationError) as e:
+            self.handle_error("SMTP username/password rejected: %s" % (e))
 
     def get_top_counts(self, rule, starttime, endtime, keys, number=None, qk=None):
         """ Counts the number of events for each unique value for each key field.

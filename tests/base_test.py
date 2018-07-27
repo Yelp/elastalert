@@ -1149,8 +1149,9 @@ def test_stop(ea):
 def test_notify_email(ea):
     mock_smtp = mock.Mock()
     ea.rules[0]['notify_email'] = ['foo@foo.foo', 'bar@bar.bar']
-    with mock.patch('elastalert.elastalert.SMTP') as mock_smtp_f:
+    with mock.patch('elastalert.util.SMTP') as mock_smtp_f:
         mock_smtp_f.return_value = mock_smtp
+        mock_smtp.has_extn.return_value = False
 
         # Notify_email from rules, array
         ea.send_notification_email('omg', rule=ea.rules[0])
