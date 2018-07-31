@@ -1144,7 +1144,7 @@ class ElastAlerter():
 
                 # TO_DELETE
                 #self.statsd_addr = ('statsd', 8125)
-                #self.send_via_udp({"sample_query.hits":"11|g"}, ('statsd', 8125))
+                self.send_via_udp({"sample_query.hits":"11|g"}, ('statsd', 8125))
                 elastalert_logger.info("metrics sent sample_query hits statsd exporter")
                 # TO_DELETE
 
