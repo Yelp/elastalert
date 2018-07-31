@@ -1102,7 +1102,7 @@ class ElastAlerter():
             )
         exit(1)
 
-    def send_via_udp(_dict, addr):
+    def send_via_udp(self, _dict, addr):
         """
         Sends key/value pairs via UDP.
         >>> self.send_via_udp({"example.send":"11|c"}, ("127.0.0.1", 8125))
