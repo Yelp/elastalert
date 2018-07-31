@@ -1110,6 +1110,7 @@ class SlackAlerter(Alerter):
         self.slack_parse_override = self.rule.get('slack_parse_override', 'none')
         self.slack_text_string = self.rule.get('slack_text_string', '')
         self.slack_alert_fields = self.rule.get('slack_alert_fields', '')
+        self.slack_ignore_ssl_errors = self.rule.get('slack_ignore_ssl_errors', False)
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1169,7 +1170,13 @@ class SlackAlerter(Alerter):
 
         for url in self.slack_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                if self.slack_ignore_ssl_errors:
+                    requests.packages.urllib3.disable_warnings()
+                response = requests.post(
+                    url, data=json.dumps(payload, cls=DateTimeEncoder),
+                    headers=headers, verify=not self.slack_ignore_ssl_errors,
+                    proxies=proxies)
+                warnings.resetwarnings()
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting to slack: %s" % e)
