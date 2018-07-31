@@ -1142,18 +1142,16 @@ class ElastAlerter():
                                        " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
                                                             total_hits, self.num_dupes, num_matches, self.alerts_sent))
 
-                localhost_ip = socket.socket.gethostbyname(socket.gethostname())
-
-                self.send_via_udp({"gauge_query.hits." + str(localhost_ip):str(total_hits) + "|g"}, self.statsd_addr)
+                self.send_via_udp({"gauge_query.hits.":str(total_hits) + "|g"}, self.statsd_addr)
                 elastalert_logger.info("metrics sent gauge_query hits statsd exporter")
 
-                self.send_via_udp({"gauge_already_seen.hits" + str(localhost_ip):str(self.num_dupes) +"|g"}, self.statsd_addr)
+                self.send_via_udp({"gauge_already_seen.hits":str(self.num_dupes) +"|g"}, self.statsd_addr)
                 elastalert_logger.info("metrics sent gauge_already_seen hits statsd exporter")
 
-                self.send_via_udp({"gauge_query.matches" + str(localhost_ip):str(num_matches) +"|g"}, self.statsd_addr)
+                self.send_via_udp({"gauge_query.matches":str(num_matches) +"|g"}, self.statsd_addr)
                 elastalert_logger.info("metrics sent gauge_query matches statsd exporter")
 
-                self.send_via_udp({"gauge_query.alerts_sent" + str(localhost_ip):str(self.alerts_sent) +"|g"}, self.statsd_addr)
+                self.send_via_udp({"gauge_query.alerts_sent":str(self.alerts_sent) +"|g"}, self.statsd_addr)
                 elastalert_logger.info("metrics sent gauge_query alerts_sent statsd exporter")
 
                 self.alerts_sent = 0
