@@ -152,7 +152,7 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
-        self.statsd_addr = ('statsd', 8125)
+        self.statsd_addr = ('statsd_exporter', 8125)
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
@@ -1143,8 +1143,7 @@ class ElastAlerter():
                                                             total_hits, self.num_dupes, num_matches, self.alerts_sent))
 
                 # TO_DELETE
-                #self.statsd_addr = ('statsd', 8125)
-                self.send_via_udp({"sample_query.hits":"11|g"}, ('statsd', 8125))
+                self.send_via_udp({"sample_query.hits":"11|g"}, self.statsd_addr)
                 elastalert_logger.info("metrics sent sample_query hits statsd exporter")
                 # TO_DELETE
 
