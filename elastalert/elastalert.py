@@ -1144,25 +1144,25 @@ class ElastAlerter():
 
                 # TO_DELETE
                 #self.statsd_addr = ('statsd', 8125)
-                self.send_via_udp({"sample_query.hits":"11|g"}, ('statsd', 8125))
+                #self.send_via_udp({"sample_query.hits":"11|g"}, ('statsd', 8125))
                 elastalert_logger.info("metrics sent sample_query hits statsd exporter")
                 # TO_DELETE
 
 
                 hits_gauge = total_hits +"|g"
-                self.send_via_udp({"gauge_query.hits":hits_gauge}, ('statsd', 8125))
+                #self.send_via_udp({"gauge_query.hits":hits_gauge}, ('statsd', 8125))
                 elastalert_logger.info("metrics sent gauge_query hits statsd exporter")
 
                 dupes_gauge = self.num_dupes +"|g"
-                self.send_via_udp({"gauge_already_seen.hits":dupes_gauge}, ('statsd', 8125))
+                #self.send_via_udp({"gauge_already_seen.hits":dupes_gauge}, ('statsd', 8125))
                 elastalert_logger.info("metrics sent gauge_already_seen hits statsd exporter")
 
                 matches_gauge = num_matches +"|g"
-                self.send_via_udp({"gauge_query.matches":matches_gauge}, ('statsd', 8125))
+                #self.send_via_udp({"gauge_query.matches":matches_gauge}, ('statsd', 8125))
                 elastalert_logger.info("metrics sent gauge_query matches statsd exporter")
 
                 alerts_gauge = self.alerts_sent +"|g"
-                self.send_via_udp({"gauge_query.alerts_sent":alerts_gauge}, ('statsd', 8125))
+                #self.send_via_udp({"gauge_query.alerts_sent":alerts_gauge}, ('statsd', 8125))
                 elastalert_logger.info("metrics sent gauge_query alerts_sent statsd exporter")
 
 
