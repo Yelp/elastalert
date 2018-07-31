@@ -1295,7 +1295,7 @@ class ElastAlerter():
         try:
             res = es.search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
         except ElasticsearchException as e:
-            raise EAException("Error querying for dashboard: %s" % (e)), None, sys.exc_info()[2]
+            raise EAException("Error querying for dashboard: %s" % (e), None, sys.exc_info()[2])
 
         if res['hits']['hits']:
             return json.loads(res['hits']['hits'][0]['_source']['dashboard'])
