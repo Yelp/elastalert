@@ -133,6 +133,37 @@ def test_freq_count():
     assert len(rule.matches) == 1
 
 
+def test_freq_count_count_events():
+    rules = {'num_events': 100,
+             'timeframe': datetime.timedelta(hours=1),
+             'use_count_query': True}
+    # Normal match
+    rule = FrequencyRule(rules)
+    rule.add_count_data({ts_to_dt('2014-10-10T00:00:00'): 75})
+    assert len(rule.matches) == 0
+    rule.add_count_data({ts_to_dt('2014-10-10T00:15:00'): 10})
+    assert len(rule.matches) == 0
+    rule.add_count_data({ts_to_dt('2014-10-10T00:25:00'): 10})
+    assert len(rule.matches) == 0
+    rule.add_count_data({ts_to_dt('2014-10-10T00:45:00'): 10})
+    assert len(rule.matches) == 1
+    assert rule.matches[0].get('num_all') == 105
+
+    # First data goes out of timeframe first
+    rule = FrequencyRule(rules)
+    rule.add_count_data({ts_to_dt('2014-10-10T00:00:00'): 75})
+    assert len(rule.matches) == 0
+    rule.add_count_data({ts_to_dt('2014-10-10T00:45:00'): 10})
+    assert len(rule.matches) == 0
+    rule.add_count_data({ts_to_dt('2014-10-10T00:55:00'): 10})
+    assert len(rule.matches) == 0
+    rule.add_count_data({ts_to_dt('2014-10-10T01:05:00'): 6})
+    assert len(rule.matches) == 0
+    rule.add_count_data({ts_to_dt('2014-10-10T01:00:00'): 80})
+    assert len(rule.matches) == 1
+    assert rule.matches[0].get('num_all') == 106
+
+
 def test_freq_out_of_order():
     events = hits(60, timestamp_field='blah', username='qlo')
     rules = {'num_events': 59,
@@ -155,6 +186,21 @@ def test_freq_out_of_order():
     assert len(rule.matches) == 0
     rule.add_data(events[55:57])
     assert len(rule.matches) == 1
+
+
+def test_freq_data_count_events():
+    events = hits(60, timestamp_field='blah', username='qlo')
+    rules = {'num_events': 50,
+             'timeframe': datetime.timedelta(hours=1),
+             'timestamp_field': 'blah',
+             'count_events': 'true'}
+    rule = FrequencyRule(rules)
+    rule.add_data(events[:10])
+    assert len(rule.matches) == 0
+
+    rule.add_data(events[10:])
+    assert len(rule.matches) == 1
+    assert rule.matches[0].get('num_all') == 60
 
 
 def test_freq_terms():
@@ -182,6 +228,36 @@ def test_freq_terms():
     rule.add_terms_data(terms3)
     assert len(rule.matches) == 2
     assert rule.matches[1].get('username') == 'userA'
+
+
+def test_freq_terms_count_events():
+    rules = {'num_events': 7,
+             'timeframe': datetime.timedelta(hours=1),
+             'query_key': 'username',
+             'count_events': 'true'}
+    rule = FrequencyRule(rules)
+
+    terms1 = {ts_to_dt('2014-01-01T00:01:00Z'): [{'key': 'userA', 'doc_count': 1},
+                                                 {'key': 'userB', 'doc_count': 5}]}
+    terms2 = {ts_to_dt('2014-01-01T00:10:00Z'): [{'key': 'userA', 'doc_count': 5},
+                                                 {'key': 'userB', 'doc_count': 5}]}
+    terms3 = {ts_to_dt('2014-01-01T00:25:00Z'): [{'key': 'userA', 'doc_count': 3},
+                                                 {'key': 'userB', 'doc_count': 0}]}
+    # Initial data
+    rule.add_terms_data(terms1)
+    assert len(rule.matches) == 0
+
+    # Match for user B
+    rule.add_terms_data(terms2)
+    assert len(rule.matches) == 1
+    assert rule.matches[0].get('username') == 'userB'
+    assert rule.matches[0].get('num_userB') == 10
+
+    # Match for user A
+    rule.add_terms_data(terms3)
+    assert len(rule.matches) == 2
+    assert rule.matches[1].get('username') == 'userA'
+    assert rule.matches[1].get('num_userA') == 9
 
 
 def test_eventwindow():
