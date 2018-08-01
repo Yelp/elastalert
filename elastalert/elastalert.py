@@ -14,6 +14,8 @@ from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
 from socket import error, socket, AF_INET, SOCK_DGRAM
+from statsd import StatsClient
+import dns.resolver,dns.reversename
 
 import dateutil.tz
 import kibana
@@ -152,7 +154,14 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
-        self.statsd_addr = ('statsd_exporter', 8125)
+        self.host_ip = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2]
+        if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)),
+        s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET,
+        socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
+        self.statsd_prefix =  str(dns.resolver.query(dns.reversename.from_address(self.host_ip),"PTR")[0])
+        self.statsd = StatsClient(host='statsd_exporter',
+                        port=8125,
+                        prefix=self.statsd_prefix)
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
@@ -1102,17 +1111,6 @@ class ElastAlerter():
             )
         exit(1)
 
-    def send_via_udp(self, _dict, addr):
-        """
-        Sends key/value pairs via UDP.
-        >>> self.send_via_udp({"example.send":"11|c"}, ("127.0.0.1", 8125))
-        """
-
-        udp_sock = socket(AF_INET, SOCK_DGRAM)
-
-        for item in _dict.items():
-            udp_sock.sendto(":".join(item).encode('utf-8'), addr)
-
     def run_all_rules(self):
         """ Run each rule one time """
         self.send_pending_alerts()
@@ -1142,10 +1140,10 @@ class ElastAlerter():
                                        " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
                                                             total_hits, self.num_dupes, num_matches, self.alerts_sent))
 
-                self.send_via_udp({"query.hits.":str(total_hits) + "|g"}, self.statsd_addr)
-                self.send_via_udp({"already_seen.hits":str(self.num_dupes) +"|g"}, self.statsd_addr)
-                self.send_via_udp({"query.matches":str(num_matches) +"|g"}, self.statsd_addr)
-                self.send_via_udp({"query.alerts_sent":str(self.alerts_sent) +"|g"}, self.statsd_addr)
+                self.statsd.gauge('query.hits', total_hits)
+                self.statsd.gauge('already_seen.hits', self.num_dupes)
+                self.statsd.gauge('query.matches', num_matches)
+                self.statsd.gauge('query.alerts_sent', self.alerts_sent)
 
                 self.alerts_sent = 0
 
