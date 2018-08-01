@@ -1408,7 +1408,7 @@ class TelegramAlerter(Alerter):
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
         if len(body) > 4095:
-            body = body[0:4000] + "\n⚠ *message was cropped according to telegram limits!* ⚠"
+            body = body[0:4000] + u"\n⚠ *message was cropped according to telegram limits!* ⚠"
         body += u' ```'
 
         headers = {'content-type': 'application/json'}
