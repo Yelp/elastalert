@@ -1171,6 +1171,8 @@ class SlackAlerter(Alerter):
         self.slack_proxy = self.rule.get('slack_proxy', None)
         self.slack_username_override = self.rule.get('slack_username_override', 'elastalert')
         self.slack_channel_override = self.rule.get('slack_channel_override', '')
+        if isinstance(self.slack_channel_override, basestring):
+            self.slack_channel_override = [self.slack_channel_override]
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_icon_url_override = self.rule.get('slack_icon_url_override', '')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
@@ -1213,7 +1215,6 @@ class SlackAlerter(Alerter):
         proxies = {'https': self.slack_proxy} if self.slack_proxy else None
         payload = {
             'username': self.slack_username_override,
-            'channel': self.slack_channel_override,
             'parse': self.slack_parse_override,
             'text': self.slack_text_string,
             'attachments': [
@@ -1237,17 +1238,19 @@ class SlackAlerter(Alerter):
             payload['icon_emoji'] = self.slack_emoji_override
 
         for url in self.slack_webhook_url:
-            try:
-                if self.slack_ignore_ssl_errors:
-                    requests.packages.urllib3.disable_warnings()
-                response = requests.post(
-                    url, data=json.dumps(payload, cls=DateTimeEncoder),
-                    headers=headers, verify=not self.slack_ignore_ssl_errors,
-                    proxies=proxies)
-                warnings.resetwarnings()
-                response.raise_for_status()
-            except RequestException as e:
-                raise EAException("Error posting to slack: %s" % e)
+            for channel_override in self.slack_channel_override:
+                try:
+                    if self.slack_ignore_ssl_errors:
+                        requests.packages.urllib3.disable_warnings()
+                    payload['channel'] = channel_override
+                    response = requests.post(
+                        url, data=json.dumps(payload, cls=DateTimeEncoder),
+                        headers=headers, verify=not self.slack_ignore_ssl_errors,
+                        proxies=proxies)
+                    warnings.resetwarnings()
+                    response.raise_for_status()
+                except RequestException as e:
+                    raise EAException("Error posting to slack: %s" % e)
         elastalert_logger.info("Alert '%s' sent to Slack" % self.rule['name'])
 
     def resolve(self):
