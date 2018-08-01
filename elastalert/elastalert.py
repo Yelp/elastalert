@@ -14,7 +14,6 @@ import socket
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
-#from socket import error, socket, AF_INET, SOCK_DGRAM
 from statsd import StatsClient
 import dns.resolver,dns.reversename
 
