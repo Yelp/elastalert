@@ -967,7 +967,8 @@ def test_slack_uses_custom_title():
         rule['slack_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1002,13 +1003,14 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
             }
         ],
         'text': '',
-        'parse': 'none'
+        'parse': 'none',
     }
     mock_post_request.assert_called_once_with(
         rule['slack_webhook_url'][0],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1044,13 +1046,14 @@ def test_slack_uses_custom_slack_channel():
             }
         ],
         'text': '',
-        'parse': 'none'
+        'parse': 'none',
     }
     mock_post_request.assert_called_once_with(
         rule['slack_webhook_url'][0],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
