@@ -134,21 +134,24 @@ class OpsGenieAlerter(Alerter):
         return ret
 
     def resolve(self):
-        if self.opsgenie_resolve_alert == True:
-            #build opsgenie result, use alias to resolv open alerts 
-            post = {'note' : 'OK-Elastalert Auto Resolving'}
+        if self.opsgenie_resolve_alert:
+            # build opsgenie result, use alias to resolv open alerts
+            post = {'note': 'OK-Elastalert Auto Resolving'}
 
             logging.debug(json.dumps(post))
 
             headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'GenieKey {}'.format(self.api_key),
+                'Content-Type': 'application/json',
+                'Authorization': 'GenieKey {}'.format(self.api_key),
             }
             # set https proxy, if it was provided
             proxies = {'https': self.opsgenie_proxy} if self.opsgenie_proxy else None
 
             try:
-                r = requests.post(self.to_addr.__add__('/').__add__(self.alias).__add__('/close?identifierType=alias'), json=post, headers=headers, proxies=proxies)
+                r = requests.post(self.to_addr.__add__('/').__add__(self.alias).__add__('/close?identifierType=alias'),
+                                  json=post,
+                                  headers=headers,
+                                  proxies=proxies)
 
                 logging.debug('request response: {0}'.format(r))
                 if r.status_code != 202:

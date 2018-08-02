@@ -203,13 +203,13 @@ class Alerter(object):
         :param match: A dictionary of relevant information to the alert.
         """
         raise NotImplementedError()
-    
+
     def resolve(self):
         """ Resolve a previous alert. Match is a dictionary of information about the alert.
 
         :param match: A dictionary of relevant information to the alert.
         """
-        raise NotImplementedError() 
+        raise NotImplementedError()
 
     def get_info(self):
         """ Returns a dictionary of data related to this alert. At minimum, this should contain
@@ -489,7 +489,7 @@ class EmailAlerter(Alerter):
         elastalert_logger.info("Sent email to %s" % (to_addr))
 
     def resolve(self):
-        if self.email_resolve_alert == True:
+        if self.email_resolve_alert:
             body = 'Alert resolved'
         # Add JIRA ticket if it exists
             if self.pipeline is not None and 'jira_ticket' in self.pipeline:
@@ -498,7 +498,7 @@ class EmailAlerter(Alerter):
 
             to_addr = self.rule['email']
             if 'email_from_field' in self.rule:
-                recipient = lookup_es_key(matches[0], self.rule['email_from_field'])
+                recipient = self.rule['email_from_field']
                 if isinstance(recipient, basestring):
                     if '@' in recipient:
                         to_addr = [recipient]
@@ -519,7 +519,7 @@ class EmailAlerter(Alerter):
                 to_addr = to_addr + self.rule['cc']
             if self.rule.get('bcc'):
                 to_addr = to_addr + self.rule['bcc']
-     
+
             try:
                 if self.smtp_ssl:
                     if self.smtp_port:
@@ -545,8 +545,7 @@ class EmailAlerter(Alerter):
 
             elastalert_logger.info("Resolve email Sent to %s" % (to_addr))
         else:
-            elastalert_logger.info("Alert not sent to Slack as resolve alert is False") 
- 
+            elastalert_logger.info("Alert not sent to Slack as resolve alert is False")
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -1253,7 +1252,7 @@ class SlackAlerter(Alerter):
 
     def resolve(self):
         # post resolve message to slack if resolve_alert is true
-        if self.slack_resolve_alert == True:
+        if self.slack_resolve_alert:
             headers = {'content-type': 'application/json'}
             proxies = {'https': self.slack_proxy} if self.slack_proxy else None
             payload = {

@@ -975,10 +975,8 @@ class ElastAlerter():
                             alert.resolve()
                         except EAException as e:
                             self.handle_error('Error while resolving alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
-                            alert_exception = str(e)
                         else:
                             self.alerts_sent += 1
-                            alert_sent = True
         except (ElasticsearchException, KeyError) as e:
             self.handle_error('Error querying for last alerts: %s' % (e), {'rule': rule['name']})
             self.writeback_es = None

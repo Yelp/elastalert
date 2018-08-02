@@ -49,6 +49,7 @@ class mock_es_client(object):
         self.info = mock.Mock(return_value=mock_info)
         self.ping = mock.Mock(return_value=True)
         self.indices = mock_es_indices_client()
+        self.count = mock.Mock(return_value={'count': []})
 
 
 class mock_ruletype(object):
@@ -65,6 +66,7 @@ class mock_ruletype(object):
 class mock_alert(object):
     def __init__(self):
         self.alert = mock.Mock()
+        self.resolve = mock.Mock()
 
     def get_info(self):
         return {'type': 'mock'}
