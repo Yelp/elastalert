@@ -154,11 +154,7 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
-        self.host_ip = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2]
-        if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)),
-        s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET,
-        socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
-        self.statsd_prefix =  str(dns.resolver.query(dns.reversename.from_address(self.host_ip),"PTR")[0])
+        self.statsd_prefix = socket.gethostname()
         self.statsd = StatsClient(host='statsd_exporter',
                         port=8125,
                         prefix=self.statsd_prefix)
