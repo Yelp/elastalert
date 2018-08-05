@@ -5,7 +5,7 @@ env:
 - TOXENV=docs
 - TOXENV=py27
 install:
-- pip install urllib3 tox statsd dnspython
+- pip install urllib3 tox statsd
 script: make test
 deploy:
   provider: pypi
