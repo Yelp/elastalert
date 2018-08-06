@@ -1139,6 +1139,7 @@ class ElastAlerter():
                 self.statsd.gauge('already_seen.hits', self.num_dupes,tags={"rule_name": rule['name']})
                 self.statsd.gauge('query.matches', num_matches, tags={"rule_name": rule['name']})
                 self.statsd.gauge('query.alerts_sent', self.alerts_sent, tags={"test":"shir", "rule_name": rule['name']})
+                self.statsd.gauge('querytest', self.alerts_sent, tags={"test":"shir"})
 
                 self.alerts_sent = 0
 
