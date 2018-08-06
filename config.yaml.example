@@ -30,6 +30,9 @@ es_port: 9200
 # Optional URL prefix for Elasticsearch
 #es_url_prefix: elasticsearch
 
+# Optional prefix for statsd metrics
+#statsd_metrics_prefix: elasticsearch
+
 # Connect with TLS to Elasticsearch
 #use_ssl: True
 
