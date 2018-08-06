@@ -50,7 +50,6 @@ from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
 
-
 class ElastAlerter():
     """ The main ElastAlert runner. This class holds all state about active rules,
     controls when queries are run, and passes information between rules and alerts.
@@ -153,7 +152,7 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
-        self.statsd_prefix = os.environ.get('statsd_metrics_prefix', '')
+        self.statsd_prefix = os.environ.get('es_host', '')
         #self.statsd_prefix = socket.gethostname()
         self.statsd = statsd.StatsClient(host='statsd_exporter',
                         port=8125,
