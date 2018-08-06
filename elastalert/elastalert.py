@@ -1134,12 +1134,13 @@ class ElastAlerter():
                 elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
                                        " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
                                                             total_hits, self.num_dupes, num_matches, self.alerts_sent))
+                rule_duration = endtime - rule.get('original_starttime')
+                elastalert_logger.info("%s range %s" % (rule['name'], rule_duration))
 
                 self.statsd.gauge('query.hits', total_hits, tags={"rule_name": rule['name']})
                 self.statsd.gauge('already_seen.hits', self.num_dupes,tags={"rule_name": rule['name']})
                 self.statsd.gauge('query.matches', num_matches, tags={"rule_name": rule['name']})
-                self.statsd.gauge('query.alerts_sent', self.alerts_sent, tags={"test":"shir", "rule_name": rule['name']})
-                self.statsd.gauge('querytest', self.alerts_sent, tags={"test":"shir"})
+                self.statsd.gauge('query.alerts_sent', self.alerts_sent, tags={"rule_name": rule['name']})
 
                 self.alerts_sent = 0
 
