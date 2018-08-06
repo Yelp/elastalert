@@ -154,7 +154,7 @@ class ElastAlerter():
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
         self.statsd_prefix = socket.gethostname()
-        self.statsd = StatsClient(host='statsd_exporter',
+        self.statsd = statsd.StatsClient(host='statsd_exporter',
                         port=8125,
                         prefix=self.statsd_prefix)
 
