@@ -152,9 +152,7 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
-        self.statsd_prefix = rule['statsd_metrics_prefix']
-        self.statsd_prefix_test = rule['es_host']
-        #self.statsd_prefix = os.environ.get('es_host', '')
+        self.statsd_prefix = self.conf.get('statsd_metrics_prefix', 'nothing')
         #self.statsd_prefix = socket.gethostname()
         self.statsd = statsd.StatsClient(host='statsd_exporter',
                         port=8125,
@@ -1136,8 +1134,6 @@ class ElastAlerter():
                 elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
                                        " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
                                                             total_hits, self.num_dupes, num_matches, self.alerts_sent))
-
-                elastalert_logger.info("es_host " % (self.statsd_prefix_test))
 
                 rule_duration = seconds(endtime - rule.get('original_starttime'))
                 self.statsd.gauge('rule_time_in_seconds', rule_duration, tags={"rule_name": rule['name']})
