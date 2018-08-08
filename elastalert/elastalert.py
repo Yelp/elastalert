@@ -14,6 +14,7 @@ import statsd
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
+from socket import error
 
 import dateutil.tz
 import kibana
