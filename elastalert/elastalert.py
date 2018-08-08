@@ -10,7 +10,6 @@ import sys
 import time
 import timeit
 import traceback
-import socket
 import statsd
 from email.mime.text import MIMEText
 from smtplib import SMTP
