@@ -1106,7 +1106,7 @@ class ElastAlerter():
         exit(1)
 
     def send_statsd_metric(self, metric_type, metric_name, metric_value, metric_tags):
-        self.statsd.type(name , value, tags=metric_tags)
+        self.statsd.metric_type(metric_name , metric_value, tags=metric_tags)
 
     def run_all_rules(self):
         """ Run each rule one time """
