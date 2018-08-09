@@ -1143,7 +1143,7 @@ class ElastAlerter():
                 self.statsd.gauge('already_seen.hits', self.num_dupes,tags={"rule_name": rule['name']})
                 self.statsd.gauge('query.matches', num_matches, tags={"rule_name": rule['name']})
                 self.statsd.gauge('query.alerts_sent', self.alerts_sent, tags={"rule_name": rule['name']})
-                self.send_statsd_metric(self, gauge, testshir, self.alerts_sent, {"rule_name": rule['name']})
+                self.send_statsd_metric(gauge, testshir, self.alerts_sent, {"rule_name": rule['name']})
 
                 self.alerts_sent = 0
 
