@@ -1135,8 +1135,8 @@ class ElastAlerter():
                                        " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
                                                             total_hits, self.num_dupes, num_matches, self.alerts_sent))
 
-                rule_duration = seconds(endtime - rule.get('original_starttime'))
-                self.statsd.gauge('rule_time_in_seconds', rule_duration, tags={"rule_name": rule['name']})
+                rule_duration_ms = seconds(endtime - rule.get('original_starttime')) * 1000
+                self.statsd.timing('rule_time', rule_duration_ms, tags={"rule_name": rule['name']})
                 self.statsd.gauge('query.hits', total_hits, tags={"rule_name": rule['name']})
                 self.statsd.gauge('already_seen.hits', self.num_dupes,tags={"rule_name": rule['name']})
                 self.statsd.gauge('query.matches', num_matches, tags={"rule_name": rule['name']})
