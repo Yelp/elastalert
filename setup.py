@@ -36,7 +36,7 @@ setup(
         'envparse>=0.2.0',
         'exotel>=0.1.3',
         'jira>=1.0.10,<1.0.15',
-        'jsonschema>=2.6.0',
+        'jsonschema>=2.6.0,<3.0.0',
         'mock>=2.0.0',
         'PyStaticConfiguration>=0.10.3',
         'python-dateutil>=2.6.0,<2.7.0',
