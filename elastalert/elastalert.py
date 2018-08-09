@@ -1105,6 +1105,9 @@ class ElastAlerter():
             )
         exit(1)
 
+    def send_statsd_metric(self, metric_type, metric_name, metric_value, metric_tags):
+        self.statsd.(type)(name , value, tags=metric_tags)
+
     def run_all_rules(self):
         """ Run each rule one time """
         self.send_pending_alerts()
@@ -1140,6 +1143,7 @@ class ElastAlerter():
                 self.statsd.gauge('already_seen.hits', self.num_dupes,tags={"rule_name": rule['name']})
                 self.statsd.gauge('query.matches', num_matches, tags={"rule_name": rule['name']})
                 self.statsd.gauge('query.alerts_sent', self.alerts_sent, tags={"rule_name": rule['name']})
+                self.send_statsd_metric(self, gauge, testshir, self.alerts_sent, {"rule_name": rule['name']})
 
                 self.alerts_sent = 0
 
