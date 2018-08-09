@@ -40,7 +40,11 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_url_prefix`` (string, no default)                       |           |
 +--------------------------------------------------------------+           |
-| ``statsd_metrics_prefix`` (string, no default)               |           |
+| ``statsd_metrics_prefix`` (string, default "statsd")         |           |
++--------------------------------------------------------------+           |
+| ``statsd_hostname`` (string, no default)                     |           |
++--------------------------------------------------------------+           |
+| ``statsd_port`` (number, default 8125)                       |           |
 +--------------------------------------------------------------+           |
 | ``es_send_get_body_as`` (string, default "GET")              |           |
 +--------------------------------------------------------------+           |
@@ -277,6 +281,16 @@ statsd_metrics_prefix
 ^^^^^^^^^^^^^
 
 ``statsd_metrics_prefix``: prefix for statsd metrics. (Optional, string, no default)
+
+statsd_hostname
+^^^^^^^^^^^^^
+
+``statsd_hostname``: hostname for sending statsd metrics (Optional, string, default "statsd")
+
+statsd_port
+^^^^^^^^^^^^^
+
+``statsd_port``: port for sending statsd metrics (Optional, number, default 8125)
 
 es_send_get_body_as
 ^^^^^^^^^^^^^^^^^^^

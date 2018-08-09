@@ -153,8 +153,8 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
-        self.statsd = statsd.StatsClient(host='statsd_exporter',
-                        port=8125,
+        self.statsd = statsd.StatsClient(host=self.conf.get('statsd_hostname', 'statsd'),
+                        port=self.conf.get('statsd_port', '8125'),
                         prefix=self.conf.get('statsd_metrics_prefix', ''))
 
         self.writeback_es = elasticsearch_client(self.conf)

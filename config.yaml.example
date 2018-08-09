@@ -33,6 +33,12 @@ es_port: 9200
 # Optional prefix for statsd metrics
 #statsd_metrics_prefix: cops
 
+# Optional hostname for sending statsd metrics, default set to "statsd"
+#statsd_hostname: statsd_exporter
+
+# Optional port for sending statsd metrics, default set to "8125"
+#statsd_port: 1001
+
 # Connect with TLS to Elasticsearch
 #use_ssl: True
 
