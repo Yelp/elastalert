@@ -10,11 +10,11 @@ import sys
 import time
 import timeit
 import traceback
-import socket
 import statsd
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
+from socket import error
 
 import dateutil.tz
 import kibana
@@ -153,10 +153,9 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
-        self.statsd_prefix = self.conf.get('statsd_metrics_prefix', '')
         self.statsd = statsd.StatsClient(host='statsd_exporter',
                         port=8125,
-                        prefix=self.statsd_prefix)
+                        prefix=self.conf.get('statsd_metrics_prefix', ''))
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
