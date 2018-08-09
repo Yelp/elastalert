@@ -5,7 +5,7 @@ env:
 - TOXENV=docs
 - TOXENV=py27
 install:
-- pip install urllib3 tox
+- pip install urllib3 tox statsd statsd-tags
 script: make test
 deploy:
   provider: pypi
