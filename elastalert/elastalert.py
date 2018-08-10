@@ -1107,7 +1107,7 @@ class ElastAlerter():
 
     def send_statsd_metric(self, metric_type, metric_name, metric_value, metric_tags):
         method_to_call = getattr(self.statsd, metric_type)
-        method_to_call(metric_name, metric_value, metric_tags=metric_tags)
+        method_to_call(metric_name, metric_value, tags=metric_tags)
 
 
     def run_all_rules(self):
