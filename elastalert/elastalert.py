@@ -1109,7 +1109,6 @@ class ElastAlerter():
         method_to_call = getattr(self.statsd, metric_type)
         method_to_call(metric_name, metric_value, tags=metric_tags)
 
-
     def run_all_rules(self):
         """ Run each rule one time """
         self.send_pending_alerts()
@@ -1140,12 +1139,11 @@ class ElastAlerter():
                                                             total_hits, self.num_dupes, num_matches, self.alerts_sent))
 
                 rule_duration_ms = seconds(endtime - rule.get('original_starttime')) * 1000
-                self.statsd.timing('rule_time', rule_duration_ms, tags={"rule_name": rule['name']})
-                self.statsd.gauge('query.hits', total_hits, tags={"rule_name": rule['name']})
-                self.statsd.gauge('already_seen.hits', self.num_dupes,tags={"rule_name": rule['name']})
-                self.statsd.gauge('query.matches', num_matches, tags={"rule_name": rule['name']})
-                self.statsd.gauge('query.alerts_sent', self.alerts_sent, tags={"rule_name": rule['name']})
-                self.send_statsd_metric('gauge', 'testshir', self.alerts_sent, {"rule_name": rule['name']})
+                self.send_statsd_metric('timing', 'rule_time', rule_duration_ms, {"rule_name": rule['name']})
+                self.send_statsd_metric('gauge', 'query.hits', total_hits, {"rule_name": rule['name']})
+                self.send_statsd_metric('gauge', 'already_seen.hits', self.num_dupes, {"rule_name": rule['name']})
+                self.send_statsd_metric('gauge', 'query.matches', num_matches, {"rule_name": rule['name']})
+                self.send_statsd_metric('gauge', 'query.alerts_sent', self.alerts_sent, {"rule_name": rule['name']})
 
                 self.alerts_sent = 0
 
