@@ -7,5 +7,5 @@ setuptools
 sphinx_rtd_theme
 tox<2.0
 urllib3<1.23
-statsd==0.0.12
+statsd
 statsd-tags==3.2.1
