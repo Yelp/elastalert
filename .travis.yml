@@ -4,8 +4,6 @@ python:
 env:
 - TOXENV=docs
 - TOXENV=py27
-install:
-- pip install urllib3 tox
 script: make test
 deploy:
   provider: pypi
