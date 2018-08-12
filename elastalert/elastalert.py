@@ -1108,9 +1108,9 @@ class ElastAlerter():
     def send_metrics(self, rule_time, query_hits, already_seen_hits, query_matches, query_alerts_sent):
         self.statsd.timing('rule_time', rule_time, tags={"rule_name": rule['name']})
         self.statsd.gauge('query_hits', query_hits, tags={"rule_name": rule['name']})
-	    self.statsd.gauge('already_seen_hits', already_seen_hits, tags={"rule_name": rule['name']})
-	    self.statsd.gauge('query_matches', query_matches, tags={"rule_name": rule['name']})
-	    self.statsd.gauge('query_alerts_sent', query_alerts_sent, tags={"rule_name": rule['name']})
+        self.statsd.gauge('already_seen_hits', already_seen_hits, tags={"rule_name": rule['name']})
+        self.statsd.gauge('query_matches', query_matches, tags={"rule_name": rule['name']})
+        self.statsd.gauge('query_alerts_sent', query_alerts_sent, tags={"rule_name": rule['name']})
 
     def run_all_rules(self):
         """ Run each rule one time """
