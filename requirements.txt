@@ -17,4 +17,5 @@ stomp.py>=4.1.17
 texttable>=0.8.8
 twilio==6.0.0
 urllib3===1.22
-statsd statsd-tags
+statsd-tags
+statsd
