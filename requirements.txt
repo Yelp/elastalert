@@ -18,5 +18,5 @@ texttable>=0.8.8
 twilio==6.0.0
 urllib3===1.22
 tox<2.0
-statsd-tags
-statsd
+statsd==3.2.2
+statsd-tags==3.2.1
