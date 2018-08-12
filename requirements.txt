@@ -19,4 +19,4 @@ twilio==6.0.0
 urllib3===1.22
 tox<2.0
 statsd
-statsd-tags==3.2.1
+statsd-tags
