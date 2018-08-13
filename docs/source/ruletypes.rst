@@ -1879,7 +1879,7 @@ Example usage using old-style format::
 HTTP POST
 ~~~~~~~~~
 
-This alert type will send results to a JSON endpoint using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON will contain al the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
+This alert type will send results to a JSON endpoint using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON will contain all the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
 
 Required:
 
