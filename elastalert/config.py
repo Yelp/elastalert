@@ -429,7 +429,7 @@ def load_alerts(rule, alert_field):
 def load_rules(args):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
     config file and then each rule found in rules_folder.
-    
+
     :param args: The parsed arguments to ElastAlert
     :return: The global configuration, a dictionary.
     """
