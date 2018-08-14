@@ -156,6 +156,7 @@ class ElastAlerter():
         self.statsd = statsd.StatsClient(host=self.conf.get('statsd_hostname', 'statsd'),
                         port=self.conf.get('statsd_port', '8125'))
         self.statsd_elastalert_instance = self.conf.get('statsd_elastalert_instance', 'elastalert')
+
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
 
