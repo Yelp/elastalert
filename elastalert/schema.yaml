@@ -144,12 +144,7 @@ properties:
   use_strftime_index: {type: boolean}
 
   # Optional Settings
-  import:
-    anyOf:
-      - type: array
-        items:
-          type: string
-      - type: string
+  import: {type: string}
   aggregation: *timeframe
   realert: *timeframe
   exponential_realert: *timeframe
@@ -292,9 +287,9 @@ properties:
   alerta_event: {type: string} # Python format string
   alerta_customer: {type: string}
   alerta_text: {type: string} # Python format string
-  alerta_type: {type: string} 
+  alerta_type: {type: string}
   alerta_value: {type: string} # Python format string
-  alerta_attributes_keys: {type: array, items: {type: string}}  
+  alerta_attributes_keys: {type: array, items: {type: string}}
   alerta_attributes_values: {type: array, items: {type: string}}  # Python format string
   alerta_new_style_string_format: {type: boolean}
 
