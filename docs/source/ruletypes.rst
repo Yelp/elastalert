@@ -40,9 +40,9 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_url_prefix`` (string, no default)                       |           |
 +--------------------------------------------------------------+           |
-| ``statsd_metrics_prefix`` (string, default "statsd")         |           |
+| ``statsd_metrics_prefix`` (string, default "elastalert")     |           |
 +--------------------------------------------------------------+           |
-| ``statsd_hostname`` (string, no default)                     |           |
+| ``statsd_hostname`` (string, default "statsd")               |           |
 +--------------------------------------------------------------+           |
 | ``statsd_port`` (number, default 8125)                       |           |
 +--------------------------------------------------------------+           |
@@ -280,7 +280,7 @@ es_url_prefix
 statsd_metrics_prefix
 ^^^^^^^^^^^^^
 
-``statsd_metrics_prefix``: prefix for statsd metrics. (Optional, string, no default)
+``statsd_metrics_prefix``: prefix for statsd metrics. (Optional, string, default "elastalert")
 
 statsd_hostname
 ^^^^^^^^^^^^^

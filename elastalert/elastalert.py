@@ -155,7 +155,7 @@ class ElastAlerter():
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
         self.statsd = statsd.StatsClient(host=self.conf.get('statsd_hostname', 'statsd'),
                         port=self.conf.get('statsd_port', '8125'),
-                        prefix=self.conf.get('statsd_metrics_prefix', ''))
+                        prefix=self.conf.get('statsd_metrics_prefix', 'elastalert'))
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None

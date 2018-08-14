@@ -30,7 +30,7 @@ es_port: 9200
 # Optional URL prefix for Elasticsearch
 #es_url_prefix: elasticsearch
 
-# Optional prefix for statsd metrics
+# Optional prefix for statsd metrics, default set to "elastalert"
 #statsd_metrics_prefix: cops
 
 # Optional hostname for sending statsd metrics, default set to "statsd"
