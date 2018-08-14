@@ -108,7 +108,6 @@ def get_module(module_name):
 
 def load_configuration(filename, conf, args=None):
     """ Load a yaml rule file and fill in the relevant fields with objects.
-
     :param filename: The name of a rule configuration file.
     :param conf: The global configuration dictionary, used for populating defaults.
     :return: The rule configuration, a dictionary.
@@ -120,54 +119,43 @@ def load_configuration(filename, conf, args=None):
 
 
 def load_rule_yaml(filename):
-    return add_rule_yaml(filename, {'rule_file': filename})
+    rule = {
+        'rule_file': filename,
+    }
 
+    import_rules.pop(filename, None)  # clear `filename` dependency
+    while True:
+        try:
+            loaded = yaml_loader(filename)
+        except yaml.scanner.ScannerError as e:
+            raise EAException('Could not parse file %s: %s' % (filename, e))
 
-def add_rule_yaml(filename, parent_rule):
-    try:
-        loaded_rule = yaml_loader(filename)
-    except yaml.scanner.ScannerError as e:
-        raise EAException('Could not parse file %s: %s' % (filename, e))
+        # Special case for merging filters - if both files specify a filter merge (AND) them
+        if 'filter' in rule and 'filter' in loaded:
+            rule['filter'] = loaded['filter'] + rule['filter']
 
-    if 'import' in loaded_rule:
-        current_import = loaded_rule['import']
-        del(loaded_rule['import'])  # or we could go on forever!
+        loaded.update(rule)
+        rule = loaded
+        if 'import' in rule:
+            # Find the path of the next file.
+            if os.path.isabs(rule['import']):
+                import_filename = rule['import']
+            else:
+                import_filename = os.path.join(os.path.dirname(filename), rule['import'])
+            # set dependencies
+            rules = import_rules.get(filename, [])
+            rules.append(import_filename)
+            import_rules[filename] = rules
+            filename = import_filename
+            del(rule['import'])  # or we could go on forever!
+        else:
+            break
 
-        child_rules = {}
-        if isinstance(current_import, basestring):
-            child_rules = add_rule_yaml(rule_file_import_path_to_absolute_path(filename, current_import), child_rules)
-        elif isinstance(current_import, list):
-            for import_target in current_import:
-                child_rules = add_rule_yaml(rule_file_import_path_to_absolute_path(filename, import_target), child_rules)
-        loaded_rule = merge_rules(loaded_rule, child_rules)
-
-    loaded_rule = merge_rules(parent_rule, loaded_rule)
-    return loaded_rule
-
-
-def merge_rules(parent_rule, child_rule):
-    # Special case for merging filters - if both files specify a filter merge (AND) them
-    merged_filter = None
-    if 'filter' in parent_rule and 'filter' in child_rule:
-        merged_filter = child_rule['filter'] + parent_rule['filter']
-
-    child_rule.update(parent_rule)
-    if merged_filter is not None:
-        child_rule['filter'] = merged_filter
-
-    return child_rule
-
-
-def rule_file_import_path_to_absolute_path(currently_parsed_file_path, import_file_path):
-    if os.path.isabs(import_file_path):
-        return import_file_path
-    else:
-        return os.path.join(os.path.dirname(currently_parsed_file_path), import_file_path)
+    return rule
 
 
 def load_options(rule, conf, filename, args=None):
     """ Converts time objects, sets defaults, and validates some settings.
-
     :param rule: A dictionary of parsed YAML from a rule config file.
     :param conf: The global configuration dictionary, used for populating defaults.
     """
@@ -439,7 +427,6 @@ def load_alerts(rule, alert_field):
 def load_rules(args):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
     config file and then each rule found in rules_folder.
-
     :param args: The parsed arguments to ElastAlert
     :return: The global configuration, a dictionary.
     """
