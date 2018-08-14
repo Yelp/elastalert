@@ -40,7 +40,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_url_prefix`` (string, no default)                       |           |
 +--------------------------------------------------------------+           |
-| ``statsd_metrics_prefix`` (string, default "elastalert")     |           |
+| ``statsd_elastalert_instance`` (string, default "elastalert")|           |
 +--------------------------------------------------------------+           |
 | ``statsd_hostname`` (string, default "statsd")               |           |
 +--------------------------------------------------------------+           |
@@ -277,10 +277,10 @@ es_url_prefix
 
 ``es_url_prefix``: URL prefix for the Elasticsearch endpoint. (Optional, string, no default)
 
-statsd_metrics_prefix
+statsd_elastalert_instance
 ^^^^^^^^^^^^^
 
-``statsd_metrics_prefix``: prefix for statsd metrics. (Optional, string, default "elastalert")
+``statsd_elastalert_instance``:  elastalert instance name which sends the statsd metrics, (Optional, string, default "elastalert")
 
 statsd_hostname
 ^^^^^^^^^^^^^

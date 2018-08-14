@@ -66,7 +66,7 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
 
-``statsd_metrics_prefix``: Optional; prefix for statsd metrics.
+``statsd_elastalert_instance``: Optional; elastalert instance name which sends the statsd metrics.  
 
 ``statsd_hostname``: Optional; hostname for statsd metrics.
 
