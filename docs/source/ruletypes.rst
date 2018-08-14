@@ -40,6 +40,12 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_url_prefix`` (string, no default)                       |           |
 +--------------------------------------------------------------+           |
+| ``statsd_elastalert_instance`` (string, default "elastalert")|           |
++--------------------------------------------------------------+           |
+| ``statsd_hostname`` (string, default "statsd")               |           |
++--------------------------------------------------------------+           |
+| ``statsd_port`` (number, default 8125)                       |           |
++--------------------------------------------------------------+           |
 | ``es_send_get_body_as`` (string, default "GET")              |           |
 +--------------------------------------------------------------+           |
 | ``aggregation`` (time, no default)                           |           |
@@ -270,6 +276,21 @@ es_url_prefix
 ^^^^^^^^^^^^^
 
 ``es_url_prefix``: URL prefix for the Elasticsearch endpoint. (Optional, string, no default)
+
+statsd_elastalert_instance
+^^^^^^^^^^^^^
+
+``statsd_elastalert_instance``:  elastalert instance name which sends the statsd metrics, (Optional, string, default "elastalert")
+
+statsd_hostname
+^^^^^^^^^^^^^
+
+``statsd_hostname``: hostname for sending statsd metrics (Optional, string, default "statsd")
+
+statsd_port
+^^^^^^^^^^^^^
+
+``statsd_port``: port for sending statsd metrics (Optional, number, default 8125)
 
 es_send_get_body_as
 ^^^^^^^^^^^^^^^^^^^

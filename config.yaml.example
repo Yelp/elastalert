@@ -30,6 +30,15 @@ es_port: 9200
 # Optional URL prefix for Elasticsearch
 #es_url_prefix: elasticsearch
 
+# Optional elastalert instance name which sends the statsd metrics, default set to "elastalert"
+#statsd_elastalert_instance: cops
+
+# Optional hostname for sending statsd metrics, default set to "statsd"
+#statsd_hostname: statsd_exporter
+
+# Optional port for sending statsd metrics, default set to "8125"
+#statsd_port: 1001
+
 # Connect with TLS to Elasticsearch
 #use_ssl: True
 
