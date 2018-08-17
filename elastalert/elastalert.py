@@ -4,12 +4,15 @@ import copy
 import datetime
 import json
 import logging
+import multiprocessing
 import os
 import signal
 import sys
+import threading
 import time
 import timeit
 import traceback
+from collections import deque
 from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
@@ -152,6 +155,9 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
+        self.num_threads = self.conf.get('num_threads', 1)
+        if self.num_threads <= 0:
+            self.num_threads = multiprocessing.cpu_count() - 1
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
@@ -1107,7 +1113,37 @@ class ElastAlerter():
 
         next_run = datetime.datetime.utcnow() + self.run_every
 
-        for rule in self.rules:
+        # Create a thread safe list of all the rules
+        work = deque(self.rules)
+        for t in range(0, self.num_threads):
+            t = threading.Thread(target=self.run_all_rules_thread, args=[next_run, work], daemon=True)
+            t.start()
+
+        # Wait for the work to be done
+        main_thread = threading.current_thread()
+        for t in threading.enumerate():
+            if t is main_thread:
+                continue
+            t.join()
+
+        # Only force starttime once
+        self.starttime = None
+
+        if not self.args.pin_rules:
+            self.load_rule_changes()
+
+    def run_all_rules_thread(self, next_run, rules):
+        """
+        :param datetime.datetime next_run:
+        :param collections.deque rules:
+        """
+        while len(rules) > 0:
+            # Grab the next rule
+            try:
+                rule = rules.popleft()
+            except IndexError:
+                break
+
             # Set endtime based on the rule's delay
             delay = rule.get('query_delay')
             if hasattr(self.args, 'end') and self.args.end:
@@ -1127,8 +1163,9 @@ class ElastAlerter():
                 old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
                 total_hits = max(self.num_hits, self.cumulative_hits)
                 elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
-                                       " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                            total_hits, self.num_dupes, num_matches, self.alerts_sent))
+                                       " %s alerts sent" % (
+                                       rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
+                                       total_hits, self.num_dupes, num_matches, self.alerts_sent))
                 self.alerts_sent = 0
 
                 if next_run < datetime.datetime.utcnow():
@@ -1144,12 +1181,6 @@ class ElastAlerter():
                     )
 
             self.remove_old_events(rule)
-
-        # Only force starttime once
-        self.starttime = None
-
-        if not self.args.pin_rules:
-            self.load_rule_changes()
 
     def stop(self):
         """ Stop an ElastAlert runner that's been started """
