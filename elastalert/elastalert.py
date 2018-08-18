@@ -1113,18 +1113,16 @@ class ElastAlerter():
 
         next_run = datetime.datetime.utcnow() + self.run_every
 
-        # Create a thread safe list of all the rules
-        work = deque(self.rules)
-        for t in range(0, self.num_threads):
-            t = threading.Thread(target=self.run_all_rules_thread, args=[next_run, work], daemon=True)
+        # Create a thread safe list of all the rules to run
+        rules_to_run = deque(self.rules)
+        for t in range(0, min(len(rules_to_run), self.num_threads)):
+            t = threading.Thread(target=self.run_all_rules_thread, args=[next_run, rules_to_run])
+            t.setDaemon(True)
             t.start()
 
-        # Wait for the work to be done
-        main_thread = threading.current_thread()
-        for t in threading.enumerate():
-            if t is main_thread:
-                continue
-            t.join()
+        # Wait until there are no rules left to be run
+        while len(rules_to_run) > 0:
+            pass
 
         # Only force starttime once
         self.starttime = None
