@@ -463,14 +463,27 @@ class ElastAlerter():
     def get_hits_terms(self, rule, starttime, endtime, index, key, qk=None, size=None):
         rule_filter = copy.copy(rule['filter'])
         if qk:
-            filter_key = rule['query_key']
+            qk_list = qk.split(", ")
+            end = None
             if rule['five']:
                 end = '.keyword'
             else:
                 end = '.raw'
-            if rule.get('raw_count_keys', True) and not rule['query_key'].endswith(end):
-                filter_key = add_raw_postfix(filter_key, rule['five'])
-            rule_filter.extend([{'term': {filter_key: qk}}])
+
+            if len(qk_list) == 1:
+                qk = qk_list[0]
+                filter_key = rule['query_key']
+                if rule.get('raw_count_keys', True) and not rule['query_key'].endswith(end):
+                    filter_key = add_raw_postfix(filter_key, rule['five'])
+                rule_filter.extend([{'term': {filter_key: qk}}])
+            else:
+                filter_keys = rule['compound_query_key']
+                for i in range(len(filter_keys)):
+                    key_with_postfix = filter_keys[i]
+                    if rule.get('raw_count_keys', True) and not key.endswith(end):
+                        key_with_postfix = add_raw_postfix(key_with_postfix, rule['five'])
+                    rule_filter.extend([{'term': {key_with_postfix: qk_list[i]}}])
+
         base_query = self.get_query(
             rule_filter,
             starttime,
@@ -854,6 +867,7 @@ class ElastAlerter():
         if rule.get('aggregation_query_element'):
             if endtime - tmp_endtime == segment_size:
                 self.run_query(rule, tmp_endtime, endtime)
+                self.cumulative_hits += self.num_hits
             elif total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
                 rule['starttime'] = rule['original_starttime']
                 return 0
@@ -862,6 +876,7 @@ class ElastAlerter():
         else:
             if not self.run_query(rule, rule['starttime'], endtime):
                 return 0
+            self.cumulative_hits += self.num_hits
             rule['type'].garbage_collect(endtime)
 
         # Process any new matches

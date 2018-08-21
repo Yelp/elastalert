@@ -70,6 +70,7 @@ class MockElastAlerter(object):
             starttime=start_time,
             endtime=end_time,
             timestamp_field=ts,
+            to_ts_func=conf['dt_to_ts'],
             five=conf['five']
         )
         index = ElastAlerter.get_index(conf, start_time, end_time)
@@ -96,6 +97,7 @@ class MockElastAlerter(object):
             starttime=start_time,
             endtime=end_time,
             timestamp_field=ts,
+            to_ts_func=conf['dt_to_ts'],
             sort=False,
             five=conf['five']
         )
@@ -403,7 +405,7 @@ class MockElastAlerter(object):
                 with open(args.save, 'wb') as data_file:
                     # Add _id to _source for dump
                     [doc['_source'].update({'_id': doc['_id']}) for doc in hits]
-                    data_file.write(json.dumps([doc['_source'] for doc in hits], indent='    '))
+                    data_file.write(json.dumps([doc['_source'] for doc in hits], indent=4))
             if args.use_downloaded:
                 if hits:
                     args.json = args.save

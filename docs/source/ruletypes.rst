@@ -1006,6 +1006,17 @@ than regular searching if there is a large number of documents. If this is used,
 ``query_key`` to that field. Also, note that ``terms_size`` (the number of buckets returned per query) defaults to 50. This means
 that if a new term appears but there are at least 50 terms which appear more frequently, it will not be found.
 
+.. note::
+
+  When using use_terms_query, make sure that the field you are using is not analyzed. If it is, the results of each terms
+  query may return tokens rather than full values. ElastAlert will by default turn on use_keyword_postfix, which attempts
+  to use the non-analyzed version (.keyword or .raw) to gather initial terms. These will not match the partial values and
+  result in false positives.
+
+``use_keyword_postfix``: If true, ElastAlert will automatically try to add .keyword (ES5+) or .raw to the fields when making an
+initial query. These are non-analyzed fields added by Logstash. If the field used is analyzed, the initial query will return
+only the tokenized values, potentially causing false positives. Defaults to true.
+
 Cardinality
 ~~~~~~~~~~~
 
@@ -1141,7 +1152,7 @@ for multiple of the same alerter. For example, consider sending multiple emails,
 
     alert:
      - email
-    email_from: "no-reply@example.com"
+    from_addr: "no-reply@example.com"
     email: "customer@example.com"
 
 versus
@@ -1150,10 +1161,10 @@ versus
 
     alert:
      - email:
-         email_from: "no-reply@example.com"
+         from_addr: "no-reply@example.com"
          email: "customer@example.com"
      - email:
-         email_from: "elastalert@example.com""
+         from_addr: "elastalert@example.com""
          email: "devs@example.com"
 
 If multiple of the same alerter type are used, top level settings will be used as the default and inline settings will override those
@@ -1252,14 +1263,12 @@ This alert requires one option:
 string, the command is executed through the shell.
 
 Strings can be formatted using the old-style format (``%``) or the new-style format (``.format()``). When the old-style format is used, fields are accessed
-using ``%(field_name)s``. When the new-style format is used, fields are accessed using ``{match[field_name]}``. New-style formatting allows accessing nested
-fields (e.g., ``{match[field_1_name][field_2_name]}``).
+using ``%(field_name)s``, or ``%(field.subfield)s``. When the new-style format is used, fields are accessed using ``{field_name}``. New-style formatting allows accessing nested
+fields (e.g., ``{field_1[subfield]}``).
 
 In an aggregated alert, these fields come from the first match.
 
 Optional:
-
-``new_style_string_format``: If True, arguments are formatted using ``.format()`` rather than ``%``. The default is False.
 
 ``pipe_match_json``: If true, the match will be converted to JSON and passed to stdin of the command. Note that this will cause ElastAlert to block
 until the command exits or sends an EOF to stdout.
@@ -1870,7 +1879,7 @@ Example usage using old-style format::
 HTTP POST
 ~~~~~~~~~
 
-This alert type will send results to a JSON endpoint using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON will contain al the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
+This alert type will send results to a JSON endpoint using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON will contain all the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
 
 Required:
 
@@ -1885,6 +1894,8 @@ Optional:
 ``http_post_proxy``: URL of proxy, if required.
 
 ``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
+
+``http_post_timeout``: The timeout value, in seconds, for making the post. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
 
 Example usage::
 

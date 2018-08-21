@@ -435,7 +435,7 @@ class SpikeRule(RuleType):
         # Reset the state and prevent alerts until windows filled again
         self.ref_windows[qk].clear()
         self.first_event.pop(qk)
-        self.skip_checks[qk] = event[self.ts_field] + self.rules['timeframe'] * 2
+        self.skip_checks[qk] = lookup_es_key(event, self.ts_field) + self.rules['timeframe'] * 2
 
     def handle_event(self, event, count, qk='all'):
         self.first_event.setdefault(qk, event)
@@ -446,7 +446,7 @@ class SpikeRule(RuleType):
         self.cur_windows[qk].append((event, count))
 
         # Don't alert if ref window has not yet been filled for this key AND
-        if event[self.ts_field] - self.first_event[qk][self.ts_field] < self.rules['timeframe'] * 2:
+        if lookup_es_key(event, self.ts_field) - self.first_event[qk][self.ts_field] < self.rules['timeframe'] * 2:
             # ElastAlert has not been running long enough for any alerts OR
             if not self.ref_window_filled_once:
                 return
@@ -454,7 +454,7 @@ class SpikeRule(RuleType):
             if not (self.rules.get('query_key') and self.rules.get('alert_on_new_data')):
                 return
             # An alert for this qk has recently fired
-            if qk in self.skip_checks and event[self.ts_field] < self.skip_checks[qk]:
+            if qk in self.skip_checks and lookup_es_key(event, self.ts_field) < self.skip_checks[qk]:
                 return
         else:
             self.ref_window_filled_once = True
@@ -635,10 +635,16 @@ class NewTermsRule(RuleType):
             raise EAException("fields must not be an empty list")
         if type(self.fields) != list:
             self.fields = [self.fields]
-        if self.rules.get('use_terms_query') and (
-            len(self.fields) != 1 or len(self.fields) == 1 and type(self.fields[0]) == list
-        ):
+        if self.rules.get('use_terms_query') and \
+                (len(self.fields) != 1 or (len(self.fields) == 1 and type(self.fields[0]) == list)):
             raise EAException("use_terms_query can only be used with a single non-composite field")
+        if self.rules.get('use_terms_query'):
+            if self.rules.get('query_key') != self.fields:
+                raise EAException('If use_terms_query is specified, you cannot specify different query_key and fields')
+            if not self.rules.get('query_key').endswith('.keyword') and not self.rules.get('query_key').endswith('.raw'):
+                if self.rules.get('use_keyword_postfix', True):
+                    elastalert_logger.warn('Warning: If query_key is a non-keyword field, you must set '
+                                           'use_keyword_postfix to false, or add .keyword/.raw to your query_key.')
         try:
             self.get_all_terms(args)
         except Exception as e:
@@ -678,7 +684,10 @@ class NewTermsRule(RuleType):
                 level = query_template['aggs']
                 # Iterate on each part of the composite key and add a sub aggs clause to the elastic search query
                 for i, sub_field in enumerate(field):
-                    level['values']['terms']['field'] = add_raw_postfix(sub_field, self.is_five_or_above())
+                    if self.rules.get('use_keyword_postfix', True):
+                        level['values']['terms']['field'] = add_raw_postfix(sub_field, self.is_five_or_above())
+                    else:
+                        level['values']['terms']['field'] = sub_field
                     if i < len(field) - 1:
                         # If we have more fields after the current one, then set up the next nested structure
                         level['values']['aggs'] = {'values': {'terms': copy.deepcopy(field_name)}}
@@ -686,7 +695,10 @@ class NewTermsRule(RuleType):
             else:
                 self.seen_values.setdefault(field, [])
                 # For non-composite keys, only a single agg is needed
-                field_name['field'] = add_raw_postfix(field, self.is_five_or_above())
+                if self.rules.get('use_keyword_postfix', True):
+                    field_name['field'] = add_raw_postfix(field, self.is_five_or_above())
+                else:
+                    field_name['field'] = field
 
             # Query the entire time range in small chunks
             while tmp_start < end:
@@ -904,22 +916,23 @@ class CardinalityRule(RuleType):
                 # If no query_key, we use the key 'all' for all events
                 key = 'all'
             self.cardinality_cache.setdefault(key, {})
-            self.first_event.setdefault(key, event[self.ts_field])
+            self.first_event.setdefault(key, lookup_es_key(event, self.ts_field))
             value = hashable(lookup_es_key(event, self.cardinality_field))
             if value is not None:
                 # Store this timestamp as most recent occurence of the term
-                self.cardinality_cache[key][value] = event[self.ts_field]
+                self.cardinality_cache[key][value] = lookup_es_key(event, self.ts_field)
                 self.check_for_match(key, event)
 
     def check_for_match(self, key, event, gc=True):
         # Check to see if we are past max/min_cardinality for a given key
-        timeframe_elapsed = event[self.ts_field] - self.first_event.get(key, event[self.ts_field]) > self.timeframe
+        time_elapsed = lookup_es_key(event, self.ts_field) - self.first_event.get(key, lookup_es_key(event, self.ts_field))
+        timeframe_elapsed = time_elapsed > self.timeframe
         if (len(self.cardinality_cache[key]) > self.rules.get('max_cardinality', float('inf')) or
                 (len(self.cardinality_cache[key]) < self.rules.get('min_cardinality', float('-inf')) and timeframe_elapsed)):
             # If there might be a match, run garbage collect first, as outdated terms are only removed in GC
             # Only run it if there might be a match so it doesn't impact performance
             if gc:
-                self.garbage_collect(event[self.ts_field])
+                self.garbage_collect(lookup_es_key(event, self.ts_field))
                 self.check_for_match(key, event, False)
             else:
                 self.first_event.pop(key, None)

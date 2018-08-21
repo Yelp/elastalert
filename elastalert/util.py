@@ -326,9 +326,12 @@ def build_es_conn_config(conf):
     parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
     parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
 
-    if 'es_username' in conf:
-        parsed_conf['es_username'] = os.environ.get('ES_USERNAME', conf['es_username'])
-        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD', conf['es_password'])
+    if os.environ.get('ES_USERNAME'):
+        parsed_conf['es_username'] = os.environ.get('ES_USERNAME')
+        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD')
+    elif 'es_username' in conf:
+        parsed_conf['es_username'] = conf['es_username']
+        parsed_conf['es_password'] = conf['es_password']
 
     if 'aws_region' in conf:
         parsed_conf['aws_region'] = conf['aws_region']
@@ -398,12 +401,13 @@ def resolve_string(string, match, missing_text='<MISSING VALUE>'):
         :param missing_text: The default text to replace a formatter with if the field doesnt exist.
     """
     flat_match = flatten_dict(match)
+    flat_match.update(match)
     dd_match = collections.defaultdict(lambda: missing_text, flat_match)
     dd_match['_missing_value'] = missing_text
     while True:
         try:
-            string = string.format(**dd_match)
             string = string % dd_match
+            string = string.format(**dd_match)
             break
         except KeyError as e:
             if '{%s}' % e.message not in string:

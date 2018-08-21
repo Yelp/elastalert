@@ -258,6 +258,7 @@ class Alerter(object):
     def get_aggregation_summary_text(self, matches):
         text = ''
         if 'aggregation' in self.rule and 'summary_table_fields' in self.rule:
+            text = self.rule.get('summary_prefix', '')
             summary_table_fields = self.rule['summary_table_fields']
             if not isinstance(summary_table_fields, list):
                 summary_table_fields = [summary_table_fields]
@@ -282,7 +283,7 @@ class Alerter(object):
             for keys, count in match_aggregation.iteritems():
                 text_table.add_row([key for key in keys] + [count])
             text += text_table.draw() + '\n\n'
-
+            text += self.rule.get('summary_prefix', '')
         return unicode(text)
 
     def create_default_title(self, matches):
@@ -1109,6 +1110,7 @@ class SlackAlerter(Alerter):
         self.slack_parse_override = self.rule.get('slack_parse_override', 'none')
         self.slack_text_string = self.rule.get('slack_text_string', '')
         self.slack_alert_fields = self.rule.get('slack_alert_fields', '')
+        self.slack_ignore_ssl_errors = self.rule.get('slack_ignore_ssl_errors', False)
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1168,7 +1170,13 @@ class SlackAlerter(Alerter):
 
         for url in self.slack_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                if self.slack_ignore_ssl_errors:
+                    requests.packages.urllib3.disable_warnings()
+                response = requests.post(
+                    url, data=json.dumps(payload, cls=DateTimeEncoder),
+                    headers=headers, verify=not self.slack_ignore_ssl_errors,
+                    proxies=proxies)
+                warnings.resetwarnings()
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting to slack: %s" % e)
@@ -1400,7 +1408,7 @@ class TelegramAlerter(Alerter):
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
         if len(body) > 4095:
-            body = body[0:4000] + "\n⚠ *message was cropped according to telegram limits!* ⚠"
+            body = body[0:4000] + u"\n⚠ *message was cropped according to telegram limits!* ⚠"
         body += u' ```'
 
         headers = {'content-type': 'application/json'}
@@ -1651,6 +1659,7 @@ class HTTPPostAlerter(Alerter):
         self.post_static_payload = self.rule.get('http_post_static_payload', {})
         self.post_all_values = self.rule.get('http_post_all_values', not self.post_payload)
         self.post_http_headers = self.rule.get('http_post_headers', {})
+        self.timeout = self.rule.get('http_post_timeout', 10)
 
     def alert(self, matches):
         """ Each match will trigger a POST to the specified endpoint(s). """
@@ -1668,7 +1677,7 @@ class HTTPPostAlerter(Alerter):
             for url in self.post_url:
                 try:
                     response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder),
-                                             headers=headers, proxies=proxies)
+                                             headers=headers, proxies=proxies, timeout=self.timeout)
                     response.raise_for_status()
                 except RequestException as e:
                     raise EAException("Error posting HTTP Post alert: %s" % e)
