@@ -1,5 +1,21 @@
 # Change Log
 
+# v0.1.34
+
+### Added
+- Added prefix/suffix support for summary table
+- Added support for ignoring SSL validation in Slack
+- More visible exceptions during query parse failures
+
+### Fixed
+- Fixed top_count_keys when using compound query_key
+- Fixed num_hits sometimes being reported too low
+- Fixed an issue with setting ES_USERNAME via env
+- Fixed an issue when using test script with custom timestamps
+- Fixed a unicode error when using Telegram
+- Fixed an issue with jsonschema version conflict
+- Fixed an issue with nested timestamps in cardinality type
+
 # v0.1.33
 
 ### Added
