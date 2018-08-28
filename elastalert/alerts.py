@@ -1260,7 +1260,7 @@ class MattermostAlerter(Alerter):
 
         if self.rule.get('alert_text_type') == 'alert_text_only':
             payload['attachments'][0]['text'] = body
-        else:            
+        else:
             payload['text'] = body
 
         if self.mattermost_msg_fields != '':
