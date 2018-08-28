@@ -94,7 +94,7 @@ oneOf:
       doc_type: {type: string}
 
   - title: New Term
-    required: [fields]
+    required: []
     properties:
       type: {enum: [new_term]}
       fields: *arrayOfStringsOrOtherArray

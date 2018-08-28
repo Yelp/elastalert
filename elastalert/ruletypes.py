@@ -639,7 +639,7 @@ class NewTermsRule(RuleType):
                 (len(self.fields) != 1 or (len(self.fields) == 1 and type(self.fields[0]) == list)):
             raise EAException("use_terms_query can only be used with a single non-composite field")
         if self.rules.get('use_terms_query'):
-            if self.rules.get('query_key') != self.fields:
+            if [self.rules['query_key']] != self.fields:
                 raise EAException('If use_terms_query is specified, you cannot specify different query_key and fields')
             if not self.rules.get('query_key').endswith('.keyword') and not self.rules.get('query_key').endswith('.raw'):
                 if self.rules.get('use_keyword_postfix', True):
