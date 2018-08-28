@@ -49,7 +49,6 @@ from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
 
-
 class ElastAlerter():
     """ The main ElastAlert runner. This class holds all state about active rules,
     controls when queries are run, and passes information between rules and alerts.
@@ -390,12 +389,6 @@ class ElastAlerter():
                     **extra_args
                 )
                 self.total_hits = int(res['hits']['total'])
-
-            if len(res.get('_shards', {}).get('failures', [])) > 0:
-                errs = [e['reason']['reason'] for e in res['_shards']['failures'] if 'Failed to parse' in e['reason']['reason']]
-                if len(errs):
-                    raise ElasticsearchException(errs)
-
             logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
@@ -531,6 +524,24 @@ class ElastAlerter():
         elastalert_logger.info(
             'Queried rule %s from %s to %s: %s buckets' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(buckets))
         )
+
+        # Get each bucket matched entries from ES.
+        if len(buckets) > 0:
+            for i in range(0, len(buckets)):
+                bucket = buckets[i]
+                bucket_rule_filter = copy.copy(rule_filter)
+                bucket_rule_filter.append({'query_string': {'query': '%s:%s' % (key, bucket['key'])}})
+                bucket_query = self.get_query(
+                    bucket_rule_filter,
+                    starttime,
+                    endtime,
+                    timestamp_field=rule['timestamp_field'],
+                    sort=False,
+                    to_ts_func=rule['dt_to_ts'],
+                    five=rule['five']
+                )
+                bucket_res = self.current_es.search(index=index, doc_type=rule['doc_type'], body=bucket_query, size=size, ignore_unavailable=True)
+                buckets[i]['hits'] = bucket_res['hits']['hits']
         return {endtime: buckets}
 
     def get_hits_aggregation(self, rule, starttime, endtime, index, query_key, term_size=None):
