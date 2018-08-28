@@ -1,5 +1,10 @@
 # Change Log
 
+# v0.1.35
+
+### Fixed
+- Fixed an issue preventing new term rule from working with terms query
+
 # v0.1.34
 
 ### Added
