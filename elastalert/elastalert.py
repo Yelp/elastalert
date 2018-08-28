@@ -392,6 +392,12 @@ class ElastAlerter():
                     **extra_args
                 )
                 self.total_hits = int(res['hits']['total'])
+
+            if len(res.get('_shards', {}).get('failures', [])) > 0:
+                errs = [e['reason']['reason'] for e in res['_shards']['failures'] if 'Failed to parse' in e['reason']['reason']]
+                if len(errs):
+                    raise ElasticsearchException(errs)
+
             logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
