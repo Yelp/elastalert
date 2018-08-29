@@ -389,7 +389,7 @@ def test_opsgenie_basic():
 
         assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
-        assert mcal[0][1]['json']['responders'] == [{'id': 'lytics', 'type': 'user'}]
+        assert mcal[0][1]['json']['responders'] == [{'username': 'lytics', 'type': 'user'}]
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
 
 
@@ -415,7 +415,7 @@ def test_opsgenie_frequency():
 
         assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
-        assert mcal[0][1]['json']['responders'] == [{'id': 'lytics', 'type': 'user'}]
+        assert mcal[0][1]['json']['responders'] == [{'username': 'lytics', 'type': 'user'}]
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
 
