@@ -29,9 +29,6 @@ class OpsGenieAlerter(Alerter):
         self.opsgenie_proxy = self.rule.get('opsgenie_proxy', None)
         self.priority = self.rule.get('opsgenie_priority')
 
-    def _fill_responders(self, responders, type_):
-        return [{'id': r, 'type': type_} for r in responders]
-
     def alert(self, matches):
         body = ''
         for match in matches:
@@ -50,9 +47,9 @@ class OpsGenieAlerter(Alerter):
         if self.account:
             post['user'] = self.account
         if self.recipients:
-            post['responders'] = self._fill_responders(self.recipients, 'user')
+            post['responders'] = [{'username': r, 'type': 'user'} for r in self.recipients]
         if self.teams:
-            post['teams'] = self._fill_responders(self.teams, 'team')
+            post['teams'] = [{'name': r, 'type': 'team'} for r in self.teams]
         post['description'] = body
         post['source'] = 'ElastAlert'
         post['tags'] = self.tags
