@@ -141,6 +141,7 @@ class ElastAlerter():
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.alerts_sent = 0
+        self.cumulative_hits = 0
         self.num_hits = 0
         self.num_dupes = 0
         self.current_es = None
