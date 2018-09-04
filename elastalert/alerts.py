@@ -1124,6 +1124,7 @@ class SlackAlerter(Alerter):
         self.slack_alert_fields = self.rule.get('slack_alert_fields', '')
         self.slack_ignore_ssl_errors = self.rule.get('slack_ignore_ssl_errors', False)
         self.slack_timeout = self.rule.get('slack_timeout', 10)
+        self.slack_ca_certs = self.rule.get('slack_ca_certs')
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1189,6 +1190,10 @@ class SlackAlerter(Alerter):
         for url in self.slack_webhook_url:
             for channel_override in self.slack_channel_override:
                 try:
+                    if self.slack_ca_certs:
+                        verify = self.slack_ca_certs
+                    else:
+                        verify = self.slack_ignore_ssl_errors
                     if self.slack_ignore_ssl_errors:
                         requests.packages.urllib3.disable_warnings()
                     payload['channel'] = channel_override
