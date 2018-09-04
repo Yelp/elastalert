@@ -238,6 +238,7 @@ properties:
   slack_parse_override: {enum: [none, full]}
   slack_text_string: {type: string}
   slack_ignore_ssl_errors: {type: boolean}
+  slack_ca_certs: {type: string}
 
   ### PagerDuty
   pagerduty_service_key: {type: string}
