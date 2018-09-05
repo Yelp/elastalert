@@ -1800,8 +1800,7 @@ class HiveAlerter(Alerter):
 
         api = TheHiveApi(
             '{hive_host}:{hive_port}'.format(**connection_details),
-            '{hive_username}'.format(**connection_details),
-            password=connection_details.get('hive_password', None),
+            connection_details.get('hive_apikey',''),
             proxies=connection_details.get('hive_proxies', {'http': '', 'https': ''}),
             cert=connection_details.get('hive_verify', False))
 
