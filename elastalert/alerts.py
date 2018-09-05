@@ -1836,9 +1836,7 @@ class HiveAlerter(Alerter):
                     alert_config[alert_config_field] = formatted_list
 
             alert = Alert(**alert_config)
-            print(Alert)
             response = api.create_alert(alert)
-            print(response)
             if response.status_code != 201:
                 raise Exception('alert not successfully created in TheHive\n{}'.format(response.text))
 
