@@ -41,6 +41,7 @@ Currently, we have support built in for these alert types:
 - Telegram
 - Debug
 - Stomp
+- theHive
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
 
