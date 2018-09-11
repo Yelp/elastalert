@@ -687,6 +687,8 @@ guaranteed to have the exact same results as with Elasticsearch. For example, an
 
 ``--alert``: Trigger real alerts instead of the debug (logging text) alert.
 
+``--formatted-output``: Output results in formatted JSON.
+
 .. note::
    Results from running this script may not always be the same as if an actual ElastAlert instance was running. Some rule types, such as spike
    and flatline require a minimum elapsed time before they begin alerting, based on their timeframe. In addition, use_count_query and
