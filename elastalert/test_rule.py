@@ -140,7 +140,6 @@ class MockElastAlerter(object):
             # If the index starts with 'logstash', fields with .raw will be available but won't in _source
             if term not in terms and not (term.endswith('.raw') and term[:-4] in terms and index.startswith('logstash')):
                 print("top_count_key %s may be missing" % (term), file=sys.stderr)
-        
         if not args.formatted_output:
             print('')  # Newline
 
@@ -160,7 +159,6 @@ class MockElastAlerter(object):
                 self.formatted_output['download_hits'] = num_hits
             else:
                 print("Downloaded %s documents to save" % (num_hits))
-                
             return res['hits']['hits']
 
     def mock_count(self, rule, start, end, index):
