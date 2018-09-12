@@ -116,7 +116,7 @@ class MockElastAlerter(object):
         if args.formatted_output:
             self.formatted_output['hits'] = num_hits
             self.formatted_output['days'] = args.days
-            self.formatted_output['terms'] = terms
+            self.formatted_output['terms'] = terms.keys()
         else:
             print("Got %s hits from the last %s day%s" % (num_hits, args.days, 's' if args.days > 1 else ''))
             print("\nAvailable terms in first hit:")
