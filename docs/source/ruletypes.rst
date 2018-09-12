@@ -1126,6 +1126,8 @@ evaluated separately against the threshold(s).
 For example, "%.2f" will round it to 2 decimal places.
 See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
 
+``min_denominator``: Minimum number of documents on which percentage calculation will apply. Default is 0.
+
 .. _alerts:
 
 Alerts
