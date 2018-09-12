@@ -144,7 +144,7 @@ class MockElastAlerter(object):
             print('')  # Newline
 
         # Download up to max_query_size (defaults to 10,000) documents to save
-        if args.save and not args.count:
+        if (args.save or args.formatted_output) and not args.count :
             try:
                 res = es_client.search(index, size=args.max_query_size, body=query, ignore_unavailable=True)
             except Exception as e:
@@ -155,9 +155,7 @@ class MockElastAlerter(object):
                 return None
             num_hits = len(res['hits']['hits'])
 
-            if args.formatted_output:
-                self.formatted_output['download_hits'] = num_hits
-            else:
+            if args.save:
                 print("Downloaded %s documents to save" % (num_hits))
             return res['hits']['hits']
 
@@ -428,6 +426,8 @@ class MockElastAlerter(object):
                 self.data = json.loads(data_file.read())
         else:
             hits = self.test_file(copy.deepcopy(rule_yaml), args)
+            if hits and args.formatted_output:
+                self.formatted_output['results'] = json.loads(json.dumps(hits))
             if hits and args.save:
                 with open(args.save, 'wb') as data_file:
                     # Add _id to _source for dump
