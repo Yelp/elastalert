@@ -787,7 +787,7 @@ may be counted on a per-``query_key`` basis.
 
 This rule requires two additional options:
 
-``num_events``: The number of events which will trigger an alert.
+``num_events``: The number of events which will trigger an alert, inclusive.
 
 ``timeframe``: The time that ``num_events`` must occur within.
 
