@@ -1918,3 +1918,45 @@ Example usage::
 
     jira_priority: $priority$
     jira_alert_owner: $owner$
+
+
+theHive
+~~~~~~~
+
+theHive alert type will send JSON request to theHive (Security Incident Response Platform) with TheHive4py API. Sent request will be stored like Hive Alert with description and observables.
+
+Required:
+
+Need to configure connection details for TheHive into the Elastalert rule, example::
+
+     hive_connection:
+       hive_host: http://localhost
+       hive_port: <hive_port>
+       hive_apikey: <hive_apikey>
+
+     hive_proxies:
+       http: ''
+       https: ''
+
+Configuration request::
+
+      hive_alert_config:
+        title: 'Title'  ## This will default to {rule[index]_rule[name]} if not provided
+        type: 'external'
+        source: 'elastalert'
+        description: '{match[field1]} {rule[name]} Sample description'
+        severity: 2
+        tags: ['tag1', 'tag2 {rule[name]}']
+        tlp: 3
+        status: 'New'
+        follow: True
+
+Optional:
+
+If needed, matched data fields can be mapped to TheHive observable types using python string formatting::
+
+    hive_observable_data_mapping:
+        - domain: "{match[field1]}_{rule[name]}"
+        - domain: "{match[field]}"
+        - ip: "{match[ip_field]}"
+

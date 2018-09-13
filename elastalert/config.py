@@ -81,7 +81,8 @@ alerts_mapping = {
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
     'alerta': alerts.AlertaAlerter,
-    'post': alerts.HTTPPostAlerter
+    'post': alerts.HTTPPostAlerter,
+    'hivealerter': alerts.HiveAlerter
 }
 # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
 # For example, jira goes before email so the ticket # will be added to the resulting email.
