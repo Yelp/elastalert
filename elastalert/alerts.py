@@ -1562,7 +1562,7 @@ class GoogleChatAlerter(Alerter):
         if isinstance(self.googlechat_webhook_url, basestring):
             self.googlechat_webhook_url = [self.googlechat_webhook_url]
         self.googlechat_format = self.rule.get('googlechat_format', 'basic')
-        self.googlechat_header_title =  self.rule.get('googlechat_header_title', None)
+        self.googlechat_header_title = self.rule.get('googlechat_header_title', None)
         self.googlechat_header_subtitle = self.rule.get('googlechat_header_subtitle', None)
         self.googlechat_header_image = self.rule.get('googlechat_header_image', None)
         self.googlechat_footer_kibanalink = self.rule.get('googlechat_footer_kibanalink', None)
@@ -1581,18 +1581,18 @@ class GoogleChatAlerter(Alerter):
         footer = None
         if self.googlechat_footer_kibanalink:
             footer = {"widgets": [{
-                        "buttons": [{
-                            "textButton": {
-                                "text": "VISIT KIBANA",
-                                "onClick": {
-                                    "openLink": {
-                                        "url": self.googlechat_footer_kibanalink
-                                    }
+                "buttons": [{
+                    "textButton": {
+                        "text": "VISIT KIBANA",
+                        "onClick": {
+                            "openLink": {
+                                "url": self.googlechat_footer_kibanalink
                                 }
                             }
-                          }]
-                        }]
-                    }
+                        }
+                    }]
+                }]
+                }
         return footer
 
     def create_card(self, matches):
