@@ -46,6 +46,7 @@ setup(
         'texttable>=0.8.8',
         'twilio>=6.0.0,<6.1',
         'TheHive4py>=1.4.4',
-        'python-magic>=0.4.15'
+        'python-magic>=0.4.15',
+        'cffi>=1.11.5'
     ]
 )
