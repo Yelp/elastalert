@@ -79,6 +79,7 @@ alerts_mapping = {
     'twilio': alerts.TwilioAlerter,
     'victorops': alerts.VictorOpsAlerter,
     'telegram': alerts.TelegramAlerter,
+    'googlechat': alerts.GoogleChatAlerter,
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
     'alerta': alerts.AlertaAlerter,

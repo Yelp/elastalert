@@ -1667,6 +1667,27 @@ Optional:
 
 ``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
 
+GoogleChat
+~~~~~~~~~~
+GoogleChat alerter will send a notification to a predefined GoogleChat channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``googlechat_webhook_url``: The webhook URL that includes the channel (room) you want to post to. Go to the Google Chat website https://chat.google.com and choose the channel in which you wish to receive the notifications. Select 'Configure Webhooks' to create a new webhook or to copy the URL from an existing one. You can use a list of URLs to send to multiple channels.
+
+Optional:
+
+``googlechat_format``: Formatting for the notification. Can be either 'card' or 'basic' (default).
+
+``googlechat_header_title``: Sets the text for the card header title. (Only used if format=card)
+
+``googlechat_header_subtitle``: Sets the text for the card header subtitle. (Only used if format=card)
+
+``googlechat_header_image``: URL for the card header icon. (Only used if format=card)
+
+``googlechat_footer_kibanalink``: URL to Kibana to include in the card footer. (Only used if format=card)
+
+
 PagerDuty
 ~~~~~~~~~
 
