@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 import time
+import uuid
 import warnings
 from email.mime.text import MIMEText
 from email.utils import formatdate
@@ -1571,10 +1572,10 @@ class GoogleChatAlerter(Alerter):
         header = None
         if self.googlechat_header_title:
             header = {
-                        "title": self.googlechat_header_title,
-                        "subtitle": self.googlechat_header_subtitle,
-                        "imageUrl": self.googlechat_header_image
-                     }
+                "title": self.googlechat_header_title,
+                "subtitle": self.googlechat_header_subtitle,
+                "imageUrl": self.googlechat_header_image
+            }
         return header
 
     def create_footer(self):
@@ -1587,22 +1588,22 @@ class GoogleChatAlerter(Alerter):
                         "onClick": {
                             "openLink": {
                                 "url": self.googlechat_footer_kibanalink
-                                }
                             }
                         }
-                    }]
+                    }
                 }]
-                }
+            }]
+            }
         return footer
 
     def create_card(self, matches):
         card = {"cards": [{
-                    "sections": [{
-                        "widgets": [
-                            {"textParagraph": {"text": self.create_alert_body(matches).encode('UTF-8')}}
-                        ]}
-                    ]}
+            "sections": [{
+                "widgets": [
+                    {"textParagraph": {"text": self.create_alert_body(matches).encode('UTF-8')}}
                 ]}
+            ]}
+        ]}
 
         # Add the optional header
         header = self.create_header()
