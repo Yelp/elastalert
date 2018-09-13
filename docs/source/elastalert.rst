@@ -39,6 +39,7 @@ Currently, we have support built in for these alert types:
 - HipChat
 - Slack
 - Telegram
+- GoogleChat
 - Debug
 - Stomp
 
