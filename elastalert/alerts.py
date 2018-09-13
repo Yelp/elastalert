@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 import time
+import uuid
 import warnings
 from email.mime.text import MIMEText
 from email.utils import formatdate
@@ -20,7 +21,6 @@ from socket import error
 import boto3
 import requests
 import stomp
-import uuid
 from exotel import Exotel
 from jira.client import JIRA
 from jira.exceptions import JIRAError
@@ -29,7 +29,8 @@ from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from texttable import Texttable
 from thehive4py.api import TheHiveApi
-from thehive4py.models import Alert, AlertArtifact
+from thehive4py.models import Alert
+from thehive4py.models import AlertArtifact
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
 from util import EAException
@@ -1574,10 +1575,10 @@ class GoogleChatAlerter(Alerter):
         header = None
         if self.googlechat_header_title:
             header = {
-                        "title": self.googlechat_header_title,
-                        "subtitle": self.googlechat_header_subtitle,
-                        "imageUrl": self.googlechat_header_image
-                     }
+                "title": self.googlechat_header_title,
+                "subtitle": self.googlechat_header_subtitle,
+                "imageUrl": self.googlechat_header_image
+            }
         return header
 
     def create_footer(self):
@@ -1590,22 +1591,22 @@ class GoogleChatAlerter(Alerter):
                         "onClick": {
                             "openLink": {
                                 "url": self.googlechat_footer_kibanalink
-                                }
                             }
                         }
-                    }]
+                    }
                 }]
-                }
+            }]
+            }
         return footer
 
     def create_card(self, matches):
         card = {"cards": [{
-                    "sections": [{
-                        "widgets": [
-                            {"textParagraph": {"text": self.create_alert_body(matches).encode('UTF-8')}}
-                        ]}
-                    ]}
+            "sections": [{
+                "widgets": [
+                    {"textParagraph": {"text": self.create_alert_body(matches).encode('UTF-8')}}
                 ]}
+            ]}
+        ]}
 
         # Add the optional header
         header = self.create_header()
@@ -1989,6 +1990,7 @@ class StrideAlerter(Alerter):
                 'stride_cloud_id': self.stride_cloud_id,
                 'stride_conversation_id': self.stride_conversation_id}
 
+
 class HiveAlerter(Alerter):
     """
     Use matched data to create alerts containing observables in an instance of TheHive
@@ -2002,7 +2004,7 @@ class HiveAlerter(Alerter):
 
         api = TheHiveApi(
             '{hive_host}:{hive_port}'.format(**connection_details),
-            connection_details.get('hive_apikey',''),
+            connection_details.get('hive_apikey', ''),
             proxies=connection_details.get('hive_proxies', {'http': '', 'https': ''}),
             cert=connection_details.get('hive_verify', False))
 
@@ -2013,7 +2015,7 @@ class HiveAlerter(Alerter):
             for mapping in self.rule.get('hive_observable_data_mapping', []):
                 for observable_type, match_data_key in mapping.iteritems():
                     try:
-                        if match_data_key.replace("{match[","").replace("]}","") in context['match']:
+                        if match_data_key.replace("{match[", "").replace("]}", "") in context['match']:
                             artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
                     except KeyError:
                         raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
@@ -2033,7 +2035,7 @@ class HiveAlerter(Alerter):
                     for element in alert_config_value:
                         try:
                             formatted_list.append(element.format(**context))
-                        except:
+                        except KeyError:
                             formatted_list.append(element)
                     alert_config[alert_config_field] = formatted_list
 
