@@ -1109,6 +1109,7 @@ class PercentageMatchRule(BaseAggregationRule):
         if 'max_percentage' not in self.rules and 'min_percentage' not in self.rules:
             raise EAException("PercentageMatchRule must have at least one of either min_percentage or max_percentage")
 
+        self.min_denominator = self.rules.get('min_denominator', 0)
         self.match_bucket_filter = self.rules['match_bucket_filter']
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
 
@@ -1146,7 +1147,7 @@ class PercentageMatchRule(BaseAggregationRule):
             return
         else:
             total_count = other_bucket_count + match_bucket_count
-            if total_count == 0:
+            if total_count == 0 or total_count < self.min_denominator:
                 return
             else:
                 match_percentage = (match_bucket_count * 1.0) / (total_count * 1.0) * 100
