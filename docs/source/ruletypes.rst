@@ -1980,7 +1980,19 @@ theHive alert type will send JSON request to theHive (Security Incident Response
 
 Required:
 
-Need to configure connection details for TheHive into the Elastalert rule, example::
+``hive_connection``: The connection details as key:values. Required keys are ``hive_host``, ``hive_port`` and ``hive_apikey``.
+
+``hive_alert_config``: Configuration options for the alert. 
+
+Optional:
+
+``hive_proxies``: Proxy configuration.
+
+``hive_observable_data_mapping``: If needed, matched data fields can be mapped to TheHive observable types using python string formatting.
+
+Example usage::
+
+	alert: hivealerter
 
      hive_connection:
        hive_host: http://localhost
@@ -1990,8 +2002,6 @@ Need to configure connection details for TheHive into the Elastalert rule, examp
      hive_proxies:
        http: ''
        https: ''
-
-Configuration request::
 
       hive_alert_config:
         title: 'Title'  ## This will default to {rule[index]_rule[name]} if not provided
@@ -2004,12 +2014,7 @@ Configuration request::
         status: 'New'
         follow: True
 
-Optional:
-
-If needed, matched data fields can be mapped to TheHive observable types using python string formatting::
-
     hive_observable_data_mapping:
         - domain: "{match[field1]}_{rule[name]}"
         - domain: "{match[field]}"
         - ip: "{match[ip_field]}"
-

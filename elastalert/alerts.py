@@ -2035,7 +2035,7 @@ class HiveAlerter(Alerter):
                     for element in alert_config_value:
                         try:
                             formatted_list.append(element.format(**context))
-                        except KeyError:
+                        except (AttributeError, KeyError):
                             formatted_list.append(element)
                     alert_config[alert_config_field] = formatted_list
 
