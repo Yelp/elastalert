@@ -11,6 +11,9 @@ from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 from six import string_types
 
+from smtplib import SMTP
+from smtplib import SMTP_SSL
+
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
 
@@ -302,6 +305,29 @@ def elasticsearch_client(conf):
                          send_get_body_as=es_conn_conf['send_get_body_as'],
                          client_cert=es_conn_conf['client_cert'],
                          client_key=es_conn_conf['client_key'])
+
+
+def build_smtp_connection(conf):
+    smtp_connection = None
+    if 'smtp_host' not in conf or conf['smtp_host'] is None:
+        conf['smtp_host'] = 'localhost'
+    if 'smtp_ssl' in conf and conf['smtp_ssl'] is True:
+        if 'smtp_port' in conf and conf['smtp_port'] is not None:
+            smtp_connection = SMTP_SSL(conf['smtp_host'], conf['smtp_port'],
+                                       keyfile=conf['smtp_key_file'], certifile=conf['smtp_cert_file'])
+        else:
+            smtp_connection = SMTP_SSL(conf['smtp_host'], keyfile=conf['smtp_key_file'], certifile=conf['smtp_cert_file'])
+    else:
+        if 'smtp_port' in conf and conf['smtp_port'] is not None:
+            smtp_connection = SMTP(conf['smtp_host'], conf['smtp_port'])
+        else:
+            smtp_connection = SMTP(conf['smtp_host'])
+        smtp_connection.ehlo()
+        if smtp_connection.has_extn('STARTTLS'):
+            smtp_connection.starttls(keyfile=conf['smtp_key_file'], certfile=conf['smtp_cert_file'])
+    if 'user' in conf and 'password' in conf:
+        smtp_connection.login(conf['user'], conf['password'])
+    return smtp_connection
 
 
 def build_es_conn_config(conf):

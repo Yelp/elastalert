@@ -12,8 +12,6 @@ import warnings
 from email.mime.text import MIMEText
 from email.utils import formatdate
 from HTMLParser import HTMLParser
-from smtplib import SMTP
-from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
@@ -40,6 +38,7 @@ from util import pretty_ts
 from util import resolve_string
 from util import ts_now
 from util import ts_to_dt
+from util import build_smtp_connection
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -410,6 +409,8 @@ class EmailAlerter(Alerter):
             self.get_account(self.rule['smtp_auth_file'])
         self.smtp_key_file = self.rule.get('smtp_key_file')
         self.smtp_cert_file = self.rule.get('smtp_cert_file')
+        if (self.rule.get('smtp_auth_file')):
+            self.get_account(self.rule['smtp_auth_file'])
         # Convert email to a list if it isn't already
         if isinstance(self.rule['email'], basestring):
             self.rule['email'] = [self.rule['email']]
@@ -461,21 +462,8 @@ class EmailAlerter(Alerter):
             to_addr = to_addr + self.rule['bcc']
 
         try:
-            if self.smtp_ssl:
-                if self.smtp_port:
-                    self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port, keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
-                else:
-                    self.smtp = SMTP_SSL(self.smtp_host, keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
-            else:
-                if self.smtp_port:
-                    self.smtp = SMTP(self.smtp_host, self.smtp_port)
-                else:
-                    self.smtp = SMTP(self.smtp_host)
-                self.smtp.ehlo()
-                if self.smtp.has_extn('STARTTLS'):
-                    self.smtp.starttls(keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
-            if 'smtp_auth_file' in self.rule:
-                self.smtp.login(self.user, self.password)
+            smtp_config = self.collect_config()
+            self.smtp = build_smtp_connection(smtp_config)
         except (SMTPException, error) as e:
             raise EAException("Error connecting to SMTP host: %s" % (e))
         except SMTPAuthenticationError as e:
@@ -499,6 +487,19 @@ class EmailAlerter(Alerter):
     def get_info(self):
         return {'type': 'email',
                 'recipients': self.rule['email']}
+
+    def collect_config(self):
+        smtp_config = {}
+        smtp_config['smtp_host'] = self.smtp_host
+        smtp_config['smtp_ssl'] = self.smtp_ssl
+        smtp_config['from_addr'] = self.from_addr
+        smtp_config['smtp_port'] = self.smtp_port
+        if self.rule.get('smtp_auth_file'):
+            smtp_config['user'] = self.user
+            smtp_config['password'] = self.password
+        smtp_config['smtp_key_file'] = self.rule.get('smtp_key_file')
+        smtp_config['smtp_cert_file'] = self.rule.get('smtp_cert_file')
+        return smtp_config
 
 
 class JiraAlerter(Alerter):
