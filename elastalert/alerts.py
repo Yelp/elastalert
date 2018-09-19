@@ -1320,10 +1320,14 @@ class PagerDutyAlerter(Alerter):
 
         self.pagerduty_api_version = self.rule.get('pagerduty_api_version', 'v1')
         self.pagerduty_v2_payload_class = self.rule.get('pagerduty_v2_payload_class', '')
+        self.pagerduty_v2_payload_class_args = self.rule.get('pagerduty_v2_payload_class_args', None)
         self.pagerduty_v2_payload_component = self.rule.get('pagerduty_v2_payload_component', '')
+        self.pagerduty_v2_payload_component_args = self.rule.get('pagerduty_v2_payload_component_args', None)
         self.pagerduty_v2_payload_group = self.rule.get('pagerduty_v2_payload_group', '')
+        self.pagerduty_v2_payload_group_args = self.rule.get('pagerduty_v2_payload_group_args', None)
         self.pagerduty_v2_payload_severity = self.rule.get('pagerduty_v2_payload_severity', 'critical')
         self.pagerduty_v2_payload_source = self.rule.get('pagerduty_v2_payload_source', 'ElastAlert')
+        self.pagerduty_v2_payload_source_args = self.rule.get('pagerduty_v2_payload_source_args', None)
 
         if self.pagerduty_api_version == 'v2':
             self.url = 'https://events.pagerduty.com/v2/enqueue'
@@ -1342,11 +1346,11 @@ class PagerDutyAlerter(Alerter):
                 'dedup_key': self.get_incident_key(matches),
                 'client': self.pagerduty_client_name,
                 'payload': {
-                    'class': self.pagerduty_v2_payload_class,
-                    'component': self.pagerduty_v2_payload_component,
-                    'group': self.pagerduty_v2_payload_group,
+                    'class': self.resolve_formatted_key(self.pagerduty_v2_payload_class, self.pagerduty_v2_payload_class_args, matches),
+                    'component': self.resolve_formatted_key(self.pagerduty_v2_payload_component, self.pagerduty_v2_payload_component_args, matches),
+                    'group': self.resolve_formatted_key(self.pagerduty_v2_payload_group, self.pagerduty_v2_payload_group_args, matches),
                     'severity': self.pagerduty_v2_payload_severity,
-                    'source': self.pagerduty_v2_payload_source,
+                    'source': self.resolve_formatted_key(self.pagerduty_v2_payload_source, self.pagerduty_v2_payload_source_args, matches),
                     'summary': self.create_title(matches),
                     'custom_details': {
                         'information': body.encode('UTF-8'),
@@ -1384,6 +1388,23 @@ class PagerDutyAlerter(Alerter):
             elastalert_logger.info("Resolve sent to PagerDuty")
         elif self.pagerduty_event_type == 'acknowledge':
             elastalert_logger.info("acknowledge sent to PagerDuty")
+
+    def resolve_formatted_key(self, key, args, matches):
+        if args:
+            key_values = [lookup_es_key(matches[0], arg) for arg in args]
+
+            # Populate values with rule level properties too
+            for i in range(len(key_values)):
+                if key_values[i] is None:
+                    key_value = self.rule.get(args[i])
+                    if key_value:
+                        key_values[i] = key_value
+
+            missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
+            key_values = [missing if val is None else val for val in key_values]
+            return key.format(*key_values)
+        else:
+            return key
 
     def get_incident_key(self, matches):
         if self.pagerduty_incident_key_args:
