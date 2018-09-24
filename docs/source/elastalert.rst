@@ -191,6 +191,8 @@ The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticse
 
 ``skip_invalid``: If ``True``, skip invalid files instead of exiting.
 
+``add_metadata_alert``: If set, alerts will include metadata described in rules (``description``, ``owner`` and ``priority``); set to ``True`` or ``False``. The default is ``False``.
+
 .. _runningelastalert:
 
 Running ElastAlert
