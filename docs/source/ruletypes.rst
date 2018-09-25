@@ -84,6 +84,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``priority`` (int, default 2)                                |           |
 +--------------------------------------------------------------+           |
+| ``category`` (string, default empty string)                  |           |
++--------------------------------------------------------------+           |
 | ``scan_entire_timeframe`` (bool, default False)              |           |
 +--------------------------------------------------------------+           |
 | ``import`` (string)                                          |           |
@@ -405,6 +407,11 @@ priority
 ^^^^^^^^
 
 ``priority``: This value will be used to identify the relative priority of the alert. Optionally, this field can be included in any alert type (e.g. for use in email subject/body text). (Optional, int, default 2)
+
+category
+^^^^^^^^
+
+``category``: This value will be used to identify the category of the alert. Optionally, this field can be included in any alert type (e.g. for use in email subject/body text). (Optional, string, default empty string)
 
 max_query_size
 ^^^^^^^^^^^^^^
