@@ -1463,6 +1463,7 @@ class ElastAlerter():
         }
 
         if self.add_metadata_alert:
+            body['category'] = rule['category']
             body['description'] = rule['description']
             body['owner'] = rule['owner']
             body['priority'] = rule['priority']
