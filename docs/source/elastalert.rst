@@ -189,9 +189,9 @@ The default value is ``False``. Elasticsearch 2.0 - 2.3 does not support dots in
 ``string_multi_field_name``: If set, the suffix to use for the subfield for string multi-fields in Elasticsearch.
 The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticsearch 5.
 
-``skip_invalid``: If ``True``, skip invalid files instead of exiting.
+``add_metadata_alert``: If set, alerts will include metadata described in rules (``category``, ``description``, ``owner`` and ``priority``); set to ``True`` or ``False``. The default is ``False``.
 
-``add_metadata_alert``: If set, alerts will include metadata described in rules (``description``, ``owner`` and ``priority``); set to ``True`` or ``False``. The default is ``False``.
+``skip_invalid``: If ``True``, skip invalid files instead of exiting.
 
 .. _runningelastalert:
 
