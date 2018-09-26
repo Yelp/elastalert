@@ -1729,13 +1729,21 @@ See https://v2.developer.pagerduty.com/docs/send-an-event-events-api-v2
 
 ``pagerduty_v2_payload_class``: Sets the class of the payload. (the event type in PagerDuty)
 
+``pagerduty_v2_payload_class_args``: If set, and ``pagerduty_v2_payload_class`` is a formattable string, Elastalert will format the class based on the provided array of fields from the rule or match.
+
 ``pagerduty_v2_payload_component``: Sets the component of the payload. (what program/interface/etc the event came from)
 
+``pagerduty_v2_payload_component_args``: If set, and ``pagerduty_v2_payload_component`` is a formattable string, Elastalert will format the component based on the provided array of fields from the rule or match.
+
 ``pagerduty_v2_payload_group``: Sets the logical grouping (e.g. app-stack)
+
+``pagerduty_v2_payload_group_args``: If set, and ``pagerduty_v2_payload_group`` is a formattable string, Elastalert will format the group based on the provided array of fields from the rule or match.
 
 ``pagerduty_v2_payload_severity``: Sets the severity of the page. (defaults to `critical`, valid options: `critical`, `error`, `warning`, `info`)
 
 ``pagerduty_v2_payload_source``: Sets the source of the event, preferably the hostname or fqdn.
+
+``pagerduty_v2_payload_source_args``: If set, and ``pagerduty_v2_payload_source`` is a formattable string, Elastalert will format the source based on the provided array of fields from the rule or match.
 
 Exotel
 ~~~~~~
