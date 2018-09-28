@@ -89,7 +89,7 @@ Eg: ``--rule this_rule.yaml``
 
 ## Third Party Tools And Extras
 ### Kibana plugin
-![img](https://raw.githubusercontent.com/bitsensor/elastalert-kibana-plugin/master/kibana-elastalert-plugin-showcase.gif)
+![img](https://raw.githubusercontent.com/bitsensor/elastalert-kibana-plugin/master/showcase.gif)
 Available at the [ElastAlert Kibana plugin repository](https://github.com/bitsensor/elastalert-kibana-plugin).
 
 ### Docker
