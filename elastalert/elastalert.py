@@ -141,6 +141,7 @@ class ElastAlerter():
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.alerts_sent = 0
+        self.cumulative_hits = 0
         self.num_hits = 0
         self.num_dupes = 0
         self.current_es = None
@@ -392,9 +393,13 @@ class ElastAlerter():
                 self.total_hits = int(res['hits']['total'])
 
             if len(res.get('_shards', {}).get('failures', [])) > 0:
-                errs = [e['reason']['reason'] for e in res['_shards']['failures'] if 'Failed to parse' in e['reason']['reason']]
-                if len(errs):
-                    raise ElasticsearchException(errs)
+                try:
+                    errs = [e['reason']['reason'] for e in res['_shards']['failures'] if 'Failed to parse' in e['reason']['reason']]
+                    if len(errs):
+                        raise ElasticsearchException(errs)
+                except (TypeError, KeyError):
+                    # Different versions of ES have this formatted in different ways. Fallback to str-ing the whole thing
+                    raise ElasticsearchException(str(res['_shards']['failures']))
 
             logging.debug(str(res))
         except ElasticsearchException as e:

@@ -389,7 +389,7 @@ def test_opsgenie_basic():
 
         assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
-        assert mcal[0][1]['json']['responders'] == [{'id': 'lytics', 'type': 'user'}]
+        assert mcal[0][1]['json']['responders'] == [{'username': 'lytics', 'type': 'user'}]
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
 
 
@@ -415,7 +415,7 @@ def test_opsgenie_frequency():
 
         assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
-        assert mcal[0][1]['json']['responders'] == [{'id': 'lytics', 'type': 'user'}]
+        assert mcal[0][1]['json']['responders'] == [{'username': 'lytics', 'type': 'user'}]
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
 
@@ -1090,6 +1090,66 @@ def test_slack_uses_custom_slack_channel():
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_slack_uses_list_of_custom_slack_channel():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': ['http://please.dontgohere.slack'],
+        'slack_channel_override': ['#test-alert', '#test-alert2'],
+        'alert': []
+    }
+    load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data1 = {
+        'username': 'elastalert',
+        'channel': '#test-alert',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['name'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    expected_data2 = {
+        'username': 'elastalert',
+        'channel': '#test-alert2',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['name'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    mock_post_request.assert_called_with(
+        rule['slack_webhook_url'][0],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True
+    )
+    assert expected_data1 == json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data2 == json.loads(mock_post_request.call_args_list[1][1]['data'])
 
 
 def test_http_alerter_with_payload():

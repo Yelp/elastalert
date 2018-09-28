@@ -76,9 +76,9 @@ class OpsGenieAlerter(Alerter):
         if self.account:
             post['user'] = self.account
         if self.recipients:
-            post['responders'] = self._fill_responders(self.recipients, 'user')
+            post['responders'] = [{'username': r, 'type': 'user'} for r in self.recipients]
         if self.teams:
-            post['teams'] = self._fill_responders(self.teams, 'team')
+            post['teams'] = [{'name': r, 'type': 'team'} for r in self.teams]
         post['description'] = body
         post['source'] = 'ElastAlert'
         post['tags'] = self.tags
