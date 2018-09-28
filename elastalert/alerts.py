@@ -1108,6 +1108,7 @@ class SlackAlerter(Alerter):
         self.slack_channel_override = self.rule.get('slack_channel_override', '')
         if isinstance(self.slack_channel_override, basestring):
             self.slack_channel_override = [self.slack_channel_override]
+        self.slack_title_link = self.rule.get('slack_title_link', '')
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_icon_url_override = self.rule.get('slack_icon_url_override', '')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
@@ -1170,6 +1171,9 @@ class SlackAlerter(Alerter):
             payload['icon_url'] = self.slack_icon_url_override
         else:
             payload['icon_emoji'] = self.slack_emoji_override
+
+        if self.slack_title_link != '':
+            payload['attachments'][0]['title_link'] = self.slack_title_link
 
         for url in self.slack_webhook_url:
             for channel_override in self.slack_channel_override:
