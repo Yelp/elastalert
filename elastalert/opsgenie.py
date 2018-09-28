@@ -17,10 +17,10 @@ class OpsGenieAlerter(Alerter):
         super(OpsGenieAlerter, self).__init__(*args)
         self.account = self.rule.get('opsgenie_account')
         self.api_key = self.rule.get('opsgenie_key', 'key')
-        self.default_reciepients = self.rule.get('opsgenie_default_receipients',None)
+        self.default_reciepients = self.rule.get('opsgenie_default_receipients', None)
         self.recipients = self.rule.get('opsgenie_recipients')
         self.recipients_args = self.rule.get('opsgenie_recipients_args')
-        self.default_teams = self.rule.get('opsgenie_default_teams',None)
+        self.default_teams = self.rule.get('opsgenie_default_teams', None)
         self.teams = self.rule.get('opsgenie_teams')
         self.teams_args = self.rule.get('opsgenie_teams_args')
         self.tags = self.rule.get('opsgenie_tags', []) + ['ElastAlert', self.rule['name']]
@@ -35,7 +35,7 @@ class OpsGenieAlerter(Alerter):
     def _parse_responders(self, responders, responder_args, matches, default_responders):
         if responder_args:
             formated_responders = list()
-            responders_values = dict( (k,lookup_es_key(matches[0], v)) for k, v in responder_args.iteritems())
+            responders_values = dict((k, lookup_es_key(matches[0], v)) for k, v in responder_args.iteritems())
             responders_values = dict((k, v) for k, v in responders_values.iteritems() if v)
 
             for responder in responders:
@@ -43,7 +43,7 @@ class OpsGenieAlerter(Alerter):
                 try:
                     formated_responders.append(responder.format(**responders_values))
                 except KeyError as error:
-                    logging.warn("OpsGenieAlerter: Cannot create responder for OpsGenie Alert. Key not foud: %s. "%(error))
+                    logging.warn("OpsGenieAlerter: Cannot create responder for OpsGenie Alert. Key not foud: %s. " % (error))
             if not formated_responders:
                 logging.warn("OpsGenieAlerter: no responders can be formed. Trying the default responder ")
                 if not default_responders:
