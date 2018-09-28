@@ -47,6 +47,7 @@ Currently, we have built-in support for the following alert types:
 - MS Teams
 - Slack
 - Telegram
+- GoogleChat
 - AWS SNS
 - VictorOps
 - PagerDuty

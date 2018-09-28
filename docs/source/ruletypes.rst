@@ -687,6 +687,8 @@ guaranteed to have the exact same results as with Elasticsearch. For example, an
 
 ``--alert``: Trigger real alerts instead of the debug (logging text) alert.
 
+``--formatted-output``: Output results in formatted JSON.
+
 .. note::
    Results from running this script may not always be the same as if an actual ElastAlert instance was running. Some rule types, such as spike
    and flatline require a minimum elapsed time before they begin alerting, based on their timeframe. In addition, use_count_query and
@@ -785,7 +787,7 @@ may be counted on a per-``query_key`` basis.
 
 This rule requires two additional options:
 
-``num_events``: The number of events which will trigger an alert.
+``num_events``: The number of events which will trigger an alert, inclusive.
 
 ``timeframe``: The time that ``num_events`` must occur within.
 
@@ -1123,6 +1125,8 @@ evaluated separately against the threshold(s).
 ``percentage_format_string``: An optional format string to apply to the percentage value in the alert match text. Must be a valid python format string.
 For example, "%.2f" will round it to 2 decimal places.
 See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
+
+``min_denominator``: Minimum number of documents on which percentage calculation will apply. Default is 0.
 
 .. _alerts:
 
@@ -1617,6 +1621,36 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 ``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
 
 
+Mattermost
+~~~~~
+
+Mattermost alerter will send a notification to a predefined Mattermost channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following option:
+
+``mattermost_webhook_url``: The webhook URL. Follow the instructions on https://docs.mattermost.com/developer/webhooks-incoming.html to create an incoming webhook on your Mattermost installation.
+
+Optional:
+
+``mattermost_proxy``: By default ElastAlert will not use a network proxy to send notifications to Mattermost. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``mattermost_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+
+``mattermost_username_override``: By default Mattermost will use your username when posting to the channel. Use this option to change it (free text).
+
+``mattermost_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
+
+``mattermost_icon_url_override``: By default ElastAlert will use the default webhook icon when posting to the channel. You can provide icon_url to use custom image.
+Provide absolute address of the picture (for example: http://some.address.com/image.jpg) or Base64 data url.
+
+``mattermost_msg_pretext``: You can set the message attachment pretext using this option.
+
+``mattermost_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good', 'warning', or hex color code.
+
+``mattermost_msg_fields``: You can add fields to your Mattermost alerts using this option. You can specify the title using `title` and the text value using `value`. Additionally you can specify whether this field should be a `short` field using `short: true`. If you set `args` and `value` is a formattable string, ElastAlert will format the incident key based on the provided array of fields from the rule or match.
+See https://docs.mattermost.com/developer/message-attachments.html#fields for more information.
+
+
 Telegram
 ~~~~~~~~
 Telegram alerter will send a notification to a predefined Telegram username or channel. The body of the notification is formatted the same as with other alerters.
@@ -1632,6 +1666,27 @@ Optional:
 ``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
 
 ``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
+
+GoogleChat
+~~~~~~~~~~
+GoogleChat alerter will send a notification to a predefined GoogleChat channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``googlechat_webhook_url``: The webhook URL that includes the channel (room) you want to post to. Go to the Google Chat website https://chat.google.com and choose the channel in which you wish to receive the notifications. Select 'Configure Webhooks' to create a new webhook or to copy the URL from an existing one. You can use a list of URLs to send to multiple channels.
+
+Optional:
+
+``googlechat_format``: Formatting for the notification. Can be either 'card' or 'basic' (default).
+
+``googlechat_header_title``: Sets the text for the card header title. (Only used if format=card)
+
+``googlechat_header_subtitle``: Sets the text for the card header subtitle. (Only used if format=card)
+
+``googlechat_header_image``: URL for the card header icon. (Only used if format=card)
+
+``googlechat_footer_kibanalink``: URL to Kibana to include in the card footer. (Only used if format=card)
+
 
 PagerDuty
 ~~~~~~~~~
@@ -1916,3 +1971,50 @@ Example usage::
 
     jira_priority: $priority$
     jira_alert_owner: $owner$
+
+
+theHive
+~~~~~~~
+
+theHive alert type will send JSON request to theHive (Security Incident Response Platform) with TheHive4py API. Sent request will be stored like Hive Alert with description and observables.
+
+Required:
+
+``hive_connection``: The connection details as key:values. Required keys are ``hive_host``, ``hive_port`` and ``hive_apikey``.
+
+``hive_alert_config``: Configuration options for the alert. 
+
+Optional:
+
+``hive_proxies``: Proxy configuration.
+
+``hive_observable_data_mapping``: If needed, matched data fields can be mapped to TheHive observable types using python string formatting.
+
+Example usage::
+
+	alert: hivealerter
+
+     hive_connection:
+       hive_host: http://localhost
+       hive_port: <hive_port>
+       hive_apikey: <hive_apikey>
+
+     hive_proxies:
+       http: ''
+       https: ''
+
+      hive_alert_config:
+        title: 'Title'  ## This will default to {rule[index]_rule[name]} if not provided
+        type: 'external'
+        source: 'elastalert'
+        description: '{match[field1]} {rule[name]} Sample description'
+        severity: 2
+        tags: ['tag1', 'tag2 {rule[name]}']
+        tlp: 3
+        status: 'New'
+        follow: True
+
+    hive_observable_data_mapping:
+        - domain: "{match[field1]}_{rule[name]}"
+        - domain: "{match[field]}"
+        - ip: "{match[ip_field]}"

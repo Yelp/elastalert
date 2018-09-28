@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 import time
+import uuid
 import warnings
 from email.mime.text import MIMEText
 from email.utils import formatdate
@@ -23,9 +24,13 @@ import stomp
 from exotel import Exotel
 from jira.client import JIRA
 from jira.exceptions import JIRAError
+from requests.auth import HTTPProxyAuth
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from texttable import Texttable
+from thehive4py.api import TheHiveApi
+from thehive4py.models import Alert
+from thehive4py.models import AlertArtifact
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
 from util import EAException
@@ -1104,6 +1109,8 @@ class SlackAlerter(Alerter):
         self.slack_proxy = self.rule.get('slack_proxy', None)
         self.slack_username_override = self.rule.get('slack_username_override', 'elastalert')
         self.slack_channel_override = self.rule.get('slack_channel_override', '')
+        if isinstance(self.slack_channel_override, basestring):
+            self.slack_channel_override = [self.slack_channel_override]
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_icon_url_override = self.rule.get('slack_icon_url_override', '')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
@@ -1145,7 +1152,6 @@ class SlackAlerter(Alerter):
         proxies = {'https': self.slack_proxy} if self.slack_proxy else None
         payload = {
             'username': self.slack_username_override,
-            'channel': self.slack_channel_override,
             'parse': self.slack_parse_override,
             'text': self.slack_text_string,
             'attachments': [
@@ -1169,23 +1175,134 @@ class SlackAlerter(Alerter):
             payload['icon_emoji'] = self.slack_emoji_override
 
         for url in self.slack_webhook_url:
-            try:
-                if self.slack_ignore_ssl_errors:
-                    requests.packages.urllib3.disable_warnings()
-                response = requests.post(
-                    url, data=json.dumps(payload, cls=DateTimeEncoder),
-                    headers=headers, verify=not self.slack_ignore_ssl_errors,
-                    proxies=proxies)
-                warnings.resetwarnings()
-                response.raise_for_status()
-            except RequestException as e:
-                raise EAException("Error posting to slack: %s" % e)
-        elastalert_logger.info("Alert sent to Slack")
+            for channel_override in self.slack_channel_override:
+                try:
+                    if self.slack_ignore_ssl_errors:
+                        requests.packages.urllib3.disable_warnings()
+                    payload['channel'] = channel_override
+                    response = requests.post(
+                        url, data=json.dumps(payload, cls=DateTimeEncoder),
+                        headers=headers, verify=not self.slack_ignore_ssl_errors,
+                        proxies=proxies)
+                    warnings.resetwarnings()
+                    response.raise_for_status()
+                except RequestException as e:
+                    raise EAException("Error posting to slack: %s" % e)
+        elastalert_logger.info("Alert '%s' sent to Slack" % self.rule['name'])
 
     def get_info(self):
         return {'type': 'slack',
                 'slack_username_override': self.slack_username_override,
                 'slack_webhook_url': self.slack_webhook_url}
+
+
+class MattermostAlerter(Alerter):
+    """ Creates a Mattermsot post for each alert """
+    required_options = frozenset(['mattermost_webhook_url'])
+
+    def __init__(self, rule):
+        super(MattermostAlerter, self).__init__(rule)
+
+        # HTTP config
+        self.mattermost_webhook_url = self.rule['mattermost_webhook_url']
+        if isinstance(self.mattermost_webhook_url, basestring):
+            self.mattermost_webhook_url = [self.mattermost_webhook_url]
+        self.mattermost_proxy = self.rule.get('mattermost_proxy', None)
+        self.mattermost_ignore_ssl_errors = self.rule.get('mattermost_ignore_ssl_errors', False)
+
+        # Override webhook config
+        self.mattermost_username_override = self.rule.get('mattermost_username_override', 'elastalert')
+        self.mattermost_channel_override = self.rule.get('mattermost_channel_override', '')
+        self.mattermost_icon_url_override = self.rule.get('mattermost_icon_url_override', '')
+
+        # Message properties
+        self.mattermost_msg_pretext = self.rule.get('mattermost_msg_pretext', '')
+        self.mattermost_msg_color = self.rule.get('mattermost_msg_color', 'danger')
+        self.mattermost_msg_fields = self.rule.get('mattermost_msg_fields', '')
+
+    def get_aggregation_summary_text__maximum_width(self):
+        width = super(MattermostAlerter, self).get_aggregation_summary_text__maximum_width()
+        # Reduced maximum width for prettier Mattermost display.
+        return min(width, 75)
+
+    def get_aggregation_summary_text(self, matches):
+        text = super(MattermostAlerter, self).get_aggregation_summary_text(matches)
+        if text:
+            text = u'```\n{0}```\n'.format(text)
+        return text
+
+    def populate_fields(self, matches):
+        alert_fields = []
+        missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
+        for field in self.mattermost_msg_fields:
+            field = copy.copy(field)
+            if 'args' in field:
+                args_values = [lookup_es_key(matches[0], arg) or missing for arg in field['args']]
+                if 'value' in field:
+                    field['value'] = field['value'].format(*args_values)
+                else:
+                    field['value'] = "\n".join(str(arg) for arg in args_values)
+                del(field['args'])
+            alert_fields.append(field)
+        return alert_fields
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+        title = self.create_title(matches)
+
+        # post to mattermost
+        headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.mattermost_proxy} if self.mattermost_proxy else None
+        payload = {
+            'attachments': [
+                {
+                    'fallback': "{0}: {1}".format(title, self.mattermost_msg_pretext),
+                    'color': self.mattermost_msg_color,
+                    'title': title,
+                    'pretext': self.mattermost_msg_pretext,
+                    'fields': []
+                }
+            ]
+        }
+
+        if self.rule.get('alert_text_type') == 'alert_text_only':
+            payload['attachments'][0]['text'] = body
+        else:
+            payload['text'] = body
+
+        if self.mattermost_msg_fields != '':
+            payload['attachments'][0]['fields'] = self.populate_fields(matches)
+
+        if self.mattermost_icon_url_override != '':
+            payload['icon_url'] = self.mattermost_icon_url_override
+
+        if self.mattermost_username_override != '':
+            payload['username'] = self.mattermost_username_override
+
+        if self.mattermost_channel_override != '':
+            payload['channel'] = self.mattermost_channel_override
+
+        for url in self.mattermost_webhook_url:
+            try:
+                if self.mattermost_ignore_ssl_errors:
+                    requests.urllib3.disable_warnings()
+
+                response = requests.post(
+                    url, data=json.dumps(payload, cls=DateTimeEncoder),
+                    headers=headers, verify=not self.mattermost_ignore_ssl_errors,
+                    proxies=proxies)
+
+                warnings.resetwarnings()
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error posting to Mattermost: %s" % e)
+        elastalert_logger.info("Alert sent to Mattermost")
+
+    def get_info(self):
+        return {'type': 'mattermost',
+                'mattermost_username_override': self.mattermost_username_override,
+                'mattermost_webhook_url': self.mattermost_webhook_url}
 
 
 class PagerDutyAlerter(Alerter):
@@ -1399,6 +1516,8 @@ class TelegramAlerter(Alerter):
         self.telegram_api_url = self.rule.get('telegram_api_url', 'api.telegram.org')
         self.url = 'https://%s/bot%s/%s' % (self.telegram_api_url, self.telegram_bot_token, "sendMessage")
         self.telegram_proxy = self.rule.get('telegram_proxy', None)
+        self.telegram_proxy_login = self.rule.get('telegram_proxy_login', None)
+        self.telegram_proxy_password = self.rule.get('telegram_proxy_pass', None)
 
     def alert(self, matches):
         body = u'⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
@@ -1414,6 +1533,7 @@ class TelegramAlerter(Alerter):
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
         proxies = {'https': self.telegram_proxy} if self.telegram_proxy else None
+        auth = HTTPProxyAuth(self.telegram_proxy_login, self.telegram_proxy_password) if self.telegram_proxy_login else None
         payload = {
             'chat_id': self.telegram_room_id,
             'text': body,
@@ -1422,7 +1542,7 @@ class TelegramAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies, auth=auth)
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -1434,6 +1554,96 @@ class TelegramAlerter(Alerter):
     def get_info(self):
         return {'type': 'telegram',
                 'telegram_room_id': self.telegram_room_id}
+
+
+class GoogleChatAlerter(Alerter):
+    """ Send a notification via Google Chat webhooks """
+    required_options = frozenset(['googlechat_webhook_url'])
+
+    def __init__(self, rule):
+        super(GoogleChatAlerter, self).__init__(rule)
+        self.googlechat_webhook_url = self.rule['googlechat_webhook_url']
+        if isinstance(self.googlechat_webhook_url, basestring):
+            self.googlechat_webhook_url = [self.googlechat_webhook_url]
+        self.googlechat_format = self.rule.get('googlechat_format', 'basic')
+        self.googlechat_header_title = self.rule.get('googlechat_header_title', None)
+        self.googlechat_header_subtitle = self.rule.get('googlechat_header_subtitle', None)
+        self.googlechat_header_image = self.rule.get('googlechat_header_image', None)
+        self.googlechat_footer_kibanalink = self.rule.get('googlechat_footer_kibanalink', None)
+
+    def create_header(self):
+        header = None
+        if self.googlechat_header_title:
+            header = {
+                "title": self.googlechat_header_title,
+                "subtitle": self.googlechat_header_subtitle,
+                "imageUrl": self.googlechat_header_image
+            }
+        return header
+
+    def create_footer(self):
+        footer = None
+        if self.googlechat_footer_kibanalink:
+            footer = {"widgets": [{
+                "buttons": [{
+                    "textButton": {
+                        "text": "VISIT KIBANA",
+                        "onClick": {
+                            "openLink": {
+                                "url": self.googlechat_footer_kibanalink
+                            }
+                        }
+                    }
+                }]
+            }]
+            }
+        return footer
+
+    def create_card(self, matches):
+        card = {"cards": [{
+            "sections": [{
+                "widgets": [
+                    {"textParagraph": {"text": self.create_alert_body(matches).encode('UTF-8')}}
+                ]}
+            ]}
+        ]}
+
+        # Add the optional header
+        header = self.create_header()
+        if header:
+            card['cards'][0]['header'] = header
+
+        # Add the optional footer
+        footer = self.create_footer()
+        if footer:
+            card['cards'][0]['sections'].append(footer)
+        return card
+
+    def create_basic(self, matches):
+        body = self.create_alert_body(matches)
+        body = body.encode('UTF-8')
+        return {'text': body}
+
+    def alert(self, matches):
+        # Format message
+        if self.googlechat_format == 'card':
+            message = self.create_card(matches)
+        else:
+            message = self.create_basic(matches)
+
+        # Post to webhook
+        headers = {'content-type': 'application/json'}
+        for url in self.googlechat_webhook_url:
+            try:
+                response = requests.post(url, data=json.dumps(message), headers=headers)
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error posting to google chat: {}".format(e))
+        elastalert_logger.info("Alert sent to Google Chat!")
+
+    def get_info(self):
+        return {'type': 'googlechat',
+                'googlechat_webhook_url': self.googlechat_webhook_url}
 
 
 class GitterAlerter(Alerter):
@@ -1779,3 +1989,64 @@ class StrideAlerter(Alerter):
         return {'type': 'stride',
                 'stride_cloud_id': self.stride_cloud_id,
                 'stride_conversation_id': self.stride_conversation_id}
+
+
+class HiveAlerter(Alerter):
+    """
+    Use matched data to create alerts containing observables in an instance of TheHive
+    """
+
+    required_options = set(['hive_connection', 'hive_alert_config'])
+
+    def alert(self, matches):
+
+        connection_details = self.rule['hive_connection']
+
+        api = TheHiveApi(
+            '{hive_host}:{hive_port}'.format(**connection_details),
+            connection_details.get('hive_apikey', ''),
+            proxies=connection_details.get('hive_proxies', {'http': '', 'https': ''}),
+            cert=connection_details.get('hive_verify', False))
+
+        for match in matches:
+            context = {'rule': self.rule, 'match': match}
+
+            artifacts = []
+            for mapping in self.rule.get('hive_observable_data_mapping', []):
+                for observable_type, match_data_key in mapping.iteritems():
+                    try:
+                        if match_data_key.replace("{match[", "").replace("]}", "") in context['match']:
+                            artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
+                    except KeyError:
+                        raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
+
+            alert_config = {
+                'artifacts': artifacts,
+                'sourceRef': str(uuid.uuid4())[0:6],
+                'title': '{rule[index]}_{rule[name]}'.format(**context)
+            }
+            alert_config.update(self.rule.get('hive_alert_config', {}))
+
+            for alert_config_field, alert_config_value in alert_config.iteritems():
+                if isinstance(alert_config_value, basestring):
+                    alert_config[alert_config_field] = alert_config_value.format(**context)
+                elif isinstance(alert_config_value, (list, tuple)):
+                    formatted_list = []
+                    for element in alert_config_value:
+                        try:
+                            formatted_list.append(element.format(**context))
+                        except (AttributeError, KeyError):
+                            formatted_list.append(element)
+                    alert_config[alert_config_field] = formatted_list
+
+            alert = Alert(**alert_config)
+            response = api.create_alert(alert)
+            if response.status_code != 201:
+                raise Exception('alert not successfully created in TheHive\n{}'.format(response.text))
+
+    def get_info(self):
+
+        return {
+            'type': 'hivealerter',
+            'hive_host': self.rule.get('hive_connection', {}).get('hive_host', '')
+        }

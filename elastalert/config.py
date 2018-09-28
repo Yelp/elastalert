@@ -73,15 +73,18 @@ alerts_mapping = {
     'stride': alerts.StrideAlerter,
     'ms_teams': alerts.MsTeamsAlerter,
     'slack': alerts.SlackAlerter,
+    'mattermost': alerts.MattermostAlerter,
     'pagerduty': alerts.PagerDutyAlerter,
     'exotel': alerts.ExotelAlerter,
     'twilio': alerts.TwilioAlerter,
     'victorops': alerts.VictorOpsAlerter,
     'telegram': alerts.TelegramAlerter,
+    'googlechat': alerts.GoogleChatAlerter,
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
     'alerta': alerts.AlertaAlerter,
-    'post': alerts.HTTPPostAlerter
+    'post': alerts.HTTPPostAlerter,
+    'hivealerter': alerts.HiveAlerter
 }
 # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
 # For example, jira goes before email so the ticket # will be added to the resulting email.
