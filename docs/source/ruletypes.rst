@@ -1620,6 +1620,7 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
 
+``slack_title_link``: You can add a link in your Slack notification by setting this to a valid URL.
 
 Mattermost
 ~~~~~
