@@ -25,7 +25,7 @@ opsgenie_key: ogkey
 # OpsGenie recipients with args
 # opsgenie_recipients:
 #   - {recipient} 
-# opsgenie_teams_args:
+# opsgenie_recipients_args:
 #     team_prefix:'user.email'
 
 # (Optional)

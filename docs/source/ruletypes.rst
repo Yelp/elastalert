@@ -1478,8 +1478,10 @@ Optional:
 ``opsgenie_account``: The OpsGenie account to integrate with.
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
+``opsgenie_recipients_args``: Map of arguments used to format opsgenie_recipients.
 
 ``opsgenie_teams``: A list of OpsGenie teams to notify (useful for schedules with escalation).
+``opsgenie_teams_args``: Map of arguments used to format opsgenie_teams (useful for assigning the alerts to teams based on some data)
 
 ``opsgenie_tags``: A list of tags for this alert.
 
