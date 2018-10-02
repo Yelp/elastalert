@@ -256,6 +256,10 @@ def load_options(rule, conf, filename, args=None):
     rule.setdefault('hipchat_from', '')
     rule.setdefault('hipchat_ignore_ssl_errors', False)
 
+    # Set OpsGenie options from global config
+    rule.setdefault('opsgenie_default_receipients', None)
+    rule.setdefault('opsgenie_default_teams', None)
+
     # Make sure we have required options
     if required_locals - frozenset(rule.keys()):
         raise EAException('Missing required option(s): %s' % (', '.join(required_locals - frozenset(rule.keys()))))

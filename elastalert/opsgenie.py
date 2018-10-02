@@ -15,11 +15,14 @@ class OpsGenieAlerter(Alerter):
 
     def __init__(self, *args):
         super(OpsGenieAlerter, self).__init__(*args)
-
         self.account = self.rule.get('opsgenie_account')
         self.api_key = self.rule.get('opsgenie_key', 'key')
+        self.default_reciepients = self.rule.get('opsgenie_default_receipients', None)
         self.recipients = self.rule.get('opsgenie_recipients')
+        self.recipients_args = self.rule.get('opsgenie_recipients_args')
+        self.default_teams = self.rule.get('opsgenie_default_teams', None)
         self.teams = self.rule.get('opsgenie_teams')
+        self.teams_args = self.rule.get('opsgenie_teams_args')
         self.tags = self.rule.get('opsgenie_tags', []) + ['ElastAlert', self.rule['name']]
         self.to_addr = self.rule.get('opsgenie_addr', 'https://api.opsgenie.com/v2/alerts')
         self.custom_message = self.rule.get('opsgenie_message')
@@ -28,6 +31,31 @@ class OpsGenieAlerter(Alerter):
         self.alias = self.rule.get('opsgenie_alias')
         self.opsgenie_proxy = self.rule.get('opsgenie_proxy', None)
         self.priority = self.rule.get('opsgenie_priority')
+
+    def _parse_responders(self, responders, responder_args, matches, default_responders):
+        if responder_args:
+            formated_responders = list()
+            responders_values = dict((k, lookup_es_key(matches[0], v)) for k, v in responder_args.iteritems())
+            responders_values = dict((k, v) for k, v in responders_values.iteritems() if v)
+
+            for responder in responders:
+                responder = unicode(responder)
+                try:
+                    formated_responders.append(responder.format(**responders_values))
+                except KeyError as error:
+                    logging.warn("OpsGenieAlerter: Cannot create responder for OpsGenie Alert. Key not foud: %s. " % (error))
+            if not formated_responders:
+                logging.warn("OpsGenieAlerter: no responders can be formed. Trying the default responder ")
+                if not default_responders:
+                    logging.warn("OpsGenieAlerter: default responder not set. Falling back")
+                    formated_responders = responders
+                else:
+                    formated_responders = default_responders
+            responders = formated_responders
+        return responders
+
+    def _fill_responders(self, responders, type_):
+        return [{'id': r, 'type': type_} for r in responders]
 
     def alert(self, matches):
         body = ''
@@ -41,7 +69,8 @@ class OpsGenieAlerter(Alerter):
             self.message = self.create_title(matches)
         else:
             self.message = self.custom_message.format(**matches[0])
-
+        self.recipients = self._parse_responders(self.recipients, self.recipients_args, matches, self.default_reciepients)
+        self.teams = self._parse_responders(self.teams, self.teams_args, matches, self.default_teams)
         post = {}
         post['message'] = self.message
         if self.account:
@@ -126,5 +155,4 @@ class OpsGenieAlerter(Alerter):
             ret['account'] = self.account
         if self.teams:
             ret['teams'] = self.teams
-
         return ret

@@ -420,6 +420,42 @@ def test_opsgenie_frequency():
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
 
 
+def test_opsgenie_alert_routing():
+    rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
+            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
+            'opsgenie_recipients': ['{RECEIPIENT_PREFIX}'], 'opsgenie_recipients_args': {'RECEIPIENT_PREFIX': 'recipient'},
+            'type': mock_rule(),
+            'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
+            'alert': 'opsgenie',
+            'opsgenie_teams': ['{TEAM_PREFIX}-Team'], 'opsgenie_teams_args': {'TEAM_PREFIX': 'team'}}
+    with mock.patch('requests.post'):
+
+        alert = OpsGenieAlerter(rule)
+        alert.alert([{'@timestamp': '2014-10-31T00:00:00', 'team': "Test", 'recipient': "lytics"}])
+
+        assert alert.get_info()['teams'] == ['Test-Team']
+        assert alert.get_info()['recipients'] == ['lytics']
+
+
+def test_opsgenie_default_alert_routing():
+    rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
+            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
+            'opsgenie_recipients': ['{RECEIPIENT_PREFIX}'], 'opsgenie_recipients_args': {'RECEIPIENT_PREFIX': 'recipient'},
+            'type': mock_rule(),
+            'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
+            'alert': 'opsgenie',
+            'opsgenie_teams': ['{TEAM_PREFIX}-Team'],
+            'opsgenie_default_receipients': ["devops@test.com"], 'opsgenie_default_teams': ["Test"]
+            }
+    with mock.patch('requests.post'):
+
+        alert = OpsGenieAlerter(rule)
+        alert.alert([{'@timestamp': '2014-10-31T00:00:00', 'team': "Test"}])
+
+        assert alert.get_info()['teams'] == ['{TEAM_PREFIX}-Team']
+        assert alert.get_info()['recipients'] == ['devops@test.com']
+
+
 def test_jira():
     description_txt = "Description stuff goes here like a runbook link."
     rule = {
