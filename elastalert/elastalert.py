@@ -717,7 +717,9 @@ class ElastAlerter():
             elif 'previous_endtime' in rule:
                 if rule['previous_endtime'] < buffer_delta:
                     rule['starttime'] = rule['previous_endtime']
-                self.adjust_start_time_for_overlapping_agg_query(rule)
+                    self.adjust_start_time_for_overlapping_agg_query(rule)
+                elif rule.get('allow_buffer_time_overlap'):
+                    rule['starttime'] = buffer_delta
             else:
                 rule['starttime'] = buffer_delta
 
