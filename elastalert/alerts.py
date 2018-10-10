@@ -1116,6 +1116,7 @@ class SlackAlerter(Alerter):
         self.slack_text_string = self.rule.get('slack_text_string', '')
         self.slack_alert_fields = self.rule.get('slack_alert_fields', '')
         self.slack_ignore_ssl_errors = self.rule.get('slack_ignore_ssl_errors', False)
+        self.slack_timeout = self.rule.get('slack_timeout', 10)
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1184,7 +1185,8 @@ class SlackAlerter(Alerter):
                     response = requests.post(
                         url, data=json.dumps(payload, cls=DateTimeEncoder),
                         headers=headers, verify=not self.slack_ignore_ssl_errors,
-                        proxies=proxies)
+                        proxies=proxies,
+                        timeout=self.slack_timeout)
                     warnings.resetwarnings()
                     response.raise_for_status()
                 except RequestException as e:
