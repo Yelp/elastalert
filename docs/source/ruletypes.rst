@@ -1479,10 +1479,10 @@ Optional:
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
 ``opsgenie_recipients_args``: Map of arguments used to format opsgenie_recipients.
-``opsgenie_default_recipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful. 
+``opsgenie_default_recipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful.
 ``opsgenie_teams``: A list of OpsGenie teams to notify (useful for schedules with escalation).
 ``opsgenie_teams_args``: Map of arguments used to format opsgenie_teams (useful for assigning the alerts to teams based on some data)
-``opsgenie_default_teams``: List of default teams to notify when the formatting of opsgenie_teams is unsuccesful. 
+``opsgenie_default_teams``: List of default teams to notify when the formatting of opsgenie_teams is unsuccesful.
 ``opsgenie_tags``: A list of tags for this alert.
 
 ``opsgenie_message``: Set the OpsGenie message to something other than the rule name. The message can be formatted with fields from the first match e.g. "Error occurred for {app_name} at {timestamp}.".
@@ -1623,6 +1623,8 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 ``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
 
 ``slack_title_link``: You can add a link in your Slack notification by setting this to a valid URL.
+
+``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slac. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
 
 Mattermost
 ~~~~~
@@ -1985,7 +1987,7 @@ Required:
 
 ``hive_connection``: The connection details as key:values. Required keys are ``hive_host``, ``hive_port`` and ``hive_apikey``.
 
-``hive_alert_config``: Configuration options for the alert. 
+``hive_alert_config``: Configuration options for the alert.
 
 Optional:
 
