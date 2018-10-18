@@ -1031,7 +1031,7 @@ class MetricAggregationRule(BaseAggregationRule):
         if 'max_threshold' not in self.rules and 'min_threshold' not in self.rules:
             raise EAException("MetricAggregationRule must have at least one of either max_threshold or min_threshold")
 
-        self.metric_key = self.rules['metric_agg_key'] + '_' + self.rules['metric_agg_type']
+        self.metric_key = 'metric_' + self.rules['metric_agg_key'] + '_' + self.rules['metric_agg_type']
 
         if not self.rules['metric_agg_type'] in self.allowed_aggregations:
             raise EAException("metric_agg_type must be one of %s" % (str(self.allowed_aggregations)))
