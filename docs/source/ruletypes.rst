@@ -1870,8 +1870,7 @@ Alerta
 ~~~~~~
 
 Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint.
-The default values will work with a local Alerta server installation with authorization disabled.
-See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on the Alerta alert json format.
+See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on the Alerta JSON format.
 
 For Alerta 5.0
 
@@ -1881,46 +1880,47 @@ Required:
 
 Optional:
 
-``alerta_api_key``: This is the api key for alerta server if required. Default behaviour is that no Authorization header sent with the request.
+``alerta_api_key``: This is the api key for alerta server, sent in an ``Authorization`` HTTP header. If not defined, no Authorization header is sent.
 
-``alerta_resource``: The resource name of the generated alert. Defaults to "elastalert". Can be a reference to a part of the match.
+``alerta_use_qk_as_resource``: If true and query_key is present, this will override ``alerta_resource`` field with the ``query_key value`` (Can be useful if ``query_key`` is a hostname).
 
-``alerta_service``: A list of service tags for the generated alert. Defaults to "elastalert".  Can be a reference to a part of the match.
+``alerta_use_match_timestamp``: If true, it will use the timestamp of the first match as the ``createTime`` of the alert. otherwise, the current server time is used.
 
-``alerta_severity``: The severity level of the alert. Defaults to "warning".
+``alert_missing_value``: Text to replace any match field not found when formating strings. Defaults to ``<MISSING_TEXT>``.
 
-``alerta_origin``: The origin field for the generated alert. Defaults to "elastalert".  Can be a reference to a part of the match.
+The following options dictate the values of the API JSON payload:
 
-``alerta_environment``: The environment field for the generated alert. Defaults to "Production".  Can be a reference to a part of the match.
+``alerta_severity``: Defaults to "warning".
 
-``alerta_group``: The group field for the generated alert. No Default. Can be a reference to a part of the match.
-
-``alerta_timeout``: The time in seconds before this alert will expire (in Alerta). Default 84600 (1 Day).
-
-``alerta_correlate``: A list of alerta events that this one correlates with. Default is an empty list. Can make reference to a part of the match to build the event name.
-
-``alerta_tags``: A list of alerta tags. Default is an empty list.  Can be a reference to a part of the match.
-
-``alerta_use_qk_as_resource``: If true and query_key is present this will override alerta_resource field with the query key value (Can be useful if query_key is a hostname).
-
-``alerta_use_match_timestamp``: If true will use the timestamp of the first match as the createTime of the alert, otherwise the current time is used. Default False.
-
-``alerta_event``: Can make reference to parts of the match to build the event name. Defaults to "elastalert".
-
-``alerta_text``: Python-style string can be used to make reference to parts of the match. Defaults to "elastalert".
+``alerta_timeout``: Defaults 84600 (1 Day).
 
 ``alerta_type``: Defaults to "elastalert".
 
-``alerta_value``: Can be a reference to a part of the match. No Default.
+The following options use Python-like string syntax ``{<field>}`` or ``%(<field>)s`` to access parts of the match, similar to the CommandAlerter. Ie: "Alert for {clientip}".
+If the referenced key is not found in the match, it is replaced by the text indicated by the option ``alert_missing_value``.
 
-``alerta_attributes_keys``: List of key names for the Alerta Attributes dictionary
+``alerta_resource``: Defaults to "elastalert".
 
-``alerta_attributes_values``: List of values for the Alerta Attributes dictionary, corresponding in order to the described keys. Can be a reference to a part of the match.
+``alerta_service``: Defaults to "elastalert".
 
-.. info::
+``alerta_origin``: Defaults to "elastalert".
 
-    The optional values use Python-like string syntax ``{<field>}`` or ``%(<field>)s`` to access parts of the match, similar to the CommandAlerter. Ie: "Alert for {clientip}"
-    If the referenced value is not found in the match, it is replaced by ``<MISSING VALUE>`` or the text indicated by the rule in ``alert_missing_value``.
+``alerta_environment``: Defaults to "Production".
+
+``alerta_group``: Defaults to "".
+
+``alerta_correlate``: Defaults to an empty list.
+
+``alerta_tags``: Defaults to an empty list.
+
+``alerta_event``: Defaults to the rule's name.
+
+``alerta_text``: Defaults to the rule's text according to its type.
+
+``alerta_value``: Defaults to "".
+
+The ``attributes`` dictionary is built by joining the lists from  ``alerta_attributes_keys`` and ``alerta_attributes_values``, considered in order.
+
 
 Example usage using old-style format::
 
@@ -1933,6 +1933,13 @@ Example usage using old-style format::
     alerta_event: "ProbeUP"
     alerta_text:  "Probe %(hostname)s is UP at %(logdate)s GMT"
     alerta_value: "UP"
+
+Example usage using new-style format::
+
+    alert:
+      - alerta
+    alerta_attributes_values: ["{key}",    "{logdate}",     "{sender_ip}"  ]
+    alerta_text:  "Probe {hostname} is UP at {logdate} GMT"
 
 
 
