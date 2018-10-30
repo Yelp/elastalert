@@ -1817,7 +1817,7 @@ class AlertaAlerter(Alerter):
 
         """
 
-        #Using default text and event title if not defined in rule
+        # Using default text and event title if not defined in rule
         alerta_text = self.rule['type'].get_match_str([match]) if self.text == '' else resolve_string(self.text, match, self.missing_text)
         alerta_event = self.create_default_title([match]) if self.event == '' else resolve_string(self.event, match, self.missing_text)
 
@@ -1844,7 +1844,8 @@ class AlertaAlerter(Alerter):
             'service': [resolve_string(a_service, match, self.missing_text) for a_service in self.service],
             'tags': [resolve_string(a_tag, match, self.missing_text) for a_tag in self.tags],
             'correlate': [resolve_string(an_event, match, self.missing_text) for an_event in self.correlate],
-            'attributes': dict(zip(self.attributes_keys, [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values])),
+            'attributes': dict(zip(self.attributes_keys,
+                               [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values])),
             'rawData': self.create_alert_body([match]),
         }
 
@@ -1853,6 +1854,7 @@ class AlertaAlerter(Alerter):
         except Exception as e:
             raise Exception("Error building Alerta request: %s" % e)
         return payload
+
 
 class HTTPPostAlerter(Alerter):
     """ Requested elasticsearch indices are sent by HTTP POST. Encoded with JSON. """
