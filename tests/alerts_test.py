@@ -1965,6 +1965,7 @@ def test_alerta_no_auth(ea):
         'alerta_api_url': 'http://elastalerthost:8080/api/alert',
         'timeframe': datetime.timedelta(hours=1),
         'timestamp_field': u'@timestamp',
+        'alerta_api_skip_ssl': True,
         'alerta_attributes_keys': ["hostname", "TimestampEvent", "senderIP"],
         'alerta_attributes_values': ["%(key)s", "%(logdate)s", "%(sender_ip)s"],
         'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
@@ -2015,7 +2016,8 @@ def test_alerta_no_auth(ea):
         alert.url,
         data=mock.ANY,
         headers={
-            'content-type': 'application/json'}
+            'content-type': 'application/json'},
+        verify=False
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
@@ -2048,6 +2050,7 @@ def test_alerta_auth(ea):
     mock_post_request.assert_called_once_with(
         alert.url,
         data=mock.ANY,
+        verify=True,
         headers={
             'content-type': 'application/json',
             'Authorization': 'Key {}'.format(rule['alerta_api_key'])})
@@ -2109,6 +2112,7 @@ def test_alerta_new_style(ea):
     mock_post_request.assert_called_once_with(
         alert.url,
         data=mock.ANY,
+        verify=True,
         headers={
             'content-type': 'application/json'}
     )
