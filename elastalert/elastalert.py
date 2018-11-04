@@ -1048,7 +1048,7 @@ class ElastAlerter():
                 # Rule file was changed, reload rule
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
-                    if (new_rule == False):
+                    if (not new_rule):
                         logging.error('Invalid rule file skipped: %s' % rule_file)
                         continue
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
@@ -1089,7 +1089,7 @@ class ElastAlerter():
             for rule_file in set(new_rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
-                    if (new_rule == False):
+                    if (not new_rule):
                         logging.error('Invalid rule file skipped: %s' % rule_file)
                         continue
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
