@@ -119,7 +119,7 @@ def load_configuration(filename, conf, args=None):
     try:
         rule = load_rule_yaml(filename)
     except Exception as e:
-        if (conf.get('skip_invalid') == True):
+        if (conf.get('skip_invalid')):
             return False
         else:
             raise e
@@ -490,7 +490,7 @@ def load_rules(args):
         try:
             rule = load_configuration(rule_file, conf, args)
             # A rule failed to load, don't try to process it
-            if (rule == False):
+            if (not rule):
                 logging.error('Invalid rule file skipped: %s' % rule_file)
                 continue
             # By setting "is_enabled: False" in rule file, a rule is easily disabled
