@@ -120,6 +120,7 @@ def load_configuration(filename, conf, args=None):
         rule = load_rule_yaml(filename)
     except Exception as e:
         if (conf.get('skip_invalid')):
+            logging.error(e)
             return False
         else:
             raise e
