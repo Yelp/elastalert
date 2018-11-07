@@ -815,7 +815,13 @@ class ElastAlerter():
             return
 
         filters = rule['filter']
-        additional_terms = [(rule['compare_key'] + ':"' + term + '"') for term in rule[listname]]
+        additional_terms = []
+        for term in rule[listname]:
+            if not term.startswith('/') or not term.endswith('/'):
+                additional_terms.append(rule['compare_key'] + ':"' + term + '"')
+            else:
+                # These are regular expressions and won't work if they are quoted
+                additional_terms.append(rule['compare_key'] + ':' + term)
         if listname == 'whitelist':
             query = "NOT " + " AND NOT ".join(additional_terms)
         else:
