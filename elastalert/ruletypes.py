@@ -31,6 +31,8 @@ class RuleType(object):
         self.matches = []
         self.rules = rules
         self.occurrences = {}
+        self.rules['category'] = self.rules.get('category', '')
+        self.rules['description'] = self.rules.get('description', '')
         self.rules['owner'] = self.rules.get('owner', '')
         self.rules['priority'] = self.rules.get('priority', '2')
 
