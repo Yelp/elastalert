@@ -1,5 +1,16 @@
 # Change Log
 
+# v0.1.36
+
+### Added
+- Added a prefix "metric_" to the key used for metric aggregations to avoid possible conflicts
+- Added option to skip Alerta certificate validation
+- Added option to gracefully fail when loading rules
+
+### Fixed
+- No longer puts quotes around regex terms in blacklists or whitelists
+- Fixed a typo in the documentation for spike rule
+
 # v0.1.35
 
 ### Fixed
