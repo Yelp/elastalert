@@ -153,6 +153,7 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
+        self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
@@ -1474,6 +1475,12 @@ class ElastAlerter():
             'alert_sent': alert_sent,
             'alert_time': alert_time
         }
+
+        if self.add_metadata_alert:
+            body['category'] = rule['category']
+            body['description'] = rule['description']
+            body['owner'] = rule['owner']
+            body['priority'] = rule['priority']
 
         match_time = lookup_es_key(match, rule['timestamp_field'])
         if match_time is not None:
