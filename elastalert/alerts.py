@@ -1111,6 +1111,7 @@ class SlackAlerter(Alerter):
         self.slack_channel_override = self.rule.get('slack_channel_override', '')
         if isinstance(self.slack_channel_override, basestring):
             self.slack_channel_override = [self.slack_channel_override]
+        self.slack_title_link = self.rule.get('slack_title_link', '')
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_icon_url_override = self.rule.get('slack_icon_url_override', '')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
@@ -1118,6 +1119,7 @@ class SlackAlerter(Alerter):
         self.slack_text_string = self.rule.get('slack_text_string', '')
         self.slack_alert_fields = self.rule.get('slack_alert_fields', '')
         self.slack_ignore_ssl_errors = self.rule.get('slack_ignore_ssl_errors', False)
+        self.slack_timeout = self.rule.get('slack_timeout', 10)
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1174,6 +1176,9 @@ class SlackAlerter(Alerter):
         else:
             payload['icon_emoji'] = self.slack_emoji_override
 
+        if self.slack_title_link != '':
+            payload['attachments'][0]['title_link'] = self.slack_title_link
+
         for url in self.slack_webhook_url:
             for channel_override in self.slack_channel_override:
                 try:
@@ -1183,7 +1188,8 @@ class SlackAlerter(Alerter):
                     response = requests.post(
                         url, data=json.dumps(payload, cls=DateTimeEncoder),
                         headers=headers, verify=not self.slack_ignore_ssl_errors,
-                        proxies=proxies)
+                        proxies=proxies,
+                        timeout=self.slack_timeout)
                     warnings.resetwarnings()
                     response.raise_for_status()
                 except RequestException as e:
@@ -1320,10 +1326,14 @@ class PagerDutyAlerter(Alerter):
 
         self.pagerduty_api_version = self.rule.get('pagerduty_api_version', 'v1')
         self.pagerduty_v2_payload_class = self.rule.get('pagerduty_v2_payload_class', '')
+        self.pagerduty_v2_payload_class_args = self.rule.get('pagerduty_v2_payload_class_args', None)
         self.pagerduty_v2_payload_component = self.rule.get('pagerduty_v2_payload_component', '')
+        self.pagerduty_v2_payload_component_args = self.rule.get('pagerduty_v2_payload_component_args', None)
         self.pagerduty_v2_payload_group = self.rule.get('pagerduty_v2_payload_group', '')
+        self.pagerduty_v2_payload_group_args = self.rule.get('pagerduty_v2_payload_group_args', None)
         self.pagerduty_v2_payload_severity = self.rule.get('pagerduty_v2_payload_severity', 'critical')
         self.pagerduty_v2_payload_source = self.rule.get('pagerduty_v2_payload_source', 'ElastAlert')
+        self.pagerduty_v2_payload_source_args = self.rule.get('pagerduty_v2_payload_source_args', None)
 
         if self.pagerduty_api_version == 'v2':
             self.url = 'https://events.pagerduty.com/v2/enqueue'
@@ -1342,11 +1352,19 @@ class PagerDutyAlerter(Alerter):
                 'dedup_key': self.get_incident_key(matches),
                 'client': self.pagerduty_client_name,
                 'payload': {
-                    'class': self.pagerduty_v2_payload_class,
-                    'component': self.pagerduty_v2_payload_component,
-                    'group': self.pagerduty_v2_payload_group,
+                    'class': self.resolve_formatted_key(self.pagerduty_v2_payload_class,
+                                                        self.pagerduty_v2_payload_class_args,
+                                                        matches),
+                    'component': self.resolve_formatted_key(self.pagerduty_v2_payload_component,
+                                                            self.pagerduty_v2_payload_component_args,
+                                                            matches),
+                    'group': self.resolve_formatted_key(self.pagerduty_v2_payload_group,
+                                                        self.pagerduty_v2_payload_group_args,
+                                                        matches),
                     'severity': self.pagerduty_v2_payload_severity,
-                    'source': self.pagerduty_v2_payload_source,
+                    'source': self.resolve_formatted_key(self.pagerduty_v2_payload_source,
+                                                         self.pagerduty_v2_payload_source_args,
+                                                         matches),
                     'summary': self.create_title(matches),
                     'custom_details': {
                         'information': body.encode('UTF-8'),
@@ -1384,6 +1402,23 @@ class PagerDutyAlerter(Alerter):
             elastalert_logger.info("Resolve sent to PagerDuty")
         elif self.pagerduty_event_type == 'acknowledge':
             elastalert_logger.info("acknowledge sent to PagerDuty")
+
+    def resolve_formatted_key(self, key, args, matches):
+        if args:
+            key_values = [lookup_es_key(matches[0], arg) for arg in args]
+
+            # Populate values with rule level properties too
+            for i in range(len(key_values)):
+                if key_values[i] is None:
+                    key_value = self.rule.get(args[i])
+                    if key_value:
+                        key_values[i] = key_value
+
+            missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
+            key_values = [missing if val is None else val for val in key_values]
+            return key.format(*key_values)
+        else:
+            return key
 
     def get_incident_key(self, matches):
         if self.pagerduty_incident_key_args:
@@ -1746,18 +1781,21 @@ class AlertaAlerter(Alerter):
     def __init__(self, rule):
         super(AlertaAlerter, self).__init__(rule)
 
+        # Setup defaul parameters
         self.url = self.rule.get('alerta_api_url', None)
-
-        # Fill up default values
         self.api_key = self.rule.get('alerta_api_key', None)
+        self.timeout = self.rule.get('alerta_timeout', 86400)
+        self.use_match_timestamp = self.rule.get('alerta_use_match_timestamp', False)
+        self.use_qk_as_resource = self.rule.get('alerta_use_qk_as_resource', False)
+        self.verify_ssl = not self.rule.get('alerta_api_skip_ssl', False)
+        self.missing_text = self.rule.get('alert_missing_value', '<MISSING VALUE>')
+
+        # Fill up default values of the API JSON payload
         self.severity = self.rule.get('alerta_severity', 'warning')
         self.resource = self.rule.get('alerta_resource', 'elastalert')
         self.environment = self.rule.get('alerta_environment', 'Production')
         self.origin = self.rule.get('alerta_origin', 'elastalert')
         self.service = self.rule.get('alerta_service', ['elastalert'])
-        self.timeout = self.rule.get('alerta_timeout', 86400)
-        self.use_match_timestamp = self.rule.get('alerta_use_match_timestamp', False)
-        self.use_qk_as_resource = self.rule.get('alerta_use_qk_as_resource', False)
         self.text = self.rule.get('alerta_text', 'elastalert')
         self.type = self.rule.get('alerta_type', 'elastalert')
         self.event = self.rule.get('alerta_event', 'elastalert')
@@ -1767,8 +1805,6 @@ class AlertaAlerter(Alerter):
         self.attributes_keys = self.rule.get('alerta_attributes_keys', [])
         self.attributes_values = self.rule.get('alerta_attributes_values', [])
         self.value = self.rule.get('alerta_value', '')
-
-        self.missing_text = self.rule.get('alert_missing_value', '<MISSING VALUE>')
 
     def alert(self, matches):
         # Override the resource if requested
@@ -1782,8 +1818,7 @@ class AlertaAlerter(Alerter):
         alerta_payload = self.get_json_payload(matches[0])
 
         try:
-
-            response = requests.post(self.url, data=alerta_payload, headers=headers)
+            response = requests.post(self.url, data=alerta_payload, headers=headers, verify=self.verify_ssl)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Alerta: %s" % e)
@@ -1791,7 +1826,7 @@ class AlertaAlerter(Alerter):
 
     def create_default_title(self, matches):
         title = '%s' % (self.rule['name'])
-        # If the rule has a query_key, add that value plus timestamp to subject
+        # If the rule has a query_key, add that value
         if 'query_key' in self.rule:
             qk = matches[0].get(self.rule['query_key'])
             if qk:
@@ -1811,17 +1846,11 @@ class AlertaAlerter(Alerter):
 
         """
 
-        alerta_service = [resolve_string(a_service, match, self.missing_text) for a_service in self.service]
-        alerta_tags = [resolve_string(a_tag, match, self.missing_text) for a_tag in self.tags]
-        alerta_correlate = [resolve_string(an_event, match, self.missing_text) for an_event in self.correlate]
-        alerta_attributes_values = [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values]
-        alerta_text = resolve_string(self.text, match, self.missing_text)
-        alerta_text = self.rule['type'].get_match_str([match]) if alerta_text == '' else alerta_text
-        alerta_event = resolve_string(self.event, match, self.missing_text)
-        alerta_event = self.create_default_title([match]) if alerta_event == '' else alerta_event
+        # Using default text and event title if not defined in rule
+        alerta_text = self.rule['type'].get_match_str([match]) if self.text == '' else resolve_string(self.text, match, self.missing_text)
+        alerta_event = self.create_default_title([match]) if self.event == '' else resolve_string(self.event, match, self.missing_text)
 
-        timestamp_field = self.rule.get('timestamp_field', '@timestamp')
-        match_timestamp = lookup_es_key(match, timestamp_field)
+        match_timestamp = lookup_es_key(match, self.rule.get('timestamp_field', '@timestamp'))
         if match_timestamp is None:
             match_timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         if self.use_match_timestamp:
@@ -1841,10 +1870,11 @@ class AlertaAlerter(Alerter):
             'event': alerta_event,
             'text': alerta_text,
             'value': resolve_string(self.value, match, self.missing_text),
-            'service': alerta_service,
-            'tags': alerta_tags,
-            'correlate': alerta_correlate,
-            'attributes': dict(zip(self.attributes_keys, alerta_attributes_values)),
+            'service': [resolve_string(a_service, match, self.missing_text) for a_service in self.service],
+            'tags': [resolve_string(a_tag, match, self.missing_text) for a_tag in self.tags],
+            'correlate': [resolve_string(an_event, match, self.missing_text) for an_event in self.correlate],
+            'attributes': dict(zip(self.attributes_keys,
+                               [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values])),
             'rawData': self.create_alert_body([match]),
         }
 
