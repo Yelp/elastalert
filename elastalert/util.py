@@ -6,7 +6,7 @@ import os
 import re
 
 import dateutil.parser
-import dateutil.tz
+import pytz
 from auth import Auth
 from . import ElasticSearchClient
 from six import string_types
@@ -130,7 +130,7 @@ def ts_to_dt(timestamp):
     dt = dateutil.parser.parse(timestamp)
     # Implicitly convert local timestamps to UTC
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=dateutil.tz.tzutc())
+        dt = dt.replace(tzinfo=pytz.utc)
     return dt
 
 
@@ -370,6 +370,15 @@ def build_es_conn_config(conf):
         parsed_conf['es_url_prefix'] = conf['es_url_prefix']
 
     return parsed_conf
+
+
+def pytzfy(dt):
+    # apscheduler requires pytz timezone objects
+    # This function will replace a dateutil.tz one with a pytz one
+    if dt.tzinfo is not None:
+        new_tz = pytz.timezone(dt.tzinfo.tzname('Y is this even required??'))
+        return dt.replace(tzinfo=new_tz)
+    return dt
 
 
 def parse_duration(value):
