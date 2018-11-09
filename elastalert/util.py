@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-import os
+import collections
 import datetime
 import logging
+import os
 
 import dateutil.parser
 import dateutil.tz
@@ -46,7 +47,6 @@ def _find_es_dict_by_key(lookup_dict, term):
     """
     if term in lookup_dict:
         return lookup_dict, term
-
     # If the term does not match immediately, perform iterative lookup:
     # 1. Split the search term into tokens
     # 2. Recurrently concatenate these together to traverse deeper into the dictionary,
@@ -64,6 +64,9 @@ def _find_es_dict_by_key(lookup_dict, term):
     subkey = ''
 
     while len(subkeys) > 0:
+        if not dict_cursor:
+            return {}, None
+
         subkey += subkeys.pop(0)
 
         if subkey in dict_cursor:
@@ -105,7 +108,6 @@ def lookup_es_key(lookup_dict, term):
 
 def ts_to_dt(timestamp):
     if isinstance(timestamp, datetime.datetime):
-        logging.warning('Expected str timestamp, got datetime')
         return timestamp
     dt = dateutil.parser.parse(timestamp)
     # Implicitly convert local timestamps to UTC
@@ -130,7 +132,6 @@ def dt_to_ts(dt):
 
 def ts_to_dt_with_format(timestamp, ts_format):
     if isinstance(timestamp, datetime.datetime):
-        logging.warning('Expected str timestamp, got datetime')
         return timestamp
     dt = datetime.datetime.strptime(timestamp, ts_format)
     # Implicitly convert local timestamps to UTC
@@ -184,19 +185,26 @@ def hashable(obj):
     return obj
 
 
-def format_index(index, start, end):
+def format_index(index, start, end, add_extra=False):
     """ Takes an index, specified using strftime format, start and end time timestamps,
     and outputs a wildcard based index string to match all possible timestamps. """
     # Convert to UTC
     start -= start.utcoffset()
     end -= end.utcoffset()
-
-    indexes = []
+    original_start = start
+    indices = set()
     while start.date() <= end.date():
-        indexes.append(start.strftime(index))
+        indices.add(start.strftime(index))
         start += datetime.timedelta(days=1)
+    num = len(indices)
+    if add_extra:
+        while len(indices) == num:
+            original_start -= datetime.timedelta(days=1)
+            new_index = original_start.strftime(index)
+            assert new_index != index, "You cannot use a static index with search_extra_index"
+            indices.add(new_index)
 
-    return ','.join(indexes)
+    return ','.join(indices)
 
 
 class EAException(Exception):
@@ -233,11 +241,11 @@ def unix_to_dt(ts):
 
 
 def dt_to_unix(dt):
-    return total_seconds(dt - datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzutc()))
+    return int(total_seconds(dt - datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzutc())))
 
 
 def dt_to_unixms(dt):
-    return dt_to_unix(dt) * 1000
+    return int(dt_to_unix(dt) * 1000)
 
 
 def cronite_datetime_to_timestamp(self, d):
@@ -250,8 +258,8 @@ def cronite_datetime_to_timestamp(self, d):
     return total_seconds((d - datetime.datetime(1970, 1, 1)))
 
 
-def add_raw_postfix(field, is_five):
-    if is_five:
+def add_raw_postfix(field, is_five_or_above):
+    if is_five_or_above:
         end = '.keyword'
     else:
         end = '.raw'
@@ -287,10 +295,13 @@ def elasticsearch_client(conf):
                          url_prefix=es_conn_conf['es_url_prefix'],
                          use_ssl=es_conn_conf['use_ssl'],
                          verify_certs=es_conn_conf['verify_certs'],
+                         ca_certs=es_conn_conf['ca_certs'],
                          connection_class=RequestsHttpConnection,
                          http_auth=es_conn_conf['http_auth'],
                          timeout=es_conn_conf['es_conn_timeout'],
-                         send_get_body_as=es_conn_conf['send_get_body_as'])
+                         send_get_body_as=es_conn_conf['send_get_body_as'],
+                         client_cert=es_conn_conf['client_cert'],
+                         client_key=es_conn_conf['client_key'])
 
 
 def build_es_conn_config(conf):
@@ -301,6 +312,9 @@ def build_es_conn_config(conf):
     parsed_conf = {}
     parsed_conf['use_ssl'] = os.environ.get('ES_USE_SSL', False)
     parsed_conf['verify_certs'] = True
+    parsed_conf['ca_certs'] = None
+    parsed_conf['client_cert'] = None
+    parsed_conf['client_key'] = None
     parsed_conf['http_auth'] = None
     parsed_conf['es_username'] = None
     parsed_conf['es_password'] = None
@@ -312,9 +326,12 @@ def build_es_conn_config(conf):
     parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
     parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
 
-    if 'es_username' in conf:
-        parsed_conf['es_username'] = os.environ.get('ES_USERNAME', conf['es_username'])
-        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD', conf['es_password'])
+    if os.environ.get('ES_USERNAME'):
+        parsed_conf['es_username'] = os.environ.get('ES_USERNAME')
+        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD')
+    elif 'es_username' in conf:
+        parsed_conf['es_username'] = conf['es_username']
+        parsed_conf['es_password'] = conf['es_password']
 
     if 'aws_region' in conf:
         parsed_conf['aws_region'] = conf['aws_region']
@@ -333,7 +350,68 @@ def build_es_conn_config(conf):
     if 'verify_certs' in conf:
         parsed_conf['verify_certs'] = conf['verify_certs']
 
+    if 'ca_certs' in conf:
+        parsed_conf['ca_certs'] = conf['ca_certs']
+
+    if 'client_cert' in conf:
+        parsed_conf['client_cert'] = conf['client_cert']
+
+    if 'client_key' in conf:
+        parsed_conf['client_key'] = conf['client_key']
+
     if 'es_url_prefix' in conf:
         parsed_conf['es_url_prefix'] = conf['es_url_prefix']
 
     return parsed_conf
+
+
+def parse_duration(value):
+    """Convert ``unit=num`` spec into a ``timedelta`` object."""
+    unit, num = value.split('=')
+    return datetime.timedelta(**{unit: int(num)})
+
+
+def parse_deadline(value):
+    """Convert ``unit=num`` spec into a ``datetime`` object."""
+    duration = parse_duration(value)
+    return ts_now() + duration
+
+
+def flatten_dict(dct, delim='.', prefix=''):
+    ret = {}
+    for key, val in dct.items():
+        if type(val) == dict:
+            ret.update(flatten_dict(val, prefix=prefix + key + delim))
+        else:
+            ret[prefix + key] = val
+    return ret
+
+
+def resolve_string(string, match, missing_text='<MISSING VALUE>'):
+    """
+        Given a python string that may contain references to fields on the match dictionary,
+            the strings are replaced using the corresponding values.
+        However, if the referenced field is not found on the dictionary,
+            it is replaced by a default string.
+        Strings can be formatted using the old-style format ('%(field)s') or
+            the new-style format ('{match[field]}').
+
+        :param string: A string that may contain references to values of the 'match' dictionary.
+        :param match: A dictionary with the values to replace where referenced by keys in the string.
+        :param missing_text: The default text to replace a formatter with if the field doesnt exist.
+    """
+    flat_match = flatten_dict(match)
+    flat_match.update(match)
+    dd_match = collections.defaultdict(lambda: missing_text, flat_match)
+    dd_match['_missing_value'] = missing_text
+    while True:
+        try:
+            string = string % dd_match
+            string = string.format(**dd_match)
+            break
+        except KeyError as e:
+            if '{%s}' % e.message not in string:
+                break
+            string = string.replace('{%s}' % e.message, '{_missing_value}')
+
+    return string
