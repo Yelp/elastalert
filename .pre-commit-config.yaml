@@ -4,10 +4,6 @@ repos:
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
-    -   id: autopep8-wrapper
-        args:
-        - -i
-        - --ignore=E265,E309,E501
     -   id: flake8
     -   id: check-yaml
     -   id: debug-statements
@@ -17,3 +13,9 @@ repos:
     rev: v1.3.4
     hooks:
     -   id: reorder-python-imports
+-   repo: git://github.com/Yelp/detect-secrets
+    sha: 0.9.1
+    hooks:
+    -   id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: .*tests/.*|.*yelp/testing/.*|\.pre-commit-config\.yaml

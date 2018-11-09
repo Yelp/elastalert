@@ -89,3 +89,16 @@ def test_add_filter():
 def test_url_encoded():
     url = kibana4_dashboard_link('example.com/#/Dashboard', '2015-01-01T00:00:00Z', '2017-01-01T00:00:00Z')
     assert not any([special_char in url for special_char in ["',\":;?&=()"]])
+
+
+def test_url_env_substitution(environ):
+    environ.update({
+        'KIBANA_HOST': 'kibana',
+        'KIBANA_PORT': '5601',
+    })
+    url = kibana4_dashboard_link(
+        'http://$KIBANA_HOST:$KIBANA_PORT/#/Dashboard',
+        '2015-01-01T00:00:00Z',
+        '2017-01-01T00:00:00Z',
+    )
+    assert url.startswith('http://kibana:5601/#/Dashboard')

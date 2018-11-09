@@ -153,6 +153,7 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
+        self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
@@ -717,7 +718,9 @@ class ElastAlerter():
             elif 'previous_endtime' in rule:
                 if rule['previous_endtime'] < buffer_delta:
                     rule['starttime'] = rule['previous_endtime']
-                self.adjust_start_time_for_overlapping_agg_query(rule)
+                    self.adjust_start_time_for_overlapping_agg_query(rule)
+                elif rule.get('allow_buffer_time_overlap'):
+                    rule['starttime'] = buffer_delta
             else:
                 rule['starttime'] = buffer_delta
 
@@ -813,7 +816,13 @@ class ElastAlerter():
             return
 
         filters = rule['filter']
-        additional_terms = [(rule['compare_key'] + ':"' + term + '"') for term in rule[listname]]
+        additional_terms = []
+        for term in rule[listname]:
+            if not term.startswith('/') or not term.endswith('/'):
+                additional_terms.append(rule['compare_key'] + ':"' + term + '"')
+            else:
+                # These are regular expressions and won't work if they are quoted
+                additional_terms.append(rule['compare_key'] + ':' + term)
         if listname == 'whitelist':
             query = "NOT " + " AND NOT ".join(additional_terms)
         else:
@@ -1040,6 +1049,9 @@ class ElastAlerter():
                 # Rule file was changed, reload rule
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
+                    if (not new_rule):
+                        logging.error('Invalid rule file skipped: %s' % rule_file)
+                        continue
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         elastalert_logger.info('Rule file %s is now disabled.' % (rule_file))
                         # Remove this rule if it's been disabled
@@ -1078,6 +1090,9 @@ class ElastAlerter():
             for rule_file in set(new_rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
+                    if (not new_rule):
+                        logging.error('Invalid rule file skipped: %s' % rule_file)
+                        continue
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         continue
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
@@ -1460,6 +1475,12 @@ class ElastAlerter():
             'alert_sent': alert_sent,
             'alert_time': alert_time
         }
+
+        if self.add_metadata_alert:
+            body['category'] = rule['category']
+            body['description'] = rule['description']
+            body['owner'] = rule['owner']
+            body['priority'] = rule['priority']
 
         match_time = lookup_es_key(match, rule['timestamp_field'])
         if match_time is not None:

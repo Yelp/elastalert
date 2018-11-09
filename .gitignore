@@ -12,6 +12,7 @@ venv/
 env/
 docs/build/
 build/
-
+.pytest_cache/
 my_rules
 *.swp
+*~

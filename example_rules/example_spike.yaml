@@ -31,7 +31,7 @@ index: logstash-*
 # (Required one of _cur or _ref, spike specific)
 # The minimum number of events that will trigger an alert
 # For example, if there are only 2 events between 12:00 and 2:00, and 20 between 2:00 and 4:00
-# _cur is 2 and _ref is 20, and the alert WILL fire because 20 is greater than threshold_cur
+# _ref is 2 and _cur is 20, and the alert WILL fire because 20 is greater than threshold_cur and (_ref * spike_height)
 threshold_cur: 5
 #threshold_ref: 5
 

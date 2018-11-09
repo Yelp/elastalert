@@ -84,6 +84,10 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``priority`` (int, default 2)                                |           |
 +--------------------------------------------------------------+           |
+| ``category`` (string, default empty string)                  |           |
++--------------------------------------------------------------+           |
+| ``scan_entire_timeframe`` (bool, default False)              |           |
++--------------------------------------------------------------+           |
 | ``import`` (string)                                          |           |
 |                                                              |           |
 | IGNORED IF ``use_count_query`` or ``use_terms_query`` is true|           |
@@ -94,11 +98,19 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``timestamp_format`` (string, default "%Y-%m-%dT%H:%M:%SZ")  |           |
 +--------------------------------------------------------------+           |
+| ``timestamp_format_expr`` (string, no default )              |           |
++--------------------------------------------------------------+           |
 | ``_source_enabled`` (boolean, default True)                  |           |
 +--------------------------------------------------------------+           |
 | ``alert_text_args`` (array of strs)                          |           |
 +--------------------------------------------------------------+           |
 | ``alert_text_kw`` (object)                                   |           |
++--------------------------------------------------------------+           |
+| ``alert_missing_value`` (string, default "<MISSING VALUE>")  |           |
++--------------------------------------------------------------+           |
+| ``is_enabled`` (boolean, default True)                       |           |
++--------------------------------------------------------------+-----------+
+| ``search_extra_index`` (boolean, default False)              |           |
 +--------------------------------------------------------------+-----------+
 
 |
@@ -219,7 +231,8 @@ import
 
 ``import``: If specified includes all the settings from this yaml file. This allows common config options to be shared. Note that imported files that aren't
 complete rules should not have a ``.yml`` or ``.yaml`` suffix so that ElastAlert doesn't treat them as rules. Filters in imported files are merged (ANDed)
-with any filters in the rule. (Optional, string, no default)
+with any filters in the rule. You can only have one import per rule, though the imported file can import another file, recursively. The filename
+can be an absolute path or relative to the rules directory. (Optional, string, no default)
 
 use_ssl
 ^^^^^^^
@@ -231,6 +244,21 @@ verify_certs
 ^^^^^^^^^^^^
 
 ``verify_certs``: Whether or not to verify TLS certificates. (Optional, boolean, default True)
+
+client_cert
+^^^^^^^^^^^
+
+``client_cert``: Path to a PEM certificate to use as the client certificate (Optional, string, no default)
+
+client_key
+^^^^^^^^^^^
+
+``client_key``: Path to a private key file to use as the client key (Optional, string, no default)
+
+ca_certs
+^^^^^^^^
+
+``ca_certs``: Path to a CA cert bundle to use to verify SSL connections (Optional, string, no default)
 
 es_username
 ^^^^^^^^^^^
@@ -261,6 +289,13 @@ If a query spans multiple days, the formatted indexes will be concatenated with 
 as narrowing the number of indexes searched, compared to using a wildcard, may be significantly faster. For example, if ``index`` is
 ``logstash-%Y.%m.%d``, the query url will be similar to ``elasticsearch.example.com/logstash-2015.02.03/...`` or
 ``elasticsearch.example.com/logstash-2015.02.03,logstash-2015.02.04/...``.
+
+search_extra_index
+^^^^^^^^^^^^^^^^^^
+
+``search_extra_index``: If this is true, ElastAlert will add an extra index on the early side onto each search. For example, if it's querying
+completely within 2018-06-28, it will actually use 2018-06-27,2018-06-28. This can be useful if your timestamp_field is not what's being used
+to generate the index names. If that's the case, sometimes a query would not have been using the right index.
 
 aggregation
 ^^^^^^^^^^^
@@ -373,6 +408,11 @@ priority
 
 ``priority``: This value will be used to identify the relative priority of the alert. Optionally, this field can be included in any alert type (e.g. for use in email subject/body text). (Optional, int, default 2)
 
+category
+^^^^^^^^
+
+``category``: This value will be used to identify the category of the alert. Optionally, this field can be included in any alert type (e.g. for use in email subject/body text). (Optional, string, default empty string)
+
 max_query_size
 ^^^^^^^^^^^^^^
 
@@ -451,7 +491,8 @@ use_kibana4_dashboard
 
 ``use_kibana4_dashboard``: A link to a Kibana 4 dashboard. For example, "https://kibana.example.com/#/dashboard/My-Dashboard".
 This will set the time setting on the dashboard from the match time minus the timeframe, to 10 minutes after the match time.
-Note that this does not support filtering by ``query_key`` like Kibana 3.
+Note that this does not support filtering by ``query_key`` like Kibana 3.  This value can use `$VAR` and `${VAR}` references
+to expand environment variables.
 
 kibana4_start_timedelta
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -528,6 +569,20 @@ timestamp_format
 format to match the type used for Elastisearch date type field. This option is only valid if ``timestamp_type`` set to ``custom``.
 (Optional, string, default '%Y-%m-%dT%H:%M:%SZ').
 
+timestamp_format_expr
+^^^^^^^^^^^^^^^^^^^^^
+
+``timestamp_format_expr``: In case Elasticsearch used custom date format for date type field, this option provides a way to adapt the
+value obtained converting a datetime through ``timestamp_format``, when the format cannot match perfectly what defined in Elastisearch.
+When set, this option is evaluated as a Python expression along with a *globals* dictionary containing the original datetime instance
+named ``dt`` and the timestamp to be refined, named ``ts``. The returned value becomes the timestamp obtained from the datetime.
+For example, when the date type field in Elasticsearch uses milliseconds (``yyyy-MM-dd'T'HH:mm:ss.SSS'Z'``) and ``timestamp_format``
+option is ``'%Y-%m-%dT%H:%M:%S.%fZ'``, Elasticsearch would fail to parse query terms as they contain microsecond values - that is
+it gets 6 digits instead of 3 - since the ``%f`` placeholder stands for microseconds for Python *strftime* method calls.
+Setting ``timestamp_format_expr: 'ts[:23] + ts[26:]'`` will truncate the value to milliseconds granting Elasticsearch compatibility.
+This option is only valid if ``timestamp_type`` set to ``custom``.
+(Optional, string, no default).
+
 _source_enabled
 ^^^^^^^^^^^^^^^
 
@@ -535,6 +590,15 @@ _source_enabled
 ElastAlert will use ``fields`` to retrieve stored fields. Both of these are represented internally as if they came from ``_source``.
 See https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html for more details. The fields used come from ``include``,
 see above for more details. (Optional, boolean, default True)
+
+scan_entire_timeframe
+^^^^^^^^^^^^^^^^^^^^^
+
+``scan_entire_timeframe``: If true, when ElastAlert starts, it will always start querying at the current time minus the timeframe.
+``timeframe`` must exist in the rule. This may be useful, for example, if you are using a flatline rule type with a large timeframe,
+and you want to be sure that if ElastAlert restarts, you can still get alerts. This may cause duplicate alerts for some rule types,
+for example, Frequency can alert multiple times in a single timeframe, and if ElastAlert were to restart with this setting, it may
+scan the same range again, triggering duplicate alerts.
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
 
@@ -630,6 +694,8 @@ guaranteed to have the exact same results as with Elasticsearch. For example, an
 
 ``--alert``: Trigger real alerts instead of the debug (logging text) alert.
 
+``--formatted-output``: Output results in formatted JSON.
+
 .. note::
    Results from running this script may not always be the same as if an actual ElastAlert instance was running. Some rule types, such as spike
    and flatline require a minimum elapsed time before they begin alerting, based on their timeframe. In addition, use_count_query and
@@ -705,10 +771,10 @@ must change with respect to the last event with the same ``query_key``.
 
 This rule requires three additional options:
 
-``compare_key``: The names of the field to monitor for changes. Since this is list of strings, we can
+``compare_key``: The names of the field to monitor for changes. Since this is a list of strings, we can
 have multiple keys. An alert will trigger if any of the fields change.
 
-``ignore_null``: If true, events without a ``compare_key`` field will not count as changed. Currently this check for all the fields in ``compare_key`` 
+``ignore_null``: If true, events without a ``compare_key`` field will not count as changed. Currently this checks for all the fields in ``compare_key``
 
 ``query_key``: This rule is applied on a per-``query_key`` basis. This field must be present in all of
 the events that are checked.
@@ -728,7 +794,7 @@ may be counted on a per-``query_key`` basis.
 
 This rule requires two additional options:
 
-``num_events``: The number of events which will trigger an alert.
+``num_events``: The number of events which will trigger an alert, inclusive.
 
 ``timeframe``: The time that ``num_events`` must occur within.
 
@@ -776,8 +842,14 @@ before a baseline rate has been established. This can be overridden using ``aler
 
 Optional:
 
+``field_value``: When set, uses the value of the field in the document and not the number of matching documents.
+This is useful to monitor for example a temperature sensor and raise an alarm if the temperature grows too fast.
+Note that the means of the field on the reference and current windows are used to determine if the ``spike_height`` value is reached.
+Note also that the threshold parameters are ignored in this smode.
+
+
 ``threshold_ref``: The minimum number of events that must exist in the reference window for an alert to trigger. For example, if
-``spike_height: 3`` and ``threshold_ref: 10``, than the 'reference' window must contain at least 10 events and the 'current' window at
+``spike_height: 3`` and ``threshold_ref: 10``, then the 'reference' window must contain at least 10 events and the 'current' window at
 least three times that for an alert to be triggered.
 
 ``threshold_cur``: The minimum number of events that must exist in the current window for an alert to trigger. For example, if
@@ -905,6 +977,9 @@ default 50, unique terms.
 ``query_key``: With flatline rule, ``query_key`` means that an alert will be triggered if any value of ``query_key`` has been seen at least once
 and then falls below the threshold.
 
+``forget_keys``: Only valid when used with ``query_key``. If this is set to true, ElastAlert will "forget" about the ``query_key`` value that
+triggers an alert, therefore preventing any more alerts for it until it's seen again.
+
 New Term
 ~~~~~~~~
 
@@ -940,6 +1015,17 @@ than regular searching if there is a large number of documents. If this is used,
 ``query_key`` to that field. Also, note that ``terms_size`` (the number of buckets returned per query) defaults to 50. This means
 that if a new term appears but there are at least 50 terms which appear more frequently, it will not be found.
 
+.. note::
+
+  When using use_terms_query, make sure that the field you are using is not analyzed. If it is, the results of each terms
+  query may return tokens rather than full values. ElastAlert will by default turn on use_keyword_postfix, which attempts
+  to use the non-analyzed version (.keyword or .raw) to gather initial terms. These will not match the partial values and
+  result in false positives.
+
+``use_keyword_postfix``: If true, ElastAlert will automatically try to add .keyword (ES5+) or .raw to the fields when making an
+initial query. These are non-analyzed fields added by Logstash. If the field used is analyzed, the initial query will return
+only the tokenized values, potentially causing false positives. Defaults to true.
+
 Cardinality
 ~~~~~~~~~~~
 
@@ -968,15 +1054,15 @@ Optional:
 Metric Aggregation
 ~~~~~~~~~~~~~~~~~~
 
-``metric_aggregation``: This rule matches when the value of a metric within the calculation window is higher or lower than a threshold. By 
+``metric_aggregation``: This rule matches when the value of a metric within the calculation window is higher or lower than a threshold. By
 default this is ``buffer_time``.
 
 This rule requires:
 
-``metric_agg_key``: This is the name of the field over which the metric value will be calculated. The underlying type of this field must be 
-supported by the specified aggregation type. 
+``metric_agg_key``: This is the name of the field over which the metric value will be calculated. The underlying type of this field must be
+supported by the specified aggregation type.
 
-``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg', 
+``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg',
 'sum', 'cardinality', 'value_count'.
 
 ``doc_type``: Specify the ``_type`` of document to search for.
@@ -989,50 +1075,50 @@ This rule also requires at least one of the two following options:
 
 Optional:
 
-``query_key``: Group metric calculations by this field. For each unique value of the ``query_key`` field, the metric will be calculated and 
+``query_key``: Group metric calculations by this field. For each unique value of the ``query_key`` field, the metric will be calculated and
 evaluated separately against the threshold(s).
 
-``use_run_every_query_size``: By default the metric value is calculated over a ``buffer_time`` sized window. If this parameter is true 
-the rule will use ``run_every`` as the calculation window.  
+``use_run_every_query_size``: By default the metric value is calculated over a ``buffer_time`` sized window. If this parameter is true
+the rule will use ``run_every`` as the calculation window.
 
-``allow_buffer_time_overlap``: This setting will only have an effect if ``use_run_every_query_size`` is false and ``buffer_time`` is greater 
-than ``run_every``. If true will allow the start of the metric calculation window to overlap the end time of a previous run. By default the 
-start and end times will not overlap, so if the time elapsed since the last run is less than the metric calculation window size, rule execution 
-will be skipped (to avoid calculations on partial data). 
+``allow_buffer_time_overlap``: This setting will only have an effect if ``use_run_every_query_size`` is false and ``buffer_time`` is greater
+than ``run_every``. If true will allow the start of the metric calculation window to overlap the end time of a previous run. By default the
+start and end times will not overlap, so if the time elapsed since the last run is less than the metric calculation window size, rule execution
+will be skipped (to avoid calculations on partial data).
 
-``bucket_interval``: If present this will divide the metric calculation window into ``bucket_interval`` sized segments. The metric value will 
-be calculated and evaluated against the threshold(s) for each segment. If ``bucket_interval`` is specified then ``buffer_time`` must be a 
+``bucket_interval``: If present this will divide the metric calculation window into ``bucket_interval`` sized segments. The metric value will
+be calculated and evaluated against the threshold(s) for each segment. If ``bucket_interval`` is specified then ``buffer_time`` must be a
 multiple of ``bucket_interval``. (Or ``run_every`` if ``use_run_every_query_size`` is true).
-  
-``sync_bucket_interval``: This only has an effect if ``bucket_interval`` is present. If true it will sync the start and end times of the metric 
-calculation window to the keys (timestamps) of the underlying date_histogram buckets. Because of the way elasticsearch calculates date_histogram 
-bucket keys these usually round evenly to nearest minute, hour, day etc (depending on the bucket size). By default the bucket keys are offset to 
-allign with the time elastalert runs, (This both avoid calculations on partial data, and ensures the very latest documents are included). 
-See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_offset for a 
+
+``sync_bucket_interval``: This only has an effect if ``bucket_interval`` is present. If true it will sync the start and end times of the metric
+calculation window to the keys (timestamps) of the underlying date_histogram buckets. Because of the way elasticsearch calculates date_histogram
+bucket keys these usually round evenly to nearest minute, hour, day etc (depending on the bucket size). By default the bucket keys are offset to
+allign with the time elastalert runs, (This both avoid calculations on partial data, and ensures the very latest documents are included).
+See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_offset for a
 more comprehensive explaination.
 
 Percentage Match
 ~~~~~~~~~~~~~~~~
 
-``percentage_match``: This rule matches when the percentage of document in the match bucket within a calculation window is higher or lower 
+``percentage_match``: This rule matches when the percentage of document in the match bucket within a calculation window is higher or lower
 than a threshold. By default the calculation window is ``buffer_time``.
 
 This rule requires:
 
-``match_bucket_filter``: ES filter DSL. This defines a filter for the match bucket, which should match a subset of the documents returned by the 
-main query filter.   
+``match_bucket_filter``: ES filter DSL. This defines a filter for the match bucket, which should match a subset of the documents returned by the
+main query filter.
 
 ``doc_type``: Specify the ``_type`` of document to search for.
 
 This rule also requires at least one of the two following options:
 
-``min_percentage``: If the percentage of matching documents is less than this number, an alert will be triggered. 
+``min_percentage``: If the percentage of matching documents is less than this number, an alert will be triggered.
 
 ``max_percentage``: If the percentage of matching documents is greater than this number, an alert will be triggered.
 
 Optional:
 
-``query_key``: Group percentage by this field. For each unique value of the ``query_key`` field, the percentage will be calculated and 
+``query_key``: Group percentage by this field. For each unique value of the ``query_key`` field, the percentage will be calculated and
 evaluated separately against the threshold(s).
 
 ``use_run_every_query_size``: See ``use_run_every_query_size`` in  Metric Aggregation rule
@@ -1040,8 +1126,14 @@ evaluated separately against the threshold(s).
 ``allow_buffer_time_overlap``:  See ``allow_buffer_time_overlap`` in  Metric Aggregation rule
 
 ``bucket_interval``: See ``bucket_interval`` in  Metric Aggregation rule
-  
+
 ``sync_bucket_interval``: See ``sync_bucket_interval`` in  Metric Aggregation rule
+
+``percentage_format_string``: An optional format string to apply to the percentage value in the alert match text. Must be a valid python format string.
+For example, "%.2f" will round it to 2 decimal places.
+See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
+
+``min_denominator``: Minimum number of documents on which percentage calculation will apply. Default is 0.
 
 .. _alerts:
 
@@ -1064,7 +1156,36 @@ or
     - email
     - jira
 
-E-mail subject or JIRA issue summary can also be customized by adding an ``alert_subject`` that contains a custom summary.
+Options for each alerter can either defined at the top level of the YAML file, or nested within the alert name, allowing for different settings
+for multiple of the same alerter. For example, consider sending multiple emails, but with different 'To' and 'From' fields:
+
+.. code-block:: yaml
+
+    alert:
+     - email
+    from_addr: "no-reply@example.com"
+    email: "customer@example.com"
+
+versus
+
+.. code-block:: yaml
+
+    alert:
+     - email:
+         from_addr: "no-reply@example.com"
+         email: "customer@example.com"
+     - email:
+         from_addr: "elastalert@example.com""
+         email: "devs@example.com"
+
+If multiple of the same alerter type are used, top level settings will be used as the default and inline settings will override those
+for each alerter.
+
+Alert Subject
+~~~~~~~~~~~~~
+
+E-mail subjects, JIRA issue summaries, PagerDuty alerts, or any alerter that has a "subject" can be customized by adding an ``alert_subject``
+that contains a custom summary.
 It can be further formatted using standard Python formatting syntax::
 
     alert_subject: "Issue {0} occurred at {1}"
@@ -1081,7 +1202,7 @@ It is mandatory to enclose the ``@timestamp`` field in quotes since in YAML form
 
 In case the rule matches multiple objects in the index, only the first match is used to populate the arguments for the formatter.
 
-If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``<MISSING VALUE>`` in place of its expected value. This will also occur if ``use_count_query`` is set to true.
+If the field(s) mentioned in the arguments list are missing, the email alert will have the text ``alert_missing_value`` in place of its expected value. This will also occur if ``use_count_query`` is set to true.
 
 Alert Content
 ~~~~~~~~~~~~~
@@ -1098,7 +1219,7 @@ There are several ways to format the body text of the various types of events. I
 
 Similarly to ``alert_subject``, ``alert_text`` can be further formatted using standard Python formatting syntax.
 The field names whose values will be used as the arguments can be passed with ``alert_text_args`` or ``alert_text_kw``.
-You may also refer to any top-level rule property in the ``alert_subject_args``, ``alert_text_args``, and ``alert_text_kw fields``.  However, if the matched document has a key with the same name, that will take preference over the rule property.
+You may also refer to any top-level rule property in the ``alert_subject_args``, ``alert_text_args``, ``alert_missing_value``, and ``alert_text_kw fields``.  However, if the matched document has a key with the same name, that will take preference over the rule property.
 
 By default::
 
@@ -1128,10 +1249,16 @@ With ``alert_text_type: exclude_fields``::
 
                           {top_counts}
 
+With ``alert_text_type: aggregation_summary_only``::
+
+    body                = rule_name
+
+                          aggregation_summary
++
 ruletype_text is the string returned by RuleType.get_match_str.
 
 field_values will contain every key value pair included in the results from Elasticsearch. These fields include "@timestamp" (or the value of ``timestamp_field``),
-every key in ``included``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
+every key in ``include``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
 come from an individual event, usually the one which triggers the alert.
 
 Command
@@ -1147,17 +1274,18 @@ This alert requires one option:
 string, the command is executed through the shell.
 
 Strings can be formatted using the old-style format (``%``) or the new-style format (``.format()``). When the old-style format is used, fields are accessed
-using ``%(field_name)s``. When the new-style format is used, fields are accessed using ``{match[field_name]}``. New-style formatting allows accessing nested
-fields (e.g., ``{match[field_1_name][field_2_name]}``).
+using ``%(field_name)s``, or ``%(field.subfield)s``. When the new-style format is used, fields are accessed using ``{field_name}``. New-style formatting allows accessing nested
+fields (e.g., ``{field_1[subfield]}``).
 
 In an aggregated alert, these fields come from the first match.
 
 Optional:
 
-``new_style_string_format``: If True, arguments are formatted using ``.format()`` rather than ``%``. The default is False.
-
 ``pipe_match_json``: If true, the match will be converted to JSON and passed to stdin of the command. Note that this will cause ElastAlert to block
 until the command exits or sends an EOF to stdout.
+
+``pipe_alert_text``: If true, the standard alert body text will be passed to stdin of the command. Note that this will cause ElastAlert to block
+until the command exits or sends an EOF to stdout. It cannot be used at the same time as ``pipe_match_json``.
 
 Example usage using old-style format::
 
@@ -1192,7 +1320,7 @@ Optional:
 ``email_from_field``: Use a field from the document that triggered the alert as the recipient. If the field cannot be found,
 the ``email`` value will be used as a default. Note that this field will not be available in every rule type, for example, if
 you have ``use_count_query`` or if it's ``type: flatline``. You can optionally add a domain suffix to the field to generate the
-address using ``email_add_domain``. For example, with the following settings::
+address using ``email_add_domain``. It can be a single recipient or list of recipients. For example, with the following settings::
 
     email_from_field: "data.user"
     email_add_domain: "@example.com"
@@ -1208,8 +1336,13 @@ an email would be sent to ``qlo@example.com``
 ``smtp_ssl``: Connect the SMTP host using TLS, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
 STARTTLS.
 
-``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. It should be YAML formatted and contain
-two fields, ``user`` and ``password``. If this is not present, no authentication will be attempted.
+``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. The path can be either absolute or relative
+to the given rule. It should be YAML formatted and contain two fields, ``user`` and ``password``. If this is not present,
+no authentication will be attempted.
+
+``smtp_cert_file``: Connect the SMTP host using the given path to a TLS certificate file, default to ``None``.
+
+``smtp_key_file``: Connect the SMTP host using the given path to a TLS key file, default to ``None``.
 
 ``email_reply_to``: This sets the Reply-To header in the email. By default, the from address is ElastAlert@ and the domain will be set
 by the smtp server.
@@ -1220,6 +1353,9 @@ by the smtp server.
 ``cc``: This adds the CC emails to the list of recipients. By default, this is left empty.
 
 ``bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
+
+``email_format``: If set to ``html``, the email's MIME type will be set to HTML, and HTML content should correctly render. If you use this,
+you need to put your own HTML into ``alert_text`` and use ``alert_text_type: alert_text_only``.
 
 Jira
 ~~~~
@@ -1293,9 +1429,32 @@ Example usage::
     jira_bump_in_statuses:
       - Open
 
+``jira_bump_only``: Only update if a ticket is found to bump.  This skips ticket creation for rules where you only want to affect existing tickets.
+
+Example usage::
+
+    jira_bump_only: true
+
+``jira_transition_to``: If ``jira_bump_tickets`` is true, Transition this ticket to the given Status when bumping. Must match the text of your JIRA implementation's Status field.
+
+Example usage::
+
+    jira_transition_to: 'Fixed'
+
+
+
+``jira_bump_after_inactivity``: If this is set, ElastAlert will only comment on tickets that have been inactive for at least this many days.
+It only applies if ``jira_bump_tickets`` is true. Default is 0 days.
+
 Arbitrary Jira fields:
 
 ElastAlert supports setting any arbitrary JIRA field that your jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your JIRA server, internally, the field is represented as ``customfield_1111``. In elastalert, you may refer to either the public facing name OR the internal representation.
+
+In addition, if you would like to use a field in the alert as the value for a custom JIRA field, use the field name plus a # symbol in front. For example, if you wanted to set a custom JIRA field called "user" to the value of the field "username" from the match, you would use the following.
+
+Example::
+
+    jira_user: "#username"
 
 Example usage::
 
@@ -1326,14 +1485,22 @@ Optional:
 ``opsgenie_account``: The OpsGenie account to integrate with.
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
-
+``opsgenie_recipients_args``: Map of arguments used to format opsgenie_recipients.
+``opsgenie_default_recipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful.
 ``opsgenie_teams``: A list of OpsGenie teams to notify (useful for schedules with escalation).
-
+``opsgenie_teams_args``: Map of arguments used to format opsgenie_teams (useful for assigning the alerts to teams based on some data)
+``opsgenie_default_teams``: List of default teams to notify when the formatting of opsgenie_teams is unsuccesful.
 ``opsgenie_tags``: A list of tags for this alert.
 
 ``opsgenie_message``: Set the OpsGenie message to something other than the rule name. The message can be formatted with fields from the first match e.g. "Error occurred for {app_name} at {timestamp}.".
 
 ``opsgenie_alias``: Set the OpsGenie alias. The alias can be formatted with fields from the first match e.g "{app_name} error".
+
+``opsgenie_subject``: A string used to create the title of the OpsGenie alert. Can use Python string formatting.
+
+``opsgenie_subject_args``: A list of fields to use to format ``opsgenie_subject`` if it contains formaters.
+
+``opsgenie_priority``: Set the OpsGenie priority level. Possible values are P1, P2, P3, P4, P5.
 
 SNS
 ~~~
@@ -1387,6 +1554,52 @@ text - Message is treated just like a message sent by a user. Can include @menti
 Valid values: html, text.
 Defaults to 'html'.
 
+``hipchat_mentions``: When using a ``html`` message format, it's not possible to mentions specific users using the ``@user`` syntax.
+In that case, you can set ``hipchat_mentions`` to a list of users which will be first mentioned using a single text message, then the normal ElastAlert message will be sent to Hipchat.
+If set, it will mention the users, no matter if the original message format is set to HTML or text.
+Valid values: list of strings.
+Defaults to ``[]``.
+
+
+Stride
+~~~~~~~
+
+Stride alerter will send a notification to a predefined Stride room. The body of the notification is formatted the same as with other alerters.
+Simple HTML such as <a> and <b> tags will be parsed into a format that Stride can consume.
+
+The alerter requires the following two options:
+
+``stride_access_token``: The randomly generated notification token created by Stride.
+
+``stride_cloud_id``: The site_id associated with the Stride site you want to send the alert to.
+
+``stride_conversation_id``: The conversation_id associated with the Stride conversation you want to send the alert to.
+
+``stride_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
+
+``stride_proxy``: By default ElastAlert will not use a network proxy to send notifications to Stride. Set this option using ``hostname:port`` if you need to use a proxy.
+
+
+MS Teams
+~~~~~~~~
+
+MS Teams alerter will send a notification to a predefined Microsoft Teams channel.
+
+The alerter requires the following options:
+
+``ms_teams_webhook_url``: The webhook URL that includes your auth data and the ID of the channel you want to post to. Go to the Connectors
+menu in your channel and configure an Incoming Webhook, then copy the resulting URL. You can use a list of URLs to send to multiple channels.
+
+``ms_teams_alert_summary``: Summary should be configured according to `MS documentation <https://docs.microsoft.com/en-us/outlook/actionable-messages/card-reference>`_, although it seems not displayed by Teams currently.
+
+Optional:
+
+``ms_teams_theme_color``: By default the alert will be posted without any color line. To add color, set this attribute to a HTML color value e.g. ``#ff0000`` for red.
+
+``ms_teams_proxy``: By default ElastAlert will not use a network proxy to send notifications to MS Teams. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``ms_teams_alert_fixed_width``: By default this is ``False`` and the notification will be sent to MS Teams as-is. Teams supports a partial Markdown implementation, which means asterisk, underscore and other characters may be interpreted as Markdown. Currenlty, Teams does not fully implement code blocks. Setting this attribute to ``True`` will enable line by line code blocks. It is recommended to enable this to get clearer notifications in Teams.
+
 Slack
 ~~~~~
 
@@ -1414,6 +1627,42 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
 
+``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
+
+``slack_title_link``: You can add a link in your Slack notification by setting this to a valid URL.
+
+``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slac. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
+
+Mattermost
+~~~~~
+
+Mattermost alerter will send a notification to a predefined Mattermost channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following option:
+
+``mattermost_webhook_url``: The webhook URL. Follow the instructions on https://docs.mattermost.com/developer/webhooks-incoming.html to create an incoming webhook on your Mattermost installation.
+
+Optional:
+
+``mattermost_proxy``: By default ElastAlert will not use a network proxy to send notifications to Mattermost. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``mattermost_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+
+``mattermost_username_override``: By default Mattermost will use your username when posting to the channel. Use this option to change it (free text).
+
+``mattermost_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
+
+``mattermost_icon_url_override``: By default ElastAlert will use the default webhook icon when posting to the channel. You can provide icon_url to use custom image.
+Provide absolute address of the picture (for example: http://some.address.com/image.jpg) or Base64 data url.
+
+``mattermost_msg_pretext``: You can set the message attachment pretext using this option.
+
+``mattermost_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good', 'warning', or hex color code.
+
+``mattermost_msg_fields``: You can add fields to your Mattermost alerts using this option. You can specify the title using `title` and the text value using `value`. Additionally you can specify whether this field should be a `short` field using `short: true`. If you set `args` and `value` is a formattable string, ElastAlert will format the incident key based on the provided array of fields from the rule or match.
+See https://docs.mattermost.com/developer/message-attachments.html#fields for more information.
+
+
 Telegram
 ~~~~~~~~
 Telegram alerter will send a notification to a predefined Telegram username or channel. The body of the notification is formatted the same as with other alerters.
@@ -1422,13 +1671,34 @@ The alerter requires the following two options:
 
 ``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#botfather
 
-``telegram_room_id``: Unique identifier for the target chat or username of the target channel (in the format @channelusername)
+``telegram_room_id``: Unique identifier for the target chat or username of the target channel using telegram chat_id (in the format "-xxxxxxxx")
 
 Optional:
 
 ``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
 
 ``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
+
+GoogleChat
+~~~~~~~~~~
+GoogleChat alerter will send a notification to a predefined GoogleChat channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``googlechat_webhook_url``: The webhook URL that includes the channel (room) you want to post to. Go to the Google Chat website https://chat.google.com and choose the channel in which you wish to receive the notifications. Select 'Configure Webhooks' to create a new webhook or to copy the URL from an existing one. You can use a list of URLs to send to multiple channels.
+
+Optional:
+
+``googlechat_format``: Formatting for the notification. Can be either 'card' or 'basic' (default).
+
+``googlechat_header_title``: Sets the text for the card header title. (Only used if format=card)
+
+``googlechat_header_subtitle``: Sets the text for the card header subtitle. (Only used if format=card)
+
+``googlechat_header_image``: URL for the card header icon. (Only used if format=card)
+
+``googlechat_footer_kibanalink``: URL to Kibana to include in the card footer. (Only used if format=card)
+
 
 PagerDuty
 ~~~~~~~~~
@@ -1441,14 +1711,46 @@ The alerter requires the following option:
 
 ``pagerduty_client_name``: The name of the monitoring client that is triggering this event.
 
+``pagerduty_event_type``: Any of the following: `trigger`, `resolve`, or `acknowledge`. (Optional, defaults to `trigger`)
+
 Optional:
 
-``pagerduty_incident_key``: If not set pagerduty will trigger a new incident for each alert sent. If set to a unique string per rule pagerduty will identify the incident that this event should be applied.
+``alert_subject``: If set, this will be used as the Incident description within PagerDuty. If not set, ElastAlert will default to using the rule name of the alert for the incident.
+
+``alert_subject_args``: If set, and  ``alert_subject`` is a formattable string, ElastAlert will format the incident key based on the provided array of fields from the rule or match.
+
+``pagerduty_incident_key``: If not set PagerDuty will trigger a new incident for each alert sent. If set to a unique string per rule PagerDuty will identify the incident that this event should be applied.
 If there's no open (i.e. unresolved) incident with this key, a new one will be created. If there's already an open incident with a matching key, this event will be appended to that incident's log.
 
 ``pagerduty_incident_key_args``: If set, and ``pagerduty_incident_key`` is a formattable string, Elastalert will format the incident key based on the provided array of fields from the rule or match.
 
-``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to Pagerduty. Set this option using ``hostname:port`` if you need to use a proxy.
+``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerDuty. Set this option using ``hostname:port`` if you need to use a proxy.
+
+V2 API Options (Optional):
+
+These options are specific to the PagerDuty V2 API
+
+See https://v2.developer.pagerduty.com/docs/send-an-event-events-api-v2
+
+``pagerduty_api_version``: Defaults to `v1`.  Set to `v2` to enable the PagerDuty V2 Event API.
+
+``pagerduty_v2_payload_class``: Sets the class of the payload. (the event type in PagerDuty)
+
+``pagerduty_v2_payload_class_args``: If set, and ``pagerduty_v2_payload_class`` is a formattable string, Elastalert will format the class based on the provided array of fields from the rule or match.
+
+``pagerduty_v2_payload_component``: Sets the component of the payload. (what program/interface/etc the event came from)
+
+``pagerduty_v2_payload_component_args``: If set, and ``pagerduty_v2_payload_component`` is a formattable string, Elastalert will format the component based on the provided array of fields from the rule or match.
+
+``pagerduty_v2_payload_group``: Sets the logical grouping (e.g. app-stack)
+
+``pagerduty_v2_payload_group_args``: If set, and ``pagerduty_v2_payload_group`` is a formattable string, Elastalert will format the group based on the provided array of fields from the rule or match.
+
+``pagerduty_v2_payload_severity``: Sets the severity of the page. (defaults to `critical`, valid options: `critical`, `error`, `warning`, `info`)
+
+``pagerduty_v2_payload_source``: Sets the source of the event, preferably the hostname or fqdn.
+
+``pagerduty_v2_payload_source_args``: If set, and ``pagerduty_v2_payload_source`` is a formattable string, Elastalert will format the source based on the provided array of fields from the rule or match.
 
 Exotel
 ~~~~~~
@@ -1479,7 +1781,7 @@ Twilio alerter will trigger an incident to a mobile phone as sms from your twili
 
 The alerter requires the following option:
 
-``twilio_accout_sid``: This is sid of your twilio account.
+``twilio_account_sid``: This is sid of your twilio account.
 
 ``twilio_auth_token``: Auth token assosiated with your twilio account.
 
@@ -1503,7 +1805,9 @@ The alerter requires the following options:
 
 Optional:
 
-``victorops_entity_display_name``: Human-readable name of alerting entity. Used by VictorOps to correlate incidents by host througout the alert lifecycle.
+``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents thoughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
+
+``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
 
 ``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
 
@@ -1577,6 +1881,114 @@ Optional:
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
 
+Alerta
+~~~~~~
+
+Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint.
+See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on the Alerta JSON format.
+
+For Alerta 5.0
+
+Required:
+
+``alerta_api_url``: API server URL.
+
+Optional:
+
+``alerta_api_key``: This is the api key for alerta server, sent in an ``Authorization`` HTTP header. If not defined, no Authorization header is sent.
+
+``alerta_use_qk_as_resource``: If true and query_key is present, this will override ``alerta_resource`` field with the ``query_key value`` (Can be useful if ``query_key`` is a hostname).
+
+``alerta_use_match_timestamp``: If true, it will use the timestamp of the first match as the ``createTime`` of the alert. otherwise, the current server time is used.
+
+``alert_missing_value``: Text to replace any match field not found when formating strings. Defaults to ``<MISSING_TEXT>``.
+
+The following options dictate the values of the API JSON payload:
+
+``alerta_severity``: Defaults to "warning".
+
+``alerta_timeout``: Defaults 84600 (1 Day).
+
+``alerta_type``: Defaults to "elastalert".
+
+The following options use Python-like string syntax ``{<field>}`` or ``%(<field>)s`` to access parts of the match, similar to the CommandAlerter. Ie: "Alert for {clientip}".
+If the referenced key is not found in the match, it is replaced by the text indicated by the option ``alert_missing_value``.
+
+``alerta_resource``: Defaults to "elastalert".
+
+``alerta_service``: Defaults to "elastalert".
+
+``alerta_origin``: Defaults to "elastalert".
+
+``alerta_environment``: Defaults to "Production".
+
+``alerta_group``: Defaults to "".
+
+``alerta_correlate``: Defaults to an empty list.
+
+``alerta_tags``: Defaults to an empty list.
+
+``alerta_event``: Defaults to the rule's name.
+
+``alerta_text``: Defaults to the rule's text according to its type.
+
+``alerta_value``: Defaults to "".
+
+The ``attributes`` dictionary is built by joining the lists from  ``alerta_attributes_keys`` and ``alerta_attributes_values``, considered in order.
+
+
+Example usage using old-style format::
+
+    alert:
+      - alerta
+    alerta_api_url: "http://youralertahost/api/alert"
+    alerta_attributes_keys:   ["hostname",   "TimestampEvent",  "senderIP" ]
+    alerta_attributes_values: ["%(key)s",    "%(logdate)s",     "%(sender_ip)s"  ]
+    alerta_correlate: ["ProbeUP","ProbeDOWN"]
+    alerta_event: "ProbeUP"
+    alerta_text:  "Probe %(hostname)s is UP at %(logdate)s GMT"
+    alerta_value: "UP"
+
+Example usage using new-style format::
+
+    alert:
+      - alerta
+    alerta_attributes_values: ["{key}",    "{logdate}",     "{sender_ip}"  ]
+    alerta_text:  "Probe {hostname} is UP at {logdate} GMT"
+
+
+
+HTTP POST
+~~~~~~~~~
+
+This alert type will send results to a JSON endpoint using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON will contain all the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
+
+Required:
+
+``http_post_url``: The URL to POST.
+
+Optional:
+
+``http_post_payload``: List of keys:values to use as the content of the POST. Example - ip:clientip will map the value from the clientip index of Elasticsearch to JSON key named ip. If not defined, all the Elasticsearch keys will be sent.
+
+``http_post_static_payload``: Key:value pairs of static parameters to be sent, along with the Elasticsearch results. Put your authentication or other information here.
+
+``http_post_proxy``: URL of proxy, if required.
+
+``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
+
+``http_post_timeout``: The timeout value, in seconds, for making the post. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
+
+Example usage::
+
+    alert: post
+    http_post_url: "http://example.com/api"
+    http_post_payload:
+      ip: clientip
+    http_post_static_payload:
+      apikey: abc123
+
+
 Alerter
 ~~~~~~~
 
@@ -1586,3 +1998,50 @@ Example usage::
 
     jira_priority: $priority$
     jira_alert_owner: $owner$
+
+
+theHive
+~~~~~~~
+
+theHive alert type will send JSON request to theHive (Security Incident Response Platform) with TheHive4py API. Sent request will be stored like Hive Alert with description and observables.
+
+Required:
+
+``hive_connection``: The connection details as key:values. Required keys are ``hive_host``, ``hive_port`` and ``hive_apikey``.
+
+``hive_alert_config``: Configuration options for the alert.
+
+Optional:
+
+``hive_proxies``: Proxy configuration.
+
+``hive_observable_data_mapping``: If needed, matched data fields can be mapped to TheHive observable types using python string formatting.
+
+Example usage::
+
+	alert: hivealerter
+
+     hive_connection:
+       hive_host: http://localhost
+       hive_port: <hive_port>
+       hive_apikey: <hive_apikey>
+
+     hive_proxies:
+       http: ''
+       https: ''
+
+      hive_alert_config:
+        title: 'Title'  ## This will default to {rule[index]_rule[name]} if not provided
+        type: 'external'
+        source: 'elastalert'
+        description: '{match[field1]} {rule[name]} Sample description'
+        severity: 2
+        tags: ['tag1', 'tag2 {rule[name]}']
+        tlp: 3
+        status: 'New'
+        follow: True
+
+    hive_observable_data_mapping:
+        - domain: "{match[field1]}_{rule[name]}"
+        - domain: "{match[field]}"
+        - ip: "{match[ip_field]}"

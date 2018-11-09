@@ -115,7 +115,14 @@ def load_configuration(filename, conf, args=None):
     :param conf: The global configuration dictionary, used for populating defaults.
     :return: The rule configuration, a dictionary.
     """
-    rule = load_rule_yaml(filename)
+    try:
+        rule = load_rule_yaml(filename)
+    except Exception as e:
+        if (conf.get('skip_invalid')):
+            logging.error(e)
+            return False
+        else:
+            raise e
     load_options(rule, conf, filename, args)
     load_modules(rule, args)
     return rule
@@ -254,6 +261,10 @@ def load_options(rule, conf, filename, args=None):
     rule.setdefault('hipchat_notify', True)
     rule.setdefault('hipchat_from', '')
     rule.setdefault('hipchat_ignore_ssl_errors', False)
+
+    # Set OpsGenie options from global config
+    rule.setdefault('opsgenie_default_receipients', None)
+    rule.setdefault('opsgenie_default_teams', None)
 
     # Make sure we have required options
     if required_locals - frozenset(rule.keys()):
@@ -478,6 +489,10 @@ def load_rules(args):
     for rule_file in rule_files:
         try:
             rule = load_configuration(rule_file, conf, args)
+            # A rule failed to load, don't try to process it
+            if (not rule):
+                logging.error('Invalid rule file skipped: %s' % rule_file)
+                continue
             # By setting "is_enabled: False" in rule file, a rule is easily disabled
             if 'is_enabled' in rule and not rule['is_enabled']:
                 continue
