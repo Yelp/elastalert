@@ -100,6 +100,7 @@ def get_module(module_name):
     """ Loads a module and returns a specific object.
     module_name should 'module.file.object'.
     Returns object or raises EAException on error. """
+    sys.path.append(os.getcwd())
     try:
         module_path, module_class = module_name.rsplit('.', 1)
         base_module = __import__(module_path, globals(), locals(), [module_class])
@@ -195,6 +196,8 @@ def load_options(rule, conf, filename, args=None):
             rule['query_delay'] = datetime.timedelta(**rule['query_delay'])
         if 'buffer_time' in rule:
             rule['buffer_time'] = datetime.timedelta(**rule['buffer_time'])
+        if 'run_every' in rule:
+            rule['run_every'] = datetime.timedelta(**rule['run_every'])
         if 'bucket_interval' in rule:
             rule['bucket_interval_timedelta'] = datetime.timedelta(**rule['bucket_interval'])
         if 'exponential_realert' in rule:

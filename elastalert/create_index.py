@@ -57,6 +57,8 @@ def main():
         filename = 'config.yaml'
     elif os.path.isfile(args.config):
         filename = args.config
+    elif os.path.isfile('../config.yaml'):
+        filename = '../config.yaml'
     else:
         filename = ''
 
