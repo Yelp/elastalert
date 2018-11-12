@@ -153,9 +153,11 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
-        self.statsd = statsd.StatsClient(host=self.conf.get('statsd_hostname', 'statsd'),
-                        port=self.conf.get('statsd_port', '8125'))
-        self.statsd_elastalert_instance = self.conf.get('statsd_elastalert_instance', 'elastalert')
+        statsd_hostname = self.conf.get('statsd_hostname', '')
+        if len(statsd_hostname) > 0:
+            self.statsd = statsd.StatsClient(host=statsd_hostname,
+                                             port=self.conf.get('statsd_port', '8125'))
+            self.statsd_elastalert_instance = self.conf.get('statsd_elastalert_instance', 'elastalert')
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
@@ -1106,11 +1108,12 @@ class ElastAlerter():
         exit(1)
 
     def send_metrics(self, elastalert_instance, rule_name, rule_time, query_hits, already_seen_hits, query_matches, query_alerts_sent):
-        self.statsd.timing('rule_time', rule_time, tags={"rule_name": rule_name, "elastalert_instance": elastalert_instance})
-        self.statsd.gauge('query_hits', query_hits, tags={"rule_name": rule_name, "elastalert_instance": elastalert_instance})
-        self.statsd.gauge('already_seen_hits', already_seen_hits, tags={"rule_name": rule_name, "elastalert_instance": elastalert_instance})
-        self.statsd.gauge('query_matches', query_matches, tags={"rule_name": rule_name, "elastalert_instance": elastalert_instance})
-        self.statsd.gauge('query_alerts_sent', query_alerts_sent, tags={"rule_name": rule_name, "elastalert_instance": elastalert_instance})
+        if self.statsd:
+            self.statsd.timing('rule_time', rule_time, tags={"rule_name": rule_name, "elastalert_instance": elastalert_instance})
+            self.statsd.gauge('query_hits', query_hits, tags={"rule_name": rule_name, "elastalert_instance": elastalert_instance})
+            self.statsd.gauge('already_seen_hits', already_seen_hits, tags={"rule_name": rule_name, "elastalert_instance": elastalert_instance})
+            self.statsd.gauge('query_matches', query_matches, tags={"rule_name": rule_name, "elastalert_instance": elastalert_instance})
+            self.statsd.gauge('query_alerts_sent', query_alerts_sent, tags={"rule_name": rule_name, "elastalert_instance": elastalert_instance})
 
     def run_all_rules(self):
         """ Run each rule one time """

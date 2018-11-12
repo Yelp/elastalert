@@ -42,7 +42,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``statsd_elastalert_instance`` (string, default "elastalert")|           |
 +--------------------------------------------------------------+           |
-| ``statsd_hostname`` (string, default "statsd")               |           |
+| ``statsd_hostname`` (string, default "")                     |           |
 +--------------------------------------------------------------+           |
 | ``statsd_port`` (number, default 8125)                       |           |
 +--------------------------------------------------------------+           |
