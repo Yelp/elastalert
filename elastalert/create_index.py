@@ -81,8 +81,8 @@ def main():
         username = args.username if args.username else None
         password = args.password if args.password else None
         aws_region = args.aws_region
-        host = args.host if args.host else raw_input('Enter Elasticsearch host: ')
-        port = args.port if args.port else int(raw_input('Enter Elasticsearch port: '))
+        host = args.host if args.host else raw_input('Enter Kibana host: ')
+        port = args.port if args.port else int(raw_input('Enter Kibana port: '))
         use_ssl = (args.ssl if args.ssl is not None
                    else raw_input('Use SSL? t/f: ').lower() in ('t', 'true'))
         if use_ssl:
