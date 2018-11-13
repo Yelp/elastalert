@@ -1174,6 +1174,9 @@ class SlackAlerter(Alerter):
         else:
             payload['icon_emoji'] = self.slack_emoji_override
 
+        if self.slack_title != '':
+            payload['attachments'][0]['title'] = self.slack_title
+
         if self.slack_title_link != '':
             payload['attachments'][0]['title_link'] = self.slack_title_link
 
