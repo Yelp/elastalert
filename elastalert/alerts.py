@@ -1112,6 +1112,7 @@ class SlackAlerter(Alerter):
         if isinstance(self.slack_channel_override, basestring):
             self.slack_channel_override = [self.slack_channel_override]
         self.slack_title_link = self.rule.get('slack_title_link', '')
+        self.slack_title = self.rule.get('slack_title', '')
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_icon_url_override = self.rule.get('slack_icon_url_override', '')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
