@@ -139,6 +139,7 @@ class ElastAlerter():
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.alerts_sent = 0
+        self.cumulative_hits = 0
         self.num_hits = 0
         self.num_dupes = 0
         self.current_es = None
@@ -150,6 +151,7 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
+        self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
@@ -388,6 +390,16 @@ class ElastAlerter():
                     **extra_args
                 )
                 self.total_hits = int(res['hits']['total'])
+
+            if len(res.get('_shards', {}).get('failures', [])) > 0:
+                try:
+                    errs = [e['reason']['reason'] for e in res['_shards']['failures'] if 'Failed to parse' in e['reason']['reason']]
+                    if len(errs):
+                        raise ElasticsearchException(errs)
+                except (TypeError, KeyError):
+                    # Different versions of ES have this formatted in different ways. Fallback to str-ing the whole thing
+                    raise ElasticsearchException(str(res['_shards']['failures']))
+
             logging.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
@@ -459,14 +471,27 @@ class ElastAlerter():
     def get_hits_terms(self, rule, starttime, endtime, index, key, qk=None, size=None):
         rule_filter = copy.copy(rule['filter'])
         if qk:
-            filter_key = rule['query_key']
+            qk_list = qk.split(", ")
+            end = None
             if rule['five']:
                 end = '.keyword'
             else:
                 end = '.raw'
-            if rule.get('raw_count_keys', True) and not rule['query_key'].endswith(end):
-                filter_key = add_raw_postfix(filter_key, rule['five'])
-            rule_filter.extend([{'term': {filter_key: qk}}])
+
+            if len(qk_list) == 1:
+                qk = qk_list[0]
+                filter_key = rule['query_key']
+                if rule.get('raw_count_keys', True) and not rule['query_key'].endswith(end):
+                    filter_key = add_raw_postfix(filter_key, rule['five'])
+                rule_filter.extend([{'term': {filter_key: qk}}])
+            else:
+                filter_keys = rule['compound_query_key']
+                for i in range(len(filter_keys)):
+                    key_with_postfix = filter_keys[i]
+                    if rule.get('raw_count_keys', True) and not key.endswith(end):
+                        key_with_postfix = add_raw_postfix(key_with_postfix, rule['five'])
+                    rule_filter.extend([{'term': {key_with_postfix: qk_list[i]}}])
+
         base_query = self.get_query(
             rule_filter,
             starttime,
@@ -691,7 +716,9 @@ class ElastAlerter():
             elif 'previous_endtime' in rule:
                 if rule['previous_endtime'] < buffer_delta:
                     rule['starttime'] = rule['previous_endtime']
-                self.adjust_start_time_for_overlapping_agg_query(rule)
+                    self.adjust_start_time_for_overlapping_agg_query(rule)
+                elif rule.get('allow_buffer_time_overlap'):
+                    rule['starttime'] = buffer_delta
             else:
                 rule['starttime'] = buffer_delta
 
@@ -787,7 +814,13 @@ class ElastAlerter():
             return
 
         filters = rule['filter']
-        additional_terms = [(rule['compare_key'] + ':"' + term + '"') for term in rule[listname]]
+        additional_terms = []
+        for term in rule[listname]:
+            if not term.startswith('/') or not term.endswith('/'):
+                additional_terms.append(rule['compare_key'] + ':"' + term + '"')
+            else:
+                # These are regular expressions and won't work if they are quoted
+                additional_terms.append(rule['compare_key'] + ':' + term)
         if listname == 'whitelist':
             query = "NOT " + " AND NOT ".join(additional_terms)
         else:
@@ -850,6 +883,7 @@ class ElastAlerter():
         if rule.get('aggregation_query_element'):
             if endtime - tmp_endtime == segment_size:
                 self.run_query(rule, tmp_endtime, endtime)
+                self.cumulative_hits += self.num_hits
             elif total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
                 rule['starttime'] = rule['original_starttime']
                 return 0
@@ -858,6 +892,7 @@ class ElastAlerter():
         else:
             if not self.run_query(rule, rule['starttime'], endtime):
                 return 0
+            self.cumulative_hits += self.num_hits
             rule['type'].garbage_collect(endtime)
 
         # Process any new matches
@@ -1012,6 +1047,9 @@ class ElastAlerter():
                 # Rule file was changed, reload rule
                 try:
                     new_rule = self.rules_loader.load_configuration(rule_file, self.conf)
+                    if not new_rule:
+                        logging.error('Invalid rule file skipped: %s' % rule_file)
+                        continue
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         elastalert_logger.info('Rule file %s is now disabled.' % (rule_file))
                         # Remove this rule if it's been disabled
@@ -1049,6 +1087,9 @@ class ElastAlerter():
             for rule_file in set(new_rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
                     new_rule = self.rules_loader.load_configuration(rule_file, self.conf)
+                    if not new_rule:
+                        logging.error('Invalid rule file skipped: %s' % rule_file)
+                        continue
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         continue
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
@@ -1431,6 +1472,12 @@ class ElastAlerter():
             'alert_sent': alert_sent,
             'alert_time': alert_time
         }
+
+        if self.add_metadata_alert:
+            body['category'] = rule['category']
+            body['description'] = rule['description']
+            body['owner'] = rule['owner']
+            body['priority'] = rule['priority']
 
         match_time = lookup_es_key(match, rule['timestamp_field'])
         if match_time is not None:

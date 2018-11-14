@@ -340,9 +340,12 @@ def build_es_conn_config(conf):
     parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
     parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
 
-    if 'es_username' in conf:
-        parsed_conf['es_username'] = os.environ.get('ES_USERNAME', conf['es_username'])
-        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD', conf['es_password'])
+    if os.environ.get('ES_USERNAME'):
+        parsed_conf['es_username'] = os.environ.get('ES_USERNAME')
+        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD')
+    elif 'es_username' in conf:
+        parsed_conf['es_username'] = conf['es_username']
+        parsed_conf['es_password'] = conf['es_password']
 
     if 'aws_region' in conf:
         parsed_conf['aws_region'] = conf['aws_region']
