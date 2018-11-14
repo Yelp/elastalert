@@ -4,7 +4,6 @@ import copy
 import datetime
 import json
 import logging
-import multiprocessing
 import os
 import signal
 import sys
@@ -144,9 +143,10 @@ class ElastAlerter():
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.alerts_sent = 0
-        self.cumulative_hits = 0
-        self.num_hits = 0
-        self.num_dupes = 0
+        self.cumulative_hits = dict.fromkeys([r['name'] for r in self.rules], 0)
+        self.total_hits = dict.fromkeys([r['name'] for r in self.rules], 0)
+        self.num_hits = dict.fromkeys([r['name'] for r in self.rules], 0)
+        self.num_dupes = dict.fromkeys([r['name'] for r in self.rules], 0)
         self.current_es = None
         self.current_es_addr = None
         self.buffer_time = self.conf['buffer_time']
@@ -156,11 +156,8 @@ class ElastAlerter():
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
-        self.num_threads = self.conf.get('num_threads', 1)
+        self.num_threads = max(1, self.conf.get('num_threads', 1))
         self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
-        if self.num_threads <= 0:
-            self.num_threads = multiprocessing.cpu_count() - 1
-
 
         self.writeback_es = elasticsearch_client(self.conf)
         self._es_version = None
@@ -398,7 +395,7 @@ class ElastAlerter():
                     ignore_unavailable=True,
                     **extra_args
                 )
-                self.total_hits = int(res['hits']['total'])
+                self.total_hits[rule['name']] = int(res['hits']['total'])
 
             if len(res.get('_shards', {}).get('failures', [])) > 0:
                 try:
@@ -418,16 +415,16 @@ class ElastAlerter():
             self.handle_error('Error running query: %s' % (e), {'rule': rule['name'], 'query': query})
             return None
         hits = res['hits']['hits']
-        self.num_hits += len(hits)
+        self.num_hits[rule['name']] += len(hits)
         lt = rule.get('use_local_time')
         status_log = "Queried rule %s from %s to %s: %s / %s hits" % (
             rule['name'],
             pretty_ts(starttime, lt),
             pretty_ts(endtime, lt),
-            self.num_hits,
+            self.num_hits[rule['name']],
             len(hits)
         )
-        if self.total_hits > rule.get('max_query_size', self.max_query_size):
+        if self.total_hits[rule['name']] > rule.get('max_query_size', self.max_query_size):
             elastalert_logger.info("%s (scrolling..)" % status_log)
             rule['scroll_id'] = res['_scroll_id']
         else:
@@ -470,7 +467,7 @@ class ElastAlerter():
             self.handle_error('Error running count query: %s' % (e), {'rule': rule['name'], 'query': query})
             return None
 
-        self.num_hits += res['count']
+        self.num_hits[rule['name']] += res['count']
         lt = rule.get('use_local_time')
         elastalert_logger.info(
             "Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), res['count'])
@@ -539,7 +536,7 @@ class ElastAlerter():
             buckets = res['aggregations']['filtered']['counts']['buckets']
         else:
             buckets = res['aggregations']['counts']['buckets']
-        self.num_hits += len(buckets)
+        self.num_hits[rule['name']] += len(buckets)
         lt = rule.get('use_local_time')
         elastalert_logger.info(
             'Queried rule %s from %s to %s: %s buckets' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(buckets))
@@ -582,7 +579,7 @@ class ElastAlerter():
             payload = res['aggregations']['filtered']
         else:
             payload = res['aggregations']
-        self.num_hits += res['hits']['total']
+        self.num_hits[rule['name']] += res['hits']['total']
         return {endtime: payload}
 
     def remove_duplicate_events(self, data, rule):
@@ -636,7 +633,7 @@ class ElastAlerter():
             if data:
                 old_len = len(data)
                 data = self.remove_duplicate_events(data, rule)
-                self.num_dupes += old_len - len(data)
+                self.num_dupes[rule['name']] += old_len - len(data)
 
         # There was an exception while querying
         if data is None:
@@ -652,7 +649,7 @@ class ElastAlerter():
                 rule_inst.add_data(data)
 
         try:
-            if rule.get('scroll_id') and self.num_hits < self.total_hits:
+            if rule.get('scroll_id') and self.num_hits[rule['name']] < self.total_hits[rule['name']]:
                 self.run_query(rule, start, end, scroll=True)
         except RuntimeError:
             # It's possible to scroll far enough to hit max recursive depth
@@ -873,9 +870,9 @@ class ElastAlerter():
             return 0
 
         # Run the rule. If querying over a large time period, split it up into segments
-        self.num_hits = 0
-        self.num_dupes = 0
-        self.cumulative_hits = 0
+        self.num_hits[rule['name']] = 0
+        self.num_dupes[rule['name']] = 0
+        self.cumulative_hits[rule['name']] = 0
         segment_size = self.get_segment_size(rule)
 
         tmp_endtime = rule['starttime']
@@ -884,15 +881,15 @@ class ElastAlerter():
             tmp_endtime = tmp_endtime + segment_size
             if not self.run_query(rule, rule['starttime'], tmp_endtime):
                 return 0
-            self.cumulative_hits += self.num_hits
-            self.num_hits = 0
+            self.cumulative_hits[rule['name']] += self.num_hits[rule['name']]
+            self.num_hits[rule['name']] = 0
             rule['starttime'] = tmp_endtime
             rule['type'].garbage_collect(tmp_endtime)
 
         if rule.get('aggregation_query_element'):
             if endtime - tmp_endtime == segment_size:
                 self.run_query(rule, tmp_endtime, endtime)
-                self.cumulative_hits += self.num_hits
+                self.cumulative_hits[rule['name']] += self.num_hits[rule['name']]
             elif total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
                 rule['starttime'] = rule['original_starttime']
                 return 0
@@ -901,14 +898,14 @@ class ElastAlerter():
         else:
             if not self.run_query(rule, rule['starttime'], endtime):
                 return 0
-            self.cumulative_hits += self.num_hits
+            self.cumulative_hits[rule['name']] += self.num_hits[rule['name']]
             rule['type'].garbage_collect(endtime)
 
         # Process any new matches
         num_matches = len(rule['type'].matches)
         while rule['type'].matches:
             match = rule['type'].matches.pop(0)
-            match['num_hits'] = self.cumulative_hits
+            match['num_hits'] = self.cumulative_hits[rule['name']]
             match['num_matches'] = num_matches
 
             # If realert is set, silence the rule for that duration
@@ -954,7 +951,7 @@ class ElastAlerter():
                 'endtime': endtime,
                 'starttime': rule['original_starttime'],
                 'matches': num_matches,
-                'hits': max(self.num_hits, self.cumulative_hits),
+                'hits': max(self.num_hits[rule['name']], self.cumulative_hits[rule['name']]),
                 '@timestamp': ts_now(),
                 'time_taken': time_taken}
         self.writeback('elastalert_status', body)
@@ -1008,7 +1005,8 @@ class ElastAlerter():
             else:
                 rule = blank_rule
 
-        copy_properties = ['agg_matches',
+        copy_properties = ['running',
+                           'agg_matches',
                            'current_aggregate_id',
                            'aggregate_alert_time',
                            'processed_hits',
@@ -1056,7 +1054,7 @@ class ElastAlerter():
                 # Rule file was changed, reload rule
                 try:
                     new_rule = load_configuration(rule_file, self.conf)
-                    if (not new_rule):
+                    if not new_rule:
                         logging.error('Invalid rule file skipped: %s' % rule_file)
                         continue
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
@@ -1187,16 +1185,15 @@ class ElastAlerter():
 
         next_run = datetime.datetime.utcnow() + self.run_every
 
-        # Create a thread safe list of all the rules to run
-        rules_to_run = deque(self.rules)
+        # Create a thread safe list of all the rules to run (exclude rules still running)
+        rules_to_run = deque()
+        for rule in self.rules:
+            if not rule['running']:
+                rules_to_run.append(rule)
         for t in range(0, min(len(rules_to_run), self.num_threads)):
             t = threading.Thread(target=self.run_all_rules_thread, args=[next_run, rules_to_run])
             t.setDaemon(True)
             t.start()
-
-        # Wait until there are no rules left to be run
-        while len(rules_to_run) > 0:
-            pass
 
         # Only force starttime once
         self.starttime = None
@@ -1213,6 +1210,7 @@ class ElastAlerter():
             # Grab the next rule
             try:
                 rule = rules.popleft()
+                rule['running'] = True
             except IndexError:
                 break
 
@@ -1233,10 +1231,10 @@ class ElastAlerter():
                 self.handle_uncaught_exception(e, rule)
             else:
                 old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
-                total_hits = max(self.num_hits, self.cumulative_hits)
+                total_hits = max(self.num_hits[rule['name']], self.cumulative_hits[rule['name']])
                 elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
                                        " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                            total_hits, self.num_dupes, num_matches, self.alerts_sent))
+                                                            total_hits, self.num_dupes[rule['name']], num_matches, self.alerts_sent))
                 self.alerts_sent = 0
 
                 if next_run < datetime.datetime.utcnow():
@@ -1252,6 +1250,7 @@ class ElastAlerter():
                     )
 
             self.remove_old_events(rule)
+            rule['running'] = False
 
     def stop(self):
         """ Stop an ElastAlert runner that's been started """
@@ -1921,7 +1920,7 @@ class ElastAlerter():
                 buckets = hits_terms.values()[0]
 
                 # get_hits_terms adds to num_hits, but we don't want to count these
-                self.num_hits -= len(buckets)
+                self.num_hits[rule['name']] -= len(buckets)
                 terms = {}
                 for bucket in buckets:
                     terms[bucket['key']] = bucket['doc_count']

@@ -727,8 +727,8 @@ def run_and_assert_segmented_queries(ea, start, end, segment_size):
 def test_query_segmenting_reset_num_hits(ea):
     # Tests that num_hits gets reset every time run_query is run
     def assert_num_hits_reset():
-        assert ea.num_hits == 0
-        ea.num_hits += 10
+        assert ea.num_hits[ea.rules[0]['name']] == 0
+        ea.num_hits[ea.rules[0]['name']] += 10
     with mock.patch.object(ea, 'run_query') as mock_run_query:
         mock_run_query.side_effect = assert_num_hits_reset()
         ea.run_rule(ea.rules[0], END, START)

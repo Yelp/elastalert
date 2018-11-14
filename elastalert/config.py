@@ -132,6 +132,7 @@ def load_configuration(filename, conf, args=None):
 def load_rule_yaml(filename):
     rule = {
         'rule_file': filename,
+        'running': False,
     }
 
     import_rules.pop(filename, None)  # clear `filename` dependency
