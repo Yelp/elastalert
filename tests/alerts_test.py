@@ -389,7 +389,7 @@ def test_opsgenie_basic():
 
         assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
-        assert mcal[0][1]['json']['responders'] == [{'id': 'lytics', 'type': 'user'}]
+        assert mcal[0][1]['json']['responders'] == [{'username': 'lytics', 'type': 'user'}]
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
 
 
@@ -415,9 +415,45 @@ def test_opsgenie_frequency():
 
         assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
-        assert mcal[0][1]['json']['responders'] == [{'id': 'lytics', 'type': 'user'}]
+        assert mcal[0][1]['json']['responders'] == [{'username': 'lytics', 'type': 'user'}]
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
+
+
+def test_opsgenie_alert_routing():
+    rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
+            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
+            'opsgenie_recipients': ['{RECEIPIENT_PREFIX}'], 'opsgenie_recipients_args': {'RECEIPIENT_PREFIX': 'recipient'},
+            'type': mock_rule(),
+            'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
+            'alert': 'opsgenie',
+            'opsgenie_teams': ['{TEAM_PREFIX}-Team'], 'opsgenie_teams_args': {'TEAM_PREFIX': 'team'}}
+    with mock.patch('requests.post'):
+
+        alert = OpsGenieAlerter(rule)
+        alert.alert([{'@timestamp': '2014-10-31T00:00:00', 'team': "Test", 'recipient': "lytics"}])
+
+        assert alert.get_info()['teams'] == ['Test-Team']
+        assert alert.get_info()['recipients'] == ['lytics']
+
+
+def test_opsgenie_default_alert_routing():
+    rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
+            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
+            'opsgenie_recipients': ['{RECEIPIENT_PREFIX}'], 'opsgenie_recipients_args': {'RECEIPIENT_PREFIX': 'recipient'},
+            'type': mock_rule(),
+            'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
+            'alert': 'opsgenie',
+            'opsgenie_teams': ['{TEAM_PREFIX}-Team'],
+            'opsgenie_default_receipients': ["devops@test.com"], 'opsgenie_default_teams': ["Test"]
+            }
+    with mock.patch('requests.post'):
+
+        alert = OpsGenieAlerter(rule)
+        alert.alert([{'@timestamp': '2014-10-31T00:00:00', 'team': "Test"}])
+
+        assert alert.get_info()['teams'] == ['{TEAM_PREFIX}-Team']
+        assert alert.get_info()['recipients'] == ['devops@test.com']
 
 
 def test_jira():
@@ -967,7 +1003,54 @@ def test_slack_uses_custom_title():
         rule['slack_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        verify=True,
+        timeout=10
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_slack_uses_custom_timeout():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert_subject': 'Cool subject',
+        'alert': [],
+        'slack_timeout': 20
+    }
+    load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['alert_subject'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True,
+        timeout=20
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1002,13 +1085,15 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
             }
         ],
         'text': '',
-        'parse': 'none'
+        'parse': 'none',
     }
     mock_post_request.assert_called_once_with(
         rule['slack_webhook_url'][0],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        verify=True,
+        timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1044,15 +1129,78 @@ def test_slack_uses_custom_slack_channel():
             }
         ],
         'text': '',
-        'parse': 'none'
+        'parse': 'none',
     }
     mock_post_request.assert_called_once_with(
         rule['slack_webhook_url'][0],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        verify=True,
+        timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_slack_uses_list_of_custom_slack_channel():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': ['http://please.dontgohere.slack'],
+        'slack_channel_override': ['#test-alert', '#test-alert2'],
+        'alert': []
+    }
+    load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data1 = {
+        'username': 'elastalert',
+        'channel': '#test-alert',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['name'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    expected_data2 = {
+        'username': 'elastalert',
+        'channel': '#test-alert2',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['name'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    mock_post_request.assert_called_with(
+        rule['slack_webhook_url'][0],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True,
+        timeout=10
+    )
+    assert expected_data1 == json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data2 == json.loads(mock_post_request.call_args_list[1][1]['data'])
 
 
 def test_http_alerter_with_payload():
@@ -1080,7 +1228,8 @@ def test_http_alerter_with_payload():
         rule['http_post_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1113,7 +1262,8 @@ def test_http_alerter_with_payload_all_values():
         rule['http_post_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1143,7 +1293,8 @@ def test_http_alerter_without_payload():
         rule['http_post_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1174,7 +1325,52 @@ def test_pagerduty_alerter():
         'incident_key': '',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with('https://events.pagerduty.com/generic/2010-04-15/create_event.json',
+                                              data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_pagerduty_alerter_v2():
+    rule = {
+        'name': 'Test PD Rule',
+        'type': 'any',
+        'pagerduty_service_key': 'magicalbadgers',
+        'pagerduty_client_name': 'ponies inc.',
+        'pagerduty_api_version': 'v2',
+        'pagerduty_v2_payload_class': 'ping failure',
+        'pagerduty_v2_payload_component': 'mysql',
+        'pagerduty_v2_payload_group': 'app-stack',
+        'pagerduty_v2_payload_severity': 'error',
+        'pagerduty_v2_payload_source': 'mysql.host.name',
+        'alert': []
+    }
+    load_modules(rule)
+    alert = PagerDutyAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'client': 'ponies inc.',
+        'payload': {
+            'class': 'ping failure',
+            'component': 'mysql',
+            'group': 'app-stack',
+            'severity': 'error',
+            'source': 'mysql.host.name',
+            'summary': 'Test PD Rule',
+            'custom_details': {
+                'information': 'Test PD Rule\n\n@timestamp: 2017-01-01T00:00:00\nsomefield: foobarbaz\n'
+            },
+        },
+        'event_action': 'trigger',
+        'dedup_key': '',
+        'routing_key': 'magicalbadgers',
+    }
+    mock_post_request.assert_called_once_with('https://events.pagerduty.com/v2/enqueue',
+                                              data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1443,7 +1639,7 @@ def test_stride_plain_text():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert': []
     }
@@ -1486,7 +1682,7 @@ def test_stride_underline_text():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert_text': '<u>Underline Text</u>',
         'alert_text_type': 'alert_text_only',
@@ -1531,7 +1727,7 @@ def test_stride_bold_text():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert_text': '<b>Bold Text</b>',
         'alert_text_type': 'alert_text_only',
@@ -1576,7 +1772,7 @@ def test_stride_strong_text():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert_text': '<strong>Bold Text</strong>',
         'alert_text_type': 'alert_text_only',
@@ -1621,7 +1817,7 @@ def test_stride_hyperlink():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert_text': '<a href="http://stride.com">Link</a>',
         'alert_text_type': 'alert_text_only',
@@ -1666,7 +1862,7 @@ def test_stride_html():
         'type': 'any',
         'stride_access_token': 'token',
         'stride_cloud_id': 'cloud_id',
-        'stride_converstation_id': 'converstation_id',
+        'stride_conversation_id': 'conversation_id',
         'alert_subject': 'Cool subject',
         'alert_text': '<b>Alert</b>: we found something. <a href="http://stride.com">Link</a>',
         'alert_text_type': 'alert_text_only',
@@ -1769,6 +1965,7 @@ def test_alerta_no_auth(ea):
         'alerta_api_url': 'http://elastalerthost:8080/api/alert',
         'timeframe': datetime.timedelta(hours=1),
         'timestamp_field': u'@timestamp',
+        'alerta_api_skip_ssl': True,
         'alerta_attributes_keys': ["hostname", "TimestampEvent", "senderIP"],
         'alerta_attributes_values': ["%(key)s", "%(logdate)s", "%(sender_ip)s"],
         'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
@@ -1819,7 +2016,8 @@ def test_alerta_no_auth(ea):
         alert.url,
         data=mock.ANY,
         headers={
-            'content-type': 'application/json'}
+            'content-type': 'application/json'},
+        verify=False
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
@@ -1852,6 +2050,7 @@ def test_alerta_auth(ea):
     mock_post_request.assert_called_once_with(
         alert.url,
         data=mock.ANY,
+        verify=True,
         headers={
             'content-type': 'application/json',
             'Authorization': 'Key {}'.format(rule['alerta_api_key'])})
@@ -1913,6 +2112,7 @@ def test_alerta_new_style(ea):
     mock_post_request.assert_called_once_with(
         alert.url,
         data=mock.ANY,
+        verify=True,
         headers={
             'content-type': 'application/json'}
     )

@@ -15,11 +15,14 @@ class OpsGenieAlerter(Alerter):
 
     def __init__(self, *args):
         super(OpsGenieAlerter, self).__init__(*args)
-
         self.account = self.rule.get('opsgenie_account')
         self.api_key = self.rule.get('opsgenie_key', 'key')
+        self.default_reciepients = self.rule.get('opsgenie_default_receipients', None)
         self.recipients = self.rule.get('opsgenie_recipients')
+        self.recipients_args = self.rule.get('opsgenie_recipients_args')
+        self.default_teams = self.rule.get('opsgenie_default_teams', None)
         self.teams = self.rule.get('opsgenie_teams')
+        self.teams_args = self.rule.get('opsgenie_teams_args')
         self.tags = self.rule.get('opsgenie_tags', []) + ['ElastAlert', self.rule['name']]
         self.to_addr = self.rule.get('opsgenie_addr', 'https://api.opsgenie.com/v2/alerts')
         self.custom_message = self.rule.get('opsgenie_message')
@@ -27,6 +30,29 @@ class OpsGenieAlerter(Alerter):
         self.opsgenie_subject_args = self.rule.get('opsgenie_subject_args')
         self.alias = self.rule.get('opsgenie_alias')
         self.opsgenie_proxy = self.rule.get('opsgenie_proxy', None)
+        self.priority = self.rule.get('opsgenie_priority')
+
+    def _parse_responders(self, responders, responder_args, matches, default_responders):
+        if responder_args:
+            formated_responders = list()
+            responders_values = dict((k, lookup_es_key(matches[0], v)) for k, v in responder_args.iteritems())
+            responders_values = dict((k, v) for k, v in responders_values.iteritems() if v)
+
+            for responder in responders:
+                responder = unicode(responder)
+                try:
+                    formated_responders.append(responder.format(**responders_values))
+                except KeyError as error:
+                    logging.warn("OpsGenieAlerter: Cannot create responder for OpsGenie Alert. Key not foud: %s. " % (error))
+            if not formated_responders:
+                logging.warn("OpsGenieAlerter: no responders can be formed. Trying the default responder ")
+                if not default_responders:
+                    logging.warn("OpsGenieAlerter: default responder not set. Falling back")
+                    formated_responders = responders
+                else:
+                    formated_responders = default_responders
+            responders = formated_responders
+        return responders
 
     def _fill_responders(self, responders, type_):
         return [{'id': r, 'type': type_} for r in responders]
@@ -43,18 +69,24 @@ class OpsGenieAlerter(Alerter):
             self.message = self.create_title(matches)
         else:
             self.message = self.custom_message.format(**matches[0])
-
+        self.recipients = self._parse_responders(self.recipients, self.recipients_args, matches, self.default_reciepients)
+        self.teams = self._parse_responders(self.teams, self.teams_args, matches, self.default_teams)
         post = {}
         post['message'] = self.message
         if self.account:
             post['user'] = self.account
         if self.recipients:
-            post['responders'] = self._fill_responders(self.recipients, 'user')
+            post['responders'] = [{'username': r, 'type': 'user'} for r in self.recipients]
         if self.teams:
-            post['teams'] = self._fill_responders(self.teams, 'team')
+            post['teams'] = [{'name': r, 'type': 'team'} for r in self.teams]
         post['description'] = body
         post['source'] = 'ElastAlert'
         post['tags'] = self.tags
+        if self.priority and self.priority not in ('P1', 'P2', 'P3', 'P4', 'P5'):
+            logging.warn("Priority level does not appear to be specified correctly. \
+                         Please make sure to set it to a value between P1 and P5")
+        else:
+            post['priority'] = self.priority
 
         if self.alias is not None:
             post['alias'] = self.alias.format(**matches[0])
@@ -104,8 +136,8 @@ class OpsGenieAlerter(Alerter):
         if self.opsgenie_subject_args:
             opsgenie_subject_values = [lookup_es_key(matches[0], arg) for arg in self.opsgenie_subject_args]
 
-            for i in xrange(len(opsgenie_subject_values)):
-                if opsgenie_subject_values[i] is None:
+            for i, subject_value in enumerate(opsgenie_subject_values):
+                if subject_value is None:
                     alert_value = self.rule.get(self.opsgenie_subject_args[i])
                     if alert_value:
                         opsgenie_subject_values[i] = alert_value
@@ -123,5 +155,4 @@ class OpsGenieAlerter(Alerter):
             ret['account'] = self.account
         if self.teams:
             ret['teams'] = self.teams
-
         return ret

@@ -7,6 +7,7 @@ import pytest
 from dateutil.parser import parse as dt
 
 from elastalert.util import add_raw_postfix
+from elastalert.util import format_index
 from elastalert.util import lookup_es_key
 from elastalert.util import parse_deadline
 from elastalert.util import parse_duration
@@ -151,27 +152,46 @@ def test_resolve_string(ea):
         'name': 'mySystem',
         'temperature': 45,
         'humidity': 80.56,
-        'sensors': ['outsideSensor', 'insideSensor']
+        'sensors': ['outsideSensor', 'insideSensor'],
+        'foo': {'bar': 'baz'}
     }
 
     expected_outputs = [
         "mySystem is online <MISSING VALUE>",
         "Sensors ['outsideSensor', 'insideSensor'] in the <MISSING VALUE> have temp 45 and 80.56 humidity",
-        "Actuator <MISSING VALUE> in the <MISSING VALUE> has temp <MISSING VALUE>"]
+        "Actuator <MISSING VALUE> in the <MISSING VALUE> has temp <MISSING VALUE>",
+        'Something baz']
     old_style_strings = [
         "%(name)s is online %(noKey)s",
         "Sensors %(sensors)s in the %(noPlace)s have temp %(temperature)s and %(humidity)s humidity",
-        "Actuator %(noKey)s in the %(noPlace)s has temp %(noKey)s"]
+        "Actuator %(noKey)s in the %(noPlace)s has temp %(noKey)s",
+        'Something %(foo.bar)s']
 
     assert resolve_string(old_style_strings[0], match) == expected_outputs[0]
     assert resolve_string(old_style_strings[1], match) == expected_outputs[1]
     assert resolve_string(old_style_strings[2], match) == expected_outputs[2]
+    assert resolve_string(old_style_strings[3], match) == expected_outputs[3]
 
     new_style_strings = [
         "{name} is online {noKey}",
         "Sensors {sensors} in the {noPlace} have temp {temperature} and {humidity} humidity",
-        "Actuator {noKey} in the {noPlace} has temp {noKey}"]
+        "Actuator {noKey} in the {noPlace} has temp {noKey}",
+        "Something {foo[bar]}"]
 
     assert resolve_string(new_style_strings[0], match) == expected_outputs[0]
     assert resolve_string(new_style_strings[1], match) == expected_outputs[1]
     assert resolve_string(new_style_strings[2], match) == expected_outputs[2]
+    assert resolve_string(new_style_strings[3], match) == expected_outputs[3]
+
+
+def test_format_index():
+    pattern = 'logstash-%Y.%m.%d'
+    pattern2 = 'logstash-%Y.%W'
+    date = dt('2018-06-25T12:00:00Z')
+    date2 = dt('2018-06-26T12:00:00Z')
+    assert sorted(format_index(pattern, date, date).split(',')) == ['logstash-2018.06.25']
+    assert sorted(format_index(pattern, date, date2).split(',')) == ['logstash-2018.06.25', 'logstash-2018.06.26']
+    assert sorted(format_index(pattern, date, date2, True).split(',')) == ['logstash-2018.06.24',
+                                                                           'logstash-2018.06.25',
+                                                                           'logstash-2018.06.26']
+    assert sorted(format_index(pattern2, date, date2, True).split(',')) == ['logstash-2018.25', 'logstash-2018.26']

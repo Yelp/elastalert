@@ -1,5 +1,55 @@
 # Change Log
 
+# v0.1.36
+
+### Added
+- Added a prefix "metric_" to the key used for metric aggregations to avoid possible conflicts
+- Added option to skip Alerta certificate validation
+- Added option to gracefully fail when loading rules
+
+### Fixed
+- No longer puts quotes around regex terms in blacklists or whitelists
+- Fixed a typo in the documentation for spike rule
+
+# v0.1.35
+
+### Fixed
+- Fixed an issue preventing new term rule from working with terms query
+
+# v0.1.34
+
+### Added
+- Added prefix/suffix support for summary table
+- Added support for ignoring SSL validation in Slack
+- More visible exceptions during query parse failures
+
+### Fixed
+- Fixed top_count_keys when using compound query_key
+- Fixed num_hits sometimes being reported too low
+- Fixed an issue with setting ES_USERNAME via env
+- Fixed an issue when using test script with custom timestamps
+- Fixed a unicode error when using Telegram
+- Fixed an issue with jsonschema version conflict
+- Fixed an issue with nested timestamps in cardinality type
+
+# v0.1.33
+
+### Added
+- Added ability to pipe alert text to a command
+- Add --start and --end support for elastalert-test-rule
+- Added ability to turn blacklist/whitelist files into queries for better performance
+- Allow setting of OpsGenie priority
+- Add ability to query the adjacent index if timestamp_field not used for index timestamping
+- Add support for pagerduty v2
+- Add option to turn off .raw/.keyword field postfixing in new term rule
+- Added --use-downloaded feature for elastalert-test-rule
+
+### Fixed
+- Fixed a bug that caused num_hits in matches to sometimes be erroneously small
+- Fixed an issue with HTTP Post alerter that could cause it to hang indefinitely
+- Fixed some issues with string formatting for various alerters
+- Fixed a couple of incorrect parts of the documentation
+
 # v0.1.32
 
 ### Added
