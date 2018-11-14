@@ -64,15 +64,18 @@ class RulesLoader(object):
         'stride': alerts.StrideAlerter,
         'ms_teams': alerts.MsTeamsAlerter,
         'slack': alerts.SlackAlerter,
+        'mattermost': alerts.MattermostAlerter,
         'pagerduty': alerts.PagerDutyAlerter,
         'exotel': alerts.ExotelAlerter,
         'twilio': alerts.TwilioAlerter,
         'victorops': alerts.VictorOpsAlerter,
         'telegram': alerts.TelegramAlerter,
+        'googlechat': alerts.GoogleChatAlerter,
         'gitter': alerts.GitterAlerter,
         'servicenow': alerts.ServiceNowAlerter,
         'alerta': alerts.AlertaAlerter,
-        'post': alerts.HTTPPostAlerter
+        'post': alerts.HTTPPostAlerter,
+        'hivealerter': alerts.HiveAlerter
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
@@ -108,6 +111,10 @@ class RulesLoader(object):
         for rule_file in rule_files:
             try:
                 rule = self.load_configuration(rule_file, conf, args)
+                # A rule failed to load, don't try to process it
+                if not rule:
+                    logging.error('Invalid rule file skipped: %s' % rule_file)
+                    continue
                 # By setting "is_enabled: False" in rule file, a rule is easily disabled
                 if 'is_enabled' in rule and not rule['is_enabled']:
                     continue

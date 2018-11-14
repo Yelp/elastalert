@@ -1022,7 +1022,8 @@ def test_slack_uses_custom_timeout():
         'alert': [],
         'slack_timeout': 20
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1155,7 +1156,8 @@ def test_slack_uses_list_of_custom_slack_channel():
         'slack_channel_override': ['#test-alert', '#test-alert2'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
