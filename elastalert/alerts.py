@@ -1437,6 +1437,36 @@ class PagerDutyAlerter(Alerter):
         return {'type': 'pagerduty',
                 'pagerduty_client_name': self.pagerduty_client_name}
 
+class PagerTreeAlerter(Alerter):
+    """ Creates a PagerTree Incident for each alert """
+    required_options = frozenset(['pagertree_integration_url'])
+
+    def __init__(self, rule):
+        super(PagerTreeAlerter, self).__init__(rule)
+        self.url = self.rule['pagertree_integration_url']
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+
+        # post to pagertree
+        headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        payload = {
+            "monitoring_tool": "ElastAlert",
+            "state_message": body
+        }
+
+        try:
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to PagerTree: %s" % e)
+        elastalert_logger.info("Trigger sent to PagerTree")
+
+    def get_info(self):
+        return {'type': 'pagertree',
+                'pagertree_integration_url': self.pagertree_integration_url}
+
 
 class ExotelAlerter(Alerter):
     required_options = frozenset(['exotel_account_sid', 'exotel_auth_token', 'exotel_to_number', 'exotel_from_number'])

@@ -51,6 +51,7 @@ Currently, we have built-in support for the following alert types:
 - AWS SNS
 - VictorOps
 - PagerDuty
+- PagerTree
 - Exotel
 - Twilio
 - Gitter
@@ -94,7 +95,7 @@ Eg: ``--rule this_rule.yaml``
 Available at the [ElastAlert Kibana plugin repository](https://github.com/bitsensor/elastalert-kibana-plugin).
 
 ### Docker
-A [Dockerized version](https://github.com/bitsensor/elastalert) of ElastAlert including a REST api is build from `master` to `bitsensor/elastalert:latest`. 
+A [Dockerized version](https://github.com/bitsensor/elastalert) of ElastAlert including a REST api is build from `master` to `bitsensor/elastalert:latest`.
 
 ```bash
 git clone https://github.com/bitsensor/elastalert.git; cd elastalert
