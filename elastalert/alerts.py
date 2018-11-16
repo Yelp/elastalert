@@ -1448,6 +1448,7 @@ class PagerTreeAlerter(Alerter):
     def __init__(self, rule):
         super(PagerTreeAlerter, self).__init__(rule)
         self.url = self.rule['pagertree_integration_url']
+        self.pagertree_proxy = self.rule.get('pagertree_proxy', None)
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
@@ -1455,6 +1456,7 @@ class PagerTreeAlerter(Alerter):
         # post to pagertree
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
+        proxies = {'https': self.pagertree_proxy} if self.pagertree_proxy else None
         payload = {
             "monitoring_tool": "ElastAlert",
             "state_message": body
