@@ -1,5 +1,10 @@
 # Change Log
 
+# v0.1.37
+
+### Added
+- Added PagerTree alerter
+
 # v0.1.36
 
 ### Added
