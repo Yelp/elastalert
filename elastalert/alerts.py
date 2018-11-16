@@ -1471,7 +1471,7 @@ class PagerTreeAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'pagertree',
-                'pagertree_integration_url': self.pagertree_integration_url}
+                'pagertree_integration_url': self.url}
 
 
 class ExotelAlerter(Alerter):
