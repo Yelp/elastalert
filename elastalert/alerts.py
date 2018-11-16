@@ -1453,7 +1453,7 @@ class PagerTreeAlerter(Alerter):
         proxies = {'https': self.pagertree_proxy} if self.pagertree_proxy else None
         payload = {
             "event_type": "create",
-            "Id": str(uuid.uuid4())[0:6],
+            "Id": str(uuid.uuid4()),
             "Title": self.create_title(matches),
             "Description": self.create_alert_body(matches)
         }
