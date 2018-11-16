@@ -1441,6 +1441,7 @@ class PagerDutyAlerter(Alerter):
         return {'type': 'pagerduty',
                 'pagerduty_client_name': self.pagerduty_client_name}
 
+
 class PagerTreeAlerter(Alerter):
     """ Creates a PagerTree Incident for each alert """
     required_options = frozenset(['pagertree_integration_url'])
