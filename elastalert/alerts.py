@@ -1571,7 +1571,7 @@ class TelegramAlerter(Alerter):
         auth = HTTPProxyAuth(self.telegram_proxy_login, self.telegram_proxy_password) if self.telegram_proxy_login else None
         payload = {
             'chat_id': self.telegram_room_id,
-            'text': body,
+            'text': body.replace('*',''),
             'parse_mode': 'markdown',
             'disable_web_page_preview': True
         }
