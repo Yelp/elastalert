@@ -54,11 +54,11 @@ When an error occurs in ElastAlert, it is written to both Elasticsearch and to s
 - ``traceback``: The traceback from when the error occurred.
 - ``data``: Extra information about the error. This often contains the name of the rule which caused the error.
 
-silence
+elastalert_silence
 ~~~~~~~
 
-``silence`` is a record of when alerts for a given rule will be suppressed, either because of a ``realert`` setting or from using --silence. When
-an alert with ``realert`` is triggered, a ``silence`` record will be written with ``until`` set to the alert time plus ``realert``.
+``elastalert_silence`` is a record of when alerts for a given rule will be suppressed, either because of a ``realert`` setting or from using --silence. When
+an alert with ``realert`` is triggered, a ``elastalert_silence`` record will be written with ``until`` set to the alert time plus ``realert``.
 
 - ``@timestamp``: The time when the document was uploaded to Elasticsearch.
 - ``rule_name``: The name of the corresponding rule.
@@ -66,5 +66,5 @@ an alert with ``realert`` is triggered, a ``silence`` record will be written wit
 - ``exponent``: The exponential factor which multiplies ``realert``. The length of this silence is equal to ``realert`` * 2**exponent. This will
   be 0 unless ``exponential_realert`` is set.
 
-Whenever an alert is triggered, ElastAlert will check for a matching ``silence`` document, and if the ``until`` timestamp is in the future, it will ignore
+Whenever an alert is triggered, ElastAlert will check for a matching ``elastalert_silence`` document, and if the ``until`` timestamp is in the future, it will ignore
 the alert completely. See the :ref:`Running ElastAlert <runningelastalert>` section for information on how to silence an alert.
