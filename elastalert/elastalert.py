@@ -1533,7 +1533,7 @@ class ElastAlerter(object):
         return body
 
     def writeback(self, doc_type, body, rule=None):
-        writeback_index = self.get_writeback_index(doc_type, rule)
+        writeback_index = self.get_writeback_index(doc_type, rule, body)
 
         # ES 2.0 - 2.3 does not support dots in field names.
         if self.replace_dots_in_field_names:
