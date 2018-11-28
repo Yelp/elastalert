@@ -213,8 +213,8 @@ class ElastAlerter():
                 elif doc_type == 'elastalert_error':
                     writeback_index += '_error'
         else:
-            suffix = '_' + "{[customers][0][uuid]}_{}".format(match_body, datetime.datetime.utcnow().strftime(rule['writeback_suffix']))
-            writeback_index += suffix
+            suffix = datetime.datetime.utcnow().strftime(rule['writeback_suffix'].format(match_body))
+            writeback_index += '_' + suffix
 
         return writeback_index
 
