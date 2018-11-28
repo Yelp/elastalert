@@ -200,7 +200,7 @@ class ElastAlerter():
         else:
             return index
 
-    def get_writeback_index(self, doc_type, rule=None):
+    def get_writeback_index(self, doc_type, rule=None, match_body=None):
         writeback_index = self.writeback_index
         if rule is None or 'writeback_suffix' not in rule:
             if self.is_atleastsix():
@@ -213,7 +213,7 @@ class ElastAlerter():
                 elif doc_type == 'elastalert_error':
                     writeback_index += '_error'
         else:
-            suffix = datetime.datetime.utcnow().strftime(rule['writeback_suffix'])
+            suffix = datetime.datetime.utcnow().strftime(rule['writeback_suffix'].format(match_body))
             writeback_index += '_' + suffix
 
         return writeback_index
@@ -1415,7 +1415,7 @@ class ElastAlerter():
         return body
 
     def writeback(self, doc_type, body, rule=None):
-        writeback_index = self.get_writeback_index(doc_type, rule)
+        writeback_index = self.get_writeback_index(doc_type, rule, body)
 
         # ES 2.0 - 2.3 does not support dots in field names.
         if self.replace_dots_in_field_names:
