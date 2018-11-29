@@ -213,8 +213,13 @@ class ElastAlerter():
                 elif doc_type == 'elastalert_error':
                     writeback_index += '_error'
         else:
-            suffix = datetime.datetime.utcnow().strftime(rule['writeback_suffix'].format(match_body))
-            writeback_index += '_' + suffix
+            try:
+                suffix = rule['writeback_suffix'].format(match_body or {})
+                suffix = datetime.datetime.utcnow().strftime(suffix)
+                writeback_index += '_' + suffix
+            except KeyError as e:
+                elastalert_logger.critical('Failed to add suffix. Unknown key %s' % str(e))
+                pass
 
         return writeback_index
 
