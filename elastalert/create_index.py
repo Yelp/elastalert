@@ -228,9 +228,9 @@ def main():
         if es_index.exists(index):
             print('Index ' + index + ' already exists. Skipping index creation.')
             return None
-    if es_index.exists_template(index):
-        print('Template ' + index + ' already exists. Deleting in preparation for creating indexes.')
-        es_index.delete_template(index)
+    if es_index.exists_template('elastalert'):
+        print('Template elastalert already exists. Deleting in preparation for creating indexes.')
+        es_index.delete_template('elastalert')
 
     # (Re-)Create indices.
     if elasticversion > 5:
