@@ -346,6 +346,7 @@ class MockElastAlerter(object):
             'es_host': 'localhost',
             'es_port': 14900,
             'writeback_index': 'wb',
+            'writeback_alias': 'wb_a',
             'max_query_size': 10000,
             'alert_time_limit': datetime.timedelta(hours=24),
             'old_query_limit': datetime.timedelta(weeks=1),
