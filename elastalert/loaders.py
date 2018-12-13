@@ -246,6 +246,8 @@ class RulesLoader(object):
                 rule['query_delay'] = datetime.timedelta(**rule['query_delay'])
             if 'buffer_time' in rule:
                 rule['buffer_time'] = datetime.timedelta(**rule['buffer_time'])
+            if 'run_every' in rule:
+                rule['run_every'] = datetime.timedelta(**rule['run_every'])
             if 'bucket_interval' in rule:
                 rule['bucket_interval_timedelta'] = datetime.timedelta(**rule['bucket_interval'])
             if 'exponential_realert' in rule:
