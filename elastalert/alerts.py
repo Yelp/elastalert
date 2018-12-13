@@ -1120,6 +1120,7 @@ class SlackAlerter(Alerter):
         self.slack_alert_fields = self.rule.get('slack_alert_fields', '')
         self.slack_ignore_ssl_errors = self.rule.get('slack_ignore_ssl_errors', False)
         self.slack_timeout = self.rule.get('slack_timeout', 10)
+        self.slack_ca_certs = self.rule.get('slack_ca_certs')
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1182,12 +1183,16 @@ class SlackAlerter(Alerter):
         for url in self.slack_webhook_url:
             for channel_override in self.slack_channel_override:
                 try:
+                    if self.slack_ca_certs:
+                        verify = self.slack_ca_certs
+                    else:
+                        verify = self.slack_ignore_ssl_errors
                     if self.slack_ignore_ssl_errors:
                         requests.packages.urllib3.disable_warnings()
                     payload['channel'] = channel_override
                     response = requests.post(
                         url, data=json.dumps(payload, cls=DateTimeEncoder),
-                        headers=headers, verify=not self.slack_ignore_ssl_errors,
+                        headers=headers, verify=verify,
                         proxies=proxies,
                         timeout=self.slack_timeout)
                     warnings.resetwarnings()
@@ -1874,7 +1879,7 @@ class AlertaAlerter(Alerter):
             'tags': [resolve_string(a_tag, match, self.missing_text) for a_tag in self.tags],
             'correlate': [resolve_string(an_event, match, self.missing_text) for an_event in self.correlate],
             'attributes': dict(zip(self.attributes_keys,
-                               [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values])),
+                                   [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values])),
             'rawData': self.create_alert_body([match]),
         }
 

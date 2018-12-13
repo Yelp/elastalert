@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import datetime
-
 import logging
-import mock
 import os
+
+import mock
 import pytest
 
 import elastalert.elastalert
@@ -95,7 +95,8 @@ def ea():
               'max_query_size': 10000,
               'ts_to_dt': ts_to_dt,
               'dt_to_ts': dt_to_ts,
-              '_source_enabled': True}]
+              '_source_enabled': True,
+              'run_every': datetime.timedelta(seconds=15)}]
     conf = {'rules_folder': 'rules',
             'run_every': datetime.timedelta(minutes=10),
             'buffer_time': datetime.timedelta(minutes=5),
@@ -103,6 +104,7 @@ def ea():
             'es_host': 'es',
             'es_port': 14900,
             'writeback_index': 'wb',
+            'writeback_alias': 'wb_a',
             'rules': rules,
             'max_query_size': 10000,
             'old_query_limit': datetime.timedelta(weeks=1),
@@ -111,16 +113,20 @@ def ea():
     conf['rules_loader'] = mock_rule_loader(conf)
     elastalert.elastalert.elasticsearch_client = mock_es_client
     with mock.patch('elastalert.elastalert.load_conf') as load_conf:
-        load_conf.return_value = conf
-        conf['rules_loader'].load.return_value = rules
-        conf['rules_loader'].get_hashes.return_value = {}
-        ea = elastalert.elastalert.ElastAlerter(['--pin_rules'])
+        with mock.patch('elastalert.elastalert.BackgroundScheduler'):
+            load_conf.return_value = conf
+            conf['rules_loader'].load.return_value = rules
+            conf['rules_loader'].get_hashes.return_value = {}
+            ea = elastalert.elastalert.ElastAlerter(['--pin_rules'])
     ea.rules[0]['type'] = mock_ruletype()
     ea.rules[0]['alert'] = [mock_alert()]
     ea.writeback_es = mock_es_client()
     ea.writeback_es.search.return_value = {'hits': {'hits': []}}
     ea.writeback_es.index.return_value = {'_id': 'ABCD'}
     ea.current_es = mock_es_client('', '')
+    ea.thread_data.current_es = ea.current_es
+    ea.thread_data.num_hits = 0
+    ea.thread_data.num_dupes = 0
     return ea
 
 

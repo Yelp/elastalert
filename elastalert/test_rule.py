@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import argparse
 import copy
 import datetime
 import json
@@ -12,7 +13,6 @@ import re
 import string
 import sys
 
-import argparse
 import mock
 
 from elastalert.config import load_conf
@@ -57,7 +57,6 @@ class MockElastAlerter(object):
             if args.stop_error:
                 exit(1)
             return None
-
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()
         ts = conf.get('timestamp_field', '@timestamp')
@@ -82,6 +81,7 @@ class MockElastAlerter(object):
             return None
         num_hits = len(res['hits']['hits'])
         if not num_hits:
+            print("Didn't get any results.")
             return []
 
         terms = res['hits']['hits'][0]['_source']

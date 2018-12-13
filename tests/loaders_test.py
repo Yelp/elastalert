@@ -17,7 +17,8 @@ test_config = {'rules_folder': 'test_folder',
                'buffer_time': {'minutes': 10},
                'es_host': 'elasticsearch.test',
                'es_port': 12345,
-               'writeback_index': 'test_index'}
+               'writeback_index': 'test_index',
+               'writeback_alias': 'test_alias'}
 
 test_rule = {'es_host': 'test_host',
              'es_port': 12345,
