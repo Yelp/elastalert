@@ -20,6 +20,7 @@ def get_module(module_name):
     """ Loads a module and returns a specific object.
     module_name should 'module.file.object'.
     Returns object or raises EAException on error. """
+    sys.path.append(os.getcwd())
     try:
         module_path, module_class = module_name.rsplit('.', 1)
         base_module = __import__(module_path, globals(), locals(), [module_class])
