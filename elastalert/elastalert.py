@@ -689,7 +689,6 @@ class ElastAlerter():
 
     def set_starttime(self, rule, endtime):
         """ Given a rule and an endtime, sets the appropriate starttime for it. """
-
         # This means we are starting fresh
         if 'starttime' not in rule:
             if not rule.get('scan_entire_timeframe'):
@@ -715,12 +714,9 @@ class ElastAlerter():
             if 'minimum_starttime' in rule and rule['minimum_starttime'] > buffer_delta:
                 rule['starttime'] = rule['minimum_starttime']
             # If buffer_time doesn't bring us past the previous endtime, use that instead
-            elif 'previous_endtime' in rule:
-                if rule['previous_endtime'] < buffer_delta:
-                    rule['starttime'] = rule['previous_endtime']
-                    self.adjust_start_time_for_overlapping_agg_query(rule)
-                elif rule.get('allow_buffer_time_overlap'):
-                    rule['starttime'] = buffer_delta
+            elif 'previous_endtime' in rule and rule['previous_endtime'] < buffer_delta:
+                rule['starttime'] = rule['previous_endtime']
+                self.adjust_start_time_for_overlapping_agg_query(rule)
             else:
                 rule['starttime'] = buffer_delta
 
@@ -843,7 +839,6 @@ class ElastAlerter():
         :return: The number of matches that the rule produced.
         """
         run_start = time.time()
-
         self.current_es = elasticsearch_client(rule)
         self.current_es_addr = (rule['es_host'], rule['es_port'])
 
