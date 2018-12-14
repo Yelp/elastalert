@@ -856,6 +856,12 @@ def test_set_starttime(ea):
     ea.set_starttime(ea.rules[0], end)
     assert ea.rules[0]['starttime'] == ea.rules[0]['previous_endtime']
 
+    # Make sure starttime is updated if previous_endtime isn't used
+    ea.rules[0]['previous_endtime'] = end - ea.buffer_time / 2
+    ea.rules[0]['starttime'] = ts_to_dt('2014-10-09T00:00:01')
+    ea.set_starttime(ea.rules[0], end)
+    assert ea.rules[0]['starttime'] == end - ea.buffer_time
+
     # scan_entire_timeframe
     ea.rules[0].pop('previous_endtime')
     ea.rules[0].pop('starttime')
