@@ -1195,8 +1195,7 @@ class SlackAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'slack',
-                'slack_username_override': self.slack_username_override,
-                'slack_webhook_url': self.slack_webhook_url}
+                'slack_username_override': self.slack_username_override}
 
 
 class MattermostAlerter(Alerter):
