@@ -85,6 +85,7 @@ alerts_mapping = {
     'googlechat': alerts.GoogleChatAlerter,
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
+    'linenotify': alerts.LineNotifyAlerter,
     'alerta': alerts.AlertaAlerter,
     'post': alerts.HTTPPostAlerter,
     'hivealerter': alerts.HiveAlerter

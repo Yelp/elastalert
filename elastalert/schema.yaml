@@ -322,3 +322,6 @@ properties:
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
+
+  ### LineNotify
+  linenotify_access_token: {type: string}

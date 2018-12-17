@@ -2011,6 +2011,16 @@ Example usage::
     jira_alert_owner: $owner$
 
 
+
+Line Notify
+~~~~~~~~~~~
+
+Line Notify will send notification to a Line application. The body of the notification is formatted the same as with other alerters.
+
+Required:
+
+``linenotify_access_token``: The access token that you got from https://notify-bot.line.me/my/
+
 theHive
 ~~~~~~~
 
@@ -2056,3 +2066,4 @@ Example usage::
         - domain: "{match[field1]}_{rule[name]}"
         - domain: "{match[field]}"
         - ip: "{match[ip_field]}"
+
