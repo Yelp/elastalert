@@ -105,28 +105,6 @@ class ElastAlerter():
         self.debug = self.args.debug
         self.verbose = self.args.verbose
 
-        if self.verbose and self.debug:
-            elastalert_logger.info(
-                "Note: --debug and --verbose flags are set. --debug takes precedent."
-            )
-
-        if self.verbose or self.debug:
-            elastalert_logger.setLevel(logging.INFO)
-
-        if self.debug:
-            elastalert_logger.info(
-                """Note: In debug mode, alerts will be logged to console but NOT actually sent.
-                To send them but remain verbose, use --verbose instead."""
-            )
-
-        if not self.args.es_debug:
-            logging.getLogger('elasticsearch').setLevel(logging.WARNING)
-
-        if self.args.es_debug_trace:
-            tracer = logging.getLogger('elasticsearch.trace')
-            tracer.setLevel(logging.INFO)
-            tracer.addHandler(logging.FileHandler(self.args.es_debug_trace))
-
         self.conf = load_rules(self.args)
         self.max_query_size = self.conf['max_query_size']
         self.scroll_keepalive = self.conf['scroll_keepalive']
