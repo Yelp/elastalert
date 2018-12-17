@@ -1,19 +1,35 @@
 # Change Log
 
-# v0.1.37
+# v0.1.38
 
 ### Added
 - Added PagerTree alerter
+- Added Line alerter
+- Added more customizable logging
+- Added new logic in test-rule to detemine the default timeframe
+
+### Fixed
+- Fixed an issue causing buffer_time to sometimes be ignored
+
+# v0.1.37
+
+### Added
+- Added more options for Opsgenie alerter
+- Added more pagerduty options
+- Added ability to add metadata to elastalert logs
+
+### Fixed
+- Fixed some documentation to be more clear
+- Stop requiring doc_type for metric aggregations
+- No longer puts quotes around regex terms in blacklists or whitelists
 
 # v0.1.36
 
 ### Added
 - Added a prefix "metric_" to the key used for metric aggregations to avoid possible conflicts
 - Added option to skip Alerta certificate validation
-- Added option to gracefully fail when loading rules
 
 ### Fixed
-- No longer puts quotes around regex terms in blacklists or whitelists
 - Fixed a typo in the documentation for spike rule
 
 # v0.1.35
