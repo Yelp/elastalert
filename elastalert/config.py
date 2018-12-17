@@ -3,6 +3,7 @@ import copy
 import datetime
 import hashlib
 import logging
+import logging.config
 import os
 import sys
 
@@ -19,6 +20,7 @@ from util import dt_to_ts
 from util import dt_to_ts_with_format
 from util import dt_to_unix
 from util import dt_to_unixms
+from util import elastalert_logger
 from util import EAException
 from util import ts_to_dt
 from util import ts_to_dt_with_format
@@ -37,7 +39,8 @@ env_settings = {'ES_USE_SSL': 'use_ssl',
                 'ES_PASSWORD': 'es_password',
                 'ES_USERNAME': 'es_username',
                 'ES_HOST': 'es_host',
-                'ES_PORT': 'es_port'}
+                'ES_PORT': 'es_port',
+                'ES_URL_PREFIX': 'es_url_prefix'}
 
 env = Env(ES_USE_SSL=bool)
 
@@ -73,14 +76,20 @@ alerts_mapping = {
     'ms_teams': alerts.MsTeamsAlerter,
     'slack': alerts.SlackAlerter,
     'rocketchat': alerts.RocketChatAlerter,
+    'mattermost': alerts.MattermostAlerter,
     'pagerduty': alerts.PagerDutyAlerter,
+    'pagertree': alerts.PagerTreeAlerter,
     'exotel': alerts.ExotelAlerter,
     'twilio': alerts.TwilioAlerter,
     'victorops': alerts.VictorOpsAlerter,
     'telegram': alerts.TelegramAlerter,
+    'googlechat': alerts.GoogleChatAlerter,
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
-    'post': alerts.HTTPPostAlerter
+    'linenotify': alerts.LineNotifyAlerter,
+    'alerta': alerts.AlertaAlerter,
+    'post': alerts.HTTPPostAlerter,
+    'hivealerter': alerts.HiveAlerter
 }
 # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
 # For example, jira goes before email so the ticket # will be added to the resulting email.
@@ -112,7 +121,14 @@ def load_configuration(filename, conf, args=None):
     :param conf: The global configuration dictionary, used for populating defaults.
     :return: The rule configuration, a dictionary.
     """
-    rule = load_rule_yaml(filename)
+    try:
+        rule = load_rule_yaml(filename)
+    except Exception as e:
+        if (conf.get('skip_invalid')):
+            logging.error(e)
+            return False
+        else:
+            raise e
     load_options(rule, conf, filename, args)
     load_modules(rule, args)
     return rule
@@ -252,6 +268,10 @@ def load_options(rule, conf, filename, args=None):
     rule.setdefault('hipchat_from', '')
     rule.setdefault('hipchat_ignore_ssl_errors', False)
 
+    # Set OpsGenie options from global config
+    rule.setdefault('opsgenie_default_receipients', None)
+    rule.setdefault('opsgenie_default_teams', None)
+
     # Make sure we have required options
     if required_locals - frozenset(rule.keys()):
         raise EAException('Missing required option(s): %s' % (', '.join(required_locals - frozenset(rule.keys()))))
@@ -319,6 +339,9 @@ def load_options(rule, conf, filename, args=None):
                 logging.warning('Did you mean to use %s in the index? '
                                 'The index will be formatted like %s' % (token,
                                                                          datetime.datetime.now().strftime(rule.get('index'))))
+
+    if rule.get('scan_entire_timeframe') and not rule.get('timeframe'):
+        raise EAException('scan_entire_timeframe can only be used if there is a timeframe specified')
 
 
 def load_modules(rule, args=None):
@@ -434,6 +457,9 @@ def load_rules(args):
     conf = yaml_loader(filename)
     use_rule = args.rule
 
+    # init logging from config and set log levels according to command line options
+    configure_logging(args, conf)
+
     for env_var, conf_var in env_settings.items():
         val = env(env_var, None)
         if val is not None:
@@ -472,6 +498,10 @@ def load_rules(args):
     for rule_file in rule_files:
         try:
             rule = load_configuration(rule_file, conf, args)
+            # A rule failed to load, don't try to process it
+            if (not rule):
+                logging.error('Invalid rule file skipped: %s' % rule_file)
+                continue
             # By setting "is_enabled: False" in rule file, a rule is easily disabled
             if 'is_enabled' in rule and not rule['is_enabled']:
                 continue
@@ -485,6 +515,38 @@ def load_rules(args):
 
     conf['rules'] = rules
     return conf
+
+
+def configure_logging(args, conf):
+    # configure logging from config file if provided
+    if 'logging' in conf:
+        # load new logging config
+        logging.config.dictConfig(conf['logging'])
+
+    if args.verbose and args.debug:
+        elastalert_logger.info(
+            "Note: --debug and --verbose flags are set. --debug takes precedent."
+        )
+
+    # re-enable INFO log level on elastalert_logger in verbose/debug mode
+    # (but don't touch it if it is already set to INFO or below by config)
+    if args.verbose or args.debug:
+        if elastalert_logger.level > logging.INFO or elastalert_logger.level == logging.NOTSET:
+            elastalert_logger.setLevel(logging.INFO)
+
+    if args.debug:
+        elastalert_logger.info(
+            """Note: In debug mode, alerts will be logged to console but NOT actually sent.
+            To send them but remain verbose, use --verbose instead."""
+        )
+
+    if not args.es_debug and 'logging' not in conf:
+        logging.getLogger('elasticsearch').setLevel(logging.WARNING)
+
+    if args.es_debug_trace:
+        tracer = logging.getLogger('elasticsearch.trace')
+        tracer.setLevel(logging.INFO)
+        tracer.addHandler(logging.FileHandler(args.es_debug_trace))
 
 
 def get_rule_hashes(conf, use_rule=None):
