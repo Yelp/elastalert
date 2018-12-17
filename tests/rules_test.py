@@ -1138,7 +1138,7 @@ def test_metric_aggregation():
 
     rule = MetricAggregationRule(rules)
 
-    assert rule.rules['aggregation_query_element'] == {'cpu_pct_avg': {'avg': {'field': 'cpu_pct'}}}
+    assert rule.rules['aggregation_query_element'] == {'metric_cpu_pct_avg': {'avg': {'field': 'cpu_pct'}}}
 
     assert rule.crossed_thresholds(None) is False
     assert rule.crossed_thresholds(0.09) is True
@@ -1146,17 +1146,17 @@ def test_metric_aggregation():
     assert rule.crossed_thresholds(0.79) is False
     assert rule.crossed_thresholds(0.81) is True
 
-    rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': None}})
-    rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': 0.5}})
+    rule.check_matches(datetime.datetime.now(), None, {'metric_cpu_pct_avg': {'value': None}})
+    rule.check_matches(datetime.datetime.now(), None, {'metric_cpu_pct_avg': {'value': 0.5}})
     assert len(rule.matches) == 0
 
-    rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': 0.05}})
-    rule.check_matches(datetime.datetime.now(), None, {'cpu_pct_avg': {'value': 0.95}})
+    rule.check_matches(datetime.datetime.now(), None, {'metric_cpu_pct_avg': {'value': 0.05}})
+    rule.check_matches(datetime.datetime.now(), None, {'metric_cpu_pct_avg': {'value': 0.95}})
     assert len(rule.matches) == 2
 
     rules['query_key'] = 'qk'
     rule = MetricAggregationRule(rules)
-    rule.check_matches(datetime.datetime.now(), 'qk_val', {'cpu_pct_avg': {'value': 0.95}})
+    rule.check_matches(datetime.datetime.now(), 'qk_val', {'metric_cpu_pct_avg': {'value': 0.95}})
     assert rule.matches[0]['qk'] == 'qk_val'
 
 
@@ -1170,9 +1170,9 @@ def test_metric_aggregation_complex_query_key():
              'max_threshold': 0.8}
 
     query = {"bucket_aggs": {"buckets": [
-        {"cpu_pct_avg": {"value": 0.91}, "key": "sub_qk_val1"},
-        {"cpu_pct_avg": {"value": 0.95}, "key": "sub_qk_val2"},
-        {"cpu_pct_avg": {"value": 0.89}, "key": "sub_qk_val3"}]
+        {"metric_cpu_pct_avg": {"value": 0.91}, "key": "sub_qk_val1"},
+        {"metric_cpu_pct_avg": {"value": 0.95}, "key": "sub_qk_val2"},
+        {"metric_cpu_pct_avg": {"value": 0.89}, "key": "sub_qk_val3"}]
     }, "key": "qk_val"}
 
     rule = MetricAggregationRule(rules)

@@ -25,6 +25,15 @@ definitions:
 
   filter: &filter {}
 
+  mattermostField: &mattermostField
+    type: object
+    additionalProperties: false
+    properties:
+      title: {type: string}
+      value: {type: string}
+      args: *arrayOfString
+      short: {type: boolean}
+
 required: [type, index, alert]
 type: object
 
@@ -94,7 +103,7 @@ oneOf:
       doc_type: {type: string}
 
   - title: New Term
-    required: [fields]
+    required: []
     properties:
       type: {enum: [new_term]}
       fields: *arrayOfStringsOrOtherArray
@@ -226,7 +235,7 @@ properties:
   ### Stride
   stride_access_token: {type: string}
   stride_cloud_id: {type: string}
-  stride_converstation_id: {type: string}
+  stride_conversation_id: {type: string}
   stride_ignore_ssl_errors: {type: boolean}
 
   ### Slack
@@ -237,11 +246,27 @@ properties:
   slack_msg_color: {enum: [good, warning, danger]}
   slack_parse_override: {enum: [none, full]}
   slack_text_string: {type: string}
+  slack_ignore_ssl_errors: {type: boolean}
+
+  ### Mattermost
+  mattermost_webhook_url: *arrayOfString
+  mattermost_proxy: {type: string}
+  mattermost_ignore_ssl_errors: {type: boolean}
+  mattermost_username_override: {type: string}
+  mattermost_icon_url_override: {type: string}
+  mattermost_channel_override: {type: string}
+  mattermost_msg_color: {enum: [good, warning, danger]}
+  mattermost_msg_pretext: {type: string}
+  mattermost_msg_fields: *mattermostField
 
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
   pagerduty_event_type: {enum: [none, trigger, resolve, acknowledge]}
+
+### PagerTree
+  pagertree_integration_url: {type: string}
+
 
   ### Exotel
   exotel_account_sid: {type: string}
@@ -271,6 +296,28 @@ properties:
   gitter_webhook_url: {type: string}
   gitter_proxy: {type: string}
   gitter_msg_level: {enum: [info, error]}
+
+  ### Alerta
+  alerta_api_url: {type: string}
+  alerta_api_key: {type: string}
+  alerta_severity: {enum: [unknown, security, debug, informational, ok, normal, cleared, indeterminate, warning, minor, major, critical]}
+  alerta_resource: {type: string}   # Python format string
+  alerta_environment: {type: string}  # Python format string
+  alerta_origin: {type: string}   # Python format string
+  alerta_group: {type: string}  # Python format string
+  alerta_service: {type: array, items: {type: string}}  # Python format string
+  alerta_service: {type: array, items: {type: string}}  # Python format string
+  alerta_correlate: {type: array, items: {type: string}}  # Python format string
+  alerta_tags: {type: array, items: {type: string}}   # Python format string
+  alerta_event: {type: string} # Python format string
+  alerta_customer: {type: string}
+  alerta_text: {type: string} # Python format string
+  alerta_type: {type: string}
+  alerta_value: {type: string} # Python format string
+  alerta_attributes_keys: {type: array, items: {type: string}}
+  alerta_attributes_values: {type: array, items: {type: string}}  # Python format string
+  alerta_new_style_string_format: {type: boolean}
+
 
   ### Simple
   simple_webhook_url: *arrayOfString

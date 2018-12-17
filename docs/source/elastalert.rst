@@ -39,8 +39,10 @@ Currently, we have support built in for these alert types:
 - HipChat
 - Slack
 - Telegram
+- GoogleChat
 - Debug
 - Stomp
+- theHive
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
 
@@ -125,7 +127,7 @@ The environment variable ``ES_USE_SSL`` will override this field.
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``. The environment variable ``ES_PASSWORD`` will override this field.
 
-``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.  The environment variable ``ES_URL_PREFIX`` will override this field.
 
 ``es_send_get_body_as``: Optional; Method for querying Elasticsearch - ``GET``, ``POST`` or ``source``. The default is ``GET``
 
@@ -187,6 +189,25 @@ The default value is ``False``. Elasticsearch 2.0 - 2.3 does not support dots in
 
 ``string_multi_field_name``: If set, the suffix to use for the subfield for string multi-fields in Elasticsearch.
 The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticsearch 5.
+
+``add_metadata_alert``: If set, alerts will include metadata described in rules (``category``, ``description``, ``owner`` and ``priority``); set to ``True`` or ``False``. The default is ``False``.
+
+``skip_invalid``: If ``True``, skip invalid files instead of exiting.
+
+=======
+Logging
+-------
+
+By default, ElastAlert uses a simple basic logging configuration to print log messages to standard error.
+You can change the log level to ``INFO`` messages by using the ``--verbose`` or ``--debug`` command line options.
+
+If you need a more sophisticated logging configuration, you can provide a full logging configuration
+in the config file. This way you can also configure logging to a file, to Logstash and
+adjust the logging format.
+
+For details, see the end of ``config.yaml.example`` where you can find an example logging
+configuration.
+
 
 .. _runningelastalert:
 

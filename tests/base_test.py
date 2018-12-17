@@ -36,9 +36,8 @@ def _set_hits(ea_inst, hits):
 
 def generate_hits(timestamps, **kwargs):
     hits = []
-    id_iter = xrange(len(timestamps)).__iter__()
-    for ts in timestamps:
-        data = {'_id': 'id' + str(id_iter.next()),
+    for i, ts in enumerate(timestamps):
+        data = {'_id': 'id{}'.format(i),
                 '_source': {'@timestamp': ts},
                 '_type': 'logs',
                 '_index': 'idx'}
@@ -725,16 +724,22 @@ def run_and_assert_segmented_queries(ea, start, end, segment_size):
             assert ea.writeback_es.index.call_args_list[-1][1]['body']['endtime'] == dt_to_ts(original_end)
 
 
+def test_query_segmenting_reset_num_hits(ea):
+    # Tests that num_hits gets reset every time run_query is run
+    def assert_num_hits_reset():
+        assert ea.num_hits == 0
+        ea.num_hits += 10
+    with mock.patch.object(ea, 'run_query') as mock_run_query:
+        mock_run_query.side_effect = assert_num_hits_reset()
+        ea.run_rule(ea.rules[0], END, START)
+    assert mock_run_query.call_count > 1
+
+
 def test_query_segmenting(ea):
     # buffer_time segments with normal queries
     ea.rules[0]['buffer_time'] = datetime.timedelta(minutes=53)
-    mock_es = mock.Mock()
-    mock_es.search.side_effect = _duplicate_hits_generator([START_TIMESTAMP])
-    with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es_init:
-        mock_es_init.return_value = mock_es
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
         run_and_assert_segmented_queries(ea, START, END, ea.rules[0]['buffer_time'])
-    # Assert that num_hits correctly includes the 1 hit per query
-    assert ea.num_hits == ea.current_es.search.call_count
 
     # run_every segments with count queries
     ea.rules[0]['use_count_query'] = True
@@ -850,6 +855,12 @@ def test_set_starttime(ea):
     ea.rules[0]['previous_endtime'] = end - ea.buffer_time * 2
     ea.set_starttime(ea.rules[0], end)
     assert ea.rules[0]['starttime'] == ea.rules[0]['previous_endtime']
+
+    # Make sure starttime is updated if previous_endtime isn't used
+    ea.rules[0]['previous_endtime'] = end - ea.buffer_time / 2
+    ea.rules[0]['starttime'] = ts_to_dt('2014-10-09T00:00:01')
+    ea.set_starttime(ea.rules[0], end)
+    assert ea.rules[0]['starttime'] == end - ea.buffer_time
 
     # scan_entire_timeframe
     ea.rules[0].pop('previous_endtime')
@@ -982,7 +993,7 @@ def test_strf_index(ea):
     end = ts_to_dt('2015-01-02T16:15:14Z')
     assert ea.get_index(ea.rules[0], start, end) == 'logstash-2015.01.02'
     end = ts_to_dt('2015-01-03T01:02:03Z')
-    assert ea.get_index(ea.rules[0], start, end) == 'logstash-2015.01.02,logstash-2015.01.03'
+    assert set(ea.get_index(ea.rules[0], start, end).split(',')) == set(['logstash-2015.01.02', 'logstash-2015.01.03'])
 
     # Test formatting for wildcard
     assert ea.get_index(ea.rules[0]) == 'logstash-*'
@@ -1231,3 +1242,47 @@ def test_remove_old_events(ea):
     ea.remove_old_events(ea.rules[0])
     assert len(ea.rules[0]['processed_hits']) == 2
     assert 'baz' not in ea.rules[0]['processed_hits']
+
+
+def test_query_with_whitelist_filter_es(ea):
+    ea.rules[0]['_source_enabled'] = False
+    ea.rules[0]['five'] = False
+    ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
+    ea.rules[0]['compare_key'] = "username"
+    ea.rules[0]['whitelist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+    new_rule = copy.copy(ea.rules[0])
+    ea.init_rule(new_rule, True)
+    assert 'NOT username:"xudan1" AND NOT username:"xudan12" AND NOT username:"aa1"' \
+           in new_rule['filter'][-1]['query']['query_string']['query']
+
+
+def test_query_with_whitelist_filter_es_five(ea):
+    ea.es_version = '6.2'
+    ea.rules[0]['_source_enabled'] = False
+    ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
+    ea.rules[0]['compare_key'] = "username"
+    ea.rules[0]['whitelist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+    new_rule = copy.copy(ea.rules[0])
+    ea.init_rule(new_rule, True)
+    assert 'NOT username:"xudan1" AND NOT username:"xudan12" AND NOT username:"aa1"' in new_rule['filter'][-1]['query_string']['query']
+
+
+def test_query_with_blacklist_filter_es(ea):
+    ea.rules[0]['_source_enabled'] = False
+    ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
+    ea.rules[0]['compare_key'] = "username"
+    ea.rules[0]['blacklist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+    new_rule = copy.copy(ea.rules[0])
+    ea.init_rule(new_rule, True)
+    assert 'username:"xudan1" OR username:"xudan12" OR username:"aa1"' in new_rule['filter'][-1]['query']['query_string']['query']
+
+
+def test_query_with_blacklist_filter_es_five(ea):
+    ea.es_version = '6.2'
+    ea.rules[0]['_source_enabled'] = False
+    ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
+    ea.rules[0]['compare_key'] = "username"
+    ea.rules[0]['blacklist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+    new_rule = copy.copy(ea.rules[0])
+    ea.init_rule(new_rule, True)
+    assert 'username:"xudan1" OR username:"xudan12" OR username:"aa1"' in new_rule['filter'][-1]['query_string']['query']

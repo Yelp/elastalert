@@ -22,9 +22,23 @@ opsgenie_key: ogkey
 #  - "neh"
 
 # (Optional)
+# OpsGenie recipients with args
+# opsgenie_recipients:
+#   - {recipient} 
+# opsgenie_recipients_args:
+#     team_prefix:'user.email'
+
+# (Optional)
 # OpsGenie teams to notify
 #opsgenie_teams:
 #  - "Infrastructure"
+
+# (Optional)
+# OpsGenie teams with args
+# opsgenie_teams:
+#   - {team_prefix}-Team 
+# opsgenie_teams_args:
+#     team_prefix:'team'
 
 # (Optional)
 # OpsGenie alert tags
