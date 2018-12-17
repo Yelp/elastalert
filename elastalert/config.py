@@ -77,6 +77,7 @@ alerts_mapping = {
     'slack': alerts.SlackAlerter,
     'mattermost': alerts.MattermostAlerter,
     'pagerduty': alerts.PagerDutyAlerter,
+    'pagertree': alerts.PagerTreeAlerter,
     'exotel': alerts.ExotelAlerter,
     'twilio': alerts.TwilioAlerter,
     'victorops': alerts.VictorOpsAlerter,
