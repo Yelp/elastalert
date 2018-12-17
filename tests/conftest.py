@@ -51,6 +51,14 @@ class mock_es_client(object):
         self.indices = mock_es_indices_client()
 
 
+class mock_rule_loader(object):
+    def __init__(self, conf):
+        self.base_config = conf
+        self.load = mock.Mock()
+        self.get_hashes = mock.Mock()
+        self.load_configuration = mock.Mock()
+
+
 class mock_ruletype(object):
     def __init__(self):
         self.add_data = mock.Mock()
@@ -102,12 +110,14 @@ def ea():
             'old_query_limit': datetime.timedelta(weeks=1),
             'disable_rules_on_error': False,
             'scroll_keepalive': '30s'}
+    conf['rules_loader'] = mock_rule_loader(conf)
     elastalert.elastalert.elasticsearch_client = mock_es_client
-    with mock.patch('elastalert.elastalert.get_rule_hashes'):
-        with mock.patch('elastalert.elastalert.load_rules') as load_conf:
-            with mock.patch('elastalert.elastalert.BackgroundScheduler'):
-                load_conf.return_value = conf
-                ea = elastalert.elastalert.ElastAlerter(['--pin_rules'])
+    with mock.patch('elastalert.elastalert.load_conf') as load_conf:
+        with mock.patch('elastalert.elastalert.BackgroundScheduler'):
+            load_conf.return_value = conf
+            conf['rules_loader'].load.return_value = rules
+            conf['rules_loader'].get_hashes.return_value = {}
+            ea = elastalert.elastalert.ElastAlerter(['--pin_rules'])
     ea.rules[0]['type'] = mock_ruletype()
     ea.rules[0]['alert'] = [mock_alert()]
     ea.writeback_es = mock_es_client()
