@@ -1364,6 +1364,7 @@ def test_pagerduty_alerter_v2():
             'custom_details': {
                 'information': 'Test PD Rule\n\n@timestamp: 2017-01-01T00:00:00\nsomefield: foobarbaz\n'
             },
+            'timestamp': '2017-01-01T00:00:00'
         },
         'event_action': 'trigger',
         'dedup_key': '',
