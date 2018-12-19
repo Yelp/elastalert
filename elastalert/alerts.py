@@ -1377,6 +1377,9 @@ class PagerDutyAlerter(Alerter):
                     },
                 },
             }
+            match_timestamp = lookup_es_key(matches[0], self.rule.get('timestamp_field', '@timestamp'))
+            if match_timestamp:
+                payload['payload']['timestamp'] = match_timestamp
         else:
             payload = {
                 'service_key': self.pagerduty_service_key,
@@ -1913,7 +1916,7 @@ class AlertaAlerter(Alerter):
             'tags': [resolve_string(a_tag, match, self.missing_text) for a_tag in self.tags],
             'correlate': [resolve_string(an_event, match, self.missing_text) for an_event in self.correlate],
             'attributes': dict(zip(self.attributes_keys,
-                               [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values])),
+                                   [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values])),
             'rawData': self.create_alert_body([match]),
         }
 
