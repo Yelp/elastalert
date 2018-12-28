@@ -60,6 +60,7 @@ rules_mapping = {
     'cardinality': ruletypes.CardinalityRule,
     'metric_aggregation': ruletypes.MetricAggregationRule,
     'percentage_match': ruletypes.PercentageMatchRule,
+    'spike_aggregation': ruletypes.SpikeMetricAggregationRule
 }
 
 # Used to map names of alerts to their classes

@@ -1,0 +1,45 @@
+name: Metricbeat Average CPU Spike Rule
+type: metric_aggregation
+
+#es_host: localhost
+#es_port: 9200
+
+index: metricbeat-*
+
+buffer_time:
+  hours: 1
+
+metric_agg_key: system.cpu.user.pct
+metric_agg_type: avg
+query_key: beat.hostname
+doc_type: metricsets
+
+#allow_buffer_time_overlap: true
+#use_run_every_query_size: true
+
+# (Required one of _cur or _ref, spike specific)
+# The minimum number of events that will trigger an alert
+# For example, if there are only 2 events between 12:00 and 2:00, and 20 between 2:00 and 4:00
+# _ref is 2 and _cur is 20, and the alert WILL fire because 20 is greater than threshold_cur and (_ref * spike_height)
+threshold_cur: 0.9
+
+# (Required, spike specific)
+# The spike rule matches when the current window contains spike_height times more
+# events than the reference window
+spike_height: 2
+
+# (Required, spike specific)
+# The direction of the spike
+# 'up' matches only spikes, 'down' matches only troughs
+# 'both' matches both spikes and troughs
+spike_type: "up"
+
+filter:
+- term:
+    metricset.name: cpu
+
+# (Required)
+# The alert is use when a match is found
+alert:
+- "debug"
+
