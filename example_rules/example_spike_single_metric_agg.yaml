@@ -1,5 +1,5 @@
 name: Metricbeat Average CPU Spike Rule
-type: metric_aggregation
+type: spike_aggregation
 
 #es_host: localhost
 #es_port: 9200
