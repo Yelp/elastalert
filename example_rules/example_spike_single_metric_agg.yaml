@@ -1,5 +1,5 @@
 name: Metricbeat Average CPU Spike Rule
-type: metric_aggregation
+type: spike_aggregation
 
 #es_host: localhost
 #es_port: 9200
@@ -18,9 +18,11 @@ doc_type: metricsets
 #use_run_every_query_size: true
 
 # (Required one of _cur or _ref, spike specific)
-# The minimum number of events that will trigger an alert
-# For example, if there are only 2 events between 12:00 and 2:00, and 20 between 2:00 and 4:00
-# _ref is 2 and _cur is 20, and the alert WILL fire because 20 is greater than threshold_cur and (_ref * spike_height)
+# The minimum value of the aggregation that will trigger the alert
+# For example, if we're tracking the average for a metric whose average is 0.4 between 12:00 and 2:00
+# and 0.95 between 2:00 and 4:00 with spike_height set to 2 and threshhold_cur set to 0.9:
+# _ref is 0.4 and _cur is 0.95, and the alert WILL fire
+# because 0.95 is greater than threshold_cur (0.9) and (_ref * spike_height (.4 * 2))
 threshold_cur: 0.9
 
 # (Required, spike specific)
