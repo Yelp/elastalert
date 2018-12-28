@@ -284,6 +284,7 @@ def elasticsearch_client(conf):
     """ returns an Elasticsearch instance configured using an es_conn_config """
     es_conn_conf = build_es_conn_config(conf)
     auth = Auth()
+
     es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
                                      username=es_conn_conf['es_username'],
                                      password=es_conn_conf['es_password'],
