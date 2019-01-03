@@ -106,8 +106,8 @@ oneOf:
       use_terms_query: {type: boolean}
       terms_size: {type: integer}
       alert_on_new_data: {type: boolean}
-      threshold_ref: {type: integer}
-      threshold_cur: {type: integer}
+      threshold_ref: {type: number}
+      threshold_cur: {type: number}
 
   - title: Flatline
     required: [threshold, timeframe]
