@@ -97,7 +97,7 @@ For ranges on fields::
 Negation, and, or
 *****************
 
-Any of the filters can be embedded in ``not``, ``and``, and ``or``::
+For Elasticsearch 2.X, any of the filters can be embedded in ``not``, ``and``, and ``or``::
 
     filter:
     - or:
@@ -113,6 +113,13 @@ Any of the filters can be embedded in ``not``, ``and``, and ``or``::
                 term:
                   _type: "something"
 
+For Elasticsearch 5.x, this will not work and to implement boolean logic use query strings::
+
+    filter:
+     - query:
+          query_string:
+            query: "somefield: somevalue OR foo: bar"
+            
 
 Loading Filters Directly From Kibana 3
 --------------------------------------

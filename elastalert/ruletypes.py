@@ -1087,7 +1087,7 @@ class MetricAggregationRule(BaseAggregationRule):
 
                 # add compound key to payload to allow alerts to trigger for every unique occurence
                 compound_value = [match_data[key] for key in self.rules['compound_query_key']]
-                match_data[self.rules['query_key']] = ",".join(compound_value)
+                match_data[self.rules['query_key']] = ",".join([unicode(value) for value in compound_value])
 
                 self.add_match(match_data)
 
