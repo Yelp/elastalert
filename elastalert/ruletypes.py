@@ -421,15 +421,14 @@ class SpikeRule(RuleType):
                 if qk is None:
                     qk = 'other'
             if self.field_value is not None:
-                if self.field_value in event:
-                    count = lookup_es_key(event, self.field_value)
-                    if count is not None:
-                        try:
-                            count = int(count)
-                        except ValueError:
-                            elastalert_logger.warn('{} is not a number: {}'.format(self.field_value, count))
-                        else:
-                            self.handle_event(event, count, qk)
+                count = lookup_es_key(event, self.field_value)
+                if count is not None:
+                    try:
+                        count = int(count)
+                    except ValueError:
+                        elastalert_logger.warn('{} is not a number: {}'.format(self.field_value, count))
+                    else:
+                        self.handle_event(event, count, qk)
             else:
                 self.handle_event(event, 1, qk)
 
