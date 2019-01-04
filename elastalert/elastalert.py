@@ -259,7 +259,9 @@ class ElastAlerter():
 
         if query_key is not None:
             for idx, key in reversed(list(enumerate(query_key.split(',')))):
-                aggs_element = {'bucket_aggs': {'terms': {'field': key, 'size': terms_size}, 'aggs': aggs_element}}
+                aggs_element = {'bucket_aggs': {'terms': {'field': key, 'size': terms_size,
+                                                          'min_doc_count': rule.get('min_doc_count', 1)},
+                                                'aggs': aggs_element}}
 
         if not rule['five']:
             query_element['filtered'].update({'aggs': aggs_element})
