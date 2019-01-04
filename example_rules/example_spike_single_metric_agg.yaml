@@ -25,9 +25,14 @@ doc_type: metricsets
 # because 0.95 is greater than threshold_cur (0.9) and (_ref * spike_height (.4 * 2))
 threshold_cur: 0.9
 
+# (Optional, min_doc_count)
+# for rules using a per-term aggregation via query_key, the minimum number of events
+# over the past buffer_time needed to update the spike tracker
+min_doc_count: 5
+
 # (Required, spike specific)
-# The spike rule matches when the current window contains spike_height times more
-# events than the reference window
+# The spike aggregation rule matches when the current window contains spike_height times higher aggregated value
+# than the reference window
 spike_height: 2
 
 # (Required, spike specific)

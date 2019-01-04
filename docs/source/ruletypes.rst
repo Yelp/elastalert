@@ -1078,6 +1078,9 @@ Optional:
 ``query_key``: Group metric calculations by this field. For each unique value of the ``query_key`` field, the metric will be calculated and
 evaluated separately against the threshold(s).
 
+``min_doc_count``: The minimum number of events in the current window needed for an alert to trigger.  Used in conjunction with ``query_key``,
+this will only consider terms which in their last ``buffer_time`` had at least ``min_doc_count`` records.  Default 1.
+
 ``use_run_every_query_size``: By default the metric value is calculated over a ``buffer_time`` sized window. If this parameter is true
 the rule will use ``run_every`` as the calculation window.
 
@@ -1118,7 +1121,7 @@ will trigger an alert.
 ``spike_type``: Either 'up', 'down' or 'both'. 'Up' meaning the rule will only match when the metric value is ``spike_height`` times
 higher. 'Down' meaning the reference metric value is ``spike_height`` higher than the current metric value. 'Both' will match either.
 
-``timeframe``: The rule will average out the rate of events over this time period. For example, ``hours: 1`` means that the 'current'
+``buffer_time``: The rule will average out the rate of events over this time period. For example, ``hours: 1`` means that the 'current'
 window will span from present to one hour ago, and the 'reference' window will span from one hour ago to two hours ago. The rule
 will not be active until the time elapsed from the first event is at least two timeframes. This is to prevent an alert being triggered
 before a baseline rate has been established. This can be overridden using ``alert_on_new_data``.
@@ -1128,11 +1131,11 @@ Optional:
 ``query_key``: Group metric calculations by this field. For each unique value of the ``query_key`` field, the metric will be calculated and
 evaluated separately against the 'reference'/'current' metric value and ``spike height``.
 
-``metric_agg_script``: A 'Painless' formatted script describing how to calculate your metric on-the-fly::
+``metric_agg_script``: A `Painless` formatted script describing how to calculate your metric on-the-fly::
 
     metric_agg_key: myScriptedMetric
     metric_agg_script:
-        script: doc['term1'].value * doc['term2'].value
+        script: doc['field1'].value * doc['field2'].value
 
 ``threshold_ref``: The minimum value of the metric in the reference window for an alert to trigger. For example, if
 ``spike_height: 3`` and ``threshold_ref: 10``, then the 'reference' window must have a metric value of 10 and the 'current' window at
@@ -1141,6 +1144,9 @@ least three times that for an alert to be triggered.
 ``threshold_cur``: The minimum value of the metric in the current window for an alert to trigger. For example, if
 ``spike_height: 3`` and ``threshold_cur: 60``, then an alert will occur if the current window has a metric value greater than 60 and
 the reference window is less than a third of that value.
+
+``min_doc_count``: The minimum number of events in the current window needed for an alert to trigger.  Used in conjunction with ``query_key``,
+this will only consider terms which in their last ``buffer_time`` had at least ``min_doc_count`` records.  Default 1.
 
 Percentage Match
 ~~~~~~~~~~~~~~~~

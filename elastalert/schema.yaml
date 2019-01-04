@@ -108,6 +108,7 @@ oneOf:
       alert_on_new_data: {type: boolean}
       threshold_ref: {type: number}
       threshold_cur: {type: number}
+      min_doc_count: {type: integer}
 
   - title: Flatline
     required: [threshold, timeframe]
