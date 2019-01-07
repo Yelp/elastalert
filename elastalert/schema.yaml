@@ -138,6 +138,20 @@ oneOf:
       # custom rules include a period in the rule type
       type: {pattern: "[.]"}
 
+  - title: Anomaly
+    required: [number_windows, anomaly_type, timeframe]
+    properties:
+      type: {enum: [anomaly]}
+      K: {type: number}
+      anomaly_type: {enum: ["up", "down", "both"]}
+      timeframe: *timeframe
+      doc_type: {type: string}
+      terms_size: {type: integer}
+      alert_on_new_data: {type: boolean}
+      value_field: {type: string}
+      number_windows: {type: number}
+      ignore_empty_window: {type: boolean}
+
 properties:
 
   # Common Settings

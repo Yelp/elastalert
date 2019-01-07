@@ -2,9 +2,11 @@
 import copy
 import datetime
 
+import dateutil.tz
 import mock
 import pytest
 
+from elastalert.ruletypes import AnomalyRule
 from elastalert.ruletypes import AnyRule
 from elastalert.ruletypes import BaseAggregationRule
 from elastalert.ruletypes import BlacklistRule
@@ -1042,6 +1044,318 @@ def test_cardinality_nested_cardinality_field():
         event = {'@timestamp': datetime.datetime.now() + datetime.timedelta(minutes=15), 'd': {'ip': ip}}
         rule.add_data([event])
         assert len(rule.matches) == 0
+
+
+def test_anomaly_number_window():
+    rules = {'K': 1,
+             'timeframe': datetime.timedelta(seconds=10),
+             'anomaly_type': 'both',
+             'timestamp_field': '@timestamp',
+             'ignore_empty_window': False,
+             'number_windows': 1}
+
+    with pytest.raises(EAException) as excinfo:
+        AnomalyRule(rules)
+    assert 'The value of number_windows would be at least 2' in str(excinfo.value)
+
+
+def test_anomaly_window_empty():
+    rules = {'K': 1,
+             'timeframe': datetime.timedelta(seconds=10),
+             'anomaly_type': 'both',
+             'timestamp_field': '@timestamp',
+             'ignore_empty_window': False,
+             'number_windows': 10,
+             'value_field': ''}
+
+    rule = AnomalyRule(rules)
+    data = [
+        {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'3'},
+        {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'4'},
+        {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'5'},
+        {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'6'},
+        {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 01, 00, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'7'},
+        {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 01, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'8'},
+        {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 01, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'9'},
+        {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 01, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'10'},
+        {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 01, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'11'},
+        {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 01, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'12'},
+        {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 02, 00, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'13'}]
+
+    rule.add_data(data)
+    assert rule.cur_windows['all'].running_count == 1
+
+    assert rule.ref_windows[0]['all'].running_count == 2
+    assert not rule.ref_windows[0]['all'].keepEmpty
+
+    assert rule.ref_windows[1]['all'].running_count == 1
+    assert not rule.ref_windows[1]['all'].keepEmpty
+
+    assert rule.ref_windows[2]['all'].running_count == 1
+    assert not rule.ref_windows[2]['all'].keepEmpty
+
+    assert rule.ref_windows[3]['all'].running_count == 0
+    assert rule.ref_windows[3]['all'].keepEmpty
+
+    assert rule.ref_windows[4]['all'].running_count == 1
+    assert not rule.ref_windows[4]['all'].keepEmpty
+
+    assert rule.ref_windows[5]['all'].running_count == 0
+    assert rule.ref_windows[5]['all'].keepEmpty
+
+    assert rule.ref_windows[6]['all'].running_count == 0
+    assert rule.ref_windows[6]['all'].keepEmpty
+
+    assert rule.ref_windows[7]['all'].running_count == 3
+    assert not rule.ref_windows[7]['all'].keepEmpty
+
+    assert rule.ref_windows[8]['all'].running_count == 2
+    assert not rule.ref_windows[8]['all'].keepEmpty
+
+    assert rule.ref_windows[9]['all'].running_count == 0
+    assert rule.ref_windows[9]['all'].keepEmpty
+
+# TODO: Add tests for query_keys
+# TODO: Add tests for upper / lower band
+# TODO: alert_on_new_data
+
+
+def test_anomaly_window_count():
+    # IGNORE_EMPTY_WINDOWS = True
+    rules = {'K': 1,
+             'timeframe': datetime.timedelta(seconds=10),
+             'anomaly_type': 'both',
+             'timestamp_field': '@timestamp',
+             'ignore_empty_window': True,
+             'number_windows': 3,
+             'value_field': ''}
+    # 1
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'3'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'4'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'5'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'6'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'7'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'8'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'9'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['anomaly_avg'] == 1
+    assert rule.matches[0]['ref_avg'] == 2
+    assert rule.matches[0]['anomaly_band_inf'] == 2
+
+    # 2
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'3'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'4'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'5'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'6'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'7'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'8'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'9'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'10'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'11'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'12'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['anomaly_avg'] == 1
+    assert rule.matches[0]['ref_avg'] == 3
+    assert rule.matches[0]['anomaly_band_inf'] == 1.5857864376269049
+
+    # 3
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'3'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'4'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'5'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'6'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'7'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'8'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'9'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'10'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'12'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['anomaly_avg'] == 1
+    assert rule.matches[0]['ref_avg'] == 4
+    assert rule.matches[0]['anomaly_band_inf'] == 4
+
+    # 4
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'3'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'4'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'5'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'6'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'7'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'8'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'12'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['anomaly_avg'] == 1
+    assert rule.matches[0]['ref_avg'] == 3
+    assert rule.matches[0]['anomaly_band_inf'] == 2
+
+    # 5
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'2'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 0
+
+    # IGNORE_EMPTY_WINDOWS = True
+    rules = {'K': 1,
+             'timeframe': datetime.timedelta(seconds=10),
+             'anomaly_type': 'both',
+             'timestamp_field': '@timestamp',
+             'ignore_empty_window': False,
+             'number_windows': 3,
+             'value_field': ''}
+
+    # 6
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'3'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'4'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'5'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'6'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'7'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 0
+
+    # 7
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'3'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'4'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'5'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'6'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'7'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'8'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'9'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'10'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'11'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'12'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'13'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'14'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'15'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['anomaly_avg'] == 1
+    assert rule.matches[0]['ref_avg'] == 4
+    assert rule.matches[0]['anomaly_band_inf'] == 1.1715728752538097
+
+    # 8
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'3'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'4'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'5'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'6'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['anomaly_avg'] == 2
+    assert rule.matches[0]['ref_avg'] == 0.6666666666666666
+    assert rule.matches[0]['anomaly_band_inf'] == -0.2761423749153967
+
+    # 9
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), '_id': u'5'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['anomaly_avg'] == 1
+    assert rule.matches[0]['ref_avg'] == 0.0
+    assert rule.matches[0]['anomaly_band_inf'] == 0.0
+
+
+def test_anomaly_window_field():
+    # IGNORE_EMPTY_WINDOWS = FALSE
+    rules = {'K': 1,
+             'timeframe': datetime.timedelta(seconds=10),
+             'anomaly_type': 'both',
+             'timestamp_field': '@timestamp',
+             'ignore_empty_window': True,
+             'number_windows': 3,
+             'value_field': 'Valor'}
+    # 10
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 2, '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 2, '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 2, '_id': u'3'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 2, '_id': u'4'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 2, '_id': u'5'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 2, '_id': u'6'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 2, '_id': u'7'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 2, '_id': u'8'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 0
+
+    # 11
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 5, '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 6, '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 7, '_id': u'3'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 7, '_id': u'4'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 8, '_id': u'5'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 8, '_id': u'6'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 40, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 8, '_id': u'7'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 2, '_id': u'8'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['anomaly_avg'] == 2.0
+    assert rule.matches[0]['ref_avg'] == 7.0
+    assert rule.matches[0]['anomaly_band_inf'] == 6.183503419072274
+
+    # 12
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 5, '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 6, '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 7, '_id': u'3'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 7, '_id': u'4'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 8, '_id': u'5'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 8, '_id': u'6'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 8, '_id': u'7'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 01, 00, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 2, '_id': u'8'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['anomaly_avg'] == 2.0
+    assert rule.matches[0]['ref_avg'] == 7.5
+    assert rule.matches[0]['anomaly_band_inf'] == 7.0
+
+    rules = {'K': 1,
+             'timeframe': datetime.timedelta(seconds=10),
+             'anomaly_type': 'both',
+             'timestamp_field': '@timestamp',
+             'ignore_empty_window': False,
+             'number_windows': 3,
+             'value_field': 'Valor'}
+
+    # 13
+    rule = AnomalyRule(rules)
+    data = [{u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 10, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 5, '_id': u'1'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 20, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 6, '_id': u'2'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 7, '_id': u'3'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 30, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 7, '_id': u'4'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 8, '_id': u'5'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 8, '_id': u'6'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 00, 50, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 8, '_id': u'7'},
+            {u'@timestamp': datetime.datetime(2014, 9, 26, 00, 01, 00, 100000, tzinfo=dateutil.tz.tzutc()), u'Valor': 1, '_id': u'8'}]
+    rule.add_data(data)
+    assert len(rule.matches) == 1
+    assert rule.matches[0]['anomaly_avg'] == 8.0
+    assert rule.matches[0]['ref_avg'] == 4.333333333333333
+    assert rule.matches[0]['anomaly_band_inf'] == 1.2421271681680985
 
 
 def test_base_aggregation_constructor():
