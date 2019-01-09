@@ -21,9 +21,18 @@ from elastalert.util import elasticsearch_client
 from elastalert.util import lookup_es_key
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
+from elastalert.util import EAException
 
 logging.getLogger().setLevel(logging.INFO)
 logging.getLogger('elasticsearch').setLevel(logging.WARNING)
+
+"""
+Error Codes:
+    1: Error connecting to ElasticSearch
+    2: Error querying ElasticSearch
+    3: Invalid Rule
+    4: Missing/invalid timestamp
+"""
 
 
 def print_terms(terms, parent):
@@ -51,6 +60,11 @@ class MockElastAlerter(object):
 
         try:
             ElastAlerter.modify_rule_for_ES5(conf)
+        except EAException as ea:
+            print('Invalid filter provided:', str(ea), file=sys.stderr)
+            if args.stop_error:
+                exit(3)
+            return None
         except Exception as e:
             print("Error connecting to ElasticSearch:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
@@ -77,7 +91,7 @@ class MockElastAlerter(object):
             print("Error running your filter:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
             if args.stop_error:
-                exit(1)
+                exit(3)
             return None
         num_hits = len(res['hits']['hits'])
         if not num_hits:
@@ -103,7 +117,7 @@ class MockElastAlerter(object):
             print("Error querying Elasticsearch:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
             if args.stop_error:
-                exit(1)
+                exit(2)
             return None
 
         num_hits = res['count']
@@ -147,7 +161,7 @@ class MockElastAlerter(object):
                 print("Error running your filter:", file=sys.stderr)
                 print(repr(e)[:2048], file=sys.stderr)
                 if args.stop_error:
-                    exit(1)
+                    exit(2)
                 return None
             num_hits = len(res['hits']['hits'])
 
@@ -234,7 +248,7 @@ class MockElastAlerter(object):
             except KeyError as e:
                 print("All documents must have a timestamp and _id: %s" % (e), file=sys.stderr)
                 if args.stop_error:
-                    exit(1)
+                    exit(4)
                 return None
 
             # Create mock _id for documents if it's missing
@@ -258,7 +272,7 @@ class MockElastAlerter(object):
                         endtime = ts_to_dt(args.end)
                     except (TypeError, ValueError):
                         self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (args.end))
-                        exit(1)
+                        exit(4)
             else:
                 endtime = ts_now()
             if args.start:
@@ -266,7 +280,7 @@ class MockElastAlerter(object):
                     starttime = ts_to_dt(args.start)
                 except (TypeError, ValueError):
                     self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (args.start))
-                    exit(1)
+                    exit(4)
             else:
                 starttime = endtime - datetime.timedelta(days=args.days)
 
@@ -314,7 +328,7 @@ class MockElastAlerter(object):
                     if call[0][0] == 'elastalert_error':
                         errors = True
                 if errors and args.stop_error:
-                    exit(1)
+                    exit(2)
 
     def run_rule_test(self):
         """
