@@ -366,7 +366,7 @@ class StompAlerter(Alerter):
             'stomp_destination', '/queue/ALERT')
         self.stomp_ssl = self.rule.get('stomp_ssl', False)
 
-        conn = stomp.Connection([(self.stomp_hostname, self.stomp_hostport)],use_ssl=self.stomp_ssl)
+        conn = stomp.Connection([(self.stomp_hostname, self.stomp_hostport)], use_ssl=self.stomp_ssl)
 
         conn.start()
         conn.connect(self.stomp_login, self.stomp_password)
