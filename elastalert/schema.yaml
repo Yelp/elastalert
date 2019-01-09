@@ -93,6 +93,23 @@ oneOf:
       threshold_ref: {type: integer}
       threshold_cur: {type: integer}
 
+  - title: Spike Aggregation
+    required: [spike_height, spike_type, timeframe]
+    properties:
+      type: {enum: [spike_aggregation]}
+      spike_height: {type: number}
+      spike_type: {enum: ["up", "down", "both"]}
+      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count"]}
+      timeframe: *timeframe
+      use_count_query: {type: boolean}
+      doc_type: {type: string}
+      use_terms_query: {type: boolean}
+      terms_size: {type: integer}
+      alert_on_new_data: {type: boolean}
+      threshold_ref: {type: number}
+      threshold_cur: {type: number}
+      min_doc_count: {type: integer}
+
   - title: Flatline
     required: [threshold, timeframe]
     properties:

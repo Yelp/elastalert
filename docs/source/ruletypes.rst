@@ -1078,6 +1078,9 @@ Optional:
 ``query_key``: Group metric calculations by this field. For each unique value of the ``query_key`` field, the metric will be calculated and
 evaluated separately against the threshold(s).
 
+``min_doc_count``: The minimum number of events in the current window needed for an alert to trigger.  Used in conjunction with ``query_key``,
+this will only consider terms which in their last ``buffer_time`` had at least ``min_doc_count`` records.  Default 1.
+
 ``use_run_every_query_size``: By default the metric value is calculated over a ``buffer_time`` sized window. If this parameter is true
 the rule will use ``run_every`` as the calculation window.
 
@@ -1096,6 +1099,54 @@ bucket keys these usually round evenly to nearest minute, hour, day etc (dependi
 allign with the time elastalert runs, (This both avoid calculations on partial data, and ensures the very latest documents are included).
 See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_offset for a
 more comprehensive explaination.
+
+Spike Aggregation
+~~~~~~~~~~~~~~~~~~
+
+``spike_aggregation``: This rule matches when the value of a metric within the calculation window is ``spike_height`` times larger or smaller
+than during the previous time period. It uses two sliding windows to compare the current and reference metric values.
+We will call these two windows "reference" and "current".
+
+This rule requires:
+
+``metric_agg_key``: This is the name of the field over which the metric value will be calculated. The underlying type of this field must be
+supported by the specified aggregation type.  If using a scripted field via ``metric_agg_script``, this is the name for your scripted field
+
+``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg',
+'sum', 'cardinality', 'value_count'.
+
+``spike_height``: The ratio of the metric value in the last ``timeframe`` to the previous ``timeframe`` that when hit
+will trigger an alert.
+
+``spike_type``: Either 'up', 'down' or 'both'. 'Up' meaning the rule will only match when the metric value is ``spike_height`` times
+higher. 'Down' meaning the reference metric value is ``spike_height`` higher than the current metric value. 'Both' will match either.
+
+``buffer_time``: The rule will average out the rate of events over this time period. For example, ``hours: 1`` means that the 'current'
+window will span from present to one hour ago, and the 'reference' window will span from one hour ago to two hours ago. The rule
+will not be active until the time elapsed from the first event is at least two timeframes. This is to prevent an alert being triggered
+before a baseline rate has been established. This can be overridden using ``alert_on_new_data``.
+
+Optional:
+
+``query_key``: Group metric calculations by this field. For each unique value of the ``query_key`` field, the metric will be calculated and
+evaluated separately against the 'reference'/'current' metric value and ``spike height``.
+
+``metric_agg_script``: A `Painless` formatted script describing how to calculate your metric on-the-fly::
+
+    metric_agg_key: myScriptedMetric
+    metric_agg_script:
+        script: doc['field1'].value * doc['field2'].value
+
+``threshold_ref``: The minimum value of the metric in the reference window for an alert to trigger. For example, if
+``spike_height: 3`` and ``threshold_ref: 10``, then the 'reference' window must have a metric value of 10 and the 'current' window at
+least three times that for an alert to be triggered.
+
+``threshold_cur``: The minimum value of the metric in the current window for an alert to trigger. For example, if
+``spike_height: 3`` and ``threshold_cur: 60``, then an alert will occur if the current window has a metric value greater than 60 and
+the reference window is less than a third of that value.
+
+``min_doc_count``: The minimum number of events in the current window needed for an alert to trigger.  Used in conjunction with ``query_key``,
+this will only consider terms which in their last ``buffer_time`` had at least ``min_doc_count`` records.  Default 1.
 
 Percentage Match
 ~~~~~~~~~~~~~~~~
