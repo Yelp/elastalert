@@ -223,6 +223,7 @@ class Alerter(object):
 
     def create_custom_title(self, matches):
         alert_subject = unicode(self.rule['alert_subject'])
+        alert_subject_max_len = int(self.rule.get('alert_subject_max_len', 2048))
 
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
@@ -239,7 +240,10 @@ class Alerter(object):
 
             missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
             alert_subject_values = [missing if val is None else val for val in alert_subject_values]
-            return alert_subject.format(*alert_subject_values)
+            alert_subject = alert_subject.format(*alert_subject_values)
+
+        if len(alert_subject) > alert_subject_max_len:
+            alert_subject = alert_subject[:alert_subject_max_len]
 
         return alert_subject
 
