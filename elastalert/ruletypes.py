@@ -462,7 +462,6 @@ class SpikeRule(RuleType):
         elif spike_check_type == 'max':
             return self.ref_windows[qk].max(), self.cur_windows[qk].max()
 
-
     def clear_windows(self, qk, event):
         # Reset the state and prevent alerts until windows filled again
         self.ref_windows[qk].clear()
