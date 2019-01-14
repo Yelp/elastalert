@@ -513,7 +513,7 @@ class SpikeRule(RuleType):
     def add_match(self, match, qk):
         extra_info = {}
         if self.field_value is None:
-            spike_count, reference_count = self.get_spike_values(qk)
+            reference_count, spike_count = self.get_spike_values(qk)
         else:
             spike_count = self.cur_windows[qk].mean()
             reference_count = self.ref_windows[qk].mean()
