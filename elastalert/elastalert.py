@@ -1427,20 +1427,20 @@ class ElastAlerter():
             return None
         return filters
 
-    def alert(self, matches, rule, alert_time=None, retried=False, es_id=None, index=None):
+    def alert(self, matches, rule, alert_time=None, retried=False, es_id=None, es_index=None):
         """ Wraps alerting, Kibana linking and enhancements in an exception handler """
         try:
-            return self.send_alert(matches, rule, alert_time=alert_time, retried=retried, es_id=es_id, index=index)
+            return self.send_alert(matches, rule, alert_time=alert_time, retried=retried, es_id=es_id, es_index=es_index)
         except Exception as e:
             self.handle_uncaught_exception(e, rule)
 
-    def send_alert(self, matches, rule, alert_time=None, retried=False, es_id=None, index=None):
+    def send_alert(self, matches, rule, alert_time=None, retried=False, es_id=None, es_index=None):
         """ Send out an alert.
 
         :param matches: A list of matches.
         :param rule: A rule configuration.
         :param es_id: If retried and self.resend_update this should be the ID of the last attempt
-        :param index: If retried and self.resend_update this should be the index the last attempt was pushed to
+        :param es_index: If retried and self.resend_update this should be the index the last attempt was pushed to
         """
         if not matches:
             return
@@ -1536,10 +1536,7 @@ class ElastAlerter():
             # Set all matches to aggregate together
             if agg_id:
                 alert_body['aggregate_id'] = agg_id
-            if es_id:
-                res = self.writeback('elastalert', alert_body, rule, es_id, index)
-            else:
-                res = self.writeback('elastalert', alert_body, rule)
+            res = self.writeback('elastalert', alert_body, rule, es_id, es_index)
             if res and not agg_id:
                 agg_id = res['_id']
 
@@ -1569,11 +1566,8 @@ class ElastAlerter():
             body['alert_exception'] = alert_exception
         return body
 
-    def writeback(self, doc_type, body, rule=None, es_id=None, index=None):
-        if index:
-            writeback_index = index
-        else:
-            writeback_index = self.get_writeback_index(doc_type, rule, body)
+    def writeback(self, doc_type, body, rule=None, es_id=None, es_index=None):
+        writeback_index = es_index or self.get_writeback_index(doc_type, rule, body)
 
         # ES 2.0 - 2.3 does not support dots in field names.
         if self.replace_dots_in_field_names:
@@ -1594,11 +1588,7 @@ class ElastAlerter():
             writeback_body['@timestamp'] = dt_to_ts(ts_now())
 
         try:
-            if es_id:
-                print 'Updating record with id %s to index %s' % (es_id, writeback_index)
-                res = self.writeback_es.index(index=writeback_index, doc_type=doc_type, body=body, id=es_id)
-            else:
-                res = self.writeback_es.index(index=writeback_index, doc_type=doc_type, body=body)
+            res = self.writeback_es.index(index=writeback_index, doc_type=doc_type, body=body, id=es_id)
             return res
         except ElasticsearchException as e:
             logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
@@ -1669,7 +1659,7 @@ class ElastAlerter():
                     if not rule.get('aggregation'):
                         retried = True
                     if self.resend_update:
-                        self.alert([match_body], rule, alert_time=alert_time, retried=retried, es_id=_id, index=_index)
+                        self.alert([match_body], rule, alert_time=alert_time, retried=retried, es_id=_id, es_index=_index)
                     else:
                         self.alert([match_body], rule, alert_time=alert_time, retried=retried)
 
@@ -1681,7 +1671,6 @@ class ElastAlerter():
 
                 # Delete it from the index
                 if not self.resend_update:
-                    print 'Deleting old record %s' % _id
                     try:
                         self.writeback_es.delete(index=_index,
                                                  doc_type='elastalert',
