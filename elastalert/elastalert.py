@@ -1537,7 +1537,7 @@ class ElastAlerter():
             if agg_id:
                 alert_body['aggregate_id'] = agg_id
             if es_id:
-                res = self.writeback('elastalert', alert_body, rule, es_id)
+                res = self.writeback('elastalert', alert_body, rule, es_id, index)
             else:
                 res = self.writeback('elastalert', alert_body, rule)
             if res and not agg_id:
