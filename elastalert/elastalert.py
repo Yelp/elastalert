@@ -147,6 +147,7 @@ class ElastAlerter():
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
         self.buffer_time = self.conf['buffer_time']
+        self.resend_update = self.conf['resend_update']
         self.silence_cache = {}
         self.rule_hashes = self.rules_loader.get_hashes(self.conf, self.args.rule)
         self.starttime = self.args.start
@@ -1426,18 +1427,20 @@ class ElastAlerter():
             return None
         return filters
 
-    def alert(self, matches, rule, alert_time=None, retried=False):
+    def alert(self, matches, rule, alert_time=None, retried=False, es_id=None, es_index=None):
         """ Wraps alerting, Kibana linking and enhancements in an exception handler """
         try:
-            return self.send_alert(matches, rule, alert_time=alert_time, retried=retried)
+            return self.send_alert(matches, rule, alert_time=alert_time, retried=retried, es_id=es_id, es_index=es_index)
         except Exception as e:
             self.handle_uncaught_exception(e, rule)
 
-    def send_alert(self, matches, rule, alert_time=None, retried=False):
+    def send_alert(self, matches, rule, alert_time=None, retried=False, es_id=None, es_index=None):
         """ Send out an alert.
 
         :param matches: A list of matches.
         :param rule: A rule configuration.
+        :param es_id: If retried and self.resend_update this should be the ID of the last attempt
+        :param es_index: If retried and self.resend_update this should be the index the last attempt was pushed to
         """
         if not matches:
             return
@@ -1533,7 +1536,7 @@ class ElastAlerter():
             # Set all matches to aggregate together
             if agg_id:
                 alert_body['aggregate_id'] = agg_id
-            res = self.writeback('elastalert', alert_body, rule)
+            res = self.writeback('elastalert', alert_body, rule, es_id, es_index)
             if res and not agg_id:
                 agg_id = res['_id']
 
@@ -1563,8 +1566,8 @@ class ElastAlerter():
             body['alert_exception'] = alert_exception
         return body
 
-    def writeback(self, doc_type, body, rule=None):
-        writeback_index = self.get_writeback_index(doc_type, rule, body)
+    def writeback(self, doc_type, body, rule=None, es_id=None, es_index=None):
+        writeback_index = es_index or self.get_writeback_index(doc_type, rule, body)
 
         # ES 2.0 - 2.3 does not support dots in field names.
         if self.replace_dots_in_field_names:
@@ -1585,8 +1588,7 @@ class ElastAlerter():
             writeback_body['@timestamp'] = dt_to_ts(ts_now())
 
         try:
-            res = self.writeback_es.index(index=writeback_index,
-                                          doc_type=doc_type, body=body)
+            res = self.writeback_es.index(index=writeback_index, doc_type=doc_type, body=body, id=es_id)
             return res
         except ElasticsearchException as e:
             logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
@@ -1656,7 +1658,10 @@ class ElastAlerter():
                     retried = False
                     if not rule.get('aggregation'):
                         retried = True
-                    self.alert([match_body], rule, alert_time=alert_time, retried=retried)
+                    if self.resend_update:
+                        self.alert([match_body], rule, alert_time=alert_time, retried=retried, es_id=_id, es_index=_index)
+                    else:
+                        self.alert([match_body], rule, alert_time=alert_time, retried=retried)
 
                 if rule['current_aggregate_id']:
                     for qk, agg_id in rule['current_aggregate_id'].iteritems():
@@ -1665,12 +1670,13 @@ class ElastAlerter():
                             break
 
                 # Delete it from the index
-                try:
-                    self.writeback_es.delete(index=_index,
-                                             doc_type='elastalert',
-                                             id=_id)
-                except ElasticsearchException:  # TODO: Give this a more relevant exception, try:except: is evil.
-                    self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
+                if not self.resend_update:
+                    try:
+                        self.writeback_es.delete(index=_index,
+                                                 doc_type='elastalert',
+                                                 id=_id)
+                    except ElasticsearchException:  # TODO: Give this a more relevant exception, try:except: is evil.
+                        self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
 
         # Send in memory aggregated alerts
         for rule in self.rules:
