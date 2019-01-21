@@ -915,7 +915,6 @@ def test_kibana_dashboard(ea):
 
 
 def test_rule_changes(ea):
-    re = datetime.timedelta(minutes=10)
     ea.rule_hashes = {'rules/rule1.yaml': 'ABC',
                       'rules/rule2.yaml': 'DEF'}
     ea.rules = [ea.init_rule(rule, True) for rule in [{'rule_file': 'rules/rule1.yaml', 'name': 'rule1', 'filter': []},
