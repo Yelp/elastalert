@@ -20,7 +20,6 @@ from socket import error
 import dateutil.tz
 import kibana
 import pytz
-import yaml
 from alerts import DebugAlerter
 from apscheduler.schedulers.background import BackgroundScheduler
 from config import load_conf
