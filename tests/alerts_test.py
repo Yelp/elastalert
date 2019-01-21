@@ -974,7 +974,8 @@ def test_slack_uses_custom_title():
         'type': 'any',
         'slack_webhook_url': 'http://please.dontgohere.slack',
         'alert_subject': 'Cool subject',
-        'alert': []
+        'alert': [],
+        'slack_ca_certs': '/path/to/ca/certs'
     }
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
@@ -1007,7 +1008,7 @@ def test_slack_uses_custom_title():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify='/path/to/ca/certs',
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1020,7 +1021,8 @@ def test_slack_uses_custom_timeout():
         'slack_webhook_url': 'http://please.dontgohere.slack',
         'alert_subject': 'Cool subject',
         'alert': [],
-        'slack_timeout': 20
+        'slack_timeout': 20,
+        'slack_ca_certs': '/path/to/ca/certs'
     }
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
@@ -1053,7 +1055,7 @@ def test_slack_uses_custom_timeout():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify='/path/to/ca/certs',
         timeout=20
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1064,7 +1066,8 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
         'name': 'Test Rule',
         'type': 'any',
         'slack_webhook_url': ['http://please.dontgohere.slack'],
-        'alert': []
+        'alert': [],
+        'slack_ca_certs': '/path/to/ca/certs'
     }
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
@@ -1097,7 +1100,7 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify='/path/to/ca/certs',
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1109,7 +1112,8 @@ def test_slack_uses_custom_slack_channel():
         'type': 'any',
         'slack_webhook_url': ['http://please.dontgohere.slack'],
         'slack_channel_override': '#test-alert',
-        'alert': []
+        'alert': [],
+        'slack_ca_certs': '/path/to/ca/certs'
     }
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
@@ -1142,7 +1146,7 @@ def test_slack_uses_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify='/path/to/ca/certs',
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1154,7 +1158,8 @@ def test_slack_uses_list_of_custom_slack_channel():
         'type': 'any',
         'slack_webhook_url': ['http://please.dontgohere.slack'],
         'slack_channel_override': ['#test-alert', '#test-alert2'],
-        'alert': []
+        'alert': [],
+        'slack_ca_certs': '/path/to/ca/certs'
     }
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
@@ -1203,7 +1208,7 @@ def test_slack_uses_list_of_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify='/path/to/ca/certs',
         timeout=10
     )
     assert expected_data1 == json.loads(mock_post_request.call_args_list[0][1]['data'])
