@@ -228,9 +228,9 @@ def main():
         if es_index.exists(index):
             print('Index ' + index + ' already exists. Skipping index creation.')
             return None
-    if es_index.exists_template('elastalert'):
+    if es_index.exists_template(index):
         print('Template elastalert already exists. Deleting in preparation for creating indexes.')
-        es_index.delete_template('elastalert')
+        es_index.delete_template(index)
 
     # (Re-)Create indices.
     if elasticversion > 5:
@@ -265,7 +265,7 @@ def main():
         es.indices.put_mapping(index=index + '_error', doc_type='elastalert_error', body=error_mapping)
         es.indices.put_mapping(index=index + '_past', doc_type='past_elastalert', body=past_mapping)
         es.indices.put_alias(index=index, name=alias)
-        es.indices.put_template(name='elastalert', body={'index_patterns': ['elastalert_*'],
+        es.indices.put_template(name=index, body={'index_patterns': [index + '_*'],
                                                          'aliases': {alias: {}}, 'mappings': es_mapping})
         print('New index %s created' % index)
     else:
@@ -275,7 +275,7 @@ def main():
         es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping)
         es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping)
         es.indices.put_alias(index=index, name=alias, body={'filter': {'term': {'_type': 'elastalert'}}})
-        es.indices.put_template(name='elastalert', body={'template': 'elastalert_*',
+        es.indices.put_template(name=index, body={'template': index + '_*',
                                                          'aliases': {alias: {}}, 'mappings': es_mapping})
         print('New index %s created' % index)
 
