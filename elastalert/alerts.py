@@ -251,13 +251,23 @@ class Alerter(object):
         return alert_subject
 
     def create_alert_body(self, matches):
-        body = self.get_aggregation_summary_text(matches)
+        body = ''
+
+        if self.rule.get('alert_text_header'):
+            body += self.rule.get('alert_text_header') + '\n\n'
+
+        body += self.get_aggregation_summary_text(matches)
+
         if self.rule.get('alert_text_type') != 'aggregation_summary_only':
             for match in matches:
                 body += unicode(BasicMatchString(self.rule, match))
                 # Separate text of aggregated alerts with dashes
                 if len(matches) > 1:
                     body += '\n----------------------------------------\n'
+
+        if self.rule.get('alert_text_footer'):
+            body += '\n' + self.rule.get('alert_text_footer') + '\n'
+
         return body
 
     def get_aggregation_summary_text__maximum_width(self):
@@ -843,13 +853,18 @@ class JiraAlerter(Alerter):
             self.pipeline['jira_server'] = self.server
 
     def create_alert_body(self, matches):
-        body = self.description + '\n'
+        body = ''
+        if self.rule.get('alert_text_header'):
+            body += self.rule.get('alert_text_header') + '\n\n'
+        body += self.description + '\n'
         body += self.get_aggregation_summary_text(matches)
         if self.rule.get('alert_text_type') != 'aggregation_summary_only':
             for match in matches:
                 body += unicode(JiraFormattedMatchString(self.rule, match))
                 if len(matches) > 1:
                     body += '\n----------------------------------------\n'
+        if self.rule.get('alert_text_footer'):
+            body += '\n' + self.rule.get('alert_text_footer') + '\n'
         return body
 
     def get_aggregation_summary_text(self, matches):
@@ -983,7 +998,10 @@ class HipChatAlerter(Alerter):
         self.hipchat_proxy = self.rule.get('hipchat_proxy', None)
 
     def create_alert_body(self, matches):
-        body = super(HipChatAlerter, self).create_alert_body(matches)
+        body = ''
+        if self.rule.get('alert_text_header'):
+            body += self.rule.get('alert_text_header') + '\n\n'
+        body += super(HipChatAlerter, self).create_alert_body(matches)
 
         # HipChat sends 400 bad request on messages longer than 10000 characters
         if self.hipchat_message_format == 'html':
@@ -999,6 +1017,9 @@ class HipChatAlerter(Alerter):
 
         if (len(body) > 9999):
             body = body[:truncate_to] + truncated_message
+
+        if self.rule.get('alert_text_footer'):
+            body += '\n' + self.rule.get('alert_text_footer') + '\n'
 
         return body
 
