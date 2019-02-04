@@ -818,6 +818,8 @@ class ElastAlerter():
         :param endtime: The latest timestamp to query.
         :return: The number of matches that the rule produced.
         """
+
+        print(rule['exponential_realert'])
         run_start = time.time()
         self.current_es = elasticsearch_client(rule)
         self.current_es_addr = (rule['es_host'], rule['es_port'])
