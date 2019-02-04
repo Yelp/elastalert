@@ -106,7 +106,7 @@ def test_email():
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
@@ -171,7 +171,7 @@ def test_email_with_unicode_strings():
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, [u'testing@test.test'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
@@ -200,7 +200,7 @@ def test_email_with_auth():
                     mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().login('someone', 'hunter2'),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
 
@@ -222,7 +222,7 @@ def test_email_with_cert_key():
                     mock.call().starttls(certfile='dummy/cert.crt', keyfile='dummy/client.key'),
                     mock.call().login('someone', 'hunter2'),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
 
@@ -240,7 +240,7 @@ def test_email_with_cc():
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
@@ -265,7 +265,7 @@ def test_email_with_bcc():
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
@@ -300,7 +300,7 @@ def test_email_with_cc_and_bcc():
                         ],
                         mock.ANY
         ),
-            mock.call().close()]
+            mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
@@ -335,7 +335,7 @@ def test_email_with_args():
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
