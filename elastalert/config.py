@@ -74,6 +74,8 @@ def load_conf(args, defaults=None, overwrites=None):
             conf['old_query_limit'] = datetime.timedelta(**conf['old_query_limit'])
         else:
             conf['old_query_limit'] = datetime.timedelta(weeks=1)
+        if 'exponential_realert' in conf:
+            conf['exponential_realert'] = datetime.timedelta(**conf['exponential_realert'])
     except (KeyError, TypeError) as e:
         raise EAException('Invalid time format used: %s' % e)
 
