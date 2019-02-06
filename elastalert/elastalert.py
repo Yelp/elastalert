@@ -146,7 +146,8 @@ class ElastAlerter():
         self.from_addr = self.conf.get('from_addr', 'ElastAlert')
         self.smtp_host = self.conf.get('smtp_host', 'localhost')
         self.max_aggregation = self.conf.get('max_aggregation', 10000)
-        self.buffer_time = self.conf['buffer_time']
+        self.limit_execution_margin = self.conf.get('limit_execution_margin', 10)
+    self.buffer_time = self.conf['buffer_time']
         self.silence_cache = {}
         self.rule_hashes = self.rules_loader.get_hashes(self.conf, self.args.rule)
         self.starttime = self.args.start
@@ -1242,7 +1243,7 @@ class ElastAlerter():
             endtime_epoch = dt_to_unix(endtime)
             # If the estimated next endtime (end + run_every) isn't at least a minute past the next exec time
             # That means that we need to pause execution after this run
-            if endtime_epoch + rule['run_every'].total_seconds() < exec_next - 59:
+            if endtime_epoch + rule['run_every'].total_seconds() < exec_next - (60- self.limit_execution_margin):
                 # apscheduler requires pytz tzinfos, so don't use unix_to_dt here!
                 rule['next_starttime'] = datetime.datetime.utcfromtimestamp(exec_next).replace(tzinfo=pytz.utc)
                 if rule.get('limit_execution_coverage'):
