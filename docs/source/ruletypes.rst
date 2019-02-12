@@ -2097,10 +2097,9 @@ Example usage::
        hive_host: http://localhost
        hive_port: <hive_port>
        hive_apikey: <hive_apikey>
-
-     hive_proxies:
-       http: ''
-       https: ''
+       hive_proxies:
+         http: ''
+         https: ''
 
       hive_alert_config:
         title: 'Title'  ## This will default to {rule[index]_rule[name]} if not provided
