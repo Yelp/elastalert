@@ -1223,22 +1223,62 @@ class PercentageMatchRule(BaseAggregationRule):
         }
 
     def check_matches(self, timestamp, query_key, aggregation_data):
-        match_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['match_bucket']['doc_count']
-        other_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['_other_']['doc_count']
+        if "compound_query_key" in self.rules:
+            self.check_matches_recursive(timestamp, query_key, aggregation_data, self.rules['compound_query_key'], dict())
 
-        if match_bucket_count is None or other_bucket_count is None:
-            return
         else:
+            match_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['match_bucket']['doc_count']
+            other_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['_other_']['doc_count']
+
+            if match_bucket_count is None or other_bucket_count is None:
+                return
+            else:
+                total_count = other_bucket_count + match_bucket_count
+                if total_count == 0 or total_count < self.min_denominator:
+                    return
+                else:
+                    match_percentage = (match_bucket_count * 1.0) / (total_count * 1.0) * 100
+                    if self.percentage_violation(match_percentage):
+                        match = {self.rules['timestamp_field']: timestamp, 'percentage': match_percentage, 'denominator': total_count}
+                        if query_key is not None:
+                            match[self.rules['query_key']] = query_key
+                        self.add_match(match)
+
+    def check_matches_recursive(self, timestamp, query_key, aggregation_data, compound_keys, match_data):
+        if len(compound_keys) < 1:
+            # shouldn't get to this point, but checking for safety
+            return
+
+        match_data[compound_keys[0]] = aggregation_data['key']
+        if 'bucket_aggs' in aggregation_data:
+            for result in aggregation_data['bucket_aggs']['buckets']:
+                self.check_matches_recursive(timestamp,
+                                             query_key,
+                                             result,
+                                             compound_keys[1:],
+                                             match_data)
+
+        else:
+
+            match_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['match_bucket']['doc_count']
+            other_bucket_count = aggregation_data['percentage_match_aggs']['buckets']['_other_']['doc_count']
             total_count = other_bucket_count + match_bucket_count
+
             if total_count == 0 or total_count < self.min_denominator:
                 return
             else:
                 match_percentage = (match_bucket_count * 1.0) / (total_count * 1.0) * 100
                 if self.percentage_violation(match_percentage):
-                    match = {self.rules['timestamp_field']: timestamp, 'percentage': match_percentage, 'denominator': total_count}
-                    if query_key is not None:
-                        match[self.rules['query_key']] = query_key
-                    self.add_match(match)
+                    match_data[self.rules['timestamp_field']] = timestamp
+                    match_data['percentage'] = match_percentage
+                    match_data['denominator'] = total_count
+
+                    # add compound key to payload to allow alerts to trigger for every unique occurence
+                    compound_value = [match_data[key] for key in self.rules['compound_query_key']]
+                    match_data[self.rules['query_key']] = ",".join([unicode(value) for value in compound_value])
+
+                    self.add_match(match_data)
+
 
     def percentage_violation(self, match_percentage):
         if 'max_percentage' in self.rules and match_percentage > self.rules['max_percentage']:
