@@ -1249,9 +1249,10 @@ class ElastAlerter():
                 rule['next_starttime'] = datetime.datetime.utcfromtimestamp(exec_next).replace(tzinfo=pytz.utc)
                 if rule.get('limit_execution_coverage'):
                     print("ici 2")
-                rule['next_min_starttime'] = rule['next_starttime']
+                    rule['next_min_starttime'] = rule['next_starttime']
                 if not rule['has_run_once']:
                     print("ici 3")
+                    rule['has_run_once'] = True
                     self.reset_rule_schedule(rule)
                     return
         print("ici 4")
