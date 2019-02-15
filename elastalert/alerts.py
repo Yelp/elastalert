@@ -2115,7 +2115,8 @@ class HiveAlerter(Alerter):
             for mapping in self.rule.get('hive_observable_data_mapping', []):
                 for observable_type, match_data_key in mapping.iteritems():
                     try:
-                        if match_data_key.replace("{match[", "").replace("]}", "") in context['match']:
+                        match_data_keys = re.findall(r'\{match\[([^\]]*)\]', match_data_key)
+                        if all([True for k in match_data_keys if k in context['match']]):
                             artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
                     except KeyError:
                         raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
@@ -2128,19 +2129,30 @@ class HiveAlerter(Alerter):
             alert_config.update(self.rule.get('hive_alert_config', {}))
 
             for alert_config_field, alert_config_value in alert_config.iteritems():
-                if isinstance(alert_config_value, basestring):
+                if alert_config_field == 'customFields':
+                    custom_fields = CustomFieldHelper()
+                    for cf_key, cf_value in alert_config_value.iteritems():
+                        try:
+                            func = getattr(custom_fields, 'add_{}'.format(cf_value['type']))
+                        except AttributeError:
+                            raise Exception('unsupported custom field type {}'.format(cf_value['type']))
+                        value = cf_value['value'].format(**context)
+                        func(cf_key, value)
+                    alert_config[alert_config_field] = custom_fields.build()
+                elif isinstance(alert_config_value, basestring):
                     alert_config[alert_config_field] = alert_config_value.format(**context)
                 elif isinstance(alert_config_value, (list, tuple)):
                     formatted_list = []
                     for element in alert_config_value:
                         try:
                             formatted_list.append(element.format(**context))
-                        except (AttributeError, KeyError):
+                        except (AttributeError, KeyError, IndexError):
                             formatted_list.append(element)
                     alert_config[alert_config_field] = formatted_list
 
             alert = Alert(**alert_config)
             response = api.create_alert(alert)
+
             if response.status_code != 201:
                 raise Exception('alert not successfully created in TheHive\n{}'.format(response.text))
 
