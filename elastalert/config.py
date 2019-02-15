@@ -212,6 +212,10 @@ def load_options(rule, conf, filename, args=None):
         raise EAException('Invalid time format used: %s' % (e))
 
     # Set defaults, copy defaults from config.yaml
+    td_fields = ['realert', 'aggregation', 'query_delay']
+    for td_field in td_fields:
+        if td_field in base_config:
+            rule.setdefault(td_field, datetime.timedelta(**base_config[td_field]))
     for key, val in base_config.items():
         rule.setdefault(key, val)
     rule.setdefault('name', os.path.splitext(filename)[0])
