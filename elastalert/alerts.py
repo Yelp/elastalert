@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -31,6 +32,7 @@ from texttable import Texttable
 from thehive4py.api import TheHiveApi
 from thehive4py.models import Alert
 from thehive4py.models import AlertArtifact
+from thehive4py.models import CustomFieldHelper
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
 from util import EAException
