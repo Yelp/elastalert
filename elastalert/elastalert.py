@@ -526,7 +526,10 @@ class ElastAlerter():
         )
         if size is None:
             size = rule.get('terms_size', 50)
-        query = self.get_terms_query(base_query, size, key, rule['five'], rule['use_keyword_postfix'])
+        use_keyword_suffix = False
+        if "use_keyword_suffix" in rule:
+            use_keyword_suffix = rule["use_keyword_suffix"]
+        query = self.get_terms_query(base_query, size, key, rule['five'], use_keyword_suffix)
 
         try:
             if not rule['five']:
@@ -666,11 +669,10 @@ class ElastAlerter():
                 rule_inst.add_aggregation_data(data)
             else:
                 rule_inst.add_data(data)
-
         if isinstance(rule['type'], FlatlineRule):
             if "writeback_events_up_enabled" in rule_inst.rules and rule_inst.rules["writeback_events_up_enabled"] and len(rule_inst.events_up) !=0:
                 for  matches in rule_inst.events_up:
-                    alert_body = self.get_alert_body(matches, rule, False, ts_now(), None, rule_inst.rules["event_up_rule_name_postfix"])
+                    alert_body = self.get_alert_body(matches, rule, False, ts_now(), None, rule_inst.rules["event_up_rule_name_suffix"])
                     self.writeback('elastalert', alert_body, rule)
                 rule_inst.events_up=[]
 
@@ -1554,7 +1556,7 @@ class ElastAlerter():
             if res and not agg_id:
                 agg_id = res['_id']
 
-    def get_alert_body(self, match, rule, alert_sent, alert_time, alert_exception=None, rule_name_postfix=None):
+    def get_alert_body(self, match, rule, alert_sent, alert_time, alert_exception=None, rule_name_suffix=None):
         body = {
             'match_body': match,
             'rule_name': rule['name'],
@@ -1562,8 +1564,8 @@ class ElastAlerter():
             'alert_sent': alert_sent,
             'alert_time': alert_time
         }
-        if rule_name_postfix != None:
-            body['rule_name']+=rule_name_postfix
+        if rule_name_suffix != None:
+            body['rule_name']+=rule_name_suffix
 
         if self.add_metadata_alert:
             body['category'] = rule['category']
