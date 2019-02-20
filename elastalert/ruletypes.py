@@ -235,8 +235,15 @@ class FrequencyRule(RuleType):
             for bucket in buckets:
                 event = ({self.ts_field: timestamp,
                           self.rules['query_key']: bucket['key']}, bucket['doc_count'])
-                self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
-                self.check_for_match(bucket['key'])
+                composite_key =bucket['key']
+                if type(composite_key) is dict:
+                    composite_key_as_string=""
+                    for single_key in composite_key.keys():
+                        composite_key_as_string+= composite_key[single_key]+","
+                    composite_key_as_string= composite_key_as_string[:-1]
+                    composite_key = composite_key_as_string
+                self.occurrences.setdefault(composite_key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
+                self.check_for_match(composite_key)
 
     def add_data(self, data):
         if 'query_key' in self.rules:
@@ -593,6 +600,49 @@ class FlatlineRule(FrequencyRule):
                 # Forget about this key until we see it again
                 self.first_event.pop(key)
                 self.occurrences.pop(key)
+
+    def check_data_if_up_again(self, data):
+        if 'query_key' in self.rules:
+            qk = self.rules['query_key']
+        else:
+            qk = None
+
+        for event in data:
+            if qk:
+                key = hashable(lookup_es_key(event, qk))
+            else:
+                # If no query_key, we use the key 'all' for all events
+                key = 'all'
+
+            # Store the timestamps of recent occurrences, per key
+            self.check_key_if_up_again(key, end=False)
+
+        # We call this multiple times with the 'end' parameter because subclasses
+        # may or may not want to check while only partial data has been added
+        if key in self.occurrences:  # could have been emptied by previous check
+            self.check_key_if_up_again(key, end=True)
+
+    def check_key_if_up_again(self, key, end=True):
+        # This function gets called between every added document with end=True after the last
+        # We ignore the calls before the end because it may trigger false positives
+
+
+        if not end:
+            return False
+
+        most_recent_ts = self.get_ts(self.occurrences[key].data[-1])
+        if self.first_event.get(key) is None:
+            self.first_event[key] = most_recent_ts
+
+        # Don't check for matches until timeframe has elapsed
+        if most_recent_ts - self.first_event[key] < self.rules['timeframe']:
+            return False
+
+        # Match if, after removing old events, we hit num_events
+        count = self.occurrences[key].count()
+        if count >= self.rules['threshold']:
+            # Do a deep-copy, otherwise we lose the datetime type in the timestamp field of the last event
+            return True
 
     def get_match_str(self, match):
         ts = match[self.rules['timestamp_field']]

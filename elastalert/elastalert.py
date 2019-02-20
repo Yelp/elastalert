@@ -261,12 +261,16 @@ class ElastAlerter():
         query_element = query['query']
         if 'sort' in query_element:
             query_element.pop('sort')
+        agg_query={'counts': {'composite':{'sources': [],'size': size}}}
+        fields = field.split(",")
+        for field in fields:
+            agg_query['counts']['composite']['sources'].append({field: {"terms": {"field": field+".keyword"}}})
         if not five:
-            query_element['filtered'].update({'aggs': {'counts': {'terms': {'field': field, 'size': size}}}})
+            query_element['filtered'].update({'aggs': agg_query})
             aggs_query = {'aggs': query_element}
         else:
             aggs_query = query
-            aggs_query['aggs'] = {'counts': {'terms': {'field': field, 'size': size}}}
+            aggs_query['aggs'] = agg_query
         return aggs_query
 
     def get_aggregation_query(self, query, rule, query_key, terms_size, timestamp_field='@timestamp'):
@@ -656,6 +660,9 @@ class ElastAlerter():
                 rule_inst.add_terms_data(data)
             elif rule.get('aggregation_query_element'):
                 rule_inst.add_aggregation_data(data)
+            elif isinstance(rule['type'], FlatlineRule):
+                #rule_inst.check_data_if_up_again(data)
+                rule_inst.add_data(data)
             else:
                 rule_inst.add_data(data)
 
@@ -1224,6 +1231,7 @@ class ElastAlerter():
             elastalert_logger.info("Background configuration change check run at %s" % (pretty_ts(ts_now())))
 
     def handle_rule_execution(self, rule):
+
         self.thread_data.alerts_sent = 0
         next_run = datetime.datetime.utcnow() + rule['run_every']
         # Set endtime based on the rule's delay
@@ -1244,18 +1252,14 @@ class ElastAlerter():
             # If the estimated next endtime (end + run_every) isn't at least a minute past the next exec time
             # That means that we need to pause execution after this run
             if endtime_epoch + rule['run_every'].total_seconds() < exec_next - 59:
-                print("ici 1")
                 # apscheduler requires pytz tzinfos, so don't use unix_to_dt here!
                 rule['next_starttime'] = datetime.datetime.utcfromtimestamp(exec_next).replace(tzinfo=pytz.utc)
                 if rule.get('limit_execution_coverage'):
-                    print("ici 2")
                     rule['next_min_starttime'] = rule['next_starttime']
                 if not rule['has_run_once']:
-                    print("ici 3")
                     rule['has_run_once'] = True
                     self.reset_rule_schedule(rule)
                     return
-        print("ici 4")
         rule['has_run_once'] = True
         try:
             num_matches = self.run_rule(rule, endtime, rule.get('initial_starttime'))
