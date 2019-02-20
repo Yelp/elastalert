@@ -668,7 +668,7 @@ class ElastAlerter():
                 rule_inst.add_data(data)
 
         if isinstance(rule['type'], FlatlineRule):
-            if rule_inst.rules["writeback_events_up_enabled"] and len(rule_inst.events_up) !=0:
+            if "writeback_events_up_enabled" in rule_inst.rules and rule_inst.rules["writeback_events_up_enabled"] and len(rule_inst.events_up) !=0:
                 for  matches in rule_inst.events_up:
                     alert_body = self.get_alert_body(matches, rule, False, ts_now(), None, rule_inst.rules["event_up_rule_name_postfix"])
                     self.writeback('elastalert', alert_body, rule)
