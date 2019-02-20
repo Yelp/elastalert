@@ -236,11 +236,12 @@ class FrequencyRule(RuleType):
                 event = ({self.ts_field: timestamp,
                           self.rules['query_key']: bucket['key']}, bucket['doc_count'])
                 composite_key =bucket['key']
+                #to deal with composite key as it is dict not string, concat all key in one string separate by ,
                 if type(composite_key) is dict:
                     composite_key_as_string=""
                     for single_key in composite_key.keys():
-                        composite_key_as_string+= composite_key[single_key]+","
-                    composite_key_as_string= composite_key_as_string[:-1]
+                        composite_key_as_string+= composite_key[single_key]+", "
+                    composite_key_as_string= composite_key_as_string[:-2]
                     composite_key = composite_key_as_string
                 self.occurrences.setdefault(composite_key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
                 self.check_for_match(composite_key)
@@ -566,6 +567,11 @@ class FlatlineRule(FrequencyRule):
 
         # Dictionary mapping query keys to the first events
         self.first_event = {}
+        self.event_triggered_at_once_per_key={}
+        self.events_up=[]
+
+
+
 
     def check_for_match(self, key, end=True):
         # This function gets called between every added document with end=True after the last
@@ -575,6 +581,12 @@ class FlatlineRule(FrequencyRule):
 
         most_recent_ts = self.get_ts(self.occurrences[key].data[-1])
         if self.first_event.get(key) is None:
+            if key not in self.event_triggered_at_once_per_key:
+                self.event_triggered_at_once_per_key[key]=True
+                print("First boot for key "+key)
+            else:
+                print("service up")
+                self.add_event_up(copy.deepcopy(self.occurrences[key].data[-1][0]))
             self.first_event[key] = most_recent_ts
 
         # Don't check for matches until timeframe has elapsed
@@ -601,48 +613,27 @@ class FlatlineRule(FrequencyRule):
                 self.first_event.pop(key)
                 self.occurrences.pop(key)
 
-    def check_data_if_up_again(self, data):
-        if 'query_key' in self.rules:
-            qk = self.rules['query_key']
-        else:
-            qk = None
 
-        for event in data:
-            if qk:
-                key = hashable(lookup_es_key(event, qk))
-            else:
-                # If no query_key, we use the key 'all' for all events
-                key = 'all'
+    def add_event_up(self, event):
+        """ This function is called on all matching events. Rules use it to add
+        extra information about the context of a match. Event is a dictionary
+        containing terms directly from Elasticsearch and alerts will report
+        all of the information.
 
-            # Store the timestamps of recent occurrences, per key
-            self.check_key_if_up_again(key, end=False)
-
-        # We call this multiple times with the 'end' parameter because subclasses
-        # may or may not want to check while only partial data has been added
-        if key in self.occurrences:  # could have been emptied by previous check
-            self.check_key_if_up_again(key, end=True)
-
-    def check_key_if_up_again(self, key, end=True):
-        # This function gets called between every added document with end=True after the last
-        # We ignore the calls before the end because it may trigger false positives
-
-
-        if not end:
-            return False
-
-        most_recent_ts = self.get_ts(self.occurrences[key].data[-1])
-        if self.first_event.get(key) is None:
-            self.first_event[key] = most_recent_ts
-
-        # Don't check for matches until timeframe has elapsed
-        if most_recent_ts - self.first_event[key] < self.rules['timeframe']:
-            return False
-
-        # Match if, after removing old events, we hit num_events
-        count = self.occurrences[key].count()
-        if count >= self.rules['threshold']:
-            # Do a deep-copy, otherwise we lose the datetime type in the timestamp field of the last event
-            return True
+        :param event: The matching event, a dictionary of terms.
+        """
+        # Convert datetime's back to timestamps
+        ts = self.rules.get('timestamp_field')
+        if ts in event:
+            event[ts] = dt_to_ts(event[ts])
+        for key in event.keys():
+            sub_keys = key.split(",")
+            if len(sub_keys) <2:
+                continue
+            for sub_key_idx in range(len(sub_keys)):
+                event[sub_keys[sub_key_idx]]= event[key][sub_keys[sub_key_idx]]
+            del event[key]
+        self.events_up.append(copy.deepcopy(event))
 
     def get_match_str(self, match):
         ts = match[self.rules['timestamp_field']]
