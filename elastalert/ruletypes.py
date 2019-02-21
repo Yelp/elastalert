@@ -239,7 +239,7 @@ class FrequencyRule(RuleType):
                 #to deal with composite key as it is dict not string, concat all key in one string separate by ,
                 if type(composite_key) is dict:
                     composite_key_as_string=""
-                    for single_key in composite_key.keys():
+                    for single_key in self.rules['query_key'].split(","):
                         composite_key_as_string+= composite_key[single_key]+", "
                     composite_key_as_string= composite_key_as_string[:-2]
                     composite_key = composite_key_as_string

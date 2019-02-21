@@ -1,0 +1,48 @@
+name: Service Up
+type: frequency
+
+index: 'elastalert'
+
+timestamp_field: '@timestamp'
+timestamp_type: iso
+
+
+query_key: ["match_body.s_serviceInfo-instanceId", "match_body.s_serviceInfo-replicaId", "match_body.s_serviceInfo-serviceName"]
+
+priority: 3
+aggregation_key: "match_body.s_serviceInfo-instanceId"
+
+forget_keys: true
+
+filter:
+- query_string:
+      query: "rule_name: Service\\ Down\\ test9_UP"
+
+aggregation:
+    seconds: 30
+timeframe:
+    minutes: 1
+
+num_events: 1
+
+
+alert:
+- email
+from_addr: "alert@taktik.com"
+email: "dm@taktik.com"
+
+alert_subject: "Services up for  {0}"
+#key represent the query key
+alert_subject_args:
+- "match_body.s_serviceInfo-instanceId"
+
+
+alert_text: |
+    Service up again on {0} {1} {2} at {3}
+alert_text_args:
+- "match_body.s_serviceInfo-instanceId"
+- "match_body.s_serviceInfo-replicaId"
+- "match_body.s_serviceInfo-serviceName"
+- "@timestamp"
+
+alert_text_type: alert_text_only
