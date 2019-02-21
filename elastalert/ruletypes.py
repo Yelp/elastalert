@@ -599,6 +599,7 @@ class FlatlineRule(FrequencyRule):
             # Do a deep-copy, otherwise we lose the datetime type in the timestamp field of the last event
             event = copy.deepcopy(self.occurrences[key].data[-1][0])
             event.update(key=key, count=count)
+            event = self.decompose_key_into_multiple_fields(event, self.rules['query_key'])
             self.add_match(event)
 
             if not self.rules.get('forget_keys'):
@@ -612,7 +613,13 @@ class FlatlineRule(FrequencyRule):
                 # Forget about this key until we see it again
                 self.first_event.pop(key)
                 self.occurrences.pop(key)
-
+    def decompose_key_into_multiple_fields(self, event, query_key):
+        if 'key' in event:
+            fieldNames = query_key.split(",")
+            key_fields = event['key'].split(",")
+            for sub_key_idx in range(len(fieldNames)):
+                event[fieldNames[sub_key_idx]]= key_fields[sub_key_idx]
+        return event
 
     def add_event_up(self, event):
         """ This function is called on all matching events. Rules use it to add
