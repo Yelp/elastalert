@@ -2,7 +2,8 @@
 import copy
 import datetime
 import sys
-
+reload(sys)
+sys.setdefaultencoding('utf8')
 from blist import sortedlist
 from util import add_raw_postfix
 from util import dt_to_ts
@@ -585,7 +586,7 @@ class FlatlineRule(FrequencyRule):
                 self.event_triggered_at_once_per_key[key]=True
                 print("First boot for key "+key)
             else:
-                print("service up")
+                print("service up "+key)
                 self.add_event_up(copy.deepcopy(self.occurrences[key].data[-1][0]))
             self.first_event[key] = most_recent_ts
 
