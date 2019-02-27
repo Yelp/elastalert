@@ -884,6 +884,8 @@ class ElastAlerter():
         else:
             self.set_starttime(rule, endtime)
 
+        if 'use_timeframe_as_max_limit' in rule and rule['use_timeframe_as_max_limit']:
+            rule['startime']=  max(ts_now() - rule['timeframe'], rule['starttime'])
         rule['original_starttime'] = rule['starttime']
 
         # Don't run if starttime was set to the future
@@ -896,17 +898,24 @@ class ElastAlerter():
         self.thread_data.num_dupes = 0
         self.thread_data.cumulative_hits = 0
         segment_size = self.get_segment_size(rule)
-
         tmp_endtime = rule['starttime']
 
-        while endtime - rule['starttime'] > segment_size:
-            tmp_endtime = tmp_endtime + segment_size
+        query_all_timeFrame_at_once = 'query_all_timeframe_at_once' in rule and rule['query_all_timeframe_at_once']
+        if  query_all_timeFrame_at_once:
+            tmp_endtime = ts_now()
+
+
+        while query_all_timeFrame_at_once or endtime - rule['starttime'] > segment_size:
+            if not query_all_timeFrame_at_once:
+                tmp_endtime = tmp_endtime + segment_size
             if not self.run_query(rule, rule['starttime'], tmp_endtime):
                 return 0
             self.thread_data.cumulative_hits += self.thread_data.num_hits
             self.thread_data.num_hits = 0
             rule['starttime'] = tmp_endtime
             rule['type'].garbage_collect(tmp_endtime)
+            if query_all_timeFrame_at_once:
+                break
 
         if rule.get('aggregation_query_element'):
             if endtime - tmp_endtime == segment_size:
@@ -917,7 +926,7 @@ class ElastAlerter():
                 return 0
             else:
                 endtime = tmp_endtime
-        else:
+        elif not query_all_timeFrame_at_once:
             if not self.run_query(rule, rule['starttime'], endtime):
                 return 0
             self.thread_data.cumulative_hits += self.thread_data.num_hits
