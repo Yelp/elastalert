@@ -1230,14 +1230,7 @@ class ElastAlerter():
             )
         exit(1)
 
-    def run_all_rules(self):
-        """ Run each rule one time """
-        self.handle_pending_alerts()
 
-        for rule in self.rules:
-            self.handle_rule_execution(rule)
-
-        self.handle_config_change()
 
     def handle_pending_alerts(self):
         self.thread_data.alerts_sent = 0
@@ -1625,6 +1618,7 @@ class ElastAlerter():
             logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
 
     def find_recent_pending_alerts(self, time_limit):
+
         """ Queries writeback_es to find alerts that did not send
         and are newer than time_limit """
 
@@ -1632,9 +1626,12 @@ class ElastAlerter():
         # unless there is constantly more than 1000 alerts to send.
 
         # Fetch recent, unsent alerts that aren't part of an aggregate, earlier alerts first.
+
         inner_query = {'query_string': {'query': '!_exists_:aggregate_id AND alert_sent:false'}}
         time_filter = {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
                                                 'to': dt_to_ts(ts_now())}}}
+        elastalert_logger.info("entered pending alert")
+
         sort = {'sort': {'alert_time': {'order': 'asc'}}}
         if self.is_atleastfive():
             query = {'query': {'bool': {'must': inner_query, 'filter': time_filter}}}
@@ -1646,13 +1643,15 @@ class ElastAlerter():
                                            doc_type='elastalert',
                                            body=query,
                                            size=1000)
+            elastalert_logger.info("res pending alert : "+str(res))
             if res['hits']['hits']:
-                return res['hits']['hits']
+                    return res['hits']['hits']
         except ElasticsearchException as e:
             logging.exception("Error finding recent pending alerts: %s %s" % (e, query))
         return []
 
     def send_pending_alerts(self):
+        elastalert_logger.info("entered send alert")
         pending_alerts = self.find_recent_pending_alerts(self.alert_time_limit)
         for alert in pending_alerts:
             _id = alert['_id']
