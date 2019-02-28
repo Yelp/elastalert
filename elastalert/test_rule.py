@@ -282,7 +282,16 @@ class MockElastAlerter(object):
                     self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (args.start))
                     exit(4)
             else:
-                starttime = endtime - datetime.timedelta(days=args.days)
+                # if days given as command line argument
+                if args.days > 0:
+                    starttime = endtime - datetime.timedelta(days=args.days)
+                else:
+                    # if timeframe is given in rule
+                    if 'timeframe' in rule:
+                        starttime = endtime - datetime.timedelta(seconds=rule['timeframe'].total_seconds() * 1.01)
+                    # default is 1 days / 24 hours
+                    else:
+                        starttime = endtime - datetime.timedelta(days=1)
 
         # Set run_every to cover the entire time range unless count query, terms query or agg query used
         # This is to prevent query segmenting which unnecessarily slows down tests
@@ -337,7 +346,7 @@ class MockElastAlerter(object):
         parser = argparse.ArgumentParser(description='Validate a rule configuration')
         parser.add_argument('file', metavar='rule', type=str, help='rule configuration filename')
         parser.add_argument('--schema-only', action='store_true', help='Show only schema errors; do not run query')
-        parser.add_argument('--days', type=int, default=1, action='store', help='Query the previous N days with this rule')
+        parser.add_argument('--days', type=int, default=0, action='store', help='Query the previous N days with this rule')
         parser.add_argument('--start', dest='start', help='YYYY-MM-DDTHH:MM:SS Start querying from this timestamp.')
         parser.add_argument('--end', dest='end', help='YYYY-MM-DDTHH:MM:SS Query to this timestamp. (Default: present) '
                                                       'Use "NOW" to start from current time. (Default: present)')

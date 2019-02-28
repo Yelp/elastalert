@@ -54,9 +54,7 @@ def main():
     parser.add_argument('--recreate', type=bool, default=False, help='Force re-creation of the index (this will cause data loss).')
     args = parser.parse_args()
 
-    if os.path.isfile('config.yaml'):
-        filename = 'config.yaml'
-    elif os.path.isfile(args.config):
+    if os.path.isfile(args.config):
         filename = args.config
     elif os.path.isfile('../config.yaml'):
         filename = '../config.yaml'
