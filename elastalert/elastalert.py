@@ -869,7 +869,6 @@ class ElastAlerter():
         """
 
         run_start = time.time()
-        elastalert_logger.info('Connection pool size before run rule: '+ str(len(self.writeback_es.transport.connection_pool.connections)))
 
        # self.thread_data.current_es = elasticsearch_client(rule)
         self.thread_data.current_es = self.writeback_es
@@ -894,7 +893,6 @@ class ElastAlerter():
         # Don't run if starttime was set to the future
         if ts_now() <= rule['starttime']:
             logging.warning("Attempted to use query start time in the future (%s), sleeping instead" % (starttime))
-            elastalert_logger.info('Connection pool size after run rule: '+ str(len(self.writeback_es.transport.connection_pool.connections)))
             return 0
 
         # Run the rule. If querying over a large time period, split it up into segments
@@ -913,7 +911,6 @@ class ElastAlerter():
             if not query_all_timeFrame_at_once:
                 tmp_endtime = tmp_endtime + segment_size
             if not self.run_query(rule, rule['starttime'], tmp_endtime):
-                elastalert_logger.info('Connection pool size after run rule: '+ str(len(self.writeback_es.transport.connection_pool.connections)))
                 return 0
             self.thread_data.cumulative_hits += self.thread_data.num_hits
             self.thread_data.num_hits = 0
@@ -928,13 +925,11 @@ class ElastAlerter():
                 self.thread_data.cumulative_hits += self.thread_data.num_hits
             elif total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
                 rule['starttime'] = rule['original_starttime']
-                elastalert_logger.info('Connection pool size after run rule: '+ str(len(self.writeback_es.transport.connection_pool.connections)))
                 return 0
             else:
                 endtime = tmp_endtime
         elif not query_all_timeFrame_at_once:
             if not self.run_query(rule, rule['starttime'], endtime):
-                elastalert_logger.info('Connection pool size after run rule: '+ str(len(self.writeback_es.transport.connection_pool.connections)))
                 return 0
             self.thread_data.cumulative_hits += self.thread_data.num_hits
             rule['type'].garbage_collect(endtime)
@@ -993,7 +988,6 @@ class ElastAlerter():
                 '@timestamp': ts_now(),
                 'time_taken': time_taken}
         self.writeback('elastalert_status', body)
-        elastalert_logger.info('Connection pool size after run rule: '+ str(len(self.writeback_es.transport.connection_pool.connections)))
         return num_matches
 
     def init_rule(self, new_rule, new=True):
@@ -1296,9 +1290,9 @@ class ElastAlerter():
         else:
             old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
             elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
-                                   " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
+                                   " %s alerts sent ; cumulative hits : %s" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
                                                         self.thread_data.num_hits, self.thread_data.num_dupes, num_matches,
-                                                        self.thread_data.alerts_sent))
+                                                        self.thread_data.alerts_sent, self.thread_data.cumulative_hits))
             self.thread_data.alerts_sent = 0
 
             if next_run < datetime.datetime.utcnow():
@@ -1624,10 +1618,8 @@ class ElastAlerter():
             writeback_body['@timestamp'] = dt_to_ts(ts_now())
 
         try:
-            elastalert_logger.info('Connection pool size before write back: '+ str(len(self.writeback_es.transport.connection_pool.connections)))
             res = self.writeback_es.index(index=writeback_index,
                                           doc_type=doc_type, body=body)
-            elastalert_logger.info('Connection pool size before after back: '+ str(len(self.writeback_es.transport.connection_pool.connections)))
             return res
         except ElasticsearchException as e:
             logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
