@@ -1,0 +1,52 @@
+name: Service Down test9
+type: flatline
+
+index: '*uiop*'
+
+timestamp_field: 'D_timestampedItem-date'
+timestamp_type: unix
+
+query_key: ["s_serviceInfo-instanceId", "s_serviceInfo-replicaId", "s_serviceInfo-serviceName"]
+writeback_events_up_enabled: true
+event_up_rule_name_suffix: "_UP"
+use_keyword_suffix: true
+
+terms_size: 5000
+use_terms_query: true
+doc_type: "_doc"
+limit_execution: "* * * * *"
+aggregation_key: "s_serviceInfo-instanceId"
+aggregation:
+    seconds: 30
+filter:
+- query_string:
+      query: "s_qs_item-name: machine.cpu"
+use_timeframe_as_max_limit: true
+query_all_timeframe_at_once: true
+
+forget_keys: true
+
+timeframe:
+    minutes: 5
+
+threshold: 1
+alert:
+- email
+from_addr: "alert@taktik.com"
+email: "dm@taktik.com"
+
+alert_subject: "Services down on {0} at {1}"
+#key represent the query key
+alert_subject_args:
+- "s_serviceInfo-instanceId"
+- "D_timestampedItem-date"
+
+alert_text: |
+    Service not answering on {0} at {1}
+alert_text_args:
+- "key"
+- "D_timestampedItem-date"
+
+alert_text_type: alert_text_only
+
+
