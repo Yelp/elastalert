@@ -27,7 +27,7 @@ query_all_timeframe_at_once: true
 forget_keys: true
 
 timeframe:
-    minutes: 5
+    minutes: 1
 
 threshold: 1
 alert:

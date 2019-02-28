@@ -613,6 +613,7 @@ class FlatlineRule(FrequencyRule):
                 # Forget about this key until we see it again
                 self.first_event.pop(key)
                 self.occurrences.pop(key)
+
     def decompose_key_into_multiple_fields(self, event, query_key):
         if 'key' in event:
             fieldNames = query_key.split(",")
