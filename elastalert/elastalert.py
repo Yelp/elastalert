@@ -928,7 +928,7 @@ class ElastAlerter():
                 return 0
             else:
                 endtime = tmp_endtime
-        elif not query_all_timeFrame_at_once:
+        else:
             if not self.run_query(rule, rule['starttime'], endtime):
                 return 0
             self.thread_data.cumulative_hits += self.thread_data.num_hits
@@ -1643,7 +1643,6 @@ class ElastAlerter():
                                            doc_type='elastalert',
                                            body=query,
                                            size=1000)
-            elastalert_logger.info("res pending alert : "+str(res))
             if res['hits']['hits']:
                     return res['hits']['hits']
         except ElasticsearchException as e:
