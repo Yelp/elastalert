@@ -869,7 +869,8 @@ class ElastAlerter():
         """
         run_start = time.time()
 
-        self.thread_data.current_es = elasticsearch_client(rule)
+       # self.thread_data.current_es = elasticsearch_client(rule)
+        self.thread_data.current_es = self.writeback_es
         self.current_es_addr = (rule['es_host'], rule['es_port'])
 
 
@@ -1673,7 +1674,7 @@ class ElastAlerter():
                 continue
 
             # Set current_es for top_count_keys query
-            self.current_es = elasticsearch_client(rule)
+            self.current_es = self.writeback_es
             self.current_es_addr = (rule['es_host'], rule['es_port'])
 
             # Send the alert unless it's a future alert
