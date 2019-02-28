@@ -666,7 +666,7 @@ class ElastAlerter():
             if "writeback_events_up_enabled" in rule_inst.rules and rule_inst.rules["writeback_events_up_enabled"] and len(rule_inst.events_up) !=0:
                 for  matches in rule_inst.events_up:
                     alert_body = self.get_alert_body(matches, rule, False, ts_now(), None, rule_inst.rules["event_up_rule_name_suffix"])
-                    self.writeback('elastalert', alert_body, rule)
+                    self.writeback('elastalert', alert_body)
                 rule_inst.events_up=[]
 
         try:
