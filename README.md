@@ -59,6 +59,7 @@ Currently, we have built-in support for the following alert types:
 - Twilio
 - Gitter
 - Line Notify
+- Zabbix
 
 Additional rule types and alerts can be easily imported or written.
 
