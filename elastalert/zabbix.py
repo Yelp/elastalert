@@ -1,16 +1,17 @@
-from alerts import Alerter, BasicMatchString
+from alerts import Alerter#, BasicMatchString
 import logging
-from pprint import pprint
+#from pprint import pprint
 from pyzabbix.api import ZabbixAPI
 from pyzabbix import ZabbixSender, ZabbixMetric
-from pyzabbix.api import ZabbixAPIException
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
+#from pyzabbix.api import ZabbixAPIException
+#from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from datetime import datetime
 
 
 class ZabbixClient(ZabbixAPI):
 
-    def __init__(self, url='http://localhost', use_authenticate=False, user='Admin', password='zabbix', sender_host='localhost', sender_port=10051):
+    def __init__(self, url='http://localhost', use_authenticate=False, user='Admin', password='zabbix', sender_host='localhost',
+                 sender_port=10051):
         self.url = url
         self.use_authenticate = use_authenticate
         self.sender_host = sender_host
@@ -40,6 +41,7 @@ class ZabbixClient(ZabbixAPI):
                 self.logger.exception(e)
                 pass
 
+
 class ZabbixAlerter(Alerter):
 
     # By setting required_options to a set of strings
@@ -50,12 +52,11 @@ class ZabbixAlerter(Alerter):
 
     def __init__(self, *args):
         super(ZabbixAlerter, self).__init__(*args)
-       
+
         self.zbx_sender_host = self.rule.get('zbx_sender_host', 'localhost')
         self.zbx_sender_port = self.rule.get('zbx_sender_port', 10051)
         self.zbx_host = self.rule.get('zbx_host')
         self.zbx_key = self.rule.get('zbx_key')
-
 
     # Alert is called
     def alert(self, matches):
@@ -71,24 +72,23 @@ class ZabbixAlerter(Alerter):
 
         for match in matches:
 
-	    ts_epoch = int(datetime.strptime(match['@timestamp'],"%Y-%m-%dT%H:%M:%S.%fZ").strftime('%s'))
+            ts_epoch = int(datetime.strptime(match['@timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ").strftime('%s'))
             zm.append(ZabbixMetric(host=self.zbx_host, key=self.zbx_key, value=1, clock=ts_epoch))
 #
-#            #if match['operation']:
-#            #    key = '{0}[{1}]'.format(match['operation'], self.zbx_key)
-            #else:
-            #    continue
-            #print(key)
+#            if match['operation']:
+#                key = '{0}[{1}]'.format(match['operation'], self.zbx_key)
+#            else:
+#                continue
+#            print(key)
 
 #            zm =  ZabbixMetric(self.zbx_host, key, 1)
 #            ZabbixSender(zabbix_server=self.zbx_sender_host, zabbix_port=self.zbx_sender_port).send(zm)
-            
 
             # Config options can be accessed with self.rule
 #            with open(self.rule['output_file_path'], "a") as output_file:
 
-                # basic_match_string will transform the match into the default
-                # human readable string format
+#                # basic_match_string will transform the match into the default
+#                # human readable string format
 #                match_string = str(BasicMatchString(self.rule, match))
 
 #                output_file.write(match_string)
