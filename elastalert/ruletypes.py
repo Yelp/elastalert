@@ -2,7 +2,8 @@
 import copy
 import datetime
 import sys
-
+reload(sys)
+sys.setdefaultencoding('utf8')
 from blist import sortedlist
 from util import add_raw_postfix
 from util import dt_to_ts
@@ -235,8 +236,16 @@ class FrequencyRule(RuleType):
             for bucket in buckets:
                 event = ({self.ts_field: timestamp,
                           self.rules['query_key']: bucket['key']}, bucket['doc_count'])
-                self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
-                self.check_for_match(bucket['key'])
+                composite_key =bucket['key']
+                #to deal with composite key as it is dict not string, concat all key in one string separate by ,
+                if type(composite_key) is dict:
+                    composite_key_as_string=""
+                    for single_key in self.rules['query_key'].split(","):
+                        composite_key_as_string+= composite_key[single_key]+", "
+                    composite_key_as_string= composite_key_as_string[:-2]
+                    composite_key = composite_key_as_string
+                self.occurrences.setdefault(composite_key, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
+                self.check_for_match(composite_key)
 
     def add_data(self, data):
         if 'query_key' in self.rules:
@@ -559,6 +568,11 @@ class FlatlineRule(FrequencyRule):
 
         # Dictionary mapping query keys to the first events
         self.first_event = {}
+        self.event_triggered_at_once_per_key={}
+        self.events_up=[]
+
+
+
 
     def check_for_match(self, key, end=True):
         # This function gets called between every added document with end=True after the last
@@ -568,6 +582,12 @@ class FlatlineRule(FrequencyRule):
 
         most_recent_ts = self.get_ts(self.occurrences[key].data[-1])
         if self.first_event.get(key) is None:
+            if key not in self.event_triggered_at_once_per_key:
+                self.event_triggered_at_once_per_key[key]=True
+                print("First boot for key "+key)
+            else:
+                print("service up "+key)
+                self.add_event_up(copy.deepcopy(self.occurrences[key].data[-1][0]))
             self.first_event[key] = most_recent_ts
 
         # Don't check for matches until timeframe has elapsed
@@ -580,6 +600,7 @@ class FlatlineRule(FrequencyRule):
             # Do a deep-copy, otherwise we lose the datetime type in the timestamp field of the last event
             event = copy.deepcopy(self.occurrences[key].data[-1][0])
             event.update(key=key, count=count)
+            event = self.decompose_key_into_multiple_fields(event, self.rules['query_key'])
             self.add_match(event)
 
             if not self.rules.get('forget_keys'):
@@ -593,6 +614,34 @@ class FlatlineRule(FrequencyRule):
                 # Forget about this key until we see it again
                 self.first_event.pop(key)
                 self.occurrences.pop(key)
+    def decompose_key_into_multiple_fields(self, event, query_key):
+        if 'key' in event:
+            fieldNames = query_key.split(",")
+            key_fields = event['key'].split(",")
+            for sub_key_idx in range(len(fieldNames)):
+                event[fieldNames[sub_key_idx]]= key_fields[sub_key_idx]
+        return event
+
+    def add_event_up(self, event):
+        """ This function is called on all matching events. Rules use it to add
+        extra information about the context of a match. Event is a dictionary
+        containing terms directly from Elasticsearch and alerts will report
+        all of the information.
+
+        :param event: The matching event, a dictionary of terms.
+        """
+        # Convert datetime's back to timestamps
+        ts = self.rules.get('timestamp_field')
+        if ts in event:
+            event[ts] = dt_to_ts(event[ts])
+        for key in event.keys():
+            sub_keys = key.split(",")
+            if len(sub_keys) <2:
+                continue
+            for sub_key_idx in range(len(sub_keys)):
+                event[sub_keys[sub_key_idx]]= event[key][sub_keys[sub_key_idx]]
+            del event[key]
+        self.events_up.append(copy.deepcopy(event))
 
     def get_match_str(self, match):
         ts = match[self.rules['timestamp_field']]
