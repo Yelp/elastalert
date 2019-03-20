@@ -161,6 +161,9 @@ class ElastAlerter():
     def is_atleastsix(self):
         return int(self.es_version.split(".")[0]) >= 6
 
+    def is_atleastseven(self):
+        return int(self.es_version.split(".")[0]) >= 7
+
     @staticmethod
     def get_index(rule, starttime=None, endtime=None):
         """ Gets the index for a rule. If strftime is set and starttime and endtime
@@ -279,7 +282,10 @@ class ElastAlerter():
         """
         query = {'sort': {timestamp_field: {'order': 'asc'}}}
         try:
-            res = self.current_es.search(index=index, size=1, body=query, _source_includes=[timestamp_field], ignore_unavailable=True)
+            if self.is_atleastseven():
+                res = self.current_es.search(index=index, size=1, body=query, _source_includes=[timestamp_field], ignore_unavailable=True)
+            else:
+                res = self.current_es.search(index=index, size=1, body=query, _source_include=[timestamp_field], ignore_unavailable=True)
         except ElasticsearchException as e:
             self.handle_error("Elasticsearch query error: %s" % (e), {'index': index, 'query': query})
             return '1969-12-30T00:00:00Z'
@@ -350,7 +356,10 @@ class ElastAlerter():
             to_ts_func=rule['dt_to_ts'],
             five=rule['five'],
         )
-        extra_args = {'_source_includes': rule['include']}
+        if self.is_atleastseven():
+            extra_args = {'_source_includes': rule['include']}
+        else:
+            extra_args = {'_source_include': rule['include']}
         scroll_keepalive = rule.get('scroll_keepalive', self.scroll_keepalive)
         if not rule.get('_source_enabled'):
             if rule['five']:
@@ -372,7 +381,7 @@ class ElastAlerter():
                     **extra_args
                 )
 
-                if self._es_version > 6:
+                if self.is_atleastseven():
                     self.total_hits = int(res['hits']['total']['value'])
                 else:
                     self.total_hits = int(res['hits']['total'])
@@ -655,11 +664,15 @@ class ElastAlerter():
         try:
             if self.is_atleastsix():
                 index = self.get_six_index('elastalert_status')
-                res = self.writeback_es.search(index=index, doc_type='elastalert_status',
-                                               size=1, body=query, _source_includes=['endtime', 'rule_name'])
+                if self.is_atleastseven():
+                    res = self.writeback_es.search(index=index, doc_type='elastalert_status',
+                                                   size=1, body=query, _source_includes=['endtime', 'rule_name'])
+                else:
+                    res = self.writeback_es.search(index=index, doc_type='elastalert_status',
+                                                   size=1, body=query, _source_include=['endtime', 'rule_name'])
             else:
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert_status',
-                                               size=1, body=query, _source_includes=['endtime', 'rule_name'])
+                                               size=1, body=query, _source_include=['endtime', 'rule_name'])
             if res['hits']['hits']:
                 endtime = ts_to_dt(res['hits']['hits'][0]['_source']['endtime'])
 
@@ -1300,7 +1313,10 @@ class ElastAlerter():
             raise EAException("use_kibana_dashboard undefined")
         query = {'query': {'term': {'_id': db_name}}}
         try:
-            res = es.search(index='kibana-int', doc_type='dashboard', body=query, _source_includes=['dashboard'])
+            if self.is_atleastseven():
+                res = es.search(index='kibana-int', doc_type='dashboard', body=query, _source_includes=['dashboard'])
+            else:
+                res = es.search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
         except ElasticsearchException as e:
             raise EAException("Error querying for dashboard: %s" % (e)), None, sys.exc_info()[2]
 
@@ -1776,11 +1792,15 @@ class ElastAlerter():
         try:
             if(self.is_atleastsix()):
                 index = self.get_six_index('silence')
-                res = self.writeback_es.search(index=index, doc_type='silence',
-                                               size=1, body=query, _source_includes=['until', 'exponent'])
+                if self.is_atleastseven():
+                    res = self.writeback_es.search(index=index, doc_type='silence',
+                                                   size=1, body=query, _source_includes=['until', 'exponent'])
+                else:
+                    res = self.writeback_es.search(index=index, doc_type='silence',
+                                                   size=1, body=query, _source_include=['until', 'exponent'])
             else:
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='silence',
-                                               size=1, body=query, _source_includes=['until', 'exponent'])
+                                               size=1, body=query, _source_include=['until', 'exponent'])
         except ElasticsearchException as e:
             self.handle_error("Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
 
