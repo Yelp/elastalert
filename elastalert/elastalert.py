@@ -371,7 +371,7 @@ class ElastAlerter():
                     ignore_unavailable=True,
                     **extra_args
                 )
-                self.total_hits = len(res['hits']['hits'])
+                self.total_hits = res['hits']['total']['value']
 
             if len(res.get('_shards', {}).get('failures', [])) > 0:
                 try:
