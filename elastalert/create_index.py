@@ -248,7 +248,15 @@ def main():
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
 
-    if(elasticversion > 5):
+    if(elasticversion > 6):
+        params = {'include_type_name': 'true'}
+        es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping, params=params)
+        es.indices.put_mapping(index=index + '_status', doc_type='elastalert_status', body=ess_mapping, params=params)
+        es.indices.put_mapping(index=index + '_silence', doc_type='silence', body=silence_mapping, params=params)
+        es.indices.put_mapping(index=index + '_error', doc_type='elastalert_error', body=error_mapping, params=params)
+        es.indices.put_mapping(index=index + '_past', doc_type='past_elastalert', body=past_mapping, params=params)
+        print('New index %s created' % index)
+    elif(elasticversion > 5):
         es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
         es.indices.put_mapping(index=index + '_status', doc_type='elastalert_status', body=ess_mapping)
         es.indices.put_mapping(index=index + '_silence', doc_type='silence', body=silence_mapping)
