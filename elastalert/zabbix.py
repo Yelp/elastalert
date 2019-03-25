@@ -1,10 +1,7 @@
 from alerts import Alerter  # , BasicMatchString
 import logging
-# from pprint import pprint
 from pyzabbix.api import ZabbixAPI
 from pyzabbix import ZabbixSender, ZabbixMetric
-# from pyzabbix.api import ZabbixAPIException
-# from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from datetime import datetime
 
 
