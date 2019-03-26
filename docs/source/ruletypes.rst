@@ -1312,6 +1312,9 @@ field_values will contain every key value pair included in the results from Elas
 every key in ``include``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
 come from an individual event, usually the one which triggers the alert.
 
+You may include the options ``alert_text_header`` or ``alert_text_footer`` in your rule to add text immediately before or after the alert text. This is useful in aggregations 
+to add text before or after the looped collection of alert texts.
+
 Command
 ~~~~~~~
 
