@@ -105,6 +105,24 @@ def test_looking_up_nested_composite_keys(ea):
     assert lookup_es_key(record, 'Fields.ts.value') == expected
 
 
+def test_looking_up_arrays(ea):
+    record = {
+        'flags': [1, 2, 3],
+        'objects': [
+            {'foo': 'bar'},
+            {'foo': [{'bar': 'baz'}]},
+            {'foo': {'bar': 'baz'}}
+        ]
+    }
+    assert lookup_es_key(record, 'flags[]') == 1
+    assert lookup_es_key(record, 'flags[1]') == 2
+    assert lookup_es_key(record, 'objects[]foo') == 'bar'
+    assert lookup_es_key(record, 'objects[1]foo[0]bar') == 'baz'
+    assert lookup_es_key(record, 'objects[2]foo.bar') == 'baz'
+    assert lookup_es_key(record, 'objects[1]foo[1]bar') is None
+    assert lookup_es_key(record, 'objects[1]foo[0]baz') is None
+
+
 def test_add_raw_postfix(ea):
     expected = 'foo.raw'
     assert add_raw_postfix('foo', False) == expected
