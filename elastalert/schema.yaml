@@ -201,6 +201,7 @@ properties:
   query_key: *arrayOfString
   replace_dots_in_field_names: {type: boolean}
   scan_entire_timeframe: {type: boolean}
+  expanded_list_value: {type: array}
 
   # Alert Content
   alert_text: {type: string} # Python format string
