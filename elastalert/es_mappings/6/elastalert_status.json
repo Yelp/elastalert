@@ -1,0 +1,14 @@
+{
+  "elastalert_status": {
+    "properties": {
+      "rule_name": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
+      "@timestamp": {
+        "type": "date",
+        "format": "dateOptionalTime"
+      }
+    }
+  }
+}
