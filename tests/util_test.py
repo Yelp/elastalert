@@ -114,9 +114,9 @@ def test_looking_up_arrays(ea):
             {'foo': {'bar': 'baz'}}
         ]
     }
-    assert lookup_es_key(record, 'flags[]') == 1
+    assert lookup_es_key(record, 'flags[0]') == 1
     assert lookup_es_key(record, 'flags[1]') == 2
-    assert lookup_es_key(record, 'objects[]foo') == 'bar'
+    assert lookup_es_key(record, 'objects[0]foo') == 'bar'
     assert lookup_es_key(record, 'objects[1]foo[0]bar') == 'baz'
     assert lookup_es_key(record, 'objects[2]foo.bar') == 'baz'
     assert lookup_es_key(record, 'objects[1]foo[1]bar') is None

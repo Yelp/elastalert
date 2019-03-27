@@ -63,10 +63,9 @@ def _find_es_dict_by_key(lookup_dict, term):
     dict_cursor = lookup_dict
 
     while term:
-        split_results = re.split(r'\[(\d?)\]', term, 1)
+        split_results = re.split(r'\[(\d)\]', term, maxsplit=1)
         if len(split_results) == 3:
             sub_term, index, term = split_results
-            index = index or '0'
             index = int(index)
         else:
             sub_term, index, term = split_results + [None, '']
