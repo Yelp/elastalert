@@ -1,0 +1,20 @@
+{
+  "past_elastalert": {
+    "properties": {
+      "rule_name": {
+        "type": "keyword"
+      },
+      "match_body": {
+        "type": "object",
+        "enabled": "false"
+      },
+      "@timestamp": {
+        "type": "date",
+        "format": "dateOptionalTime"
+      },
+      "aggregate_id": {
+        "type": "keyword"
+      }
+    }
+  }
+}

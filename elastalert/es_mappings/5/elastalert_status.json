@@ -1,0 +1,13 @@
+{
+  "elastalert_status": {
+    "properties": {
+      "rule_name": {
+        "type": "keyword"
+      },
+      "@timestamp": {
+        "type": "date",
+        "format": "dateOptionalTime"
+      }
+    }
+  }
+}
