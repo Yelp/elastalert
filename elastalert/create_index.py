@@ -6,6 +6,7 @@ import argparse
 import getpass
 import os
 import time
+import json
 
 import elasticsearch.helpers
 import yaml
@@ -15,7 +16,6 @@ from elasticsearch.client import Elasticsearch
 from elasticsearch.client import IndicesClient
 from elasticsearch.exceptions import NotFoundError
 from envparse import Env
-
 
 env = Env(ES_USE_SSL=bool)
 
@@ -128,93 +128,7 @@ def main():
     print("Elastic Version:" + esversion.split(".")[0])
     elasticversion = int(esversion.split(".")[0])
 
-    if(elasticversion > 5):
-        mapping = {'type': 'keyword'}
-    else:
-        mapping = {'index': 'not_analyzed', 'type': 'string'}
-
-    print("Mapping used for string:" + str(mapping))
-
-    silence_mapping = {
-        'silence': {
-            'properties': {
-                'rule_name': mapping,
-                'until': {
-                    'type': 'date',
-                    'format': 'dateOptionalTime',
-                },
-                '@timestamp': {
-                    'type': 'date',
-                    'format': 'dateOptionalTime',
-                },
-            },
-        },
-    }
-    ess_mapping = {
-        'elastalert_status': {
-            'properties': {
-                'rule_name': mapping,
-                '@timestamp': {
-                    'type': 'date',
-                    'format': 'dateOptionalTime',
-                },
-            },
-        },
-    }
-    es_mapping = {
-        'elastalert': {
-            'properties': {
-                'rule_name': mapping,
-                '@timestamp': {
-                    'type': 'date',
-                    'format': 'dateOptionalTime',
-                },
-                'alert_time': {
-                    'type': 'date',
-                    'format': 'dateOptionalTime',
-                },
-                'match_time': {
-                    'type': 'date',
-                    'format': 'dateOptionalTime',
-                },
-                'match_body': {
-                    'type': 'object',
-                    'enabled': False,
-                },
-                'aggregate_id': mapping,
-            },
-        },
-    }
-    past_mapping = {
-        'past_elastalert': {
-            'properties': {
-                'rule_name': mapping,
-                'match_body': {
-                    'type': 'object',
-                    'enabled': False,
-                },
-                '@timestamp': {
-                    'type': 'date',
-                    'format': 'dateOptionalTime',
-                },
-                'aggregate_id': mapping,
-            },
-        },
-    }
-    error_mapping = {
-        'elastalert_error': {
-            'properties': {
-                'data': {
-                    'type': 'object',
-                    'enabled': False,
-                },
-                '@timestamp': {
-                    'type': 'date',
-                    'format': 'dateOptionalTime',
-                },
-            },
-        },
-    }
+    es_index_mappings = read_es_index_mappings() if elasticversion > 5 else read_es_index_mappings(5)
 
     es_index = IndicesClient(es)
     if not args.recreate:
@@ -248,27 +162,46 @@ def main():
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
 
-    if(elasticversion > 5):
-        es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
-        es.indices.put_mapping(index=index + '_status', doc_type='elastalert_status', body=ess_mapping)
-        es.indices.put_mapping(index=index + '_silence', doc_type='silence', body=silence_mapping)
-        es.indices.put_mapping(index=index + '_error', doc_type='elastalert_error', body=error_mapping)
-        es.indices.put_mapping(index=index + '_past', doc_type='past_elastalert', body=past_mapping)
-        print('New index %s created' % index)
+    if elasticversion > 5:
+        es.indices.put_mapping(index=index,              doc_type='_doc', body=es_index_mappings['elastalert'])
+        es.indices.put_mapping(index=index + '_status',  doc_type='_doc', body=es_index_mappings['elastalert_status'])
+        es.indices.put_mapping(index=index + '_silence', doc_type='_doc', body=es_index_mappings['silence'])
+        es.indices.put_mapping(index=index + '_error',   doc_type='_doc', body=es_index_mappings['elastalert_error'])
+        es.indices.put_mapping(index=index + '_past',    doc_type='_doc', body=es_index_mappings['past_elastalert'])
     else:
-        es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
-        es.indices.put_mapping(index=index, doc_type='elastalert_status', body=ess_mapping)
-        es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)
-        es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping)
-        es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping)
-        print('New index %s created' % index)
+        es.indices.put_mapping(index=index, doc_type='elastalert',        body=es_index_mappings['elastalert'])
+        es.indices.put_mapping(index=index, doc_type='elastalert_status', body=es_index_mappings['elastalert_status'])
+        es.indices.put_mapping(index=index, doc_type='silence',           body=es_index_mappings['silence'])
+        es.indices.put_mapping(index=index, doc_type='elastalert_error',  body=es_index_mappings['elastalert_error'])
+        es.indices.put_mapping(index=index, doc_type='past_elastalert',   body=es_index_mappings['past_elastalert'])
 
+    print('New index %s created' % index)
     if old_index:
         print("Copying all data from old index '{0}' to new index '{1}'".format(old_index, index))
         # Use the defaults for chunk_size, scroll, scan_kwargs, and bulk_kwargs
         elasticsearch.helpers.reindex(es, old_index, index)
 
     print('Done!')
+
+
+def read_es_index_mappings(es_version=6):
+    print('Reading Elastic {0} index mappings:'.format(es_version))
+    return {
+        'silence': read_es_index_mapping('silence', es_version),
+        'elastalert_status': read_es_index_mapping('elastalert_status', es_version),
+        'elastalert': read_es_index_mapping('elastalert', es_version),
+        'past_elastalert': read_es_index_mapping('past_elastalert', es_version),
+        'elastalert_error': read_es_index_mapping('elastalert_error', es_version)
+    }
+
+
+def read_es_index_mapping(mapping, es_version=6):
+    base_path = os.path.abspath(os.path.dirname(__file__))
+    mapping_path = 'es_mappings/{0}/{1}.json'.format(es_version, mapping)
+    path = os.path.join(base_path, mapping_path)
+    with open(path, 'r') as f:
+        print("Reading index mapping '{0}'".format(mapping_path))
+        return json.load(f)
 
 
 if __name__ == '__main__':
