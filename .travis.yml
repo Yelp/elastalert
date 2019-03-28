@@ -7,6 +7,19 @@ env:
 install:
 - pip install tox
 script: make test
+jobs:
+  include:
+    - stage: "Elasticsearch"
+      env:
+        - TOXENV=py27 ES_VERSION=7.0.0-rc1
+      install:
+        - pip install tox
+        - wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${ES_VERSION}-linux-x86_64.tar.gz
+        - tar -xzf elasticsearch-${ES_VERSION}.tar.gz
+        - ./elasticsearch-${ES_VERSION}/bin/elasticsearch &
+      before_script:
+        - sleep 10
+      script: make test
 deploy:
   provider: pypi
   user: yelplabs
