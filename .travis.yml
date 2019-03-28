@@ -15,11 +15,11 @@ jobs:
       install:
         - pip install tox
         - wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${ES_VERSION}-linux-x86_64.tar.gz
-        - tar -xzf elasticsearch-${ES_VERSION}.tar.gz
+        - tar -xzf elasticsearch-${ES_VERSION}-linux-x86_64.tar.gz
         - ./elasticsearch-${ES_VERSION}/bin/elasticsearch &
-      before_script:
-        - sleep 10
-      script: make test
+      script:
+        - wget -q --waitretry=1 --retry-connrefused --tries=30 -O - http://127.0.0.1:9200
+        - make test
 deploy:
   provider: pypi
   user: yelplabs
