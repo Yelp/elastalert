@@ -125,7 +125,7 @@ def main():
         client_key=client_key)
 
     esversion = es.info()["version"]["number"]
-    print("Elastic Version:" + esversion.split(".")[0])
+    print("Elastic Version:" + esversion)
     elasticversion = int(esversion.split(".")[0])
 
     es_index_mappings = read_es_index_mappings() if elasticversion > 5 else read_es_index_mappings(5)

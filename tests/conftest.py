@@ -13,6 +13,7 @@ from elastalert.util import ts_to_dt
 
 
 mock_info = {'status': 200, 'name': 'foo', 'version': {'number': '2.0'}}
+mock_sixsix_info = {'status': 200, 'name': 'foo', 'version': {'number': '6.6.0'}}
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -47,6 +48,20 @@ class mock_es_client(object):
         self.index = mock.Mock()
         self.delete = mock.Mock()
         self.info = mock.Mock(return_value=mock_info)
+        self.ping = mock.Mock(return_value=True)
+        self.indices = mock_es_indices_client()
+
+
+class mock_es_sixsix_client(object):
+    def __init__(self, host='es', port=14900):
+        self.host = host
+        self.port = port
+        self.return_hits = []
+        self.search = mock.Mock()
+        self.create = mock.Mock()
+        self.index = mock.Mock()
+        self.delete = mock.Mock()
+        self.info = mock.Mock(return_value=mock_sixsix_info)
         self.ping = mock.Mock(return_value=True)
         self.indices = mock_es_indices_client()
 
@@ -112,6 +127,50 @@ def ea():
     ea.writeback_es.index.return_value = {'_id': 'ABCD'}
     ea.current_es = mock_es_client('', '')
     return ea
+
+
+@pytest.fixture
+def ea_sixsix():
+    rules = [{'es_host': '',
+              'es_port': 14900,
+              'name': 'anytest',
+              'index': 'idx',
+              'filter': [],
+              'include': ['@timestamp'],
+              'aggregation': datetime.timedelta(0),
+              'realert': datetime.timedelta(0),
+              'processed_hits': {},
+              'timestamp_field': '@timestamp',
+              'match_enhancements': [],
+              'rule_file': 'blah.yaml',
+              'max_query_size': 10000,
+              'ts_to_dt': ts_to_dt,
+              'dt_to_ts': dt_to_ts,
+              '_source_enabled': True}]
+    conf = {'rules_folder': 'rules',
+            'run_every': datetime.timedelta(minutes=10),
+            'buffer_time': datetime.timedelta(minutes=5),
+            'alert_time_limit': datetime.timedelta(hours=24),
+            'es_host': 'es',
+            'es_port': 14900,
+            'writeback_index': 'wb',
+            'rules': rules,
+            'max_query_size': 10000,
+            'old_query_limit': datetime.timedelta(weeks=1),
+            'disable_rules_on_error': False,
+            'scroll_keepalive': '30s'}
+    elastalert.elastalert.elasticsearch_client = mock_es_sixsix_client
+    with mock.patch('elastalert.elastalert.get_rule_hashes'):
+        with mock.patch('elastalert.elastalert.load_rules') as load_conf:
+            load_conf.return_value = conf
+            ea_sixsix = elastalert.elastalert.ElastAlerter(['--pin_rules'])
+    ea_sixsix.rules[0]['type'] = mock_ruletype()
+    ea_sixsix.rules[0]['alert'] = [mock_alert()]
+    ea_sixsix.writeback_es = mock_es_sixsix_client()
+    ea_sixsix.writeback_es.search.return_value = {'hits': {'hits': []}}
+    ea_sixsix.writeback_es.index.return_value = {'_id': 'ABCD'}
+    ea_sixsix.current_es = mock_es_sixsix_client('', -1)
+    return ea_sixsix
 
 
 @pytest.fixture(scope='function')
