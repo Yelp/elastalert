@@ -17,8 +17,20 @@ def main():
     db_name = raw_input("Dashboard name: ")
     send_get_body_as = raw_input("Method for querying Elasticsearch[GET]: ") or 'GET'
     es = Elasticsearch(host=es_host, port=es_port, send_get_body_as=send_get_body_as)
+
+    es_version = es.info()["version"]["number"]
+    print("Elastic Version:" + es_version)
+
     query = {'query': {'term': {'_id': db_name}}}
-    res = es.search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
+
+    if is_atleastsixsix(es_version):
+        # TODO add support for kibana 5
+        # TODO use doc_type='_doc' instead
+        # TODO use _source_includes=[...] instead when elasticsearch client supports this
+        res = es.search(index='kibana-int', doc_type='dashboard', body=query, params={'_source_includes': 'dashboard'})
+    else:
+        res = es.search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
+
     if not res['hits']['hits']:
         print("No dashboard %s found" % (db_name))
         exit()
@@ -33,6 +45,10 @@ def main():
     print("es_port: %s" % (es_port))
     print("filter:")
     print(yaml.safe_dump(config_filters))
+
+
+def is_atleastsixsix(es_version):
+    return float('.'.join(es_version.split('.')[:2])) >= 6.6
 
 
 if __name__ == '__main__':
