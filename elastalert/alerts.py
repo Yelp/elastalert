@@ -488,7 +488,7 @@ class EmailAlerter(Alerter):
         except SMTPAuthenticationError as e:
             raise EAException("SMTP username/password rejected: %s" % (e))
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
-        self.smtp.close()
+        self.smtp.quit()
 
         elastalert_logger.info("Sent email to %s" % (to_addr))
 
