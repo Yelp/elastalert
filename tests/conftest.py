@@ -11,9 +11,24 @@ import elastalert.util
 from elastalert.util import dt_to_ts
 from elastalert.util import ts_to_dt
 
-
 mock_info = {'status': 200, 'name': 'foo', 'version': {'number': '2.0'}}
 mock_sixsix_info = {'status': 200, 'name': 'foo', 'version': {'number': '6.6.0'}}
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--runelasticsearch", action="store_true", default=False, help="run elasticsearch tests"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--runelasticsearch"):
+        # --runelasticsearch given in cli: do not skip elasticsearch tests
+        return
+    skip_elasticsearch = pytest.mark.skip(reason="need --runelasticsearch option to run")
+    for item in items:
+        if "elasticsearch" in item.keywords:
+            item.add_marker(skip_elasticsearch)
 
 
 @pytest.fixture(scope='function', autouse=True)

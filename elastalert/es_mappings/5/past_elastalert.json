@@ -2,7 +2,8 @@
   "past_elastalert": {
     "properties": {
       "rule_name": {
-        "type": "keyword"
+        "index": "not_analyzed",
+        "type": "string"
       },
       "match_body": {
         "type": "object",
@@ -13,7 +14,8 @@
         "format": "dateOptionalTime"
       },
       "aggregate_id": {
-        "type": "keyword"
+        "index": "not_analyzed",
+        "type": "string"
       }
     }
   }

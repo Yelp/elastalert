@@ -2,7 +2,8 @@
   "elastalert_status": {
     "properties": {
       "rule_name": {
-        "type": "keyword"
+        "index": "not_analyzed",
+        "type": "string"
       },
       "@timestamp": {
         "type": "date",

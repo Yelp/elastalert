@@ -2,7 +2,8 @@
   "elastalert": {
     "properties": {
       "rule_name": {
-        "type": "keyword"
+        "index": "not_analyzed",
+        "type": "string"
       },
       "@timestamp": {
         "type": "date",
@@ -21,7 +22,8 @@
         "enabled": "false"
       },
       "aggregate_id": {
-        "type": "keyword"
+        "index": "not_analyzed",
+        "type": "string"
       }
     }
   }
