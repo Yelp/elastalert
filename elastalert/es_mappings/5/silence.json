@@ -2,7 +2,8 @@
   "silence": {
     "properties": {
       "rule_name": {
-        "type": "keyword"
+        "index": "not_analyzed",
+        "type": "string"
       },
       "until": {
         "type": "date",

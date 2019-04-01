@@ -24,7 +24,7 @@ def main():
     query = {'query': {'term': {'_id': db_name}}}
 
     if is_atleastsixsix(es_version):
-        # TODO add support for kibana 5
+        # TODO check support for kibana 7
         # TODO use doc_type='_doc' instead
         # TODO use _source_includes=[...] instead when elasticsearch client supports this
         res = es.search(index='kibana-int', doc_type='dashboard', body=query, params={'_source_includes': 'dashboard'})

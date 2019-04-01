@@ -1,8 +1,7 @@
 {
   "properties": {
     "rule_name": {
-      "index": "not_analyzed",
-      "type": "string"
+      "type": "keyword"
     },
     "until": {
       "type": "date",

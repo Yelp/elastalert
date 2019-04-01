@@ -1,8 +1,7 @@
 {
   "properties": {
     "rule_name": {
-      "index": "not_analyzed",
-      "type": "string"
+      "type": "keyword"
     },
     "match_body": {
       "type": "object",
@@ -13,8 +12,7 @@
       "format": "dateOptionalTime"
     },
     "aggregate_id": {
-      "index": "not_analyzed",
-      "type": "string"
+      "type": "keyword"
     }
   }
 }
