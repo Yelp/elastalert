@@ -7,8 +7,7 @@ import os
 import dateutil.parser
 import dateutil.tz
 from auth import Auth
-from elasticsearch import RequestsHttpConnection
-from elasticsearch.client import Elasticsearch
+import elasticsearchclient
 from six import string_types
 
 logging.basicConfig()
@@ -281,7 +280,7 @@ def replace_dots_in_field_names(document):
 
 
 def elasticsearch_client(conf):
-    """ returns an Elasticsearch instance configured using an es_conn_config """
+    """ returns an ElasticsearchClient instance configured using an es_conn_config """
     es_conn_conf = build_es_conn_config(conf)
     auth = Auth()
     es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
@@ -290,18 +289,7 @@ def elasticsearch_client(conf):
                                      aws_region=es_conn_conf['aws_region'],
                                      profile_name=es_conn_conf['profile'])
 
-    return Elasticsearch(host=es_conn_conf['es_host'],
-                         port=es_conn_conf['es_port'],
-                         url_prefix=es_conn_conf['es_url_prefix'],
-                         use_ssl=es_conn_conf['use_ssl'],
-                         verify_certs=es_conn_conf['verify_certs'],
-                         ca_certs=es_conn_conf['ca_certs'],
-                         connection_class=RequestsHttpConnection,
-                         http_auth=es_conn_conf['http_auth'],
-                         timeout=es_conn_conf['es_conn_timeout'],
-                         send_get_body_as=es_conn_conf['send_get_body_as'],
-                         client_cert=es_conn_conf['client_cert'],
-                         client_key=es_conn_conf['client_key'])
+    return elasticsearchclient.ElasticSearchClient(es_conn_conf)
 
 
 def build_es_conn_config(conf):
