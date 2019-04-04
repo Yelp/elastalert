@@ -123,7 +123,6 @@ class ElastAlerter():
         self.num_hits = 0
         self.num_dupes = 0
         self.current_es = None
-        self.current_es_addr = None
         self.buffer_time = self.conf['buffer_time']
         self.silence_cache = {}
         self.rule_hashes = get_rule_hashes(self.conf, self.args.rule)
@@ -134,7 +133,6 @@ class ElastAlerter():
         self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
 
         self.writeback_es = elasticsearch_client(self.conf)
-        self._es_version = None
 
         remove = []
         for rule in self.rules:
@@ -144,28 +142,6 @@ class ElastAlerter():
 
         if self.args.silence:
             self.silence()
-
-    def get_version(self):
-        info = self.writeback_es.info()
-        return info['version']['number']
-
-    @property
-    def es_version(self):
-        if self._es_version is None:
-            self._es_version = self.get_version()
-        return self._es_version
-
-    def is_atleastfive(self):
-        return int(self.es_version.split(".")[0]) >= 5
-
-    def is_atleastsix(self):
-        return int(self.es_version.split(".")[0]) >= 6
-
-    def is_atleastsixsix(self):
-        return float('.'.join(self.es_version.split(".")[:2])) >= 6.6
-
-    def is_atleastseven(self):
-        return int(self.es_version.split(".")[0]) >= 7
 
     @staticmethod
     def get_index(rule, starttime=None, endtime=None):
@@ -289,7 +265,7 @@ class ElastAlerter():
         """
         query = {'sort': {timestamp_field: {'order': 'asc'}}}
         try:
-            if self.is_atleastsixsix():
+            if self.current_es.is_atleastsixsix():
                 # TODO use _source_includes=[...] instead when elasticsearch client supports this
                 res = self.current_es.search(index=index, size=1, body=query,
                                              params={'_source_includes': timestamp_field}, ignore_unavailable=True)
@@ -366,7 +342,7 @@ class ElastAlerter():
             to_ts_func=rule['dt_to_ts'],
             five=rule['five'],
         )
-        if self.is_atleastsixsix():
+        if self.current_es.is_atleastsixsix():
             # TODO fix when elasticsearch client supports param _source_includes
             # Since _source_includes is not supported we must use params instead.
             # the value object in _source_includes is not automagically parsed into a legal
@@ -395,7 +371,7 @@ class ElastAlerter():
                     **extra_args
                 )
 
-                if self.is_atleastseven():
+                if self.current_es.is_atleastseven():
                     self.total_hits = int(res['hits']['total']['value'])
                 else:
                     self.total_hits = int(res['hits']['total'])
@@ -585,7 +561,7 @@ class ElastAlerter():
         else:
             payload = res['aggregations']
 
-        if self.is_atleastseven():
+        if self.current_es.is_atleastseven():
             self.num_hits += res['hits']['total']['value']
         else:
             self.num_hits += res['hits']['total']
@@ -678,14 +654,14 @@ class ElastAlerter():
         """
         sort = {'sort': {'@timestamp': {'order': 'desc'}}}
         query = {'filter': {'term': {'rule_name': '%s' % (rule['name'])}}}
-        if self.is_atleastfive():
+        if self.writeback_es.is_atleastfive():
             query = {'query': {'bool': query}}
         query.update(sort)
 
         try:
-            if self.is_atleastsix():
+            if self.writeback_es.is_atleastsix():
                 index = self.get_six_index('elastalert_status')
-                if self.is_atleastsixsix():
+                if self.writeback_es.is_atleastsixsix():
                     # TODO use _source_includes=[...] instead when elasticsearch client supports this
                     res = self.writeback_es.search(index=index, doc_type='_doc', size=1, body=query,
                                                    params={'_source_includes': 'endtime,rule_name'})
@@ -843,7 +819,7 @@ class ElastAlerter():
         else:
             query = " OR ".join(additional_terms)
         query_str_filter = {'query_string': {'query': query}}
-        if self.is_atleastfive():
+        if self.writeback_es.is_atleastfive():
             filters.append(query_str_filter)
         else:
             filters.append({'query': query_str_filter})
@@ -859,7 +835,6 @@ class ElastAlerter():
         """
         run_start = time.time()
         self.current_es = elasticsearch_client(rule)
-        self.current_es_addr = (rule['es_host'], rule['es_port'])
 
         # If there are pending aggregate matches, try processing them
         for x in range(len(rule['agg_matches'])):
@@ -984,7 +959,7 @@ class ElastAlerter():
         if 'top_count_keys' in new_rule and new_rule.get('raw_count_keys', True):
             if self.string_multi_field_name:
                 string_multi_field_name = self.string_multi_field_name
-            elif self.is_atleastfive():
+            elif self.writeback_es.is_atleastfive():
                 string_multi_field_name = '.keyword'
             else:
                 string_multi_field_name = '.raw'
@@ -1032,7 +1007,7 @@ class ElastAlerter():
     def modify_rule_for_ES5(new_rule):
         # Get ES version per rule
         rule_es = elasticsearch_client(new_rule)
-        if int(rule_es.info()['version']['number'].split(".")[0]) >= 5:
+        if rule_es.is_atleastfive():
             new_rule['five'] = True
         else:
             new_rule['five'] = False
@@ -1335,7 +1310,7 @@ class ElastAlerter():
             raise EAException("use_kibana_dashboard undefined")
         query = {'query': {'term': {'_id': db_name}}}
         try:
-            if self.is_atleastsixsix():
+            if es.is_atleastsixsix():
                 # TODO use doc_type = _doc
                 # TODO use _source_includes=[...] instead when elasticsearch client supports for this
                 res = es.search(index='kibana-int', doc_type='dashboard', body=query,
@@ -1533,7 +1508,7 @@ class ElastAlerter():
             writeback_body['@timestamp'] = dt_to_ts(ts_now())
 
         try:
-            if self.is_atleastsix():
+            if self.writeback_es.is_atleastsix():
                 writeback_index = self.get_six_index(doc_type)
                 res = self.writeback_es.index(index=writeback_index, doc_type='_doc', body=body)
             else:
@@ -1554,13 +1529,13 @@ class ElastAlerter():
         time_filter = {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
                                                 'to': dt_to_ts(ts_now())}}}
         sort = {'sort': {'alert_time': {'order': 'asc'}}}
-        if self.is_atleastfive():
+        if self.writeback_es.is_atleastfive():
             query = {'query': {'bool': {'must': inner_query, 'filter': time_filter}}}
         else:
             query = {'query': inner_query, 'filter': time_filter}
         query.update(sort)
         try:
-            if self.is_atleastsix():
+            if self.writeback_es.is_atleastsix():
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='_doc', body=query, size=1000)
             else:
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert', body=query, size=1000)
@@ -1593,7 +1568,6 @@ class ElastAlerter():
 
             # Set current_es for top_count_keys query
             self.current_es = elasticsearch_client(rule)
-            self.current_es_addr = (rule['es_host'], rule['es_port'])
 
             # Send the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):
@@ -1616,7 +1590,7 @@ class ElastAlerter():
 
                 # Delete it from the index
                 try:
-                    if self.is_atleastsix():
+                    if self.writeback_es.is_atleastsix():
                         self.writeback_es.delete(index=self.writeback_index, doc_type='_doc', id=_id)
                     else:
                         self.writeback_es.delete(index=self.writeback_index, doc_type='elastalert', id=_id)
@@ -1649,7 +1623,7 @@ class ElastAlerter():
         query = {'query': {'query_string': {'query': 'aggregate_id:%s' % (_id)}}, 'sort': {'@timestamp': 'asc'}}
         matches = []
         try:
-            if self.is_atleastsix():
+            if self.writeback_es.is_atleastsix():
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='_doc', body=query,
                                                size=self.max_aggregation)
             else:
@@ -1657,7 +1631,7 @@ class ElastAlerter():
                                                size=self.max_aggregation)
             for match in res['hits']['hits']:
                 matches.append(match['_source'])
-                if self.is_atleastsix():
+                if self.writeback_es.is_atleastsix():
                     self.writeback_es.delete(index=self.writeback_index, doc_type='_doc', id=match['_id'])
                 else:
                     self.writeback_es.delete(index=self.writeback_index, doc_type='elastalert', id=match['_id'])
@@ -1672,11 +1646,11 @@ class ElastAlerter():
                                      'must_not': [{'exists': {'field': 'aggregate_id'}}]}}}
         if aggregation_key_value:
             query['filter']['bool']['must'].append({'term': {'aggregation_key': aggregation_key_value}})
-        if self.is_atleastfive():
+        if self.writeback_es.is_atleastfive():
             query = {'query': {'bool': query}}
         query['sort'] = {'alert_time': {'order': 'desc'}}
         try:
-            if self.is_atleastsix():
+            if self.writeback_es.is_atleastsix():
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='_doc', body=query, size=1)
             else:
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert', body=query, size=1)
@@ -1811,16 +1785,16 @@ class ElastAlerter():
             return False
         query = {'term': {'rule_name': rule_name}}
         sort = {'sort': {'until': {'order': 'desc'}}}
-        if self.is_atleastfive():
+        if self.writeback_es.is_atleastfive():
             query = {'query': query}
         else:
             query = {'filter': query}
         query.update(sort)
 
         try:
-            if self.is_atleastsix():
+            if self.writeback_es.is_atleastsix():
                 index = self.get_six_index('silence')
-                if self.is_atleastsixsix():
+                if self.writeback_es.is_atleastsixsix():
                     # TODO use _source_includes=[...] instead when elasticsearch client supports this
                     res = self.writeback_es.search(index=index, doc_type='_doc',
                                                    size=1, body=query, params={'_source_includes': 'until,exponent'})

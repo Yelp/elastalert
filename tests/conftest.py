@@ -11,9 +11,6 @@ import elastalert.util
 from elastalert.util import dt_to_ts
 from elastalert.util import ts_to_dt
 
-mock_info = {'status': 200, 'name': 'foo', 'version': {'number': '2.0'}}
-mock_sixsix_info = {'status': 200, 'name': 'foo', 'version': {'number': '6.6.0'}}
-
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -55,6 +52,7 @@ class mock_es_indices_client(object):
 
 class mock_es_client(object):
     def __init__(self, host='es', port=14900):
+        mock_info = {'status': 200, 'name': 'foo', 'version': {'number': '2.0'}}
         self.host = host
         self.port = port
         self.return_hits = []
@@ -66,9 +64,26 @@ class mock_es_client(object):
         self.ping = mock.Mock(return_value=True)
         self.indices = mock_es_indices_client()
 
+    @property
+    def es_version(self):
+        return self.info()['version']['number']
+
+    def is_atleastfive(self):
+        return False
+
+    def is_atleastsix(self):
+        return False
+
+    def is_atleastsixsix(self):
+        return False
+
+    def is_atleastseven(self):
+        return False
+
 
 class mock_es_sixsix_client(object):
     def __init__(self, host='es', port=14900):
+        mock_sixsix_info = {'status': 200, 'name': 'foo', 'version': {'number': '6.6.0'}}
         self.host = host
         self.port = port
         self.return_hits = []
@@ -79,6 +94,22 @@ class mock_es_sixsix_client(object):
         self.info = mock.Mock(return_value=mock_sixsix_info)
         self.ping = mock.Mock(return_value=True)
         self.indices = mock_es_indices_client()
+
+    @property
+    def es_version(self):
+        return self.info()['version']['number']
+
+    def is_atleastfive(self):
+        return True
+
+    def is_atleastsix(self):
+        return True
+
+    def is_atleastsixsix(self):
+        return True
+
+    def is_atleastseven(self):
+        return False
 
 
 class mock_ruletype(object):

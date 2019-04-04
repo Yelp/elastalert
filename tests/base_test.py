@@ -1324,14 +1324,13 @@ def test_query_with_whitelist_filter_es(ea):
            in new_rule['filter'][-1]['query']['query_string']['query']
 
 
-def test_query_with_whitelist_filter_es_five(ea):
-    ea.es_version = '6.2'
-    ea.rules[0]['_source_enabled'] = False
-    ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
-    ea.rules[0]['compare_key'] = "username"
-    ea.rules[0]['whitelist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
-    new_rule = copy.copy(ea.rules[0])
-    ea.init_rule(new_rule, True)
+def test_query_with_whitelist_filter_es_five(ea_sixsix):
+    ea_sixsix.rules[0]['_source_enabled'] = False
+    ea_sixsix.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
+    ea_sixsix.rules[0]['compare_key'] = "username"
+    ea_sixsix.rules[0]['whitelist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+    new_rule = copy.copy(ea_sixsix.rules[0])
+    ea_sixsix.init_rule(new_rule, True)
     assert 'NOT username:"xudan1" AND NOT username:"xudan12" AND NOT username:"aa1"' in \
            new_rule['filter'][-1]['query_string']['query']
 
@@ -1347,13 +1346,13 @@ def test_query_with_blacklist_filter_es(ea):
            new_rule['filter'][-1]['query']['query_string']['query']
 
 
-def test_query_with_blacklist_filter_es_five(ea):
-    ea.es_version = '6.2'
-    ea.rules[0]['_source_enabled'] = False
-    ea.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
-    ea.rules[0]['compare_key'] = "username"
-    ea.rules[0]['blacklist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
-    new_rule = copy.copy(ea.rules[0])
-    ea.init_rule(new_rule, True)
+def test_query_with_blacklist_filter_es_five(ea_sixsix):
+    ea_sixsix.rules[0]['_source_enabled'] = False
+    ea_sixsix.rules[0]['filter'] = [{'query_string': {'query': 'baz'}}]
+    ea_sixsix.rules[0]['compare_key'] = "username"
+    ea_sixsix.rules[0]['blacklist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+    ea_sixsix.rules[0]['blacklist'] = ['xudan1', 'xudan12', 'aa1', 'bb1']
+    new_rule = copy.copy(ea_sixsix.rules[0])
+    ea_sixsix.init_rule(new_rule, True)
     assert 'username:"xudan1" OR username:"xudan12" OR username:"aa1"' in new_rule['filter'][-1]['query_string'][
         'query']
