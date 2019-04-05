@@ -8,7 +8,7 @@ import re
 import dateutil.parser
 import dateutil.tz
 from auth import Auth
-import elasticsearchclient
+from . import ElasticSearchClient
 from six import string_types
 
 logging.basicConfig()
@@ -299,7 +299,7 @@ def replace_dots_in_field_names(document):
 
 
 def elasticsearch_client(conf):
-    """ returns an ElasticsearchClient instance configured using an es_conn_config """
+    """ returns an :class:`ElasticSearchClient` instance configured using an es_conn_config """
     es_conn_conf = build_es_conn_config(conf)
     auth = Auth()
     es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
@@ -308,7 +308,7 @@ def elasticsearch_client(conf):
                                      aws_region=es_conn_conf['aws_region'],
                                      profile_name=es_conn_conf['profile'])
 
-    return elasticsearchclient.ElasticSearchClient(es_conn_conf)
+    return ElasticSearchClient(es_conn_conf)
 
 
 def build_es_conn_config(conf):

@@ -7,9 +7,9 @@ import dateutil
 import mock
 import pytest
 
-import elastalert.elasticsearchclient
 import elastalert.create_index
 import elastalert.elastalert
+from elastalert import ElasticSearchClient
 from elastalert.util import ts_to_dt, dt_to_ts, build_es_conn_config
 from tests.conftest import mock_ruletype, mock_alert, mock_es_client
 
@@ -23,7 +23,7 @@ es_timeout = 10
 @pytest.fixture
 def es_client():
     es_conn_config = build_es_conn_config({'es_host': es_host, 'es_port': es_port, 'es_conn_timeout': es_timeout})
-    return elastalert.elasticsearchclient.ElasticSearchClient(es_conn_config)
+    return ElasticSearchClient(es_conn_config)
 
 
 @pytest.fixture
@@ -70,7 +70,11 @@ def ea():
 
 
 @pytest.mark.elasticsearch
-class TestElasticsearch:
+class TestElasticsearch(object):
+    # TODO perform teardown removing data inserted into Elasticsearch
+    # Warning!!!: Test class is not erasing its testdata on the Elasticsearch server.
+    # This is not a problem as long as the data is manually removed or the test environment
+    # is torn down after the test run(eg. running tests in a test environment such as Travis)
     def test_create_indices(self, es_client):
         elastalert.create_index.main(es_client=es_client, ea_index=test_index)
         indices_mappings = es_client.indices.get_mapping(test_index + '*')

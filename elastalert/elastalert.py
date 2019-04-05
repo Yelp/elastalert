@@ -50,7 +50,7 @@ from util import ts_to_dt
 from util import unix_to_dt
 
 
-class ElastAlerter():
+class ElastAlerter(object):
     """ The main ElastAlert runner. This class holds all state about active rules,
     controls when queries are run, and passes information between rules and alerts.
 
