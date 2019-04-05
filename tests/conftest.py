@@ -20,12 +20,17 @@ def pytest_addoption(parser):
 
 def pytest_collection_modifyitems(config, items):
     if config.getoption("--runelasticsearch"):
-        # --runelasticsearch given in cli: do not skip elasticsearch tests
-        return
-    skip_elasticsearch = pytest.mark.skip(reason="need --runelasticsearch option to run")
-    for item in items:
-        if "elasticsearch" in item.keywords:
-            item.add_marker(skip_elasticsearch)
+        # --runelasticsearch given in cli: run elasticsearch tests, skip ordinary unit tests
+        skip_unit_tests = pytest.mark.skip(reason="not running when --runelasticsearch option is used to run")
+        for item in items:
+            if "elasticsearch" not in item.keywords:
+                item.add_marker(skip_unit_tests)
+    else:
+        # skip elasticsearch tests
+        skip_elasticsearch = pytest.mark.skip(reason="need --runelasticsearch option to run")
+        for item in items:
+            if "elasticsearch" in item.keywords:
+                item.add_marker(skip_elasticsearch)
 
 
 @pytest.fixture(scope='function', autouse=True)
@@ -52,7 +57,6 @@ class mock_es_indices_client(object):
 
 class mock_es_client(object):
     def __init__(self, host='es', port=14900):
-        mock_info = {'status': 200, 'name': 'foo', 'version': {'number': '2.0'}}
         self.host = host
         self.port = port
         self.return_hits = []
@@ -60,7 +64,7 @@ class mock_es_client(object):
         self.create = mock.Mock()
         self.index = mock.Mock()
         self.delete = mock.Mock()
-        self.info = mock.Mock(return_value=mock_info)
+        self.info = mock.Mock(return_value={'status': 200, 'name': 'foo', 'version': {'number': '2.0'}})
         self.ping = mock.Mock(return_value=True)
         self.indices = mock_es_indices_client()
 
@@ -83,7 +87,6 @@ class mock_es_client(object):
 
 class mock_es_sixsix_client(object):
     def __init__(self, host='es', port=14900):
-        mock_sixsix_info = {'status': 200, 'name': 'foo', 'version': {'number': '6.6.0'}}
         self.host = host
         self.port = port
         self.return_hits = []
@@ -91,7 +94,7 @@ class mock_es_sixsix_client(object):
         self.create = mock.Mock()
         self.index = mock.Mock()
         self.delete = mock.Mock()
-        self.info = mock.Mock(return_value=mock_sixsix_info)
+        self.info = mock.Mock(return_value={'status': 200, 'name': 'foo', 'version': {'number': '6.6.0'}})
         self.ping = mock.Mock(return_value=True)
         self.indices = mock_es_indices_client()
 
