@@ -48,7 +48,8 @@ def main():
 
 
 def is_atleastsixsix(es_version):
-    return float('.'.join(es_version.split('.')[:2])) >= 6.6
+    major, minor = map(int, es_version.split(".")[:2])
+    return major > 6 or (major == 6 and minor >= 6)
 
 
 if __name__ == '__main__':
