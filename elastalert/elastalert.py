@@ -162,21 +162,6 @@ class ElastAlerter(object):
         else:
             return index
 
-    def get_six_index(self, doc_type):
-        """ In ES6, you cannot have multiple _types per index,
-        therefore we use self.writeback_index as the prefix for the actual
-        index name, based on doc_type. """
-        writeback_index = self.writeback_index
-        if doc_type == 'silence':
-            writeback_index += '_silence'
-        elif doc_type == 'past_elastalert':
-            writeback_index += '_past'
-        elif doc_type == 'elastalert_status':
-            writeback_index += '_status'
-        elif doc_type == 'elastalert_error':
-            writeback_index += '_error'
-        return writeback_index
-
     @staticmethod
     def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False,
                   five=False):
@@ -654,8 +639,9 @@ class ElastAlerter(object):
         query.update(sort)
 
         try:
-            if self.writeback_es.is_atleastsix():
-                index = self.get_six_index('elastalert_status')
+            doc_type = 'elastalert_status'
+            index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
+            if self.writeback_es.is_atleastsixtwo():
                 if self.writeback_es.is_atleastsixsix():
                     res = self.writeback_es.search(index=index, size=1, body=query,
                                                    _source_includes=['endtime', 'rule_name'])
@@ -663,7 +649,7 @@ class ElastAlerter(object):
                     res = self.writeback_es.search(index=index, size=1, body=query,
                                                    _source_include=['endtime', 'rule_name'])
             else:
-                res = self.writeback_es.deprecated_search(index=self.writeback_index, doc_type='elastalert_status',
+                res = self.writeback_es.deprecated_search(index=index, doc_type=doc_type,
                                                           size=1, body=query, _source_include=['endtime', 'rule_name'])
             if res['hits']['hits']:
                 endtime = ts_to_dt(res['hits']['hits'][0]['_source']['endtime'])
@@ -1497,11 +1483,11 @@ class ElastAlerter(object):
             writeback_body['@timestamp'] = dt_to_ts(ts_now())
 
         try:
-            if self.writeback_es.is_atleastsix():
-                writeback_index = self.get_six_index(doc_type)
-                res = self.writeback_es.index(index=writeback_index, body=body)
+            index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
+            if self.writeback_es.is_atleastsixtwo():
+                res = self.writeback_es.index(index=index, body=body)
             else:
-                res = self.writeback_es.index(index=self.writeback_index, doc_type=doc_type, body=body)
+                res = self.writeback_es.index(index=index, doc_type=doc_type, body=body)
             return res
         except ElasticsearchException as e:
             logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
@@ -1524,7 +1510,7 @@ class ElastAlerter(object):
             query = {'query': inner_query, 'filter': time_filter}
         query.update(sort)
         try:
-            if self.writeback_es.is_atleastsix():
+            if self.writeback_es.is_atleastsixtwo():
                 res = self.writeback_es.search(index=self.writeback_index, body=query, size=1000)
             else:
                 res = self.writeback_es.deprecated_search(index=self.writeback_index,
@@ -1580,8 +1566,8 @@ class ElastAlerter(object):
 
                 # Delete it from the index
                 try:
-                    if self.writeback_es.is_atleastsix():
-                        self.writeback_es.delete(index=self.writeback_index, doc_type='_doc', id=_id)
+                    if self.writeback_es.is_atleastsixtwo():
+                        self.writeback_es.delete(index=self.writeback_index, id=_id)
                     else:
                         self.writeback_es.delete(index=self.writeback_index, doc_type='elastalert', id=_id)
                 except ElasticsearchException:  # TODO: Give this a more relevant exception, try:except: is evil.
@@ -1613,7 +1599,7 @@ class ElastAlerter(object):
         query = {'query': {'query_string': {'query': 'aggregate_id:%s' % (_id)}}, 'sort': {'@timestamp': 'asc'}}
         matches = []
         try:
-            if self.writeback_es.is_atleastsix():
+            if self.writeback_es.is_atleastsixtwo():
                 res = self.writeback_es.search(index=self.writeback_index, body=query,
                                                size=self.max_aggregation)
             else:
@@ -1621,8 +1607,8 @@ class ElastAlerter(object):
                                                           body=query, size=self.max_aggregation)
             for match in res['hits']['hits']:
                 matches.append(match['_source'])
-                if self.writeback_es.is_atleastsix():
-                    self.writeback_es.delete(index=self.writeback_index, doc_type='_doc', id=match['_id'])
+                if self.writeback_es.is_atleastsixtwo():
+                    self.writeback_es.delete(index=self.writeback_index, id=match['_id'])
                 else:
                     self.writeback_es.delete(index=self.writeback_index, doc_type='elastalert', id=match['_id'])
         except (KeyError, ElasticsearchException) as e:
@@ -1640,7 +1626,7 @@ class ElastAlerter(object):
             query = {'query': {'bool': query}}
         query['sort'] = {'alert_time': {'order': 'desc'}}
         try:
-            if self.writeback_es.is_atleastsix():
+            if self.writeback_es.is_atleastsixtwo():
                 res = self.writeback_es.search(index=self.writeback_index, body=query, size=1)
             else:
                 res = self.writeback_es.deprecated_search(index=self.writeback_index, doc_type='elastalert', body=query, size=1)
@@ -1782,8 +1768,9 @@ class ElastAlerter(object):
         query.update(sort)
 
         try:
-            if self.writeback_es.is_atleastsix():
-                index = self.get_six_index('silence')
+            doc_type = 'silence'
+            index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
+            if self.writeback_es.is_atleastsixtwo():
                 if self.writeback_es.is_atleastsixsix():
                     res = self.writeback_es.search(index=index, size=1, body=query,
                                                    _source_includes=['until', 'exponent'])
@@ -1791,7 +1778,7 @@ class ElastAlerter(object):
                     res = self.writeback_es.search(index=index, size=1, body=query,
                                                    _source_include=['until', 'exponent'])
             else:
-                res = self.writeback_es.deprecated_search(index=self.writeback_index, doc_type='silence',
+                res = self.writeback_es.deprecated_search(index=index, doc_type=doc_type,
                                                           size=1, body=query, _source_include=['until', 'exponent'])
         except ElasticsearchException as e:
             self.handle_error("Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
