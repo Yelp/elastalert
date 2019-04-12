@@ -11,6 +11,8 @@ import elastalert.util
 from elastalert.util import dt_to_ts
 from elastalert.util import ts_to_dt
 
+writeback_index = 'wb'
+
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -71,8 +73,10 @@ class mock_es_client(object):
         self.es_version = mock.Mock(return_value='2.0')
         self.is_atleastfive = mock.Mock(return_value=False)
         self.is_atleastsix = mock.Mock(return_value=False)
+        self.is_atleastsixtwo = mock.Mock(return_value=False)
         self.is_atleastsixsix = mock.Mock(return_value=False)
         self.is_atleastseven = mock.Mock(return_value=False)
+        self.resolve_writeback_index = mock.Mock(return_value=writeback_index)
 
 
 class mock_es_sixsix_client(object):
@@ -91,8 +95,22 @@ class mock_es_sixsix_client(object):
         self.es_version = mock.Mock(return_value='6.6.0')
         self.is_atleastfive = mock.Mock(return_value=True)
         self.is_atleastsix = mock.Mock(return_value=True)
+        self.is_atleastsixtwo = mock.Mock(return_value=False)
         self.is_atleastsixsix = mock.Mock(return_value=True)
         self.is_atleastseven = mock.Mock(return_value=False)
+
+        def writeback_index_side_effect(index, doc_type):
+            if doc_type == 'silence':
+                return index + '_silence'
+            elif doc_type == 'past_elastalert':
+                return index + '_past'
+            elif doc_type == 'elastalert_status':
+                return index + '_status'
+            elif doc_type == 'elastalert_error':
+                return index + '_error'
+            return index
+
+        self.resolve_writeback_index = mock.Mock(side_effect=writeback_index_side_effect)
 
 
 class mock_ruletype(object):
@@ -138,7 +156,7 @@ def ea():
             'alert_time_limit': datetime.timedelta(hours=24),
             'es_host': 'es',
             'es_port': 14900,
-            'writeback_index': 'wb',
+            'writeback_index': writeback_index,
             'rules': rules,
             'max_query_size': 10000,
             'old_query_limit': datetime.timedelta(weeks=1),
@@ -184,7 +202,7 @@ def ea_sixsix():
             'alert_time_limit': datetime.timedelta(hours=24),
             'es_host': 'es',
             'es_port': 14900,
-            'writeback_index': 'wb',
+            'writeback_index': writeback_index,
             'rules': rules,
             'max_query_size': 10000,
             'old_query_limit': datetime.timedelta(weeks=1),
