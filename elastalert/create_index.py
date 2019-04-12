@@ -59,20 +59,30 @@ def main(es_client, ea_index, recreate=False, old_ea_index=None):
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
 
-    if elasticversion > 5:
-        # TODO remove doc_type for elasticsearch >= 7 when elastic client supports doc_type=None
-        params = {'include_type_name': 'true'} if elasticversion > 6 else {}
-
+    if elasticversion > 6:
+        # TODO remove doc_type completely when elasicsearch client allows doc_type=None
+        # doc_type is a deprecated feature and will be completely removed in Elasicsearch 8
         es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
-                                      body=es_index_mappings['elastalert'], params=params)
+                                      body=es_index_mappings['elastalert'], include_type_name=True)
         es_client.indices.put_mapping(index=ea_index + '_status', doc_type='_doc',
-                                      body=es_index_mappings['elastalert_status'], params=params)
+                                      body=es_index_mappings['elastalert_status'], include_type_name=True)
         es_client.indices.put_mapping(index=ea_index + '_silence', doc_type='_doc',
-                                      body=es_index_mappings['silence'], params=params)
+                                      body=es_index_mappings['silence'], include_type_name=True)
         es_client.indices.put_mapping(index=ea_index + '_error', doc_type='_doc',
-                                      body=es_index_mappings['elastalert_error'], params=params)
+                                      body=es_index_mappings['elastalert_error'], include_type_name=True)
         es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
-                                      body=es_index_mappings['past_elastalert'], params=params)
+                                      body=es_index_mappings['past_elastalert'], include_type_name=True)
+    elif elasticversion > 5:
+        es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
+                                      body=es_index_mappings['elastalert'])
+        es_client.indices.put_mapping(index=ea_index + '_status', doc_type='_doc',
+                                      body=es_index_mappings['elastalert_status'])
+        es_client.indices.put_mapping(index=ea_index + '_silence', doc_type='_doc',
+                                      body=es_index_mappings['silence'])
+        es_client.indices.put_mapping(index=ea_index + '_error', doc_type='_doc',
+                                      body=es_index_mappings['elastalert_error'])
+        es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
+                                      body=es_index_mappings['past_elastalert'])
     else:
         es_client.indices.put_mapping(index=ea_index, doc_type='elastalert',
                                       body=es_index_mappings['elastalert'])

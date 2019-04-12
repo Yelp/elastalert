@@ -61,28 +61,18 @@ class mock_es_client(object):
         self.port = port
         self.return_hits = []
         self.search = mock.Mock()
+        self.deprecated_search = mock.Mock()
         self.create = mock.Mock()
         self.index = mock.Mock()
         self.delete = mock.Mock()
         self.info = mock.Mock(return_value={'status': 200, 'name': 'foo', 'version': {'number': '2.0'}})
         self.ping = mock.Mock(return_value=True)
         self.indices = mock_es_indices_client()
-
-    @property
-    def es_version(self):
-        return self.info()['version']['number']
-
-    def is_atleastfive(self):
-        return False
-
-    def is_atleastsix(self):
-        return False
-
-    def is_atleastsixsix(self):
-        return False
-
-    def is_atleastseven(self):
-        return False
+        self.es_version = mock.Mock(return_value='2.0')
+        self.is_atleastfive = mock.Mock(return_value=False)
+        self.is_atleastsix = mock.Mock(return_value=False)
+        self.is_atleastsixsix = mock.Mock(return_value=False)
+        self.is_atleastseven = mock.Mock(return_value=False)
 
 
 class mock_es_sixsix_client(object):
@@ -91,28 +81,18 @@ class mock_es_sixsix_client(object):
         self.port = port
         self.return_hits = []
         self.search = mock.Mock()
+        self.deprecated_search = mock.Mock()
         self.create = mock.Mock()
         self.index = mock.Mock()
         self.delete = mock.Mock()
         self.info = mock.Mock(return_value={'status': 200, 'name': 'foo', 'version': {'number': '6.6.0'}})
         self.ping = mock.Mock(return_value=True)
         self.indices = mock_es_indices_client()
-
-    @property
-    def es_version(self):
-        return self.info()['version']['number']
-
-    def is_atleastfive(self):
-        return True
-
-    def is_atleastsix(self):
-        return True
-
-    def is_atleastsixsix(self):
-        return True
-
-    def is_atleastseven(self):
-        return False
+        self.es_version = mock.Mock(return_value='6.6.0')
+        self.is_atleastfive = mock.Mock(return_value=True)
+        self.is_atleastsix = mock.Mock(return_value=True)
+        self.is_atleastsixsix = mock.Mock(return_value=True)
+        self.is_atleastseven = mock.Mock(return_value=False)
 
 
 class mock_ruletype(object):
@@ -164,6 +144,7 @@ def ea():
             'old_query_limit': datetime.timedelta(weeks=1),
             'disable_rules_on_error': False,
             'scroll_keepalive': '30s'}
+    elastalert.util.elasticsearch_client = mock_es_client
     elastalert.elastalert.elasticsearch_client = mock_es_client
     with mock.patch('elastalert.elastalert.get_rule_hashes'):
         with mock.patch('elastalert.elastalert.load_rules') as load_conf:
@@ -173,6 +154,7 @@ def ea():
     ea.rules[0]['alert'] = [mock_alert()]
     ea.writeback_es = mock_es_client()
     ea.writeback_es.search.return_value = {'hits': {'hits': []}}
+    ea.writeback_es.deprecated_search.return_value = {'hits': {'hits': []}}
     ea.writeback_es.index.return_value = {'_id': 'ABCD'}
     ea.current_es = mock_es_client('', '')
     return ea
@@ -209,6 +191,7 @@ def ea_sixsix():
             'disable_rules_on_error': False,
             'scroll_keepalive': '30s'}
     elastalert.elastalert.elasticsearch_client = mock_es_sixsix_client
+    elastalert.util.elasticsearch_client = mock_es_sixsix_client
     with mock.patch('elastalert.elastalert.get_rule_hashes'):
         with mock.patch('elastalert.elastalert.load_rules') as load_conf:
             load_conf.return_value = conf
@@ -217,6 +200,7 @@ def ea_sixsix():
     ea_sixsix.rules[0]['alert'] = [mock_alert()]
     ea_sixsix.writeback_es = mock_es_sixsix_client()
     ea_sixsix.writeback_es.search.return_value = {'hits': {'hits': []}}
+    ea_sixsix.writeback_es.deprecated_search.return_value = {'hits': {'hits': []}}
     ea_sixsix.writeback_es.index.return_value = {'_id': 'ABCD'}
     ea_sixsix.current_es = mock_es_sixsix_client('', -1)
     return ea_sixsix
