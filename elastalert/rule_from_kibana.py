@@ -6,9 +6,9 @@ from __future__ import print_function
 import json
 
 import yaml
-from elasticsearch.client import Elasticsearch
 
 from elastalert.kibana import filters_from_dashboard
+from elastalert.util import elasticsearch_client
 
 
 def main():
@@ -16,20 +16,19 @@ def main():
     es_port = raw_input("Elasticsearch port: ")
     db_name = raw_input("Dashboard name: ")
     send_get_body_as = raw_input("Method for querying Elasticsearch[GET]: ") or 'GET'
-    es = Elasticsearch(host=es_host, port=es_port, send_get_body_as=send_get_body_as)
 
-    es_version = es.info()["version"]["number"]
-    print("Elastic Version:" + es_version)
+    es = elasticsearch_client({'es_host': es_host, 'es_port': es_port, 'send_get_body_as': send_get_body_as})
+
+    print("Elastic Version:" + es.es_version)
 
     query = {'query': {'term': {'_id': db_name}}}
 
-    if is_atleastsixsix(es_version):
+    if es.is_atleastsixsix():
         # TODO check support for kibana 7
         # TODO use doc_type='_doc' instead
-        # TODO use _source_includes=[...] instead when elasticsearch client supports this
-        res = es.search(index='kibana-int', doc_type='dashboard', body=query, params={'_source_includes': 'dashboard'})
+        res = es.deprecated_search(index='kibana-int', doc_type='dashboard', body=query, _source_includes=['dashboard'])
     else:
-        res = es.search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
+        res = es.deprecated_search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
 
     if not res['hits']['hits']:
         print("No dashboard %s found" % (db_name))
@@ -45,11 +44,6 @@ def main():
     print("es_port: %s" % (es_port))
     print("filter:")
     print(yaml.safe_dump(config_filters))
-
-
-def is_atleastsixsix(es_version):
-    major, minor = map(int, es_version.split(".")[:2])
-    return major > 6 or (major == 6 and minor >= 6)
 
 
 if __name__ == '__main__':
