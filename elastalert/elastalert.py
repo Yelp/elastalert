@@ -1605,7 +1605,7 @@ class ElastAlerter():
         """ Removes and returns all matches from writeback_es that have aggregate_id == _id """
 
         # XXX if there are more than self.max_aggregation matches, you have big alerts and we will leave entries in ES.
-        query = {'query': {'query_string': {'query': 'aggregate_id:%s' % (_id)}}, 'sort': {'@timestamp': 'asc'}}
+        query = {'query': {'query_string': {'query': 'aggregate_id:"%s"' % (_id)}}, 'sort': {'@timestamp': 'asc'}}
         matches = []
         try:
             res = self.writeback_es.search(index=self.writeback_index,
