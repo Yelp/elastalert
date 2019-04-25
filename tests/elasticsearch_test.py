@@ -76,7 +76,7 @@ class TestElasticsearch(object):
     # This is not a problem as long as the data is manually removed or the test environment
     # is torn down after the test run(eg. running tests in a test environment such as Travis)
     def test_create_indices(self, es_client):
-        elastalert.create_index.main(es_client=es_client, ea_index=test_index)
+        elastalert.create_index.create_index_mappings(es_client=es_client, ea_index=test_index)
         indices_mappings = es_client.indices.get_mapping(test_index + '*')
         print('-' * 50)
         print(json.dumps(indices_mappings, indent=2))
