@@ -243,24 +243,24 @@ def main():
             except NotFoundError:
                 # Why does this ever occur?? It shouldn't. But it does.
                 pass
-        es_index.create(index_name)
+        es_index.create(index_name, params={"include_type_name": "true"})
 
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
 
     if(elasticversion > 5):
-        es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
-        es.indices.put_mapping(index=index + '_status', doc_type='elastalert_status', body=ess_mapping)
-        es.indices.put_mapping(index=index + '_silence', doc_type='silence', body=silence_mapping)
-        es.indices.put_mapping(index=index + '_error', doc_type='elastalert_error', body=error_mapping)
-        es.indices.put_mapping(index=index + '_past', doc_type='past_elastalert', body=past_mapping)
+        es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping, params={"include_type_name": "true"})
+        es.indices.put_mapping(index=index + '_status', doc_type='elastalert_status', body=ess_mapping, params={"include_type_name": "true"})
+        es.indices.put_mapping(index=index + '_silence', doc_type='silence', body=silence_mapping, params={"include_type_name": "true"})
+        es.indices.put_mapping(index=index + '_error', doc_type='elastalert_error', body=error_mapping, params={"include_type_name": "true"})
+        es.indices.put_mapping(index=index + '_past', doc_type='past_elastalert', body=past_mapping, params={"include_type_name": "true"})
         print('New index %s created' % index)
     else:
-        es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping)
-        es.indices.put_mapping(index=index, doc_type='elastalert_status', body=ess_mapping)
-        es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping)
-        es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping)
-        es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping)
+        es.indices.put_mapping(index=index, doc_type='elastalert', body=es_mapping,  params={"include_type_name": "true"})
+        es.indices.put_mapping(index=index, doc_type='elastalert_status', body=ess_mapping,  params={"include_type_name": "true"})
+        es.indices.put_mapping(index=index, doc_type='silence', body=silence_mapping,  params={"include_type_name": "true"})
+        es.indices.put_mapping(index=index, doc_type='elastalert_error', body=error_mapping, params={"include_type_name": "true"})
+        es.indices.put_mapping(index=index, doc_type='past_elastalert', body=past_mapping, params={"include_type_name": "true"})
         print('New index %s created' % index)
 
     if old_index:
