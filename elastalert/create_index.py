@@ -177,7 +177,7 @@ if __name__ == '__main__':
         '--aws-region',
         default=None,
         help='AWS Region to use for signing requests. Optionally use the AWS_DEFAULT_REGION environment variable')
-    parser.add_argument('--timeout', default=60, help='Elasticsearch request timeout')
+    parser.add_argument('--timeout', default=60, type=int, help='Elasticsearch request timeout')
     parser.add_argument('--config', default='config.yaml', help='Global config file (default: config.yaml)')
     parser.add_argument('--recreate', type=bool, default=False,
                         help='Force re-creation of the index (this will cause data loss).')
