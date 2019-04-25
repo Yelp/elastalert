@@ -25,7 +25,7 @@ setup(
                             'elastalert-rule-from-kibana=elastalert.rule_from_kibana:main',
                             'elastalert=elastalert.elastalert:main']},
     packages=find_packages(),
-    package_data={'elastalert': ['schema.yaml']},
+    package_data={'elastalert': ['schema.yaml', 'es_mappings/**/*.json']},
     install_requires=[
         'aws-requests-auth>=0.3.0',
         'blist>=1.3.6',

@@ -20,7 +20,7 @@ from envparse import Env
 env = Env(ES_USE_SSL=bool)
 
 
-def main(es_client, ea_index, recreate=False, old_ea_index=None):
+def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None):
     esversion = es_client.info()["version"]["number"]
     print("Elastic Version: " + esversion)
 
@@ -147,7 +147,7 @@ def is_atleastseven(es_version):
     return int(es_version.split(".")[0]) >= 7
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default=os.environ.get('ES_HOST', None), help='Elasticsearch host')
     parser.add_argument('--port', default=os.environ.get('ES_PORT', None), type=int, help='Elasticsearch port')
@@ -255,4 +255,8 @@ if __name__ == '__main__':
         ca_certs=ca_certs,
         client_key=client_key)
 
-    main(es_client=es, ea_index=index, recreate=args.recreate, old_ea_index=old_index)
+    create_index_mappings(es_client=es, ea_index=index, recreate=args.recreate, old_ea_index=old_index)
+
+
+if __name__ == '__main__':
+    main()
