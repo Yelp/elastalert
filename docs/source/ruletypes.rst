@@ -2118,3 +2118,47 @@ Example usage::
         - domain: "{match[field1]}_{rule[name]}"
         - domain: "{match[field]}"
         - ip: "{match[ip_field]}"
+
+
+Alertmanager
+~~~~~~~~~~~~
+
+This alert type will send alerts to Alertmanager using v1 API endpoint ``api/v1/alerts``. ``alert_subject`` and ``alert_text`` are passed as the annotations labeled ``summary`` and ``description`` accordingly. The labels can be changed.
+See https://prometheus.io/docs/alerting/clients/ for more details about the Alertmanager alert format.
+
+Required:
+
+``alertmanager_host``: The host pointing to the Alertmanager.
+
+Optional:
+
+``alertmanager_alertname``: ``alertname`` is the only required label. Defaults to using the rule name of the alert.
+
+``alertmanager_labels``: Key:value pairs of arbitrary labels to be attached to every alert. Keys should match the regular expression ``^[a-zA-Z_][a-zA-Z0-9_]*$``.
+
+``alertmanager_annotations``: Key:value pairs of arbitrary annotations to be attached to every alert. Keys should match the regular expression ``^[a-zA-Z_][a-zA-Z0-9_]*$``.
+
+``alertmanager_fields``: Key:value pairs of labels and corresponding match fields. When using ``alertmanager_fields`` you can access nested fields and index into arrays the same way as with ``alert_text_args``. Keys should match the regular expression ``^[a-zA-Z_][a-zA-Z0-9_]*$``. This dictionary will be merged with the ``alertmanager_labels``.
+
+``alertmanager_alert_subject_labelname``: Rename the annotations' label name for ``alert_subject``. Default is ``summary``.
+
+``alertmanager_alert_text_labelname``: Rename the annotations' label name for ``alert_text``. Default is ``description``.
+
+``alertmanager_proxy``: URL of proxy, if required.
+
+``alertmanager_verify_ssl``: Whether or not to verify TLS certificates. (boolean, default True).
+
+Example usage::
+
+    alert:
+    - alertmanager:
+        alertmanager_host: http://localhost:9093
+        alertmanager_alertname: Title
+        alertmanager_annotations:
+            severity: error
+        alertmanager_labels:
+            source: elastalert
+        alertmanager_fields:
+            namespace: kubernetes.namespace_name
+            app: kubernetes.labels.k8s-app
+            pod_name: kubernetes.pod_name

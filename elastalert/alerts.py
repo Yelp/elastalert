@@ -13,10 +13,7 @@ import warnings
 from email.mime.text import MIMEText
 from email.utils import formatdate
 from HTMLParser import HTMLParser
-from smtplib import SMTP
-from smtplib import SMTP_SSL
-from smtplib import SMTPAuthenticationError
-from smtplib import SMTPException
+from smtplib import SMTP, SMTP_SSL, SMTPAuthenticationError, SMTPException
 from socket import error
 
 import boto3
@@ -30,18 +27,19 @@ from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from texttable import Texttable
 from thehive4py.api import TheHiveApi
-from thehive4py.models import Alert
-from thehive4py.models import AlertArtifact
-from thehive4py.models import CustomFieldHelper
+from thehive4py.models import Alert, AlertArtifact, CustomFieldHelper
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
-from util import EAException
-from util import elastalert_logger
-from util import lookup_es_key
-from util import pretty_ts
-from util import resolve_string
-from util import ts_now
-from util import ts_to_dt
+
+from util import (
+    EAException,
+    elastalert_logger,
+    lookup_es_key,
+    pretty_ts,
+    resolve_string,
+    ts_now,
+    ts_to_dt
+)
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -2170,3 +2168,59 @@ class HiveAlerter(Alerter):
             'type': 'hivealerter',
             'hive_host': self.rule.get('hive_connection', {}).get('hive_host', '')
         }
+
+
+class AlertmanagerAlerter(Alerter):
+    """ Sends an alert to Alertmanager """
+
+    required_options = frozenset({'alertmanager_host'})
+
+    def __init__(self, rule):
+        super(AlertmanagerAlerter, self).__init__(rule)
+        self.url = '{}/api/v1/alerts'.format(self.rule['alertmanager_host'])
+        self.alertname = self.rule.get('alertmanager_alertname', self.rule['name'])
+        self.labels = self.rule.get('alertmanager_labels', dict())
+        self.annotations = self.rule.get('alertmanager_annotations', dict())
+        self.fields = self.rule.get('alertmanager_fields', dict())
+        self.title_labelname = self.rule.get('alertmanager_alert_subject_labelname', 'summary')
+        self.body_labelname = self.rule.get('alertmanager_alert_text_labelname', 'description')
+        self.proxies = {'https': self.rule.get('alertmanager_proxy')} if self.rule.get('alertmanager_proxy') else None
+        self.verify_ssl = self.rule.get('alertmanager_verify_ssl', True)
+
+    def _json_or_string(self, obj):
+        """helper to encode non-string objects to JSON"""
+        if isinstance(obj, basestring):
+            return obj
+        return json.dumps(obj, cls=DateTimeEncoder)
+
+    def alert(self, matches):
+        self.labels.update({
+            label: self._json_or_string(lookup_es_key(matches[0], term))
+            for label, term in self.fields.iteritems()})
+        self.labels.update(
+            alertname=self.alertname,
+            elastalert_rule=self.rule['name'])
+        self.annotations.update({
+            self.title_labelname: self.create_title(matches),
+            self.body_labelname: self.create_alert_body(matches)})
+        payload = json.dumps([{
+            'annotations': self.annotations,
+            'labels': self.labels}], cls=DateTimeEncoder)
+
+        try:
+            if not self.verify_ssl:
+                requests.packages.urllib3.disable_warnings()
+            response = requests.post(
+                self.url,
+                data=payload,
+                headers={'content-type': 'application/json'},
+                verify=self.verify_ssl,
+                proxies=self.proxies,
+            )
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Alertmanager: %s" % e)
+        elastalert_logger.info("Alert sent to Alertmanager")
+
+    def get_info(self):
+        return {'type': 'alertmanager'}

@@ -7,25 +7,28 @@ import logging.config
 import os
 import sys
 
-import alerts
-import enhancements
 import jsonschema
-import ruletypes
 import yaml
 import yaml.scanner
 from envparse import Env
-from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
-from util import dt_to_ts
-from util import dt_to_ts_with_format
-from util import dt_to_unix
-from util import dt_to_unixms
-from util import elastalert_logger
-from util import EAException
-from util import ts_to_dt
-from util import ts_to_dt_with_format
-from util import unix_to_dt
-from util import unixms_to_dt
+
+import alerts
+import enhancements
+import ruletypes
+from opsgenie import OpsGenieAlerter
+from util import (
+    EAException,
+    dt_to_ts,
+    dt_to_ts_with_format,
+    dt_to_unix,
+    dt_to_unixms,
+    elastalert_logger,
+    ts_to_dt,
+    ts_to_dt_with_format,
+    unix_to_dt,
+    unixms_to_dt,
+)
 
 # schema for rule yaml
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
@@ -89,7 +92,8 @@ alerts_mapping = {
     'linenotify': alerts.LineNotifyAlerter,
     'alerta': alerts.AlertaAlerter,
     'post': alerts.HTTPPostAlerter,
-    'hivealerter': alerts.HiveAlerter
+    'hivealerter': alerts.HiveAlerter,
+    'alertmanager': alerts.AlertmanagerAlerter
 }
 # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
 # For example, jira goes before email so the ticket # will be added to the resulting email.
