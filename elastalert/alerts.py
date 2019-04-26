@@ -279,7 +279,7 @@ class Alerter(object):
             text_table = Texttable(max_width=self.get_aggregation_summary_text__maximum_width())
             text_table.header(summary_table_fields_with_count)
             # Format all fields as 'text' to avoid long numbers being shown as scientific notation
-            text_table.set_cols_dtype(['t' for i in summary_table_fields_with_count])
+            text_table.set_cols_dtype(['t' for _ in summary_table_fields_with_count])
             match_aggregation = {}
 
             # Maintain an aggregate count for each unique key encountered in the aggregation period
@@ -481,10 +481,10 @@ class EmailAlerter(Alerter):
                     self.smtp.starttls(keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
             if 'smtp_auth_file' in self.rule:
                 self.smtp.login(self.user, self.password)
-        except (SMTPException, error) as e:
-            raise EAException("Error connecting to SMTP host: %s" % (e))
         except SMTPAuthenticationError as e:
             raise EAException("SMTP username/password rejected: %s" % (e))
+        except (SMTPException, error) as e:
+            raise EAException("Error connecting to SMTP host: %s" % (e))
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
         self.smtp.quit()
 
@@ -915,10 +915,10 @@ class CommandAlerter(Alerter):
 
             if self.rule.get('pipe_match_json'):
                 match_json = json.dumps(matches, cls=DateTimeEncoder) + '\n'
-                stdout, stderr = subp.communicate(input=match_json)
+                subp.communicate(input=match_json)
             elif self.rule.get('pipe_alert_text'):
                 alert_text = self.create_alert_body(matches)
-                stdout, stderr = subp.communicate(input=alert_text)
+                subp.communicate(input=alert_text)
             if self.rule.get("fail_on_non_zero_exit", False) and subp.wait():
                 raise EAException("Non-zero exit code while running command %s" % (' '.join(command)))
         except OSError as e:
@@ -2062,7 +2062,7 @@ class StrideAlerter(Alerter):
     def get_info(self):
         return {'type': 'stride',
                 'stride_cloud_id': self.stride_cloud_id,
-                'stride_converstation_id': self.stride_converstation_id}
+                'stride_converstation_id': self.stride_conversation_id}
 
 
 class LineNotifyAlerter(Alerter):
