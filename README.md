@@ -42,20 +42,28 @@ Currently, we have built-in support for the following alert types:
 - Email
 - JIRA
 - OpsGenie
+- Stomp
 - Commands
+- AWS SNS
 - HipChat
+- Stride
 - MS Teams
 - Slack
-- Telegram
-- GoogleChat
-- AWS SNS
-- VictorOps
+- Mattermost
 - PagerDuty
 - PagerTree
 - Exotel
 - Twilio
+- VictorOps
+- Telegram
+- GoogleChat
 - Gitter
+- ServiceNow
 - Line Notify
+- Alerta
+- HTTP POST
+- theHive
+- Alertmanager
 
 Additional rule types and alerts can be easily imported or written.
 
