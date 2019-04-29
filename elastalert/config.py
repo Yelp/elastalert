@@ -474,6 +474,7 @@ def load_rules(args):
 
     conf.setdefault('max_query_size', 10000)
     conf.setdefault('scroll_keepalive', '30s')
+    conf.setdefault('max_scrolling_count', 0)
     conf.setdefault('disable_rules_on_error', True)
     conf.setdefault('scan_subdirectories', True)
 
