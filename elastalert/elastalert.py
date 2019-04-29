@@ -48,6 +48,7 @@ from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
+from util import should_scrolling_continue
 
 
 class ElastAlerter():
@@ -601,6 +602,7 @@ class ElastAlerter():
 
         # Reset hit counter and query
         rule_inst = rule['type']
+        rule['scrolling_cycle'] = rule.get('scrolling_cycle', 0) + 1
         index = self.get_index(rule, start, end)
         if rule.get('use_count_query'):
             data = self.get_hits_count(rule, start, end, index)
@@ -629,7 +631,7 @@ class ElastAlerter():
                 rule_inst.add_data(data)
 
         try:
-            if rule.get('scroll_id') and self.num_hits < self.total_hits:
+            if rule.get('scroll_id') and self.num_hits < self.total_hits and should_scrolling_continue(rule):
                 self.run_query(rule, start, end, scroll=True)
         except RuntimeError:
             # It's possible to scroll far enough to hit max recursive depth
@@ -838,6 +840,7 @@ class ElastAlerter():
             self.set_starttime(rule, endtime)
 
         rule['original_starttime'] = rule['starttime']
+        rule['scrolling_cycle'] = 0
 
         # Don't run if starttime was set to the future
         if ts_now() <= rule['starttime']:

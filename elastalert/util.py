@@ -434,3 +434,16 @@ def resolve_string(string, match, missing_text='<MISSING VALUE>'):
             string = string.replace('{%s}' % e.message, '{_missing_value}')
 
     return string
+
+
+def should_scrolling_continue(rule_conf):
+    """
+    Tells about a rule config if it can scroll still or should stop the scrolling.
+
+    :param: rule_conf as dict
+    :rtype: bool
+    """
+    max_scrolling = rule_conf.get('max_scrolling_count')
+    stop_the_scroll = 0 < max_scrolling <= rule_conf.get('scrolling_cycle')
+
+    return not stop_the_scroll
