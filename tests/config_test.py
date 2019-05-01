@@ -45,6 +45,7 @@ test_args = mock.Mock()
 test_args.config = 'test_config'
 test_args.rule = None
 test_args.debug = False
+test_args.es_debug_trace = None
 
 
 def test_import_rules():

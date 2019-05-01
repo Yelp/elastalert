@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -31,6 +32,7 @@ from texttable import Texttable
 from thehive4py.api import TheHiveApi
 from thehive4py.models import Alert
 from thehive4py.models import AlertArtifact
+from thehive4py.models import CustomFieldHelper
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
 from util import EAException
@@ -226,6 +228,7 @@ class Alerter(object):
 
     def create_custom_title(self, matches):
         alert_subject = unicode(self.rule['alert_subject'])
+        alert_subject_max_len = int(self.rule.get('alert_subject_max_len', 2048))
 
         if 'alert_subject_args' in self.rule:
             alert_subject_args = self.rule['alert_subject_args']
@@ -242,7 +245,10 @@ class Alerter(object):
 
             missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
             alert_subject_values = [missing if val is None else val for val in alert_subject_values]
-            return alert_subject.format(*alert_subject_values)
+            alert_subject = alert_subject.format(*alert_subject_values)
+
+        if len(alert_subject) > alert_subject_max_len:
+            alert_subject = alert_subject[:alert_subject_max_len]
 
         return alert_subject
 
@@ -364,8 +370,9 @@ class StompAlerter(Alerter):
         self.stomp_password = self.rule.get('stomp_password', 'admin')
         self.stomp_destination = self.rule.get(
             'stomp_destination', '/queue/ALERT')
+        self.stomp_ssl = self.rule.get('stomp_ssl', False)
 
-        conn = stomp.Connection([(self.stomp_hostname, self.stomp_hostport)])
+        conn = stomp.Connection([(self.stomp_hostname, self.stomp_hostport)], use_ssl=self.stomp_ssl)
 
         conn.start()
         conn.connect(self.stomp_login, self.stomp_password)
@@ -1112,6 +1119,7 @@ class SlackAlerter(Alerter):
         if isinstance(self.slack_channel_override, basestring):
             self.slack_channel_override = [self.slack_channel_override]
         self.slack_title_link = self.rule.get('slack_title_link', '')
+        self.slack_title = self.rule.get('slack_title', '')
         self.slack_emoji_override = self.rule.get('slack_emoji_override', ':ghost:')
         self.slack_icon_url_override = self.rule.get('slack_icon_url_override', '')
         self.slack_msg_color = self.rule.get('slack_msg_color', 'danger')
@@ -1177,6 +1185,9 @@ class SlackAlerter(Alerter):
         else:
             payload['icon_emoji'] = self.slack_emoji_override
 
+        if self.slack_title != '':
+            payload['attachments'][0]['title'] = self.slack_title
+
         if self.slack_title_link != '':
             payload['attachments'][0]['title_link'] = self.slack_title_link
 
@@ -1203,8 +1214,7 @@ class SlackAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'slack',
-                'slack_username_override': self.slack_username_override,
-                'slack_webhook_url': self.slack_webhook_url}
+                'slack_username_override': self.slack_username_override}
 
 
 class MattermostAlerter(Alerter):
@@ -1445,6 +1455,39 @@ class PagerDutyAlerter(Alerter):
     def get_info(self):
         return {'type': 'pagerduty',
                 'pagerduty_client_name': self.pagerduty_client_name}
+
+
+class PagerTreeAlerter(Alerter):
+    """ Creates a PagerTree Incident for each alert """
+    required_options = frozenset(['pagertree_integration_url'])
+
+    def __init__(self, rule):
+        super(PagerTreeAlerter, self).__init__(rule)
+        self.url = self.rule['pagertree_integration_url']
+        self.pagertree_proxy = self.rule.get('pagertree_proxy', None)
+
+    def alert(self, matches):
+        # post to pagertree
+        headers = {'content-type': 'application/json'}
+        # set https proxy, if it was provided
+        proxies = {'https': self.pagertree_proxy} if self.pagertree_proxy else None
+        payload = {
+            "event_type": "create",
+            "Id": str(uuid.uuid4()),
+            "Title": self.create_title(matches),
+            "Description": self.create_alert_body(matches)
+        }
+
+        try:
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to PagerTree: %s" % e)
+        elastalert_logger.info("Trigger sent to PagerTree")
+
+    def get_info(self):
+        return {'type': 'pagertree',
+                'pagertree_integration_url': self.url}
 
 
 class ExotelAlerter(Alerter):
@@ -2023,7 +2066,36 @@ class StrideAlerter(Alerter):
     def get_info(self):
         return {'type': 'stride',
                 'stride_cloud_id': self.stride_cloud_id,
-                'stride_conversation_id': self.stride_conversation_id}
+                'stride_converstation_id': self.stride_converstation_id}
+
+
+class LineNotifyAlerter(Alerter):
+    """ Created a Line Notify for each alert """
+    required_option = frozenset(["linenotify_access_token"])
+
+    def __init__(self, rule):
+        super(LineNotifyAlerter, self).__init__(rule)
+        self.linenotify_access_token = self.rule["linenotify_access_token"]
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+        # post to Line Notify
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": "Bearer {}".format(self.linenotify_access_token)
+        }
+        payload = {
+            "message": body
+        }
+        try:
+            response = requests.post("https://notify-api.line.me/api/notify", data=payload, headers=headers)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Line Notify: %s" % e)
+        elastalert_logger.info("Alert sent to Line Notify")
+
+    def get_info(self):
+        return {"type": "linenotify", "linenotify_access_token": self.linenotify_access_token}
 
 
 class HiveAlerter(Alerter):
@@ -2050,7 +2122,11 @@ class HiveAlerter(Alerter):
             for mapping in self.rule.get('hive_observable_data_mapping', []):
                 for observable_type, match_data_key in mapping.iteritems():
                     try:
-                        if match_data_key.replace("{match[", "").replace("]}", "") in context['match']:
+                        match_data_keys = re.findall(r'\{match\[([^\]]*)\]', match_data_key)
+                        rule_data_keys = re.findall(r'\{rule\[([^\]]*)\]', match_data_key)
+                        data_keys = match_data_keys + rule_data_keys
+                        context_keys = context['match'].keys() + context['rule'].keys()
+                        if all([True if k in context_keys else False for k in data_keys]):
                             artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
                     except KeyError:
                         raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
@@ -2063,19 +2139,30 @@ class HiveAlerter(Alerter):
             alert_config.update(self.rule.get('hive_alert_config', {}))
 
             for alert_config_field, alert_config_value in alert_config.iteritems():
-                if isinstance(alert_config_value, basestring):
+                if alert_config_field == 'customFields':
+                    custom_fields = CustomFieldHelper()
+                    for cf_key, cf_value in alert_config_value.iteritems():
+                        try:
+                            func = getattr(custom_fields, 'add_{}'.format(cf_value['type']))
+                        except AttributeError:
+                            raise Exception('unsupported custom field type {}'.format(cf_value['type']))
+                        value = cf_value['value'].format(**context)
+                        func(cf_key, value)
+                    alert_config[alert_config_field] = custom_fields.build()
+                elif isinstance(alert_config_value, basestring):
                     alert_config[alert_config_field] = alert_config_value.format(**context)
                 elif isinstance(alert_config_value, (list, tuple)):
                     formatted_list = []
                     for element in alert_config_value:
                         try:
                             formatted_list.append(element.format(**context))
-                        except (AttributeError, KeyError):
+                        except (AttributeError, KeyError, IndexError):
                             formatted_list.append(element)
                     alert_config[alert_config_field] = formatted_list
 
             alert = Alert(**alert_config)
             response = api.create_alert(alert)
+
             if response.status_code != 201:
                 raise Exception('alert not successfully created in TheHive\n{}'.format(response.text))
 

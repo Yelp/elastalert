@@ -1004,7 +1004,7 @@ def test_slack_uses_custom_title():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify=False,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1049,7 +1049,7 @@ def test_slack_uses_custom_timeout():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify=False,
         timeout=20
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1092,7 +1092,7 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify=False,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1136,7 +1136,7 @@ def test_slack_uses_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify=False,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1196,7 +1196,7 @@ def test_slack_uses_list_of_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify=False,
         timeout=10
     )
     assert expected_data1 == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -2118,3 +2118,32 @@ def test_alerta_new_style(ea):
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_alert_subject_size_limit_no_args(ea):
+    rule = {
+        'name': 'test_rule',
+        'type': mock_rule(),
+        'owner': 'the_owner',
+        'priority': 2,
+        'alert_subject': 'A very long subject',
+        'alert_subject_max_len': 5
+    }
+    alert = Alerter(rule)
+    alertSubject = alert.create_custom_title([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+    assert 5 == len(alertSubject)
+
+
+def test_alert_subject_size_limit_with_args(ea):
+    rule = {
+        'name': 'test_rule',
+        'type': mock_rule(),
+        'owner': 'the_owner',
+        'priority': 2,
+        'alert_subject': 'Test alert for {0} {1}',
+        'alert_subject_args': ['test_term', 'test.term'],
+        'alert_subject_max_len': 6
+    }
+    alert = Alerter(rule)
+    alertSubject = alert.create_custom_title([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
+    assert 6 == len(alertSubject)

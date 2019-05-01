@@ -3,6 +3,7 @@ import copy
 import datetime
 import hashlib
 import logging
+import logging.config
 import os
 import sys
 
@@ -20,6 +21,7 @@ from util import dt_to_ts_with_format
 from util import dt_to_unix
 from util import dt_to_unixms
 from util import EAException
+from util import elastalert_logger
 from util import ts_to_dt
 from util import ts_to_dt_with_format
 from util import unix_to_dt
@@ -58,6 +60,7 @@ rules_mapping = {
     'cardinality': ruletypes.CardinalityRule,
     'metric_aggregation': ruletypes.MetricAggregationRule,
     'percentage_match': ruletypes.PercentageMatchRule,
+    'spike_aggregation': ruletypes.SpikeMetricAggregationRule
 }
 
 # Used to map names of alerts to their classes
@@ -75,6 +78,7 @@ alerts_mapping = {
     'slack': alerts.SlackAlerter,
     'mattermost': alerts.MattermostAlerter,
     'pagerduty': alerts.PagerDutyAlerter,
+    'pagertree': alerts.PagerTreeAlerter,
     'exotel': alerts.ExotelAlerter,
     'twilio': alerts.TwilioAlerter,
     'victorops': alerts.VictorOpsAlerter,
@@ -82,6 +86,7 @@ alerts_mapping = {
     'googlechat': alerts.GoogleChatAlerter,
     'gitter': alerts.GitterAlerter,
     'servicenow': alerts.ServiceNowAlerter,
+    'linenotify': alerts.LineNotifyAlerter,
     'alerta': alerts.AlertaAlerter,
     'post': alerts.HTTPPostAlerter,
     'hivealerter': alerts.HiveAlerter
@@ -210,6 +215,10 @@ def load_options(rule, conf, filename, args=None):
         raise EAException('Invalid time format used: %s' % (e))
 
     # Set defaults, copy defaults from config.yaml
+    td_fields = ['realert', 'exponential_realert', 'aggregation', 'query_delay']
+    for td_field in td_fields:
+        if td_field in base_config:
+            rule.setdefault(td_field, datetime.timedelta(**base_config[td_field]))
     for key, val in base_config.items():
         rule.setdefault(key, val)
     rule.setdefault('name', os.path.splitext(filename)[0])
@@ -455,6 +464,9 @@ def load_rules(args):
     conf = yaml_loader(filename)
     use_rule = args.rule
 
+    # init logging from config and set log levels according to command line options
+    configure_logging(args, conf)
+
     for env_var, conf_var in env_settings.items():
         val = env(env_var, None)
         if val is not None:
@@ -510,6 +522,38 @@ def load_rules(args):
 
     conf['rules'] = rules
     return conf
+
+
+def configure_logging(args, conf):
+    # configure logging from config file if provided
+    if 'logging' in conf:
+        # load new logging config
+        logging.config.dictConfig(conf['logging'])
+
+    if args.verbose and args.debug:
+        elastalert_logger.info(
+            "Note: --debug and --verbose flags are set. --debug takes precedent."
+        )
+
+    # re-enable INFO log level on elastalert_logger in verbose/debug mode
+    # (but don't touch it if it is already set to INFO or below by config)
+    if args.verbose or args.debug:
+        if elastalert_logger.level > logging.INFO or elastalert_logger.level == logging.NOTSET:
+            elastalert_logger.setLevel(logging.INFO)
+
+    if args.debug:
+        elastalert_logger.info(
+            """Note: In debug mode, alerts will be logged to console but NOT actually sent.
+            To send them but remain verbose, use --verbose instead."""
+        )
+
+    if not args.es_debug and 'logging' not in conf:
+        logging.getLogger('elasticsearch').setLevel(logging.WARNING)
+
+    if args.es_debug_trace:
+        tracer = logging.getLogger('elasticsearch.trace')
+        tracer.setLevel(logging.INFO)
+        tracer.addHandler(logging.FileHandler(args.es_debug_trace))
 
 
 def get_rule_hashes(conf, use_rule=None):
