@@ -50,7 +50,7 @@ from util import ts_to_dt
 from util import unix_to_dt
 
 
-class ElastAlerter():
+class ElastAlerter(object):
     """ The main ElastAlert runner. This class holds all state about active rules,
     controls when queries are run, and passes information between rules and alerts.
 
@@ -123,7 +123,6 @@ class ElastAlerter():
         self.num_hits = 0
         self.num_dupes = 0
         self.current_es = None
-        self.current_es_addr = None
         self.buffer_time = self.conf['buffer_time']
         self.silence_cache = {}
         self.rule_hashes = get_rule_hashes(self.conf, self.args.rule)
@@ -134,7 +133,6 @@ class ElastAlerter():
         self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
 
         self.writeback_es = elasticsearch_client(self.conf)
-        self._es_version = None
 
         remove = []
         for rule in self.rules:
@@ -144,22 +142,6 @@ class ElastAlerter():
 
         if self.args.silence:
             self.silence()
-
-    def get_version(self):
-        info = self.writeback_es.info()
-        return info['version']['number']
-
-    @property
-    def es_version(self):
-        if self._es_version is None:
-            self._es_version = self.get_version()
-        return self._es_version
-
-    def is_atleastfive(self):
-        return int(self.es_version.split(".")[0]) >= 5
-
-    def is_atleastsix(self):
-        return int(self.es_version.split(".")[0]) >= 6
 
     @staticmethod
     def get_index(rule, starttime=None, endtime=None):
@@ -179,21 +161,6 @@ class ElastAlerter():
                 return index[:format_start] + '*' + index[format_end:]
         else:
             return index
-
-    def get_six_index(self, doc_type):
-        """ In ES6, you cannot have multiple _types per index,
-        therefore we use self.writeback_index as the prefix for the actual
-        index name, based on doc_type. """
-        writeback_index = self.writeback_index
-        if doc_type == 'silence':
-            writeback_index += '_silence'
-        elif doc_type == 'past_elastalert':
-            writeback_index += '_past'
-        elif doc_type == 'elastalert_status':
-            writeback_index += '_status'
-        elif doc_type == 'elastalert_error':
-            writeback_index += '_error'
-        return writeback_index
 
     @staticmethod
     def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False,
@@ -283,7 +250,12 @@ class ElastAlerter():
         """
         query = {'sort': {timestamp_field: {'order': 'asc'}}}
         try:
-            res = self.current_es.search(index=index, size=1, body=query, _source_include=[timestamp_field], ignore_unavailable=True)
+            if self.current_es.is_atleastsixsix():
+                res = self.current_es.search(index=index, size=1, body=query,
+                                             _source_includes=[timestamp_field], ignore_unavailable=True)
+            else:
+                res = self.current_es.search(index=index, size=1, body=query, _source_include=[timestamp_field],
+                                             ignore_unavailable=True)
         except ElasticsearchException as e:
             self.handle_error("Elasticsearch query error: %s" % (e), {'index': index, 'query': query})
             return '1969-12-30T00:00:00Z'
@@ -354,7 +326,10 @@ class ElastAlerter():
             to_ts_func=rule['dt_to_ts'],
             five=rule['five'],
         )
-        extra_args = {'_source_include': rule['include']}
+        if self.current_es.is_atleastsixsix():
+            extra_args = {'_source_includes': rule['include']}
+        else:
+            extra_args = {'_source_include': rule['include']}
         scroll_keepalive = rule.get('scroll_keepalive', self.scroll_keepalive)
         if not rule.get('_source_enabled'):
             if rule['five']:
@@ -375,7 +350,11 @@ class ElastAlerter():
                     ignore_unavailable=True,
                     **extra_args
                 )
-                self.total_hits = int(res['hits']['total'])
+
+                if self.current_es.is_atleastseven():
+                    self.total_hits = int(res['hits']['total']['value'])
+                else:
+                    self.total_hits = int(res['hits']['total'])
 
             if len(res.get('_shards', {}).get('failures', [])) > 0:
                 try:
@@ -493,7 +472,7 @@ class ElastAlerter():
 
         try:
             if not rule['five']:
-                res = self.current_es.search(
+                res = self.current_es.deprecated_search(
                     index=index,
                     doc_type=rule['doc_type'],
                     body=query,
@@ -501,7 +480,8 @@ class ElastAlerter():
                     ignore_unavailable=True
                 )
             else:
-                res = self.current_es.search(index=index, doc_type=rule['doc_type'], body=query, size=0, ignore_unavailable=True)
+                res = self.current_es.deprecated_search(index=index, doc_type=rule['doc_type'],
+                                                        body=query, size=0, ignore_unavailable=True)
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
             # (so big that they will fill the entire terminal buffer)
@@ -539,7 +519,7 @@ class ElastAlerter():
         query = self.get_aggregation_query(base_query, rule, query_key, term_size, rule['timestamp_field'])
         try:
             if not rule['five']:
-                res = self.current_es.search(
+                res = self.current_es.deprecated_search(
                     index=index,
                     doc_type=rule.get('doc_type'),
                     body=query,
@@ -547,7 +527,8 @@ class ElastAlerter():
                     ignore_unavailable=True
                 )
             else:
-                res = self.current_es.search(index=index, doc_type=rule.get('doc_type'), body=query, size=0, ignore_unavailable=True)
+                res = self.current_es.deprecated_search(index=index, doc_type=rule.get('doc_type'),
+                                                        body=query, size=0, ignore_unavailable=True)
         except ElasticsearchException as e:
             if len(str(e)) > 1024:
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
@@ -559,7 +540,12 @@ class ElastAlerter():
             payload = res['aggregations']['filtered']
         else:
             payload = res['aggregations']
-        self.num_hits += res['hits']['total']
+
+        if self.current_es.is_atleastseven():
+            self.num_hits += res['hits']['total']['value']
+        else:
+            self.num_hits += res['hits']['total']
+
         return {endtime: payload}
 
     def remove_duplicate_events(self, data, rule):
@@ -648,18 +634,23 @@ class ElastAlerter():
         """
         sort = {'sort': {'@timestamp': {'order': 'desc'}}}
         query = {'filter': {'term': {'rule_name': '%s' % (rule['name'])}}}
-        if self.is_atleastfive():
+        if self.writeback_es.is_atleastfive():
             query = {'query': {'bool': query}}
         query.update(sort)
 
         try:
-            if self.is_atleastsix():
-                index = self.get_six_index('elastalert_status')
-                res = self.writeback_es.search(index=index, doc_type='elastalert_status',
-                                               size=1, body=query, _source_include=['endtime', 'rule_name'])
+            doc_type = 'elastalert_status'
+            index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
+            if self.writeback_es.is_atleastsixtwo():
+                if self.writeback_es.is_atleastsixsix():
+                    res = self.writeback_es.search(index=index, size=1, body=query,
+                                                   _source_includes=['endtime', 'rule_name'])
+                else:
+                    res = self.writeback_es.search(index=index, size=1, body=query,
+                                                   _source_include=['endtime', 'rule_name'])
             else:
-                res = self.writeback_es.search(index=self.writeback_index, doc_type='elastalert_status',
-                                               size=1, body=query, _source_include=['endtime', 'rule_name'])
+                res = self.writeback_es.deprecated_search(index=index, doc_type=doc_type,
+                                                          size=1, body=query, _source_include=['endtime', 'rule_name'])
             if res['hits']['hits']:
                 endtime = ts_to_dt(res['hits']['hits'][0]['_source']['endtime'])
 
@@ -808,7 +799,7 @@ class ElastAlerter():
         else:
             query = " OR ".join(additional_terms)
         query_str_filter = {'query_string': {'query': query}}
-        if self.is_atleastfive():
+        if self.writeback_es.is_atleastfive():
             filters.append(query_str_filter)
         else:
             filters.append({'query': query_str_filter})
@@ -824,7 +815,6 @@ class ElastAlerter():
         """
         run_start = time.time()
         self.current_es = elasticsearch_client(rule)
-        self.current_es_addr = (rule['es_host'], rule['es_port'])
 
         # If there are pending aggregate matches, try processing them
         for x in range(len(rule['agg_matches'])):
@@ -949,7 +939,7 @@ class ElastAlerter():
         if 'top_count_keys' in new_rule and new_rule.get('raw_count_keys', True):
             if self.string_multi_field_name:
                 string_multi_field_name = self.string_multi_field_name
-            elif self.is_atleastfive():
+            elif self.writeback_es.is_atleastfive():
                 string_multi_field_name = '.keyword'
             else:
                 string_multi_field_name = '.raw'
@@ -997,7 +987,7 @@ class ElastAlerter():
     def modify_rule_for_ES5(new_rule):
         # Get ES version per rule
         rule_es = elasticsearch_client(new_rule)
-        if int(rule_es.info()['version']['number'].split(".")[0]) >= 5:
+        if rule_es.is_atleastfive():
             new_rule['five'] = True
         else:
             new_rule['five'] = False
@@ -1281,7 +1271,7 @@ class ElastAlerter():
 
         # Upload
         es = elasticsearch_client(rule)
-
+        # TODO: doc_type = _doc for elastic >= 6
         res = es.index(index='kibana-int',
                        doc_type='temp',
                        body=db_body)
@@ -1300,7 +1290,8 @@ class ElastAlerter():
             raise EAException("use_kibana_dashboard undefined")
         query = {'query': {'term': {'_id': db_name}}}
         try:
-            res = es.search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
+            # TODO use doc_type = _doc
+            res = es.deprecated_search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
         except ElasticsearchException as e:
             raise EAException("Error querying for dashboard: %s" % (e)), None, sys.exc_info()[2]
 
@@ -1473,10 +1464,6 @@ class ElastAlerter():
         return body
 
     def writeback(self, doc_type, body):
-        writeback_index = self.writeback_index
-        if(self.is_atleastsix()):
-            writeback_index = self.get_six_index(doc_type)
-
         # ES 2.0 - 2.3 does not support dots in field names.
         if self.replace_dots_in_field_names:
             writeback_body = replace_dots_in_field_names(body)
@@ -1496,8 +1483,11 @@ class ElastAlerter():
             writeback_body['@timestamp'] = dt_to_ts(ts_now())
 
         try:
-            res = self.writeback_es.index(index=writeback_index,
-                                          doc_type=doc_type, body=body)
+            index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
+            if self.writeback_es.is_atleastsixtwo():
+                res = self.writeback_es.index(index=index, body=body)
+            else:
+                res = self.writeback_es.index(index=index, doc_type=doc_type, body=body)
             return res
         except ElasticsearchException as e:
             logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
@@ -1514,16 +1504,17 @@ class ElastAlerter():
         time_filter = {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
                                                 'to': dt_to_ts(ts_now())}}}
         sort = {'sort': {'alert_time': {'order': 'asc'}}}
-        if self.is_atleastfive():
+        if self.writeback_es.is_atleastfive():
             query = {'query': {'bool': {'must': inner_query, 'filter': time_filter}}}
         else:
             query = {'query': inner_query, 'filter': time_filter}
         query.update(sort)
         try:
-            res = self.writeback_es.search(index=self.writeback_index,
-                                           doc_type='elastalert',
-                                           body=query,
-                                           size=1000)
+            if self.writeback_es.is_atleastsixtwo():
+                res = self.writeback_es.search(index=self.writeback_index, body=query, size=1000)
+            else:
+                res = self.writeback_es.deprecated_search(index=self.writeback_index,
+                                                          doc_type='elastalert', body=query, size=1000)
             if res['hits']['hits']:
                 return res['hits']['hits']
         except ElasticsearchException as e:
@@ -1553,7 +1544,6 @@ class ElastAlerter():
 
             # Set current_es for top_count_keys query
             self.current_es = elasticsearch_client(rule)
-            self.current_es_addr = (rule['es_host'], rule['es_port'])
 
             # Send the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):
@@ -1576,9 +1566,10 @@ class ElastAlerter():
 
                 # Delete it from the index
                 try:
-                    self.writeback_es.delete(index=self.writeback_index,
-                                             doc_type='elastalert',
-                                             id=_id)
+                    if self.writeback_es.is_atleastsixtwo():
+                        self.writeback_es.delete(index=self.writeback_index, id=_id)
+                    else:
+                        self.writeback_es.delete(index=self.writeback_index, doc_type='elastalert', id=_id)
                 except ElasticsearchException:  # TODO: Give this a more relevant exception, try:except: is evil.
                     self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
 
@@ -1608,15 +1599,18 @@ class ElastAlerter():
         query = {'query': {'query_string': {'query': 'aggregate_id:%s' % (_id)}}, 'sort': {'@timestamp': 'asc'}}
         matches = []
         try:
-            res = self.writeback_es.search(index=self.writeback_index,
-                                           doc_type='elastalert',
-                                           body=query,
-                                           size=self.max_aggregation)
+            if self.writeback_es.is_atleastsixtwo():
+                res = self.writeback_es.search(index=self.writeback_index, body=query,
+                                               size=self.max_aggregation)
+            else:
+                res = self.writeback_es.deprecated_search(index=self.writeback_index, doc_type='elastalert',
+                                                          body=query, size=self.max_aggregation)
             for match in res['hits']['hits']:
                 matches.append(match['_source'])
-                self.writeback_es.delete(index=self.writeback_index,
-                                         doc_type='elastalert',
-                                         id=match['_id'])
+                if self.writeback_es.is_atleastsixtwo():
+                    self.writeback_es.delete(index=self.writeback_index, id=match['_id'])
+                else:
+                    self.writeback_es.delete(index=self.writeback_index, doc_type='elastalert', id=match['_id'])
         except (KeyError, ElasticsearchException) as e:
             self.handle_error("Error fetching aggregated matches: %s" % (e), {'id': _id})
         return matches
@@ -1628,14 +1622,14 @@ class ElastAlerter():
                                      'must_not': [{'exists': {'field': 'aggregate_id'}}]}}}
         if aggregation_key_value:
             query['filter']['bool']['must'].append({'term': {'aggregation_key': aggregation_key_value}})
-        if self.is_atleastfive():
+        if self.writeback_es.is_atleastfive():
             query = {'query': {'bool': query}}
         query['sort'] = {'alert_time': {'order': 'desc'}}
         try:
-            res = self.writeback_es.search(index=self.writeback_index,
-                                           doc_type='elastalert',
-                                           body=query,
-                                           size=1)
+            if self.writeback_es.is_atleastsixtwo():
+                res = self.writeback_es.search(index=self.writeback_index, body=query, size=1)
+            else:
+                res = self.writeback_es.deprecated_search(index=self.writeback_index, doc_type='elastalert', body=query, size=1)
             if len(res['hits']['hits']) == 0:
                 return None
         except (KeyError, ElasticsearchException) as e:
@@ -1767,20 +1761,25 @@ class ElastAlerter():
             return False
         query = {'term': {'rule_name': rule_name}}
         sort = {'sort': {'until': {'order': 'desc'}}}
-        if self.is_atleastfive():
+        if self.writeback_es.is_atleastfive():
             query = {'query': query}
         else:
             query = {'filter': query}
         query.update(sort)
 
         try:
-            if(self.is_atleastsix()):
-                index = self.get_six_index('silence')
-                res = self.writeback_es.search(index=index, doc_type='silence',
-                                               size=1, body=query, _source_include=['until', 'exponent'])
+            doc_type = 'silence'
+            index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
+            if self.writeback_es.is_atleastsixtwo():
+                if self.writeback_es.is_atleastsixsix():
+                    res = self.writeback_es.search(index=index, size=1, body=query,
+                                                   _source_includes=['until', 'exponent'])
+                else:
+                    res = self.writeback_es.search(index=index, size=1, body=query,
+                                                   _source_include=['until', 'exponent'])
             else:
-                res = self.writeback_es.search(index=self.writeback_index, doc_type='silence',
-                                               size=1, body=query, _source_include=['until', 'exponent'])
+                res = self.writeback_es.deprecated_search(index=index, doc_type=doc_type,
+                                                          size=1, body=query, _source_include=['until', 'exponent'])
         except ElasticsearchException as e:
             self.handle_error("Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
 
