@@ -318,7 +318,7 @@ def test_match_with_module_from_pending(ea):
     pending_alert = {'match_body': {'foo': 'bar'}, 'rule_name': ea.rules[0]['name'],
                      'alert_time': START_TIMESTAMP, '@timestamp': START_TIMESTAMP}
     # First call, return the pending alert, second, no associated aggregated alerts
-    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': pending_alert}]}},
+    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': pending_alert}]}},
                                                      {'hits': {'hits': []}}]
     ea.send_pending_alerts()
     assert mod.process.call_count == 0
@@ -326,7 +326,7 @@ def test_match_with_module_from_pending(ea):
     # If aggregation is set, enhancement IS called
     pending_alert = {'match_body': {'foo': 'bar'}, 'rule_name': ea.rules[0]['name'],
                      'alert_time': START_TIMESTAMP, '@timestamp': START_TIMESTAMP}
-    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': pending_alert}]}},
+    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': pending_alert}]}},
                                                      {'hits': {'hits': []}}]
     ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
     ea.send_pending_alerts()
@@ -405,9 +405,9 @@ def test_agg_matchtime(ea):
     # First call - Find all pending alerts (only entries without agg_id)
     # Second call - Find matches with agg_id == 'ABCD'
     # Third call - Find matches with agg_id == 'CDEF'
-    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': call1},
-                                                                        {'_id': 'CDEF', '_source': call3}]}},
-                                                     {'hits': {'hits': [{'_id': 'BCDE', '_source': call2}]}},
+    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': call1},
+                                                                        {'_id': 'CDEF', '_index': 'wb', '_source': call3}]}},
+                                                     {'hits': {'hits': [{'_id': 'BCDE', '_index': 'wb', '_source': call2}]}},
                                                      {'hits': {'total': 0, 'hits': []}}]
 
     with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es:
@@ -573,9 +573,9 @@ def test_agg_with_aggregation_key(ea):
     # First call - Find all pending alerts (only entries without agg_id)
     # Second call - Find matches with agg_id == 'ABCD'
     # Third call - Find matches with agg_id == 'CDEF'
-    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_source': call1},
-                                                                        {'_id': 'CDEF', '_source': call2}]}},
-                                                     {'hits': {'hits': [{'_id': 'BCDE', '_source': call3}]}},
+    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': call1},
+                                                                        {'_id': 'CDEF', '_index': 'wb', '_source': call2}]}},
+                                                     {'hits': {'hits': [{'_id': 'BCDE', '_index': 'wb', '_source': call3}]}},
                                                      {'hits': {'total': 0, 'hits': []}}]
 
     with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es:
@@ -986,7 +986,6 @@ def test_kibana_dashboard(ea):
 
 
 def test_rule_changes(ea):
-    re = datetime.timedelta(minutes=10)
     ea.rule_hashes = {'rules/rule1.yaml': 'ABC',
                       'rules/rule2.yaml': 'DEF'}
     ea.rules = [ea.init_rule(rule, True) for rule in [{'rule_file': 'rules/rule1.yaml', 'name': 'rule1', 'filter': []},
@@ -996,10 +995,10 @@ def test_rule_changes(ea):
                   'rules/rule3.yaml': 'XXX',
                   'rules/rule2.yaml': '!@#$'}
 
-    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
-        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
-            mock_load.side_effect = [{'filter': [], 'name': 'rule2', 'rule_file': 'rules/rule2.yaml', 'run_every': re},
-                                     {'filter': [], 'name': 'rule3', 'rule_file': 'rules/rule3.yaml', 'run_every': re}]
+    with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
+        with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
+            mock_load.side_effect = [{'filter': [], 'name': 'rule2', 'rule_file': 'rules/rule2.yaml'},
+                                     {'filter': [], 'name': 'rule3', 'rule_file': 'rules/rule3.yaml'}]
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
 
@@ -1017,8 +1016,8 @@ def test_rule_changes(ea):
     # A new rule with a conflicting name wont load
     new_hashes = copy.copy(new_hashes)
     new_hashes.update({'rules/rule4.yaml': 'asdf'})
-    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
-        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+    with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
+        with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
             with mock.patch.object(ea, 'send_notification_email') as mock_send:
                 mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff',
                                           'rule_file': 'rules/rule4.yaml'}
@@ -1031,10 +1030,9 @@ def test_rule_changes(ea):
     # A new rule with is_enabled=False wont load
     new_hashes = copy.copy(new_hashes)
     new_hashes.update({'rules/rule4.yaml': 'asdf'})
-    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
-        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
-            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'is_enabled': False,
-                                      'rule_file': 'rules/rule4.yaml'}
+    with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
+        with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
+            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'is_enabled': False, 'rule_file': 'rules/rule4.yaml'}
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
     assert len(ea.rules) == 3
@@ -1043,8 +1041,8 @@ def test_rule_changes(ea):
     # An old rule which didn't load gets reloaded
     new_hashes = copy.copy(new_hashes)
     new_hashes['rules/rule4.yaml'] = 'qwerty'
-    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
-        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+    with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
+        with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
             mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
@@ -1184,7 +1182,7 @@ def test_wait_until_responsive_timeout_index_does_not_exist(ea, capsys):
 
     # Ensure we get useful diagnostics.
     output, errors = capsys.readouterr()
-    assert 'Writeback index "wb" does not exist, did you run `elastalert-create-index`?' in errors
+    assert 'Writeback alias "wb_a" does not exist, did you run `elastalert-create-index`?' in errors
 
     # Slept until we passed the deadline.
     sleep.mock_calls == [
@@ -1267,8 +1265,8 @@ def test_uncaught_exceptions(ea):
     # Changing the file should re-enable it
     ea.rule_hashes = {'blah.yaml': 'abc'}
     new_hashes = {'blah.yaml': 'def'}
-    with mock.patch('elastalert.elastalert.get_rule_hashes') as mock_hashes:
-        with mock.patch('elastalert.elastalert.load_configuration') as mock_load:
+    with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
+        with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
             mock_load.side_effect = [ea.disabled_rules[0]]
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
