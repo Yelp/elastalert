@@ -1014,7 +1014,7 @@ def test_count_keys(ea):
     counts = ea.get_top_counts(ea.rules[0], START, END, ['this', 'that'])
     calls = ea.current_es.search.call_args_list
     assert calls[0][1]['search_type'] == 'count'
-    assert calls[0][1]['body']['aggs']['filtered']['aggs']['counts']['terms'] == {'field': 'this', 'size': 5}
+    assert calls[0][1]['body']['aggs']['filtered']['aggs']['counts']['terms'] == {'field': 'this', 'size': 5, 'min_doc_count': 1}
     assert counts['top_events_this'] == {'a': 10, 'b': 5}
     assert counts['top_events_that'] == {'d': 10, 'c': 12}
 
