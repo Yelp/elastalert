@@ -1871,7 +1871,7 @@ The alerter requires the following options:
 
 Optional:
 
-``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents thoughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
+``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents throughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
 
