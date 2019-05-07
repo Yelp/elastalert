@@ -191,6 +191,7 @@ def ea():
     ea.thread_data.current_es = ea.current_es
     ea.thread_data.num_hits = 0
     ea.thread_data.num_dupes = 0
+    ea.thread_data.alerts_sent = 0
     return ea
 
 

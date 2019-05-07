@@ -20,7 +20,7 @@ from envparse import Env
 env = Env(ES_USE_SSL=bool)
 
 
-def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None):
+def create_index_mappings(es_client, ea_index, ea_alias=None, recreate=False, old_ea_index=None):
     esversion = es_client.info()["version"]["number"]
     print("Elastic Version: " + esversion)
 
@@ -31,6 +31,10 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
         if es_index.exists(ea_index):
             print('Index ' + ea_index + ' already exists. Skipping index creation.')
             return None
+
+    if es_index.exists_template(ea_index):
+        print('Template ' + ea_index + ' already exists. Deleting in preparation for creating indices.')
+        es_index.delete_template(ea_index)
 
     # (Re-)Create indices.
     if is_atleastsix(esversion):
@@ -71,6 +75,9 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
                                       body=es_index_mappings['elastalert_error'], include_type_name=True)
         es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
                                       body=es_index_mappings['past_elastalert'], include_type_name=True)
+        es_client.indices.put_template(name=ea_index, body={'index_patterns': [ea_index + '_*'],
+                                                            'aliases': {ea_alias: {}},
+                                                            'mappings': es_index_mappings['elastalert']})
     elif is_atleastsixtwo(esversion):
         es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
                                       body=es_index_mappings['elastalert'])
@@ -82,6 +89,9 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
                                       body=es_index_mappings['elastalert_error'])
         es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
                                       body=es_index_mappings['past_elastalert'])
+        es_client.indices.put_template(name=ea_index, body={'index_patterns': [ea_index + '_*'],
+                                                            'aliases': {ea_alias: {}},
+                                                            'mappings': es_index_mappings['elastalert']})
     elif is_atleastsix(esversion):
         es_client.indices.put_mapping(index=ea_index, doc_type='elastalert',
                                       body=es_index_mappings['elastalert'])
@@ -93,6 +103,9 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
                                       body=es_index_mappings['elastalert_error'])
         es_client.indices.put_mapping(index=ea_index + '_past', doc_type='past_elastalert',
                                       body=es_index_mappings['past_elastalert'])
+        es_client.indices.put_template(name=ea_index, body={'index_patterns': [ea_index + '_*'],
+                                                            'aliases': {ea_alias: {}},
+                                                            'mappings': es_index_mappings['elastalert']})
     else:
         es_client.indices.put_mapping(index=ea_index, doc_type='elastalert',
                                       body=es_index_mappings['elastalert'])
@@ -104,6 +117,9 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
                                       body=es_index_mappings['elastalert_error'])
         es_client.indices.put_mapping(index=ea_index, doc_type='past_elastalert',
                                       body=es_index_mappings['past_elastalert'])
+        es_client.indices.put_template(name=ea_index, body={'template': ea_index + '_*',
+                                                            'aliases': {ea_alias: {}},
+                                                            'mappings': es_index_mappings['elastalert']})
 
     print('New index %s created' % ea_index)
     if old_ea_index:
@@ -262,7 +278,7 @@ def main():
         ca_certs=ca_certs,
         client_key=client_key)
 
-    create_index_mappings(es_client=es, ea_index=index, recreate=args.recreate, old_ea_index=old_index)
+    create_index_mappings(es_client=es, ea_index=index, ea_alias=alias, recreate=args.recreate, old_ea_index=old_index)
 
 
 if __name__ == '__main__':
