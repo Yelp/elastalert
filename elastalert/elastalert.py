@@ -19,6 +19,7 @@ import dateutil.tz
 import kibana
 import yaml
 from alerts import DebugAlerter
+from alerts import BasicMatchString
 from config import get_rule_hashes
 from config import load_configuration
 from config import load_rules
@@ -1433,6 +1434,10 @@ class ElastAlerter(object):
         agg_id = None
         for match in matches:
             alert_body = self.get_alert_body(match, rule, alert_sent, alert_time, alert_exception)
+            # we dont want to index the fields again so create a dupe rule with the alert_text_only option set to reuse existing method
+            rule2 = rule
+            rule2['alert_text_type'] = 'alert_text_only'
+            alert_body['alert_text'] = unicode(BasicMatchString(rule2, match))
             # Set all matches to aggregate together
             if agg_id:
                 alert_body['aggregate_id'] = agg_id
