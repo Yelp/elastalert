@@ -1617,7 +1617,7 @@ class TelegramAlerter(Alerter):
         payload = {
             'chat_id': self.telegram_room_id,
             'text': body,
-            'parse_mode': 'markdown',
+            'parse_mode': 'html',
             'disable_web_page_preview': True
         }
 
