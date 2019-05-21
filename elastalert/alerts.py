@@ -488,7 +488,7 @@ class EmailAlerter(Alerter):
         except SMTPAuthenticationError as e:
             raise EAException("SMTP username/password rejected: %s" % (e))
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
-        self.smtp.close()
+        self.smtp.quit()
 
         elastalert_logger.info("Sent email to %s" % (to_addr))
 
@@ -1381,6 +1381,9 @@ class PagerDutyAlerter(Alerter):
                     },
                 },
             }
+            match_timestamp = lookup_es_key(matches[0], self.rule.get('timestamp_field', '@timestamp'))
+            if match_timestamp:
+                payload['payload']['timestamp'] = match_timestamp
         else:
             payload = {
                 'service_key': self.pagerduty_service_key,
@@ -1917,7 +1920,7 @@ class AlertaAlerter(Alerter):
             'tags': [resolve_string(a_tag, match, self.missing_text) for a_tag in self.tags],
             'correlate': [resolve_string(an_event, match, self.missing_text) for an_event in self.correlate],
             'attributes': dict(zip(self.attributes_keys,
-                               [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values])),
+                                   [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values])),
             'rawData': self.create_alert_body([match]),
         }
 
@@ -2121,7 +2124,7 @@ class HiveAlerter(Alerter):
                         rule_data_keys = re.findall(r'\{rule\[([^\]]*)\]', match_data_key)
                         data_keys = match_data_keys + rule_data_keys
                         context_keys = context['match'].keys() + context['rule'].keys()
-                        if all([True for k in data_keys if k in context_keys]):
+                        if all([True if k in context_keys else False for k in data_keys]):
                             artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
                     except KeyError:
                         raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))

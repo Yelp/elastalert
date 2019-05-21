@@ -6,9 +6,9 @@ from __future__ import print_function
 import json
 
 import yaml
-from elasticsearch.client import Elasticsearch
 
 from elastalert.kibana import filters_from_dashboard
+from elastalert.util import elasticsearch_client
 
 
 def main():
@@ -16,9 +16,20 @@ def main():
     es_port = raw_input("Elasticsearch port: ")
     db_name = raw_input("Dashboard name: ")
     send_get_body_as = raw_input("Method for querying Elasticsearch[GET]: ") or 'GET'
-    es = Elasticsearch(host=es_host, port=es_port, send_get_body_as=send_get_body_as)
+
+    es = elasticsearch_client({'es_host': es_host, 'es_port': es_port, 'send_get_body_as': send_get_body_as})
+
+    print("Elastic Version:" + es.es_version)
+
     query = {'query': {'term': {'_id': db_name}}}
-    res = es.search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
+
+    if es.is_atleastsixsix():
+        # TODO check support for kibana 7
+        # TODO use doc_type='_doc' instead
+        res = es.deprecated_search(index='kibana-int', doc_type='dashboard', body=query, _source_includes=['dashboard'])
+    else:
+        res = es.deprecated_search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
+
     if not res['hits']['hits']:
         print("No dashboard %s found" % (db_name))
         exit()

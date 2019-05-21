@@ -1312,6 +1312,8 @@ field_values will contain every key value pair included in the results from Elas
 every key in ``include``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
 come from an individual event, usually the one which triggers the alert.
 
+When using ``alert_text_args``, you can access nested fields and index into arrays. For example, if your match was ``{"data": {"ips": ["127.0.0.1", "12.34.56.78"]}}``, then by using ``"data.ips[1]"`` in ``alert_text_args``, it would replace value with ``"12.34.56.78"``. This can go arbitrarily deep into fields and will still work on keys that contain dots themselves.
+
 Command
 ~~~~~~~
 
@@ -1867,7 +1869,7 @@ The alerter requires the following options:
 
 Optional:
 
-``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents thoughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
+``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents throughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
 
@@ -2097,10 +2099,9 @@ Example usage::
        hive_host: http://localhost
        hive_port: <hive_port>
        hive_apikey: <hive_apikey>
-
-     hive_proxies:
-       http: ''
-       https: ''
+       hive_proxies:
+         http: ''
+         https: ''
 
       hive_alert_config:
         title: 'Title'  ## This will default to {rule[index]_rule[name]} if not provided
