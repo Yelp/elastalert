@@ -2074,3 +2074,16 @@ Line Notify will send notification to a Line application. The body of the notifi
 Required:
 
 ``linenotify_access_token``: The access token that you got from https://notify-bot.line.me/my/
+
+
+Zabbix
+~~~~~~~~~~~
+
+Zabbix will send notification to a Zabbix server. The item in the host specified receive a 1 value for each hit. For example, if the elastic query produce 3 hits in the last execution of elastalert, three '1' (integer) values will be send from elastalert to Zabbix Server. If the query have 0 hits, any value will be sent.
+
+Required:
+
+``zbx_sender_host``: The address where zabbix server is running.
+``zbx_sender_port``: The port where zabbix server is listenning.
+``zbx_host``: This field setup the host in zabbix that receives the value sent by Elastalert.
+``zbx_item``: This field setup the item in the host that receives the value sent by Elastalert.
