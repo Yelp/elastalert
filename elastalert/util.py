@@ -3,12 +3,12 @@ import collections
 import datetime
 import logging
 import os
+import re
 
 import dateutil.parser
 import dateutil.tz
 from auth import Auth
-from elasticsearch import RequestsHttpConnection
-from elasticsearch.client import Elasticsearch
+from . import ElasticSearchClient
 from six import string_types
 
 logging.basicConfig()
@@ -60,27 +60,45 @@ def _find_es_dict_by_key(lookup_dict, term):
     # For example:
     #  {'foo.bar': {'bar': 'ray'}} to look up foo.bar will return {'bar': 'ray'}, not 'ray'
     dict_cursor = lookup_dict
-    subkeys = term.split('.')
-    subkey = ''
 
-    while len(subkeys) > 0:
-        if not dict_cursor:
-            return {}, None
-
-        subkey += subkeys.pop(0)
-
-        if subkey in dict_cursor:
-            if len(subkeys) == 0:
-                break
-
-            dict_cursor = dict_cursor[subkey]
-            subkey = ''
-        elif len(subkeys) == 0:
-            # If there are no keys left to match, return None values
-            dict_cursor = None
-            subkey = None
+    while term:
+        split_results = re.split(r'\[(\d)\]', term, maxsplit=1)
+        if len(split_results) == 3:
+            sub_term, index, term = split_results
+            index = int(index)
         else:
-            subkey += '.'
+            sub_term, index, term = split_results + [None, '']
+
+        subkeys = sub_term.split('.')
+
+        subkey = ''
+
+        while len(subkeys) > 0:
+            if not dict_cursor:
+                return {}, None
+
+            subkey += subkeys.pop(0)
+
+            if subkey in dict_cursor:
+                if len(subkeys) == 0:
+                    break
+                dict_cursor = dict_cursor[subkey]
+                subkey = ''
+            elif len(subkeys) == 0:
+                # If there are no keys left to match, return None values
+                dict_cursor = None
+                subkey = None
+            else:
+                subkey += '.'
+
+        if index is not None and subkey:
+            dict_cursor = dict_cursor[subkey]
+            if type(dict_cursor) == list and len(dict_cursor) > index:
+                subkey = index
+                if term:
+                    dict_cursor = dict_cursor[subkey]
+            else:
+                return {}, None
 
     return dict_cursor, subkey
 
@@ -281,7 +299,7 @@ def replace_dots_in_field_names(document):
 
 
 def elasticsearch_client(conf):
-    """ returns an Elasticsearch instance configured using an es_conn_config """
+    """ returns an :class:`ElasticSearchClient` instance configured using an es_conn_config """
     es_conn_conf = build_es_conn_config(conf)
     auth = Auth()
     es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
@@ -290,18 +308,7 @@ def elasticsearch_client(conf):
                                      aws_region=es_conn_conf['aws_region'],
                                      profile_name=es_conn_conf['profile'])
 
-    return Elasticsearch(host=es_conn_conf['es_host'],
-                         port=es_conn_conf['es_port'],
-                         url_prefix=es_conn_conf['es_url_prefix'],
-                         use_ssl=es_conn_conf['use_ssl'],
-                         verify_certs=es_conn_conf['verify_certs'],
-                         ca_certs=es_conn_conf['ca_certs'],
-                         connection_class=RequestsHttpConnection,
-                         http_auth=es_conn_conf['http_auth'],
-                         timeout=es_conn_conf['es_conn_timeout'],
-                         send_get_body_as=es_conn_conf['send_get_body_as'],
-                         client_cert=es_conn_conf['client_cert'],
-                         client_key=es_conn_conf['client_key'])
+    return ElasticSearchClient(es_conn_conf)
 
 
 def build_es_conn_config(conf):
@@ -415,3 +422,16 @@ def resolve_string(string, match, missing_text='<MISSING VALUE>'):
             string = string.replace('{%s}' % e.message, '{_missing_value}')
 
     return string
+
+
+def should_scrolling_continue(rule_conf):
+    """
+    Tells about a rule config if it can scroll still or should stop the scrolling.
+
+    :param: rule_conf as dict
+    :rtype: bool
+    """
+    max_scrolling = rule_conf.get('max_scrolling_count')
+    stop_the_scroll = 0 < max_scrolling <= rule_conf.get('scrolling_cycle')
+
+    return not stop_the_scroll

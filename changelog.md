@@ -1,5 +1,22 @@
 # Change Log
 
+# v0.1.39
+
+### Added
+- Added spike alerts for metric aggregations
+- Allow SSL connections for Stomp
+- Allow limits on alert text length
+- Add optional min doc count for terms queries
+- Add ability to index into arrays for alert_text_args, etc
+
+### Fixed
+- Fixed bug involving --config flag with create-index
+- Fixed some settings not being inherited from the config properly
+- Some fixes for Hive alerter
+- Close SMTP connections properly
+- Fix timestamps in Pagerduty v2 payload
+- Fixed an bug causing aggregated alerts to mix up
+
 # v0.1.38
 
 ### Added
