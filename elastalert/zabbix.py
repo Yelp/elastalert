@@ -62,8 +62,6 @@ class ZabbixAlerter(Alerter):
         # It contains more than one match when the alert has
         # the aggregation option set
         zm = []
-
-
         for match in matches:
             ts_epoch = int(datetime.strptime(match['@timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ").strftime('%s'))
             zm.append(ZabbixMetric(host=self.zbx_host, key=self.zbx_key, value=1, clock=ts_epoch))
