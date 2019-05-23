@@ -2,7 +2,6 @@
 import copy
 import datetime
 import json
-import logging
 import os
 import re
 import subprocess
@@ -589,7 +588,7 @@ class JiraAlerter(Alerter):
                 msg = '%s Both have common statuses of (%s). As such, no tickets will ever be found.' % (
                     msg, ','.join(intersection))
             msg += ' This should be simplified to use only one or the other.'
-            logging.warning(msg)
+            elastalert_logger.warning(msg)
 
         self.reset_jira_args()
 
@@ -609,7 +608,7 @@ class JiraAlerter(Alerter):
             if self.priority is not None and self.client is not None:
                 self.jira_args['priority'] = {'id': self.priority_ids[self.priority]}
         except KeyError:
-            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, self.priority_ids.keys()))
+            elastalert_logger.error("Priority %s not found. Valid priorities are %s" % (self.priority, self.priority_ids.keys()))
 
     def reset_jira_args(self):
         self.jira_args = {'project': {'key': self.project},
@@ -752,7 +751,7 @@ class JiraAlerter(Alerter):
         try:
             issues = self.client.search_issues(jql)
         except JIRAError as e:
-            logging.exception("Error while searching for JIRA ticket using jql '%s': %s" % (jql, e))
+            elastalert_logger.exception("Error while searching for JIRA ticket using jql '%s': %s" % (jql, e))
             return None
 
         if len(issues):
@@ -795,19 +794,19 @@ class JiraAlerter(Alerter):
                     try:
                         self.comment_on_ticket(ticket, match)
                     except JIRAError as e:
-                        logging.exception("Error while commenting on ticket %s: %s" % (ticket, e))
+                        elastalert_logger.exception("Error while commenting on ticket %s: %s" % (ticket, e))
                     if self.labels:
                         for l in self.labels:
                             try:
                                 ticket.fields.labels.append(l)
                             except JIRAError as e:
-                                logging.exception("Error while appending labels to ticket %s: %s" % (ticket, e))
+                                elastalert_logger.exception("Error while appending labels to ticket %s: %s" % (ticket, e))
                 if self.transition:
                     elastalert_logger.info('Transitioning existing ticket %s' % (ticket.key))
                     try:
                         self.transition_ticket(ticket)
                     except JIRAError as e:
-                        logging.exception("Error while transitioning ticket %s: %s" % (ticket, e))
+                        elastalert_logger.exception("Error while transitioning ticket %s: %s" % (ticket, e))
 
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
@@ -896,7 +895,7 @@ class CommandAlerter(Alerter):
         if isinstance(self.rule['command'], basestring):
             self.shell = True
             if '%' in self.rule['command']:
-                logging.warning('Warning! You could be vulnerable to shell injection!')
+                elastalert_logger.warning('Warning! You could be vulnerable to shell injection!')
             self.rule['command'] = [self.rule['command']]
 
         self.new_style_string_format = False
