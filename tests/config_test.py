@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 import copy
 import datetime
+import os
 
 import mock
-import os
 import pytest
 
 import elastalert.alerts
 import elastalert.ruletypes
 from elastalert.config import get_file_paths
+from elastalert.config import import_rules
 from elastalert.config import load_configuration
 from elastalert.config import load_modules
 from elastalert.config import load_options
 from elastalert.config import load_rules
 from elastalert.util import EAException
-from elastalert.config import import_rules
 
 test_config = {'rules_folder': 'test_folder',
                'run_every': {'minutes': 10},
@@ -40,6 +40,44 @@ test_rule = {'es_host': 'test_host',
              'email': 'test@test.test',
              'aggregation': {'hours': 2},
              'include': ['comparekey', '@timestamp']}
+
+test_metarule1 = {'es_host': 'test_host',
+                  'es_port': 12345,
+                  'type': 'spike',
+                  'spike_height': 2,
+                  'spike_type': 'up',
+                  'timeframe': {'minutes': 10},
+                  'index': 'test_index',
+                  'query_key': 'testkey',
+                  'compare_key': 'comparekey',
+                  'filter': [{'term': {'key': 'value'}}],
+                  'alert': 'email',
+                  'use_count_query': True,
+                  'doc_type': 'blsh',
+                  'email': 'test@test.test',
+                  'aggregation': {'hours': 2},
+                  'include': ['comparekey', '@timestamp'],
+                  'name': 'testrule for %expanded_value%',
+                  'expanded_list_value': ['some_value', 'another_value']}
+
+test_metarule2 = {'es_host': 'test_host',
+                  'es_port': 12345,
+                  'type': 'spike',
+                  'spike_height': 2,
+                  'spike_type': 'up',
+                  'timeframe': {'minutes': 10},
+                  'index': 'test_index',
+                  'query_key': 'testkey',
+                  'compare_key': 'comparekey',
+                  'filter': [{'term': {'key': 'value'}}],
+                  'alert': 'email',
+                  'use_count_query': True,
+                  'doc_type': 'blsh',
+                  'aggregation': {'hours': 2},
+                  'include': ['comparekey', '@timestamp'],
+                  'name': 'testrule for %expanded_value[0]% will be send to %expanded_value[1]%',
+                  'email': '%expanded_value[1]%',
+                  'expanded_list_value': [['some_value', 'some_person@acme.com'], ['another_value', 'another_person@acme.com']]}
 
 test_args = mock.Mock()
 test_args.config = 'test_config'
@@ -85,7 +123,7 @@ def test_import_import():
 
     with mock.patch('elastalert.config.yaml_loader') as mock_open:
         mock_open.side_effect = [import_rule, import_me]
-        rules = load_configuration('blah.yaml', test_config)
+        rules = load_configuration('blah.yaml', test_config)[0]
         assert mock_open.call_args_list[0][0] == ('blah.yaml',)
         assert mock_open.call_args_list[1][0] == ('importme.ymlt',)
         assert len(mock_open.call_args_list) == 2
@@ -111,7 +149,7 @@ def test_import_absolute_import():
 
     with mock.patch('elastalert.config.yaml_loader') as mock_open:
         mock_open.side_effect = [import_rule, import_me]
-        rules = load_configuration('blah.yaml', test_config)
+        rules = load_configuration('blah.yaml', test_config)[0]
         assert mock_open.call_args_list[0][0] == ('blah.yaml',)
         assert mock_open.call_args_list[1][0] == ('/importme.ymlt',)
         assert len(mock_open.call_args_list) == 2
@@ -136,7 +174,7 @@ def test_import_filter():
 
     with mock.patch('elastalert.config.yaml_loader') as mock_open:
         mock_open.side_effect = [import_rule, import_me]
-        rules = load_configuration('blah.yaml', test_config)
+        rules = load_configuration('blah.yaml', test_config)[0]
         assert rules['filter'] == [{'term': {'ratchet': 'clank'}}, {'term': {'key': 'value'}}]
 
 
@@ -183,6 +221,34 @@ def test_load_rules():
             # Assert include doesn't contain duplicates
             assert rules['rules'][0]['include'].count('@timestamp') == 1
             assert rules['rules'][0]['include'].count('comparekey') == 1
+
+
+def test_load_metarules1():
+    test_rule_copy = copy.deepcopy(test_metarule1)
+    test_config_copy = copy.deepcopy(test_config)
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [test_config_copy, test_rule_copy]
+
+        with mock.patch('os.listdir') as mock_ls:
+            mock_ls.return_value = ['testrule.yaml']
+            rules = load_rules(test_args)
+            assert 'testrule for some_value' in rules['rules'][0]['name']
+            assert 'testrule for another_value' in rules['rules'][1]['name']
+
+
+def test_load_metarules2():
+    test_rule_copy = copy.deepcopy(test_metarule2)
+    test_config_copy = copy.deepcopy(test_config)
+    with mock.patch('elastalert.config.yaml_loader') as mock_open:
+        mock_open.side_effect = [test_config_copy, test_rule_copy]
+
+        with mock.patch('os.listdir') as mock_ls:
+            mock_ls.return_value = ['testrule.yaml']
+            rules = load_rules(test_args)
+            assert 'testrule for some_value' in rules['rules'][0]['name']
+            assert 'testrule for another_value' in rules['rules'][1]['name']
+            assert 'some_person@acme.com' in rules['rules'][0]['email']
+            assert 'another_person@acme.com' in rules['rules'][1]['email']
 
 
 def test_load_default_host_port():

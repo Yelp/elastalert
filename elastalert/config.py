@@ -20,8 +20,8 @@ from util import dt_to_ts
 from util import dt_to_ts_with_format
 from util import dt_to_unix
 from util import dt_to_unixms
-from util import elastalert_logger
 from util import EAException
+from util import elastalert_logger
 from util import ts_to_dt
 from util import ts_to_dt_with_format
 from util import unix_to_dt
@@ -119,7 +119,7 @@ def load_configuration(filename, conf, args=None):
 
     :param filename: The name of a rule configuration file.
     :param conf: The global configuration dictionary, used for populating defaults.
-    :return: The rule configuration, a dictionary.
+    :return: The expanded rules configuration, a list of dictionaries.
     """
     try:
         rule = load_rule_yaml(filename)
@@ -129,9 +129,11 @@ def load_configuration(filename, conf, args=None):
             return False
         else:
             raise e
-    load_options(rule, conf, filename, args)
-    load_modules(rule, args)
-    return rule
+    expanded_rules = expand(rule)
+    for expanded_rule in expanded_rules:
+        load_options(expanded_rule, conf, filename, args)
+        load_modules(expanded_rule, args)
+    return expanded_rules
 
 
 def load_rule_yaml(filename):
@@ -449,6 +451,52 @@ def load_alerts(rule, alert_field):
     return alert_field
 
 
+def expand(rule):
+    expanded_rules = []
+    # Expand rule when needed
+    if 'expanded_list_value' in rule:
+        for i in range(len(rule['expanded_list_value'])):
+            rule_aux = copy.deepcopy(rule)
+            rule_aux['name'] = search_and_replace(rule_aux['name'], rule_aux['expanded_list_value'][i])
+
+            rule_aux = search_and_replace(rule_aux, rule_aux['expanded_list_value'][i])
+            del(rule_aux['expanded_list_value'])
+            expanded_rules.append(rule_aux)
+    else:
+        expanded_rules = [rule]
+
+    return expanded_rules
+
+
+def search_and_replace(current, value):
+    if (type(current) == dict):
+        result = {}
+        for key in current:
+            aux = search_and_replace(current[key], value)
+            result[key] = aux
+        return result
+    elif (type(current) == list):
+        result = []
+        for v in current:
+            aux = search_and_replace(v, value)
+            result.append(aux)
+        return result
+    elif (type(current) == int):
+        return current
+    elif (type(current) == bool):
+        return current
+    elif (type(current) == str):
+        if("%expanded_value[" in current):
+            for x in range(len(value)):
+                myExp = '%expanded_value[' + str(x) + ']%'
+                current = current.replace(myExp, value[x])
+
+        if("%expanded_value%" in current):
+            current = current.replace("%expanded_value%", value)
+
+        return current
+
+
 def load_rules(args):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
     config file and then each rule found in rules_folder.
@@ -502,21 +550,23 @@ def load_rules(args):
     rule_files = get_file_paths(conf, use_rule)
     for rule_file in rule_files:
         try:
-            rule = load_configuration(rule_file, conf, args)
-            # A rule failed to load, don't try to process it
-            if (not rule):
-                logging.error('Invalid rule file skipped: %s' % rule_file)
-                continue
-            # By setting "is_enabled: False" in rule file, a rule is easily disabled
-            if 'is_enabled' in rule and not rule['is_enabled']:
-                continue
-            if rule['name'] in names:
-                raise EAException('Duplicate rule named %s' % (rule['name']))
+            rules_aux = load_configuration(rule_file, conf, args)
+
+            for rule in rules_aux:
+                # A rule failed to load, don't try to process it
+                if (not rule):
+                    logging.error('Invalid rule file skipped: %s' % rule_file)
+                    continue
+                # By setting "is_enabled: False" in rule file, a rule is easily disabled
+                if 'is_enabled' in rule and not rule['is_enabled']:
+                    continue
+                if rule['name'] in names:
+                    raise EAException('Duplicate rule named %s' % (rule['name']))
+
+                rules.append(rule)
+                names.append(rule['name'])
         except EAException as e:
             raise EAException('Error loading file %s: %s' % (rule_file, e))
-
-        rules.append(rule)
-        names.append(rule['name'])
 
     conf['rules'] = rules
     return conf
