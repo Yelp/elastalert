@@ -4,7 +4,6 @@ import datetime
 import json
 import logging
 import os
-import re
 import subprocess
 import sys
 import time
@@ -2126,12 +2125,13 @@ class HiveAlerter(Alerter):
 
     def create_artifacts(self, match):
         artifacts = []
+        context = {'rule': self.rule, 'match': match}
         for mapping in self.rule.get('hive_observable_data_mapping', []):
             for observable_type, match_data_key in mapping.iteritems():
                 try:
-                    artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**{'rule': self.rule, 'match': match})))
+                    artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
                 except KeyError:
-                    raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, {'rule': self.rule, 'match': match}))
+                    raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
         return artifacts
 
     def create_alert_config(self, match):
