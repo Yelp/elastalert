@@ -63,13 +63,14 @@ class BasicMatchString(object):
         while self.text[-2:] != '\n\n':
             self.text += '\n'
 
-    def _add_custom_alert_text(self):
+    def _create_custom_alert_text(self, event=None, alert_text_key='alert_text'):
+        if event is None:
+            event = self.match
         missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
         alert_text = str(self.rule.get('alert_text', ''))
         if 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
             alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
-
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
@@ -81,7 +82,7 @@ class BasicMatchString(object):
 
             alert_text_values = [missing if val is None else val for val in alert_text_values]
             alert_text = alert_text.format(*alert_text_values)
-        elif 'alert_text_kw' in self.rule:
+        elif alert_text_key+'_kw' in self.rule:
             kw = {}
             for name, kw_name in list(self.rule.get('alert_text_kw').items()):
                 val = lookup_es_key(self.match, name)
@@ -94,8 +95,12 @@ class BasicMatchString(object):
 
                 kw[kw_name] = missing if val is None else val
             alert_text = alert_text.format(**kw)
+        else:
+            alert_text = alert_text.format(**event)
+        return alert_text
 
-        self.text += alert_text
+    def _add_custom_alert_text(self):
+        self.text += self._create_custom_alert_text()
 
     def _add_rule_text(self):
         self.text += self.rule['type'].get_match_str(self.match)
@@ -151,7 +156,25 @@ class BasicMatchString(object):
             if self.rule.get('top_count_keys'):
                 self._add_top_counts()
             if self.rule.get('alert_text_type') != 'exclude_fields':
-                self._add_match_items()
+                if 'related_events' in self.match:
+                    related_events = self.match['related_events']
+                    del self.match['related_events']
+                    alert_text_related_event_text = unicode(self.rule.get('alert_text_related_event_text', ''))
+                    if alert_text_related_event_text == '':
+                        self.text += '\n----------------------------------------\n'
+                        self._add_match_items()
+                    else:
+                        self.text += self._create_custom_alert_text(self.match, 'alert_text_related_event_text')
+
+                    for related_event in related_events:
+                        if alert_text_related_event_text == '':
+                            self.text += '\n----------------------------------------\n'
+                            self.match = related_event
+                            self._add_match_items()
+                        else:
+                            self.text += self._create_custom_alert_text(related_event, 'alert_text_related_event_text')
+                else:
+                    self._add_match_items()
         return self.text
 
 
