@@ -2216,6 +2216,9 @@ class HiveAlerter(Alerter):
             artifacts = []
             for match in matches:
                 artifacts += self.create_artifacts(match)
+                if 'related_events' in match:
+                    for related_event in match['related_events']:
+                        artifacts += self.create_artifacts(related_event)
 
             alert_config['artifacts'] = artifacts
             alert_config['title'] = self.create_title(matches)
