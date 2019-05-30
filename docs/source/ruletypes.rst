@@ -1998,6 +1998,8 @@ If the referenced key is not found in the match, it is replaced by the text indi
 
 ``alerta_value``: Defaults to "".
 
+``alerta_customer``: Defaults to rule's owner if defined otherwise None.
+
 The ``attributes`` dictionary is built by joining the lists from  ``alerta_attributes_keys`` and ``alerta_attributes_values``, considered in order.
 
 

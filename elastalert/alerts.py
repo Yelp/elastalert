@@ -1827,7 +1827,7 @@ class AlertaAlerter(Alerter):
     def __init__(self, rule):
         super(AlertaAlerter, self).__init__(rule)
 
-        # Setup defaul parameters
+        # Setup default parameters
         self.url = self.rule.get('alerta_api_url', None)
         self.api_key = self.rule.get('alerta_api_key', None)
         self.timeout = self.rule.get('alerta_timeout', 86400)
@@ -1851,6 +1851,7 @@ class AlertaAlerter(Alerter):
         self.attributes_keys = self.rule.get('alerta_attributes_keys', [])
         self.attributes_values = self.rule.get('alerta_attributes_values', [])
         self.value = self.rule.get('alerta_value', '')
+        self.customer = self.rule.get('alerta_customer') or self.rule.get('owner', None)
 
     def alert(self, matches):
         # Override the resource if requested
@@ -1922,6 +1923,7 @@ class AlertaAlerter(Alerter):
             'attributes': dict(zip(self.attributes_keys,
                                    [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values])),
             'rawData': self.create_alert_body([match]),
+            'customer': resolve_string(self.customer, match, self.missing_text),
         }
 
         try:

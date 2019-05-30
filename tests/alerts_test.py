@@ -2010,7 +2010,8 @@ def test_alerta_no_auth(ea):
         "group": "Health",
         "attributes": {"senderIP": "1.1.1.1", "hostname": "<MISSING VALUE>", "TimestampEvent": "<MISSING VALUE>"},
         "type": "elastalert",
-        "event": "ProbeUP"
+        "event": "ProbeUP",
+        "customer": ""
     }
 
     mock_post_request.assert_called_once_with(
@@ -2107,7 +2108,8 @@ def test_alerta_new_style(ea):
         "group": "Health",
         "attributes": {"senderIP": "1.1.1.1", "hostname": "aProbe", "TimestampEvent": "<MISSING VALUE>"},
         "type": "elastalert",
-        "event": "ProbeUP"
+        "event": "ProbeUP",
+        "customer": ""
     }
 
     mock_post_request.assert_called_once_with(
