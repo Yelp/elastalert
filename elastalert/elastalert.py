@@ -351,7 +351,8 @@ class ElastAlerter(object):
                     ignore_unavailable=True,
                     **extra_args
                 )
-                rule['scroll_id'] = res['_scroll_id']
+                if '_scroll_id' in res:
+                    rule['scroll_id'] = res['_scroll_id']
 
                 if self.current_es.is_atleastseven():
                     self.total_hits = int(res['hits']['total']['value'])
