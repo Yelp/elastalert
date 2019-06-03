@@ -351,6 +351,7 @@ class ElastAlerter(object):
                     ignore_unavailable=True,
                     **extra_args
                 )
+                rule['scroll_id'] = res['_scroll_id']
 
                 if self.current_es.is_atleastseven():
                     self.total_hits = int(res['hits']['total']['value'])
@@ -386,7 +387,6 @@ class ElastAlerter(object):
         )
         if self.total_hits > rule.get('max_query_size', self.max_query_size):
             elastalert_logger.info("%s (scrolling..)" % status_log)
-            rule['scroll_id'] = res['_scroll_id']
         else:
             elastalert_logger.info(status_log)
 
@@ -624,7 +624,8 @@ class ElastAlerter(object):
             pass
 
         if 'scroll_id' in rule:
-            rule.pop('scroll_id')
+            scroll_id = rule.pop('scroll_id')
+            self.current_es.clear_scroll(scroll_id=scroll_id)
 
         return True
 
