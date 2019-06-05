@@ -1536,7 +1536,7 @@ The OpsGenie alert requires one option:
 Optional:
 
 ``opsgenie_account``: The OpsGenie account to integrate with.
-
+``opsgenie_addr``: The OpsGenie URL to to connect against, default is ``https://api.opsgenie.com/v2/alerts``
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
 ``opsgenie_recipients_args``: Map of arguments used to format opsgenie_recipients.
 ``opsgenie_default_recipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful.
