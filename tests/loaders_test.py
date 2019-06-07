@@ -53,7 +53,7 @@ def test_import_rules():
         mock_open.return_value = test_rule_copy
 
         # Test that type is imported
-        with mock.patch('__builtin__.__import__') as mock_import:
+        with mock.patch('builtins.__import__') as mock_import:
             mock_import.return_value = elastalert.ruletypes
             rules_loader.load_configuration('test_config', test_config)
         assert mock_import.call_args_list[0][0][0] == 'testing.test'
@@ -63,7 +63,7 @@ def test_import_rules():
         test_rule_copy = copy.deepcopy(test_rule)
         mock_open.return_value = test_rule_copy
         test_rule_copy['alert'] = 'testing2.test2.Alerter'
-        with mock.patch('__builtin__.__import__') as mock_import:
+        with mock.patch('builtins.__import__') as mock_import:
             mock_import.return_value = elastalert.alerts
             rules_loader.load_configuration('test_config', test_config)
         assert mock_import.call_args_list[0][0][0] == 'testing2.test2'
@@ -212,8 +212,8 @@ def test_load_rules():
         with mock.patch('elastalert.loaders.yaml_loader') as mock_rule_open:
             mock_rule_open.return_value = test_rule_copy
 
-            with mock.patch('os.listdir') as mock_ls:
-                mock_ls.return_value = ['testrule.yaml']
+            with mock.patch('os.walk') as mock_ls:
+                mock_ls.return_value = [('', [], ['testrule.yaml'])]
                 rules = load_conf(test_args)
                 rules['rules'] = rules['rules_loader'].load(rules)
                 assert isinstance(rules['rules'][0]['type'], elastalert.ruletypes.RuleType)
@@ -238,8 +238,8 @@ def test_load_default_host_port():
         with mock.patch('elastalert.loaders.yaml_loader') as mock_rule_open:
             mock_rule_open.return_value = test_rule_copy
 
-            with mock.patch('os.listdir') as mock_ls:
-                mock_ls.return_value = ['testrule.yaml']
+            with mock.patch('os.walk') as mock_ls:
+                mock_ls.return_value = [('', [], ['testrule.yaml'])]
                 rules = load_conf(test_args)
                 rules['rules'] = rules['rules_loader'].load(rules)
 
@@ -325,7 +325,7 @@ def test_load_disabled_rules():
 def test_raises_on_missing_config():
     optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include', 'es_host', 'es_port', 'name')
     test_rule_copy = copy.deepcopy(test_rule)
-    for key in test_rule_copy.keys():
+    for key in list(test_rule_copy.keys()):
         test_rule_copy = copy.deepcopy(test_rule)
         test_config_copy = copy.deepcopy(test_config)
         test_rule_copy.pop(key)
@@ -338,12 +338,11 @@ def test_raises_on_missing_config():
             mock_conf_open.return_value = test_config_copy
             with mock.patch('elastalert.loaders.yaml_loader') as mock_rule_open:
                 mock_rule_open.return_value = test_rule_copy
-                with mock.patch('os.listdir') as mock_ls:
-                    mock_ls.return_value = ['testrule.yaml']
+                with mock.patch('os.walk') as mock_walk:
+                    mock_walk.return_value = [('', [], ['testrule.yaml'])]
                     with pytest.raises(EAException, message='key %s should be required' % key):
                         rules = load_conf(test_args)
                         rules['rules'] = rules['rules_loader'].load(rules)
-                        print(rules)
 
 
 def test_compound_query_key():

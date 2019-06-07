@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 import copy
 import logging
-from elasticsearch import Elasticsearch, RequestsHttpConnection
-from elasticsearch.client import query_params, _make_path
+
+from elasticsearch import Elasticsearch
+from elasticsearch import RequestsHttpConnection
+from elasticsearch.client import _make_path
+from elasticsearch.client import query_params
 
 
 class ElasticSearchClient(Elasticsearch):
@@ -59,14 +62,14 @@ class ElasticSearchClient(Elasticsearch):
         """
         Returns True when the Elasticsearch server version >= 6.2
         """
-        major, minor = map(int, self.es_version.split(".")[:2])
+        major, minor = list(map(int, self.es_version.split(".")[:2]))
         return major > 6 or (major == 6 and minor >= 2)
 
     def is_atleastsixsix(self):
         """
         Returns True when the Elasticsearch server version >= 6.6
         """
-        major, minor = map(int, self.es_version.split(".")[:2])
+        major, minor = list(map(int, self.es_version.split(".")[:2]))
         return major > 6 or (major == 6 and minor >= 6)
 
     def is_atleastseven(self):

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import contextlib
 import copy
 import datetime
 import json
@@ -40,7 +39,7 @@ def generate_hits(timestamps, **kwargs):
                 '_source': {'@timestamp': ts},
                 '_type': 'logs',
                 '_index': 'idx'}
-        for key, item in kwargs.iteritems():
+        for key, item in kwargs.items():
             data['_source'][key] = item
         # emulate process_hits(), add metadata to _source
         for field in ['_id', '_type', '_index']:
@@ -70,7 +69,7 @@ def test_init_rule(ea):
     # Simulate state of a rule just loaded from a file
     ea.rules[0]['minimum_starttime'] = datetime.datetime.now()
     new_rule = copy.copy(ea.rules[0])
-    map(new_rule.pop, ['agg_matches', 'current_aggregate_id', 'processed_hits', 'minimum_starttime'])
+    list(map(new_rule.pop, ['agg_matches', 'current_aggregate_id', 'processed_hits', 'minimum_starttime']))
 
     # Properties are copied from ea.rules[0]
     ea.rules[0]['starttime'] = '2014-01-02T00:11:22'
@@ -262,8 +261,8 @@ def test_run_rule_calls_garbage_collect(ea):
     end_time = '2014-09-26T12:00:00Z'
     ea.buffer_time = datetime.timedelta(hours=1)
     ea.run_every = datetime.timedelta(hours=1)
-    with contextlib.nested(mock.patch.object(ea.rules[0]['type'], 'garbage_collect'),
-                           mock.patch.object(ea, 'run_query')) as (mock_gc, mock_get_hits):
+    with mock.patch.object(ea.rules[0]['type'], 'garbage_collect') as mock_gc, \
+            mock.patch.object(ea, 'run_query'):
         ea.run_rule(ea.rules[0], ts_to_dt(end_time), ts_to_dt(start_time))
 
     # Running ElastAlert every hour for 12 hours, we should see self.garbage_collect called 12 times.
@@ -624,12 +623,12 @@ def test_silence(ea):
 def test_compound_query_key(ea):
     ea.rules[0]['query_key'] = 'this,that,those'
     ea.rules[0]['compound_query_key'] = ['this', 'that', 'those']
-    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP], this='abc', that=u'☃', those=4)
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP], this='abc', that='☃', those=4)
     ea.thread_data.current_es.search.return_value = hits
     ea.run_query(ea.rules[0], START, END)
     call_args = ea.rules[0]['type'].add_data.call_args_list[0]
     assert 'this,that,those' in call_args[0][0][0]
-    assert call_args[0][0][0]['this,that,those'] == u'abc, ☃, 4'
+    assert call_args[0][0][0]['this,that,those'] == 'abc, ☃, 4'
 
 
 def test_silence_query_key(ea):
@@ -754,7 +753,8 @@ def test_realert_with_nested_query_key(ea):
 def test_count(ea):
     ea.rules[0]['use_count_query'] = True
     ea.rules[0]['doc_type'] = 'doctype'
-    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+    with mock.patch('elastalert.elastalert.elasticsearch_client'), \
+            mock.patch.object(ea, 'get_hits_count') as mock_hits:
         ea.run_rule(ea.rules[0], END, START)
 
     # Assert that es.count is run against every run_every timeframe between START and END
@@ -766,8 +766,8 @@ def test_count(ea):
         end = start + ea.run_every
         query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['lte'] = dt_to_ts(end)
         query['query']['filtered']['filter']['bool']['must'][0]['range']['@timestamp']['gt'] = dt_to_ts(start)
+        mock_hits.assert_any_call(mock.ANY, start, end, mock.ANY)
         start = start + ea.run_every
-        ea.thread_data.current_es.count.assert_any_call(body=query, doc_type='doctype', index='idx', ignore_unavailable=True)
 
 
 def run_and_assert_segmented_queries(ea, start, end, segment_size):
@@ -910,7 +910,8 @@ def test_set_starttime(ea):
     assert ea.rules[0]['starttime'] == end - ea.run_every
 
     # Count query, with previous endtime
-    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+    with mock.patch('elastalert.elastalert.elasticsearch_client'), \
+            mock.patch.object(ea, 'get_hits_count'):
         ea.run_rule(ea.rules[0], END, START)
     ea.set_starttime(ea.rules[0], end)
     assert ea.rules[0]['starttime'] == END
@@ -977,7 +978,7 @@ def test_kibana_dashboard(ea):
         url = ea.use_kibana_link(ea.rules[0], match)
         db = json.loads(mock_es.index.call_args_list[-1][1]['body']['dashboard'])
         found_filters = 0
-        for filter_id, filter_dict in db['services']['filter']['list'].items():
+        for filter_id, filter_dict in list(db['services']['filter']['list'].items()):
             if (filter_dict['field'] == 'foo' and filter_dict['query'] == '"cat"') or \
                     (filter_dict['field'] == 'bar' and filter_dict['query'] == '"dog"'):
                 found_filters += 1
@@ -1113,7 +1114,7 @@ def test_exponential_realert(ea):
     for args in test_values:
         ea.silence_cache[ea.rules[0]['name']] = (args[1], args[2])
         next_alert, exponent = ea.next_alert_time(ea.rules[0], ea.rules[0]['name'], args[0])
-        assert exponent == next_res.next()
+        assert exponent == next(next_res)
 
 
 def test_wait_until_responsive(ea):

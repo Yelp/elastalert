@@ -6,24 +6,25 @@ import logging
 import os
 import sys
 
-import alerts
-import enhancements
 import jsonschema
-import ruletypes
 import yaml
 import yaml.scanner
-from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
-from util import get_module
-from util import dt_to_ts
-from util import dt_to_ts_with_format
-from util import dt_to_unix
-from util import dt_to_unixms
-from util import EAException
-from util import ts_to_dt
-from util import ts_to_dt_with_format
-from util import unix_to_dt
-from util import unixms_to_dt
+
+from . import alerts
+from . import enhancements
+from . import ruletypes
+from .opsgenie import OpsGenieAlerter
+from .util import dt_to_ts
+from .util import dt_to_ts_with_format
+from .util import dt_to_unix
+from .util import dt_to_unixms
+from .util import EAException
+from .util import get_module
+from .util import ts_to_dt
+from .util import ts_to_dt_with_format
+from .util import unix_to_dt
+from .util import unixms_to_dt
 
 
 class RulesLoader(object):
@@ -90,7 +91,7 @@ class RulesLoader(object):
     def __init__(self, conf):
         # schema for rule yaml
         self.rule_schema = jsonschema.Draft4Validator(
-            yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
+            yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml')), Loader=yaml.FullLoader))
 
         self.base_config = copy.deepcopy(conf)
 
@@ -260,7 +261,7 @@ class RulesLoader(object):
             raise EAException('Invalid time format used: %s' % e)
 
         # Set defaults, copy defaults from config.yaml
-        for key, val in self.base_config.items():
+        for key, val in list(self.base_config.items()):
             rule.setdefault(key, val)
         rule.setdefault('name', os.path.splitext(filename)[0])
         rule.setdefault('realert', datetime.timedelta(seconds=0))
@@ -317,8 +318,8 @@ class RulesLoader(object):
         rule.setdefault('hipchat_ignore_ssl_errors', False)
 
         # Make sure we have required options
-        if self.required_locals - frozenset(rule.keys()):
-            raise EAException('Missing required option(s): %s' % (', '.join(self.required_locals - frozenset(rule.keys()))))
+        if self.required_locals - frozenset(list(rule.keys())):
+            raise EAException('Missing required option(s): %s' % (', '.join(self.required_locals - frozenset(list(rule.keys())))))
 
         if 'include' in rule and type(rule['include']) != list:
             raise EAException('include option must be a list')
@@ -361,7 +362,7 @@ class RulesLoader(object):
                         es_filter = es_filter['not']
                     if 'query' in es_filter:
                         es_filter = es_filter['query']
-                    if es_filter.keys()[0] not in ('term', 'query_string', 'range'):
+                    if list(es_filter.keys())[0] not in ('term', 'query_string', 'range'):
                         raise EAException(
                             'generate_kibana_link is incompatible with filters other than term, query_string and range.'
                             'Consider creating a dashboard and using use_kibana_dashboard instead.')
@@ -414,13 +415,13 @@ class RulesLoader(object):
         # Make sure we have required alert and type options
         reqs = rule['type'].required_options
 
-        if reqs - frozenset(rule.keys()):
-            raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(rule.keys()))))
+        if reqs - frozenset(list(rule.keys())):
+            raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(list(rule.keys())))))
         # Instantiate rule
         try:
             rule['type'] = rule['type'](rule, args)
         except (KeyError, EAException) as e:
-            raise EAException('Error initializing rule %s: %s' % (rule['name'], e)), None, sys.exc_info()[2]
+            raise EAException('Error initializing rule %s: %s' % (rule['name'], e)).with_traceback(sys.exc_info()[2])
         # Instantiate alerts only if we're not in debug mode
         # In debug mode alerts are not actually sent so don't bother instantiating them
         if not args or not args.debug:
@@ -430,10 +431,10 @@ class RulesLoader(object):
         def normalize_config(alert):
             """Alert config entries are either "alertType" or {"alertType": {"key": "data"}}.
             This function normalizes them both to the latter format. """
-            if isinstance(alert, basestring):
+            if isinstance(alert, str):
                 return alert, rule
             elif isinstance(alert, dict):
-                name, config = iter(alert.items()).next()
+                name, config = next(iter(list(alert.items())))
                 config_copy = copy.copy(rule)
                 config_copy.update(config)  # warning, this (intentionally) mutates the rule dict
                 return name, config_copy
@@ -455,12 +456,12 @@ class RulesLoader(object):
                 alert_field = [alert_field]
 
             alert_field = [normalize_config(x) for x in alert_field]
-            alert_field = sorted(alert_field, key=lambda (a, b): self.alerts_order.get(a, 1))
+            alert_field = sorted(alert_field, key=lambda a_b: self.alerts_order.get(a_b[0], 1))
             # Convert all alerts into Alerter objects
             alert_field = [create_alert(a, b) for a, b in alert_field]
 
         except (KeyError, EAException) as e:
-            raise EAException('Error initiating alert %s: %s' % (rule['alert'], e)), None, sys.exc_info()[2]
+            raise EAException('Error initiating alert %s: %s' % (rule['alert'], e)).with_traceback(sys.exc_info()[2])
 
         return alert_field
 
@@ -530,7 +531,7 @@ class FileRulesLoader(RulesLoader):
     def get_rule_file_hash(self, rule_file):
         rule_file_hash = ''
         if os.path.exists(rule_file):
-            with open(rule_file) as fh:
+            with open(rule_file, 'rb') as fh:
                 rule_file_hash = hashlib.sha1(fh.read()).digest()
             for import_rule_file in self.import_rules.get(rule_file, []):
                 rule_file_hash += self.get_rule_file_hash(import_rule_file)

@@ -18,37 +18,38 @@ from smtplib import SMTPException
 from socket import error
 
 import dateutil.tz
-import kibana
 import pytz
-from alerts import DebugAlerter
 from apscheduler.schedulers.background import BackgroundScheduler
-from config import load_conf
 from croniter import croniter
 from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.exceptions import TransportError
-from enhancements import DropMatchException
-from ruletypes import FlatlineRule
-from util import add_raw_postfix
-from util import cronite_datetime_to_timestamp
-from util import dt_to_ts
-from util import dt_to_unix
-from util import EAException
-from util import elastalert_logger
-from util import elasticsearch_client
-from util import format_index
-from util import lookup_es_key
-from util import parse_deadline
-from util import parse_duration
-from util import pretty_ts
-from util import replace_dots_in_field_names
-from util import seconds
-from util import set_es_key
-from util import total_seconds
-from util import ts_add
-from util import ts_now
-from util import ts_to_dt
-from util import unix_to_dt
+
+from . import kibana
+from .alerts import DebugAlerter
+from .config import load_conf
+from .enhancements import DropMatchException
+from .ruletypes import FlatlineRule
+from .util import add_raw_postfix
+from .util import cronite_datetime_to_timestamp
+from .util import dt_to_ts
+from .util import dt_to_unix
+from .util import EAException
+from .util import elastalert_logger
+from .util import elasticsearch_client
+from .util import format_index
+from .util import lookup_es_key
+from .util import parse_deadline
+from .util import parse_duration
+from .util import pretty_ts
+from .util import replace_dots_in_field_names
+from .util import seconds
+from .util import set_es_key
+from .util import total_seconds
+from .util import ts_add
+from .util import ts_now
+from .util import ts_to_dt
+from .util import unix_to_dt
 
 
 class ElastAlerter(object):
@@ -134,7 +135,7 @@ class ElastAlerter(object):
         self.rules_loader = self.conf['rules_loader']
         self.rules = self.rules_loader.load(self.conf, self.args)
 
-        print len(self.rules), 'rules loaded'
+        print(len(self.rules), 'rules loaded')
 
         self.max_query_size = self.conf['max_query_size']
         self.scroll_keepalive = self.conf['scroll_keepalive']
@@ -166,7 +167,7 @@ class ElastAlerter(object):
         for rule in self.rules:
             if not self.init_rule(rule):
                 remove.append(rule)
-        map(self.rules.remove, remove)
+        list(map(self.rules.remove, remove))
 
         if self.args.silence:
             self.silence()
@@ -306,7 +307,7 @@ class ElastAlerter(object):
         for hit in hits:
             # Merge fields and _source
             hit.setdefault('_source', {})
-            for key, value in hit.get('fields', {}).items():
+            for key, value in list(hit.get('fields', {}).items()):
                 # Fields are returned as lists, assume any with length 1 are not arrays in _source
                 # Except sometimes they aren't lists. This is dependent on ES version
                 hit['_source'].setdefault(key, value[0] if type(value) is list and len(value) == 1 else value)
@@ -328,11 +329,11 @@ class ElastAlerter(object):
 
             if rule.get('compound_query_key'):
                 values = [lookup_es_key(hit['_source'], key) for key in rule['compound_query_key']]
-                hit['_source'][rule['query_key']] = ', '.join([unicode(value) for value in values])
+                hit['_source'][rule['query_key']] = ', '.join([str(value) for value in values])
 
             if rule.get('compound_aggregation_key'):
                 values = [lookup_es_key(hit['_source'], key) for key in rule['compound_aggregation_key']]
-                hit['_source'][rule['aggregation_key']] = ', '.join([unicode(value) for value in values])
+                hit['_source'][rule['aggregation_key']] = ', '.join([str(value) for value in values])
 
             processed_hits.append(hit['_source'])
 
@@ -595,10 +596,10 @@ class ElastAlerter(object):
         buffer_time = rule.get('buffer_time', self.buffer_time)
         if rule.get('query_delay'):
             buffer_time += rule['query_delay']
-        for _id, timestamp in rule['processed_hits'].iteritems():
+        for _id, timestamp in rule['processed_hits'].items():
             if now - timestamp > buffer_time:
                 remove.append(_id)
-        map(rule['processed_hits'].pop, remove)
+        list(map(rule['processed_hits'].pop, remove))
 
     def run_query(self, rule, start=None, end=None, scroll=False):
         """ Query for the rule and pass all of the results to the RuleType instance.
@@ -772,7 +773,7 @@ class ElastAlerter(object):
         # get the value for the match's query_key (or none) to form the key used for the silence_cache.
         # Flatline ruletype sets "key" instead of the actual query_key
         if isinstance(rule['type'], FlatlineRule) and 'key' in match:
-            return unicode(match['key'])
+            return str(match['key'])
         return self.get_named_key_value(rule, match, 'query_key')
 
     def get_aggregation_key_value(self, rule, match):
@@ -787,7 +788,7 @@ class ElastAlerter(object):
                 if key_value is not None:
                     # Only do the unicode conversion if we actually found something)
                     # otherwise we might transform None --> 'None'
-                    key_value = unicode(key_value)
+                    key_value = str(key_value)
             except KeyError:
                 # Some matches may not have the specified key
                 # use a special token for these
@@ -1051,7 +1052,7 @@ class ElastAlerter(object):
         new_rule_hashes = self.rules_loader.get_hashes(self.conf, self.args.rule)
 
         # Check each current rule for changes
-        for rule_file, hash_value in self.rule_hashes.iteritems():
+        for rule_file, hash_value in self.rule_hashes.items():
             if rule_file not in new_rule_hashes:
                 # Rule file was deleted
                 elastalert_logger.info('Rule file %s not found, stopping rule execution' % (rule_file))
@@ -1227,7 +1228,7 @@ class ElastAlerter(object):
         if rule.get('limit_execution'):
             rule['next_starttime'] = None
             rule['next_min_starttime'] = None
-            exec_next = croniter(rule['limit_execution']).next()
+            exec_next = next(croniter(rule['limit_execution']))
             endtime_epoch = dt_to_unix(endtime)
             # If the estimated next endtime (end + run_every) isn't at least a minute past the next exec time
             # That means that we need to pause execution after this run
@@ -1383,7 +1384,7 @@ class ElastAlerter(object):
             # TODO use doc_type = _doc
             res = es.deprecated_search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
         except ElasticsearchException as e:
-            raise EAException("Error querying for dashboard: %s" % (e)), None, sys.exc_info()[2]
+            raise EAException("Error querying for dashboard: %s" % (e)).with_traceback(sys.exc_info()[2])
 
         if res['hits']['hits']:
             return json.loads(res['hits']['hits'][0]['_source']['dashboard'])
@@ -1485,7 +1486,7 @@ class ElastAlerter(object):
                     try:
                         enhancement.process(match)
                         valid_matches.append(match)
-                    except DropMatchException as e:
+                    except DropMatchException:
                         pass
                     except EAException as e:
                         self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
@@ -1560,7 +1561,7 @@ class ElastAlerter(object):
         else:
             writeback_body = body
 
-        for key in writeback_body.keys():
+        for key in list(writeback_body.keys()):
             # Convert any datetime objects to timestamps
             if isinstance(writeback_body[key], datetime.datetime):
                 writeback_body[key] = dt_to_ts(writeback_body[key])
@@ -1649,7 +1650,7 @@ class ElastAlerter(object):
                     self.alert([match_body], rule, alert_time=alert_time, retried=retried)
 
                 if rule['current_aggregate_id']:
-                    for qk, agg_id in rule['current_aggregate_id'].iteritems():
+                    for qk, agg_id in rule['current_aggregate_id'].items():
                         if agg_id == _id:
                             rule['current_aggregate_id'].pop(qk)
                             break
@@ -1666,7 +1667,7 @@ class ElastAlerter(object):
         # Send in memory aggregated alerts
         for rule in self.rules:
             if rule['agg_matches']:
-                for aggregation_key_value, aggregate_alert_time in rule['aggregate_alert_time'].iteritems():
+                for aggregation_key_value, aggregate_alert_time in rule['aggregate_alert_time'].items():
                     if ts_now() > aggregate_alert_time:
                         alertable_matches = [
                             agg_match
@@ -1877,7 +1878,7 @@ class ElastAlerter(object):
         if res['hits']['hits']:
             until_ts = res['hits']['hits'][0]['_source']['until']
             exponent = res['hits']['hits'][0]['_source'].get('exponent', 0)
-            if rule_name not in self.silence_cache.keys():
+            if rule_name not in list(self.silence_cache.keys()):
                 self.silence_cache[rule_name] = (ts_to_dt(until_ts), exponent)
             else:
                 self.silence_cache[rule_name] = (ts_to_dt(until_ts), self.silence_cache[rule_name][1])
@@ -1925,13 +1926,13 @@ class ElastAlerter(object):
             tb = traceback.format_exc()
             email_body += tb
 
-        if isinstance(self.notify_email, basestring):
+        if isinstance(self.notify_email, str):
             self.notify_email = [self.notify_email]
         email = MIMEText(email_body)
         email['Subject'] = subject if subject else 'ElastAlert notification'
         recipients = self.notify_email
         if rule and rule.get('notify_email'):
-            if isinstance(rule['notify_email'], basestring):
+            if isinstance(rule['notify_email'], str):
                 rule['notify_email'] = [rule['notify_email']]
             recipients = recipients + rule['notify_email']
         recipients = list(set(recipients))
@@ -1958,14 +1959,14 @@ class ElastAlerter(object):
             if hits_terms is None:
                 top_events_count = {}
             else:
-                buckets = hits_terms.values()[0]
+                buckets = list(hits_terms.values())[0]
 
                 # get_hits_terms adds to num_hits, but we don't want to count these
                 self.thread_data.num_hits -= len(buckets)
                 terms = {}
                 for bucket in buckets:
                     terms[bucket['key']] = bucket['doc_count']
-                counts = terms.items()
+                counts = list(terms.items())
                 counts.sort(key=lambda x: x[1], reverse=True)
                 top_events_count = dict(counts[:number])
 
