@@ -3,6 +3,7 @@ import collections
 import datetime
 import logging
 import os
+import re
 import sys
 
 import dateutil.parser
@@ -75,27 +76,45 @@ def _find_es_dict_by_key(lookup_dict, term):
     # For example:
     #  {'foo.bar': {'bar': 'ray'}} to look up foo.bar will return {'bar': 'ray'}, not 'ray'
     dict_cursor = lookup_dict
-    subkeys = term.split('.')
-    subkey = ''
 
-    while len(subkeys) > 0:
-        if not dict_cursor:
-            return {}, None
-
-        subkey += subkeys.pop(0)
-
-        if subkey in dict_cursor:
-            if len(subkeys) == 0:
-                break
-
-            dict_cursor = dict_cursor[subkey]
-            subkey = ''
-        elif len(subkeys) == 0:
-            # If there are no keys left to match, return None values
-            dict_cursor = None
-            subkey = None
+    while term:
+        split_results = re.split(r'\[(\d)\]', term, maxsplit=1)
+        if len(split_results) == 3:
+            sub_term, index, term = split_results
+            index = int(index)
         else:
-            subkey += '.'
+            sub_term, index, term = split_results + [None, '']
+
+        subkeys = sub_term.split('.')
+
+        subkey = ''
+
+        while len(subkeys) > 0:
+            if not dict_cursor:
+                return {}, None
+
+            subkey += subkeys.pop(0)
+
+            if subkey in dict_cursor:
+                if len(subkeys) == 0:
+                    break
+                dict_cursor = dict_cursor[subkey]
+                subkey = ''
+            elif len(subkeys) == 0:
+                # If there are no keys left to match, return None values
+                dict_cursor = None
+                subkey = None
+            else:
+                subkey += '.'
+
+        if index is not None and subkey:
+            dict_cursor = dict_cursor[subkey]
+            if type(dict_cursor) == list and len(dict_cursor) > index:
+                subkey = index
+                if term:
+                    dict_cursor = dict_cursor[subkey]
+            else:
+                return {}, None
 
     return dict_cursor, subkey
 

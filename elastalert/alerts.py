@@ -488,7 +488,7 @@ class EmailAlerter(Alerter):
         except SMTPAuthenticationError as e:
             raise EAException("SMTP username/password rejected: %s" % (e))
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
-        self.smtp.close()
+        self.smtp.quit()
 
         elastalert_logger.info("Sent email to %s" % (to_addr))
 
@@ -1386,6 +1386,9 @@ class PagerDutyAlerter(Alerter):
                     },
                 },
             }
+            match_timestamp = lookup_es_key(matches[0], self.rule.get('timestamp_field', '@timestamp'))
+            if match_timestamp:
+                payload['payload']['timestamp'] = match_timestamp
         else:
             payload = {
                 'service_key': self.pagerduty_service_key,
