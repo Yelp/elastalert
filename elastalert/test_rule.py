@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import print_function
-
 import argparse
 import copy
 import datetime
@@ -125,7 +122,7 @@ class MockElastAlerter(object):
         if args.formatted_output:
             self.formatted_output['hits'] = num_hits
             self.formatted_output['days'] = args.days
-            self.formatted_output['terms'] = terms.keys()
+            self.formatted_output['terms'] = list(terms.keys())
             self.formatted_output['result'] = terms
         else:
             print("Got %s hits from the last %s day%s" % (num_hits, args.days, 's' if args.days > 1 else ''))
@@ -191,7 +188,7 @@ class MockElastAlerter(object):
                 if field != '_id':
                     if not any([re.match(incl.replace('*', '.*'), field) for incl in rule['include']]):
                         fields_to_remove.append(field)
-            map(doc.pop, fields_to_remove)
+            list(map(doc.pop, fields_to_remove))
 
         # Separate _source and _id, convert timestamps
         resp = [{'_source': doc, '_id': doc['_id']} for doc in docs]
@@ -211,7 +208,7 @@ class MockElastAlerter(object):
                 if qk is None or doc[rule['query_key']] == qk:
                     buckets.setdefault(doc[key], 0)
                     buckets[doc[key]] += 1
-        counts = buckets.items()
+        counts = list(buckets.items())
         counts.sort(key=lambda x: x[1], reverse=True)
         if size:
             counts = counts[:size]

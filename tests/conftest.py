@@ -242,7 +242,7 @@ def ea_sixsix():
 def environ():
     """py.test fixture to get a fresh mutable environment."""
     old_env = os.environ
-    new_env = dict(old_env.items())
+    new_env = dict(list(old_env.items()))
     os.environ = new_env
     yield os.environ
     os.environ = old_env

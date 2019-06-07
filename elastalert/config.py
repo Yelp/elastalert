@@ -6,16 +6,13 @@ import logging.config
 import os
 import sys
 
-import loaders
 from envparse import Env
 from staticconf.loader import yaml_loader
-from util import dt_to_ts
-from util import dt_to_ts_with_format
-from util import dt_to_unix
-from util import dt_to_unixms
-from util import elastalert_logger
-from util import EAException
-from util import get_module
+
+from . import loaders
+from .util import EAException
+from .util import elastalert_logger
+from .util import get_module
 
 # schema for rule yaml
 rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml')), Loader=yaml.FullLoader))
@@ -54,21 +51,21 @@ def load_conf(args, defaults=None, overwrites=None):
     # init logging from config and set log levels according to command line options
     configure_logging(args, conf)
 
-    for env_var, conf_var in env_settings.items():
+    for env_var, conf_var in list(env_settings.items()):
         val = env(env_var, None)
         if val is not None:
             conf[conf_var] = val
 
-    for key, value in (defaults.iteritems() if defaults is not None else []):
+    for key, value in (iter(defaults.items()) if defaults is not None else []):
         if key not in conf:
             conf[key] = value
 
-    for key, value in (overwrites.iteritems() if overwrites is not None else []):
+    for key, value in (iter(overwrites.items()) if overwrites is not None else []):
         conf[key] = value
 
     # Make sure we have all required globals
-    if required_globals - frozenset(conf.keys()):
-        raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(conf.keys()))))
+    if required_globals - frozenset(list(conf.keys())):
+        raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(list(conf.keys())))))
 
     conf.setdefault('writeback_alias', 'elastalert_alerts')
     conf.setdefault('max_query_size', 10000)
@@ -99,8 +96,8 @@ def load_conf(args, defaults=None, overwrites=None):
     conf['rules_loader'] = rules_loader
     # Make sure we have all the required globals for the loader
     # Make sure we have all required globals
-    if rules_loader.required_globals - frozenset(conf.keys()):
+    if rules_loader.required_globals - frozenset(list(conf.keys())):
         raise EAException(
-            '%s must contain %s' % (filename, ', '.join(rules_loader.required_globals - frozenset(conf.keys()))))
+            '%s must contain %s' % (filename, ', '.join(rules_loader.required_globals - frozenset(list(conf.keys())))))
 
     return conf
