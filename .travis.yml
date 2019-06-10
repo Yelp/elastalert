@@ -1,9 +1,9 @@
 language: python
 python:
-- '2.7'
+- '3.6'
 env:
 - TOXENV=docs
-- TOXENV=py27
+- TOXENV=py36
 install:
 - pip install tox
 - >
@@ -19,16 +19,16 @@ script:
     make test-elasticsearch
   else
     make test
-  fi  
+  fi
 jobs:
   include:
     - stage: 'Elasticsearch test'
-      env: TOXENV=py27 ES_VERSION=7.0.0-linux-x86_64
-    - env: TOXENV=py27 ES_VERSION=6.6.2
-    - env: TOXENV=py27 ES_VERSION=6.3.2
-    - env: TOXENV=py27 ES_VERSION=6.2.4
-    - env: TOXENV=py27 ES_VERSION=6.0.1
-    - env: TOXENV=py27 ES_VERSION=5.6.16
+      env: TOXENV=py36 ES_VERSION=7.0.0-linux-x86_64
+    - env: TOXENV=py36 ES_VERSION=6.6.2
+    - env: TOXENV=py36 ES_VERSION=6.3.2
+    - env: TOXENV=py36 ES_VERSION=6.2.4
+    - env: TOXENV=py36 ES_VERSION=6.0.1
+    - env: TOXENV=py36 ES_VERSION=5.6.16
 
 deploy:
   provider: pypi
