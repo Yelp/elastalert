@@ -1601,14 +1601,14 @@ class TelegramAlerter(Alerter):
         self.telegram_proxy_password = self.rule.get('telegram_proxy_pass', None)
 
     def alert(self, matches):
-        body = u'⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
+        body = u'⚠ %s ⚠ ```\n' % (self.create_title(matches))
         for match in matches:
             body += unicode(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
         if len(body) > 4095:
-            body = body[0:4000] + u"\n⚠ *message was cropped according to telegram limits!* ⚠"
+            body = body[0:4000] + u"\n⚠ message was cropped according to telegram limits! ⚠"
         body += u' ```'
 
         headers = {'content-type': 'application/json'}
@@ -1618,7 +1618,6 @@ class TelegramAlerter(Alerter):
         payload = {
             'chat_id': self.telegram_room_id,
             'text': body,
-            'parse_mode': 'markdown',
             'disable_web_page_preview': True
         }
 
