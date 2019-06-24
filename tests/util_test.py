@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 from datetime import timedelta
+from timezones import timezones
 
 import mock
 import pytest
 from dateutil.parser import parse as dt
 
 from elastalert.util import add_raw_postfix
+from elastalert.util import dt_to_ts
 from elastalert.util import format_index
 from elastalert.util import lookup_es_key
 from elastalert.util import parse_deadline
@@ -15,6 +17,15 @@ from elastalert.util import replace_dots_in_field_names
 from elastalert.util import resolve_string
 from elastalert.util import set_es_key
 from elastalert.util import should_scrolling_continue
+
+
+@pytest.mark.parametrize('spec, expected_ts', [
+    (datetime(2019, 6, 24, 11, 24, 45, 000, timezones.UTC), '2019-06-24T11:24:45.000Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 987, timezones.UTC), '2019-06-24T11:24:45.987Z'),
+])
+def test_parse_duration(spec, expected_ts):
+    """``datetime`` specs can be translated into ``time string`` instances."""
+    assert dt_to_ts(spec) == expected_ts
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
