@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 from datetime import timedelta
-from timezones import timezones
+import timezones
 
 import mock
 import pytest
