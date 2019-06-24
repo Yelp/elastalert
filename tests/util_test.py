@@ -22,6 +22,8 @@ from elastalert.util import should_scrolling_continue
 @pytest.mark.parametrize('spec, expected_ts', [
     (datetime(2019, 6, 24, 11, 24, 45, 000, tzinfo=utc), '2019-06-24T11:24:45.000000Z'),
     (datetime(2019, 6, 24, 11, 24, 45, 987, tzinfo=utc), '2019-06-24T11:24:45.000987Z'),
+	(datetime(2019, 6, 24, 11, 24, 45, 000, tzinfo=None), '2019-06-24T11:24:45.000000Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 987, tzinfo=None), '2019-06-24T11:24:45.000987Z'),
 ])
 def test_dt_to_ts(spec, expected_ts):
     """``datetime`` specs can be translated into ``time string`` instances."""
