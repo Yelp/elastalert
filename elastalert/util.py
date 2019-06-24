@@ -138,8 +138,22 @@ def dt_to_ts(dt):
     if not isinstance(dt, datetime.datetime):
         logging.warning('Expected datetime, got %s' % (type(dt)))
         return dt
-    ts = dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    return ts
+    ts = dt.isoformat()
+
+    if dt.tzinfo is None:
+
+        # isoformat truncates microsecond if 0
+        if dt.microsecond == 0:
+            ts = ts + '.000000'
+
+        # Implicitly convert local times to UTC
+        return ts + 'Z'
+
+    if dt.microsecond == 0:
+        ts = ts.replace('+', '.000000+')
+
+    # Convert 0 offset to UTC
+    return replace('+00:00', 'Z')
 
 
 def ts_to_dt_with_format(timestamp, ts_format):

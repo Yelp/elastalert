@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 from datetime import timedelta
+from pytz import FixedOffset
+from pytz import timezone
 from pytz import utc
 
 import mock
@@ -20,10 +22,12 @@ from elastalert.util import should_scrolling_continue
 
 
 @pytest.mark.parametrize('spec, expected_ts', [
+    (datetime(2019, 6, 24, 11, 24, 45, 000, tzinfo=None), '2019-06-24T11:24:45.000000Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 987, tzinfo=None), '2019-06-24T11:24:45.000987Z'),
     (datetime(2019, 6, 24, 11, 24, 45, 000, tzinfo=utc), '2019-06-24T11:24:45.000000Z'),
     (datetime(2019, 6, 24, 11, 24, 45, 987, tzinfo=utc), '2019-06-24T11:24:45.000987Z'),
-	(datetime(2019, 6, 24, 11, 24, 45, 000, tzinfo=None), '2019-06-24T11:24:45.000000Z'),
-    (datetime(2019, 6, 24, 11, 24, 45, 987, tzinfo=None), '2019-06-24T11:24:45.000987Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 000, tzinfo=FixedOffset(60)), '2019-06-24T11:24:45.000000+01:00'),
+    (datetime(2019, 6, 24, 11, 24, 45, 987, tzinfo=FixedOffset(60)), '2019-06-24T11:24:45.000987+01:00'),
 ])
 def test_dt_to_ts(spec, expected_ts):
     """``datetime`` specs can be translated into ``time string`` instances."""
