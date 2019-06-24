@@ -153,7 +153,7 @@ def dt_to_ts(dt):
         ts = ts.replace('+', '.000000+')
 
     # Convert 0 offset to UTC
-    return replace('+00:00', 'Z')
+    return ts.replace('+00:00', 'Z')
 
 
 def ts_to_dt_with_format(timestamp, ts_format):
