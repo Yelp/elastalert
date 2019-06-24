@@ -141,6 +141,10 @@ def dt_to_ts(dt):
     ts = dt.isoformat()
     # Round microseconds to milliseconds
     if dt.tzinfo is None:
+
+        if dt.milliseconds == 0:
+            ts = ts '.00000'
+
         # Implicitly convert local times to UTC
         return ts + 'Z'
     # isoformat() uses microsecond accuracy and timezone offsets
