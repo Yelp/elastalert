@@ -149,7 +149,7 @@ def dt_to_ts(dt):
         return ts + 'Z'
     # isoformat() uses microsecond accuracy and timezone offsets
     # but we should try to use millisecond accuracy and Z to indicate UTC
-    return ts.replace('000+00:00', 'Z').replace('+00:00', 'Z')
+    return ts
 
 
 def ts_to_dt_with_format(timestamp, ts_format):
