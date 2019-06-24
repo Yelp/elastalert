@@ -2,6 +2,7 @@
 from datetime import datetime
 from datetime import timedelta
 from pytz import timezone
+import pytz
 
 import mock
 import pytest
