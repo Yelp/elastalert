@@ -24,7 +24,7 @@ from elastalert.util import should_scrolling_continue
     (datetime(2019, 6, 24, 11, 24, 45, 000, tzinfo=pytz.utc), '2019-06-24T11:24:45.000Z'),
     (datetime(2019, 6, 24, 11, 24, 45, 987, tzinfo=pytz.utc), '2019-06-24T11:24:45.987Z'),
 ])
-def test_parse_duration(spec, expected_ts):
+def test_dt_to_ts(spec, expected_ts):
     """``datetime`` specs can be translated into ``time string`` instances."""
     assert dt_to_ts(spec) == expected_ts
 
