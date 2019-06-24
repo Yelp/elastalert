@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 from datetime import timedelta
-import timezones
 
 import mock
 import pytest
@@ -20,8 +19,8 @@ from elastalert.util import should_scrolling_continue
 
 
 @pytest.mark.parametrize('spec, expected_ts', [
-    (datetime(2019, 6, 24, 11, 24, 45, 000, timezones.UTC), '2019-06-24T11:24:45.000Z'),
-    (datetime(2019, 6, 24, 11, 24, 45, 987, timezones.UTC), '2019-06-24T11:24:45.987Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 000, datetime.timezone.utc), '2019-06-24T11:24:45.000Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 987, datetime.timezone.utc), '2019-06-24T11:24:45.987Z'),
 ])
 def test_parse_duration(spec, expected_ts):
     """``datetime`` specs can be translated into ``time string`` instances."""
