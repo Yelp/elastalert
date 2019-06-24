@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 from datetime import timedelta
+from pytz import FixedOffset
+from pytz import utc
 
 import mock
 import pytest
 from dateutil.parser import parse as dt
 
 from elastalert.util import add_raw_postfix
+from elastalert.util import dt_to_iso_microseconds
 from elastalert.util import format_index
 from elastalert.util import lookup_es_key
 from elastalert.util import parse_deadline
@@ -15,6 +18,22 @@ from elastalert.util import replace_dots_in_field_names
 from elastalert.util import resolve_string
 from elastalert.util import set_es_key
 from elastalert.util import should_scrolling_continue
+
+
+@pytest.mark.parametrize('spec, expected_ts', [
+    (datetime(2019, 6, 24, 11, 24, 45, 000, tzinfo=None), '2019-06-24T11:24:45.000000Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 987, tzinfo=None), '2019-06-24T11:24:45.000987Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 987000, tzinfo=None), '2019-06-24T11:24:45.987000Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 000, tzinfo=utc), '2019-06-24T11:24:45.000000Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 987, tzinfo=utc), '2019-06-24T11:24:45.000987Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 987000, tzinfo=utc), '2019-06-24T11:24:45.987000Z'),
+    (datetime(2019, 6, 24, 11, 24, 45, 000, tzinfo=FixedOffset(60)), '2019-06-24T11:24:45.000000+01:00'),
+    (datetime(2019, 6, 24, 11, 24, 45, 987, tzinfo=FixedOffset(60)), '2019-06-24T11:24:45.000987+01:00'),
+    (datetime(2019, 6, 24, 11, 24, 45, 987000, tzinfo=FixedOffset(60)), '2019-06-24T11:24:45.987000+01:00'),
+])
+def test_dt_to_iso_microseconds(spec, expected_ts):
+    """``datetime`` specs can be translated into iso microseconds time strings."""
+    assert dt_to_iso_microseconds(spec) == expected_ts
 
 
 @pytest.mark.parametrize('spec, expected_delta', [

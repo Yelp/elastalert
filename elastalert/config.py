@@ -16,6 +16,7 @@ import yaml.scanner
 from envparse import Env
 from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
+from util import dt_to_iso_microseconds
 from util import dt_to_ts
 from util import dt_to_ts_with_format
 from util import dt_to_unix
@@ -235,6 +236,9 @@ def load_options(rule, conf, filename, args=None):
     if rule['timestamp_type'] == 'iso':
         rule['ts_to_dt'] = ts_to_dt
         rule['dt_to_ts'] = dt_to_ts
+    elif rule['timestamp_type'] == 'iso_us':
+        rule['ts_to_dt'] = ts_to_dt
+        rule['dt_to_ts'] = dt_to_iso_microseconds
     elif rule['timestamp_type'] == 'unix':
         rule['ts_to_dt'] = unix_to_dt
         rule['dt_to_ts'] = dt_to_unix

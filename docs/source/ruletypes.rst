@@ -556,10 +556,11 @@ summary_table_fields
 timestamp_type
 ^^^^^^^^^^^^^^
 
-``timestamp_type``: One of ``iso``, ``unix``, ``unix_ms``, ``custom``. This option will set the type of ``@timestamp`` (or ``timestamp_field``)
-used to query Elasticsearch. ``iso`` will use ISO8601 timestamps, which will work with most Elasticsearch date type field. ``unix`` will
-query using an integer unix (seconds since 1/1/1970) timestamp. ``unix_ms`` will use milliseconds unix timestamp. ``custom`` allows you to define
-your own ``timestamp_format``. The default is ``iso``.
+``timestamp_type``: One of ``iso``, ``iso_us``, ``unix``, ``unix_ms``, ``custom``. This option will set the type of ``@timestamp`` (or ``timestamp_field``)
+used to query Elasticsearch. ``iso`` will use ISO8601 timestamps, which will work with most Elasticsearch date type field. ``iso_us`` will use ISO8601
+timestamps with microsecond precission, which will work with strict_date_time Elasticsearch date type field. ``unix`` will query using an integer unix
+(seconds since 1/1/1970) timestamp. ``unix_ms`` will use milliseconds unix timestamp. ``custom`` allows you to define your own ``timestamp_format``.
+The default is ``iso``.
 (Optional, string enum, default iso).
 
 timestamp_format

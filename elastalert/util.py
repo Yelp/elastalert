@@ -148,6 +148,21 @@ def dt_to_ts(dt):
     return ts.replace('000+00:00', 'Z').replace('+00:00', 'Z')
 
 
+def dt_to_iso_microseconds(dt):
+    ts = dt.isoformat()
+    if dt.tzinfo is None:
+        # isoformat omits microseconds if 0
+        if dt.microsecond == 0:
+            ts = ts + '.000000'
+        # implicitly convert to UTC
+        return ts + 'Z'
+    # isoformat omits microseconds if 0
+    if dt.microsecond == 0:
+        ts = ts.replace('+', '.000000+')
+    # convert 0 offset to UTC
+    return ts.replace('+00:00', 'Z')
+
+
 def ts_to_dt_with_format(timestamp, ts_format):
     if isinstance(timestamp, datetime.datetime):
         return timestamp
