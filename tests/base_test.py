@@ -23,7 +23,7 @@ from elastalert.util import ts_to_dt
 from elastalert.util import unix_to_dt
 
 START_TIMESTAMP = '2014-09-26T12:34:45.000000Z'
-END_TIMESTAMP = '2014-09-27T12:34:45.123456Z'
+END_TIMESTAMP = '2014-09-27T12:34:45.000000Z'
 START = ts_to_dt(START_TIMESTAMP)
 END = ts_to_dt(END_TIMESTAMP)
 

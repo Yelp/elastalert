@@ -866,13 +866,13 @@ def test_flatline_query_key():
     rule.add_data([create_event(ts_to_dt('2014-09-26T12:00:20Z'), qk='key3')])
 
     # key1 and key2 have not had any new data, so they will trigger the flatline alert
-    timestamp = '2014-09-26T12:00:45Z'
+    timestamp = '2014-09-26T12:00:45.000000Z'
     rule.garbage_collect(ts_to_dt(timestamp))
     assert len(rule.matches) == 2
     assert set(['key1', 'key2']) == set([m['key'] for m in rule.matches if m['@timestamp'] == timestamp])
 
     # Next time the rule runs, all 3 keys still have no data, so all three will cause an alert
-    timestamp = '2014-09-26T12:01:20Z'
+    timestamp = '2014-09-26T12:01:20.000000Z'
     rule.garbage_collect(ts_to_dt(timestamp))
     assert len(rule.matches) == 5
     assert set(['key1', 'key2', 'key3']) == set([m['key'] for m in rule.matches if m['@timestamp'] == timestamp])
