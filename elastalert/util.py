@@ -142,7 +142,7 @@ def dt_to_ts(dt):
     # Round microseconds to milliseconds
     if dt.tzinfo is None:
 
-        if dt.microseconds == 0:
+        if dt.microsecond == 0:
             ts = ts + '.00000'
 
         # Implicitly convert local times to UTC
