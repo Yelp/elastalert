@@ -1,3 +1,6 @@
+Note: If you're using Elasticsearch 7, you'll need to install a beta release of Elastalert: `pip install "elastalert>=0.2.0b"`
+
+
 [![Stories in Ready](https://badge.waffle.io/Yelp/elastalert.png?label=ready&title=Ready)](https://waffle.io/Yelp/elastalert)
 [![Stories in In Progress](https://badge.waffle.io/Yelp/elastalert.png?label=in%20progress&title=In%20Progress)](https://waffle.io/Yelp/elastalert)
 [![Build Status](https://travis-ci.org/Yelp/elastalert.svg)](https://travis-ci.org/Yelp/elastalert)
@@ -56,6 +59,7 @@ Currently, we have built-in support for the following alert types:
 - Twilio
 - Gitter
 - Line Notify
+- Zabbix
 
 Additional rule types and alerts can be easily imported or written.
 

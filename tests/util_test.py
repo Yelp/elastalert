@@ -14,6 +14,7 @@ from elastalert.util import parse_duration
 from elastalert.util import replace_dots_in_field_names
 from elastalert.util import resolve_string
 from elastalert.util import set_es_key
+from elastalert.util import should_scrolling_continue
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
@@ -213,3 +214,17 @@ def test_format_index():
                                                                            'logstash-2018.06.25',
                                                                            'logstash-2018.06.26']
     assert sorted(format_index(pattern2, date, date2, True).split(',')) == ['logstash-2018.25', 'logstash-2018.26']
+
+
+def test_should_scrolling_continue():
+    rule_no_max_scrolling = {'max_scrolling_count': 0, 'scrolling_cycle': 1}
+    rule_reached_max_scrolling = {'max_scrolling_count': 2, 'scrolling_cycle': 2}
+    rule_before_first_run = {'max_scrolling_count': 0, 'scrolling_cycle': 0}
+    rule_before_max_scrolling = {'max_scrolling_count': 2, 'scrolling_cycle': 1}
+    rule_over_max_scrolling = {'max_scrolling_count': 2, 'scrolling_cycle': 3}
+
+    assert should_scrolling_continue(rule_no_max_scrolling) is True
+    assert should_scrolling_continue(rule_reached_max_scrolling) is False
+    assert should_scrolling_continue(rule_before_first_run) is True
+    assert should_scrolling_continue(rule_before_max_scrolling) is True
+    assert should_scrolling_continue(rule_over_max_scrolling) is False

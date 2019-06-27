@@ -28,7 +28,7 @@ from util import unix_to_dt
 from util import unixms_to_dt
 
 # schema for rule yaml
-rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
+rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml')), Loader=yaml.FullLoader))
 
 # Required global (config.yaml) and local (rule.yaml)  configuration options
 required_globals = frozenset(['run_every', 'rules_folder', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
@@ -475,6 +475,7 @@ def load_rules(args):
 
     conf.setdefault('max_query_size', 10000)
     conf.setdefault('scroll_keepalive', '30s')
+    conf.setdefault('max_scrolling_count', 0)
     conf.setdefault('disable_rules_on_error', True)
     conf.setdefault('scan_subdirectories', True)
 

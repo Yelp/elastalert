@@ -1869,7 +1869,7 @@ The alerter requires the following options:
 
 Optional:
 
-``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents thoughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
+``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents throughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
 
@@ -2118,3 +2118,16 @@ Example usage::
         - domain: "{match[field1]}_{rule[name]}"
         - domain: "{match[field]}"
         - ip: "{match[ip_field]}"
+
+
+Zabbix
+~~~~~~~~~~~
+
+Zabbix will send notification to a Zabbix server. The item in the host specified receive a 1 value for each hit. For example, if the elastic query produce 3 hits in the last execution of elastalert, three '1' (integer) values will be send from elastalert to Zabbix Server. If the query have 0 hits, any value will be sent.
+
+Required:
+
+``zbx_sender_host``: The address where zabbix server is running.
+``zbx_sender_port``: The port where zabbix server is listenning.
+``zbx_host``: This field setup the host in zabbix that receives the value sent by Elastalert.
+``zbx_item``: This field setup the item in the host that receives the value sent by Elastalert.
