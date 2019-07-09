@@ -1108,6 +1108,9 @@ class ElastAlerter(object):
             if next_run < datetime.datetime.utcnow():
                 continue
 
+            #Show disabled rules
+            self.show_disabled_rules()
+
             # Wait before querying again
             sleep_duration = total_seconds(next_run - datetime.datetime.utcnow())
             self.sleep_for(sleep_duration)
@@ -1199,6 +1202,14 @@ class ElastAlerter(object):
     def stop(self):
         """ Stop an ElastAlert runner that's been started """
         self.running = False
+
+    def get_disabled_rules(self):
+        """ Return disabled rules """
+        return self.disabled_rules
+
+    def show_disabled_rules(self):
+        """ Show disabled rules """
+        elastalert_logger.info("Disabled rules are: %s" % (str(self.get_disabled_rules())))
 
     def sleep_for(self, duration):
         """ Sleep for a set duration """
