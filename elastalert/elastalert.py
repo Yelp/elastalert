@@ -1110,7 +1110,7 @@ class ElastAlerter(object):
             if next_run < datetime.datetime.utcnow():
                 continue
 
-            #Show disabled rules
+            # Show disabled rules
             self.show_disabled_rules()
 
             # Wait before querying again
