@@ -43,12 +43,12 @@ from util import pretty_ts
 from util import replace_dots_in_field_names
 from util import seconds
 from util import set_es_key
+from util import should_scrolling_continue
 from util import total_seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
-from util import should_scrolling_continue
 
 
 class ElastAlerter(object):
@@ -1209,7 +1209,7 @@ class ElastAlerter(object):
 
     def get_disabled_rules(self):
         """ Return disabled rules """
-        return self.disabled_rules
+        return [rule['name'] for rule in self.disabled_rules]
 
     def sleep_for(self, duration):
         """ Sleep for a set duration """
