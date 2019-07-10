@@ -132,6 +132,7 @@ class ElastAlerter(object):
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
         self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
+        self.show_disabled_rules = self.conf.get('show_disabled_rules', True)
 
         self.writeback_es = elasticsearch_client(self.conf)
 
@@ -1110,6 +1111,10 @@ class ElastAlerter(object):
             if next_run < datetime.datetime.utcnow():
                 continue
 
+            # Show disabled rules
+            if self.show_disabled_rules:
+                elastalert_logger.info("Disabled rules are: %s" % (str(self.get_disabled_rules())))
+
             # Wait before querying again
             sleep_duration = total_seconds(next_run - datetime.datetime.utcnow())
             self.sleep_for(sleep_duration)
@@ -1201,6 +1206,10 @@ class ElastAlerter(object):
     def stop(self):
         """ Stop an ElastAlert runner that's been started """
         self.running = False
+
+    def get_disabled_rules(self):
+        """ Return disabled rules """
+        return self.disabled_rules
 
     def sleep_for(self, duration):
         """ Sleep for a set duration """
