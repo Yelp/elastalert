@@ -166,6 +166,8 @@ from that time, unless it is older than ``old_query_limit``, in which case it wi
 will upload a traceback message to ``elastalert_metadata`` and if ``notify_email`` is set, send an email notification. The
 rule will no longer be run until either ElastAlert restarts or the rule file has been modified. This defaults to True.
 
+``show_disabled_rules``: If true, ElastAlert show the disable rules' list when finishes the execution. This defaults to True.
+
 ``notify_email``: An email address, or list of email addresses, to which notification emails will be sent. Currently,
 only an uncaught exception will send a notification email. The from address, SMTP host, and reply-to header can be set
 using ``from_addr``, ``smtp_host``, and ``email_reply_to`` options, respectively. By default, no emails will be sent.
