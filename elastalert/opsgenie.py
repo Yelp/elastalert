@@ -81,9 +81,13 @@ class OpsGenieAlerter(Alerter):
             post['teams'] = [{'name': r, 'type': 'team'} for r in self.teams]
         post['description'] = body
         post['source'] = 'ElastAlert'
-
+        for tag in self.tags:
         if self.tags is not None:
             post['tags'] = self.tags.format(**matches[0])
+
+        for i, tag in enumerate(self.tags):
+            self.tags[i] = tag.format(**matches[0])
+        post['tags'] = self.tags
 
         if self.priority and self.priority not in ('P1', 'P2', 'P3', 'P4', 'P5'):
             logging.warn("Priority level does not appear to be specified correctly. \
