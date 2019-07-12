@@ -81,9 +81,6 @@ class OpsGenieAlerter(Alerter):
             post['teams'] = [{'name': r, 'type': 'team'} for r in self.teams]
         post['description'] = body
         post['source'] = 'ElastAlert'
-        for tag in self.tags:
-        if self.tags is not None:
-            post['tags'] = self.tags.format(**matches[0])
 
         for i, tag in enumerate(self.tags):
             self.tags[i] = tag.format(**matches[0])
