@@ -402,6 +402,13 @@ class MockElastAlerter(object):
         overwrites = {
             'rules_loader': 'file',
         }
+
+        # Set arguments that ElastAlerter needs
+        args.verbose = args.alert
+        args.debug = not args.verbose
+        args.es_debug = False
+        args.es_debug_trace = False
+
         conf = load_conf(args, defaults, overwrites)
         rule_yaml = conf['rules_loader'].get_yaml(args.file)
         conf['rules_loader'].load_options(rule_yaml, conf, args.file)
