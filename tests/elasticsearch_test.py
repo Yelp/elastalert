@@ -51,7 +51,7 @@ class TestElasticsearch(object):
             assert 'past_elastalert' in indices_mappings[test_index]['mappings']
 
     @pytest.mark.usefixtures("ea")
-    def test_aggregated_alert(self, ea):  # noqa: F811
+    def test_aggregated_alert(self, ea, es_client):  # noqa: F811
         match_timestamp = datetime.datetime.now(tz=dateutil.tz.tzutc()).replace(microsecond=0) + datetime.timedelta(
             days=1)
         ea.rules[0]['aggregate_by_match_time'] = True
@@ -59,6 +59,7 @@ class TestElasticsearch(object):
                  'num_hits': 0,
                  'num_matches': 3
                  }
+        ea.writeback_es = es_client
         res = ea.add_aggregated_alert(match, ea.rules[0])
         if ea.writeback_es.is_atleastsix():
             assert res['result'] == 'created'
@@ -70,9 +71,10 @@ class TestElasticsearch(object):
         assert ea.find_pending_aggregate_alert(ea.rules[0])
 
     @pytest.mark.usefixtures("ea")
-    def test_silenced(self, ea):  # noqa: F811
+    def test_silenced(self, ea, es_client):  # noqa: F811
         until_timestamp = datetime.datetime.now(tz=dateutil.tz.tzutc()).replace(microsecond=0) + datetime.timedelta(
             days=1)
+        ea.writeback_es = es_client
         res = ea.set_realert(ea.rules[0]['name'], until_timestamp, 0)
         if ea.writeback_es.is_atleastsix():
             assert res['result'] == 'created'
@@ -94,5 +96,7 @@ class TestElasticsearch(object):
             ea.rules[0]['five'] = True
         else:
             ea.rules[0]['five'] = False
+        ea.thread_data.current_es = ea.current_es
         hits = ea.get_hits(ea.rules[0], start, end, test_index)
+
         assert isinstance(hits, list)
