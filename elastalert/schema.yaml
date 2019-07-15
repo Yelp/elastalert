@@ -281,8 +281,11 @@ properties:
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
   pagerduty_event_type: {enum: [none, trigger, resolve, acknowledge]}
+  
+  ### Squadcast
+  squadcast_integration_url: {type: string}
 
-### PagerTree
+  ### PagerTree
   pagertree_integration_url: {type: string}
 
 
