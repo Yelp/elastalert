@@ -79,6 +79,7 @@ alerts_mapping = {
     'mattermost': alerts.MattermostAlerter,
     'pagerduty': alerts.PagerDutyAlerter,
     'pagertree': alerts.PagerTreeAlerter,
+    'squadcast': alerts.SquadCastAlerter,
     'exotel': alerts.ExotelAlerter,
     'twilio': alerts.TwilioAlerter,
     'victorops': alerts.VictorOpsAlerter,
