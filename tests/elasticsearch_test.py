@@ -34,9 +34,9 @@ class TestElasticsearch(object):
     def test_create_indices(self, es_client):
         elastalert.create_index.create_index_mappings(es_client=es_client, ea_index=test_index)
         indices_mappings = es_client.indices.get_mapping(test_index + '*')
-        print('-' * 50)
-        print(json.dumps(indices_mappings, indent=2))
-        print('-' * 50)
+        print(('-' * 50))
+        print((json.dumps(indices_mappings, indent=2)))
+        print(('-' * 50))
         if es_client.is_atleastsix():
             assert test_index in indices_mappings
             assert test_index + '_error' in indices_mappings

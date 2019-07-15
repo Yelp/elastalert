@@ -8,10 +8,10 @@ import sys
 
 import dateutil.parser
 import pytz
-from auth import Auth
 from six import string_types
 
 from . import ElasticSearchClient
+from .auth import Auth
 
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
@@ -27,7 +27,7 @@ def get_module(module_name):
         base_module = __import__(module_path, globals(), locals(), [module_class])
         module = getattr(base_module, module_class)
     except (ImportError, AttributeError, ValueError) as e:
-        raise EAException("Could not import module %s: %s" % (module_name, e)), None, sys.exc_info()[2]
+        raise EAException("Could not import module %s: %s" % (module_name, e)).with_traceback(sys.exc_info()[2])
     return module
 
 
@@ -411,7 +411,7 @@ def parse_deadline(value):
 
 def flatten_dict(dct, delim='.', prefix=''):
     ret = {}
-    for key, val in dct.items():
+    for key, val in list(dct.items()):
         if type(val) == dict:
             ret.update(flatten_dict(val, prefix=prefix + key + delim))
         else:
@@ -442,8 +442,8 @@ def resolve_string(string, match, missing_text='<MISSING VALUE>'):
             string = string.format(**dd_match)
             break
         except KeyError as e:
-            if '{%s}' % e.message not in string:
+            if '{%s}' % str(e).strip("'") not in string:
                 break
-            string = string.replace('{%s}' % e.message, '{_missing_value}')
+            string = string.replace('{%s}' % str(e).strip("'"), '{_missing_value}')
 
     return string
