@@ -43,12 +43,12 @@ from util import pretty_ts
 from util import replace_dots_in_field_names
 from util import seconds
 from util import set_es_key
+from util import should_scrolling_continue
 from util import total_seconds
 from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
-from util import should_scrolling_continue
 
 
 class ElastAlerter(object):
@@ -352,6 +352,8 @@ class ElastAlerter(object):
                     ignore_unavailable=True,
                     **extra_args
                 )
+                if '_scroll_id' in res:
+                    rule['scroll_id'] = res['_scroll_id']
 
                 if self.current_es.is_atleastseven():
                     self.total_hits = int(res['hits']['total']['value'])
@@ -387,7 +389,6 @@ class ElastAlerter(object):
         )
         if self.total_hits > rule.get('max_query_size', self.max_query_size):
             elastalert_logger.info("%s (scrolling..)" % status_log)
-            rule['scroll_id'] = res['_scroll_id']
         else:
             elastalert_logger.info(status_log)
 
@@ -438,7 +439,7 @@ class ElastAlerter(object):
     def get_hits_terms(self, rule, starttime, endtime, index, key, qk=None, size=None):
         rule_filter = copy.copy(rule['filter'])
         if qk:
-            qk_list = qk.split(", ")
+            qk_list = qk.split(",")
             end = None
             if rule['five']:
                 end = '.keyword'
@@ -625,7 +626,8 @@ class ElastAlerter(object):
             pass
 
         if 'scroll_id' in rule:
-            rule.pop('scroll_id')
+            scroll_id = rule.pop('scroll_id')
+            self.current_es.clear_scroll(scroll_id=scroll_id)
 
         return True
 
@@ -1207,7 +1209,7 @@ class ElastAlerter(object):
 
     def get_disabled_rules(self):
         """ Return disabled rules """
-        return self.disabled_rules
+        return [rule['name'] for rule in self.disabled_rules]
 
     def sleep_for(self, duration):
         """ Sleep for a set duration """
