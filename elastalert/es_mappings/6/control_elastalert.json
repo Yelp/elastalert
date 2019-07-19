@@ -1,0 +1,8 @@
+{
+  "properties": {
+    "@timestamp": {
+      "type": "date",
+      "format": "dateOptionalTime"
+    }
+  }
+}

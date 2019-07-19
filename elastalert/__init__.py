@@ -89,6 +89,8 @@ class ElasticSearchClient(Elasticsearch):
             return writeback_index + '_status'
         elif doc_type == 'elastalert_error':
             return writeback_index + '_error'
+        elif doc_type == 'control_elastalert':
+            return writeback_index + '_control'
         return writeback_index
 
     @query_params(

@@ -104,6 +104,8 @@ class mock_es_sixsix_client(object):
                 return index + '_silence'
             elif doc_type == 'past_elastalert':
                 return index + '_past'
+            elif doc_type == 'control_elastalert':
+                return index + '_control'
             elif doc_type == 'elastalert_status':
                 return index + '_status'
             elif doc_type == 'elastalert_error':

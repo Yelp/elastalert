@@ -40,6 +40,7 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
             ea_index + '_silence',
             ea_index + '_error',
             ea_index + '_past',
+            ea_index + '_control',
         )
     else:
         index_names = (
@@ -71,6 +72,8 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
                                       body=es_index_mappings['elastalert_error'], include_type_name=True)
         es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
                                       body=es_index_mappings['past_elastalert'], include_type_name=True)
+        es_client.indices.put_mapping(index=ea_index + '_control', doc_type='_doc',
+                                      body=es_index_mappings['control_elastalert'], include_type_name=True)
     elif is_atleastsixtwo(esversion):
         es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
                                       body=es_index_mappings['elastalert'])
@@ -82,6 +85,8 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
                                       body=es_index_mappings['elastalert_error'])
         es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
                                       body=es_index_mappings['past_elastalert'])
+        es_client.indices.put_mapping(index=ea_index + '_control', doc_type='_doc',
+                                      body=es_index_mappings['control_elastalert'])
     elif is_atleastsix(esversion):
         es_client.indices.put_mapping(index=ea_index, doc_type='elastalert',
                                       body=es_index_mappings['elastalert'])
@@ -93,6 +98,8 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
                                       body=es_index_mappings['elastalert_error'])
         es_client.indices.put_mapping(index=ea_index + '_past', doc_type='past_elastalert',
                                       body=es_index_mappings['past_elastalert'])
+        es_client.indices.put_mapping(index=ea_index + '_control', doc_type='control_elastalert',
+                                      body=es_index_mappings['control_elastalert'])
     else:
         es_client.indices.put_mapping(index=ea_index, doc_type='elastalert',
                                       body=es_index_mappings['elastalert'])
@@ -104,6 +111,8 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
                                       body=es_index_mappings['elastalert_error'])
         es_client.indices.put_mapping(index=ea_index, doc_type='past_elastalert',
                                       body=es_index_mappings['past_elastalert'])
+        es_client.indices.put_mapping(index=ea_index, doc_type='control_elastalert',
+                                      body=es_index_mappings['control_elastalert'])
 
     print('New index %s created' % ea_index)
     if old_ea_index:
@@ -121,6 +130,7 @@ def read_es_index_mappings(es_version=6):
         'elastalert_status': read_es_index_mapping('elastalert_status', es_version),
         'elastalert': read_es_index_mapping('elastalert', es_version),
         'past_elastalert': read_es_index_mapping('past_elastalert', es_version),
+        'control_elastalert': read_es_index_mapping('control_elastalert', es_version),
         'elastalert_error': read_es_index_mapping('elastalert_error', es_version)
     }
 

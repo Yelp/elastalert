@@ -10,6 +10,7 @@ es_mappings = [
     'elastalert_error',
     'elastalert_status',
     'past_elastalert',
+    'control_elastalert',
     'silence'
 ]
 

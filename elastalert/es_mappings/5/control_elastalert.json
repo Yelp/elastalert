@@ -1,0 +1,10 @@
+{
+  "control_elastalert": {
+    "properties": {
+      "@timestamp": {
+        "type": "date",
+        "format": "dateOptionalTime"
+      }
+    }
+  }
+}
