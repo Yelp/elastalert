@@ -688,7 +688,7 @@ class ElastAlerter():
         # Use buffer for normal queries, or run_every increments otherwise
         # or, if scan_entire_timeframe, use timeframe
 
-        if not rule.get('use_count_query') and not rule.get('use_terms_query'):
+        if not rule.get('use_terms_query'):
             if not rule.get('scan_entire_timeframe'):
                 buffer_time = rule.get('buffer_time', self.buffer_time)
                 buffer_delta = endtime - buffer_time
@@ -739,7 +739,7 @@ class ElastAlerter():
     def get_segment_size(self, rule):
         """ The segment size is either buffer_size for queries which can overlap or run_every for queries
         which must be strictly separate. This mimicks the query size for when ElastAlert is running continuously. """
-        if not rule.get('use_count_query') and not rule.get('use_terms_query') and not rule.get('aggregation_query_element'):
+        if not rule.get('use_terms_query') and not rule.get('aggregation_query_element'):
             return rule.get('buffer_time', self.buffer_time)
         elif rule.get('aggregation_query_element'):
             if rule.get('use_run_every_query_size'):
@@ -892,7 +892,7 @@ class ElastAlerter():
                 silence_cache_key += '.' + query_key_value
 
             if self.is_silenced(rule['name'] + "._silence") or self.is_silenced(silence_cache_key):
-                elastalert_logger.info('Ignoring match for silenced rule %s' % (silence_cache_key,))
+                elastalert_logger.info('Ignoring match for silenced rule %s in %s to %s' % (silence_cache_key, rule['starttime'], endtime))
                 continue
 
             if rule['realert']:
@@ -911,6 +911,8 @@ class ElastAlerter():
 
             # If no aggregation, alert immediately
             if not rule['aggregation']:
+                rule['fromts'] = dt_to_ts(rule['starttime'])
+                rule['tots'] = dt_to_ts(endtime)
                 self.alert([match], rule)
                 continue
 
@@ -1371,7 +1373,7 @@ class ElastAlerter():
                     timeframe = rule.get('timeframe', datetime.timedelta(minutes=10))
 
                 start = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) - timeframe
-                end = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) + datetime.timedelta(minutes=10)
+                end = ts_to_dt(lookup_es_key(match, rule['timestamp_field']))
                 keys = rule.get('top_count_keys')
                 counts = self.get_top_counts(rule, start, end, keys, qk=qk)
                 match.update(counts)
