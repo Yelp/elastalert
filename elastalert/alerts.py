@@ -1521,14 +1521,14 @@ class ExotelAlerter(Alerter):
 
 
 class TwilioAlerter(Alerter):
-    required_options = frozenset(['twilio_account_sid', 'twilio_auth_token', 'twilio_to_number', 'twilio_from_number'])
+    required_options = frozenset(['twilio_account_sid', 'twilio_auth_token', 'twilio_to_number'])
 
     def __init__(self, rule):
         super(TwilioAlerter, self).__init__(rule)
         self.twilio_account_sid = self.rule['twilio_account_sid']
         self.twilio_auth_token = self.rule['twilio_auth_token']
         self.twilio_to_number = self.rule['twilio_to_number']
-        self.twilio_from_number = self.rule['twilio_from_number']
+        self.twilio_from_number = self.rule.get('twilio_from_number')
 
     def alert(self, matches):
         client = TwilioClient(self.twilio_account_sid, self.twilio_auth_token)
