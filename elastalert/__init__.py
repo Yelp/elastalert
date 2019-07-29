@@ -240,6 +240,9 @@ class ElasticSearchClient(Elasticsearch):
 
         if not index:
             index = "_all"
-        return self.transport.perform_request(
+        res = self.transport.perform_request(
             "GET", _make_path(index, doc_type, "_search"), params=params, body=body
-        )[1]
+        )
+        if type(res) == list:
+            return res[1]
+        return res
