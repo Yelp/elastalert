@@ -1529,6 +1529,8 @@ class TwilioAlerter(Alerter):
         self.twilio_auth_token = self.rule['twilio_auth_token']
         self.twilio_to_number = self.rule['twilio_to_number']
         self.twilio_from_number = self.rule.get('twilio_from_number')
+        self.twilio_message_service_sid = self.rule.get('twilio_message_service_sid')
+        self.twilio_use_copilot = self.rule.get('twilio_use_copilot', False)
 
     def alert(self, matches):
         client = TwilioClient(self.twilio_account_sid, self.twilio_auth_token)
