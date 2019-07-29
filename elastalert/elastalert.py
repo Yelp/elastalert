@@ -105,6 +105,7 @@ class ElastAlerter(object):
         self.args = parser.parse_args(args)
 
     def __init__(self, args):
+        self.es_clients = {}
         self.parse_args(args)
         self.debug = self.args.debug
         self.verbose = self.args.verbose
@@ -843,7 +844,7 @@ class ElastAlerter(object):
         :return: The number of matches that the rule produced.
         """
         run_start = time.time()
-        self.thread_data.current_es = elasticsearch_client(rule)
+        self.thread_data.current_es = self.es_clients.setdefault(rule['name'], elasticsearch_client(rule))
 
         # If there are pending aggregate matches, try processing them
         for x in range(len(rule['agg_matches'])):
@@ -1115,6 +1116,8 @@ class ElastAlerter(object):
                     continue
                 if self.init_rule(new_rule):
                     elastalert_logger.info('Loaded new rule %s' % (rule_file))
+                    if new_rule['name'] in self.es_clients:
+                        self.es_clients.pop(new_rule['name'])
                     self.rules.append(new_rule)
 
         self.rule_hashes = new_rule_hashes
