@@ -245,4 +245,4 @@ class ElasticSearchClient(Elasticsearch):
             index = "_all"
         return self.transport.perform_request(
             "GET", _make_path(index, doc_type, "_search"), params=params, body=body
-        )
+        )[1]
