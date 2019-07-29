@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import copy
-import logging
 
 from elasticsearch import Elasticsearch
 from elasticsearch import RequestsHttpConnection
@@ -235,8 +234,6 @@ class ElasticSearchClient(Elasticsearch):
         :arg version: Specify whether to return document version as part of a
             hit
         """
-        logging.warning(
-            'doc_type has been deprecated since elasticsearch version 6 and will be completely removed in 8')
         # from is a reserved word so it cannot be used, use from_ instead
         if "from_" in params:
             params["from"] = params.pop("from_")
