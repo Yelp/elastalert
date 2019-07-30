@@ -49,6 +49,8 @@ class ElasticSearchClient(Elasticsearch):
                     self._es_version = self.info()['version']['number']
                     break
                 except TransportError:
+                    if retry == 2:
+                        raise
                     time.sleep(3)
         return self._es_version
 
