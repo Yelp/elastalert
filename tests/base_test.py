@@ -516,7 +516,7 @@ def test_agg_no_writeback_connectivity(ea):
     ea.thread_data.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
     ea.add_aggregated_alert = mock.Mock()
 
-    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+    with mock.patch.object(ea, 'run_query'):
         ea.run_rule(ea.rules[0], END, START)
 
     ea.add_aggregated_alert.assert_any_call({'@timestamp': hit1, 'num_hits': 0, 'num_matches': 3}, ea.rules[0])

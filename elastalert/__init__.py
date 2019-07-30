@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import copy
+import time
 
 from elasticsearch import Elasticsearch
 from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import _make_path
 from elasticsearch.client import query_params
+from elasticsearch.exceptions import TransportError
 
 
 class ElasticSearchClient(Elasticsearch):
@@ -42,7 +44,14 @@ class ElasticSearchClient(Elasticsearch):
         Returns the reported version from the Elasticsearch server.
         """
         if self._es_version is None:
-            self._es_version = self.info()['version']['number']
+            for retry in range(3):
+                try:
+                    self._es_version = self.info()['version']['number']
+                    break
+                except TransportError:
+                    if retry == 2:
+                        raise
+                    time.sleep(3)
         return self._es_version
 
     def is_atleastfive(self):
