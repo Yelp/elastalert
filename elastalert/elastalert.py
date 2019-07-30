@@ -17,6 +17,7 @@ from socket import error
 
 import dateutil.tz
 import kibana
+import prometheus_client
 import yaml
 from alerts import DebugAlerter
 from config import get_rule_hashes
@@ -49,6 +50,18 @@ from util import ts_add
 from util import ts_now
 from util import ts_to_dt
 from util import unix_to_dt
+
+# initialize prometheus metrics to be exposed
+prom_hits = prometheus_client.Gauge('elastalert_hits', 'Number of hits', ['rule_name'])
+prom_matches = prometheus_client.Gauge('elastalert_matches', 'Number of matches', ['rule_name'])
+prom_time_taken = prometheus_client.Gauge('elastalert_time_taken', 'Time taken to evaluate rule', ['rule_name'])
+
+prom_alerts_sent = prometheus_client.Counter('elastalert_alerts_sent', 'Number of alerts sent', ['rule_name'])
+prom_alerts_not_sent = prometheus_client.Counter('elastalert_alerts_not_sent', 'Number of alerts not sent', ['rule_name'])
+
+prom_errors = prometheus_client.Counter('elastalert_errors', 'Number of errors')
+
+prom_alerts_silenced = prometheus_client.Counter('elastalert_alerts_silenced', 'Number of silenced alerts', ['rule_name'])
 
 
 class ElastAlerter(object):
@@ -1499,6 +1512,8 @@ class ElastAlerter(object):
         if '@timestamp' not in writeback_body:
             writeback_body['@timestamp'] = dt_to_ts(ts_now())
 
+        update_metrics(doc_type, body)
+
         try:
             index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
             if self.writeback_es.is_atleastsixtwo():
@@ -1926,6 +1941,23 @@ class ElastAlerter(object):
         return timestamp + wait, exponent
 
 
+def update_metrics(doc_type, body):
+    """ Update various prometheus metrics accoording to the doc_type """
+    if doc_type == 'elastalert_status':
+        prom_hits.labels(body['rule_name']).set(int(body['hits']))
+        prom_matches.labels(body['rule_name']).set(int(body['matches']))
+        prom_time_taken.labels(body['rule_name']).set(float(body['time_taken']))
+    elif doc_type == 'elastalert':
+        if body['alert_sent']:
+            prom_alerts_sent.labels(body['rule_name']).inc()
+        else:
+            prom_alerts_not_sent.labels(body['rule_name']).inc()
+    elif doc_type == 'elastalert_error':
+        prom_errors.inc()
+    elif doc_type == 'silence':
+        prom_alerts_silenced.labels(body['rule_name']).inc()
+
+
 def handle_signal(signal, frame):
     elastalert_logger.info('SIGINT received, stopping ElastAlert...')
     # use os._exit to exit immediately and avoid someone catching SystemExit
@@ -1937,6 +1969,10 @@ def main(args=None):
     if not args:
         args = sys.argv[1:]
     client = ElastAlerter(args)
+
+    # start serving metrics
+    prometheus_client.start_http_server(9090)
+
     if not client.args.silence:
         client.start()
 
