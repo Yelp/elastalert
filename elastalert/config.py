@@ -152,6 +152,12 @@ def load_rule_yaml(filename):
 
         loaded.update(rule)
         rule = loaded
+
+        # load password from environment variable
+        if 'es_username' in rule:
+            rule['es_username'] = os.path.expandvars(rule['es_username'])
+            rule['es_password'] = os.path.expandvars(rule['es_password'])
+
         if 'import' in rule:
             # Find the path of the next file.
             if os.path.isabs(rule['import']):
