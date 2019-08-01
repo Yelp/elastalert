@@ -77,7 +77,7 @@ class RulesLoader(object):
         'alerta': alerts.AlertaAlerter,
         'post': alerts.HTTPPostAlerter,
         'hivealerter': alerts.HiveAlerter,
-        'discord':alerts.DiscordAlerter
+        'discord': alerts.DiscordAlerter
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
