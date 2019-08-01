@@ -36,6 +36,6 @@ discord_emoji_title: ":lock:"
 # Must be an hexadecimal value according to the exemple below
 discord_embed_color: 0xE24D42
 
-# This content will be displayed at the very end of your embed message. If you don't add one of these 2 lines, 
+# This content will be displayed at the very end of your embed message. If you don't add one of these 2 lines, the footer will not be added.
 discord_embed_footer: "Message sent by ElastAlert from your computer"
 discord_embed_icon_url: "https://humancoders-formations.s3.amazonaws.com/uploads/course/logo/38/thumb_bigger_formation-elasticsearch.png"
