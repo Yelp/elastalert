@@ -2218,7 +2218,7 @@ class DiscordAlerter(Alerter):
 
         if self.discord_embed_footer:
                 embed["footer"] = {}
-                embed["footer"]["text"] = (self.discord_embed_footer)
+                embed["footer"]["text"] = (self.discord_embed_footer) if self.discord_embed_footer else None
                 embed["footer"]["icon_url"] = (self.discord_embed_icon_url) if self.discord_embed_icon_url else None
         else:
                 None
