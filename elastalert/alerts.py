@@ -23,6 +23,7 @@ import boto3
 import requests
 import stomp
 from exotel import Exotel
+from discord_webhook import DiscordWebhook, DiscordEmbed
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 from requests.auth import HTTPProxyAuth
