@@ -587,43 +587,42 @@ class ElastAlerter(object):
             start = self.get_index_start(rule['index'])
         if end is None:
             end = ts_now()
-
-        # Reset hit counter and query
         rule_inst = rule['type']
-        rule['scrolling_cycle'] = rule.get('scrolling_cycle', 0) + 1
         index = self.get_index(rule, start, end)
-        if rule.get('use_count_query'):
-            data = self.get_hits_count(rule, start, end, index)
-        elif rule.get('use_terms_query'):
-            data = self.get_hits_terms(rule, start, end, index, rule['query_key'])
-        elif rule.get('aggregation_query_element'):
-            data = self.get_hits_aggregation(rule, start, end, index, rule.get('query_key', None))
-        else:
-            data = self.get_hits(rule, start, end, index, scroll)
-            if data:
-                old_len = len(data)
-                data = self.remove_duplicate_events(data, rule)
-                self.num_dupes += old_len - len(data)
 
-        # There was an exception while querying
-        if data is None:
-            return False
-        elif data:
+        while True:
+            # Reset hit counter and query
+            rule['scrolling_cycle'] = rule.get('scrolling_cycle', 0) + 1
             if rule.get('use_count_query'):
-                rule_inst.add_count_data(data)
+                data = self.get_hits_count(rule, start, end, index)
             elif rule.get('use_terms_query'):
-                rule_inst.add_terms_data(data)
+                data = self.get_hits_terms(
+                    rule, start, end, index, rule['query_key'])
             elif rule.get('aggregation_query_element'):
-                rule_inst.add_aggregation_data(data)
+                data = self.get_hits_aggregation(
+                    rule, start, end, index, rule.get('query_key', None))
             else:
-                rule_inst.add_data(data)
+                data = self.get_hits(rule, start, end, index, scroll)
+                if data:
+                    old_len = len(data)
+                    data = self.remove_duplicate_events(data, rule)
+                    self.num_dupes += old_len - len(data)
 
-        try:
-            if rule.get('scroll_id') and self.num_hits < self.total_hits and should_scrolling_continue(rule):
-                self.run_query(rule, start, end, scroll=True)
-        except RuntimeError:
-            # It's possible to scroll far enough to hit max recursive depth
-            pass
+            # There was an exception while querying
+            if data is None:
+                return False
+            elif data:
+                if rule.get('use_count_query'):
+                    rule_inst.add_count_data(data)
+                elif rule.get('use_terms_query'):
+                    rule_inst.add_terms_data(data)
+                elif rule.get('aggregation_query_element'):
+                    rule_inst.add_aggregation_data(data)
+                else:
+                    rule_inst.add_data(data)
+            scroll = True
+            if not (rule.get('scroll_id') and self.num_hits < self.total_hits and should_scrolling_continue(rule)):
+                break
 
         if 'scroll_id' in rule:
             scroll_id = rule.pop('scroll_id')
