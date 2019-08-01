@@ -455,7 +455,7 @@ class MockElastAlerter(object):
 
         # Set arguments that ElastAlerter needs
         args.verbose = args.alert
-        args.debug = not args.verbose
+        args.debug = not args.alert
         args.es_debug = False
         args.es_debug_trace = False
 
