@@ -49,6 +49,7 @@ Currently, we have built-in support for the following alert types:
 - HipChat
 - MS Teams
 - Slack
+- RocketChat
 - Telegram
 - GoogleChat
 - AWS SNS

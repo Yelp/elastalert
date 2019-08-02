@@ -163,6 +163,14 @@ class JiraFormattedMatchString(BasicMatchString):
         self.text += preformatted_text
 
 
+class RocketChatFormattedMatchString(BasicMatchString):
+    def _add_match_items(self):
+        match_items = dict([(x, y) for x, y in self.match.items() if not x.startswith('top_events_')])
+        json_blob = self._pretty_print_as_json(match_items)
+        preformatted_text = u'```json\n{0}```\n'.format(json_blob)
+        self.text += preformatted_text
+
+
 class Alerter(object):
     """ Base class for types of alerts.
 
@@ -1319,6 +1327,67 @@ class MattermostAlerter(Alerter):
         return {'type': 'mattermost',
                 'mattermost_username_override': self.mattermost_username_override,
                 'mattermost_webhook_url': self.mattermost_webhook_url}
+
+
+class RocketChatAlerter(Alerter):
+    required_options = set(['rocket_chat_webhook_url'])
+
+    def __init__(self, rule):
+        super(RocketChatAlerter, self).__init__(rule)
+        self.rocket_chat_webhook_url = self.rule['rocket_chat_webhook_url']
+        if isinstance(self.rocket_chat_webhook_url, basestring):
+            self.rocket_chat_webhook_url = [self.rocket_chat_webhook_url]
+        self.rocket_chat_proxy = self.rule.get('rocket_chat_proxy', None)
+        self.rocket_chat_username_override = self.rule.get('rocket_chat_username_override', 'elastalert')
+        self.rocket_chat_emoji_override = self.rule.get('rocket_chat_emoji_override', ':ghost:')
+        self.rocket_chat_icon_url_override = self.rule.get('rocket_chat_icon_url_override', '')
+
+    def format_body(self, body):
+        return body.encode('UTF-8')
+
+    def create_alert_body(self, matches):
+        body = self.get_aggregation_summary_text(matches)
+        if self.rule.get('alert_text_type') != 'aggregation_summary_only':
+            for match in matches:
+                body += unicode(RocketChatFormattedMatchString(self.rule, match))
+        return body
+
+    def get_aggregation_summary_text__maximum_width(self):
+        width = super(RocketChatAlerter, self).get_aggregation_summary_text__maximum_width()
+        return min(width, 75)
+
+    def get_aggregation_summary_text(self, matches):
+        text = super(RocketChatAlerter, self).get_aggregation_summary_text(matches)
+        if text:
+            text = u'```\n{0}```\n'.format(text)
+        return text
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+        body = self.format_body(body)
+        headers = {'content-type': 'application/json'}
+        proxies = {'https': self.rocket_chat_proxy} if self.rocket_chat_proxy else None
+        payload = {
+            'username': self.rocket_chat_username_override,
+            'text': body,
+        }
+        if self.rocket_chat_icon_url_override != '':
+            payload['icon_url'] = self.rocket_chat_icon_url_override
+        else:
+            payload['icon_emoji'] = self.rocket_chat_emoji_override
+
+        for url in self.rocket_chat_webhook_url:
+            try:
+                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error posting to Rocket.Chat: %s" % e)
+            elastalert_logger.info("Alert sent to Rocket.Chat")
+
+    def get_info(self):
+        return {'type': 'rocketchat',
+                'rocket_chat_username_override': self.rocket_chat_username_override,
+                'rocket_chat_webhook_url': self.rocket_chat_webhook_url}
 
 
 class PagerDutyAlerter(Alerter):
