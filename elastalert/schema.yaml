@@ -343,3 +343,6 @@ properties:
 
   ### LineNotify
   linenotify_access_token: {type: string}
+
+  ## Discord
+  discord_webhook_url: {type: string}
