@@ -8,7 +8,7 @@ from setuptools import setup
 base_dir = os.path.dirname(__file__)
 setup(
     name='elastalert',
-    version='0.1.39',
+    version='0.2.0b3',
     description='Runs custom filters on Elasticsearch and alerts on matches',
     author='Quentin Long',
     author_email='qlo@yelp.com',
@@ -27,6 +27,7 @@ setup(
     packages=find_packages(),
     package_data={'elastalert': ['schema.yaml', 'es_mappings/**/*.json']},
     install_requires=[
+        'apscheduler>=3.3.0',
         'aws-requests-auth>=0.3.0',
         'blist>=1.3.6',
         'boto3>=1.4.4',

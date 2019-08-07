@@ -1,21 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
 import argparse
 import getpass
+import json
 import os
 import time
-import json
 
 import elasticsearch.helpers
 import yaml
-from auth import Auth
 from elasticsearch import RequestsHttpConnection
 from elasticsearch.client import Elasticsearch
 from elasticsearch.client import IndicesClient
 from elasticsearch.exceptions import NotFoundError
 from envparse import Env
+
+from .auth import Auth
 
 env = Env(ES_USE_SSL=bool)
 
@@ -139,7 +138,7 @@ def is_atleastsix(es_version):
 
 
 def is_atleastsixtwo(es_version):
-    major, minor = map(int, es_version.split(".")[:2])
+    major, minor = list(map(int, es_version.split(".")[:2]))
     return major > 6 or (major == 6 and minor >= 2)
 
 
@@ -161,6 +160,7 @@ def main():
     parser.add_argument('--no-verify-certs', dest='verify_certs', action='store_false',
                         help='Do not verify TLS certificates')
     parser.add_argument('--index', help='Index name to create')
+    parser.add_argument('--alias', help='Alias name to create')
     parser.add_argument('--old-index', help='Old index name to copy')
     parser.add_argument('--send_get_body_as', default='GET',
                         help='Method for querying Elasticsearch - POST, GET or source')
@@ -185,6 +185,8 @@ def main():
 
     if os.path.isfile(args.config):
         filename = args.config
+    elif os.path.isfile('../config.yaml'):
+        filename = '../config.yaml'
     else:
         filename = ''
 
@@ -204,34 +206,38 @@ def main():
         client_cert = data.get('client_cert')
         client_key = data.get('client_key')
         index = args.index if args.index is not None else data.get('writeback_index')
+        alias = args.alias if args.alias is not None else data.get('writeback_alias')
         old_index = args.old_index if args.old_index is not None else None
     else:
         username = args.username if args.username else None
         password = args.password if args.password else None
         aws_region = args.aws_region
-        host = args.host if args.host else raw_input('Enter Elasticsearch host: ')
-        port = args.port if args.port else int(raw_input('Enter Elasticsearch port: '))
+        host = args.host if args.host else input('Enter Elasticsearch host: ')
+        port = args.port if args.port else int(input('Enter Elasticsearch port: '))
         use_ssl = (args.ssl if args.ssl is not None
-                   else raw_input('Use SSL? t/f: ').lower() in ('t', 'true'))
+                   else input('Use SSL? t/f: ').lower() in ('t', 'true'))
         if use_ssl:
             verify_certs = (args.verify_certs if args.verify_certs is not None
-                            else raw_input('Verify TLS certificates? t/f: ').lower() not in ('f', 'false'))
+                            else input('Verify TLS certificates? t/f: ').lower() not in ('f', 'false'))
         else:
             verify_certs = True
         if args.no_auth is None and username is None:
-            username = raw_input('Enter optional basic-auth username (or leave blank): ')
+            username = input('Enter optional basic-auth username (or leave blank): ')
             password = getpass.getpass('Enter optional basic-auth password (or leave blank): ')
         url_prefix = (args.url_prefix if args.url_prefix is not None
-                      else raw_input('Enter optional Elasticsearch URL prefix (prepends a string to the URL of every request): '))
+                      else input('Enter optional Elasticsearch URL prefix (prepends a string to the URL of every request): '))
         send_get_body_as = args.send_get_body_as
         ca_certs = None
         client_cert = None
         client_key = None
-        index = args.index if args.index is not None else raw_input('New index name? (Default elastalert_status) ')
+        index = args.index if args.index is not None else input('New index name? (Default elastalert_status) ')
         if not index:
             index = 'elastalert_status'
+        alias = args.alias if args.alias is not None else input('New alias name? (Default elastalert_alerts) ')
+        if not alias:
+            alias = 'elastalert_alias'
         old_index = (args.old_index if args.old_index is not None
-                     else raw_input('Name of existing index to copy? (Default None) '))
+                     else input('Name of existing index to copy? (Default None) '))
 
     timeout = args.timeout
 
