@@ -2037,6 +2037,8 @@ Optional:
 
 ``http_post_static_payload``: Key:value pairs of static parameters to be sent, along with the Elasticsearch results. Put your authentication or other information here.
 
+``http_post_headers``: Key:value pairs of headers to be sent as part of the request.
+
 ``http_post_proxy``: URL of proxy, if required.
 
 ``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
@@ -2051,6 +2053,8 @@ Example usage::
       ip: clientip
     http_post_static_payload:
       apikey: abc123
+    http_post_headers:
+      authorization: Basic 123dr3234
 
 
 Alerter

@@ -1554,6 +1554,9 @@ class ElastAlerter(object):
             'alert_time': alert_time
         }
 
+        if rule.get('include_match_in_root'):
+            body.update({k: v for k, v in match.items() if not k.startswith('_')})
+
         if self.add_metadata_alert:
             body['category'] = rule['category']
             body['description'] = rule['description']

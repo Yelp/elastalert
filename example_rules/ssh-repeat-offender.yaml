@@ -1,0 +1,61 @@
+# Rule name, must be unique
+name: SSH abuse - reapeat offender
+
+# Alert on x events in y seconds
+type: frequency
+
+# Alert when this many documents matching the query occur within a timeframe
+num_events: 2
+
+# num_events must occur within this amount of time to trigger an alert
+timeframe:
+  weeks: 1
+
+# A list of elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter:
+  - term:
+      rule_name: "SSH abuse"
+
+index: elastalert
+
+# When the attacker continues, send a new alert after x minutes
+realert:
+  weeks: 4
+
+query_key:
+  - match_body.source.ip
+
+include:
+  - match_body.host.hostname
+  - match_body.user.name
+  - match_body.source.ip
+
+alert_subject: "SSH abuse (repeat offender) on <{}> | <{}|Show Dashboard>"
+alert_subject_args:
+  - match_body.host.hostname
+  - kibana_link
+
+alert_text: |-
+  An reapeat offender has been active on {}.
+
+  IP: {}
+  User: {}
+alert_text_args:
+  - match_body.host.hostname
+  - match_body.user.name
+  - match_body.source.ip
+
+# The alert is use when a match is found
+alert:
+  - slack
+
+slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_username_override: "ElastAlert"
+
+# Alert body only cointains a title and text
+alert_text_type: alert_text_only
+
+# Link to BitSensor Kibana Dashboard
+use_kibana4_dashboard: "https://dev.securely.ai/app/kibana#/dashboard/37739d80-a95c-11e9-b5ba-33a34ca252fb"
