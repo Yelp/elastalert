@@ -651,7 +651,7 @@ class ElastAlerter(object):
 
         if 'scroll_id' in rule:
             scroll_id = rule.pop('scroll_id')
-            self.current_es.clear_scroll(scroll_id=scroll_id)
+            self.thread_data.current_es.clear_scroll(scroll_id=scroll_id)
 
         return True
 
