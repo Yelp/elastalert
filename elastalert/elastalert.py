@@ -24,6 +24,7 @@ from croniter import croniter
 from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.exceptions import TransportError
+from elasticsearch.exceptions import NotFoundError
 
 from . import kibana
 from .alerts import DebugAlerter
@@ -657,7 +658,10 @@ class ElastAlerter(object):
 
         if 'scroll_id' in rule:
             scroll_id = rule.pop('scroll_id')
-            self.thread_data.current_es.clear_scroll(scroll_id=scroll_id)
+            try:
+                self.thread_data.current_es.clear_scroll(scroll_id=scroll_id)
+            except NotFoundError:
+                pass
 
         return True
 
