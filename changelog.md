@@ -1,5 +1,22 @@
 # Change Log
 
+# v0.2.1
+
+### Fixed
+- Fixed an AttributeError introduced in 0.2.0
+
+# v0.2.0
+
+- Switched to Python 3
+
+### Added
+- Add rule loader class for customized rule loading
+- Added thread based rules and limit_execution
+- Run_every can now be customized per rule
+
+### Fixed
+- Various small fixes
+
 # v0.1.39
 
 ### Added
