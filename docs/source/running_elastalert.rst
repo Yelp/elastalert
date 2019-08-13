@@ -70,6 +70,8 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``writeback_index`` is the name of the index in which ElastAlert will store data. We will create this index later.
 
+``writeback_alias``: Optional; the alias to use for alert indices. The default is ``elastalert_alerts``.
+
 ``alert_time_limit`` is the retry window for failed alerts.
 
 Save the file as ``config.yaml``

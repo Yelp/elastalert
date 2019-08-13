@@ -149,6 +149,8 @@ configuration.
 
 ``writeback_index``: The index on ``es_host`` to use.
 
+``writeback_alias``: Optional; the alias to use for alert indices. The default is ``elastalert_alerts``.
+
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. The
 default is 10,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
 limit is reached, ElastAlert will `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_ through pages the size of ``max_query_size`` until processing all results.

@@ -1557,7 +1557,7 @@ class ElastAlerter(object):
             body['alert_exception'] = alert_exception
         return body
 
-    def writeback(self, doc_type, body, rule=None, match_body=None):
+    def writeback(self, doc_type, body, rule=None):
         # ES 2.0 - 2.3 does not support dots in field names.
         if self.replace_dots_in_field_names:
             writeback_body = replace_dots_in_field_names(body)
@@ -1578,10 +1578,17 @@ class ElastAlerter(object):
 
         try:
             index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
+            if rule is not None and 'writeback_suffix' in rule:
+                try:
+                    suffix = rule['writeback_suffix'].format(writeback_body['match_body'] or {})
+                    suffix = datetime.datetime.utcnow().strftime(suffix)
+                    index += '_' + suffix
+                except KeyError as e:
+                    elastalert_logger.critical('Failed to add suffix. Unknown key ' + str(e))
             if self.writeback_es.is_atleastsixtwo():
-                res = self.writeback_es.index(index=index, body=body)
+                res = self.writeback_es.index(index=index, body=writeback_body)
             else:
-                res = self.writeback_es.index(index=index, doc_type=doc_type, body=body)
+                res = self.writeback_es.index(index=index, doc_type=doc_type, body=writeback_body)
             return res
         except ElasticsearchException as e:
             logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
@@ -1605,9 +1612,9 @@ class ElastAlerter(object):
         query.update(sort)
         try:
             if self.writeback_es.is_atleastsixtwo():
-                res = self.writeback_es.search(index=self.writeback_index, body=query, size=1000)
+                res = self.writeback_es.search(index=self.writeback_alias, body=query, size=1000)
             else:
-                res = self.writeback_es.deprecated_search(index=self.writeback_index,
+                res = self.writeback_es.deprecated_search(index=self.writeback_alias,
                                                           doc_type='elastalert', body=query, size=1000)
             if res['hits']['hits']:
                 return res['hits']['hits']
@@ -1619,6 +1626,7 @@ class ElastAlerter(object):
         pending_alerts = self.find_recent_pending_alerts(self.alert_time_limit)
         for alert in pending_alerts:
             _id = alert['_id']
+            _index = alert['_index']
             alert = alert['_source']
             try:
                 rule_name = alert.pop('rule_name')
@@ -1661,9 +1669,9 @@ class ElastAlerter(object):
                 # Delete it from the index
                 try:
                     if self.writeback_es.is_atleastsixtwo():
-                        self.writeback_es.delete(index=self.writeback_index, id=_id)
+                        self.writeback_es.delete(index=_index, id=_id)
                     else:
-                        self.writeback_es.delete(index=self.writeback_index, doc_type='elastalert', id=_id)
+                        self.writeback_es.delete(index=_index, doc_type='elastalert', id=_id)
                 except ElasticsearchException:  # TODO: Give this a more relevant exception, try:except: is evil.
                     self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
 
@@ -1694,17 +1702,17 @@ class ElastAlerter(object):
         matches = []
         try:
             if self.writeback_es.is_atleastsixtwo():
-                res = self.writeback_es.search(index=self.writeback_index, body=query,
+                res = self.writeback_es.search(index=self.writeback_alias, body=query,
                                                size=self.max_aggregation)
             else:
-                res = self.writeback_es.deprecated_search(index=self.writeback_index, doc_type='elastalert',
+                res = self.writeback_es.deprecated_search(index=self.writeback_alias, doc_type='elastalert',
                                                           body=query, size=self.max_aggregation)
             for match in res['hits']['hits']:
                 matches.append(match['_source'])
                 if self.writeback_es.is_atleastsixtwo():
-                    self.writeback_es.delete(index=self.writeback_index, id=match['_id'])
+                    self.writeback_es.delete(index=match['_index'], id=match['_id'])
                 else:
-                    self.writeback_es.delete(index=self.writeback_index, doc_type='elastalert', id=match['_id'])
+                    self.writeback_es.delete(index=match['_index'], doc_type='elastalert', id=match['_id'])
         except (KeyError, ElasticsearchException) as e:
             self.handle_error("Error fetching aggregated matches: %s" % (e), {'id': _id})
         return matches
@@ -1721,9 +1729,9 @@ class ElastAlerter(object):
         query['sort'] = {'alert_time': {'order': 'desc'}}
         try:
             if self.writeback_es.is_atleastsixtwo():
-                res = self.writeback_es.search(index=self.writeback_index, body=query, size=1)
+                res = self.writeback_es.search(index=self.writeback_alias, body=query, size=1)
             else:
-                res = self.writeback_es.deprecated_search(index=self.writeback_index, doc_type='elastalert', body=query, size=1)
+                res = self.writeback_es.deprecated_search(index=self.writeback_alias, doc_type='elastalert', body=query, size=1)
             if len(res['hits']['hits']) == 0:
                 return None
         except (KeyError, ElasticsearchException) as e:

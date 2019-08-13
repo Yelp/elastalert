@@ -28,6 +28,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+-----------+
 | ``name`` (string, defaults to the filename)                  |           |
 +--------------------------------------------------------------+           |
+| ``writeback_suffix`` (string, no default)                    |           |
++--------------------------------------------------------------+           |
 | ``use_strftime_index`` (boolean, default False)              |  Optional |
 +--------------------------------------------------------------+           |
 | ``use_ssl`` (boolean, default False)                         |           |
@@ -225,6 +227,12 @@ or loaded from a module. For loading from a module, the alert should be specifie
 
 Optional Settings
 ~~~~~~~~~~~~~~~~~
+
+writeback_suffix
+^^^^^^^^^^^^^^^^
+``writeback_suffix``: If specified the index that alerts are written to is changed from ``<writeback_index>`` to ``<writeback_index>_<writeback_suffix>``.
+The suffix can include a ``datetime`` format which will be dynamically formatted using the current utc time and references
+to ``match_body`` fields, e.g.: ``{match_body_field}_%Y.%M.%d``, ``%Y.%M.%d``, or ``{match_body_field}``.
 
 import
 ^^^^^^
