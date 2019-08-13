@@ -41,7 +41,13 @@ def load_conf(args, defaults=None, overwrites=None):
         :return: The global configuration, a dictionary.
         """
     filename = args.config
-    conf = yaml_loader(filename)
+    if filename:
+        conf = yaml_loader(filename)
+    else:
+        try:
+            conf = yaml_loader('config.yaml')
+        except FileNotFoundError:
+            raise EAException('No --config or config.yaml found')
 
     # init logging from config and set log levels according to command line options
     configure_logging(args, conf)
