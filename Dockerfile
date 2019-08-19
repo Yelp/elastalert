@@ -21,6 +21,7 @@ RUN wget https://github.com/Yelp/elastalert/archive/v${ELASTALERT_VERSION}.zip -
     apk del gcc libffi-dev musl-dev openssl-dev python2-dev
 
 COPY ./elastalert/elastalert.py /opt/elastalert/elastalert
+COPY ./elastalert/ruletypes.py /opt/elastalert/elastalert
 
 RUN mkdir -p /opt/elastalert/config && \
     mkdir -p /opt/elastalert/rules && \

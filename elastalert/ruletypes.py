@@ -229,6 +229,7 @@ class FrequencyRule(RuleType):
         event = ({self.ts_field: ts}, count)
         self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
         self.check_for_match('all')
+        self.clear()
 
     def add_terms_data(self, terms):
         for timestamp, buckets in terms.iteritems():
@@ -277,6 +278,13 @@ class FrequencyRule(RuleType):
         for key, window in self.occurrences.iteritems():
             if timestamp - lookup_es_key(window.data[-1][0], self.ts_field) > self.rules['timeframe']:
                 stale_keys.append(key)
+        map(self.occurrences.pop, stale_keys)
+
+    def clear(self):
+        """ Remove all occurrence data """
+        stale_keys = []
+        for key, window in self.occurrences.iteritems():
+            stale_keys.append(key)
         map(self.occurrences.pop, stale_keys)
 
     def get_match_str(self, match):
