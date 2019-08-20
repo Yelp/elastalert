@@ -339,8 +339,6 @@ class RulesLoader(object):
             rule['compound_compare_key'] = [rule['compare_key']]
         # Add QK, CK and timestamp to include
         include = rule.get('include', ['*'])
-        if 'query_key' in rule:
-            include.append(rule['query_key'])
         if 'compound_query_key' in rule:
             include += rule['compound_query_key']
         if 'compound_aggregation_key' in rule:
