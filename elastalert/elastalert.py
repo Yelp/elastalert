@@ -1555,7 +1555,9 @@ class ElastAlerter(object):
             'rule_name': rule['name'],
             'alert_info': rule['alert'][0].get_info() if not self.debug else {},
             'alert_sent': alert_sent,
-            'alert_time': alert_time
+            'alert_time': alert_time,
+            'client_name': rule['client_name'],
+            'app_name': rule['app_name']
         }
 
         if rule.get('include_match_in_root'):
