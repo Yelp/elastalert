@@ -2111,7 +2111,7 @@ class HiveAlerter(Alerter):
         connection_details = self.rule['hive_connection']
 
         api = TheHiveApi(
-            '{hive_host}:{hive_port}'.format(**connection_details),
+            connection_details.get('hive_host'),
             connection_details.get('hive_apikey', ''),
             proxies=connection_details.get('hive_proxies', {'http': '', 'https': ''}),
             cert=connection_details.get('hive_verify', False))
