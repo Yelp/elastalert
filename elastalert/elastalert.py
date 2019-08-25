@@ -530,7 +530,8 @@ class ElastAlerter(object):
             buckets = res['aggregations']['filtered']['counts']['buckets']
         else:
             buckets = res['aggregations']['counts']['buckets']
-        self.thread_data.num_hits += len(buckets)
+        if getattr(self.thread_data,"num_hits",None):
+            self.thread_data.num_hits += len(buckets)
         lt = rule.get('use_local_time')
         elastalert_logger.info(
             'Queried rule %s from %s to %s: %s buckets' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(buckets))
@@ -1986,7 +1987,8 @@ class ElastAlerter(object):
                 buckets = list(hits_terms.values())[0]
 
                 # get_hits_terms adds to num_hits, but we don't want to count these
-                self.thread_data.num_hits -= len(buckets)
+                if getattr(self.thread_data, "num_hits", None):
+                    self.thread_data.num_hits -= len(buckets)
                 terms = {}
                 for bucket in buckets:
                     terms[bucket['key']] = bucket['doc_count']
