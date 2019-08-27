@@ -4,31 +4,16 @@ import datetime
 import logging
 import os
 import re
-import sys
 
 import dateutil.parser
-import pytz
+import dateutil.tz
+from auth import Auth
+from elasticsearch import RequestsHttpConnection
+from elasticsearch.client import Elasticsearch
 from six import string_types
-
-from . import ElasticSearchClient
-from .auth import Auth
 
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
-
-
-def get_module(module_name):
-    """ Loads a module and returns a specific object.
-    module_name should 'module.file.object'.
-    Returns object or raises EAException on error. """
-    sys.path.append(os.getcwd())
-    try:
-        module_path, module_class = module_name.rsplit('.', 1)
-        base_module = __import__(module_path, globals(), locals(), [module_class])
-        module = getattr(base_module, module_class)
-    except (ImportError, AttributeError, ValueError) as e:
-        raise EAException("Could not import module %s: %s" % (module_name, e)).with_traceback(sys.exc_info()[2])
-    return module
 
 
 def new_get_event_ts(ts_field):
@@ -146,7 +131,7 @@ def ts_to_dt(timestamp):
     dt = dateutil.parser.parse(timestamp)
     # Implicitly convert local timestamps to UTC
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=pytz.utc)
+        dt = dt.replace(tzinfo=dateutil.tz.tzutc())
     return dt
 
 
@@ -292,6 +277,17 @@ def cronite_datetime_to_timestamp(self, d):
     return total_seconds((d - datetime.datetime(1970, 1, 1)))
 
 
+def remove_raw_postfix(field, is_five_or_above):
+    position = 0
+    if is_five_or_above:
+        end = '.keyword'
+    else:
+        end = '.raw'
+    if field.endswith(end):
+        position = field.rfind(end)
+    return field[:position] if position != 0 else field
+
+
 def add_raw_postfix(field, is_five_or_above):
     if is_five_or_above:
         end = '.keyword'
@@ -315,7 +311,7 @@ def replace_dots_in_field_names(document):
 
 
 def elasticsearch_client(conf):
-    """ returns an :class:`ElasticSearchClient` instance configured using an es_conn_config """
+    """ returns an Elasticsearch instance configured using an es_conn_config """
     es_conn_conf = build_es_conn_config(conf)
     auth = Auth()
     es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
@@ -324,7 +320,18 @@ def elasticsearch_client(conf):
                                      aws_region=es_conn_conf['aws_region'],
                                      profile_name=es_conn_conf['profile'])
 
-    return ElasticSearchClient(es_conn_conf)
+    return Elasticsearch(host=es_conn_conf['es_host'],
+                         port=es_conn_conf['es_port'],
+                         url_prefix=es_conn_conf['es_url_prefix'],
+                         use_ssl=es_conn_conf['use_ssl'],
+                         verify_certs=es_conn_conf['verify_certs'],
+                         ca_certs=es_conn_conf['ca_certs'],
+                         connection_class=RequestsHttpConnection,
+                         http_auth=es_conn_conf['http_auth'],
+                         timeout=es_conn_conf['es_conn_timeout'],
+                         send_get_body_as=es_conn_conf['send_get_body_as'],
+                         client_cert=es_conn_conf['client_cert'],
+                         client_key=es_conn_conf['client_key'])
 
 
 def build_es_conn_config(conf):
@@ -388,15 +395,6 @@ def build_es_conn_config(conf):
     return parsed_conf
 
 
-def pytzfy(dt):
-    # apscheduler requires pytz timezone objects
-    # This function will replace a dateutil.tz one with a pytz one
-    if dt.tzinfo is not None:
-        new_tz = pytz.timezone(dt.tzinfo.tzname('Y is this even required??'))
-        return dt.replace(tzinfo=new_tz)
-    return dt
-
-
 def parse_duration(value):
     """Convert ``unit=num`` spec into a ``timedelta`` object."""
     unit, num = value.split('=')
@@ -411,7 +409,7 @@ def parse_deadline(value):
 
 def flatten_dict(dct, delim='.', prefix=''):
     ret = {}
-    for key, val in list(dct.items()):
+    for key, val in dct.items():
         if type(val) == dict:
             ret.update(flatten_dict(val, prefix=prefix + key + delim))
         else:
@@ -442,21 +440,8 @@ def resolve_string(string, match, missing_text='<MISSING VALUE>'):
             string = string.format(**dd_match)
             break
         except KeyError as e:
-            if '{%s}' % str(e).strip("'") not in string:
+            if '{%s}' % e.message not in string:
                 break
-            string = string.replace('{%s}' % str(e).strip("'"), '{_missing_value}')
+            string = string.replace('{%s}' % e.message, '{_missing_value}')
 
     return string
-
-
-def should_scrolling_continue(rule_conf):
-    """
-    Tells about a rule config if it can scroll still or should stop the scrolling.
-
-    :param: rule_conf as dict
-    :rtype: bool
-    """
-    max_scrolling = rule_conf.get('max_scrolling_count')
-    stop_the_scroll = 0 < max_scrolling <= rule_conf.get('scrolling_cycle')
-
-    return not stop_the_scroll

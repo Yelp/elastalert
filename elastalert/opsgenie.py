@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-
 import requests
-
 from .alerts import Alerter
 from .alerts import BasicMatchString
 from .util import EAException
 from .util import elastalert_logger
 from .util import lookup_es_key
-
+from .util import remove_raw_postfix
 
 class OpsGenieAlerter(Alerter):
     '''Sends a http request to the OpsGenie API to signal for an alert'''
@@ -71,6 +69,7 @@ class OpsGenieAlerter(Alerter):
             self.message = self.create_title(matches)
         else:
             self.message = self.custom_message.format(**matches[0])
+
         self.recipients = self._parse_responders(self.recipients, self.recipients_args, matches, self.default_reciepients)
         self.teams = self._parse_responders(self.teams, self.teams_args, matches, self.default_teams)
         post = {}
@@ -86,6 +85,7 @@ class OpsGenieAlerter(Alerter):
 
         for i, tag in enumerate(self.tags):
             self.tags[i] = tag.format(**matches[0])
+
         post['tags'] = self.tags
 
         if self.priority and self.priority not in ('P1', 'P2', 'P3', 'P4', 'P5'):
@@ -94,8 +94,28 @@ class OpsGenieAlerter(Alerter):
         else:
             post['priority'] = self.priority
 
-        if self.alias is not None:
-            post['alias'] = self.alias.format(**matches[0])
+        if 'opsgenie_alias_kw' in self.rule:
+            missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
+            kw = {}
+            for name, kw_name in self.rule.get('opsgenie_alias_kw').items():
+                val = lookup_es_key(matches[0], name)
+
+                # Support referencing other top-level rule properties
+                # This technically may not work if there is a top-level rule property with the same name
+                # as an es result key, since it would have been matched in the lookup_es_key call above
+                if val is None:
+                    val = self.rule.get(name)
+
+                # last attempt: try to recover data directly from matches (if present)
+                if val is None and matches:
+                    val = lookup_es_key(matches[0], remove_raw_postfix(name, self.rule['five']))
+
+                kw[kw_name] = missing if val is None else val
+
+            post['alias'] = self.alias.format(**kw)
+        else:
+            if self.alias is not None:
+                post['alias'] = self.alias.format(**matches[0])
 
         logging.debug(json.dumps(post))
 
@@ -145,6 +165,11 @@ class OpsGenieAlerter(Alerter):
             for i, subject_value in enumerate(opsgenie_subject_values):
                 if subject_value is None:
                     alert_value = self.rule.get(self.opsgenie_subject_args[i])
+
+                    # last attempt: try to recover data directly from matches (if present)
+                    if alert_value is None and matches:
+                        alert_value = lookup_es_key(matches[0], remove_raw_postfix(self.opsgenie_subject_args[i], self.rule['five']))
+
                     if alert_value:
                         opsgenie_subject_values[i] = alert_value
 
@@ -152,6 +177,7 @@ class OpsGenieAlerter(Alerter):
             return opsgenie_subject.format(*opsgenie_subject_values)
 
         return opsgenie_subject
+
 
     def get_info(self):
         ret = {'type': 'opsgenie'}
@@ -162,3 +188,4 @@ class OpsGenieAlerter(Alerter):
         if self.teams:
             ret['teams'] = self.teams
         return ret
+
