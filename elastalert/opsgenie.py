@@ -9,6 +9,7 @@ from .util import elastalert_logger
 from .util import lookup_es_key
 from .util import remove_raw_postfix
 
+
 class OpsGenieAlerter(Alerter):
     '''Sends a http request to the OpsGenie API to signal for an alert'''
     required_options = frozenset(['opsgenie_key'])
@@ -178,7 +179,6 @@ class OpsGenieAlerter(Alerter):
 
         return opsgenie_subject
 
-
     def get_info(self):
         ret = {'type': 'opsgenie'}
         if self.recipients:
@@ -188,4 +188,3 @@ class OpsGenieAlerter(Alerter):
         if self.teams:
             ret['teams'] = self.teams
         return ret
-
