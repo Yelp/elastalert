@@ -1268,9 +1268,34 @@ There are several ways to format the body text of the various types of events. I
     top_counts          = top_counts_header, LF, top_counts_value
     field_values        = Field, ": ", Value
 
-Similarly to ``alert_subject``, ``alert_text`` can be further formatted using standard Python formatting syntax.
+Similarly to ``alert_subject``, ``alert_text`` can be further formatted using:
+
+1. Jinja Template
+
+By setting ``alert_text_type: alert_text_jinja`` you can use jinja templates in ``alert_text``.
+
+```
+alert_text_type: alert_text_jinja
+
+alert_text: |
+  Alert triggered! *({{num_hits}} Matches!)*
+  Something happened with {{username}} ({{email}})
+  {{description|truncate}}
+
+```
+
+2. Standard Python formatting syntax
+
 The field names whose values will be used as the arguments can be passed with ``alert_text_args`` or ``alert_text_kw``.
 You may also refer to any top-level rule property in the ``alert_subject_args``, ``alert_text_args``, ``alert_missing_value``, and ``alert_text_kw fields``.  However, if the matched document has a key with the same name, that will take preference over the rule property.
+
+```
+alert_text: "Something happened with {0} at {1}"
+alert_text_type: alert_text_only
+alert_text_args: ["username", "@timestamp"]
+```
+
+----------------------------------
 
 By default::
 
@@ -1289,6 +1314,14 @@ With ``alert_text_type: alert_text_only``::
     body                = rule_name
 
                           alert_text
+
+
+With ``alert_text_type: alert_text_jinja``::
+
+    body                = rule_name
+
+                          alert_text
+
 
 With ``alert_text_type: exclude_fields``::
 
@@ -1408,7 +1441,7 @@ by the smtp server.
 ``bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
 
 ``email_format``: If set to ``html``, the email's MIME type will be set to HTML, and HTML content should correctly render. If you use this,
-you need to put your own HTML into ``alert_text`` and use ``alert_text_type: alert_text_only``.
+you need to put your own HTML into ``alert_text`` and use ``alert_text_type: alert_text_jinja`` Or ``alert_text_type: alert_text_only``.
 
 Jira
 ~~~~

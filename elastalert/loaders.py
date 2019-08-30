@@ -9,6 +9,7 @@ import sys
 import jsonschema
 import yaml
 import yaml.scanner
+from jinja2 import Template
 from staticconf.loader import yaml_loader
 
 from . import alerts
@@ -389,6 +390,10 @@ class RulesLoader(object):
 
         if rule.get('scan_entire_timeframe') and not rule.get('timeframe'):
             raise EAException('scan_entire_timeframe can only be used if there is a timeframe specified')
+
+        # Compile Jinja Template
+        if rule.get('alert_text_type') == 'alert_text_jinja':
+            rule["jinja_template"] = Template(str(rule.get('alert_text', '')))
 
     def load_modules(self, rule, args=None):
         """ Loads things that could be modules. Enhancements, alerts and rule type. """

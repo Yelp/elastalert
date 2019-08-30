@@ -95,6 +95,8 @@ class BasicMatchString(object):
 
                 kw[kw_name] = missing if val is None else val
             alert_text = alert_text.format(**kw)
+        elif 'alert_text_jinja' == self.rule.get('alert_text_type'):
+            alert_text = self.rule.get("jinja_template").render(**self.match)
 
         self.text += alert_text
 
