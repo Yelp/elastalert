@@ -96,7 +96,10 @@ class BasicMatchString(object):
                 kw[kw_name] = missing if val is None else val
             alert_text = alert_text.format(**kw)
         elif 'alert_text_jinja' == self.rule.get('alert_text_type'):
-            alert_text = self.rule.get("jinja_template").render(**self.match)
+            #  Top fields are accessible via `{{field_name}}` or `{{jinja_root_name['field_name']}}`
+            #  `jinja_root_name` dict is useful when accessing *fields with dots in their keys*,
+            #  as Jinja treat dot as a nested field.
+            alert_text = self.rule.get("jinja_template").render(**self.match, **{self.rule['jinja_root_name']: self.match})
 
         self.text += alert_text
 

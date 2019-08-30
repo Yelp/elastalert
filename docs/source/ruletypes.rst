@@ -1284,6 +1284,9 @@ alert_text: |
 
 ```
 
+Top fields are accessible via `{{field_name}}` or `{{_data['field_name']}}`, `_data` is useful when accessing *fields with dots in their keys*, as Jinja treat dot as a nested field.
+If `_data` conflicts with your top level data, use  ``jinja_root_name`` to change its name.
+
 2. Standard Python formatting syntax
 
 The field names whose values will be used as the arguments can be passed with ``alert_text_args`` or ``alert_text_kw``.

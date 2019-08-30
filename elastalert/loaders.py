@@ -275,6 +275,7 @@ class RulesLoader(object):
         rule.setdefault('_source_enabled', True)
         rule.setdefault('use_local_time', True)
         rule.setdefault('description', "")
+        rule.setdefault('jinja_root_name', "_data")
 
         # Set timestamp_type conversion function, used when generating queries and processing hits
         rule['timestamp_type'] = rule['timestamp_type'].strip().lower()

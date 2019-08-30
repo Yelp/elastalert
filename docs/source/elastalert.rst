@@ -203,6 +203,8 @@ The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticse
 
 ``skip_invalid``: If ``True``, skip invalid files instead of exiting.
 
+``jinja_root_name``: When using a Jinja template, specify the name of the root field name in the template. The default is ``_data``.
+
 =======
 Logging
 -------

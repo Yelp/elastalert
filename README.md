@@ -229,6 +229,9 @@ alert_text: |
 
 ```
 
+> Top fields are accessible via `{{field_name}}` or `{{_data['field_name']}}`, `_data` is useful when accessing *fields with dots in their keys*, as Jinja treat dot as a nested field.
+> If `_data` conflicts with your top level data, use  ``jinja_root_name`` to change its name.
+
 With ``alert_text_type: alert_text_only`` by using Python style string formatting and ``alert_text_args``. For example
 
 ```
