@@ -151,7 +151,7 @@ class BasicMatchString(object):
 
         self._add_custom_alert_text()
         self._ensure_new_line()
-        if self.rule.get('alert_text_type') != 'alert_text_only':
+        if self.rule.get('alert_text_type') != 'alert_text_only' and self.rule.get('alert_text_type') != 'alert_text_jinja':
             self._add_rule_text()
             self._ensure_new_line()
             if self.rule.get('top_count_keys'):
