@@ -530,7 +530,7 @@ class ElastAlerter(object):
             buckets = res['aggregations']['filtered']['counts']['buckets']
         else:
             buckets = res['aggregations']['counts']['buckets']
-        if getattr(self.thread_data,"num_hits",None):
+        if getattr(self.thread_data, "num_hits", None):
             self.thread_data.num_hits += len(buckets)
         lt = rule.get('use_local_time')
         elastalert_logger.info(
