@@ -1686,6 +1686,10 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_title_link``: You can add a link in your Slack notification by setting this to a valid URL. Requires slack_title to be set.
 
+``slack_footer``: Add a static footer text for alert.
+
+``slack_footer_icon``: A Public Url for a footer icon.
+
 ``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slac. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
 
 Mattermost
