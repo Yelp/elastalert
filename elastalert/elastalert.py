@@ -1458,9 +1458,19 @@ class ElastAlerter(object):
         if alert_time is None:
             alert_time = ts_now()
 
+        # Calculate Total Hits (useful in-case of aggregation)
+        total_agg_hits = 0
+        total_agg_matches = 0
+        for match in matches:
+            total_agg_hits += match['num_hits']
+            total_agg_matches += match['num_matches']
+
         if rule.get('aggregation'):
             num_matches = rule.get('aggregation_max_alerts', len(matches))
             matches = matches[:num_matches]
+            for match in matches:
+                match['total_agg_hits'] = total_agg_hits
+                match['total_agg_matches'] = total_agg_matches
 
         # Compute top count keys
         if rule.get('top_count_keys'):

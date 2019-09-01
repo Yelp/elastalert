@@ -364,6 +364,8 @@ Then, for the same sample data shown above listing alice and bob's events, Elast
    past events will result in different alerts than if elastalert had been running while those events occured. This behavior can be changed
    by setting ``aggregate_by_match_time``.
 
+.. note:: In Alert field ``total_agg_hits`` and ``total_agg_matches`` contains the summation of all alerts hits & matches.
+
 aggregate_by_match_time
 ^^^^^^^^^^^^^^^^^^^^^^^
 
