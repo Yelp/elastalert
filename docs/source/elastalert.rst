@@ -133,9 +133,12 @@ The environment variable ``ES_USE_SSL`` will override this field.
 
 ``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``20``.
 
+``rules_loader``: Optional; sets the loader class to be used by ElastAlert to retrieve rules and hashes.
+Defaults to ``FileRulesLoader`` if not set.
+
 ``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all
 files in this folder, and all subdirectories, that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
-or remove rules based on their respective config files.
+or remove rules based on their respective config files. (only required when using ``FileRulesLoader``).
 
 ``scan_subdirectories``: Optional; Sets whether or not ElastAlert should recursively descend the rules directory - ``true`` or ``false``. The default is ``true``
 
@@ -148,7 +151,11 @@ configuration.
 
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. The
 default is 10,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
-limit is reached, ElastAlert will `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_ through pages the size of ``max_query_size`` until processing all results.
+limit is reached, ElastAlert will `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_
+using the size of ``max_query_size`` through the set amount of pages, when ``max_scrolling_count`` is set or until processing all results.
+
+``max_scrolling_count``: The maximum amount of pages to scroll through. The default is ``0``, which means the scrolling has no limit.
+For example if this value is set to ``5`` and the ``max_query_size`` is set to ``10000`` then ``50000`` documents will be downloaded at most.
 
 ``scroll_keepalive``: The maximum time (formatted in `Time Units <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units>`_) the scrolling context should be kept alive. Avoid using high values as it abuses resources in Elasticsearch, but be mindful to allow sufficient time to finish processing all the results.
 
@@ -162,6 +169,8 @@ from that time, unless it is older than ``old_query_limit``, in which case it wi
 ``disable_rules_on_error``: If true, ElastAlert will disable rules which throw uncaught (not EAException) exceptions. It
 will upload a traceback message to ``elastalert_metadata`` and if ``notify_email`` is set, send an email notification. The
 rule will no longer be run until either ElastAlert restarts or the rule file has been modified. This defaults to True.
+
+``show_disabled_rules``: If true, ElastAlert show the disable rules' list when finishes the execution. This defaults to True.
 
 ``notify_email``: An email address, or list of email addresses, to which notification emails will be sent. Currently,
 only an uncaught exception will send a notification email. The from address, SMTP host, and reply-to header can be set
@@ -189,6 +198,25 @@ The default value is ``False``. Elasticsearch 2.0 - 2.3 does not support dots in
 
 ``string_multi_field_name``: If set, the suffix to use for the subfield for string multi-fields in Elasticsearch.
 The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticsearch 5.
+
+``add_metadata_alert``: If set, alerts will include metadata described in rules (``category``, ``description``, ``owner`` and ``priority``); set to ``True`` or ``False``. The default is ``False``.
+
+``skip_invalid``: If ``True``, skip invalid files instead of exiting.
+
+=======
+Logging
+-------
+
+By default, ElastAlert uses a simple basic logging configuration to print log messages to standard error.
+You can change the log level to ``INFO`` messages by using the ``--verbose`` or ``--debug`` command line options.
+
+If you need a more sophisticated logging configuration, you can provide a full logging configuration
+in the config file. This way you can also configure logging to a file, to Logstash and
+adjust the logging format.
+
+For details, see the end of ``config.yaml.example`` where you can find an example logging
+configuration.
+
 
 .. _runningelastalert:
 

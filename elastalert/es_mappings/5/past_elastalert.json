@@ -1,0 +1,22 @@
+{
+  "past_elastalert": {
+    "properties": {
+      "rule_name": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
+      "match_body": {
+        "type": "object",
+        "enabled": "false"
+      },
+      "@timestamp": {
+        "type": "date",
+        "format": "dateOptionalTime"
+      },
+      "aggregate_id": {
+        "index": "not_analyzed",
+        "type": "string"
+      }
+    }
+  }
+}

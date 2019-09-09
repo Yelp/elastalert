@@ -93,6 +93,23 @@ oneOf:
       threshold_ref: {type: integer}
       threshold_cur: {type: integer}
 
+  - title: Spike Aggregation
+    required: [spike_height, spike_type, timeframe]
+    properties:
+      type: {enum: [spike_aggregation]}
+      spike_height: {type: number}
+      spike_type: {enum: ["up", "down", "both"]}
+      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count"]}
+      timeframe: *timeframe
+      use_count_query: {type: boolean}
+      doc_type: {type: string}
+      use_terms_query: {type: boolean}
+      terms_size: {type: integer}
+      alert_on_new_data: {type: boolean}
+      threshold_ref: {type: number}
+      threshold_cur: {type: number}
+      min_doc_count: {type: integer}
+
   - title: Flatline
     required: [threshold, timeframe]
     properties:
@@ -161,6 +178,7 @@ properties:
   buffer_time: *timeframe
   query_delay: *timeframe
   max_query_size: {type: integer}
+  max_scrolling: {type: integer}
 
   owner: {type: string}
   priority: {type: integer}
@@ -247,6 +265,7 @@ properties:
   slack_parse_override: {enum: [none, full]}
   slack_text_string: {type: string}
   slack_ignore_ssl_errors: {type: boolean}
+  slack_ca_certs: {type: string}
 
   ### Mattermost
   mattermost_webhook_url: *arrayOfString
@@ -263,6 +282,10 @@ properties:
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
   pagerduty_event_type: {enum: [none, trigger, resolve, acknowledge]}
+
+### PagerTree
+  pagertree_integration_url: {type: string}
+
 
   ### Exotel
   exotel_account_sid: {type: string}
@@ -318,3 +341,12 @@ properties:
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
+
+  ### LineNotify
+  linenotify_access_token: {type: string}
+
+  ### Zabbix
+  zbx_sender_host: {type: string}
+  zbx_sender_port: {type: integer}
+  zbx_host: {type: string}
+  zbx_item: {type: string}

@@ -84,6 +84,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``priority`` (int, default 2)                                |           |
 +--------------------------------------------------------------+           |
+| ``category`` (string, default empty string)                  |           |
++--------------------------------------------------------------+           |
 | ``scan_entire_timeframe`` (bool, default False)              |           |
 +--------------------------------------------------------------+           |
 | ``import`` (string)                                          |           |
@@ -405,6 +407,11 @@ priority
 ^^^^^^^^
 
 ``priority``: This value will be used to identify the relative priority of the alert. Optionally, this field can be included in any alert type (e.g. for use in email subject/body text). (Optional, int, default 2)
+
+category
+^^^^^^^^
+
+``category``: This value will be used to identify the category of the alert. Optionally, this field can be included in any alert type (e.g. for use in email subject/body text). (Optional, string, default empty string)
 
 max_query_size
 ^^^^^^^^^^^^^^
@@ -1071,6 +1078,9 @@ Optional:
 ``query_key``: Group metric calculations by this field. For each unique value of the ``query_key`` field, the metric will be calculated and
 evaluated separately against the threshold(s).
 
+``min_doc_count``: The minimum number of events in the current window needed for an alert to trigger.  Used in conjunction with ``query_key``,
+this will only consider terms which in their last ``buffer_time`` had at least ``min_doc_count`` records.  Default 1.
+
 ``use_run_every_query_size``: By default the metric value is calculated over a ``buffer_time`` sized window. If this parameter is true
 the rule will use ``run_every`` as the calculation window.
 
@@ -1089,6 +1099,54 @@ bucket keys these usually round evenly to nearest minute, hour, day etc (dependi
 allign with the time elastalert runs, (This both avoid calculations on partial data, and ensures the very latest documents are included).
 See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_offset for a
 more comprehensive explaination.
+
+Spike Aggregation
+~~~~~~~~~~~~~~~~~~
+
+``spike_aggregation``: This rule matches when the value of a metric within the calculation window is ``spike_height`` times larger or smaller
+than during the previous time period. It uses two sliding windows to compare the current and reference metric values.
+We will call these two windows "reference" and "current".
+
+This rule requires:
+
+``metric_agg_key``: This is the name of the field over which the metric value will be calculated. The underlying type of this field must be
+supported by the specified aggregation type.  If using a scripted field via ``metric_agg_script``, this is the name for your scripted field
+
+``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg',
+'sum', 'cardinality', 'value_count'.
+
+``spike_height``: The ratio of the metric value in the last ``timeframe`` to the previous ``timeframe`` that when hit
+will trigger an alert.
+
+``spike_type``: Either 'up', 'down' or 'both'. 'Up' meaning the rule will only match when the metric value is ``spike_height`` times
+higher. 'Down' meaning the reference metric value is ``spike_height`` higher than the current metric value. 'Both' will match either.
+
+``buffer_time``: The rule will average out the rate of events over this time period. For example, ``hours: 1`` means that the 'current'
+window will span from present to one hour ago, and the 'reference' window will span from one hour ago to two hours ago. The rule
+will not be active until the time elapsed from the first event is at least two timeframes. This is to prevent an alert being triggered
+before a baseline rate has been established. This can be overridden using ``alert_on_new_data``.
+
+Optional:
+
+``query_key``: Group metric calculations by this field. For each unique value of the ``query_key`` field, the metric will be calculated and
+evaluated separately against the 'reference'/'current' metric value and ``spike height``.
+
+``metric_agg_script``: A `Painless` formatted script describing how to calculate your metric on-the-fly::
+
+    metric_agg_key: myScriptedMetric
+    metric_agg_script:
+        script: doc['field1'].value * doc['field2'].value
+
+``threshold_ref``: The minimum value of the metric in the reference window for an alert to trigger. For example, if
+``spike_height: 3`` and ``threshold_ref: 10``, then the 'reference' window must have a metric value of 10 and the 'current' window at
+least three times that for an alert to be triggered.
+
+``threshold_cur``: The minimum value of the metric in the current window for an alert to trigger. For example, if
+``spike_height: 3`` and ``threshold_cur: 60``, then an alert will occur if the current window has a metric value greater than 60 and
+the reference window is less than a third of that value.
+
+``min_doc_count``: The minimum number of events in the current window needed for an alert to trigger.  Used in conjunction with ``query_key``,
+this will only consider terms which in their last ``buffer_time`` had at least ``min_doc_count`` records.  Default 1.
 
 Percentage Match
 ~~~~~~~~~~~~~~~~
@@ -1253,6 +1311,8 @@ ruletype_text is the string returned by RuleType.get_match_str.
 field_values will contain every key value pair included in the results from Elasticsearch. These fields include "@timestamp" (or the value of ``timestamp_field``),
 every key in ``include``, every key in ``top_count_keys``, ``query_key``, and ``compare_key``. If the alert spans multiple events, these values may
 come from an individual event, usually the one which triggers the alert.
+
+When using ``alert_text_args``, you can access nested fields and index into arrays. For example, if your match was ``{"data": {"ips": ["127.0.0.1", "12.34.56.78"]}}``, then by using ``"data.ips[1]"`` in ``alert_text_args``, it would replace value with ``"12.34.56.78"``. This can go arbitrarily deep into fields and will still work on keys that contain dots themselves.
 
 Command
 ~~~~~~~
@@ -1479,10 +1539,10 @@ Optional:
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
 ``opsgenie_recipients_args``: Map of arguments used to format opsgenie_recipients.
-``opsgenie_default_recipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful. 
+``opsgenie_default_recipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful.
 ``opsgenie_teams``: A list of OpsGenie teams to notify (useful for schedules with escalation).
 ``opsgenie_teams_args``: Map of arguments used to format opsgenie_teams (useful for assigning the alerts to teams based on some data)
-``opsgenie_default_teams``: List of default teams to notify when the formatting of opsgenie_teams is unsuccesful. 
+``opsgenie_default_teams``: List of default teams to notify when the formatting of opsgenie_teams is unsuccesful.
 ``opsgenie_tags``: A list of tags for this alert.
 
 ``opsgenie_message``: Set the OpsGenie message to something other than the rule name. The message can be formatted with fields from the first match e.g. "Error occurred for {app_name} at {timestamp}.".
@@ -1622,6 +1682,11 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
 
+``slack_title``: Sets a title for the message, this shows up as a blue text at the start of the message
+
+``slack_title_link``: You can add a link in your Slack notification by setting this to a valid URL. Requires slack_title to be set.
+
+``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slac. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
 
 Mattermost
 ~~~~~
@@ -1726,13 +1791,30 @@ See https://v2.developer.pagerduty.com/docs/send-an-event-events-api-v2
 
 ``pagerduty_v2_payload_class``: Sets the class of the payload. (the event type in PagerDuty)
 
+``pagerduty_v2_payload_class_args``: If set, and ``pagerduty_v2_payload_class`` is a formattable string, Elastalert will format the class based on the provided array of fields from the rule or match.
+
 ``pagerduty_v2_payload_component``: Sets the component of the payload. (what program/interface/etc the event came from)
 
+``pagerduty_v2_payload_component_args``: If set, and ``pagerduty_v2_payload_component`` is a formattable string, Elastalert will format the component based on the provided array of fields from the rule or match.
+
 ``pagerduty_v2_payload_group``: Sets the logical grouping (e.g. app-stack)
+
+``pagerduty_v2_payload_group_args``: If set, and ``pagerduty_v2_payload_group`` is a formattable string, Elastalert will format the group based on the provided array of fields from the rule or match.
 
 ``pagerduty_v2_payload_severity``: Sets the severity of the page. (defaults to `critical`, valid options: `critical`, `error`, `warning`, `info`)
 
 ``pagerduty_v2_payload_source``: Sets the source of the event, preferably the hostname or fqdn.
+
+``pagerduty_v2_payload_source_args``: If set, and ``pagerduty_v2_payload_source`` is a formattable string, Elastalert will format the source based on the provided array of fields from the rule or match.
+
+PagerTree
+~~~~~~~~~
+
+PagerTree alerter will trigger an incident to a predefined PagerTree integration url.
+
+The alerter requires the following options:
+
+``pagertree_integration_url``: URL generated by PagerTree for the integration.
 
 Exotel
 ~~~~~~
@@ -1787,7 +1869,7 @@ The alerter requires the following options:
 
 Optional:
 
-``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents thoughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
+``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents throughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
 
@@ -1867,8 +1949,7 @@ Alerta
 ~~~~~~
 
 Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint.
-The default values will work with a local Alerta server installation with authorization disabled.
-See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on the Alerta alert json format.
+See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on the Alerta JSON format.
 
 For Alerta 5.0
 
@@ -1878,46 +1959,47 @@ Required:
 
 Optional:
 
-``alerta_api_key``: This is the api key for alerta server if required. Default behaviour is that no Authorization header sent with the request.
+``alerta_api_key``: This is the api key for alerta server, sent in an ``Authorization`` HTTP header. If not defined, no Authorization header is sent.
 
-``alerta_resource``: The resource name of the generated alert. Defaults to "elastalert". Can be a reference to a part of the match.
+``alerta_use_qk_as_resource``: If true and query_key is present, this will override ``alerta_resource`` field with the ``query_key value`` (Can be useful if ``query_key`` is a hostname).
 
-``alerta_service``: A list of service tags for the generated alert. Defaults to "elastalert".  Can be a reference to a part of the match.
+``alerta_use_match_timestamp``: If true, it will use the timestamp of the first match as the ``createTime`` of the alert. otherwise, the current server time is used.
 
-``alerta_severity``: The severity level of the alert. Defaults to "warning".
+``alert_missing_value``: Text to replace any match field not found when formating strings. Defaults to ``<MISSING_TEXT>``.
 
-``alerta_origin``: The origin field for the generated alert. Defaults to "elastalert".  Can be a reference to a part of the match.
+The following options dictate the values of the API JSON payload:
 
-``alerta_environment``: The environment field for the generated alert. Defaults to "Production".  Can be a reference to a part of the match.
+``alerta_severity``: Defaults to "warning".
 
-``alerta_group``: The group field for the generated alert. No Default. Can be a reference to a part of the match.
-
-``alerta_timeout``: The time in seconds before this alert will expire (in Alerta). Default 84600 (1 Day).
-
-``alerta_correlate``: A list of alerta events that this one correlates with. Default is an empty list. Can make reference to a part of the match to build the event name.
-
-``alerta_tags``: A list of alerta tags. Default is an empty list.  Can be a reference to a part of the match.
-
-``alerta_use_qk_as_resource``: If true and query_key is present this will override alerta_resource field with the query key value (Can be useful if query_key is a hostname).
-
-``alerta_use_match_timestamp``: If true will use the timestamp of the first match as the createTime of the alert, otherwise the current time is used. Default False.
-
-``alerta_event``: Can make reference to parts of the match to build the event name. Defaults to "elastalert".
-
-``alerta_text``: Python-style string can be used to make reference to parts of the match. Defaults to "elastalert".
+``alerta_timeout``: Defaults 84600 (1 Day).
 
 ``alerta_type``: Defaults to "elastalert".
 
-``alerta_value``: Can be a reference to a part of the match. No Default.
+The following options use Python-like string syntax ``{<field>}`` or ``%(<field>)s`` to access parts of the match, similar to the CommandAlerter. Ie: "Alert for {clientip}".
+If the referenced key is not found in the match, it is replaced by the text indicated by the option ``alert_missing_value``.
 
-``alerta_attributes_keys``: List of key names for the Alerta Attributes dictionary
+``alerta_resource``: Defaults to "elastalert".
 
-``alerta_attributes_values``: List of values for the Alerta Attributes dictionary, corresponding in order to the described keys. Can be a reference to a part of the match.
+``alerta_service``: Defaults to "elastalert".
 
-.. info::
+``alerta_origin``: Defaults to "elastalert".
 
-    The optional values use Python-like string syntax ``{<field>}`` or ``%(<field>)s`` to access parts of the match, similar to the CommandAlerter. Ie: "Alert for {clientip}"
-    If the referenced value is not found in the match, it is replaced by ``<MISSING VALUE>`` or the text indicated by the rule in ``alert_missing_value``.
+``alerta_environment``: Defaults to "Production".
+
+``alerta_group``: Defaults to "".
+
+``alerta_correlate``: Defaults to an empty list.
+
+``alerta_tags``: Defaults to an empty list.
+
+``alerta_event``: Defaults to the rule's name.
+
+``alerta_text``: Defaults to the rule's text according to its type.
+
+``alerta_value``: Defaults to "".
+
+The ``attributes`` dictionary is built by joining the lists from  ``alerta_attributes_keys`` and ``alerta_attributes_values``, considered in order.
+
 
 Example usage using old-style format::
 
@@ -1930,6 +2012,13 @@ Example usage using old-style format::
     alerta_event: "ProbeUP"
     alerta_text:  "Probe %(hostname)s is UP at %(logdate)s GMT"
     alerta_value: "UP"
+
+Example usage using new-style format::
+
+    alert:
+      - alerta
+    alerta_attributes_values: ["{key}",    "{logdate}",     "{sender_ip}"  ]
+    alerta_text:  "Probe {hostname} is UP at {logdate} GMT"
 
 
 
@@ -1948,6 +2037,8 @@ Optional:
 
 ``http_post_static_payload``: Key:value pairs of static parameters to be sent, along with the Elasticsearch results. Put your authentication or other information here.
 
+``http_post_headers``: Key:value pairs of headers to be sent as part of the request.
+
 ``http_post_proxy``: URL of proxy, if required.
 
 ``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
@@ -1962,6 +2053,8 @@ Example usage::
       ip: clientip
     http_post_static_payload:
       apikey: abc123
+    http_post_headers:
+      authorization: Basic 123dr3234
 
 
 Alerter
@@ -1975,6 +2068,16 @@ Example usage::
     jira_alert_owner: $owner$
 
 
+
+Line Notify
+~~~~~~~~~~~
+
+Line Notify will send notification to a Line application. The body of the notification is formatted the same as with other alerters.
+
+Required:
+
+``linenotify_access_token``: The access token that you got from https://notify-bot.line.me/my/
+
 theHive
 ~~~~~~~
 
@@ -1984,7 +2087,7 @@ Required:
 
 ``hive_connection``: The connection details as key:values. Required keys are ``hive_host``, ``hive_port`` and ``hive_apikey``.
 
-``hive_alert_config``: Configuration options for the alert. 
+``hive_alert_config``: Configuration options for the alert.
 
 Optional:
 
@@ -2000,10 +2103,9 @@ Example usage::
        hive_host: http://localhost
        hive_port: <hive_port>
        hive_apikey: <hive_apikey>
-
-     hive_proxies:
-       http: ''
-       https: ''
+       hive_proxies:
+         http: ''
+         https: ''
 
       hive_alert_config:
         title: 'Title'  ## This will default to {rule[index]_rule[name]} if not provided
@@ -2020,3 +2122,16 @@ Example usage::
         - domain: "{match[field1]}_{rule[name]}"
         - domain: "{match[field]}"
         - ip: "{match[ip_field]}"
+
+
+Zabbix
+~~~~~~~~~~~
+
+Zabbix will send notification to a Zabbix server. The item in the host specified receive a 1 value for each hit. For example, if the elastic query produce 3 hits in the last execution of elastalert, three '1' (integer) values will be send from elastalert to Zabbix Server. If the query have 0 hits, any value will be sent.
+
+Required:
+
+``zbx_sender_host``: The address where zabbix server is running.
+``zbx_sender_port``: The port where zabbix server is listenning.
+``zbx_host``: This field setup the host in zabbix that receives the value sent by Elastalert.
+``zbx_item``: This field setup the item in the host that receives the value sent by Elastalert.

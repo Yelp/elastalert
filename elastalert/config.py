@@ -1,36 +1,18 @@
 # -*- coding: utf-8 -*-
-import copy
 import datetime
-import hashlib
 import logging
-import os
-import sys
+import logging.config
 
-import alerts
-import enhancements
-import jsonschema
-import ruletypes
-import yaml
-import yaml.scanner
 from envparse import Env
-from opsgenie import OpsGenieAlerter
 from staticconf.loader import yaml_loader
-from util import dt_to_ts
-from util import dt_to_ts_with_format
-from util import dt_to_unix
-from util import dt_to_unixms
-from util import EAException
-from util import ts_to_dt
-from util import ts_to_dt_with_format
-from util import unix_to_dt
-from util import unixms_to_dt
 
-# schema for rule yaml
-rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml'))))
+from . import loaders
+from .util import EAException
+from .util import elastalert_logger
+from .util import get_module
 
-# Required global (config.yaml) and local (rule.yaml)  configuration options
-required_globals = frozenset(['run_every', 'rules_folder', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
-required_locals = frozenset(['alert', 'type', 'name', 'index'])
+# Required global (config.yaml) configuration options
+required_globals = frozenset(['run_every', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
 
 # Settings that can be derived from ENV variables
 env_settings = {'ES_USE_SSL': 'use_ssl',
@@ -42,422 +24,57 @@ env_settings = {'ES_USE_SSL': 'use_ssl',
 
 env = Env(ES_USE_SSL=bool)
 
-# import rule dependency
-import_rules = {}
 
-# Used to map the names of rules to their classes
-rules_mapping = {
-    'frequency': ruletypes.FrequencyRule,
-    'any': ruletypes.AnyRule,
-    'spike': ruletypes.SpikeRule,
-    'blacklist': ruletypes.BlacklistRule,
-    'whitelist': ruletypes.WhitelistRule,
-    'change': ruletypes.ChangeRule,
-    'flatline': ruletypes.FlatlineRule,
-    'new_term': ruletypes.NewTermsRule,
-    'cardinality': ruletypes.CardinalityRule,
-    'metric_aggregation': ruletypes.MetricAggregationRule,
-    'percentage_match': ruletypes.PercentageMatchRule,
+# Used to map the names of rule loaders to their classes
+loader_mapping = {
+    'file': loaders.FileRulesLoader,
 }
 
-# Used to map names of alerts to their classes
-alerts_mapping = {
-    'email': alerts.EmailAlerter,
-    'jira': alerts.JiraAlerter,
-    'opsgenie': OpsGenieAlerter,
-    'stomp': alerts.StompAlerter,
-    'debug': alerts.DebugAlerter,
-    'command': alerts.CommandAlerter,
-    'sns': alerts.SnsAlerter,
-    'hipchat': alerts.HipChatAlerter,
-    'stride': alerts.StrideAlerter,
-    'ms_teams': alerts.MsTeamsAlerter,
-    'slack': alerts.SlackAlerter,
-    'mattermost': alerts.MattermostAlerter,
-    'pagerduty': alerts.PagerDutyAlerter,
-    'exotel': alerts.ExotelAlerter,
-    'twilio': alerts.TwilioAlerter,
-    'victorops': alerts.VictorOpsAlerter,
-    'telegram': alerts.TelegramAlerter,
-    'googlechat': alerts.GoogleChatAlerter,
-    'gitter': alerts.GitterAlerter,
-    'servicenow': alerts.ServiceNowAlerter,
-    'alerta': alerts.AlertaAlerter,
-    'post': alerts.HTTPPostAlerter,
-    'hivealerter': alerts.HiveAlerter
-}
-# A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
-# For example, jira goes before email so the ticket # will be added to the resulting email.
-alerts_order = {
-    'jira': 0,
-    'email': 1
-}
 
-base_config = {}
-
-
-def get_module(module_name):
-    """ Loads a module and returns a specific object.
-    module_name should 'module.file.object'.
-    Returns object or raises EAException on error. """
-    try:
-        module_path, module_class = module_name.rsplit('.', 1)
-        base_module = __import__(module_path, globals(), locals(), [module_class])
-        module = getattr(base_module, module_class)
-    except (ImportError, AttributeError, ValueError) as e:
-        raise EAException("Could not import module %s: %s" % (module_name, e)), None, sys.exc_info()[2]
-    return module
-
-
-def load_configuration(filename, conf, args=None):
-    """ Load a yaml rule file and fill in the relevant fields with objects.
-
-    :param filename: The name of a rule configuration file.
-    :param conf: The global configuration dictionary, used for populating defaults.
-    :return: The rule configuration, a dictionary.
-    """
-    rule = load_rule_yaml(filename)
-    load_options(rule, conf, filename, args)
-    load_modules(rule, args)
-    return rule
-
-
-def load_rule_yaml(filename):
-    rule = {
-        'rule_file': filename,
-    }
-
-    import_rules.pop(filename, None)  # clear `filename` dependency
-    while True:
-        try:
-            loaded = yaml_loader(filename)
-        except yaml.scanner.ScannerError as e:
-            raise EAException('Could not parse file %s: %s' % (filename, e))
-
-        # Special case for merging filters - if both files specify a filter merge (AND) them
-        if 'filter' in rule and 'filter' in loaded:
-            rule['filter'] = loaded['filter'] + rule['filter']
-
-        loaded.update(rule)
-        rule = loaded
-        if 'import' in rule:
-            # Find the path of the next file.
-            if os.path.isabs(rule['import']):
-                import_filename = rule['import']
-            else:
-                import_filename = os.path.join(os.path.dirname(filename), rule['import'])
-            # set dependencies
-            rules = import_rules.get(filename, [])
-            rules.append(import_filename)
-            import_rules[filename] = rules
-            filename = import_filename
-            del(rule['import'])  # or we could go on forever!
-        else:
-            break
-
-    return rule
-
-
-def load_options(rule, conf, filename, args=None):
-    """ Converts time objects, sets defaults, and validates some settings.
-
-    :param rule: A dictionary of parsed YAML from a rule config file.
-    :param conf: The global configuration dictionary, used for populating defaults.
-    """
-    adjust_deprecated_values(rule)
-
-    try:
-        rule_schema.validate(rule)
-    except jsonschema.ValidationError as e:
-        raise EAException("Invalid Rule file: %s\n%s" % (filename, e))
-
-    try:
-        # Set all time based parameters
-        if 'timeframe' in rule:
-            rule['timeframe'] = datetime.timedelta(**rule['timeframe'])
-        if 'realert' in rule:
-            rule['realert'] = datetime.timedelta(**rule['realert'])
-        else:
-            if 'aggregation' in rule:
-                rule['realert'] = datetime.timedelta(minutes=0)
-            else:
-                rule['realert'] = datetime.timedelta(minutes=1)
-        if 'aggregation' in rule and not rule['aggregation'].get('schedule'):
-            rule['aggregation'] = datetime.timedelta(**rule['aggregation'])
-        if 'query_delay' in rule:
-            rule['query_delay'] = datetime.timedelta(**rule['query_delay'])
-        if 'buffer_time' in rule:
-            rule['buffer_time'] = datetime.timedelta(**rule['buffer_time'])
-        if 'bucket_interval' in rule:
-            rule['bucket_interval_timedelta'] = datetime.timedelta(**rule['bucket_interval'])
-        if 'exponential_realert' in rule:
-            rule['exponential_realert'] = datetime.timedelta(**rule['exponential_realert'])
-        if 'kibana4_start_timedelta' in rule:
-            rule['kibana4_start_timedelta'] = datetime.timedelta(**rule['kibana4_start_timedelta'])
-        if 'kibana4_end_timedelta' in rule:
-            rule['kibana4_end_timedelta'] = datetime.timedelta(**rule['kibana4_end_timedelta'])
-    except (KeyError, TypeError) as e:
-        raise EAException('Invalid time format used: %s' % (e))
-
-    # Set defaults, copy defaults from config.yaml
-    for key, val in base_config.items():
-        rule.setdefault(key, val)
-    rule.setdefault('name', os.path.splitext(filename)[0])
-    rule.setdefault('realert', datetime.timedelta(seconds=0))
-    rule.setdefault('aggregation', datetime.timedelta(seconds=0))
-    rule.setdefault('query_delay', datetime.timedelta(seconds=0))
-    rule.setdefault('timestamp_field', '@timestamp')
-    rule.setdefault('filter', [])
-    rule.setdefault('timestamp_type', 'iso')
-    rule.setdefault('timestamp_format', '%Y-%m-%dT%H:%M:%SZ')
-    rule.setdefault('_source_enabled', True)
-    rule.setdefault('use_local_time', True)
-    rule.setdefault('description', "")
-
-    # Set timestamp_type conversion function, used when generating queries and processing hits
-    rule['timestamp_type'] = rule['timestamp_type'].strip().lower()
-    if rule['timestamp_type'] == 'iso':
-        rule['ts_to_dt'] = ts_to_dt
-        rule['dt_to_ts'] = dt_to_ts
-    elif rule['timestamp_type'] == 'unix':
-        rule['ts_to_dt'] = unix_to_dt
-        rule['dt_to_ts'] = dt_to_unix
-    elif rule['timestamp_type'] == 'unix_ms':
-        rule['ts_to_dt'] = unixms_to_dt
-        rule['dt_to_ts'] = dt_to_unixms
-    elif rule['timestamp_type'] == 'custom':
-        def _ts_to_dt_with_format(ts):
-            return ts_to_dt_with_format(ts, ts_format=rule['timestamp_format'])
-
-        def _dt_to_ts_with_format(dt):
-            ts = dt_to_ts_with_format(dt, ts_format=rule['timestamp_format'])
-            if 'timestamp_format_expr' in rule:
-                # eval expression passing 'ts' and 'dt'
-                return eval(rule['timestamp_format_expr'], {'ts': ts, 'dt': dt})
-            else:
-                return ts
-
-        rule['ts_to_dt'] = _ts_to_dt_with_format
-        rule['dt_to_ts'] = _dt_to_ts_with_format
-    else:
-        raise EAException('timestamp_type must be one of iso, unix, or unix_ms')
-
-    # Add support for client ssl certificate auth
-    if 'verify_certs' in conf:
-        rule.setdefault('verify_certs', conf.get('verify_certs'))
-        rule.setdefault('ca_certs', conf.get('ca_certs'))
-        rule.setdefault('client_cert', conf.get('client_cert'))
-        rule.setdefault('client_key', conf.get('client_key'))
-
-    # Set HipChat options from global config
-    rule.setdefault('hipchat_msg_color', 'red')
-    rule.setdefault('hipchat_domain', 'api.hipchat.com')
-    rule.setdefault('hipchat_notify', True)
-    rule.setdefault('hipchat_from', '')
-    rule.setdefault('hipchat_ignore_ssl_errors', False)
-
-    # Set OpsGenie options from global config
-    rule.setdefault('opsgenie_default_receipients', None)
-    rule.setdefault('opsgenie_default_teams', None)
-
-    # Make sure we have required options
-    if required_locals - frozenset(rule.keys()):
-        raise EAException('Missing required option(s): %s' % (', '.join(required_locals - frozenset(rule.keys()))))
-
-    if 'include' in rule and type(rule['include']) != list:
-        raise EAException('include option must be a list')
-
-    if isinstance(rule.get('query_key'), list):
-        rule['compound_query_key'] = rule['query_key']
-        rule['query_key'] = ','.join(rule['query_key'])
-
-    if isinstance(rule.get('aggregation_key'), list):
-        rule['compound_aggregation_key'] = rule['aggregation_key']
-        rule['aggregation_key'] = ','.join(rule['aggregation_key'])
-
-    if isinstance(rule.get('compare_key'), list):
-        rule['compound_compare_key'] = rule['compare_key']
-        rule['compare_key'] = ','.join(rule['compare_key'])
-    elif 'compare_key' in rule:
-        rule['compound_compare_key'] = [rule['compare_key']]
-    # Add QK, CK and timestamp to include
-    include = rule.get('include', ['*'])
-    if 'query_key' in rule:
-        include.append(rule['query_key'])
-    if 'compound_query_key' in rule:
-        include += rule['compound_query_key']
-    if 'compound_aggregation_key' in rule:
-        include += rule['compound_aggregation_key']
-    if 'compare_key' in rule:
-        include.append(rule['compare_key'])
-    if 'compound_compare_key' in rule:
-        include += rule['compound_compare_key']
-    if 'top_count_keys' in rule:
-        include += rule['top_count_keys']
-    include.append(rule['timestamp_field'])
-    rule['include'] = list(set(include))
-
-    # Check that generate_kibana_url is compatible with the filters
-    if rule.get('generate_kibana_link'):
-        for es_filter in rule.get('filter'):
-            if es_filter:
-                if 'not' in es_filter:
-                    es_filter = es_filter['not']
-                if 'query' in es_filter:
-                    es_filter = es_filter['query']
-                if es_filter.keys()[0] not in ('term', 'query_string', 'range'):
-                    raise EAException('generate_kibana_link is incompatible with filters other than term, query_string and range. '
-                                      'Consider creating a dashboard and using use_kibana_dashboard instead.')
-
-    # Check that doc_type is provided if use_count/terms_query
-    if rule.get('use_count_query') or rule.get('use_terms_query'):
-        if 'doc_type' not in rule:
-            raise EAException('doc_type must be specified.')
-
-    # Check that query_key is set if use_terms_query
-    if rule.get('use_terms_query'):
-        if 'query_key' not in rule:
-            raise EAException('query_key must be specified with use_terms_query')
-
-    # Warn if use_strf_index is used with %y, %M or %D
-    # (%y = short year, %M = minutes, %D = full date)
-    if rule.get('use_strftime_index'):
-        for token in ['%y', '%M', '%D']:
-            if token in rule.get('index'):
-                logging.warning('Did you mean to use %s in the index? '
-                                'The index will be formatted like %s' % (token,
-                                                                         datetime.datetime.now().strftime(rule.get('index'))))
-
-    if rule.get('scan_entire_timeframe') and not rule.get('timeframe'):
-        raise EAException('scan_entire_timeframe can only be used if there is a timeframe specified')
-
-
-def load_modules(rule, args=None):
-    """ Loads things that could be modules. Enhancements, alerts and rule type. """
-    # Set match enhancements
-    match_enhancements = []
-    for enhancement_name in rule.get('match_enhancements', []):
-        if enhancement_name in dir(enhancements):
-            enhancement = getattr(enhancements, enhancement_name)
-        else:
-            enhancement = get_module(enhancement_name)
-        if not issubclass(enhancement, enhancements.BaseEnhancement):
-            raise EAException("Enhancement module %s not a subclass of BaseEnhancement" % (enhancement_name))
-        match_enhancements.append(enhancement(rule))
-    rule['match_enhancements'] = match_enhancements
-
-    # Convert rule type into RuleType object
-    if rule['type'] in rules_mapping:
-        rule['type'] = rules_mapping[rule['type']]
-    else:
-        rule['type'] = get_module(rule['type'])
-        if not issubclass(rule['type'], ruletypes.RuleType):
-            raise EAException('Rule module %s is not a subclass of RuleType' % (rule['type']))
-
-    # Make sure we have required alert and type options
-    reqs = rule['type'].required_options
-
-    if reqs - frozenset(rule.keys()):
-        raise EAException('Missing required option(s): %s' % (', '.join(reqs - frozenset(rule.keys()))))
-    # Instantiate rule
-    try:
-        rule['type'] = rule['type'](rule, args)
-    except (KeyError, EAException) as e:
-        raise EAException('Error initializing rule %s: %s' % (rule['name'], e)), None, sys.exc_info()[2]
-    # Instantiate alerts only if we're not in debug mode
-    # In debug mode alerts are not actually sent so don't bother instantiating them
-    if not args or not args.debug:
-        rule['alert'] = load_alerts(rule, alert_field=rule['alert'])
-
-
-def isyaml(filename):
-    return filename.endswith('.yaml') or filename.endswith('.yml')
-
-
-def get_file_paths(conf, use_rule=None):
-    # Passing a filename directly can bypass rules_folder and .yaml checks
-    if use_rule and os.path.isfile(use_rule):
-        return [use_rule]
-    rule_folder = conf['rules_folder']
-    rule_files = []
-    if conf['scan_subdirectories']:
-        for root, folders, files in os.walk(rule_folder):
-            for filename in files:
-                if use_rule and use_rule != filename:
-                    continue
-                if isyaml(filename):
-                    rule_files.append(os.path.join(root, filename))
-    else:
-        for filename in os.listdir(rule_folder):
-            fullpath = os.path.join(rule_folder, filename)
-            if os.path.isfile(fullpath) and isyaml(filename):
-                rule_files.append(fullpath)
-    return rule_files
-
-
-def load_alerts(rule, alert_field):
-    def normalize_config(alert):
-        """Alert config entries are either "alertType" or {"alertType": {"key": "data"}}.
-        This function normalizes them both to the latter format. """
-        if isinstance(alert, basestring):
-            return alert, rule
-        elif isinstance(alert, dict):
-            name, config = iter(alert.items()).next()
-            config_copy = copy.copy(rule)
-            config_copy.update(config)  # warning, this (intentionally) mutates the rule dict
-            return name, config_copy
-        else:
-            raise EAException()
-
-    def create_alert(alert, alert_config):
-        alert_class = alerts_mapping.get(alert) or get_module(alert)
-        if not issubclass(alert_class, alerts.Alerter):
-            raise EAException('Alert module %s is not a subclass of Alerter' % (alert))
-        missing_options = (rule['type'].required_options | alert_class.required_options) - frozenset(alert_config or [])
-        if missing_options:
-            raise EAException('Missing required option(s): %s' % (', '.join(missing_options)))
-        return alert_class(alert_config)
-
-    try:
-        if type(alert_field) != list:
-            alert_field = [alert_field]
-
-        alert_field = [normalize_config(x) for x in alert_field]
-        alert_field = sorted(alert_field, key=lambda (a, b): alerts_order.get(a, 1))
-        # Convert all alerts into Alerter objects
-        alert_field = [create_alert(a, b) for a, b in alert_field]
-
-    except (KeyError, EAException) as e:
-        raise EAException('Error initiating alert %s: %s' % (rule['alert'], e)), None, sys.exc_info()[2]
-
-    return alert_field
-
-
-def load_rules(args):
+def load_conf(args, defaults=None, overwrites=None):
     """ Creates a conf dictionary for ElastAlerter. Loads the global
-    config file and then each rule found in rules_folder.
+        config file and then each rule found in rules_folder.
 
-    :param args: The parsed arguments to ElastAlert
-    :return: The global configuration, a dictionary.
-    """
-    names = []
+        :param args: The parsed arguments to ElastAlert
+        :param defaults: Dictionary of default conf values
+        :param overwrites: Dictionary of conf values to override
+        :return: The global configuration, a dictionary.
+        """
     filename = args.config
-    conf = yaml_loader(filename)
-    use_rule = args.rule
+    if filename:
+        conf = yaml_loader(filename)
+    else:
+        try:
+            conf = yaml_loader('config.yaml')
+        except FileNotFoundError:
+            raise EAException('No --config or config.yaml found')
 
-    for env_var, conf_var in env_settings.items():
+    # init logging from config and set log levels according to command line options
+    configure_logging(args, conf)
+
+    for env_var, conf_var in list(env_settings.items()):
         val = env(env_var, None)
         if val is not None:
             conf[conf_var] = val
 
-    # Make sure we have all required globals
-    if required_globals - frozenset(conf.keys()):
-        raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(conf.keys()))))
+    for key, value in (iter(defaults.items()) if defaults is not None else []):
+        if key not in conf:
+            conf[key] = value
 
+    for key, value in (iter(overwrites.items()) if overwrites is not None else []):
+        conf[key] = value
+
+    # Make sure we have all required globals
+    if required_globals - frozenset(list(conf.keys())):
+        raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(list(conf.keys())))))
+
+    conf.setdefault('writeback_alias', 'elastalert_alerts')
     conf.setdefault('max_query_size', 10000)
     conf.setdefault('scroll_keepalive', '30s')
+    conf.setdefault('max_scrolling_count', 0)
     conf.setdefault('disable_rules_on_error', True)
     conf.setdefault('scan_subdirectories', True)
+    conf.setdefault('rules_loader', 'file')
 
     # Convert run_every, buffer_time into a timedelta object
     try:
@@ -472,56 +89,48 @@ def load_rules(args):
         else:
             conf['old_query_limit'] = datetime.timedelta(weeks=1)
     except (KeyError, TypeError) as e:
-        raise EAException('Invalid time format used: %s' % (e))
+        raise EAException('Invalid time format used: %s' % e)
 
-    global base_config
-    base_config = copy.deepcopy(conf)
+    # Initialise the rule loader and load each rule configuration
+    rules_loader_class = loader_mapping.get(conf['rules_loader']) or get_module(conf['rules_loader'])
+    rules_loader = rules_loader_class(conf)
+    conf['rules_loader'] = rules_loader
+    # Make sure we have all the required globals for the loader
+    # Make sure we have all required globals
+    if rules_loader.required_globals - frozenset(list(conf.keys())):
+        raise EAException(
+            '%s must contain %s' % (filename, ', '.join(rules_loader.required_globals - frozenset(list(conf.keys())))))
 
-    # Load each rule configuration file
-    rules = []
-    rule_files = get_file_paths(conf, use_rule)
-    for rule_file in rule_files:
-        try:
-            rule = load_configuration(rule_file, conf, args)
-            # By setting "is_enabled: False" in rule file, a rule is easily disabled
-            if 'is_enabled' in rule and not rule['is_enabled']:
-                continue
-            if rule['name'] in names:
-                raise EAException('Duplicate rule named %s' % (rule['name']))
-        except EAException as e:
-            raise EAException('Error loading file %s: %s' % (rule_file, e))
-
-        rules.append(rule)
-        names.append(rule['name'])
-
-    conf['rules'] = rules
     return conf
 
 
-def get_rule_hashes(conf, use_rule=None):
-    rule_files = get_file_paths(conf, use_rule)
-    rule_mod_times = {}
-    for rule_file in rule_files:
-        rule_mod_times[rule_file] = get_rulefile_hash(rule_file)
-    return rule_mod_times
+def configure_logging(args, conf):
+    # configure logging from config file if provided
+    if 'logging' in conf:
+        # load new logging config
+        logging.config.dictConfig(conf['logging'])
 
+    if args.verbose and args.debug:
+        elastalert_logger.info(
+            "Note: --debug and --verbose flags are set. --debug takes precedent."
+        )
 
-def get_rulefile_hash(rule_file):
-    rulefile_hash = ''
-    if os.path.exists(rule_file):
-        with open(rule_file) as fh:
-            rulefile_hash = hashlib.sha1(fh.read()).digest()
-        for import_rule_file in import_rules.get(rule_file, []):
-            rulefile_hash += get_rulefile_hash(import_rule_file)
-    return rulefile_hash
+    # re-enable INFO log level on elastalert_logger in verbose/debug mode
+    # (but don't touch it if it is already set to INFO or below by config)
+    if args.verbose or args.debug:
+        if elastalert_logger.level > logging.INFO or elastalert_logger.level == logging.NOTSET:
+            elastalert_logger.setLevel(logging.INFO)
 
+    if args.debug:
+        elastalert_logger.info(
+            """Note: In debug mode, alerts will be logged to console but NOT actually sent.
+            To send them but remain verbose, use --verbose instead."""
+        )
 
-def adjust_deprecated_values(rule):
-    # From rename of simple HTTP alerter
-    if rule.get('type') == 'simple':
-        rule['type'] = 'post'
-        if 'simple_proxy' in rule:
-            rule['http_post_proxy'] = rule['simple_proxy']
-        if 'simple_webhook_url' in rule:
-            rule['http_post_url'] = rule['simple_webhook_url']
-        logging.warning('"simple" alerter has been renamed "post" and comptability may be removed in a future release.')
+    if not args.es_debug and 'logging' not in conf:
+        logging.getLogger('elasticsearch').setLevel(logging.WARNING)
+
+    if args.es_debug_trace:
+        tracer = logging.getLogger('elasticsearch.trace')
+        tracer.setLevel(logging.INFO)
+        tracer.addHandler(logging.FileHandler(args.es_debug_trace))

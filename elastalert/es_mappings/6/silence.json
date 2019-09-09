@@ -1,0 +1,15 @@
+{
+  "properties": {
+    "rule_name": {
+      "type": "keyword"
+    },
+    "until": {
+      "type": "date",
+      "format": "dateOptionalTime"
+    },
+    "@timestamp": {
+      "type": "date",
+      "format": "dateOptionalTime"
+    }
+  }
+}
