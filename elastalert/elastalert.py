@@ -1327,6 +1327,17 @@ class ElastAlerter(object):
         )
         return kibana.kibana4_dashboard_link(db_name, start, end)
 
+    def generate_kibana6_link(self, rule, match):
+        start = ts_add(
+            lookup_es_key(match, rule['timestamp_field']),
+            -rule.get('timeframe', datetime.timedelta(minutes=10))
+        )
+        end = ts_add(
+            lookup_es_key(match, rule['timestamp_field']),
+            rule.get('timeframe', datetime.timedelta(minutes=10))
+        )
+        return kibana.kibana6_link(rule, start, end)
+
     def generate_kibana_db(self, rule, match):
         ''' Uses a template dashboard to upload a temp dashboard showing the match.
         Returns the url to the dashboard. '''
@@ -1480,9 +1491,11 @@ class ElastAlerter(object):
                 match.update(counts)
 
         # Generate a kibana3 dashboard for the first match
-        if rule.get('generate_kibana_link') or rule.get('use_kibana_dashboard'):
+        if rule.get('generate_kibana_link') or rule.get('use_kibana_dashboard') or rule.get('generate_kibana6_link'):
             try:
-                if rule.get('generate_kibana_link'):
+                if rule.get('generate_kibana6_link'):
+                    kb_link = self.generate_kibana6_link(rule, matches[0])
+                elif rule.get('generate_kibana_link'):
                     kb_link = self.generate_kibana_db(rule, matches[0])
                 else:
                     kb_link = self.use_kibana_link(rule, matches[0])

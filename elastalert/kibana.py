@@ -5,7 +5,12 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import elastalert
+import json
+import prison
+
 from .util import EAException
+
 
 
 dashboard_temp = {'editable': True,
@@ -286,3 +291,37 @@ def kibana4_dashboard_link(dashboard, starttime, endtime):
     time_settings = kibana4_time_temp % (starttime, endtime)
     time_settings = urllib.parse.quote(time_settings)
     return "%s?_g=%s" % (dashboard, time_settings)
+
+
+def kibana6_link(rule, starttime, endtime):
+    if len(rule["filter"]) == 1 and "query_string" in rule["filter"][0]:
+        query = rule["filter"][0]["query_string"]["query"]
+        return rule['kibana_url'] + "#/discover?_a=" + prison.dumps(
+            {
+                "time": {"from": starttime, "mode": "absolute", "to": endtime},
+                "query": {"language": "lucene", "query": query},
+            }
+        )
+    else:
+        query = elastalert.ElastAlerter.get_query(rule["filter"], five=True)
+        filters = query["query"]["bool"]
+        return rule['kibana_url'] + "#/discover?_g=" + prison.dumps(
+            {
+                "filters": [
+                    {
+                        "$state": {"store": "globalState"},
+                        "bool": filters,
+                        "meta": {
+                            "alias": "filter",
+                            "disabled": False,
+                            "index": rule["index"],
+                            "key": "bool",
+                            "negate": False,
+                            "type": "custom",
+                            "value": json.dumps(filters),
+                        },
+                    }
+                ],
+                "time": {"from": starttime, "mode": "absolute", "to": endtime},
+            }
+        )

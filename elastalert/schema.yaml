@@ -195,6 +195,7 @@ properties:
   top_count_number: {type: integer}
   raw_count_keys: {type: boolean}
   generate_kibana_link: {type: boolean}
+  generate_kibana6_link: {type: boolean}
   kibana_dashboard: {type: string}
   use_kibana_dashboard: {type: string}
   use_local_time: {type: boolean}
