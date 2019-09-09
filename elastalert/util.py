@@ -150,6 +150,15 @@ def ts_to_dt(timestamp):
     return dt
 
 
+def dt_to_ts_no_ms(dt):
+    if not isinstance(dt, datetime.datetime):
+        logging.warning('Expected datetime, got %s' % (type(dt)))
+        return dt
+    ts_iso = dt.isoformat()
+    ts = dateutil.parser.parse(ts_iso).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return ts
+
+
 def dt_to_ts(dt):
     if not isinstance(dt, datetime.datetime):
         logging.warning('Expected datetime, got %s' % (type(dt)))
@@ -202,7 +211,7 @@ def pretty_ts(timestamp, tz=True):
         dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
-    return dt.strftime('%Y-%m-%d %H:%M %Z')
+    return dt.strftime('%Y-%m-%d %H:%M:%S %Z')
 
 
 def ts_add(ts, td):
