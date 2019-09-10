@@ -992,7 +992,7 @@ class ElastAlerter(object):
         try:
             if self.writeback_es:
                 res = self.writeback_es.count(index=self.writeback_index, doc_type='elastalert', body=query)
-                if res['count'] > 0:
+                if res['count'] != [] and res['count'] > 0:
                     for alert in rule['alert']:
                         try:
                             alert.resolve()
