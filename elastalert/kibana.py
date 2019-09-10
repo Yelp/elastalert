@@ -12,7 +12,6 @@ import prison
 from .util import EAException
 
 
-
 dashboard_temp = {'editable': True,
                   'failover': False,
                   'index': {'default': 'NO_TIME_FILTER_OR_INDEX_PATTERN_NOT_MATCHED',

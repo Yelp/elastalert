@@ -52,6 +52,7 @@ from .util import ts_add
 from .util import ts_now
 from .util import ts_to_dt
 from .util import unix_to_dt
+from .util import dt_to_ts_no_ms
 
 
 class ElastAlerter(object):

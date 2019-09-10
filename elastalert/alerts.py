@@ -1262,10 +1262,6 @@ class SlackAlerter(Alerter):
         for url in self.slack_webhook_url:
             for channel_override in self.slack_channel_override:
                 try:
-                    if self.slack_ca_certs:
-                        verify = self.slack_ca_certs
-                    else:
-                        verify = self.slack_ignore_ssl_errors
                     if self.slack_ignore_ssl_errors:
                         requests.packages.urllib3.disable_warnings()
                     payload['channel'] = channel_override
@@ -1278,7 +1274,7 @@ class SlackAlerter(Alerter):
                     response.raise_for_status()
                 except RequestException as e:
                     raise EAException("Error posting to slack: %s" % e)
-        elastalert_logger.info("Alert sent to Slack")
+        elastalert_logger.info("Alert '%s' sent to Slack" % self.rule['name'])
 
     def resolve(self):
         # post resolve message to slack if resolve_alert is true
