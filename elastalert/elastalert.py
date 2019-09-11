@@ -991,7 +991,7 @@ class ElastAlerter(object):
                 }}
         try:
             if self.writeback_es:
-                res = self.writeback_es.count(index=self.writeback_index, doc_type='elastalert', body=query)
+                res = self.writeback_es.count(index=self.writeback_index, body=query)
                 if res['count'] != [] and res['count'] > 0:
                     for alert in rule['alert']:
                         try:
@@ -999,7 +999,7 @@ class ElastAlerter(object):
                         except EAException as e:
                             self.handle_error('Error while resolving alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
                         else:
-                            self.alerts_sent += 1
+                            self.thread_data.alerts_sent += 1
         except (ElasticsearchException, KeyError) as e:
             self.handle_error('Error querying for last alerts: %s' % (e), {'rule': rule['name']})
             self.writeback_es = None
