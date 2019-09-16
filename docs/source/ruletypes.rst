@@ -1869,7 +1869,7 @@ The alerter requires the following options:
 
 Optional:
 
-``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents thoughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
+``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents throughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
 
@@ -2037,6 +2037,8 @@ Optional:
 
 ``http_post_static_payload``: Key:value pairs of static parameters to be sent, along with the Elasticsearch results. Put your authentication or other information here.
 
+``http_post_headers``: Key:value pairs of headers to be sent as part of the request.
+
 ``http_post_proxy``: URL of proxy, if required.
 
 ``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
@@ -2051,6 +2053,8 @@ Example usage::
       ip: clientip
     http_post_static_payload:
       apikey: abc123
+    http_post_headers:
+      authorization: Basic 123dr3234
 
 
 Alerter
@@ -2128,7 +2132,7 @@ See https://prometheus.io/docs/alerting/clients/ for more details about the Aler
 
 Required:
 
-``alertmanager_host``: The host pointing to the Alertmanager.
+``alertmanager_hosts``: The list of hosts pointing to the Alertmanager.
 
 Optional:
 
@@ -2152,7 +2156,8 @@ Example usage::
 
     alert:
     - alertmanager:
-        alertmanager_host: http://localhost:9093
+        alertmanager_hosts:
+        - http://localhost:9093
         alertmanager_alertname: Title
         alertmanager_annotations:
             severity: error
@@ -2162,3 +2167,16 @@ Example usage::
             namespace: kubernetes.namespace_name
             app: kubernetes.labels.k8s-app
             pod_name: kubernetes.pod_name
+
+
+Zabbix
+~~~~~~~~~~~
+
+Zabbix will send notification to a Zabbix server. The item in the host specified receive a 1 value for each hit. For example, if the elastic query produce 3 hits in the last execution of elastalert, three '1' (integer) values will be send from elastalert to Zabbix Server. If the query have 0 hits, any value will be sent.
+
+Required:
+
+``zbx_sender_host``: The address where zabbix server is running.
+``zbx_sender_port``: The port where zabbix server is listenning.
+``zbx_host``: This field setup the host in zabbix that receives the value sent by Elastalert.
+``zbx_item``: This field setup the item in the host that receives the value sent by Elastalert.

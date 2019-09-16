@@ -1,5 +1,5 @@
-[![Stories in Ready](https://badge.waffle.io/Yelp/elastalert.png?label=ready&title=Ready)](https://waffle.io/Yelp/elastalert)
-[![Stories in In Progress](https://badge.waffle.io/Yelp/elastalert.png?label=in%20progress&title=In%20Progress)](https://waffle.io/Yelp/elastalert)
+Recent changes: As of Elastalert 0.2.0, you must use Python 3.6. Python 2 will not longer be supported.
+
 [![Build Status](https://travis-ci.org/Yelp/elastalert.svg)](https://travis-ci.org/Yelp/elastalert)
 [![Join the chat at https://gitter.im/Yelp/elastalert](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Yelp/elastalert?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -42,27 +42,21 @@ Currently, we have built-in support for the following alert types:
 - Email
 - JIRA
 - OpsGenie
-- Stomp
 - Commands
-- AWS SNS
 - HipChat
-- Stride
 - MS Teams
 - Slack
-- Mattermost
+- Telegram
+- GoogleChat
+- AWS SNS
+- VictorOps
 - PagerDuty
 - PagerTree
 - Exotel
 - Twilio
-- VictorOps
-- Telegram
-- GoogleChat
 - Gitter
-- ServiceNow
 - Line Notify
-- Alerta
-- HTTP POST
-- theHive
+- Zabbix
 - Alertmanager
 
 Additional rule types and alerts can be easily imported or written.

@@ -1,0 +1,18 @@
+{
+  "silence": {
+    "properties": {
+      "rule_name": {
+        "index": "not_analyzed",
+        "type": "string"
+      },
+      "until": {
+        "type": "date",
+        "format": "dateOptionalTime"
+      },
+      "@timestamp": {
+        "type": "date",
+        "format": "dateOptionalTime"
+      }
+    }
+  }
+}

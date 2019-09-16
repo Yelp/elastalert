@@ -178,6 +178,7 @@ properties:
   buffer_time: *timeframe
   query_delay: *timeframe
   max_query_size: {type: integer}
+  max_scrolling: {type: integer}
 
   owner: {type: string}
   priority: {type: integer}
@@ -264,6 +265,7 @@ properties:
   slack_parse_override: {enum: [none, full]}
   slack_text_string: {type: string}
   slack_ignore_ssl_errors: {type: boolean}
+  slack_ca_certs: {type: string}
 
   ### Mattermost
   mattermost_webhook_url: *arrayOfString
@@ -342,3 +344,9 @@ properties:
 
   ### LineNotify
   linenotify_access_token: {type: string}
+
+  ### Zabbix
+  zbx_sender_host: {type: string}
+  zbx_sender_port: {type: integer}
+  zbx_host: {type: string}
+  zbx_item: {type: string}
