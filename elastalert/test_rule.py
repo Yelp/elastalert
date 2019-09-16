@@ -336,11 +336,11 @@ class MockElastAlerter(object):
             :return: the default rule configuration, a dictionary """
         if args.config is not None:
             with open(args.config) as fh:
-                conf = yaml.load(fh)
+                conf = yaml.load(fh, Loader=yaml.FullLoader)
         else:
             if os.path.isfile('config.yaml'):
                 with open('config.yaml') as fh:
-                    conf = yaml.load(fh)
+                    conf = yaml.load(fh, Loader=yaml.FullLoader)
             else:
                 conf = {}
 

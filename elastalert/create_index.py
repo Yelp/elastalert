@@ -60,7 +60,7 @@ def main():
 
     if filename:
         with open(filename) as config_file:
-            data = yaml.load(config_file)
+            data = yaml.load(config_file, Loader=yaml.FullLoader)
         host = args.host if args.host else data.get('es_host')
         port = args.port if args.port else data.get('es_port')
         username = args.username if args.username else data.get('es_username')
