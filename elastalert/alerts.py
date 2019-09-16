@@ -2173,11 +2173,11 @@ class HiveAlerter(Alerter):
 class AlertmanagerAlerter(Alerter):
     """ Sends an alert to Alertmanager """
 
-    required_options = frozenset({'alertmanager_host'})
+    required_options = frozenset({'alertmanager_hosts'})
 
     def __init__(self, rule):
         super(AlertmanagerAlerter, self).__init__(rule)
-        self.url = '{}/api/v1/alerts'.format(self.rule['alertmanager_host'])
+        self.urls = ['{}/api/v1/alerts'.format(host) for host in self.rule['alertmanager_hosts']]
         self.alertname = self.rule.get('alertmanager_alertname', self.rule['name'])
         self.labels = self.rule.get('alertmanager_labels', dict())
         self.annotations = self.rule.get('alertmanager_annotations', dict())
@@ -2210,14 +2210,15 @@ class AlertmanagerAlerter(Alerter):
         try:
             if not self.verify_ssl:
                 requests.packages.urllib3.disable_warnings()
-            response = requests.post(
-                self.url,
-                data=payload,
-                headers={'content-type': 'application/json'},
-                verify=self.verify_ssl,
-                proxies=self.proxies,
-            )
-            response.raise_for_status()
+            for url in self.urls:
+                response = requests.post(
+                    url,
+                    data=payload,
+                    headers={'content-type': 'application/json'},
+                    verify=self.verify_ssl,
+                    proxies=self.proxies,
+                )
+                response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Alertmanager: %s" % e)
         elastalert_logger.info("Alert sent to Alertmanager")
