@@ -56,12 +56,10 @@ Note that a term query may not behave as expected if a field is analyzed. By def
 a field that appears to have the value "foo bar", unless it is not analyzed. Conversely, a term query for "foo" will match analyzed strings "foo bar" and "foo baz". For full text
 matching on analyzed fields, use query_string. See https://www.elastic.co/guide/en/elasticsearch/guide/current/term-vs-full-text.html
 
-`terms <https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-terms-query.html>`_
+terms
 *****
 
-
-
-Terms allows for easy combination of multiple term filters::
+Terms  allows for easy combination of multiple term filters::
 
     filter:
     - terms:
@@ -73,6 +71,9 @@ You can also match on multiple fields::
         fieldX: ["value1", "value2"]
         fieldY: ["something", "something_else"]
         fieldZ: ["foo", "bar", "baz"]
+
+See Elasticsearch Documentation: https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-terms-query.html
+
 
 wildcard
 ********
