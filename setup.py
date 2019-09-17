@@ -41,7 +41,7 @@ setup(
         'mock>=2.0.0',
         'PyStaticConfiguration>=0.10.3',
         'python-dateutil>=2.6.0,<2.7.0',
-        'PyYAML>=3.12',
+        'PyYAML>=5.1',
         'requests>=2.10.0',
         'stomp.py>=4.1.17',
         'texttable>=0.8.8',

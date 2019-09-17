@@ -2194,7 +2194,7 @@ class AlertmanagerAlerter(Alerter):
 
     def _json_or_string(self, obj):
         """helper to encode non-string objects to JSON"""
-        if isinstance(obj, basestring):
+        if isinstance(obj, str):
             return obj
         return json.dumps(obj, cls=DateTimeEncoder)
 
