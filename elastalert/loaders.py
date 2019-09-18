@@ -324,9 +324,15 @@ class RulesLoader(object):
         if 'include' in rule and type(rule['include']) != list:
             raise EAException('include option must be a list')
 
-        if isinstance(rule.get('query_key'), list):
-            rule['compound_query_key'] = rule['query_key']
-            rule['query_key'] = ','.join(rule['query_key'])
+        raw_query_key = rule.get('query_key')
+        if isinstance(raw_query_key, list):
+            if len(raw_query_key) > 1:
+                rule['compound_query_key'] = raw_query_key
+                rule['query_key'] = ','.join(raw_query_key)
+            elif len(raw_query_key) == 1:
+                rule['query_key'] = raw_query_key[0]
+            else:
+                del(rule['query_key'])
 
         if isinstance(rule.get('aggregation_key'), list):
             rule['compound_aggregation_key'] = rule['aggregation_key']

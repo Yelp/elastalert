@@ -358,6 +358,29 @@ def test_compound_query_key():
     assert test_rule_copy['compound_query_key'] == ['field1', 'field2']
 
 
+def test_query_key_with_single_value():
+    test_config_copy = copy.deepcopy(test_config)
+    rules_loader = FileRulesLoader(test_config_copy)
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy.pop('use_count_query')
+    test_rule_copy['query_key'] = ['field1']
+    rules_loader.load_options(test_rule_copy, test_config, 'filename.yaml')
+    assert 'field1' in test_rule_copy['include']
+    assert test_rule_copy['query_key'] == 'field1'
+    assert 'compound_query_key' not in test_rule_copy
+
+
+def test_query_key_with_no_values():
+    test_config_copy = copy.deepcopy(test_config)
+    rules_loader = FileRulesLoader(test_config_copy)
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy.pop('use_count_query')
+    test_rule_copy['query_key'] = []
+    rules_loader.load_options(test_rule_copy, test_config, 'filename.yaml')
+    assert 'query_key' not in test_rule_copy
+    assert 'compound_query_key' not in test_rule_copy
+
+
 def test_name_inference():
     test_config_copy = copy.deepcopy(test_config)
     rules_loader = FileRulesLoader(test_config_copy)
