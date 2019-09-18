@@ -58,6 +58,18 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``kibana4_end_timedelta`` (time, default: 10 min)            |           |
 +--------------------------------------------------------------+           |
+| ``use_kibana_discover`` (string, no default)                 |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_url`` (string, no default)                 |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_index_pattern_id`` (string, no default)    |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_columns`` (list of strs, default _source)  |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_from_timedelta`` (time, default: 10 min)   |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_to_timedelta`` (time, default: 10 min)     |           |
++--------------------------------------------------------------+           |
 | ``use_local_time`` (boolean, default True)                   |           |
 +--------------------------------------------------------------+           |
 | ``realert`` (time, default: 1 min)                           |           |
@@ -509,6 +521,74 @@ kibana4_end_timedelta
 This value is added in back of the event. For example,
 
 ``kibana4_end_timedelta: minutes: 2``
+
+use_kibana_discover
+^^^^^^^^^^^^^^^^^^^
+
+``use_kibana_discover``: Enables the generation of the ``kibana_link`` variable for a particular version of the Kibana Discover application.
+This setting requires that ``kibana_discover_url`` and ``kibana_discover_index_pattern_id`` are also configured.
+
+The currently supported versions of Kibana Discover are: 
+
+- `5.6`
+- `6.0`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `6.7`, `6.8`
+- `7.0`, `7.1`, `7.2`, `7.3`
+
+``use_kibana_discover: 7.3``
+
+kibana_discover_url
+^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_url``: The url of the Kibana Discover application used to generate the ``kibana_link`` variable.
+This value can use `$VAR` and `${VAR}` references to expand environment variables.
+
+``kibana_discover_url: http://kibana:5601/#/discover``
+
+kibana_discover_index_pattern_id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_index_pattern_id``: The id of the index pattern to link to in the Kibana Discover application.
+These ids are usually generated and can be found in url of the index pattern management page, or by exporting its saved object.
+
+Example export of an index pattern's saved object:
+
+.. code-block:: text
+
+    [
+        {
+            "_id": "4e97d188-8a45-4418-8a37-07ed69b4d34c",
+            "_type": "index-pattern",
+            "_source": { ... }
+        }
+    ]
+
+You can modify an index pattern's id by exporting the saved object, modifying the ``_id`` field, and re-importing.
+
+``kibana_discover_index_pattern_id: 4e97d188-8a45-4418-8a37-07ed69b4d34c``
+
+kibana_discover_columns
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_columns``: The columns to display in the generated Kibana Discover application link.
+Defaults to the ``_source`` column.
+
+``kibana_discover_columns: [ timestamp, message ]``
+
+kibana_discover_from_timedelta
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_from_timedelta``:  The offset to the `from` time of the Kibana Discover link's time range.
+The `from` time is calculated by subtracting this timedelta from the event time.  Defaults to 10 minutes.
+
+``kibana_discover_from_timedelta: minutes: 2``
+
+kibana_discover_to_timedelta
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_to_timedelta``:  The offset to the `to` time of the Kibana Discover link's time range.
+The `to` time is calculated by adding this timedelta to the event time.  Defaults to 10 minutes.
+
+``kibana_discover_to_timedelta: minutes: 2``
 
 use_local_time
 ^^^^^^^^^^^^^^
