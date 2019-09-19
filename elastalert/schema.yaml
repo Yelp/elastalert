@@ -203,6 +203,15 @@ properties:
   replace_dots_in_field_names: {type: boolean}
   scan_entire_timeframe: {type: boolean}
 
+  ### Kibana Discover App Link
+  use_kibana_discover: {type: boolean}
+  kibana_discover_url: {type: string}
+  kibana_discover_version: {enum: ['7.3', '7.2', '7.1', '7.0', '6.8', '6.7', '6.6', '6.5', '6.4', '6.3', '6.2', '6.1', '6.0', '5.6']}
+  kibana_discover_index_pattern_id: {type: string}
+  kibana_discover_columns: {type: array, items: {type: string}}
+  kibana_discover_from_timedelta: *timeframe
+  kibana_discover_to_timedelta: *timeframe
+
   # Alert Content
   alert_text: {type: string} # Python format string
   alert_text_args: {type: array, items: {type: string}}

@@ -27,6 +27,7 @@ from elasticsearch.exceptions import TransportError
 from elasticsearch.exceptions import NotFoundError
 
 from . import kibana
+from .kibana_discover import kibana_discover_url
 from .alerts import DebugAlerter
 from .config import load_conf
 from .enhancements import DropMatchException
@@ -1494,6 +1495,11 @@ class ElastAlerter(object):
 
         if rule.get('use_kibana4_dashboard'):
             kb_link = self.generate_kibana4_db(rule, matches[0])
+            if kb_link:
+                matches[0]['kibana_link'] = kb_link
+
+        if rule.get('use_kibana_discover'):
+            kb_link = kibana_discover_url(rule, matches[0])
             if kb_link:
                 matches[0]['kibana_link'] = kb_link
 
