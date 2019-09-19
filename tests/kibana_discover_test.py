@@ -9,7 +9,7 @@ from elastalert.kibana_discover import kibana_discover_url
 def test_kibana_discover_url_with_kibana_5x_and_6x(kibana_version):
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': kibana_version,
+            'kibana_discover_version': kibana_version,
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'timestamp_field': 'timestamp'
@@ -42,7 +42,7 @@ def test_kibana_discover_url_with_kibana_5x_and_6x(kibana_version):
 def test_kibana_discover_url_with_kibana_7x(kibana_version):
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': kibana_version,
+            'kibana_discover_version': kibana_version,
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'timestamp_field': 'timestamp'
@@ -74,7 +74,7 @@ def test_kibana_discover_url_with_kibana_7x(kibana_version):
 def test_kibana_discover_url_with_missing_kibana_discover_url():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_index_pattern_id': 'logs',
             'timestamp_field': 'timestamp',
             'name': 'test'
@@ -89,7 +89,7 @@ def test_kibana_discover_url_with_missing_kibana_discover_url():
 def test_kibana_discover_url_with_missing_kibana_discover_index_pattern_id():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'timestamp_field': 'timestamp',
             'name': 'test'
@@ -104,7 +104,7 @@ def test_kibana_discover_url_with_missing_kibana_discover_index_pattern_id():
 def test_kibana_discover_url_with_invalid_kibana_version():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '4.5',
+            'kibana_discover_version': '4.5',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp'
@@ -123,7 +123,7 @@ def test_kibana_discover_url_with_discover_url_env_substitution(environ):
     })
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_url': 'http://$KIBANA_HOST:$KIBANA_PORT/#/discover',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'timestamp_field': 'timestamp'
@@ -155,7 +155,7 @@ def test_kibana_discover_url_with_discover_url_env_substitution(environ):
 def test_kibana_discover_url_with_from_timedelta():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '7.3',
+            'kibana_discover_version': '7.3',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'kibana_discover_from_timedelta': timedelta(hours=1),
@@ -188,7 +188,7 @@ def test_kibana_discover_url_with_from_timedelta():
 def test_kibana_discover_url_with_from_timedelta_and_timeframe():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '7.3',
+            'kibana_discover_version': '7.3',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'kibana_discover_from_timedelta': timedelta(hours=1),
@@ -222,7 +222,7 @@ def test_kibana_discover_url_with_from_timedelta_and_timeframe():
 def test_kibana_discover_url_with_to_timedelta():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '7.3',
+            'kibana_discover_version': '7.3',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'kibana_discover_to_timedelta': timedelta(hours=1),
@@ -255,7 +255,7 @@ def test_kibana_discover_url_with_to_timedelta():
 def test_kibana_discover_url_with_to_timedelta_and_timeframe():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '7.3',
+            'kibana_discover_version': '7.3',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'kibana_discover_to_timedelta': timedelta(hours=1),
@@ -289,7 +289,7 @@ def test_kibana_discover_url_with_to_timedelta_and_timeframe():
 def test_kibana_discover_url_with_timeframe():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '7.3',
+            'kibana_discover_version': '7.3',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'timeframe': timedelta(minutes=20),
@@ -322,7 +322,7 @@ def test_kibana_discover_url_with_timeframe():
 def test_kibana_discover_url_with_custom_columns():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'logs-*',
             'kibana_discover_columns': ['level', 'message'],
@@ -355,7 +355,7 @@ def test_kibana_discover_url_with_custom_columns():
 def test_kibana_discover_url_with_single_filter():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
@@ -406,7 +406,7 @@ def test_kibana_discover_url_with_single_filter():
 def test_kibana_discover_url_with_multiple_filters():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': '90943e30-9a47-11e8-b64d-95841ca0b247',
             'timestamp_field': 'timestamp',
@@ -460,7 +460,7 @@ def test_kibana_discover_url_with_multiple_filters():
 def test_kibana_discover_url_with_int_query_key():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
@@ -520,7 +520,7 @@ def test_kibana_discover_url_with_int_query_key():
 def test_kibana_discover_url_with_str_query_key():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
@@ -582,7 +582,7 @@ def test_kibana_discover_url_with_str_query_key():
 def test_kibana_discover_url_with_null_query_key_value():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
@@ -632,7 +632,7 @@ def test_kibana_discover_url_with_null_query_key_value():
 def test_kibana_discover_url_with_missing_query_key_value():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
@@ -681,7 +681,7 @@ def test_kibana_discover_url_with_missing_query_key_value():
 def test_kibana_discover_url_with_compound_query_key():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
@@ -769,7 +769,7 @@ def test_kibana_discover_url_with_compound_query_key():
 def test_kibana_discover_url_with_filter_and_query_key():
     url = kibana_discover_url(
         rule={
-            'use_kibana_discover': '6.8',
+            'kibana_discover_version': '6.8',
             'kibana_discover_url': 'http://kibana:5601/#/discover',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',

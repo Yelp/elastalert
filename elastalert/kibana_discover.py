@@ -18,7 +18,15 @@ kibana7_versions = frozenset(['7.0', '7.1', '7.2', '7.3'])
 
 def kibana_discover_url(rule, match):
     ''' Creates a link for a kibana discover app. '''
-    kibana_version = rule.get('use_kibana_discover')
+
+    kibana_version = rule.get('kibana_discover_version')
+    if not kibana_version:
+        logging.warning(
+            'use_kibana_discover was configured without kibana_discover_version for rule %s' % (
+                rule.get('name', '<MISSING NAME>')
+            )
+        )
+        return None
 
     discover_url = rule.get('kibana_discover_url')
     if not discover_url:
