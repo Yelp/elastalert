@@ -14,9 +14,9 @@ from email.mime.text import MIMEText
 from email.utils import formatdate
 from html.parser import HTMLParser
 from smtplib import SMTP
-from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
+from smtplib import SMTP_SSL
 from socket import error
 
 import boto3
@@ -132,12 +132,14 @@ class BasicMatchString(object):
                     pass
             self.text += '%s: %s\n' % (key, value_str)
 
-    def _pretty_print_as_json(self, blob):
+    @staticmethod
+    def _pretty_print_as_json(blob):
         try:
             return json.dumps(blob, cls=DateTimeEncoder, sort_keys=True, indent=4, ensure_ascii=False)
         except UnicodeDecodeError:
             # This blob contains non-unicode, so lets pretend it's Latin-1 to show something
-            return json.dumps(blob, cls=DateTimeEncoder, sort_keys=True, indent=4, encoding='Latin-1', ensure_ascii=False)
+            return json.dumps(blob, cls=DateTimeEncoder, sort_keys=True, indent=4, encoding='Latin-1',
+                              ensure_ascii=False)
 
     def __str__(self):
         self.text = ''
@@ -196,12 +198,12 @@ class Alerter(object):
                     root[key] = self.resolve_rule_reference(value)
 
     def resolve_rule_reference(self, value):
-        strValue = str(value)
-        if strValue.startswith('$') and strValue.endswith('$') and strValue[1:-1] in self.rule:
+        str_value = str(value)
+        if str_value.startswith('$') and str_value.endswith('$') and str_value[1:-1] in self.rule:
             if type(value) == int:
-                return int(self.rule[strValue[1:-1]])
+                return int(self.rule[str_value[1:-1]])
             else:
-                return self.rule[strValue[1:-1]]
+                return self.rule[str_value[1:-1]]
         else:
             return value
 
@@ -337,7 +339,8 @@ class StompAlerter(Alerter):
 
             if resmatch is not None:
                 elastalert_logger.info(
-                    'Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(match, self.rule['timestamp_field'])))
+                    'Alert for %s, %s at %s:' % (
+                    self.rule['name'], resmatch, lookup_es_key(match, self.rule['timestamp_field'])))
                 alerts.append(
                     'Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(
                         match, self.rule['timestamp_field']))
@@ -394,9 +397,11 @@ class DebugAlerter(Alerter):
         for match in matches:
             if qk in match:
                 elastalert_logger.info(
-                    'Alert for %s, %s at %s:' % (self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
+                    'Alert for %s, %s at %s:' % (
+                    self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
             else:
-                elastalert_logger.info('Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
+                elastalert_logger.info(
+                    'Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
             elastalert_logger.info(str(BasicMatchString(self.rule, match)))
 
     def get_info(self):
@@ -471,7 +476,8 @@ class EmailAlerter(Alerter):
         try:
             if self.smtp_ssl:
                 if self.smtp_port:
-                    self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port, keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
+                    self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port, keyfile=self.smtp_key_file,
+                                         certfile=self.smtp_cert_file)
                 else:
                     self.smtp = SMTP_SSL(self.smtp_host, keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
             else:
@@ -610,7 +616,8 @@ class JiraAlerter(Alerter):
             if self.priority is not None and self.client is not None:
                 self.jira_args['priority'] = {'id': self.priority_ids[self.priority]}
         except KeyError:
-            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, list(self.priority_ids.keys())))
+            logging.error(
+                "Priority %s not found. Valid priorities are %s" % (self.priority, list(self.priority_ids.keys())))
 
     def reset_jira_args(self):
         self.jira_args = {'project': {'key': self.project},
@@ -653,7 +660,8 @@ class JiraAlerter(Alerter):
         # If the schema information is not available, raise an exception since we don't know how to set it
         # Note this is only the case for two built-in types, id: issuekey and id: thumbnail
         if not ('schema' in field or 'type' in field['schema']):
-            raise Exception("Could not determine schema information for the jira field '{0}'".format(normalized_jira_field))
+            raise Exception(
+                "Could not determine schema information for the jira field '{0}'".format(normalized_jira_field))
         arg_type = field['schema']['type']
 
         # Handle arrays of simple types like strings or numbers
@@ -667,7 +675,8 @@ class JiraAlerter(Alerter):
             if array_items in ['string', 'date', 'datetime']:
                 # Special case for multi-select custom types (the JIRA metadata says that these are strings, but
                 # in reality, they are required to be provided as an object.
-                if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
+                if 'custom' in field['schema'] and field['schema'][
+                    'custom'] in self.custom_string_types_with_special_handling:
                     self.jira_args[arg_name] = [{'value': v} for v in value]
                 else:
                     self.jira_args[arg_name] = value
@@ -687,7 +696,8 @@ class JiraAlerter(Alerter):
             if arg_type in ['string', 'date', 'datetime']:
                 # Special case for custom types (the JIRA metadata says that these are strings, but
                 # in reality, they are required to be provided as an object.
-                if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
+                if 'custom' in field['schema'] and field['schema'][
+                    'custom'] in self.custom_string_types_with_special_handling:
                     self.jira_args[arg_name] = {'value': value}
                 else:
                     self.jira_args[arg_name] = value
@@ -832,7 +842,7 @@ class JiraAlerter(Alerter):
                         # Re-raise the exception, preserve the stack-trace, and give some
                         # context as to which watcher failed to be added
                         raise Exception(
-                            "Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}" .format(
+                            "Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}".format(
                                 watcher,
                                 ex
                             )).with_traceback(sys.exc_info()[2])
@@ -877,7 +887,7 @@ class JiraAlerter(Alerter):
         # Add count for spikes
         count = matches[0].get('spike_count')
         if count:
-            title += ' - %s+ events' % (count)
+            title += ' - %s+ events' % count
 
         return title
 
@@ -886,7 +896,7 @@ class JiraAlerter(Alerter):
 
 
 class CommandAlerter(Alerter):
-    required_options = set(['command'])
+    required_options = {'command'}
 
     def __init__(self, *args):
         super(CommandAlerter, self).__init__(*args)
@@ -918,10 +928,10 @@ class CommandAlerter(Alerter):
 
             if self.rule.get('pipe_match_json'):
                 match_json = json.dumps(matches, cls=DateTimeEncoder) + '\n'
-                stdout, stderr = subp.communicate(input=match_json.encode())
+                subp.communicate(input=match_json.encode())
             elif self.rule.get('pipe_alert_text'):
                 alert_text = self.create_alert_body(matches)
-                stdout, stderr = subp.communicate(input=alert_text.encode())
+                subp.communicate(input=alert_text.encode())
             if self.rule.get("fail_on_non_zero_exit", False) and subp.wait():
                 raise EAException("Non-zero exit code while running command %s" % (' '.join(command)))
         except OSError as e:
@@ -1022,7 +1032,8 @@ class HipChatAlerter(Alerter):
 
         try:
             if self.hipchat_ignore_ssl_errors:
-                requests.packages.urllib3.disable_warnings()
+                import warnings
+                warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 
             if self.rule.get('hipchat_mentions', []):
                 ping_users = self.rule.get('hipchat_mentions', [])
@@ -1032,7 +1043,7 @@ class HipChatAlerter(Alerter):
                 )
                 ping_msg['message_format'] = "text"
 
-                response = requests.post(
+                _ = requests.post(
                     self.url,
                     data=json.dumps(ping_msg, cls=DateTimeEncoder),
                     headers=headers,
@@ -1093,7 +1104,8 @@ class MsTeamsAlerter(Alerter):
 
         for url in self.ms_teams_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
+                                         proxies=proxies)
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting to ms teams: %s" % e)
@@ -1199,7 +1211,8 @@ class SlackAlerter(Alerter):
                     else:
                         verify = self.slack_ignore_ssl_errors
                     if self.slack_ignore_ssl_errors:
-                        requests.packages.urllib3.disable_warnings()
+                        import warnings
+                        warnings.filterwarnings('ignore', message='Unverified HTTPS request')
                     payload['channel'] = channel_override
                     response = requests.post(
                         url, data=json.dumps(payload, cls=DateTimeEncoder),
@@ -1263,7 +1276,7 @@ class MattermostAlerter(Alerter):
                     field['value'] = field['value'].format(*args_values)
                 else:
                     field['value'] = "\n".join(str(arg) for arg in args_values)
-                del(field['args'])
+                del (field['args'])
             alert_fields.append(field)
         return alert_fields
 
@@ -1307,7 +1320,8 @@ class MattermostAlerter(Alerter):
         for url in self.mattermost_webhook_url:
             try:
                 if self.mattermost_ignore_ssl_errors:
-                    requests.urllib3.disable_warnings()
+                    import warnings
+                    warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 
                 response = requests.post(
                     url, data=json.dumps(payload, cls=DateTimeEncoder),
@@ -1482,7 +1496,8 @@ class PagerTreeAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
+                                     proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to PagerTree: %s" % e)
@@ -1580,7 +1595,8 @@ class VictorOpsAlerter(Alerter):
             payload["entity_id"] = self.victorops_entity_id
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
+                                     proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to VictorOps: %s" % e)
@@ -1619,7 +1635,8 @@ class TelegramAlerter(Alerter):
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
         proxies = {'https': self.telegram_proxy} if self.telegram_proxy else None
-        auth = HTTPProxyAuth(self.telegram_proxy_login, self.telegram_proxy_password) if self.telegram_proxy_login else None
+        auth = HTTPProxyAuth(self.telegram_proxy_login,
+                             self.telegram_proxy_password) if self.telegram_proxy_login else None
         payload = {
             'chat_id': self.telegram_room_id,
             'text': body,
@@ -1628,11 +1645,13 @@ class TelegramAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies, auth=auth)
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
+                                     proxies=proxies, auth=auth)
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
-            raise EAException("Error posting to Telegram: %s. Details: %s" % (e, "" if e.response is None else e.response.text))
+            raise EAException(
+                "Error posting to Telegram: %s. Details: %s" % (e, "" if e.response is None else e.response.text))
 
         elastalert_logger.info(
             "Alert sent to Telegram room %s" % self.telegram_room_id)
@@ -1754,7 +1773,8 @@ class GitterAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.gitter_webhook_url, json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.gitter_webhook_url, json.dumps(payload, cls=DateTimeEncoder), headers=headers,
+                                     proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Gitter: %s" % e)
@@ -1767,7 +1787,7 @@ class GitterAlerter(Alerter):
 
 class ServiceNowAlerter(Alerter):
     """ Creates a ServiceNow alert """
-    required_options = set([
+    required_options = {
         'username',
         'password',
         'servicenow_rest_url',
@@ -1778,7 +1798,7 @@ class ServiceNowAlerter(Alerter):
         'subcategory',
         'cmdb_ci',
         'caller_id'
-    ])
+    }
 
     def __init__(self, rule):
         super(ServiceNowAlerter, self).__init__(rule)
@@ -1896,8 +1916,10 @@ class AlertaAlerter(Alerter):
         """
 
         # Using default text and event title if not defined in rule
-        alerta_text = self.rule['type'].get_match_str([match]) if self.text == '' else resolve_string(self.text, match, self.missing_text)
-        alerta_event = self.create_default_title([match]) if self.event == '' else resolve_string(self.event, match, self.missing_text)
+        alerta_text = self.rule['type'].get_match_str([match]) if self.text == '' else resolve_string(self.text, match,
+                                                                                                      self.missing_text)
+        alerta_event = self.create_default_title([match]) if self.event == '' else resolve_string(self.event, match,
+                                                                                                  self.missing_text)
 
         match_timestamp = lookup_es_key(match, self.rule.get('timestamp_field', '@timestamp'))
         if match_timestamp is None:
@@ -1923,7 +1945,8 @@ class AlertaAlerter(Alerter):
             'tags': [resolve_string(a_tag, match, self.missing_text) for a_tag in self.tags],
             'correlate': [resolve_string(an_event, match, self.missing_text) for an_event in self.correlate],
             'attributes': dict(list(zip(self.attributes_keys,
-                                        [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values]))),
+                                        [resolve_string(a_value, match, self.missing_text) for a_value in
+                                         self.attributes_values]))),
             'rawData': self.create_alert_body([match]),
         }
 
@@ -2052,7 +2075,8 @@ class StrideAlerter(Alerter):
 
         try:
             if self.stride_ignore_ssl_errors:
-                requests.packages.urllib3.disable_warnings()
+                import warnings
+                warnings.filterwarnings('ignore', message='Unverified HTTPS request')
             response = requests.post(
                 self.url, data=json.dumps(payload, cls=DateTimeEncoder),
                 headers=headers, verify=not self.stride_ignore_ssl_errors,
@@ -2067,7 +2091,7 @@ class StrideAlerter(Alerter):
     def get_info(self):
         return {'type': 'stride',
                 'stride_cloud_id': self.stride_cloud_id,
-                'stride_converstation_id': self.stride_converstation_id}
+                'stride_converstation_id': self.stride_conversation_id}
 
 
 class LineNotifyAlerter(Alerter):
@@ -2104,7 +2128,7 @@ class HiveAlerter(Alerter):
     Use matched data to create alerts containing observables in an instance of TheHive
     """
 
-    required_options = set(['hive_connection', 'hive_alert_config'])
+    required_options = {'hive_connection', 'hive_alert_config'}
 
     def alert(self, matches):
 
@@ -2128,7 +2152,8 @@ class HiveAlerter(Alerter):
                         data_keys = match_data_keys + rule_data_keys
                         context_keys = list(context['match'].keys()) + list(context['rule'].keys())
                         if all([True if k in context_keys else False for k in data_keys]):
-                            artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
+                            artifacts.append(
+                                AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
                     except KeyError:
                         raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
 
@@ -2201,7 +2226,7 @@ class AlertmanagerAlerter(Alerter):
     def alert(self, matches):
         self.labels.update({
             label: self._json_or_string(lookup_es_key(matches[0], term))
-            for label, term in self.fields.iteritems()})
+            for label, term in self.fields.items()})
         self.labels.update(
             alertname=self.alertname,
             elastalert_rule=self.rule['name'])
@@ -2214,7 +2239,8 @@ class AlertmanagerAlerter(Alerter):
 
         try:
             if not self.verify_ssl:
-                requests.packages.urllib3.disable_warnings()
+                import warnings
+                warnings.filterwarnings('ignore', message='Unverified HTTPS request')
             for url in self.urls:
                 response = requests.post(
                     url,
