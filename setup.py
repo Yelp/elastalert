@@ -39,6 +39,7 @@ setup(
         'jira>=2.0.0',
         'jsonschema>=2.6.0,<3.0.0',
         'mock>=2.0.0',
+        'prison>=0.1.2',
         'PyStaticConfiguration>=0.10.3',
         'python-dateutil>=2.6.0,<2.7.0',
         'PyYAML>=3.12',
