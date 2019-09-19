@@ -534,7 +534,7 @@ The currently supported versions of Kibana Discover are:
 - `6.0`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `6.7`, `6.8`
 - `7.0`, `7.1`, `7.2`, `7.3`
 
-``use_kibana_discover: 7.3``
+``use_kibana_discover: '7.3'``
 
 kibana_discover_url
 ^^^^^^^^^^^^^^^^^^^^
