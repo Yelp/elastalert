@@ -203,7 +203,6 @@ The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticse
 
 ``skip_invalid``: If ``True``, skip invalid files instead of exiting.
 
-=======
 Logging
 -------
 
