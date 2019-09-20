@@ -1307,7 +1307,7 @@ With ``alert_text_type: aggregation_summary_only``::
     body                = rule_name
 
                           aggregation_summary
-+
+
 ruletype_text is the string returned by RuleType.get_match_str.
 
 field_values will contain every key value pair included in the results from Elasticsearch. These fields include "@timestamp" (or the value of ``timestamp_field``),
@@ -1691,7 +1691,7 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 ``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slac. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
 
 Mattermost
-~~~~~
+~~~~~~~~~~
 
 Mattermost alerter will send a notification to a predefined Mattermost channel. The body of the notification is formatted the same as with other alerters.
 
