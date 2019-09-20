@@ -16,7 +16,7 @@ kibana_default_timedelta = datetime.timedelta(minutes=10)
 kibana5_kibana6_versions = frozenset(['5.6', '6.0', '6.1', '6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8'])
 kibana7_versions = frozenset(['7.0', '7.1', '7.2', '7.3'])
 
-def kibana_discover_url(rule, match):
+def generate_kibana_discover_link(rule, match):
     ''' Creates a link for a kibana discover app. '''
 
     kibana_version = rule.get('kibana_discover_version')
