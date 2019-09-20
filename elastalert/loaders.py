@@ -90,7 +90,7 @@ class RulesLoader(object):
 
     def __init__(self, conf):
         # schema for rule yaml
-        self.rule_schema = jsonschema.Draft4Validator(
+        self.rule_schema = jsonschema.Draft7Validator(
             yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml')), Loader=yaml.FullLoader))
 
         self.base_config = copy.deepcopy(conf)
