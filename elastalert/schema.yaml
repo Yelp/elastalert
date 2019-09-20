@@ -11,6 +11,17 @@ definitions:
     type: [string, array]
     items: {type: [string, array]}
 
+  timedelta: &timedelta
+    type: object
+    additionalProperties: false
+    properties:
+      days: {type: number}
+      weeks: {type: number}
+      hours: {type: number}
+      minutes: {type: number}
+      seconds: {type: number}
+      milliseconds: {type: number}
+
   timeFrame: &timeframe
     type: object
     additionalProperties: false
@@ -205,12 +216,12 @@ properties:
 
   ### Kibana Discover App Link
   generate_kibana_discover_url: {type: boolean}
-  kibana_discover_app_url: {type: string}
+  kibana_discover_app_url: {type: string, minLength: 1}
   kibana_discover_version: {type: string, enum: ['7.3', '7.2', '7.1', '7.0', '6.8', '6.7', '6.6', '6.5', '6.4', '6.3', '6.2', '6.1', '6.0', '5.6']}
-  kibana_discover_index_pattern_id: {type: string}
-  kibana_discover_columns: {type: array, items: {type: string}}
-  kibana_discover_from_timedelta: *timeframe
-  kibana_discover_to_timedelta: *timeframe
+  kibana_discover_index_pattern_id: {type: string, minLength: 1}
+  kibana_discover_columns: {type: array, items: {type: string, minLength: 1}, minItems: 1}
+  kibana_discover_from_timedelta: *timedelta
+  kibana_discover_to_timedelta: *timedelta
 
   # Alert Content
   alert_text: {type: string} # Python format string
