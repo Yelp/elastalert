@@ -1498,10 +1498,10 @@ class ElastAlerter(object):
             if kb_link:
                 matches[0]['kibana_link'] = kb_link
 
-        if rule.get('use_kibana_discover'):
+        if rule.get('generate_kibana_discover_link'):
             kb_link = generate_kibana_discover_link(rule, matches[0])
             if kb_link:
-                matches[0]['kibana_link'] = kb_link
+                matches[0]['kibana_discover_link'] = kb_link
 
         # Enhancements were already run at match time if
         # run_enhancements_first is set or

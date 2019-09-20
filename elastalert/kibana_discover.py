@@ -19,19 +19,19 @@ kibana7_versions = frozenset(['7.0', '7.1', '7.2', '7.3'])
 def generate_kibana_discover_link(rule, match):
     ''' Creates a link for a kibana discover app. '''
 
-    kibana_version = rule.get('kibana_discover_version')
-    if not kibana_version:
+    discover_url = rule.get('kibana_discover_url')
+    if not discover_url:
         logging.warning(
-            'use_kibana_discover was configured without kibana_discover_version for rule %s' % (
+            'Missing kibana_discover_url for rule %s' % (
                 rule.get('name', '<MISSING NAME>')
             )
         )
         return None
 
-    discover_url = rule.get('kibana_discover_url')
-    if not discover_url:
+    kibana_version = rule.get('kibana_discover_version')
+    if not kibana_version:
         logging.warning(
-            'use_kibana_discover was configured without kibana_discover_url for rule %s' % (
+            'Missing kibana_discover_version for rule %s' % (
                 rule.get('name', '<MISSING NAME>')
             )
         )
@@ -40,7 +40,7 @@ def generate_kibana_discover_link(rule, match):
     index = rule.get('kibana_discover_index_pattern_id')
     if not index:
         logging.warning(
-            'use_kibana_discover was configured without kibana_discover_index_pattern_id for rule %s' % (
+            'Missing kibana_discover_index_pattern_id for rule %s' % (
                 rule.get('name', '<MISSING NAME>')
             )
         )

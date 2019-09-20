@@ -58,7 +58,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``kibana4_end_timedelta`` (time, default: 10 min)            |           |
 +--------------------------------------------------------------+           |
-| ``use_kibana_discover`` (boolean, default False)             |           |
+| ``generate_kibana_discover_link`` (boolean, default False)   |           |
 +--------------------------------------------------------------+           |
 | ``kibana_discover_url`` (string, no default)                 |           |
 +--------------------------------------------------------------+           |
@@ -524,22 +524,22 @@ This value is added in back of the event. For example,
 
 ``kibana4_end_timedelta: minutes: 2``
 
-use_kibana_discover
-^^^^^^^^^^^^^^^^^^^
+generate_kibana_discover_link
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``use_kibana_discover``: Enables the generation of the ``kibana_link`` variable for the Kibana Discover application.
+``generate_kibana_discover_link``: Enables the generation of the ``kibana_discover_link`` variable for the Kibana Discover application.
 This setting requires the following settings are also configured:
 
 - ``kibana_discover_url``
 - ``kibana_discover_version``
 - ``kibana_discover_index_pattern_id``
 
-``use_kibana_discover: true``
+``generate_kibana_discover_link: true``
 
 kibana_discover_url
 ^^^^^^^^^^^^^^^^^^^^
 
-``kibana_discover_url``: The url of the Kibana Discover application used to generate the ``kibana_link`` variable.
+``kibana_discover_url``: The url of the Kibana Discover application used to generate the ``kibana_discover_link`` variable.
 This value can use `$VAR` and `${VAR}` references to expand environment variables.
 
 ``kibana_discover_url: http://kibana:5601/#/discover``
