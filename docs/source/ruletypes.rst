@@ -58,9 +58,9 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``kibana4_end_timedelta`` (time, default: 10 min)            |           |
 +--------------------------------------------------------------+           |
-| ``generate_kibana_discover_link`` (boolean, default False)   |           |
+| ``generate_kibana_discover_url`` (boolean, default False)    |           |
 +--------------------------------------------------------------+           |
-| ``kibana_discover_url`` (string, no default)                 |           |
+| ``kibana_discover_app_url`` (string, no default)             |           |
 +--------------------------------------------------------------+           |
 | ``kibana_discover_version`` (string, no default)             |           |
 +--------------------------------------------------------------+           |
@@ -524,28 +524,28 @@ This value is added in back of the event. For example,
 
 ``kibana4_end_timedelta: minutes: 2``
 
-generate_kibana_discover_link
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+generate_kibana_discover_url
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``generate_kibana_discover_link``: Enables the generation of the ``kibana_discover_link`` variable for the Kibana Discover application.
+``generate_kibana_discover_url``: Enables the generation of the ``kibana_discover_url`` variable for the Kibana Discover application.
 This setting requires the following settings are also configured:
 
-- ``kibana_discover_url``
+- ``kibana_discover_app_url``
 - ``kibana_discover_version``
 - ``kibana_discover_index_pattern_id``
 
-``generate_kibana_discover_link: true``
+``generate_kibana_discover_url: true``
 
-kibana_discover_url
-^^^^^^^^^^^^^^^^^^^^
+kibana_discover_app_url
+^^^^^^^^^^^^^^^^^^^^^^^
 
-``kibana_discover_url``: The url of the Kibana Discover application used to generate the ``kibana_discover_link`` variable.
+``kibana_discover_app_url``: The url of the Kibana Discover application used to generate the ``kibana_discover_url`` variable.
 This value can use `$VAR` and `${VAR}` references to expand environment variables.
 
-``kibana_discover_url: http://kibana:5601/#/discover``
+``kibana_discover_app_url: http://kibana:5601/#/discover``
 
 kibana_discover_version
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 ``kibana_discover_version``: Specifies the version of the Kibana Discover application.
 
@@ -558,7 +558,7 @@ The currently supported versions of Kibana Discover are:
 ``kibana_discover_version: '7.3'``
 
 kibana_discover_index_pattern_id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``kibana_discover_index_pattern_id``: The id of the index pattern to link to in the Kibana Discover application.
 These ids are usually generated and can be found in url of the index pattern management page, or by exporting its saved object.
@@ -580,7 +580,7 @@ You can modify an index pattern's id by exporting the saved object, modifying th
 ``kibana_discover_index_pattern_id: 4e97d188-8a45-4418-8a37-07ed69b4d34c``
 
 kibana_discover_columns
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 ``kibana_discover_columns``: The columns to display in the generated Kibana Discover application link.
 Defaults to the ``_source`` column.
@@ -588,7 +588,7 @@ Defaults to the ``_source`` column.
 ``kibana_discover_columns: [ timestamp, message ]``
 
 kibana_discover_from_timedelta
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``kibana_discover_from_timedelta``:  The offset to the `from` time of the Kibana Discover link's time range.
 The `from` time is calculated by subtracting this timedelta from the event time.  Defaults to 10 minutes.
@@ -596,7 +596,7 @@ The `from` time is calculated by subtracting this timedelta from the event time.
 ``kibana_discover_from_timedelta: minutes: 2``
 
 kibana_discover_to_timedelta
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``kibana_discover_to_timedelta``:  The offset to the `to` time of the Kibana Discover link's time range.
 The `to` time is calculated by adding this timedelta to the event time.  Defaults to 10 minutes.
