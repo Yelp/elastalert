@@ -193,6 +193,7 @@ class RulesLoader(object):
 
         self.import_rules.pop(filename, None)  # clear `filename` dependency
         while True:
+            rule['rule_file']=filename
             loaded = self.get_yaml(filename)
 
             # Special case for merging filters - if both files specify a filter merge (AND) them
