@@ -23,8 +23,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from croniter import croniter
 from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
-from elasticsearch.exceptions import TransportError
 from elasticsearch.exceptions import NotFoundError
+from elasticsearch.exceptions import TransportError
 
 from . import kibana
 from .alerts import DebugAlerter
@@ -1067,7 +1067,13 @@ class ElastAlerter(object):
             if rule_file not in new_rule_hashes:
                 # Rule file was deleted
                 elastalert_logger.info('Rule file %s not found, stopping rule execution' % (rule_file))
-                self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
+                for rule in self.rules:
+                    if rule['rule_file'] == rule_file:
+                        break
+                else:
+                    continue
+                self.scheduler.remove_job(job_id=rule['name'])
+                self.rules.remove(rule)
                 continue
             if hash_value != new_rule_hashes[rule_file]:
                 # Rule file was changed, reload rule
