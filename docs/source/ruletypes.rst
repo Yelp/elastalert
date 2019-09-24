@@ -1638,9 +1638,12 @@ Optional:
 ``opsgenie_default_teams``: List of default teams to notify when the formatting of opsgenie_teams is unsuccesful.
 ``opsgenie_tags``: A list of tags for this alert.
 
+
 ``opsgenie_message``: Set the OpsGenie message to something other than the rule name. The message can be formatted with fields from the first match e.g. "Error occurred for {app_name} at {timestamp}.".
 
-``opsgenie_alias``: Set the OpsGenie alias. The alias can be formatted with fields from the first match e.g "{app_name} error".
+``opsgenie_alias``: Set the OpsGenie alias. The alias can be formatted with fields from the first match e.g "{app_name} error" or through ``opsgenie_alias_kw``.
+``opsgenie_alias_kw``: An object with format similar to ``alert_text_kw``, used to populate ``opsgenie_alias`` with nested fields.
+
 
 ``opsgenie_subject``: A string used to create the title of the OpsGenie alert. Can use Python string formatting.
 

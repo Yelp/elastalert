@@ -460,3 +460,14 @@ def should_scrolling_continue(rule_conf):
     stop_the_scroll = 0 < max_scrolling <= rule_conf.get('scrolling_cycle')
 
     return not stop_the_scroll
+
+
+def remove_raw_postfix(field, is_five_or_above):
+    position = 0
+    if is_five_or_above:
+        end = '.keyword'
+    else:
+        end = '.raw'
+    if field.endswith(end):
+        position = field.rfind(end)
+    return field[:position] if position != 0 else field
