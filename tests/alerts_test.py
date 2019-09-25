@@ -1190,6 +1190,206 @@ def test_slack_uses_list_of_custom_slack_channel():
     assert expected_data2 == json.loads(mock_post_request.call_args_list[1][1]['data'])
 
 
+def test_slack_attach_kibana_discover_url_when_generated():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'kibana_discover_url': 'http://kibana#discover'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            },
+            {
+                'color': '#ec4b98',
+                'title': 'Discover in Kibana',
+                'title_link': 'http://kibana#discover'
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_slack_attach_kibana_discover_url_when_not_generated():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_slack_kibana_discover_title():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_kibana_discover_title': 'Click to discover in Kibana',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'kibana_discover_url': 'http://kibana#discover'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            },
+            {
+                'color': '#ec4b98',
+                'title': 'Click to discover in Kibana',
+                'title_link': 'http://kibana#discover'
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_slack_kibana_discover_color():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_kibana_discover_color': 'blue',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'kibana_discover_url': 'http://kibana#discover'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            },
+            {
+                'color': 'blue',
+                'title': 'Discover in Kibana',
+                'title_link': 'http://kibana#discover'
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
 def test_http_alerter_with_payload():
     rule = {
         'name': 'Test HTTP Post Alerter With Payload',
