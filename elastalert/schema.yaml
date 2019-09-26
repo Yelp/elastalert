@@ -301,6 +301,20 @@ properties:
   mattermost_msg_pretext: {type: string}
   mattermost_msg_fields: *mattermostField
 
+  ## Opsgenie
+  opsgenie_details:
+    type: object
+    minProperties: 1
+    patternProperties:
+      "^.+$":
+        oneOf:
+          - type: string
+          - type: object
+            additionalProperties: false
+            required: [field]
+            properties:
+              field: {type: string, minLength: 1}
+
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
