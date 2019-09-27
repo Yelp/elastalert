@@ -1460,10 +1460,9 @@ class ElastAlerter(object):
 
         # Calculate Total Hits (useful in-case of aggregation)
         total_agg_hits = 0
-        total_agg_matches = 0
+        total_agg_matches = len(matches)
         for match in matches:
             total_agg_hits += match['num_hits']
-            total_agg_matches += match['num_matches']
 
         if rule.get('aggregation'):
             num_matches = rule.get('aggregation_max_alerts', len(matches))
