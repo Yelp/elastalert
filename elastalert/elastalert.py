@@ -1458,13 +1458,13 @@ class ElastAlerter(object):
         if alert_time is None:
             alert_time = ts_now()
 
-        # Calculate Total Hits (useful in-case of aggregation)
-        total_agg_hits = 0
-        total_agg_matches = len(matches)
-        for match in matches:
-            total_agg_hits += match['num_hits']
-
         if rule.get('aggregation'):
+            # Calculate Total Hits (useful in-case of aggregation)
+            total_agg_hits = 0
+            total_agg_matches = len(matches)
+            for match in matches:
+                total_agg_hits += match['num_hits']
+
             num_matches = rule.get('aggregation_max_alerts', len(matches))
             matches = matches[:num_matches]
             for match in matches:

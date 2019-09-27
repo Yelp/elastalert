@@ -314,7 +314,7 @@ def test_match_with_module_from_pending(ea):
     mod.process = mock.Mock()
     ea.rules[0]['match_enhancements'] = [mod]
     ea.rules[0].pop('aggregation')
-    pending_alert = {'match_body': {'foo': 'bar'}, 'rule_name': ea.rules[0]['name'],
+    pending_alert = {'match_body': {'foo': 'bar'}, 'num_matches': 1, 'num_hits': 1, 'rule_name': ea.rules[0]['name'],
                      'alert_time': START_TIMESTAMP, '@timestamp': START_TIMESTAMP}
     # First call, return the pending alert, second, no associated aggregated alerts
     ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': pending_alert}]}},
@@ -323,7 +323,7 @@ def test_match_with_module_from_pending(ea):
     assert mod.process.call_count == 0
 
     # If aggregation is set, enhancement IS called
-    pending_alert = {'match_body': {'foo': 'bar'}, 'rule_name': ea.rules[0]['name'],
+    pending_alert = {'match_body': {'foo': 'bar'}, 'num_matches': 1, 'num_hits': 1, 'rule_name': ea.rules[0]['name'],
                      'alert_time': START_TIMESTAMP, '@timestamp': START_TIMESTAMP}
     ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': pending_alert}]}},
                                                      {'hits': {'hits': []}}]
