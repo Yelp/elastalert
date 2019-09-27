@@ -1648,6 +1648,15 @@ Optional:
 
 ``opsgenie_priority``: Set the OpsGenie priority level. Possible values are P1, P2, P3, P4, P5.
 
+``opsgenie_details``: Map of custom key/value pairs to include in the alert's details. The value can sourced from either fields in the first match, environment variables, or a constant value.
+
+Example usage::
+
+    opsgenie_details:
+      Author: 'Bob Smith'          # constant value
+      Environment: '$VAR'          # environment variable
+      Message: { field: message }  # field in the first match
+
 SNS
 ~~~
 
