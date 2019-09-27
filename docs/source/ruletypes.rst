@@ -464,7 +464,7 @@ top_count_number
 ``top_count_number``: The number of terms to list if ``top_count_keys`` is set. (Optional, integer, default 5)
 
 top_count_absolute_timeframe
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``top_count_absolute_timeframe``: When True, the top count query is done using (alert_time - timeframe)
 
