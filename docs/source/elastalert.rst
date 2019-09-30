@@ -207,7 +207,7 @@ The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticse
 
 =======
 Logging
--------
+=======
 
 By default, ElastAlert uses a simple basic logging configuration to print log messages to standard error.
 You can change the log level to ``INFO`` messages by using the ``--verbose`` or ``--debug`` command line options.
