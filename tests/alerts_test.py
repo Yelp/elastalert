@@ -1645,6 +1645,51 @@ def test_slack_kibana_discover_color():
     assert expected_data == actual_data
 
 
+def test_slack_ignore_ssl_errors():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_ignore_ssl_errors': True,
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
 def test_http_alerter_with_payload():
     rule = {
         'name': 'Test HTTP Post Alerter With Payload',
