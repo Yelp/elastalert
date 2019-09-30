@@ -71,8 +71,23 @@ In addition to this basic usage, there are many other features that make alerts 
 To get started, check out `Running ElastAlert For The First Time` in the [documentation](http://elastalert.readthedocs.org).
 
 ## Running ElastAlert
+You can either install the latest released version of ElastAlert using pip:
 
-``$ python elastalert/elastalert.py [--debug] [--verbose] [--start <timestamp>] [--end <timestamp>] [--rule <filename.yaml>] [--config <filename.yaml>]``
+```pip install elastalert```
+
+or you can clone the ElastAlert repository for the most recent changes:
+
+```git clone https://github.com/Yelp/elastalert.git```
+
+Install the module:
+
+```pip install "setuptools>=11.3"```
+
+```python setup.py install```
+
+The following invocation can be used to run ElastAlert after installing
+
+``$ elastalert [--debug] [--verbose] [--start <timestamp>] [--end <timestamp>] [--rule <filename.yaml>] [--config <filename.yaml>]``
 
 ``--debug`` will print additional information to the screen as well as suppresses alerts and instead prints the alert body. Not compatible with `--verbose`.
 

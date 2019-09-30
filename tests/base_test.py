@@ -1049,6 +1049,15 @@ def test_rule_changes(ea):
             ea.load_rule_changes()
     assert len(ea.rules) == 4
 
+    # Disable a rule by removing the file
+    new_hashes.pop('rules/rule4.yaml')
+    with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
+        with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
+            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
+            mock_hashes.return_value = new_hashes
+            ea.load_rule_changes()
+    ea.scheduler.remove_job.assert_called_with(job_id='rule4')
+
 
 def test_strf_index(ea):
     """ Test that the get_index function properly generates indexes spanning days """

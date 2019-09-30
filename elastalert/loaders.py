@@ -91,7 +91,7 @@ class RulesLoader(object):
 
     def __init__(self, conf):
         # schema for rule yaml
-        self.rule_schema = jsonschema.Draft4Validator(
+        self.rule_schema = jsonschema.Draft7Validator(
             yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml')), Loader=yaml.FullLoader))
 
         self.base_config = copy.deepcopy(conf)
@@ -258,6 +258,10 @@ class RulesLoader(object):
                 rule['kibana4_start_timedelta'] = datetime.timedelta(**rule['kibana4_start_timedelta'])
             if 'kibana4_end_timedelta' in rule:
                 rule['kibana4_end_timedelta'] = datetime.timedelta(**rule['kibana4_end_timedelta'])
+            if 'kibana_discover_from_timedelta' in rule:
+                rule['kibana_discover_from_timedelta'] = datetime.timedelta(**rule['kibana_discover_from_timedelta'])
+            if 'kibana_discover_to_timedelta' in rule:
+                rule['kibana_discover_to_timedelta'] = datetime.timedelta(**rule['kibana_discover_to_timedelta'])
         except (KeyError, TypeError) as e:
             raise EAException('Invalid time format used: %s' % e)
 
@@ -326,9 +330,15 @@ class RulesLoader(object):
         if 'include' in rule and type(rule['include']) != list:
             raise EAException('include option must be a list')
 
-        if isinstance(rule.get('query_key'), list):
-            rule['compound_query_key'] = rule['query_key']
-            rule['query_key'] = ','.join(rule['query_key'])
+        raw_query_key = rule.get('query_key')
+        if isinstance(raw_query_key, list):
+            if len(raw_query_key) > 1:
+                rule['compound_query_key'] = raw_query_key
+                rule['query_key'] = ','.join(raw_query_key)
+            elif len(raw_query_key) == 1:
+                rule['query_key'] = raw_query_key[0]
+            else:
+                del(rule['query_key'])
 
         if isinstance(rule.get('aggregation_key'), list):
             rule['compound_aggregation_key'] = rule['aggregation_key']
