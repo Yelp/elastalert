@@ -1205,7 +1205,7 @@ class SlackAlerter(Alerter):
                     if self.slack_ca_certs:
                         verify = self.slack_ca_certs
                     else:
-                        verify = self.slack_ignore_ssl_errors
+                        verify = not self.slack_ignore_ssl_errors
                     if self.slack_ignore_ssl_errors:
                         requests.packages.urllib3.disable_warnings()
                     payload['channel'] = channel_override

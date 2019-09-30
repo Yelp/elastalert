@@ -1242,7 +1242,7 @@ def test_slack_uses_custom_title():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1288,7 +1288,7 @@ def test_slack_uses_custom_timeout():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=20
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1332,7 +1332,7 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1377,7 +1377,7 @@ def test_slack_uses_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1438,7 +1438,7 @@ def test_slack_uses_list_of_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data1 == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1489,7 +1489,7 @@ def test_slack_attach_kibana_discover_url_when_generated():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1534,7 +1534,7 @@ def test_slack_attach_kibana_discover_url_when_not_generated():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1586,7 +1586,7 @@ def test_slack_kibana_discover_title():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1638,7 +1638,7 @@ def test_slack_kibana_discover_color():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
