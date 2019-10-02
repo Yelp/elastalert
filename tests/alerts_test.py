@@ -1396,7 +1396,13 @@ def test_pagerduty_alerter_custom_incident_key():
         'incident_key': 'custom key',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None, timeout=10)
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        timeout=10
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1429,7 +1435,13 @@ def test_pagerduty_alerter_custom_incident_key_with_args():
         'incident_key': 'custom foobarbaz',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None, timeout=10)
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        timeout=10
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1463,7 +1475,13 @@ def test_pagerduty_alerter_custom_alert_subject():
         'incident_key': 'custom foobarbaz',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None, timeout=10)
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        timeout=10
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1499,7 +1517,13 @@ def test_pagerduty_alerter_custom_alert_subject_with_args():
         'incident_key': 'custom foobarbaz',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None, timeout=10)
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        timeout=10
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1536,7 +1560,13 @@ def test_pagerduty_alerter_custom_alert_subject_with_args_specifying_trigger():
         'incident_key': 'custom foobarbaz',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None, timeout=10)
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        timeout=10
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 

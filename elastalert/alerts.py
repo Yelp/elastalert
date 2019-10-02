@@ -1039,11 +1039,17 @@ class HipChatAlerter(Alerter):
                     headers=headers,
                     verify=not self.hipchat_ignore_ssl_errors,
                     proxies=proxies,
-                    timeout=self.post_timeout)
+                    timeout=self.post_timeout
+                )
 
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
-                                     verify=not self.hipchat_ignore_ssl_errors,
-                                     proxies=proxies, timeout=self.post_timeout)
+            response = requests.post(
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                verify=not self.hipchat_ignore_ssl_errors,
+                proxies=proxies,
+                timeout=self.post_timeout
+            )
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -1069,7 +1075,6 @@ class MsTeamsAlerter(Alerter):
         self.ms_teams_alert_fixed_width = self.rule.get('ms_teams_alert_fixed_width', False)
         self.ms_teams_theme_color = self.rule.get('ms_teams_theme_color', '')
         self.post_timeout = self.rule.get('ms_teams_post_timeout', 10)
-        
 
     def format_body(self, body):
         if self.ms_teams_alert_fixed_width:
@@ -1097,7 +1102,13 @@ class MsTeamsAlerter(Alerter):
 
         for url in self.ms_teams_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies, timeout=self.post_timeout)
+                response = requests.post(
+                    url,
+                    data=json.dumps(payload, cls=DateTimeEncoder),
+                    headers=headers,
+                    proxies=proxies,
+                    timeout=self.post_timeout
+                )
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting to ms teams: %s" % e)
@@ -1209,7 +1220,8 @@ class SlackAlerter(Alerter):
                         url, data=json.dumps(payload, cls=DateTimeEncoder),
                         headers=headers, verify=verify,
                         proxies=proxies,
-                        timeout=self.post_timeout)
+                        timeout=self.post_timeout
+                    )
                     warnings.resetwarnings()
                     response.raise_for_status()
                 except RequestException as e:
@@ -1315,9 +1327,13 @@ class MattermostAlerter(Alerter):
                     requests.urllib3.disable_warnings()
 
                 response = requests.post(
-                    url, data=json.dumps(payload, cls=DateTimeEncoder),
-                    headers=headers, verify=not self.mattermost_ignore_ssl_errors,
-                    proxies=proxies, timeout=self.post_timeout)
+                    url,
+                    data=json.dumps(payload, cls=DateTimeEncoder),
+                    headers=headers,
+                    verify=not self.mattermost_ignore_ssl_errors,
+                    proxies=proxies,
+                    timeout=self.post_timeout
+                )
 
                 warnings.resetwarnings()
                 response.raise_for_status()
@@ -1490,7 +1506,13 @@ class PagerTreeAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies, timeout=self.post_timeout)
+            response = requests.post(
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                proxies=proxies,
+                timeout=self.post_timeout
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to PagerTree: %s" % e)
@@ -1589,7 +1611,13 @@ class VictorOpsAlerter(Alerter):
             payload["entity_id"] = self.victorops_entity_id
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies, timeout=self.post_timeout)
+            response = requests.post(
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                proxies=proxies,
+                timeout=self.post_timeout
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to VictorOps: %s" % e)
@@ -1638,7 +1666,14 @@ class TelegramAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies, auth=auth, timeout=self.post_timeout)
+            response = requests.post(
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                proxies=proxies,
+                auth=auth,
+                timeout=self.post_timeout
+            )
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -1731,7 +1766,12 @@ class GoogleChatAlerter(Alerter):
         headers = {'content-type': 'application/json'}
         for url in self.googlechat_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(message), headers=headers, timeout=self.post_timeout)
+                response = requests.post(
+                    url,
+                    data=json.dumps(message),
+                    headers=headers,
+                    timeout=self.post_timeout
+                )
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting to google chat: {}".format(e))
@@ -1766,7 +1806,13 @@ class GitterAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.gitter_webhook_url, json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies, timeout=self.post_timeout)
+            response = requests.post(
+                self.gitter_webhook_url,
+                json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                proxies=proxies,
+                timeout=self.post_timeout
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Gitter: %s" % e)
@@ -1882,7 +1928,13 @@ class AlertaAlerter(Alerter):
         alerta_payload = self.get_json_payload(matches[0])
 
         try:
-            response = requests.post(self.url, data=alerta_payload, headers=headers, verify=self.verify_ssl, timeout=self.post_timeout)
+            response = requests.post(
+                self.url,
+                data=alerta_payload,
+                headers=headers,
+                verify=self.verify_ssl,
+                timeout=self.post_timeout
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Alerta: %s" % e)
@@ -1980,8 +2032,13 @@ class HTTPPostAlerter(Alerter):
             proxies = {'https': self.post_proxy} if self.post_proxy else None
             for url in self.post_url:
                 try:
-                    response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder),
-                                             headers=headers, proxies=proxies, timeout=self.post_timeout)
+                    response = requests.post(
+                        url,
+                        data=json.dumps(payload, cls=DateTimeEncoder),
+                        headers=headers,
+                        proxies=proxies,
+                        timeout=self.post_timeout
+                    )
                     response.raise_for_status()
                 except RequestException as e:
                     raise EAException("Error posting HTTP Post alert: %s" % e)
@@ -2070,9 +2127,13 @@ class StrideAlerter(Alerter):
             if self.stride_ignore_ssl_errors:
                 requests.packages.urllib3.disable_warnings()
             response = requests.post(
-                self.url, data=json.dumps(payload, cls=DateTimeEncoder),
-                headers=headers, verify=not self.stride_ignore_ssl_errors,
-                proxies=proxies, timeout=self.post_timeout)
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                verify=not self.stride_ignore_ssl_errors,
+                proxies=proxies,
+                timeout=self.post_timeout
+            )
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -2106,7 +2167,12 @@ class LineNotifyAlerter(Alerter):
             "message": body
         }
         try:
-            response = requests.post("https://notify-api.line.me/api/notify", data=payload, headers=headers, timeout=self.post_timeout)
+            response = requests.post(
+                "https://notify-api.line.me/api/notify",
+                data=payload,
+                headers=headers,
+                timeout=self.post_timeout
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Line Notify: %s" % e)
