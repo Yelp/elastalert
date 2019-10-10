@@ -23,3 +23,9 @@ repos:
     -   id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
         exclude: .*tests/.*|.*yelp/testing/.*|\.pre-commit-config\.yaml
+
+-   repo: https://github.com/pryorda/dockerfilelint-precommit-hooks
+    rev: v0.1.0
+    hooks:
+    -   id: dockerfilelint
+        stages: [commit]
