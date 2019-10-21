@@ -949,7 +949,7 @@ class CardinalityRule(RuleType):
 
     def garbage_collect(self, timestamp):
         """ Remove all occurrence data that is beyond the timeframe away """
-        for qk, terms in self.cardinality_cache.items():
+        for qk, terms in list(self.cardinality_cache.items()):
             for term, last_occurence in terms.items():
                 if timestamp - lookup_es_key(last_occurence, self.ts_field) > self.rules['timeframe']:
                     self.cardinality_cache[qk].pop(term)
