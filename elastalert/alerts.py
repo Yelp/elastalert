@@ -2179,7 +2179,7 @@ class HiveAlerter(Alerter):
                     value = cf_value['value'].format(**context)
                     func(cf_key, value)
                 alert_config[alert_config_field] = custom_fields.build()
-            elif isinstance(alert_config_value, basestring):
+            elif isinstance(alert_config_value, str):
                 alert_config[alert_config_field] = alert_config_value.format(**context)
             elif isinstance(alert_config_value, (list, tuple)):
                 formatted_list = []
