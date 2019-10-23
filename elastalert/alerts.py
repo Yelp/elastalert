@@ -68,7 +68,7 @@ class BasicMatchString(object):
         if event is None:
             event = self.match
         missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
-        alert_text = unicode(self.rule.get(alert_text_key, ''))
+        alert_text = str(self.rule.get(alert_text_key, ''))
 
         if alert_text_key+'_args' in self.rule:
             alert_text_args = self.rule.get(alert_text_key+'_args')
@@ -162,7 +162,7 @@ class BasicMatchString(object):
                 if 'related_events' in self.match:
                     related_events = self.match['related_events']
                     del self.match['related_events']
-                    alert_text_related_event_text = unicode(self.rule.get('alert_text_related_event_text', ''))
+                    alert_text_related_event_text = str(self.rule.get('alert_text_related_event_text', ''))
                     if alert_text_related_event_text == '':
                         self.text += '\n----------------------------------------\n'
                         self._add_match_items()
