@@ -949,15 +949,9 @@ class CardinalityRule(RuleType):
 
     def garbage_collect(self, timestamp):
         """ Remove all occurrence data that is beyond the timeframe away """
-<<<<<<< HEAD
         for qk, terms in list(self.cardinality_cache.items()):
             for term, last_occurence in list(terms.items()):
                 if timestamp - last_occurence > self.rules['timeframe']:
-=======
-        for qk, terms in self.cardinality_cache.items():
-            for term, last_occurence in terms.items():
-                if timestamp - lookup_es_key(last_occurence, self.ts_field) > self.rules['timeframe']:
->>>>>>> Add related_events capability to cardinality
                     self.cardinality_cache[qk].pop(term)
 
             # Create a placeholder event for if a min_cardinality match occured

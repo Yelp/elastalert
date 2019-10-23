@@ -67,10 +67,11 @@ class BasicMatchString(object):
         if event is None:
             event = self.match
         missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
-        alert_text = str(self.rule.get('alert_text', ''))
-        if 'alert_text_args' in self.rule:
-            alert_text_args = self.rule.get('alert_text_args')
-            alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
+        alert_text = str(self.rule.get(alert_text_key, ''))
+
+        if alert_text_key+'_args' in self.rule:
+            alert_text_args = self.rule.get(alert_text_key+'_args')
+            alert_text_values = [lookup_es_key(event, arg) for arg in alert_text_args]
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
@@ -159,7 +160,7 @@ class BasicMatchString(object):
                 if 'related_events' in self.match:
                     related_events = self.match['related_events']
                     del self.match['related_events']
-                    alert_text_related_event_text = unicode(self.rule.get('alert_text_related_event_text', ''))
+                    alert_text_related_event_text = str(self.rule.get('alert_text_related_event_text', ''))
                     if alert_text_related_event_text == '':
                         self.text += '\n----------------------------------------\n'
                         self._add_match_items()
@@ -2150,7 +2151,7 @@ class HiveAlerter(Alerter):
         artifacts = []
         context = {'rule': self.rule, 'match': match}
         for mapping in self.rule.get('hive_observable_data_mapping', []):
-            for observable_type, match_data_key in mapping.iteritems():
+            for observable_type, match_data_key in mapping.items():
                 try:
                     artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
                 except KeyError:
@@ -2167,10 +2168,10 @@ class HiveAlerter(Alerter):
 
         alert_config.update(self.rule.get('hive_alert_config', {}))
 
-        for alert_config_field, alert_config_value in alert_config.iteritems():
+        for alert_config_field, alert_config_value in alert_config.items():
             if alert_config_field == 'customFields':
                 custom_fields = CustomFieldHelper()
-                for cf_key, cf_value in alert_config_value.iteritems():
+                for cf_key, cf_value in alert_config_value.items():
                     try:
                         func = getattr(custom_fields, 'add_{}'.format(cf_value['type']))
                     except AttributeError:
