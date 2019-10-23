@@ -2127,7 +2127,7 @@ class HiveAlerter(Alerter):
         artifacts = []
         context = {'rule': self.rule, 'match': match}
         for mapping in self.rule.get('hive_observable_data_mapping', []):
-            for observable_type, match_data_key in mapping.iteritems():
+            for observable_type, match_data_key in mapping.items():
                 try:
                     artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
                 except KeyError:
@@ -2144,10 +2144,10 @@ class HiveAlerter(Alerter):
 
         alert_config.update(self.rule.get('hive_alert_config', {}))
 
-        for alert_config_field, alert_config_value in alert_config.iteritems():
+        for alert_config_field, alert_config_value in alert_config.items():
             if alert_config_field == 'customFields':
                 custom_fields = CustomFieldHelper()
-                for cf_key, cf_value in alert_config_value.iteritems():
+                for cf_key, cf_value in alert_config_value.items():
                     try:
                         func = getattr(custom_fields, 'add_{}'.format(cf_value['type']))
                     except AttributeError:
