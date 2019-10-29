@@ -1513,19 +1513,35 @@ class ElastAlerter(object):
         # run_enhancements_first is set or
         # retried==True, which means this is a retry of a failed alert
         if not rule.get('run_enhancements_first') and not retried:
-            for enhancement in rule['match_enhancements']:
-                valid_matches = []
-                for match in matches:
-                    try:
-                        enhancement.process(match)
-                        valid_matches.append(match)
-                    except DropMatchException:
-                        pass
-                    except EAException as e:
-                        self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
-                matches = valid_matches
-                if not matches:
-                    return None
+            if rule.get('block_enhancements_in_writeback'):
+                matches_enhanced = copy.deepcopy(matches)
+                for enhancement in rule['match_enhancements']:
+                    valid_matches = []
+                    for match_enhanced in matches_enhanced:
+                        try:
+                            enhancement.process(match_enhanced)
+                            valid_matches.append(match_enhanced)
+                        except DropMatchException:
+                            pass
+                        except EAException as e:
+                            self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+                    matches_enhanced = valid_matches
+                    if not matches_enhanced:
+                        return None
+            else:
+                for enhancement in rule['match_enhancements']:
+                    valid_matches = []
+                    for match in matches:
+                        try:
+                            enhancement.process(match)
+                            valid_matches.append(match)
+                        except DropMatchException:
+                            pass
+                        except EAException as e:
+                            self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+                    matches = valid_matches
+                    if not matches:
+                        return None
 
         # Don't send real alerts in debug mode
         if self.debug:
@@ -1542,7 +1558,10 @@ class ElastAlerter(object):
         for alert in rule['alert']:
             alert.pipeline = alert_pipeline
             try:
-                alert.alert(matches)
+                if rule.get('block_enhancements_in_writeback'):
+                    alert.alert(matches_enhanced)
+                else:
+                    alert.alert(matches)
             except EAException as e:
                 self.handle_error('Error while running alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
                 alert_exception = str(e)
