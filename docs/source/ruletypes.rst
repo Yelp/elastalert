@@ -634,7 +634,7 @@ For example, if ``query_key`` is set to ``username`` and ``realert`` is set, and
 additional alerts for ``{'username': 'bob'}`` will be ignored while other usernames will trigger alerts. Documents which are missing the
 ``query_key`` will be grouped together. A list of fields may also be used, which will create a compound query key. This compound key is
 treated as if it were a single field whose value is the component values, or "None", joined by commas. A new field with the key
-"field1,field2,etc" will be created in each document and may conflict with existing fields of the same name.
+"field1,field2,etc" will be created in each document and may conflict with existing fields of the same name. Use the following syntax to specify multiple fields: `query_key: ["ip_address", "environment"]`
 
 aggregation_key
 ^^^^^^^^^^^^^^^
