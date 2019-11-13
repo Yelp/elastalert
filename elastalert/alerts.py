@@ -1845,6 +1845,7 @@ class AlertaAlerter(Alerter):
 
         # Setup defaul parameters
         self.url = self.rule.get('alerta_api_url', None)
+		self.customer = self.rule.get('alerta_customer', '')
         self.api_key = self.rule.get('alerta_api_key', None)
         self.timeout = self.rule.get('alerta_timeout', 86400)
         self.use_match_timestamp = self.rule.get('alerta_use_match_timestamp', False)
@@ -1921,6 +1922,7 @@ class AlertaAlerter(Alerter):
 
         alerta_payload_dict = {
             'resource': resolve_string(self.resource, match, self.missing_text),
+			'customer': resolve_string(self.customer, match, self.missing_text),
             'severity': self.severity,
             'timeout': self.timeout,
             'createTime': createTime,
