@@ -684,9 +684,9 @@ class ElastAlerter(object):
             if self.writeback_es.is_atleastsixtwo():
                 if self.writeback_es.run_on_single_index():
                     # edit query to search on ea_type
-                    query["query"]["bool"]["must"]=[query["query"]["bool"]["filter"]]
-                    query["query"]["bool"]["must"].append({'term': {'ea_type': doc_type.replace("elastalert_","")}})
-                    query["query"]["bool"].pop("filter",None)
+                    query["query"]["bool"]["must"] = [query["query"]["bool"]["filter"]]
+                    query["query"]["bool"]["must"].append({'term': {'ea_type': doc_type.replace("elastalert_", "")}})
+                    query["query"]["bool"].pop("filter", None)
                 if self.writeback_es.is_atleastsixsix():
                     res = self.writeback_es.search(index=index, size=1, body=query,
                                                    _source_includes=['endtime', 'rule_name'])
@@ -1616,7 +1616,7 @@ class ElastAlerter(object):
 
         if self.writeback_es.run_on_single_index() and self.writeback_es.is_atleastsixtwo():
             # ADD specific term to replace doc_type
-            body.update({"ea_type":doc_type.replace("elastalert_","")})
+            body.update({"ea_type": doc_type.replace("elastalert_", "")})
 
         try:
             index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
@@ -1649,8 +1649,8 @@ class ElastAlerter(object):
             if self.writeback_es.is_atleastsixtwo():
                 if self.writeback_es.run_on_single_index():
                     # edit query to search on ea_type
-                    query["query"]["bool"]["must"]=[query["query"]["bool"]["must"]]
-                    query["query"]["bool"]["must"].append({"term":{"ea_type":"elastalert"}})
+                    query["query"]["bool"]["must"] = [query["query"]["bool"]["must"]]
+                    query["query"]["bool"]["must"].append({"term": {"ea_type": "elastalert"}})
                 res = self.writeback_es.search(index=self.writeback_index, body=query, size=1000)
             else:
                 res = self.writeback_es.deprecated_search(index=self.writeback_index,
@@ -1742,7 +1742,7 @@ class ElastAlerter(object):
             if self.writeback_es.is_atleastsixtwo():
                 if self.writeback_es.run_on_single_index():
                     # edit query to search on ea_type
-                    query = {'query':{'bool': {'must':[query["query"],{'term': {'ea_type': 'elastalert'}}]}},'sort':query["sort"]}
+                    query = {'query': {'bool': {'must': [query["query"], {'term': {'ea_type': 'elastalert'}}]}}, 'sort': query["sort"]}
                 res = self.writeback_es.search(index=self.writeback_index, body=query,
                                                size=self.max_aggregation)
             else:
@@ -1919,7 +1919,7 @@ class ElastAlerter(object):
             if self.writeback_es.is_atleastsixtwo():
                 if self.writeback_es.run_on_single_index():
                     # edit query to search on ea_type
-                    query = {"query": {"bool": {"must": [query["query"],{"term":{"ea_type":doc_type.replace("elastalert_","")}}]}}}
+                    query = {"query": {"bool": {"must": [query["query"], {"term": {"ea_type": doc_type.replace("elastalert_", "")}}]}}}
                 if self.writeback_es.is_atleastsixsix():
                     res = self.writeback_es.search(index=index, size=1, body=query,
                                                    _source_includes=['until', 'exponent'])

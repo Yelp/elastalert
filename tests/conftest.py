@@ -112,8 +112,6 @@ class mock_es_sixsix_client(object):
                 return index + '_error'
             return index
 
-        
-
         self.resolve_writeback_index = mock.Mock(side_effect=writeback_index_side_effect)
 
 

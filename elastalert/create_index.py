@@ -24,10 +24,10 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
     print("Elastic Version: " + esversion)
 
     es_index_mappings = read_es_index_mappings() if is_atleastsix(esversion) else read_es_index_mappings(5)
-    
+
     if single_index:
         es_maps = es_index_mappings
-        es_index_mappings={}
+        es_index_mappings = {}
         es_index_mappings['elastalert_single'] = es_maps['elastalert']
         es_index_mappings['elastalert_single'].update(es_maps['elastalert_status'])
         es_index_mappings['elastalert_single'].update(es_maps['elastalert_error'])
@@ -71,7 +71,6 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
     if is_atleastseven(esversion):
         # TODO remove doc_type completely when elasicsearch client allows doc_type=None
         # doc_type is a deprecated feature and will be completely removed in Elasicsearch 8
-        
         if single_index:
             es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
                                           body=es_index_mappings['elastalert_single'], include_type_name=True)

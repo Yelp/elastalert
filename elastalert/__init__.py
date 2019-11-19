@@ -62,7 +62,7 @@ class ElasticSearchClient(Elasticsearch):
             if self._conf["run_on_single_index"] is True:
                 return True
         return False
-        
+
     def is_atleastfive(self):
         """
         Returns True when the Elasticsearch server version >= 5
@@ -101,7 +101,6 @@ class ElasticSearchClient(Elasticsearch):
         index name, based on doc_type. """
         if self.run_on_single_index():
             return writeback_index
-            
         if not self.is_atleastsix():
             return writeback_index
         elif doc_type == 'silence':
