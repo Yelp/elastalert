@@ -130,14 +130,17 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
 
 def read_es_index_mappings(es_version=6):
     print('Reading Elastic {0} index mappings:'.format(es_version))
-    return {
+    maps = {
         'silence': read_es_index_mapping('silence', es_version),
         'elastalert_status': read_es_index_mapping('elastalert_status', es_version),
         'elastalert': read_es_index_mapping('elastalert', es_version),
         'past_elastalert': read_es_index_mapping('past_elastalert', es_version),
-        'elastalert_error': read_es_index_mapping('elastalert_error', es_version),
-        'elastalert_single': read_es_index_mapping('elastalert_single', es_version)
+        'elastalert_error': read_es_index_mapping('elastalert_error', es_version)
     }
+    if (es_version>=6):
+        maps['elastalert_single'] = read_es_index_mapping('elastalert_single', es_version)
+    
+    return maps
 
 
 def read_es_index_mapping(mapping, es_version=6):

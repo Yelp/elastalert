@@ -1614,7 +1614,7 @@ class ElastAlerter(object):
         if '@timestamp' not in writeback_body:
             writeback_body['@timestamp'] = dt_to_ts(ts_now())
 
-        if self.writeback_es.run_on_single_index():
+        if self.writeback_es.run_on_single_index() and self.writeback_es.is_atleastsixtwo():
             # ADD specific term to replace doc_type
             body.update({"ea_type":doc_type.replace("elastalert_","")})
 
