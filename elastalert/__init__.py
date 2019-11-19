@@ -54,6 +54,15 @@ class ElasticSearchClient(Elasticsearch):
                     time.sleep(3)
         return self._es_version
 
+    def run_on_single_index(self):
+        """
+        Returns True if elastalert has to run on a single index
+        """
+        if "run_on_single_index" in self._conf:
+            if self._conf["run_on_single_index"] is True:
+                return True
+        return False
+
     def is_atleastfive(self):
         """
         Returns True when the Elasticsearch server version >= 5
@@ -90,6 +99,8 @@ class ElasticSearchClient(Elasticsearch):
         """ In ES6, you cannot have multiple _types per index,
         therefore we use self.writeback_index as the prefix for the actual
         index name, based on doc_type. """
+        if self.run_on_single_index():
+            return writeback_index
         if not self.is_atleastsix():
             return writeback_index
         elif doc_type == 'silence':

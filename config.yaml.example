@@ -59,6 +59,9 @@ es_port: 9200
 writeback_index: elastalert_status
 writeback_alias: elastalert_alerts
 
+#If you need elastalert to run on a single writeback index
+#run_on_single_index: True
+
 # If an alert fails for some reason, ElastAlert will retry
 # sending the alert until this time period has elapsed
 alert_time_limit:
