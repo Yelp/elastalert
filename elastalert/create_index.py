@@ -25,7 +25,7 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
 
     es_index_mappings = read_es_index_mappings() if is_atleastsix(esversion) else read_es_index_mappings(5)
 
-    if single_index:
+    if single_index and is_atleastsix(esversion):
         es_maps = es_index_mappings
         es_index_mappings = {}
         es_index_mappings['elastalert_single'] = es_maps['elastalert']
