@@ -356,6 +356,13 @@ def build_es_conn_config(conf):
         parsed_conf['es_username'] = conf['es_username']
         parsed_conf['es_password'] = conf['es_password']
 
+    if os.environ.get('ES_SINGLE_INDEX'):
+        parsed_conf['run_on_single_index'] = True if os.environ.get('ES_SINGLE_INDEX') == "True" else False
+    elif 'run_on_single_index' in conf:
+        parsed_conf['run_on_single_index'] = conf['run_on_single_index']
+    else:
+        parsed_conf['run_on_single_index'] = False
+
     if 'aws_region' in conf:
         parsed_conf['aws_region'] = conf['aws_region']
 

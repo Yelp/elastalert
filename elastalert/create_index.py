@@ -19,11 +19,21 @@ from .auth import Auth
 env = Env(ES_USE_SSL=bool)
 
 
-def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None):
+def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None, single_index=False):
     esversion = es_client.info()["version"]["number"]
     print("Elastic Version: " + esversion)
 
     es_index_mappings = read_es_index_mappings() if is_atleastsix(esversion) else read_es_index_mappings(5)
+
+    if single_index and is_atleastsix(esversion):
+        # concatenate all mappings for them to be pushed
+        es_maps = es_index_mappings
+        es_index_mappings = {}
+        es_index_mappings['elastalert_single'] = es_maps['elastalert']
+        es_index_mappings['elastalert_single'].update(es_maps['elastalert_status'])
+        es_index_mappings['elastalert_single'].update(es_maps['elastalert_error'])
+        es_index_mappings['elastalert_single'].update(es_maps['silence'])
+        es_index_mappings['elastalert_single'].update(es_maps['past_elastalert'])
 
     es_index = IndicesClient(es_client)
     if not recreate:
@@ -32,7 +42,12 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
             return None
 
     # (Re-)Create indices.
-    if is_atleastsix(esversion):
+    if single_index or not is_atleastsix(esversion):
+        index_names = (
+            ea_index,
+        )
+
+    else:
         index_names = (
             ea_index,
             ea_index + '_status',
@@ -40,10 +55,7 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
             ea_index + '_error',
             ea_index + '_past',
         )
-    else:
-        index_names = (
-            ea_index,
-        )
+
     for index_name in index_names:
         if es_index.exists(index_name):
             print('Deleting index ' + index_name + '.')
@@ -60,38 +72,50 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
     if is_atleastseven(esversion):
         # TODO remove doc_type completely when elasicsearch client allows doc_type=None
         # doc_type is a deprecated feature and will be completely removed in Elasicsearch 8
-        es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
-                                      body=es_index_mappings['elastalert'], include_type_name=True)
-        es_client.indices.put_mapping(index=ea_index + '_status', doc_type='_doc',
-                                      body=es_index_mappings['elastalert_status'], include_type_name=True)
-        es_client.indices.put_mapping(index=ea_index + '_silence', doc_type='_doc',
-                                      body=es_index_mappings['silence'], include_type_name=True)
-        es_client.indices.put_mapping(index=ea_index + '_error', doc_type='_doc',
-                                      body=es_index_mappings['elastalert_error'], include_type_name=True)
-        es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
-                                      body=es_index_mappings['past_elastalert'], include_type_name=True)
+        if single_index:
+            es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
+                                          body=es_index_mappings['elastalert_single'], include_type_name=True)
+        else:
+            es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
+                                          body=es_index_mappings['elastalert'], include_type_name=True)
+            es_client.indices.put_mapping(index=ea_index + '_status', doc_type='_doc',
+                                          body=es_index_mappings['elastalert_status'], include_type_name=True)
+            es_client.indices.put_mapping(index=ea_index + '_silence', doc_type='_doc',
+                                          body=es_index_mappings['silence'], include_type_name=True)
+            es_client.indices.put_mapping(index=ea_index + '_error', doc_type='_doc',
+                                          body=es_index_mappings['elastalert_error'], include_type_name=True)
+            es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
+                                          body=es_index_mappings['past_elastalert'], include_type_name=True)
     elif is_atleastsixtwo(esversion):
-        es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
-                                      body=es_index_mappings['elastalert'])
-        es_client.indices.put_mapping(index=ea_index + '_status', doc_type='_doc',
-                                      body=es_index_mappings['elastalert_status'])
-        es_client.indices.put_mapping(index=ea_index + '_silence', doc_type='_doc',
-                                      body=es_index_mappings['silence'])
-        es_client.indices.put_mapping(index=ea_index + '_error', doc_type='_doc',
-                                      body=es_index_mappings['elastalert_error'])
-        es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
-                                      body=es_index_mappings['past_elastalert'])
+        if single_index:
+            es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
+                                          body=es_index_mappings['elastalert_single'])
+        else:
+            es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
+                                          body=es_index_mappings['elastalert'])
+            es_client.indices.put_mapping(index=ea_index + '_status', doc_type='_doc',
+                                          body=es_index_mappings['elastalert_status'])
+            es_client.indices.put_mapping(index=ea_index + '_silence', doc_type='_doc',
+                                          body=es_index_mappings['silence'])
+            es_client.indices.put_mapping(index=ea_index + '_error', doc_type='_doc',
+                                          body=es_index_mappings['elastalert_error'])
+            es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
+                                          body=es_index_mappings['past_elastalert'])
     elif is_atleastsix(esversion):
-        es_client.indices.put_mapping(index=ea_index, doc_type='elastalert',
-                                      body=es_index_mappings['elastalert'])
-        es_client.indices.put_mapping(index=ea_index + '_status', doc_type='elastalert_status',
-                                      body=es_index_mappings['elastalert_status'])
-        es_client.indices.put_mapping(index=ea_index + '_silence', doc_type='silence',
-                                      body=es_index_mappings['silence'])
-        es_client.indices.put_mapping(index=ea_index + '_error', doc_type='elastalert_error',
-                                      body=es_index_mappings['elastalert_error'])
-        es_client.indices.put_mapping(index=ea_index + '_past', doc_type='past_elastalert',
-                                      body=es_index_mappings['past_elastalert'])
+        if single_index:
+            es_client.indices.put_mapping(index=ea_index, doc_type='elastalert',
+                                          body=es_index_mappings['elastalert_single'])
+        else:
+            es_client.indices.put_mapping(index=ea_index, doc_type='elastalert',
+                                          body=es_index_mappings['elastalert'])
+            es_client.indices.put_mapping(index=ea_index + '_status', doc_type='elastalert_status',
+                                          body=es_index_mappings['elastalert_status'])
+            es_client.indices.put_mapping(index=ea_index + '_silence', doc_type='silence',
+                                          body=es_index_mappings['silence'])
+            es_client.indices.put_mapping(index=ea_index + '_error', doc_type='elastalert_error',
+                                          body=es_index_mappings['elastalert_error'])
+            es_client.indices.put_mapping(index=ea_index + '_past', doc_type='past_elastalert',
+                                          body=es_index_mappings['past_elastalert'])
     else:
         es_client.indices.put_mapping(index=ea_index, doc_type='elastalert',
                                       body=es_index_mappings['elastalert'])
@@ -160,6 +184,7 @@ def main():
     parser.add_argument('--no-verify-certs', dest='verify_certs', action='store_false',
                         help='Do not verify TLS certificates')
     parser.add_argument('--index', help='Index name to create')
+    parser.add_argument('--single-index', action='store_true', default=None, help='Create one single index')
     parser.add_argument('--alias', help='Alias name to create')
     parser.add_argument('--old-index', help='Old index name to copy')
     parser.add_argument('--send_get_body_as', default='GET',
@@ -206,6 +231,7 @@ def main():
         client_cert = data.get('client_cert')
         client_key = data.get('client_key')
         index = args.index if args.index is not None else data.get('writeback_index')
+        single_index = args.single_index if args.single_index is not None else data.get('run_on_single_index') is not False
         alias = args.alias if args.alias is not None else data.get('writeback_alias')
         old_index = args.old_index if args.old_index is not None else None
     else:
@@ -233,6 +259,7 @@ def main():
         index = args.index if args.index is not None else input('New index name? (Default elastalert_status) ')
         if not index:
             index = 'elastalert_status'
+        single_index = False
         alias = args.alias if args.alias is not None else input('New alias name? (Default elastalert_alerts) ')
         if not alias:
             alias = 'elastalert_alias'
@@ -261,7 +288,7 @@ def main():
         ca_certs=ca_certs,
         client_key=client_key)
 
-    create_index_mappings(es_client=es, ea_index=index, recreate=args.recreate, old_ea_index=old_index)
+    create_index_mappings(es_client=es, ea_index=index, recreate=args.recreate, old_ea_index=old_index, single_index=single_index)
 
 
 if __name__ == '__main__':
