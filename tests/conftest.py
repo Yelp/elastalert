@@ -76,6 +76,7 @@ class mock_es_client(object):
         self.is_atleastsixtwo = mock.Mock(return_value=False)
         self.is_atleastsixsix = mock.Mock(return_value=False)
         self.is_atleastseven = mock.Mock(return_value=False)
+        self.run_on_single_index = mock.Mock(return_value=False)
         self.resolve_writeback_index = mock.Mock(return_value=writeback_index)
 
 
@@ -98,6 +99,7 @@ class mock_es_sixsix_client(object):
         self.is_atleastsixtwo = mock.Mock(return_value=False)
         self.is_atleastsixsix = mock.Mock(return_value=True)
         self.is_atleastseven = mock.Mock(return_value=False)
+        self.run_on_single_index = mock.Mock(return_value=False)
 
         def writeback_index_side_effect(index, doc_type):
             if doc_type == 'silence':
@@ -109,6 +111,8 @@ class mock_es_sixsix_client(object):
             elif doc_type == 'elastalert_error':
                 return index + '_error'
             return index
+
+        
 
         self.resolve_writeback_index = mock.Mock(side_effect=writeback_index_side_effect)
 
