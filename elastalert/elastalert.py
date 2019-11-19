@@ -1615,8 +1615,8 @@ class ElastAlerter(object):
             writeback_body['@timestamp'] = dt_to_ts(ts_now())
 
         if self.writeback_es.run_on_single_index():
-           # ADD specific term to replace doc_type
-           body.update({"ea_type":doc_type.replace("elastalert_","")})
+            # ADD specific term to replace doc_type
+            body.update({"ea_type":doc_type.replace("elastalert_","")})
 
         try:
             index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
