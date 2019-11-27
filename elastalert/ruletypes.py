@@ -925,7 +925,7 @@ class CardinalityRule(RuleType):
             value = hashable(lookup_es_key(event, self.cardinality_field))
             if value is not None:
                 # Store this timestamp as most recent occurence of the term
-                self.cardinality_cache[key][value] = event
+                self.cardinality_cache[key][value] = lookup_es_key(event, self.ts_field)
                 self.check_for_match(key, event)
 
     def check_for_match(self, key, event, gc=True):
