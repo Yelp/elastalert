@@ -1,5 +1,59 @@
 # Change Log
 
+# v0.1.39
+
+### Added
+- Added spike alerts for metric aggregations
+- Allow SSL connections for Stomp
+- Allow limits on alert text length
+- Add optional min doc count for terms queries
+- Add ability to index into arrays for alert_text_args, etc
+
+### Fixed
+- Fixed bug involving --config flag with create-index
+- Fixed some settings not being inherited from the config properly
+- Some fixes for Hive alerter
+- Close SMTP connections properly
+- Fix timestamps in Pagerduty v2 payload
+- Fixed an bug causing aggregated alerts to mix up
+
+# v0.1.38
+
+### Added
+- Added PagerTree alerter
+- Added Line alerter
+- Added more customizable logging
+- Added new logic in test-rule to detemine the default timeframe
+
+### Fixed
+- Fixed an issue causing buffer_time to sometimes be ignored
+
+# v0.1.37
+
+### Added
+- Added more options for Opsgenie alerter
+- Added more pagerduty options
+- Added ability to add metadata to elastalert logs
+
+### Fixed
+- Fixed some documentation to be more clear
+- Stop requiring doc_type for metric aggregations
+- No longer puts quotes around regex terms in blacklists or whitelists
+
+# v0.1.36
+
+### Added
+- Added a prefix "metric_" to the key used for metric aggregations to avoid possible conflicts
+- Added option to skip Alerta certificate validation
+
+### Fixed
+- Fixed a typo in the documentation for spike rule
+
+# v0.1.35
+
+### Fixed
+- Fixed an issue preventing new term rule from working with terms query
+
 # v0.1.34
 
 ### Added

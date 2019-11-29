@@ -25,6 +25,15 @@ definitions:
 
   filter: &filter {}
 
+  mattermostField: &mattermostField
+    type: object
+    additionalProperties: false
+    properties:
+      title: {type: string}
+      value: {type: string}
+      args: *arrayOfString
+      short: {type: boolean}
+
 required: [type, index, alert]
 type: object
 
@@ -84,6 +93,23 @@ oneOf:
       threshold_ref: {type: integer}
       threshold_cur: {type: integer}
 
+  - title: Spike Aggregation
+    required: [spike_height, spike_type, timeframe]
+    properties:
+      type: {enum: [spike_aggregation]}
+      spike_height: {type: number}
+      spike_type: {enum: ["up", "down", "both"]}
+      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count"]}
+      timeframe: *timeframe
+      use_count_query: {type: boolean}
+      doc_type: {type: string}
+      use_terms_query: {type: boolean}
+      terms_size: {type: integer}
+      alert_on_new_data: {type: boolean}
+      threshold_ref: {type: number}
+      threshold_cur: {type: number}
+      min_doc_count: {type: integer}
+
   - title: Flatline
     required: [threshold, timeframe]
     properties:
@@ -94,7 +120,7 @@ oneOf:
       doc_type: {type: string}
 
   - title: New Term
-    required: [fields]
+    required: []
     properties:
       type: {enum: [new_term]}
       fields: *arrayOfStringsOrOtherArray
@@ -239,10 +265,25 @@ properties:
   slack_text_string: {type: string}
   slack_ignore_ssl_errors: {type: boolean}
 
+  ### Mattermost
+  mattermost_webhook_url: *arrayOfString
+  mattermost_proxy: {type: string}
+  mattermost_ignore_ssl_errors: {type: boolean}
+  mattermost_username_override: {type: string}
+  mattermost_icon_url_override: {type: string}
+  mattermost_channel_override: {type: string}
+  mattermost_msg_color: {enum: [good, warning, danger]}
+  mattermost_msg_pretext: {type: string}
+  mattermost_msg_fields: *mattermostField
+
   ### PagerDuty
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
   pagerduty_event_type: {enum: [none, trigger, resolve, acknowledge]}
+
+### PagerTree
+  pagertree_integration_url: {type: string}
+
 
   ### Exotel
   exotel_account_sid: {type: string}
@@ -298,3 +339,6 @@ properties:
   ### Simple
   simple_webhook_url: *arrayOfString
   simple_proxy: {type: string}
+
+  ### LineNotify
+  linenotify_access_token: {type: string}
