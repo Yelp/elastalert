@@ -1648,6 +1648,15 @@ Optional:
 
 ``opsgenie_priority``: Set the OpsGenie priority level. Possible values are P1, P2, P3, P4, P5.
 
+``opsgenie_details``: Map of custom key/value pairs to include in the alert's details. The value can sourced from either fields in the first match, environment variables, or a constant value.
+
+Example usage::
+
+    opsgenie_details:
+      Author: 'Bob Smith'          # constant value
+      Environment: '$VAR'          # environment variable
+      Message: { field: message }  # field in the first match
+
 SNS
 ~~~
 
@@ -1780,6 +1789,12 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 ``slack_title_link``: You can add a link in your Slack notification by setting this to a valid URL. Requires slack_title to be set.
 
 ``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slac. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
+
+``slack_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the slack notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
+
+``slack_kibana_discover_color``: The color of the Kibana Discover url attachment. Defaults to ``#ec4b98``.
+
+``slack_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
 
 Mattermost
 ~~~~~~~~~~

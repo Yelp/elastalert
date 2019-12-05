@@ -456,6 +456,261 @@ def test_opsgenie_default_alert_routing():
         assert alert.get_info()['recipients'] == ['devops@test.com']
 
 
+def test_opsgenie_details_with_constant_value():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {'Foo': 'Bar'}
+    }
+    match = {
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {'Foo': 'Bar'},
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
+def test_opsgenie_details_with_field():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {'Foo': {'field': 'message'}}
+    }
+    match = {
+        'message': 'Bar',
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {'Foo': 'Bar'},
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
+def test_opsgenie_details_with_nested_field():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {'Foo': {'field': 'nested.field'}}
+    }
+    match = {
+        'nested': {
+            'field': 'Bar'
+        },
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {'Foo': 'Bar'},
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
+def test_opsgenie_details_with_non_string_field():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {
+            'Age': {'field': 'age'},
+            'Message': {'field': 'message'}
+        }
+    }
+    match = {
+        'age': 10,
+        'message': {
+            'format': 'The cow goes %s!',
+            'arg0': 'moo'
+        }
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {
+            'Age': '10',
+            'Message': "{'format': 'The cow goes %s!', 'arg0': 'moo'}"
+        },
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
+def test_opsgenie_details_with_missing_field():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {
+            'Message': {'field': 'message'},
+            'Missing': {'field': 'missing'}
+        }
+    }
+    match = {
+        'message': 'Testing',
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {'Message': 'Testing'},
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
+def test_opsgenie_details_with_environment_variable_replacement(environ):
+    environ.update({
+        'TEST_VAR': 'Bar'
+    })
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {'Foo': '$TEST_VAR'}
+    }
+    match = {
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {'Foo': 'Bar'},
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
 def test_jira():
     description_txt = "Description stuff goes here like a runbook link."
     rule = {
@@ -1188,6 +1443,206 @@ def test_slack_uses_list_of_custom_slack_channel():
     )
     assert expected_data1 == json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data2 == json.loads(mock_post_request.call_args_list[1][1]['data'])
+
+
+def test_slack_attach_kibana_discover_url_when_generated():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'kibana_discover_url': 'http://kibana#discover'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            },
+            {
+                'color': '#ec4b98',
+                'title': 'Discover in Kibana',
+                'title_link': 'http://kibana#discover'
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_slack_attach_kibana_discover_url_when_not_generated():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_slack_kibana_discover_title():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_kibana_discover_title': 'Click to discover in Kibana',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'kibana_discover_url': 'http://kibana#discover'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            },
+            {
+                'color': '#ec4b98',
+                'title': 'Click to discover in Kibana',
+                'title_link': 'http://kibana#discover'
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_slack_kibana_discover_color():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_kibana_discover_color': 'blue',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'kibana_discover_url': 'http://kibana#discover'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            },
+            {
+                'color': 'blue',
+                'title': 'Discover in Kibana',
+                'title_link': 'http://kibana#discover'
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
 
 
 def test_http_alerter_with_payload():

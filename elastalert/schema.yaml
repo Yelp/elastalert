@@ -286,6 +286,9 @@ properties:
   slack_text_string: {type: string}
   slack_ignore_ssl_errors: {type: boolean}
   slack_ca_certs: {type: string}
+  slack_attach_kibana_discover_url {type: boolean}
+  slack_kibana_discover_color {type: string}
+  slack_kibana_discover_title {type: string}
 
   ### Mattermost
   mattermost_webhook_url: *arrayOfString
@@ -297,6 +300,20 @@ properties:
   mattermost_msg_color: {enum: [good, warning, danger]}
   mattermost_msg_pretext: {type: string}
   mattermost_msg_fields: *mattermostField
+
+  ## Opsgenie
+  opsgenie_details:
+    type: object
+    minProperties: 1
+    patternProperties:
+      "^.+$":
+        oneOf:
+          - type: string
+          - type: object
+            additionalProperties: false
+            required: [field]
+            properties:
+              field: {type: string, minLength: 1}
 
   ### PagerDuty
   pagerduty_service_key: {type: string}
