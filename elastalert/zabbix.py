@@ -70,10 +70,8 @@ class ZabbixAlerter(Alerter):
                 ts_epoch = int(match[self.timestamp_field])
             else:
                 try:
-                    print("{0} - {1}".format(match[self.timestamp_field], self.timestamp_strptime))
                     ts_epoch = int(datetime.strptime(match[self.timestamp_field], self.timestamp_strptime).strftime('%s'))
                 except ValueError:
-                    print("{0} - {1}".format(match[self.timestamp_field], self.timestamp_strptime))
                     ts_epoch = int(datetime.strptime(match[self.timestamp_field], '%Y-%m-%dT%H:%M:%SZ').strftime('%s'))
             zm.append(ZabbixMetric(host=self.zbx_host, key=self.zbx_key, value=1, clock=ts_epoch))
 
