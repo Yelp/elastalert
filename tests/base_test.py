@@ -75,7 +75,7 @@ def test_init_rule(ea):
     ea.rules[0]['starttime'] = '2014-01-02T00:11:22'
     ea.rules[0]['processed_hits'] = ['abcdefg']
     new_rule = ea.init_rule(new_rule, False)
-    for prop in ['starttime', 'agg_matches', 'current_aggregate_id', 'processed_hits', 'minimum_starttime']:
+    for prop in ['starttime', 'agg_matches', 'current_aggregate_id', 'processed_hits', 'minimum_starttime', 'run_every']:
         assert new_rule[prop] == ea.rules[0][prop]
 
     # Properties are fresh
@@ -83,6 +83,11 @@ def test_init_rule(ea):
     new_rule.pop('starttime')
     assert 'starttime' not in new_rule
     assert new_rule['processed_hits'] == {}
+
+    # Assert run_every is unique
+    new_rule['run_every'] = datetime.timedelta(seconds=17)
+    new_rule = ea.init_rule(new_rule, True)
+    assert new_rule['run_every'] == datetime.timedelta(seconds=17)
 
 
 def test_query(ea):
@@ -982,8 +987,11 @@ def test_rule_changes(ea):
     re = datetime.timedelta(minutes=10)
     ea.rule_hashes = {'rules/rule1.yaml': 'ABC',
                       'rules/rule2.yaml': 'DEF'}
-    ea.rules = [ea.init_rule(rule, True) for rule in [{'rule_file': 'rules/rule1.yaml', 'name': 'rule1', 'filter': []},
-                                                      {'rule_file': 'rules/rule2.yaml', 'name': 'rule2', 'filter': []}]]
+    run_every = datetime.timedelta(seconds=1)
+    ea.rules = [ea.init_rule(rule, True) for rule in [{'rule_file': 'rules/rule1.yaml', 'name': 'rule1', 'filter': [],
+                                                       'run_every': run_every},
+                                                      {'rule_file': 'rules/rule2.yaml', 'name': 'rule2', 'filter': [],
+                                                       'run_every': run_every}]]
     ea.rules[1]['processed_hits'] = ['save me']
     new_hashes = {'rules/rule1.yaml': 'ABC',
                   'rules/rule3.yaml': 'XXX',
@@ -991,8 +999,8 @@ def test_rule_changes(ea):
 
     with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
         with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
-            mock_load.side_effect = [{'filter': [], 'name': 'rule2', 'rule_file': 'rules/rule2.yaml'},
-                                     {'filter': [], 'name': 'rule3', 'rule_file': 'rules/rule3.yaml'}]
+            mock_load.side_effect = [{'filter': [], 'name': 'rule2', 'rule_file': 'rules/rule2.yaml', 'run_every': run_every},
+                                     {'filter': [], 'name': 'rule3', 'rule_file': 'rules/rule3.yaml', 'run_every': run_every}]
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
 
@@ -1014,7 +1022,7 @@ def test_rule_changes(ea):
         with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
             with mock.patch.object(ea, 'send_notification_email') as mock_send:
                 mock_load.return_value = {'filter': [], 'name': 'rule3', 'new': 'stuff',
-                                          'rule_file': 'rules/rule4.yaml'}
+                                          'rule_file': 'rules/rule4.yaml', 'run_every': run_every}
                 mock_hashes.return_value = new_hashes
                 ea.load_rule_changes()
                 mock_send.assert_called_once_with(exception=mock.ANY, rule_file='rules/rule4.yaml')
@@ -1026,7 +1034,8 @@ def test_rule_changes(ea):
     new_hashes.update({'rules/rule4.yaml': 'asdf'})
     with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
         with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
-            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'is_enabled': False, 'rule_file': 'rules/rule4.yaml'}
+            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'is_enabled': False,
+                                      'rule_file': 'rules/rule4.yaml', 'run_every': run_every}
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
     assert len(ea.rules) == 3
@@ -1037,7 +1046,8 @@ def test_rule_changes(ea):
     new_hashes['rules/rule4.yaml'] = 'qwerty'
     with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
         with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
-            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
+            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml',
+                                      'run_every': run_every}
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
     assert len(ea.rules) == 4
@@ -1046,7 +1056,8 @@ def test_rule_changes(ea):
     new_hashes.pop('rules/rule4.yaml')
     with mock.patch.object(ea.conf['rules_loader'], 'get_hashes') as mock_hashes:
         with mock.patch.object(ea.conf['rules_loader'], 'load_configuration') as mock_load:
-            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml'}
+            mock_load.return_value = {'filter': [], 'name': 'rule4', 'new': 'stuff', 'rule_file': 'rules/rule4.yaml',
+                                      'run_every': run_every}
             mock_hashes.return_value = new_hashes
             ea.load_rule_changes()
     ea.scheduler.remove_job.assert_called_with(job_id='rule4')
