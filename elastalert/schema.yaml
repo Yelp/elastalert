@@ -161,6 +161,16 @@ oneOf:
     properties:
       type: {enum: [percentage_match]}
 
+  - title: Find Match
+    required: [query_key, compare_key, start_value, end_value, timeframe, invert]
+    properties:
+      type: {enum: [find_match]}
+      compare_key: {'items': {'type': 'string'},'type': ['string', 'array']}
+      start_value: {type: string}
+      end_value: {type: string}
+      timeframe: *timeframe
+      invert: {type: boolean}
+
   - title: Custom Rule from Module
     properties:
       # custom rules include a period in the rule type

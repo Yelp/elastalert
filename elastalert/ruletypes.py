@@ -1247,3 +1247,117 @@ class PercentageMatchRule(BaseAggregationRule):
         if 'min_percentage' in self.rules and match_percentage < self.rules['min_percentage']:
             return True
         return False
+
+
+class FindMatchRule(RuleType):
+    required_options = frozenset(['query_key', 'compare_key', 'start_value', 'end_value', 'timeframe', 'invert'])
+
+    def __init__(self, *args):
+        super(FindMatchRule, self).__init__(*args)
+        self.compare_key = self.rules['compare_key']
+        self.start_value = self.rules['start_value']
+        self.end_value = self.rules['end_value']
+        self.query_key = self.rules['query_key']
+        self.time_seconds = total_seconds(self.rules['timeframe'])
+        self.invert = self.rules['invert']
+
+        # dict with query_key as key and timestamp from start event as value
+        self.start_time_per_qk = {}
+
+        # list of end events, needed to remove matching start event if it comes after end event
+        self.end_event_qk = []
+
+    def garbage_collect(self, timestamp):
+        key_del = set()
+        for key, value in self.start_time_per_qk.items():
+            if total_seconds(timestamp - value) > self.time_seconds:
+                # delete start entry if end event not found within specified timeframe
+                if not self.invert:
+                    elastalert_logger.info("Match not found for query_key: %s within specified timeframe" % key)
+                    key_del.add(key)
+
+                # alert when end event not found after specified time has elapsed
+                else:
+                    elastalert_logger.info("Alert triggered! End event with query_key: %s not found" % key)
+                    extra = {
+                        self.compare_key: 'end event not found',
+                        'start_event': self.start_value,
+                        'end_event': self.end_value,
+                        self.query_key: key,
+                    }
+                    self.add_match(extra)
+                    key_del.add(key)
+
+        for key in key_del:
+            del self.start_time_per_qk[key]
+
+    def add_data(self, data):
+        # sort list
+        start_events = []
+        end_events = []
+        for d in data:
+            if self.compare_key in d and self.query_key in d:
+                if d[self.compare_key] == self.start_value:
+                    start_events.append(d)
+                elif d[self.compare_key] == self.end_value:
+                    end_events.append(d)
+
+        data = start_events + end_events
+
+        # loop through sorted list
+        for d in data:
+
+                # if this event is start event then fill dict with this event's query_key and timestamp
+                # we ignore any further occurrences of start events with the same query_key
+                if d[self.compare_key] == self.start_value:
+                    if d[self.query_key] not in self.start_time_per_qk:
+                        # if end event did not come before start event then add entry for start event
+                        if d[self.query_key] not in self.end_event_qk:
+                            self.start_time_per_qk[d[self.query_key]] = d['@timestamp']
+                        # if end event is in the list before start event comes then remove end event entry
+                        else:
+                            self.end_event_qk.remove(d[self.query_key])
+
+                # if this event is end event then check if its query_key is present in dict containing start events
+                elif d[self.compare_key] == self.end_value:
+
+                    # we search for matches
+                    if not self.invert:
+                        # if this event does not have corresponding start event then either we missed one or some error occurred
+                        if d[self.query_key] not in self.start_time_per_qk:
+                            elastalert_logger.info("Found the last event with query_key: %s without match" % str(d[self.query_key]))
+                        else:
+                            # if time difference between the events is within specified time then it is an alert
+                            diff = total_seconds(d['@timestamp'] - self.start_time_per_qk[d[self.query_key]])
+                            elastalert_logger.info("Found match for query_key: %s, time gap between the events in seconds: %s" % (str(d[self.query_key]), str(diff)))
+                            if diff <= self.time_seconds:
+                                elastalert_logger.info("Alert triggered for events with query_key: %s" % str(d[self.query_key]))
+                                extra = {
+                                    'start_event': self.start_value,
+                                    'end_event': self.end_value,
+                                    'elapsed_time': diff,
+                                }
+                                self.add_match(dict(list(d.items()) + list(extra.items())))
+
+                            del self.start_time_per_qk[d[self.query_key]]
+
+                    # we search for non-matched events so let's delete start entry if end event is found
+                    else:
+                        if d[self.query_key] in self.start_time_per_qk:
+                            diff = total_seconds(d['@timestamp'] - self.start_time_per_qk[d[self.query_key]])
+                            elastalert_logger.info("Found match for query_key: %s, time gap between the events in seconds: %s" % (str(d[self.query_key]), str(diff)))
+                            # alert when end event is found but not within specified time
+                            if diff > self.time_seconds:
+                                elastalert_logger.info("Alert triggered for events with query_key: %s" % str(d[self.query_key]))
+                                extra = {
+                                    'start_event': self.start_value,
+                                    'end_event': self.end_value,
+                                    'elapsed_time': diff,
+                                }
+                                self.add_match(dict(list(d.items()) + list(extra.items())))
+
+                            del self.start_time_per_qk[d[self.query_key]]
+                        # add entry for end event if matching start event not found (maybe end event comes first)
+                        else:
+                            if d[self.query_key] not in self.end_event_qk:
+                                self.end_event_qk.append(d[self.query_key])

@@ -50,6 +50,7 @@ class RulesLoader(object):
         'cardinality': ruletypes.CardinalityRule,
         'metric_aggregation': ruletypes.MetricAggregationRule,
         'percentage_match': ruletypes.PercentageMatchRule,
+        'find_match': ruletypes.FindMatchRule,
     }
 
     # Used to map names of alerts to their classes
