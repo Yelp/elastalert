@@ -1330,7 +1330,7 @@ class FindMatchRule(RuleType):
                         # if time difference between the events is within specified time then it is an alert
                         diff = total_seconds(d['@timestamp'] - self.start_time_per_qk[d[self.query_key]])
                         elastalert_logger.info("Found match for query_key: %s, "
-                        "time gap between the events in seconds: %s" % (str(d[self.query_key]), str(diff)))
+                                               "time gap between the events in seconds: %s" % (str(d[self.query_key]), str(diff)))
                         if diff <= self.time_seconds:
                             elastalert_logger.info("Alert triggered for events with query_key: %s" % str(d[self.query_key]))
                             extra = {
@@ -1347,7 +1347,7 @@ class FindMatchRule(RuleType):
                     if d[self.query_key] in self.start_time_per_qk:
                         diff = total_seconds(d['@timestamp'] - self.start_time_per_qk[d[self.query_key]])
                         elastalert_logger.info("Found match for query_key: %s, "
-                        "time gap between the events in seconds: %s" % (str(d[self.query_key]), str(diff)))
+                                               "time gap between the events in seconds: %s" % (str(d[self.query_key]), str(diff)))
                         # alert when end event is found but not within specified time
                         if diff > self.time_seconds:
                             elastalert_logger.info("Alert triggered for events with query_key: %s" % str(d[self.query_key]))
