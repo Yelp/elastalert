@@ -348,6 +348,7 @@ def build_es_conn_config(conf):
     parsed_conf['es_url_prefix'] = ''
     parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
     parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
+    parsed_conf['ssl_show_warn'] = conf.get('ssl_show_warn', True)
 
     if os.environ.get('ES_USERNAME'):
         parsed_conf['es_username'] = os.environ.get('ES_USERNAME')
