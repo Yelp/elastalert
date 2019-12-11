@@ -11,6 +11,8 @@ import time
 import uuid
 import warnings
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 from email.utils import formatdate
 from html.parser import HTMLParser
 from smtplib import SMTP
@@ -410,6 +412,8 @@ class EmailAlerter(Alerter):
     def __init__(self, *args):
         super(EmailAlerter, self).__init__(*args)
 
+        self.assets_dir = self.rule.get('assets_dir', '/tmp')
+        self.images_dictionary = dict(zip( self.rule.get('email_image_keys', []),  self.rule.get('email_image_values', [])));
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
         self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
@@ -454,7 +458,17 @@ class EmailAlerter(Alerter):
                 if 'email_add_domain' in self.rule:
                     to_addr = [name + self.rule['email_add_domain'] for name in to_addr]
         if self.rule.get('email_format') == 'html':
-            email_msg = MIMEText(body, 'html', _charset='UTF-8')
+            #email_msg = MIMEText(body, 'html', _charset='UTF-8') # old way
+            email_msg = MIMEMultipart()
+            msgText = MIMEText(body, 'html', _charset='UTF-8')
+            email_msg.attach(msgText)   # Added, and edited the previous line
+
+            for image_key in self.images_dictionary:
+                fp = open(os.path.join(self.assets_dir, self.images_dictionary[image_key]), 'rb')
+                img = MIMEImage(fp.read())
+                fp.close()
+                img.add_header('Content-ID', '<{}>'.format(image_key))
+                email_msg.attach(img)
         else:
             email_msg = MIMEText(body, _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
