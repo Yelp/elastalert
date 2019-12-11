@@ -387,3 +387,9 @@ properties:
   zbx_sender_port: {type: integer}
   zbx_host: {type: string}
   zbx_item: {type: string}
+
+  ### Zalo
+  zalo_bot_token: {type: string}
+  zalo_user_id: {type: string}
+  zalo_api_url: {type: string}
+  zalo_api_version: {type: string}

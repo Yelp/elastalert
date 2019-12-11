@@ -2185,3 +2185,49 @@ class HiveAlerter(Alerter):
             'type': 'hivealerter',
             'hive_host': self.rule.get('hive_connection', {}).get('hive_host', '')
         }
+
+class ZaloAlerter(Alerter):
+    """ Send a Zalo message via bot api for each alert """
+    required_options = frozenset(['zalo_bot_token', 'zalo_user_id'])
+
+    def __init__(self, rule):
+        super(ZaloAlerter, self).__init__(rule)
+        self.zalo_bot_token = self.rule['zalo_bot_token']
+        self.zalo_user_id = self.rule['zalo_user_id']
+        self.zalo_api_url = self.rule.get('zalo_api_url', 'openapi.zalo.me')
+        self.zalo_api_version = self.rule.get('zalo_api_version', 'v2.0')
+        self.url = 'https://%s/%s/oa/%s?access_token=%s' % (self.zalo_api_url, self.zalo_api_version, "message", self.zalo_bot_token)
+
+    def alert(self, matches):
+        body = '⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
+        for match in matches:
+            body += str(BasicMatchString(self.rule, match))
+            # Separate text of aggregated alerts with dashes
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        if len(body) > 4095:
+            body = body[0:4000] + "\n⚠ *message was cropped according to zalo limits!* ⚠"
+        body += ' ```'
+
+        headers = {'content-type': 'application/json'}
+        payload = {
+            'recipient':{
+                'user_id': self.zalo_user_id
+            },
+            'message':{
+                'text': body
+            }
+        }
+        try:
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers)
+            warnings.resetwarnings()
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Zalo: %s. Details: %s" % (e, "" if e.response is None else e.response.text))
+
+        elastalert_logger.info(
+            "Alert sent to Zalo use %s" % self.zalo_user_id)
+
+    def get_info(self):
+        return {'type': 'zalo',
+                'zalo_user_id': self.zalo_user_id}
