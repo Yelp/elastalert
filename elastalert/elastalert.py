@@ -1617,6 +1617,8 @@ class ElastAlerter(object):
         if self.writeback_es.run_on_single_index() and self.writeback_es.is_atleastsix():
             # ADD specific term to replace doc_type
             body.update({"ea_type": doc_type.replace("elastalert_", "")})
+            if "rule_name" not in body and "data" in body and "rule" in body["data"]:
+                body.update({"rule_name": body["data"]["rule"]})
 
         try:
             index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
