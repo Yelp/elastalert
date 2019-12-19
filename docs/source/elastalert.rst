@@ -133,9 +133,12 @@ The environment variable ``ES_USE_SSL`` will override this field.
 
 ``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``20``.
 
+``rules_loader``: Optional; sets the loader class to be used by ElastAlert to retrieve rules and hashes.
+Defaults to ``FileRulesLoader`` if not set.
+
 ``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all
 files in this folder, and all subdirectories, that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
-or remove rules based on their respective config files.
+or remove rules based on their respective config files. (only required when using ``FileRulesLoader``).
 
 ``scan_subdirectories``: Optional; Sets whether or not ElastAlert should recursively descend the rules directory - ``true`` or ``false``. The default is ``true``
 
@@ -166,6 +169,8 @@ from that time, unless it is older than ``old_query_limit``, in which case it wi
 ``disable_rules_on_error``: If true, ElastAlert will disable rules which throw uncaught (not EAException) exceptions. It
 will upload a traceback message to ``elastalert_metadata`` and if ``notify_email`` is set, send an email notification. The
 rule will no longer be run until either ElastAlert restarts or the rule file has been modified. This defaults to True.
+
+``show_disabled_rules``: If true, ElastAlert show the disable rules' list when finishes the execution. This defaults to True.
 
 ``notify_email``: An email address, or list of email addresses, to which notification emails will be sent. Currently,
 only an uncaught exception will send a notification email. The from address, SMTP host, and reply-to header can be set
@@ -198,7 +203,6 @@ The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticse
 
 ``skip_invalid``: If ``True``, skip invalid files instead of exiting.
 
-=======
 Logging
 -------
 

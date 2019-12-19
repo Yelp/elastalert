@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 import copy
-import logging
-from elasticsearch import Elasticsearch, RequestsHttpConnection
-from elasticsearch.client import query_params, _make_path
+import time
+
+from elasticsearch import Elasticsearch
+from elasticsearch import RequestsHttpConnection
+from elasticsearch.client import _make_path
+from elasticsearch.client import query_params
+from elasticsearch.exceptions import TransportError
 
 
 class ElasticSearchClient(Elasticsearch):
@@ -40,7 +44,14 @@ class ElasticSearchClient(Elasticsearch):
         Returns the reported version from the Elasticsearch server.
         """
         if self._es_version is None:
-            self._es_version = self.info()['version']['number']
+            for retry in range(3):
+                try:
+                    self._es_version = self.info()['version']['number']
+                    break
+                except TransportError:
+                    if retry == 2:
+                        raise
+                    time.sleep(3)
         return self._es_version
 
     def is_atleastfive(self):
@@ -59,14 +70,14 @@ class ElasticSearchClient(Elasticsearch):
         """
         Returns True when the Elasticsearch server version >= 6.2
         """
-        major, minor = map(int, self.es_version.split(".")[:2])
+        major, minor = list(map(int, self.es_version.split(".")[:2]))
         return major > 6 or (major == 6 and minor >= 2)
 
     def is_atleastsixsix(self):
         """
         Returns True when the Elasticsearch server version >= 6.6
         """
-        major, minor = map(int, self.es_version.split(".")[:2])
+        major, minor = list(map(int, self.es_version.split(".")[:2]))
         return major > 6 or (major == 6 and minor >= 6)
 
     def is_atleastseven(self):
@@ -232,14 +243,15 @@ class ElasticSearchClient(Elasticsearch):
         :arg version: Specify whether to return document version as part of a
             hit
         """
-        logging.warning(
-            'doc_type has been deprecated since elasticsearch version 6 and will be completely removed in 8')
         # from is a reserved word so it cannot be used, use from_ instead
         if "from_" in params:
             params["from"] = params.pop("from_")
 
         if not index:
             index = "_all"
-        return self.transport.perform_request(
+        res = self.transport.perform_request(
             "GET", _make_path(index, doc_type, "_search"), params=params, body=body
         )
+        if type(res) == list or type(res) == tuple:
+            return res[1]
+        return res

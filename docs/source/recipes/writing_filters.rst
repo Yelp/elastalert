@@ -57,7 +57,7 @@ a field that appears to have the value "foo bar", unless it is not analyzed. Con
 matching on analyzed fields, use query_string. See https://www.elastic.co/guide/en/elasticsearch/guide/current/term-vs-full-text.html
 
 `terms <https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-terms-query.html>`_
-*****
+*****************************************************************************************************
 
 
 
