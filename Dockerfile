@@ -8,8 +8,6 @@ RUN pip install --no-cache -r requirements.txt
 COPY ./requirements-dev.txt /usr/src/app/
 RUN pip install --no-cache -r requirements-dev.txt
 
-RUN pip install --no-cache elastalert
-
 RUN \
   apt-get update && \
   DEBIAN_FRONTEND=noninteractive \
