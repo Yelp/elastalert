@@ -1504,6 +1504,7 @@ class PagerTreeAlerter(Alerter):
         return {'type': 'pagertree',
                 'pagertree_integration_url': self.url}
 
+
 class SquadcastAlerter(Alerter):
     """ Creates a Squadcast Incident for each alert """
     required_options = frozenset(['squadcast_integration_url'])
@@ -1535,6 +1536,7 @@ class SquadcastAlerter(Alerter):
     def get_info(self):
         return {'type': 'squadcast',
                 'squadcast_integration_url': self.url}
+
 
 class ExotelAlerter(Alerter):
     required_options = frozenset(['exotel_account_sid', 'exotel_auth_token', 'exotel_to_number', 'exotel_from_number'])
