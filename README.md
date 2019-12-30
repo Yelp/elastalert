@@ -52,6 +52,7 @@ Currently, we have built-in support for the following alert types:
 - VictorOps
 - PagerDuty
 - PagerTree
+- Squadcast
 - Exotel
 - Twilio
 - Gitter
