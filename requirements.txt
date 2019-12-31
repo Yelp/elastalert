@@ -20,3 +20,4 @@ urllib3==1.22
 statsd==3.2.2
 statsd-tags==3.2.1.post1
 monotonic==1.5
+stomp.py==4.1.22
