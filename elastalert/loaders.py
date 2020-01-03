@@ -67,6 +67,7 @@ class RulesLoader(object):
         'slack': alerts.SlackAlerter,
         'mattermost': alerts.MattermostAlerter,
         'pagerduty': alerts.PagerDutyAlerter,
+        'squadcast': alerts.SquadcastAlerter,
         'exotel': alerts.ExotelAlerter,
         'twilio': alerts.TwilioAlerter,
         'victorops': alerts.VictorOpsAlerter,
