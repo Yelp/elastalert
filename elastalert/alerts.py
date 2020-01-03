@@ -1516,11 +1516,9 @@ class SquadcastAlerter(Alerter):
     def alert(self, matches):
         # post to squadcast
         headers = {'content-type': 'application/json'}
-        
         payload = matches[0].copy()
         payload['Title'] = self.create_title(matches)
         payload['Description'] = self.create_alert_body(matches)
-
         try:
             response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers)
             response.raise_for_status()
