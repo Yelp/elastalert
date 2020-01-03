@@ -1507,27 +1507,22 @@ class PagerTreeAlerter(Alerter):
 
 class SquadcastAlerter(Alerter):
     """ Creates a Squadcast Incident for each alert """
-    required_options = frozenset(['squadcast_integration_url'])
+    required_options = frozenset(['squadcast_webhook_url'])
 
     def __init__(self, rule):
         super(SquadcastAlerter, self).__init__(rule)
-        self.url = self.rule['squadcast_integration_url']
-        self.squadcast_proxy = self.rule.get('squadcast_proxy', None)
+        self.url = self.rule['squadcast_webhook_url']
 
     def alert(self, matches):
         # post to squadcast
         headers = {'content-type': 'application/json'}
-        # set https proxy, if it was provided
-        proxies = {'https': self.squadcast_proxy} if self.squadcast_proxy else None
-        payload = {
-            "event": "create",
-            "id": str(uuid.uuid4()),
-            "message": self.create_title(matches),
-            "description": self.create_alert_body(matches)
-        }
+        
+        payload = matches[0].copy()
+        payload['Title'] = self.create_title(matches)
+        payload['Description'] = self.create_alert_body(matches)
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Squadcast: %s" % e)
