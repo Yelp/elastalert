@@ -320,11 +320,11 @@ properties:
   pagerduty_client_name: {type: string}
   pagerduty_event_type: {enum: [none, trigger, resolve, acknowledge]}
 
-### PagerTree
+  ### PagerTree
   pagertree_integration_url: {type: string}
 
-### Squadcast
-  squadcast_integration_url: {type: string}
+  ### Squadcast
+  squadcast_webhook_url: {type: string}
 
   ### Exotel
   exotel_account_sid: {type: string}
