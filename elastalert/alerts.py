@@ -2211,7 +2211,7 @@ class MISPAlerter(Alerter):
             alert_config.update(self.rule.get('misp_alert_config', {}))
 
             for alert_config_field, alert_config_value in alert_config.iteritems():
-                if isinstance(alert_config_value, basestring):
+                if isinstance(alert_config_value, str):
                     alert_config[alert_config_field] = alert_config_value.format(**context)
                 elif isinstance(alert_config_value, (list, tuple)):
                     formatted_list = []
