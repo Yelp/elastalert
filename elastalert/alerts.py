@@ -2222,7 +2222,12 @@ class MISPAlerter(Alerter):
                             formatted_list.append(element)
                     alert_config[alert_config_field] = formatted_list
 
-            response = misp.new_event(**alert_config)
+            try:
+                response = misp.new_event(**alert_config)
+		warnings.resetwarnings()
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error creating event in MISP: %s. Details: %s" % (e, "" if e.response is None else e.response.text))
 
     def get_info(self):
 
