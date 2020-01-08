@@ -2224,7 +2224,7 @@ class MISPAlerter(Alerter):
 
             try:
                 response = misp.new_event(**alert_config)
-		warnings.resetwarnings()
+                warnings.resetwarnings()
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error creating event in MISP: %s. Details: %s" % (e, "" if e.response is None else e.response.text))
