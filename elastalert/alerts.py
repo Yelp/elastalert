@@ -25,6 +25,7 @@ import stomp
 from exotel import Exotel
 from jira.client import JIRA
 from jira.exceptions import JIRAError
+from pymisp import PyMISP
 from requests.auth import HTTPProxyAuth
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
@@ -2185,6 +2186,7 @@ class HiveAlerter(Alerter):
             'type': 'hivealerter',
             'hive_host': self.rule.get('hive_connection', {}).get('hive_host', '')
         }
+
 
 class MISPAlerter(Alerter):
     """
