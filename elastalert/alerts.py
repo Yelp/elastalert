@@ -2222,7 +2222,7 @@ class MISPAlerter(Alerter):
 
             response = misp.new_event(**alert_config)
 
-  def get_info(self):
+    def get_info(self):
 
         return {
             'type': 'mispalerter',
