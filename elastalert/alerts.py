@@ -536,6 +536,7 @@ class JiraAlerter(Alerter):
         'jira_server',
         'jira_transition_to',
         'jira_watchers',
+        'jira_attach_kibana_discover_url',
     ]
 
     # Some built-in jira types that can be used as custom fields require special handling
@@ -556,6 +557,7 @@ class JiraAlerter(Alerter):
         self.get_account(self.rule['jira_account_file'])
         self.project = self.rule['jira_project']
         self.issue_type = self.rule['jira_issuetype']
+        self.jira_attach_kibana_discover_url = self.rule.get('jira_attach_kibana_discover_url', False)
 
         # Deferred settings refer to values that can only be resolved when a match
         # is found and as such loading them will be delayed until we find a match
@@ -845,6 +847,10 @@ class JiraAlerter(Alerter):
             self.pipeline['jira_ticket'] = self.issue
             self.pipeline['jira_server'] = self.server
 
+    def create_jira_external_link(self, link_title, link):
+        elem = ["[", link_title, "|", link, "]"]
+        return "".join(elem)
+
     def create_alert_body(self, matches):
         body = self.description + '\n'
         body += self.get_aggregation_summary_text(matches)
@@ -853,6 +859,10 @@ class JiraAlerter(Alerter):
                 body += str(JiraFormattedMatchString(self.rule, match))
                 if len(matches) > 1:
                     body += '\n----------------------------------------\n'
+        if self.jira_attach_kibana_discover_url:
+            kibana_discover_url = lookup_es_key(matches[0], 'kibana_discover_url')
+            body += '\n'
+            body += self.create_jira_external_link("Discover in Kibana", kibana_discover_url)
         return body
 
     def get_aggregation_summary_text(self, matches):
