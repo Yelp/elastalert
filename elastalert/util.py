@@ -448,7 +448,7 @@ def resolve_string(string, match, missing_text='<MISSING VALUE>'):
             string = string % dd_match
             string = string.format(**dd_match)
             break
-        except KeyError as e:
+        except KeyError, ValueError as e:
             if '{%s}' % str(e).strip("'") not in string:
                 break
             string = string.replace('{%s}' % str(e).strip("'"), '{_missing_value}')
