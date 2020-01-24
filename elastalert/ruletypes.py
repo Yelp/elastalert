@@ -229,7 +229,7 @@ class FrequencyRule(RuleType):
 
         event = ({self.ts_field: ts}, count)
         self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
-        self.check_for_match('all')
+        self.check_for_match('all', True)
 
     def add_terms_data(self, terms):
         for timestamp, buckets in terms.items():
@@ -237,7 +237,7 @@ class FrequencyRule(RuleType):
                 event = ({self.ts_field: timestamp,
                           self.rules['query_key']: bucket['key']}, bucket['doc_count'])
                 self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
-                self.check_for_match(bucket['key'])
+                self.check_for_match(bucket['key'], True)
 
     def add_data(self, data):
         if 'query_key' in self.rules:
@@ -265,6 +265,9 @@ class FrequencyRule(RuleType):
         # Match if, after removing old events, we hit num_events.
         # the 'end' parameter depends on whether this was called from the
         # middle or end of an add_data call and is used in subclasses
+        if not end:
+            return
+
         if self.occurrences[key].count() >= self.rules['num_events']:
             event = self.occurrences[key].data[-1][0]
             if self.attach_related:
