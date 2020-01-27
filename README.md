@@ -115,7 +115,7 @@ A [Dockerized version](https://github.com/bitsensor/elastalert) of ElastAlert in
 
 ```bash
 git clone https://github.com/bitsensor/elastalert.git; cd elastalert
-docker run -d -p 3030:3030 \
+docker run -d -p 3030:3030 -p 3333:3333 \
     -v `pwd`/config/elastalert.yaml:/opt/elastalert/config.yaml \
     -v `pwd`/config/config.json:/opt/elastalert-server/config/config.json \
     -v `pwd`/rules:/opt/elastalert/rules \
