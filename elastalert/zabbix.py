@@ -66,7 +66,7 @@ class ZabbixAlerter(Alerter):
         # the aggregation option set
         zm = []
         for match in matches:
-            if ':' not in match[self.timestamp_field] or '-' in not match[self.timestamp_field]:
+            if ':' not in match[self.timestamp_field] or '-' not in match[self.timestamp_field]:
                 ts_epoch = int(match[self.timestamp_field])
             else:
                 try:
