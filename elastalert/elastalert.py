@@ -25,7 +25,7 @@ from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch.exceptions import TransportError
-from prometheus_wrapper import PrometheusWrapper
+from .prometheus_wrapper import PrometheusWrapper
 
 from . import kibana
 from .kibana_discover import generate_kibana_discover_url
