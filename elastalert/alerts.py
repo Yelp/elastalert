@@ -2156,6 +2156,12 @@ class HiveAlerter(Alerter):
                     artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
                 except KeyError:
                     print('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
+
+        if self.rule.get('hive_observables_key', 'observables') in match:
+            for mapping in match[self.rule.get('hive_observables_key', 'observables')]:
+                for observable_type, observable_data in mapping.items():
+                    artifacts.append(AlertArtifact(dataType=observable_type, data=observable_data))
+
         return artifacts
 
     def create_alert_config(self, match):
