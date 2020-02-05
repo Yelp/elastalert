@@ -69,8 +69,8 @@ class BasicMatchString(object):
         missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
         alert_text = str(self.rule.get(alert_text_key, ''))
 
-        if alert_text_key+'_args' in self.rule:
-            alert_text_args = self.rule.get(alert_text_key+'_args')
+        if alert_text_key + '_args' in self.rule:
+            alert_text_args = self.rule.get(alert_text_key + '_args')
             alert_text_values = [lookup_es_key(event, arg) for arg in alert_text_args]
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
@@ -83,7 +83,7 @@ class BasicMatchString(object):
 
             alert_text_values = [missing if val is None else val for val in alert_text_values]
             alert_text = alert_text.format(*alert_text_values)
-        elif alert_text_key+'_kw' in self.rule:
+        elif alert_text_key + '_kw' in self.rule:
             kw = {}
             for name, kw_name in list(self.rule.get('alert_text_kw').items()):
                 val = lookup_es_key(self.match, name)
@@ -2180,7 +2180,10 @@ class HiveAlerter(Alerter):
                     func(cf_key, value)
                 alert_config[alert_config_field] = custom_fields.build()
             elif isinstance(alert_config_value, str):
-                alert_config[alert_config_field] = alert_config_value.format(**context)
+                if alert_config_field in ['tlp', 'severity']:
+                    alert_config[alert_config_field] = int(alert_config_value.format(**context), 10)
+                else:
+                    alert_config[alert_config_field] = alert_config_value.format(**context)
             elif isinstance(alert_config_value, (list, tuple)):
                 formatted_list = []
                 for element in alert_config_value:
