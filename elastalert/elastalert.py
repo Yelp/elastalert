@@ -55,6 +55,7 @@ from .util import ts_now
 from .util import ts_to_dt
 from .util import unix_to_dt
 
+
 class ElastAlerter(object):
     """ The main ElastAlert runner. This class holds all state about active rules,
     controls when queries are run, and passes information between rules and alerts.
@@ -105,7 +106,7 @@ class ElastAlerter(object):
             dest='es_debug_trace',
             help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file. Note that '
                  'this will incorrectly display localhost:9200 as the host/port')
-        parser.add_argument('--prometheus_port', type=int, dest='prometheus_port', help='Enables Prometheus metrics endpoint on specified port.')
+        parser.add_argument('--prometheus_port', type=int, dest='prometheus_port', help='Enables Prometheus metrics on specified port.')
         self.args = parser.parse_args(args)
 
     def __init__(self, args):
@@ -2053,6 +2054,7 @@ def main(args=None):
 
     if client.prometheus_port and not client.debug:
         p = PrometheusWrapper(client)
+        p.start()
 
     if not client.args.silence:
         client.start()
