@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import ssl
 import subprocess
 import sys
 import time
@@ -418,6 +419,7 @@ class EmailAlerter(Alerter):
             self.get_account(self.rule['smtp_auth_file'])
         self.smtp_key_file = self.rule.get('smtp_key_file')
         self.smtp_cert_file = self.rule.get('smtp_cert_file')
+        self.smtp_ca_file = self.rule.get('smtp_ca_file')
         # Convert email to a list if it isn't already
         if isinstance(self.rule['email'], str):
             self.rule['email'] = [self.rule['email']]
@@ -481,7 +483,20 @@ class EmailAlerter(Alerter):
                     self.smtp = SMTP(self.smtp_host)
                 self.smtp.ehlo()
                 if self.smtp.has_extn('STARTTLS'):
-                    self.smtp.starttls(keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
+                    if sys.version_info[0] == 3 and sys.version_info[1] >= 3:
+                        if self.smtp_cert_file or self.smtp_ca_file:
+                            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+                            context.verify_mode = ssl.CERT_REQUIRED
+                            context.check_hostname = True
+                            if self.smtp_ca_file:
+                                context.load_verify_locations(self.smtp_ca_file)
+                            if self.smtp_cert_file:
+                                context.load_cert_chain(certfile=self.smtp_cert_file, keyfile=self.smtp_key_file)
+                            self.smtp.starttls(context=context)
+                        else:
+                            self.smtp.starttls()
+                    else:
+                        self.smtp.starttls(keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
             if 'smtp_auth_file' in self.rule:
                 self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:
