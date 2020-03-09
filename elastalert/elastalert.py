@@ -972,8 +972,14 @@ class ElastAlerter(object):
         try:
             self.modify_rule_for_ES5(new_rule)
         except TransportError as e:
-            elastalert_logger.warning('Error connecting to Elasticsearch for rule {}. '
-                                      'The rule has been disabled.'.format(new_rule['name']))
+            if self.disable_rules_on_error:
+                elastalert_logger.warning('Error connecting to Elasticsearch for rule {}. '
+                                        'The rule has been disabled.'.format(new_rule['name']))
+            else:
+                elastalert_logger.warning('Error connecting to Elasticsearch for rule {}. '
+                                        'We will try again next time.'.format(new_rule['name']))
+                # By changing the hash of the rule, load_rule_changes will try to load this rule again in the next round
+                self.rule_hashes[new_rule['name']] = ""
             self.send_notification_email(exception=e, rule=new_rule)
             return False
 
