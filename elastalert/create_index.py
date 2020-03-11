@@ -30,10 +30,10 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
         es_maps = es_index_mappings
         es_index_mappings = {}
         es_index_mappings['elastalert_single'] = es_maps['elastalert']
-        es_index_mappings['elastalert_single'].update(es_maps['elastalert_status'])
-        es_index_mappings['elastalert_single'].update(es_maps['elastalert_error'])
-        es_index_mappings['elastalert_single'].update(es_maps['silence'])
-        es_index_mappings['elastalert_single'].update(es_maps['past_elastalert'])
+        es_index_mappings['elastalert_single']['properties'].update(es_maps['elastalert_status']['properties'])
+        es_index_mappings['elastalert_single']['properties'].update(es_maps['elastalert_error']['properties'])
+        es_index_mappings['elastalert_single']['properties'].update(es_maps['silence']['properties'])
+        es_index_mappings['elastalert_single']['properties'].update(es_maps['past_elastalert']['properties'])
 
     es_index = IndicesClient(es_client)
     if not recreate:
