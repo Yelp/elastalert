@@ -59,3 +59,4 @@ toml==0.10.0
 twilio==6.0.0
 urllib3==1.22
 virtualenv==16.7.9
+PyYAML==5.3.1
