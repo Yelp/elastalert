@@ -23,13 +23,14 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from croniter import croniter
 from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
-from elasticsearch.exceptions import TransportError
 from elasticsearch.exceptions import NotFoundError
+from elasticsearch.exceptions import TransportError
 
 from . import kibana
 from .alerts import DebugAlerter
 from .config import load_conf
 from .enhancements import DropMatchException
+from .kibana_discover import generate_kibana_discover_url
 from .ruletypes import FlatlineRule
 from .util import add_raw_postfix
 from .util import cronite_datetime_to_timestamp
@@ -1021,8 +1022,7 @@ class ElastAlerter(object):
                            'processed_hits',
                            'starttime',
                            'minimum_starttime',
-                           'has_run_once',
-                           'run_every']
+                           'has_run_once']
         for prop in copy_properties:
             if prop not in rule:
                 continue
@@ -1067,7 +1067,13 @@ class ElastAlerter(object):
             if rule_file not in new_rule_hashes:
                 # Rule file was deleted
                 elastalert_logger.info('Rule file %s not found, stopping rule execution' % (rule_file))
-                self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
+                for rule in self.rules:
+                    if rule['rule_file'] == rule_file:
+                        break
+                else:
+                    continue
+                self.scheduler.remove_job(job_id=rule['name'])
+                self.rules.remove(rule)
                 continue
             if hash_value != new_rule_hashes[rule_file]:
                 # Rule file was changed, reload rule
@@ -1460,8 +1466,8 @@ class ElastAlerter(object):
         # Compute top count keys
         if rule.get('top_count_keys'):
             for match in matches:
-                if 'query_key' in rule and rule['query_key'] in match:
-                    qk = match[rule['query_key']]
+                if 'query_key' in rule:
+                    qk = lookup_es_key(match, rule['query_key'])
                 else:
                     qk = None
 
@@ -1496,6 +1502,11 @@ class ElastAlerter(object):
             kb_link = self.generate_kibana4_db(rule, matches[0])
             if kb_link:
                 matches[0]['kibana_link'] = kb_link
+
+        if rule.get('generate_kibana_discover_url'):
+            kb_link = generate_kibana_discover_url(rule, matches[0])
+            if kb_link:
+                matches[0]['kibana_discover_url'] = kb_link
 
         # Enhancements were already run at match time if
         # run_enhancements_first is set or

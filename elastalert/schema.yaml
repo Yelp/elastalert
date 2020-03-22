@@ -1,4 +1,4 @@
-$schema: http://json-schema.org/draft-04/schema#
+$schema: http://json-schema.org/draft-07/schema#
 definitions:
 
   # Either a single string OR an array of strings
@@ -10,6 +10,17 @@ definitions:
   arrayOfStringsOrOtherArrays: &arrayOfStringsOrOtherArray
     type: [string, array]
     items: {type: [string, array]}
+
+  timedelta: &timedelta
+    type: object
+    additionalProperties: false
+    properties:
+      days: {type: number}
+      weeks: {type: number}
+      hours: {type: number}
+      minutes: {type: number}
+      seconds: {type: number}
+      milliseconds: {type: number}
 
   timeFrame: &timeframe
     type: object
@@ -203,6 +214,15 @@ properties:
   replace_dots_in_field_names: {type: boolean}
   scan_entire_timeframe: {type: boolean}
 
+  ### Kibana Discover App Link
+  generate_kibana_discover_url: {type: boolean}
+  kibana_discover_app_url: {type: string, format: uri}
+  kibana_discover_version: {type: string, enum: ['7.3', '7.2', '7.1', '7.0', '6.8', '6.7', '6.6', '6.5', '6.4', '6.3', '6.2', '6.1', '6.0', '5.6']}
+  kibana_discover_index_pattern_id: {type: string, minLength: 1}
+  kibana_discover_columns: {type: array, items: {type: string, minLength: 1}, minItems: 1}
+  kibana_discover_from_timedelta: *timedelta
+  kibana_discover_to_timedelta: *timedelta
+
   # Alert Content
   alert_text: {type: string} # Python format string
   alert_text_args: {type: array, items: {type: string}}
@@ -266,6 +286,9 @@ properties:
   slack_text_string: {type: string}
   slack_ignore_ssl_errors: {type: boolean}
   slack_ca_certs: {type: string}
+  slack_attach_kibana_discover_url {type: boolean}
+  slack_kibana_discover_color {type: string}
+  slack_kibana_discover_title {type: string}
 
   ### Mattermost
   mattermost_webhook_url: *arrayOfString
@@ -277,6 +300,20 @@ properties:
   mattermost_msg_color: {enum: [good, warning, danger]}
   mattermost_msg_pretext: {type: string}
   mattermost_msg_fields: *mattermostField
+
+  ## Opsgenie
+  opsgenie_details:
+    type: object
+    minProperties: 1
+    patternProperties:
+      "^.+$":
+        oneOf:
+          - type: string
+          - type: object
+            additionalProperties: false
+            required: [field]
+            properties:
+              field: {type: string, minLength: 1}
 
   ### PagerDuty
   pagerduty_service_key: {type: string}

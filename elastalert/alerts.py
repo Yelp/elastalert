@@ -1141,6 +1141,9 @@ class SlackAlerter(Alerter):
         self.slack_ignore_ssl_errors = self.rule.get('slack_ignore_ssl_errors', False)
         self.slack_timeout = self.rule.get('slack_timeout', 10)
         self.slack_ca_certs = self.rule.get('slack_ca_certs')
+        self.slack_attach_kibana_discover_url = self.rule.get('slack_attach_kibana_discover_url', False)
+        self.slack_kibana_discover_color = self.rule.get('slack_kibana_discover_color', '#ec4b98')
+        self.slack_kibana_discover_title = self.rule.get('slack_kibana_discover_title', 'Discover in Kibana')
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1202,6 +1205,15 @@ class SlackAlerter(Alerter):
 
         if self.slack_title_link != '':
             payload['attachments'][0]['title_link'] = self.slack_title_link
+
+        if self.slack_attach_kibana_discover_url:
+            kibana_discover_url = lookup_es_key(matches[0], 'kibana_discover_url')
+            if kibana_discover_url:
+                payload['attachments'].append({
+                    'color': self.slack_kibana_discover_color,
+                    'title': self.slack_kibana_discover_title,
+                    'title_link': kibana_discover_url
+                })
 
         for url in self.slack_webhook_url:
             for channel_override in self.slack_channel_override:
@@ -2135,7 +2147,7 @@ class HiveAlerter(Alerter):
         connection_details = self.rule['hive_connection']
 
         api = TheHiveApi(
-            '{hive_host}:{hive_port}'.format(**connection_details),
+            connection_details.get('hive_host'),
             connection_details.get('hive_apikey', ''),
             proxies=connection_details.get('hive_proxies', {'http': '', 'https': ''}),
             cert=connection_details.get('hive_verify', False))

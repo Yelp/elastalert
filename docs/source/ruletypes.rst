@@ -58,6 +58,20 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``kibana4_end_timedelta`` (time, default: 10 min)            |           |
 +--------------------------------------------------------------+           |
+| ``generate_kibana_discover_url`` (boolean, default False)    |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_app_url`` (string, no default)             |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_version`` (string, no default)             |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_index_pattern_id`` (string, no default)    |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_columns`` (list of strs, default _source)  |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_from_timedelta`` (time, default: 10 min)   |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_to_timedelta`` (time, default: 10 min)     |           |
++--------------------------------------------------------------+           |
 | ``use_local_time`` (boolean, default True)                   |           |
 +--------------------------------------------------------------+           |
 | ``realert`` (time, default: 1 min)                           |           |
@@ -509,6 +523,85 @@ kibana4_end_timedelta
 This value is added in back of the event. For example,
 
 ``kibana4_end_timedelta: minutes: 2``
+
+generate_kibana_discover_url
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``generate_kibana_discover_url``: Enables the generation of the ``kibana_discover_url`` variable for the Kibana Discover application.
+This setting requires the following settings are also configured:
+
+- ``kibana_discover_app_url``
+- ``kibana_discover_version``
+- ``kibana_discover_index_pattern_id``
+
+``generate_kibana_discover_url: true``
+
+kibana_discover_app_url
+^^^^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_app_url``: The url of the Kibana Discover application used to generate the ``kibana_discover_url`` variable.
+This value can use `$VAR` and `${VAR}` references to expand environment variables.
+
+``kibana_discover_app_url: http://kibana:5601/#/discover``
+
+kibana_discover_version
+^^^^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_version``: Specifies the version of the Kibana Discover application.
+
+The currently supported versions of Kibana Discover are: 
+
+- `5.6`
+- `6.0`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `6.7`, `6.8`
+- `7.0`, `7.1`, `7.2`, `7.3`
+
+``kibana_discover_version: '7.3'``
+
+kibana_discover_index_pattern_id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_index_pattern_id``: The id of the index pattern to link to in the Kibana Discover application.
+These ids are usually generated and can be found in url of the index pattern management page, or by exporting its saved object.
+
+Example export of an index pattern's saved object:
+
+.. code-block:: text
+
+    [
+        {
+            "_id": "4e97d188-8a45-4418-8a37-07ed69b4d34c",
+            "_type": "index-pattern",
+            "_source": { ... }
+        }
+    ]
+
+You can modify an index pattern's id by exporting the saved object, modifying the ``_id`` field, and re-importing.
+
+``kibana_discover_index_pattern_id: 4e97d188-8a45-4418-8a37-07ed69b4d34c``
+
+kibana_discover_columns
+^^^^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_columns``: The columns to display in the generated Kibana Discover application link.
+Defaults to the ``_source`` column.
+
+``kibana_discover_columns: [ timestamp, message ]``
+
+kibana_discover_from_timedelta
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_from_timedelta``:  The offset to the `from` time of the Kibana Discover link's time range.
+The `from` time is calculated by subtracting this timedelta from the event time.  Defaults to 10 minutes.
+
+``kibana_discover_from_timedelta: minutes: 2``
+
+kibana_discover_to_timedelta
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_to_timedelta``:  The offset to the `to` time of the Kibana Discover link's time range.
+The `to` time is calculated by adding this timedelta to the event time.  Defaults to 10 minutes.
+
+``kibana_discover_to_timedelta: minutes: 2``
 
 use_local_time
 ^^^^^^^^^^^^^^
@@ -1305,7 +1398,7 @@ With ``alert_text_type: aggregation_summary_only``::
     body                = rule_name
 
                           aggregation_summary
-+
+
 ruletype_text is the string returned by RuleType.get_match_str.
 
 field_values will contain every key value pair included in the results from Elasticsearch. These fields include "@timestamp" (or the value of ``timestamp_field``),
@@ -1555,6 +1648,15 @@ Optional:
 
 ``opsgenie_priority``: Set the OpsGenie priority level. Possible values are P1, P2, P3, P4, P5.
 
+``opsgenie_details``: Map of custom key/value pairs to include in the alert's details. The value can sourced from either fields in the first match, environment variables, or a constant value.
+
+Example usage::
+
+    opsgenie_details:
+      Author: 'Bob Smith'          # constant value
+      Environment: '$VAR'          # environment variable
+      Message: { field: message }  # field in the first match
+
 SNS
 ~~~
 
@@ -1688,8 +1790,14 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slac. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
 
+``slack_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the slack notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
+
+``slack_kibana_discover_color``: The color of the Kibana Discover url attachment. Defaults to ``#ec4b98``.
+
+``slack_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
+
 Mattermost
-~~~~~
+~~~~~~~~~~
 
 Mattermost alerter will send a notification to a predefined Mattermost channel. The body of the notification is formatted the same as with other alerters.
 
