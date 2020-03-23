@@ -1032,7 +1032,6 @@ class HipChatAlerter(Alerter):
 
         try:
             if self.hipchat_ignore_ssl_errors:
-                import warnings
                 warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 
             if self.rule.get('hipchat_mentions', []):
@@ -1223,7 +1222,6 @@ class SlackAlerter(Alerter):
                     else:
                         verify = self.slack_ignore_ssl_errors
                     if self.slack_ignore_ssl_errors:
-                        import warnings
                         warnings.filterwarnings('ignore', message='Unverified HTTPS request')
                     payload['channel'] = channel_override
                     response = requests.post(
@@ -1332,7 +1330,6 @@ class MattermostAlerter(Alerter):
         for url in self.mattermost_webhook_url:
             try:
                 if self.mattermost_ignore_ssl_errors:
-                    import warnings
                     warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 
                 response = requests.post(
@@ -1818,6 +1815,7 @@ class ServiceNowAlerter(Alerter):
         self.servicenow_proxy = self.rule.get('servicenow_proxy', None)
 
     def alert(self, matches):
+        description = ''
         for match in matches:
             # Parse everything into description.
             description = str(BasicMatchString(self.rule, match))
@@ -2087,7 +2085,6 @@ class StrideAlerter(Alerter):
 
         try:
             if self.stride_ignore_ssl_errors:
-                import warnings
                 warnings.filterwarnings('ignore', message='Unverified HTTPS request')
             response = requests.post(
                 self.url, data=json.dumps(payload, cls=DateTimeEncoder),
@@ -2159,8 +2156,8 @@ class HiveAlerter(Alerter):
             for mapping in self.rule.get('hive_observable_data_mapping', []):
                 for observable_type, match_data_key in mapping.items():
                     try:
-                        match_data_keys = re.findall(r'\{match\[([^\]]*)\]', match_data_key)
-                        rule_data_keys = re.findall(r'\{rule\[([^\]]*)\]', match_data_key)
+                        match_data_keys = re.findall(r'{match\[([^\]]*)\]', match_data_key)
+                        rule_data_keys = re.findall(r'{rule\[([^\]]*)\]', match_data_key)
                         data_keys = match_data_keys + rule_data_keys
                         context_keys = list(context['match'].keys()) + list(context['rule'].keys())
                         if all([True if k in context_keys else False for k in data_keys]):
@@ -2251,7 +2248,6 @@ class AlertmanagerAlerter(Alerter):
 
         try:
             if not self.verify_ssl:
-                import warnings
                 warnings.filterwarnings('ignore', message='Unverified HTTPS request')
             for url in self.urls:
                 response = requests.post(
@@ -2262,6 +2258,7 @@ class AlertmanagerAlerter(Alerter):
                     proxies=self.proxies,
                 )
                 response.raise_for_status()
+            warnings.resetwarnings()
         except RequestException as e:
             raise EAException("Error posting to Alertmanager: %s" % e)
         elastalert_logger.info("Alert sent to Alertmanager")
