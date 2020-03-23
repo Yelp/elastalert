@@ -1623,7 +1623,7 @@ class ElastAlerter(object):
         try:
             index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
             if self.writeback_es.is_atleastsixtwo():
-                res = self.writeback_es.index(index=index, body=body)
+                res = self.writeback_es.index(index=index, doc_type="_doc", body=body)
             else:
                 res = self.writeback_es.index(index=index, doc_type=doc_type, body=body)
             return res
