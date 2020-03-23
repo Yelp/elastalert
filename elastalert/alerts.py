@@ -6,8 +6,6 @@ import logging
 import os
 import re
 import subprocess
-import sys
-import time
 import uuid
 import warnings
 from email.mime.text import MIMEText
@@ -22,6 +20,8 @@ from socket import error
 import boto3
 import requests
 import stomp
+import sys
+import time
 from exotel import Exotel
 from jira.client import JIRA
 from jira.exceptions import JIRAError
@@ -340,7 +340,7 @@ class StompAlerter(Alerter):
             if resmatch is not None:
                 elastalert_logger.info(
                     'Alert for %s, %s at %s:' % (
-                    self.rule['name'], resmatch, lookup_es_key(match, self.rule['timestamp_field'])))
+                        self.rule['name'], resmatch, lookup_es_key(match, self.rule['timestamp_field'])))
                 alerts.append(
                     'Alert for %s, %s at %s:' % (self.rule['name'], resmatch, lookup_es_key(
                         match, self.rule['timestamp_field']))
@@ -398,7 +398,7 @@ class DebugAlerter(Alerter):
             if qk in match:
                 elastalert_logger.info(
                     'Alert for %s, %s at %s:' % (
-                    self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
+                        self.rule['name'], match[qk], lookup_es_key(match, self.rule['timestamp_field'])))
             else:
                 elastalert_logger.info(
                     'Alert for %s at %s:' % (self.rule['name'], lookup_es_key(match, self.rule['timestamp_field'])))
@@ -675,9 +675,11 @@ class JiraAlerter(Alerter):
             if array_items in ['string', 'date', 'datetime']:
                 # Special case for multi-select custom types (the JIRA metadata says that these are strings, but
                 # in reality, they are required to be provided as an object.
-                if 'custom' in field['schema'] and field['schema'][
-                    'custom'] in self.custom_string_types_with_special_handling:
-                    self.jira_args[arg_name] = [{'value': v} for v in value]
+                if 'custom' in field['schema']:
+                    if field['schema']['custom'] in self.custom_string_types_with_special_handling:
+                        self.jira_args[arg_name] = [{'value': v} for v in value]
+                    else:
+                        self.jira_args[arg_name] = value
                 else:
                     self.jira_args[arg_name] = value
             elif array_items == 'number':
@@ -696,9 +698,11 @@ class JiraAlerter(Alerter):
             if arg_type in ['string', 'date', 'datetime']:
                 # Special case for custom types (the JIRA metadata says that these are strings, but
                 # in reality, they are required to be provided as an object.
-                if 'custom' in field['schema'] and field['schema'][
-                    'custom'] in self.custom_string_types_with_special_handling:
-                    self.jira_args[arg_name] = {'value': value}
+                if 'custom' in field['schema']:
+                    if field['schema']['custom'] in self.custom_string_types_with_special_handling:
+                        self.jira_args[arg_name] = {'value': value}
+                    else:
+                        self.jira_args[arg_name] = value
                 else:
                     self.jira_args[arg_name] = value
             # Number type
@@ -1909,7 +1913,7 @@ class AlertaAlerter(Alerter):
         if 'query_key' in self.rule:
             qk = matches[0].get(self.rule['query_key'])
             if qk:
-                title += '.%s' % (qk)
+                title += '.%s' % qk
         return title
 
     def get_info(self):
@@ -1935,15 +1939,15 @@ class AlertaAlerter(Alerter):
         if match_timestamp is None:
             match_timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         if self.use_match_timestamp:
-            createTime = ts_to_dt(match_timestamp).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            create_time = ts_to_dt(match_timestamp).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         else:
-            createTime = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            create_time = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
         alerta_payload_dict = {
             'resource': resolve_string(self.resource, match, self.missing_text),
             'severity': self.severity,
             'timeout': self.timeout,
-            'createTime': createTime,
+            'createTime': create_time,
             'type': self.type,
             'environment': resolve_string(self.environment, match, self.missing_text),
             'origin': resolve_string(self.origin, match, self.missing_text),
@@ -2020,6 +2024,9 @@ class StrideHTMLParser(HTMLParser):
         self.content = []
         self.mark = None
         HTMLParser.__init__(self)
+
+    def error(self, message):
+        pass
 
     def handle_starttag(self, tag, attrs):
         """Identify and verify starting tag is fabric compatible."""
@@ -2226,7 +2233,8 @@ class AlertmanagerAlerter(Alerter):
         self.proxies = {'https': self.rule.get('alertmanager_proxy')} if self.rule.get('alertmanager_proxy') else None
         self.verify_ssl = self.rule.get('alertmanager_verify_ssl', True)
 
-    def _json_or_string(self, obj):
+    @staticmethod
+    def _json_or_string(obj):
         """helper to encode non-string objects to JSON"""
         if isinstance(obj, str):
             return obj
