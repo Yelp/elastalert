@@ -4,7 +4,6 @@ import os
 from setuptools import find_packages
 from setuptools import setup
 
-
 base_dir = os.path.dirname(__file__)
 setup(
     name='elastalert',
@@ -27,10 +26,13 @@ setup(
     packages=find_packages(),
     package_data={'elastalert': ['schema.yaml', 'es_mappings/**/*.json']},
     install_requires=[
+        'PyStaticConfiguration>=0.10.3',
+        'PyYAML>=5.1',
         'apscheduler>=3.3.0',
         'aws-requests-auth>=0.3.0',
         'blist>=1.3.6',
         'boto3>=1.4.4',
+        'cffi>=1.11.5',
         'configparser>=3.5.0',
         'croniter>=0.3.16',
         'elasticsearch==7.0.0',
@@ -40,15 +42,13 @@ setup(
         'jsonschema>=3.0.2',
         'mock>=2.0.0',
         'prison>=0.1.2',
-        'PyStaticConfiguration>=0.10.3',
+        'py-zabbix==1.1.3',
         'python-dateutil>=2.6.0,<2.7.0',
-        'PyYAML>=3.12',
+        'python-magic>=0.4.15',
         'requests>=2.10.0',
         'stomp.py>=4.1.17',
         'texttable>=0.8.8',
-        'twilio>=6.0.0,<6.1',
         'thehive4py>=1.4.4',
-        'python-magic>=0.4.15',
-        'cffi>=1.11.5'
+        'twilio>=6.0.0,<6.1',
     ]
 )

@@ -57,6 +57,7 @@ Currently, we have built-in support for the following alert types:
 - Gitter
 - Line Notify
 - Zabbix
+- Alertmanager
 
 Additional rule types and alerts can be easily imported or written.
 
