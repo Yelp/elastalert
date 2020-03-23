@@ -276,7 +276,8 @@ class Alerter(object):
             summary_table_fields = self.rule['summary_table_fields']
             if not isinstance(summary_table_fields, list):
                 summary_table_fields = [summary_table_fields]
-            # Include a count aggregation so that we can see at a glance how many of each aggregation_key were encountered
+            # Include a count aggregation so that we can see at a glance
+            # how many of each aggregation_key were encountered
             summary_table_fields_with_count = summary_table_fields + ['count']
             text += "Aggregation resulted in the following data for summary_table_fields ==> {0}:\n\n".format(
                 summary_table_fields_with_count
@@ -444,7 +445,7 @@ class EmailAlerter(Alerter):
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
             url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
-            body += '\nJIRA ticket: %s' % (url)
+            body += '\nJIRA ticket: %s' % url
 
         to_addr = self.rule['email']
         if 'email_from_field' in self.rule:
@@ -491,13 +492,13 @@ class EmailAlerter(Alerter):
             if 'smtp_auth_file' in self.rule:
                 self.smtp.login(self.user, self.password)
         except (SMTPException, error) as e:
-            raise EAException("Error connecting to SMTP host: %s" % (e))
+            raise EAException("Error connecting to SMTP host: %s" % e)
         except SMTPAuthenticationError as e:
-            raise EAException("SMTP username/password rejected: %s" % (e))
+            raise EAException("SMTP username/password rejected: %s" % e)
         self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
         self.smtp.quit()
 
-        elastalert_logger.info("Sent email to %s" % (to_addr))
+        elastalert_logger.info("Sent email to %s" % to_addr)
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -506,7 +507,7 @@ class EmailAlerter(Alerter):
         if 'query_key' in self.rule:
             qk = matches[0].get(self.rule['query_key'])
             if qk:
-                subject += ' - %s' % (qk)
+                subject += ' - %s' % qk
 
         return subject
 
@@ -558,10 +559,15 @@ class JiraAlerter(Alerter):
 
     def __init__(self, rule):
         super(JiraAlerter, self).__init__(rule)
+        self.priority_ids = {}
         self.server = self.rule['jira_server']
         self.get_account(self.rule['jira_account_file'])
         self.project = self.rule['jira_project']
         self.issue_type = self.rule['jira_issuetype']
+        self.jira_args = {
+            'project': {'key': self.project},
+            'issuetype': {'name': self.issue_type}
+        }
 
         # Deferred settings refer to values that can only be resolved when a match
         # is found and as such loading them will be delayed until we find a match
@@ -620,9 +626,6 @@ class JiraAlerter(Alerter):
                 "Priority %s not found. Valid priorities are %s" % (self.priority, list(self.priority_ids.keys())))
 
     def reset_jira_args(self):
-        self.jira_args = {'project': {'key': self.project},
-                          'issuetype': {'name': self.issue_type}}
-
         if self.components:
             # Support single component or list
             if type(self.components) != list:
@@ -730,7 +733,6 @@ class JiraAlerter(Alerter):
     def get_priorities(self):
         """ Creates a mapping of priority index to id. """
         priorities = self.client.priorities()
-        self.priority_ids = {}
         for x in range(len(priorities)):
             self.priority_ids[x] = priorities[x].id
 
@@ -805,20 +807,20 @@ class JiraAlerter(Alerter):
                         self.pipeline['jira_ticket'] = None
                         self.pipeline['jira_server'] = self.server
                     return None
-                elastalert_logger.info('Commenting on existing ticket %s' % (ticket.key))
+                elastalert_logger.info('Commenting on existing ticket %s' % ticket.key)
                 for match in matches:
                     try:
                         self.comment_on_ticket(ticket, match)
                     except JIRAError as e:
                         logging.exception("Error while commenting on ticket %s: %s" % (ticket, e))
                     if self.labels:
-                        for l in self.labels:
+                        for label in self.labels:
                             try:
-                                ticket.fields.labels.append(l)
+                                ticket.fields.labels.append(label)
                             except JIRAError as e:
                                 logging.exception("Error while appending labels to ticket %s: %s" % (ticket, e))
                 if self.transition:
-                    elastalert_logger.info('Transitioning existing ticket %s' % (ticket.key))
+                    elastalert_logger.info('Transitioning existing ticket %s' % ticket.key)
                     try:
                         self.transition_ticket(ticket)
                     except JIRAError as e:
@@ -846,14 +848,15 @@ class JiraAlerter(Alerter):
                         # Re-raise the exception, preserve the stack-trace, and give some
                         # context as to which watcher failed to be added
                         raise Exception(
-                            "Exception encountered when trying to add '{0}' as a watcher. Does the user exist?\n{1}".format(
+                            "Exception encountered when trying to add '{0}' "
+                            "as a watcher. Does the user exist?\n{1}".format(
                                 watcher,
                                 ex
                             )).with_traceback(sys.exc_info()[2])
 
         except JIRAError as e:
             raise EAException("Error creating JIRA ticket using jira_args (%s): %s" % (self.jira_args, e))
-        elastalert_logger.info("Opened Jira ticket: %s" % (self.issue))
+        elastalert_logger.info("Opened Jira ticket: %s" % self.issue)
 
         if self.pipeline is not None:
             self.pipeline['jira_ticket'] = self.issue
@@ -924,7 +927,7 @@ class CommandAlerter(Alerter):
             command = [resolve_string(command_arg, matches[0]) for command_arg in self.rule['command']]
             self.last_command = command
         except KeyError as e:
-            raise EAException("Error formatting command: %s" % (e))
+            raise EAException("Error formatting command: %s" % e)
 
         # Run command and pipe data
         try:
@@ -978,7 +981,7 @@ class SnsAlerter(Alerter):
             Message=body,
             Subject=self.create_title(matches)
         )
-        elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
+        elastalert_logger.info("Sent sns notification to %s" % self.sns_topic_arn)
 
 
 class HipChatAlerter(Alerter):
@@ -1014,7 +1017,7 @@ class HipChatAlerter(Alerter):
             truncated_message = '..(truncated)'
             truncate_to = 10000 - len(truncated_message)
 
-        if (len(body) > 9999):
+        if len(body) > 9999:
             body = body[:truncate_to] + truncated_message
 
         return body
@@ -1148,7 +1151,8 @@ class SlackAlerter(Alerter):
         self.slack_kibana_discover_color = self.rule.get('slack_kibana_discover_color', '#ec4b98')
         self.slack_kibana_discover_title = self.rule.get('slack_kibana_discover_title', 'Discover in Kibana')
 
-    def format_body(self, body):
+    @staticmethod
+    def format_body(body):
         # https://api.slack.com/docs/formatting
         return body
 
