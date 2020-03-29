@@ -41,7 +41,6 @@ pycparser==2.19
 PyJWT==1.7.1
 pyOpenSSL==19.1.0
 pyparsing==2.4.6
-pyrsistent==0.15.7
 PyStaticConfiguration==0.10.4
 python-dateutil==2.6.1
 pytz==2019.3
