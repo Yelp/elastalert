@@ -549,7 +549,7 @@ kibana_discover_version
 
 ``kibana_discover_version``: Specifies the version of the Kibana Discover application.
 
-The currently supported versions of Kibana Discover are: 
+The currently supported versions of Kibana Discover are:
 
 - `5.6`
 - `6.0`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `6.7`, `6.8`
@@ -2185,51 +2185,6 @@ Line Notify will send notification to a Line application. The body of the notifi
 Required:
 
 ``linenotify_access_token``: The access token that you got from https://notify-bot.line.me/my/
-
-theHive
-~~~~~~~
-
-theHive alert type will send JSON request to theHive (Security Incident Response Platform) with TheHive4py API. Sent request will be stored like Hive Alert with description and observables.
-
-Required:
-
-``hive_connection``: The connection details as key:values. Required keys are ``hive_host``, ``hive_port`` and ``hive_apikey``.
-
-``hive_alert_config``: Configuration options for the alert.
-
-Optional:
-
-``hive_proxies``: Proxy configuration.
-
-``hive_observable_data_mapping``: If needed, matched data fields can be mapped to TheHive observable types using python string formatting.
-
-Example usage::
-
-	alert: hivealerter
-
-     hive_connection:
-       hive_host: http://localhost
-       hive_port: <hive_port>
-       hive_apikey: <hive_apikey>
-       hive_proxies:
-         http: ''
-         https: ''
-
-      hive_alert_config:
-        title: 'Title'  ## This will default to {rule[index]_rule[name]} if not provided
-        type: 'external'
-        source: 'elastalert'
-        description: '{match[field1]} {rule[name]} Sample description'
-        severity: 2
-        tags: ['tag1', 'tag2 {rule[name]}']
-        tlp: 3
-        status: 'New'
-        follow: True
-
-    hive_observable_data_mapping:
-        - domain: "{match[field1]}_{rule[name]}"
-        - domain: "{match[field]}"
-        - ip: "{match[ip_field]}"
 
 
 Zabbix
