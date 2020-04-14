@@ -1,5 +1,23 @@
 # Change Log
 
+# v0.2.2
+
+# Added
+- Integration with Kibana Discover app
+- Addied ability to specify opsgenie alert details 
+
+### Fixed
+- Fix some encoding issues with command alerter
+- Better error messages for missing config file
+- Fixed an issue with run_every not applying per-rule
+- Fixed an issue with rules not being removed
+- Fixed an issue with top count keys and nested query keys
+- Various documentation fixes
+- Fixed an issue with not being able to use spike aggregation
+
+### Removed
+- Remove The Hive alerter
+
 # v0.2.1
 
 ### Fixed
