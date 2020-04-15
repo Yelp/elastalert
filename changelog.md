@@ -1,8 +1,13 @@
 # Change Log
 
+# v0.2.3
+
+### Added
+- Added back TheHive alerter without TheHive4py library
+
 # v0.2.2
 
-# Added
+### Added
 - Integration with Kibana Discover app
 - Addied ability to specify opsgenie alert details 
 
