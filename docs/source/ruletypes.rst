@@ -2187,7 +2187,7 @@ Required:
 ``linenotify_access_token``: The access token that you got from https://notify-bot.line.me/my/
 
 theHive
-~~~~~~
+~~~~~~~
 
 theHive alert type will send JSON request to theHive (Security Incident Response Platform) with TheHive4py API. Sent request will be stored like Hive Alert with description and observables.
 
