@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -2104,3 +2105,72 @@ class LineNotifyAlerter(Alerter):
 
     def get_info(self):
         return {"type": "linenotify", "linenotify_access_token": self.linenotify_access_token}
+
+
+class HiveAlerter(Alerter):
+    """
+    Use matched data to create alerts containing observables in an instance of TheHive
+    """
+
+    required_options = set(['hive_connection', 'hive_alert_config'])
+
+    def alert(self, matches):
+
+        connection_details = self.rule['hive_connection']
+
+        for match in matches:
+            context = {'rule': self.rule, 'match': match}
+
+            artifacts = []
+            for mapping in self.rule.get('hive_observable_data_mapping', []):
+                for observable_type, match_data_key in mapping.items():
+                    try:
+                        match_data_keys = re.findall(r'\{match\[([^\]]*)\]', match_data_key)
+                        rule_data_keys = re.findall(r'\{rule\[([^\]]*)\]', match_data_key)
+                        data_keys = match_data_keys + rule_data_keys
+                        context_keys = list(context['match'].keys()) + list(context['rule'].keys())
+                        if all([True if k in context_keys else False for k in data_keys]):
+                            artifact = {'tlp': 2, 'tags': [], 'message': None, 'dataType': observable_type,
+                                        'data': match_data_key.format(**context)}
+                            artifacts.append(artifact)
+                    except KeyError:
+                        raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
+
+            alert_config = {
+                'artifacts': artifacts,
+                'sourceRef': str(uuid.uuid4())[0:6],
+                'customFields': {},
+                'caseTemplate': None,
+                'title': '{rule[index]}_{rule[name]}'.format(**context),
+                'date': int(time.time()) * 1000
+            }
+            alert_config.update(self.rule.get('hive_alert_config', {}))
+
+            for alert_config_field, alert_config_value in alert_config.items():
+                if isinstance(alert_config_value, str):
+                    alert_config[alert_config_field] = alert_config_value.format(**context)
+                elif isinstance(alert_config_value, (list, tuple)):
+                    formatted_list = []
+                    for element in alert_config_value:
+                        try:
+                            formatted_list.append(element.format(**context))
+                        except (AttributeError, KeyError, IndexError):
+                            formatted_list.append(element)
+                    alert_config[alert_config_field] = formatted_list
+
+            alert_body = json.dumps(alert_config, indent=4, sort_keys=True)
+            req = '{}:{}/api/alert'.format(connection_details['hive_host'], connection_details['hive_port'])
+            headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer {}'.format(connection_details.get('hive_apikey', ''))}
+            proxies = connection_details.get('hive_proxies', {'http': '', 'https': ''})
+            verify = connection_details.get('hive_verify', False)
+            response = requests.post(req, headers=headers, data=alert_body, proxies=proxies, verify=verify)
+
+            if response.status_code != 201:
+                raise Exception('alert not successfully created in TheHive\n{}'.format(response.text))
+
+    def get_info(self):
+
+        return {
+            'type': 'hivealerter',
+            'hive_host': self.rule.get('hive_connection', {}).get('hive_host', '')
+        }
