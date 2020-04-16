@@ -1,5 +1,10 @@
 # Change Log
 
+# v0.2.4
+
+### Added
+- Added back customFields support for The Hive
+
 # v0.2.3
 
 ### Added
