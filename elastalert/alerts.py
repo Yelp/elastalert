@@ -2145,9 +2145,15 @@ class HiveAlerter(Alerter):
                 'date': int(time.time()) * 1000
             }
             alert_config.update(self.rule.get('hive_alert_config', {}))
-
+            custom_fields = {}
             for alert_config_field, alert_config_value in alert_config.items():
-                if isinstance(alert_config_value, str):
+                if alert_config_field == 'customFields':
+                    n = 0
+                    for cf_key, cf_value in alert_config_value.items():
+                        cf = {'order': n, cf_value['type']: cf_value['value'].format(**context)}
+                        n += 1
+                        custom_fields[cf_key] = cf
+                elif isinstance(alert_config_value, str):
                     alert_config[alert_config_field] = alert_config_value.format(**context)
                 elif isinstance(alert_config_value, (list, tuple)):
                     formatted_list = []
@@ -2157,6 +2163,8 @@ class HiveAlerter(Alerter):
                         except (AttributeError, KeyError, IndexError):
                             formatted_list.append(element)
                     alert_config[alert_config_field] = formatted_list
+            if custom_fields:
+                alert_config['customFields'] = custom_fields
 
             alert_body = json.dumps(alert_config, indent=4, sort_keys=True)
             req = '{}:{}/api/alert'.format(connection_details['hive_host'], connection_details['hive_port'])
