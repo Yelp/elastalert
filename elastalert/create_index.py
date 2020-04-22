@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 import argparse
 import getpass
+import json
 import os
 import time
-import json
 
 import elasticsearch.helpers
 import yaml

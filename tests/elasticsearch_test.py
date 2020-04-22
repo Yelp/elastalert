@@ -4,14 +4,13 @@ import json
 import time
 
 import dateutil
-import mock
 import pytest
 
 import elastalert.create_index
 import elastalert.elastalert
 from elastalert import ElasticSearchClient
-from elastalert.util import ts_to_dt, dt_to_ts, build_es_conn_config
-from tests.conftest import mock_ruletype, mock_alert, mock_es_client
+from elastalert.util import build_es_conn_config
+from tests.conftest import ea  # noqa: F401
 
 test_index = 'test_index'
 
@@ -24,49 +23,6 @@ es_timeout = 10
 def es_client():
     es_conn_config = build_es_conn_config({'es_host': es_host, 'es_port': es_port, 'es_conn_timeout': es_timeout})
     return ElasticSearchClient(es_conn_config)
-
-
-@pytest.fixture
-def ea():
-    rules = [{'es_host': '',
-              'es_port': 14900,
-              'name': 'anytest',
-              'index': 'idx',
-              'filter': [],
-              'include': ['@timestamp'],
-              'aggregation': datetime.timedelta(0),
-              'realert': datetime.timedelta(0),
-              'processed_hits': {},
-              'timestamp_field': '@timestamp',
-              'match_enhancements': [],
-              'rule_file': 'blah.yaml',
-              'max_query_size': 10000,
-              'ts_to_dt': ts_to_dt,
-              'dt_to_ts': dt_to_ts,
-              '_source_enabled': True}]
-    conf = {'rules_folder': 'rules',
-            'run_every': datetime.timedelta(minutes=10),
-            'buffer_time': datetime.timedelta(minutes=5),
-            'alert_time_limit': datetime.timedelta(hours=24),
-            'es_host': es_host,
-            'es_port': es_port,
-            'es_conn_timeout': es_timeout,
-            'writeback_index': test_index,
-            'rules': rules,
-            'max_query_size': 10000,
-            'old_query_limit': datetime.timedelta(weeks=1),
-            'disable_rules_on_error': False,
-            'scroll_keepalive': '30s'}
-    elastalert.elastalert.elasticsearch_client = mock_es_client
-    with mock.patch('elastalert.elastalert.get_rule_hashes'):
-        with mock.patch('elastalert.elastalert.load_rules') as load_conf:
-            load_conf.return_value = conf
-            ea = elastalert.elastalert.ElastAlerter(['--pin_rules'])
-    ea.rules[0]['type'] = mock_ruletype()
-    ea.rules[0]['alert'] = [mock_alert()]
-    ea.writeback_es = es_client()
-    ea.current_es = mock_es_client('', '')
-    return ea
 
 
 @pytest.mark.elasticsearch
@@ -131,7 +87,8 @@ class TestElasticsearch(object):
         # Now lets check if our rule is reported as silenced
         assert ea.is_silenced(ea.rules[0]['name'])
 
-    def test_get_hits(self, ea, es_client):
+    @pytest.mark.usefixtures("ea")
+    def test_get_hits(self, ea, es_client):  # noqa: F811
         start = datetime.datetime.now(tz=dateutil.tz.tzutc()).replace(microsecond=0)
         end = start + datetime.timedelta(days=1)
         ea.current_es = es_client

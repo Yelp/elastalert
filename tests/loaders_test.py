@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import copy
 import datetime
+import os
 
 import mock
-import os
 import pytest
 
 import elastalert.alerts
@@ -388,26 +388,6 @@ def test_name_inference():
     test_rule_copy.pop('name')
     rules_loader.load_options(test_rule_copy, test_config, 'msmerc woz ere.yaml')
     assert test_rule_copy['name'] == 'msmerc woz ere'
-
-def test_raises_on_missing_config():
-    optional_keys = ('aggregation', 'use_count_query', 'query_key', 'compare_key', 'filter', 'include', 'es_host', 'es_port', 'name')
-    test_rule_copy = copy.deepcopy(test_rule)
-    for key in test_rule_copy.keys():
-        test_rule_copy = copy.deepcopy(test_rule)
-        test_config_copy = copy.deepcopy(test_config)
-        test_rule_copy.pop(key)
-
-        # Non required keys
-        if key in optional_keys:
-            continue
-
-        with mock.patch('elastalert.config.yaml_loader') as mock_open:
-            mock_open.side_effect = [test_config_copy, test_rule_copy]
-            with mock.patch('os.listdir') as mock_ls:
-                mock_ls.return_value = ['testrule.yaml']
-                with pytest.raises(EAException, message='key %s should be required' % key):
-                    rule = load_rules(test_args)
-                    print(rule)
 
 
 def test_raises_on_bad_generate_kibana_filters():

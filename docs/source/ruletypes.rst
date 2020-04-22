@@ -549,7 +549,7 @@ kibana_discover_version
 
 ``kibana_discover_version``: Specifies the version of the Kibana Discover application.
 
-The currently supported versions of Kibana Discover are: 
+The currently supported versions of Kibana Discover are:
 
 - `5.6`
 - `6.0`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `6.7`, `6.8`
@@ -1215,8 +1215,6 @@ will trigger an alert.
 higher. 'Down' meaning the reference metric value is ``spike_height`` higher than the current metric value. 'Both' will match either.
 
 ``buffer_time``: The rule will average out the rate of events over this time period. For example, ``hours: 1`` means that the 'current'
-
-``timeframe``: The rule will average out the rate of events over this time period. For example, ``hours: 1`` means that the 'current'
 window will span from present to one hour ago, and the 'reference' window will span from one hour ago to two hours ago. The rule
 will not be active until the time elapsed from the first event is at least two timeframes. This is to prevent an alert being triggered
 before a baseline rate has been established. This can be overridden using ``alert_on_new_data``.
@@ -2176,6 +2174,7 @@ Example usage::
 
     jira_priority: $priority$
     jira_alert_owner: $owner$
+
 
 
 Line Notify

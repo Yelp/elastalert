@@ -1211,7 +1211,7 @@ class SlackAlerter(Alerter):
                     payload['channel'] = channel_override
                     response = requests.post(
                         url, data=json.dumps(payload, cls=DateTimeEncoder),
-                        headers=headers, verify=not self.slack_ignore_ssl_errors,
+                        headers=headers, verify=verify,
                         proxies=proxies,
                         timeout=self.slack_timeout)
                     warnings.resetwarnings()
@@ -2075,7 +2075,7 @@ class StrideAlerter(Alerter):
     def get_info(self):
         return {'type': 'stride',
                 'stride_cloud_id': self.stride_cloud_id,
-                'stride_conversation_id': self.stride_converstation_id}
+                'stride_converstation_id': self.stride_converstation_id}
 
 
 class LineNotifyAlerter(Alerter):

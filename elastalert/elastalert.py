@@ -19,13 +19,6 @@ from socket import error
 
 import dateutil.tz
 import pytz
-import yaml
-from alerts import DebugAlerter
-from apscheduler.schedulers.background import BackgroundScheduler
-from config import get_rule_hashes
-from config import load_configuration
-from config import load_rules
-from config import load_conf
 from apscheduler.schedulers.background import BackgroundScheduler
 from croniter import croniter
 from elasticsearch.exceptions import ConnectionError
@@ -54,6 +47,7 @@ from .util import pretty_ts
 from .util import replace_dots_in_field_names
 from .util import seconds
 from .util import set_es_key
+from .util import should_scrolling_continue
 from .util import total_seconds
 from .util import ts_add
 from .util import ts_now
@@ -119,8 +113,6 @@ class ElastAlerter(object):
         self.debug = self.args.debug
         self.verbose = self.args.verbose
 
-        self.conf = load_rules(self.args)
-        print len(self.conf['rules']), 'rules loaded'
         if self.verbose and self.debug:
             elastalert_logger.info(
                 "Note: --debug and --verbose flags are set. --debug takes precedent."
@@ -151,7 +143,6 @@ class ElastAlerter(object):
 
         self.max_query_size = self.conf['max_query_size']
         self.scroll_keepalive = self.conf['scroll_keepalive']
-        self.rules = self.rules_loader.load(self.conf, self.args)
         self.writeback_index = self.conf['writeback_index']
         self.writeback_alias = self.conf['writeback_alias']
         self.run_every = self.conf['run_every']
@@ -293,8 +284,12 @@ class ElastAlerter(object):
         """
         query = {'sort': {timestamp_field: {'order': 'asc'}}}
         try:
-            res = self.thread_data.current_es.search(index=index, size=1, body=query,
-                                                     _source_include=[timestamp_field], ignore_unavailable=True)
+            if self.thread_data.current_es.is_atleastsixsix():
+                res = self.thread_data.current_es.search(index=index, size=1, body=query,
+                                                         _source_includes=[timestamp_field], ignore_unavailable=True)
+            else:
+                res = self.thread_data.current_es.search(index=index, size=1, body=query, _source_include=[timestamp_field],
+                                                         ignore_unavailable=True)
         except ElasticsearchException as e:
             self.handle_error("Elasticsearch query error: %s" % (e), {'index': index, 'query': query})
             return '1969-12-30T00:00:00Z'
@@ -365,7 +360,7 @@ class ElastAlerter(object):
             to_ts_func=rule['dt_to_ts'],
             five=rule['five'],
         )
-        if self.current_es.is_atleastsixsix():
+        if self.thread_data.current_es.is_atleastsixsix():
             extra_args = {'_source_includes': rule['include']}
         else:
             extra_args = {'_source_include': rule['include']}
@@ -389,7 +384,13 @@ class ElastAlerter(object):
                     ignore_unavailable=True,
                     **extra_args
                 )
-                self.thread_data.total_hits = int(res['hits']['total'])
+                if '_scroll_id' in res:
+                    rule['scroll_id'] = res['_scroll_id']
+
+                if self.thread_data.current_es.is_atleastseven():
+                    self.thread_data.total_hits = int(res['hits']['total']['value'])
+                else:
+                    self.thread_data.total_hits = int(res['hits']['total'])
 
             if len(res.get('_shards', {}).get('failures', [])) > 0:
                 try:
@@ -506,7 +507,7 @@ class ElastAlerter(object):
 
         try:
             if not rule['five']:
-                res = self.thread_data.current_es.search(
+                res = self.thread_data.current_es.deprecated_search(
                     index=index,
                     doc_type=rule['doc_type'],
                     body=query,
@@ -514,8 +515,8 @@ class ElastAlerter(object):
                     ignore_unavailable=True
                 )
             else:
-                res = self.thread_data.current_es.search(index=index, doc_type=rule['doc_type'],
-                                                         body=query, size=0, ignore_unavailable=True)
+                res = self.thread_data.current_es.deprecated_search(index=index, doc_type=rule['doc_type'],
+                                                                    body=query, size=0, ignore_unavailable=True)
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
             # (so big that they will fill the entire terminal buffer)
@@ -553,7 +554,7 @@ class ElastAlerter(object):
         query = self.get_aggregation_query(base_query, rule, query_key, term_size, rule['timestamp_field'])
         try:
             if not rule['five']:
-                res = self.thread_data.current_es.search(
+                res = self.thread_data.current_es.deprecated_search(
                     index=index,
                     doc_type=rule.get('doc_type'),
                     body=query,
@@ -561,8 +562,8 @@ class ElastAlerter(object):
                     ignore_unavailable=True
                 )
             else:
-                res = self.thread_data.current_es.search(index=index, doc_type=rule.get('doc_type'),
-                                                         body=query, size=0, ignore_unavailable=True)
+                res = self.thread_data.current_es.deprecated_search(index=index, doc_type=rule.get('doc_type'),
+                                                                    body=query, size=0, ignore_unavailable=True)
         except ElasticsearchException as e:
             if len(str(e)) > 1024:
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
@@ -574,7 +575,12 @@ class ElastAlerter(object):
             payload = res['aggregations']['filtered']
         else:
             payload = res['aggregations']
-        self.thread_data.num_hits += res['hits']['total']
+
+        if self.thread_data.current_es.is_atleastseven():
+            self.thread_data.num_hits += res['hits']['total']['value']
+        else:
+            self.thread_data.num_hits += res['hits']['total']
+
         return {endtime: payload}
 
     def remove_duplicate_events(self, data, rule):
@@ -645,7 +651,7 @@ class ElastAlerter(object):
                 rule_inst.add_data(data)
 
         try:
-            if rule.get('scroll_id') and self.thread_data.num_hits < self.thread_data.total_hits:
+            if rule.get('scroll_id') and self.thread_data.num_hits < self.thread_data.total_hits and should_scrolling_continue(rule):
                 self.run_query(rule, start, end, scroll=True)
         except RuntimeError:
             # It's possible to scroll far enough to hit max recursive depth
@@ -1073,6 +1079,9 @@ class ElastAlerter(object):
                 # Rule file was changed, reload rule
                 try:
                     new_rule = self.rules_loader.load_configuration(rule_file, self.conf)
+                    if not new_rule:
+                        logging.error('Invalid rule file skipped: %s' % rule_file)
+                        continue
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         elastalert_logger.info('Rule file %s is now disabled.' % (rule_file))
                         # Remove this rule if it's been disabled
@@ -1110,6 +1119,9 @@ class ElastAlerter(object):
             for rule_file in set(new_rule_hashes.keys()) - set(self.rule_hashes.keys()):
                 try:
                     new_rule = self.rules_loader.load_configuration(rule_file, self.conf)
+                    if not new_rule:
+                        logging.error('Invalid rule file skipped: %s' % rule_file)
+                        continue
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         continue
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
@@ -1577,9 +1589,7 @@ class ElastAlerter(object):
             body['alert_exception'] = alert_exception
         return body
 
-    def writeback(self, doc_type, body, rule=None):
-        writeback_index = self.get_writeback_index(doc_type, rule, body)
-
+    def writeback(self, doc_type, body, rule=None, match_body=None):
         # ES 2.0 - 2.3 does not support dots in field names.
         if self.replace_dots_in_field_names:
             writeback_body = replace_dots_in_field_names(body)
@@ -1641,7 +1651,6 @@ class ElastAlerter(object):
         pending_alerts = self.find_recent_pending_alerts(self.alert_time_limit)
         for alert in pending_alerts:
             _id = alert['_id']
-            _index = alert['_index']
             alert = alert['_source']
             try:
                 rule_name = alert.pop('rule_name')
@@ -1660,7 +1669,7 @@ class ElastAlerter(object):
                 continue
 
             # Set current_es for top_count_keys query
-            self.current_es = elasticsearch_client(rule)
+            self.thread_data.current_es = elasticsearch_client(rule)
 
             # Send the alert unless it's a future alert
             if ts_now() > ts_to_dt(alert_time):

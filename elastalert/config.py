@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
-import hashlib
 import logging
 import logging.config
-import os
-import sys
 
 from envparse import Env
 from staticconf.loader import yaml_loader
@@ -13,9 +10,6 @@ from . import loaders
 from .util import EAException
 from .util import elastalert_logger
 from .util import get_module
-
-# schema for rule yaml
-rule_schema = jsonschema.Draft4Validator(yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml')), Loader=yaml.FullLoader))
 
 # Required global (config.yaml) configuration options
 required_globals = frozenset(['run_every', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
@@ -29,6 +23,7 @@ env_settings = {'ES_USE_SSL': 'use_ssl',
                 'ES_URL_PREFIX': 'es_url_prefix'}
 
 env = Env(ES_USE_SSL=bool)
+
 
 # Used to map the names of rule loaders to their classes
 loader_mapping = {
@@ -107,3 +102,35 @@ def load_conf(args, defaults=None, overwrites=None):
             '%s must contain %s' % (filename, ', '.join(rules_loader.required_globals - frozenset(list(conf.keys())))))
 
     return conf
+
+
+def configure_logging(args, conf):
+    # configure logging from config file if provided
+    if 'logging' in conf:
+        # load new logging config
+        logging.config.dictConfig(conf['logging'])
+
+    if args.verbose and args.debug:
+        elastalert_logger.info(
+            "Note: --debug and --verbose flags are set. --debug takes precedent."
+        )
+
+    # re-enable INFO log level on elastalert_logger in verbose/debug mode
+    # (but don't touch it if it is already set to INFO or below by config)
+    if args.verbose or args.debug:
+        if elastalert_logger.level > logging.INFO or elastalert_logger.level == logging.NOTSET:
+            elastalert_logger.setLevel(logging.INFO)
+
+    if args.debug:
+        elastalert_logger.info(
+            """Note: In debug mode, alerts will be logged to console but NOT actually sent.
+            To send them but remain verbose, use --verbose instead."""
+        )
+
+    if not args.es_debug and 'logging' not in conf:
+        logging.getLogger('elasticsearch').setLevel(logging.WARNING)
+
+    if args.es_debug_trace:
+        tracer = logging.getLogger('elasticsearch.trace')
+        tracer.setLevel(logging.INFO)
+        tracer.addHandler(logging.FileHandler(args.es_debug_trace))

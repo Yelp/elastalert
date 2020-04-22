@@ -172,13 +172,15 @@ def ea():
             'old_query_limit': datetime.timedelta(weeks=1),
             'disable_rules_on_error': False,
             'scroll_keepalive': '30s'}
+    elastalert.util.elasticsearch_client = mock_es_client
     conf['rules_loader'] = mock_rule_loader(conf)
     elastalert.elastalert.elasticsearch_client = mock_es_client
     with mock.patch('elastalert.elastalert.load_conf') as load_conf:
-        load_conf.return_value = conf
-        conf['rules_loader'].load.return_value = rules
-        conf['rules_loader'].get_hashes.return_value = {}
-        ea = elastalert.elastalert.ElastAlerter(['--pin_rules'])
+        with mock.patch('elastalert.elastalert.BackgroundScheduler'):
+            load_conf.return_value = conf
+            conf['rules_loader'].load.return_value = rules
+            conf['rules_loader'].get_hashes.return_value = {}
+            ea = elastalert.elastalert.ElastAlerter(['--pin_rules'])
     ea.rules[0]['type'] = mock_ruletype()
     ea.rules[0]['alert'] = [mock_alert()]
     ea.writeback_es = mock_es_client()
@@ -218,16 +220,20 @@ def ea_sixsix():
             'es_host': 'es',
             'es_port': 14900,
             'writeback_index': writeback_index,
+            'writeback_alias': 'wb_a',
             'rules': rules,
             'max_query_size': 10000,
             'old_query_limit': datetime.timedelta(weeks=1),
             'disable_rules_on_error': False,
             'scroll_keepalive': '30s'}
+    conf['rules_loader'] = mock_rule_loader(conf)
     elastalert.elastalert.elasticsearch_client = mock_es_sixsix_client
     elastalert.util.elasticsearch_client = mock_es_sixsix_client
-    with mock.patch('elastalert.elastalert.get_rule_hashes'):
-        with mock.patch('elastalert.elastalert.load_rules') as load_conf:
+    with mock.patch('elastalert.elastalert.load_conf') as load_conf:
+        with mock.patch('elastalert.elastalert.BackgroundScheduler'):
             load_conf.return_value = conf
+            conf['rules_loader'].load.return_value = rules
+            conf['rules_loader'].get_hashes.return_value = {}
             ea_sixsix = elastalert.elastalert.ElastAlerter(['--pin_rules'])
     ea_sixsix.rules[0]['type'] = mock_ruletype()
     ea_sixsix.rules[0]['alert'] = [mock_alert()]

@@ -14,11 +14,11 @@ import mock
 
 from elastalert.config import load_conf
 from elastalert.elastalert import ElastAlerter
+from elastalert.util import EAException
 from elastalert.util import elasticsearch_client
 from elastalert.util import lookup_es_key
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
-from elastalert.util import EAException
 
 logging.getLogger().setLevel(logging.INFO)
 logging.getLogger('elasticsearch').setLevel(logging.WARNING)
@@ -335,56 +335,6 @@ class MockElastAlerter(object):
                         errors = True
                 if errors and args.stop_error:
                     exit(2)
-
-    def load_conf(self, rules, args):
-        """ Loads a default conf dictionary (from global config file, if provided, or hard-coded mocked data),
-            for initializing rules. Also initializes rules.
-
-            :return: the default rule configuration, a dictionary """
-        if args.config is not None:
-            with open(args.config) as fh:
-                conf = yaml.load(fh, Loader=yaml.FullLoader)
-        else:
-            if os.path.isfile('config.yaml'):
-                with open('config.yaml') as fh:
-                    conf = yaml.load(fh, Loader=yaml.FullLoader)
-            else:
-                conf = {}
-
-        # Need to convert these parameters to datetime objects
-        for key in ['buffer_time', 'run_every', 'alert_time_limit', 'old_query_limit']:
-            if key in conf:
-                conf[key] = datetime.timedelta(**conf[key])
-
-        # Mock configuration. This specifies the base values for attributes, unless supplied otherwise.
-        conf_default = {
-            'rules_folder': 'rules',
-            'es_host': 'localhost',
-            'es_port': 14900,
-            'writeback_index': 'wb',
-            'writeback_alias': 'wb_a',
-            'max_query_size': 10000,
-            'alert_time_limit': datetime.timedelta(hours=24),
-            'old_query_limit': datetime.timedelta(weeks=1),
-            'run_every': datetime.timedelta(minutes=5),
-            'disable_rules_on_error': False,
-            'buffer_time': datetime.timedelta(minutes=45),
-            'scroll_keepalive': '30s'
-        }
-
-        for key in conf_default:
-            if key not in conf:
-                conf[key] = conf_default[key]
-        elastalert.config.base_config = copy.deepcopy(conf)
-        load_options(rules, conf, args.file)
-
-        if args.formatted_output:
-            self.formatted_output['success'] = True
-            self.formatted_output['name'] = rules['name']
-        else:
-            print("Successfully loaded %s\n" % (rules['name']))
-
-        return conf
 
     def run_rule_test(self):
         """
