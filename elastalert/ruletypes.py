@@ -317,15 +317,15 @@ class EventWindow(object):
         """ Add an event to the window. Event should be of the form (dict, count).
         This will also pop the oldest events and call onRemoved on them until the
         window size is less than timeframe. """
-        if not event or not event[1]:
-            return self
         self.data.add(event)
-        self.running_count += event[1]
+        if event and event[1]:
+            self.running_count += event[1]
 
         while self.duration() >= self.timeframe:
             oldest = self.data[0]
             self.data.remove(oldest)
-            self.running_count -= oldest[1]
+            if oldest and oldest[1]:
+                self.running_count -= oldest[1]
             self.onRemoved and self.onRemoved(oldest)
 
     def duration(self):
@@ -359,15 +359,14 @@ class EventWindow(object):
     def append_middle(self, event):
         """ Attempt to place the event in the correct location in our deque.
         Returns True if successful, otherwise False. """
-        if not event or not event[1]:
-            return self
         rotation = 0
         ts = self.get_ts(event)
 
         # Append left if ts is earlier than first event
         if self.get_ts(self.data[0]) > ts:
             self.data.appendleft(event)
-            self.running_count += event[1]
+            if event and event[1]:
+                self.running_count += event[1]
             return
 
         # Rotate window until we can insert event
@@ -378,7 +377,8 @@ class EventWindow(object):
                 # This should never happen
                 return
         self.data.append(event)
-        self.running_count += event[1]
+        if event and event[1]:
+            self.running_count += event[1]
         self.data.rotate(-rotation)
 
 
