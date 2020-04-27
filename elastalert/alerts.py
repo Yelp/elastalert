@@ -1128,15 +1128,14 @@ class SlackAlerter(Alerter):
         self.slack_attach_kibana_discover_url = self.rule.get('slack_attach_kibana_discover_url', False)
         self.slack_kibana_discover_color = self.rule.get('slack_kibana_discover_color', '#ec4b98')
         self.slack_kibana_discover_title = self.rule.get('slack_kibana_discover_title', 'Discover in Kibana')
+        self.slack_aggregation_table_width = self.rule.get('slack_aggregation_table_width', 75)
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
         return body
 
     def get_aggregation_summary_text__maximum_width(self):
-        width = super(SlackAlerter, self).get_aggregation_summary_text__maximum_width()
-        # Reduced maximum width for prettier Slack display.
-        return min(width, 75)
+        return self.slack_aggregation_table_width
 
     def get_aggregation_summary_text(self, matches):
         text = super(SlackAlerter, self).get_aggregation_summary_text(matches)
