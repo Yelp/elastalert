@@ -16,3 +16,5 @@ build/
 my_rules
 *.swp
 *~
+
+.vscode/
