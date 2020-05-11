@@ -34,6 +34,7 @@ class OpsGenieAlerter(Alerter):
         self.opsgenie_proxy = self.rule.get('opsgenie_proxy', None)
         self.priority = self.rule.get('opsgenie_priority')
         self.opsgenie_details = self.rule.get('opsgenie_details', {})
+        self.opsgenie_description = self.rule.get('opsgenie_description', None)
 
     def _parse_responders(self, responders, responder_args, matches, default_responders):
         if responder_args:
@@ -82,7 +83,13 @@ class OpsGenieAlerter(Alerter):
             post['responders'] = [{'username': r, 'type': 'user'} for r in self.recipients]
         if self.teams:
             post['teams'] = [{'name': r, 'type': 'team'} for r in self.teams]
-        post['description'] = body
+
+        # use custom description if provided in rule
+        if self.opsgenie_description:
+            post['description'] = self.opsgenie_description.format(**matches[0])
+        else:
+            post['description'] = body
+
         post['source'] = 'ElastAlert'
 
         for i, tag in enumerate(self.tags):
