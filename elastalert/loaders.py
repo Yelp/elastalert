@@ -268,7 +268,7 @@ class RulesLoader(object):
         # Set defaults, copy defaults from config.yaml
         for key, val in list(self.base_config.items()):
             rule.setdefault(key, val)
-        rule.setdefault('name', os.path.splitext(filename)[0])
+        rule.setdefault('name', **rule['name'])
         rule.setdefault('realert', datetime.timedelta(seconds=0))
         rule.setdefault('aggregation', datetime.timedelta(seconds=0))
         rule.setdefault('query_delay', datetime.timedelta(seconds=0))
