@@ -1650,6 +1650,8 @@ Optional:
 
 ``opsgenie_details``: Map of custom key/value pairs to include in the alert's details. The value can sourced from either fields in the first match, environment variables, or a constant value.
 
+``opsgenie_priority``: By default ElastAlert will not use a network proxy to send notifications to OpsGenie. Set
+
 Example usage::
 
     opsgenie_details:
