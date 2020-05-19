@@ -342,6 +342,7 @@ class MockElastAlerter(object):
         """
         parser = argparse.ArgumentParser(description='Validate a rule configuration')
         parser.add_argument('file', metavar='rule', type=str, help='rule configuration filename')
+        parser.add_argument('project', metavar='project', type=int, help='Run the rule against which project')
         parser.add_argument('--schema-only', action='store_true', help='Show only schema errors; do not run query')
         parser.add_argument('--days', type=int, default=0, action='store', help='Query the previous N days with this rule')
         parser.add_argument('--start', dest='start', help='YYYY-MM-DDTHH:MM:SS Start querying from this timestamp.')
@@ -397,10 +398,11 @@ class MockElastAlerter(object):
             'run_every': {'minutes': 5},
             'disable_rules_on_error': False,
             'buffer_time': {'minutes': 45},
-            'scroll_keepalive': '30s'
+            'scroll_keepalive': '30s',
+            'project': args.project,
         }
         overwrites = {
-            'rules_loader': 'file',
+            # 'rules_loader': 'file',
         }
 
         # Set arguments that ElastAlerter needs
