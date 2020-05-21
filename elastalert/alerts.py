@@ -1128,6 +1128,7 @@ class SlackAlerter(Alerter):
         self.slack_attach_kibana_discover_url = self.rule.get('slack_attach_kibana_discover_url', False)
         self.slack_kibana_discover_color = self.rule.get('slack_kibana_discover_color', '#ec4b98')
         self.slack_kibana_discover_title = self.rule.get('slack_kibana_discover_title', 'Discover in Kibana')
+        self.custom_message = self.rule.get('slack_message', None)
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1153,9 +1154,12 @@ class SlackAlerter(Alerter):
         return alert_fields
 
     def alert(self, matches):
-        body = self.create_alert_body(matches)
+        if self.custom_message:
+            body = self.custom_message.format(**matches[0])
+        else:
+            body = self.create_alert_body(matches)
 
-        body = self.format_body(body)
+            body = self.format_body(body)
         # post to slack
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
