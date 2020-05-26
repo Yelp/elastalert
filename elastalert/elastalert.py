@@ -967,7 +967,10 @@ class ElastAlerter(object):
     def init_rule(self, new_rule, new=True):
         ''' Copies some necessary non-config state from an exiting rule to a new rule. '''
         if not new:
-            self.scheduler.remove_job(job_id=new_rule['name'])
+            try:
+                self.scheduler.remove_job(job_id=new_rule['name'])
+            except Exception as e:
+                elastalert_logger.warning('{} not running. Failed to stop job'.format(new_rule['name']))
 
         try:
             self.modify_rule_for_ES5(new_rule)
@@ -1024,9 +1027,9 @@ class ElastAlerter(object):
                            'minimum_starttime',
                            'has_run_once']
         for prop in copy_properties:
-            if prop not in rule:
+            if prop not in rule and prop not in blank_rule:
                 continue
-            new_rule[prop] = rule[prop]
+            new_rule[prop] = rule.get(prop, blank_rule.get(prop, None))
 
         job = self.scheduler.add_job(self.handle_rule_execution, 'interval',
                                      args=[new_rule],
@@ -1067,13 +1070,7 @@ class ElastAlerter(object):
             if rule_file not in new_rule_hashes:
                 # Rule file was deleted
                 elastalert_logger.info('Rule file %s not found, stopping rule execution' % (rule_file))
-                for rule in self.rules:
-                    if rule['rule_file'] == rule_file:
-                        break
-                else:
-                    continue
-                self.scheduler.remove_job(job_id=rule['name'])
-                self.rules.remove(rule)
+                self.stop_rule(rule_file, False)
                 continue
             if hash_value != new_rule_hashes[rule_file]:
                 # Rule file was changed, reload rule
@@ -1085,7 +1082,7 @@ class ElastAlerter(object):
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         elastalert_logger.info('Rule file %s is now disabled.' % (rule_file))
                         # Remove this rule if it's been disabled
-                        self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
+                        self.stop_rule(rule_file)
                         continue
                 except EAException as e:
                     message = 'Could not load rule %s: %s' % (rule_file, e)
@@ -1110,7 +1107,7 @@ class ElastAlerter(object):
 
                 # Initialize the rule that matches rule_file
                 new_rule = self.init_rule(new_rule, False)
-                self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
+                self.stop_rule(rule_file)
                 if new_rule:
                     self.rules.append(new_rule)
 
@@ -1931,15 +1928,23 @@ class ElastAlerter(object):
             body['data'] = data
         self.writeback('elastalert_error', body)
 
+    def stop_rule(self, rule_file, disable=True):
+        running_rule = next(rule for rule in self.rules if rule['rule_file'] == rule_file)
+        if running_rule:
+            self.rules.remove(running_rule)
+            if disable:
+                self.disabled_rules.append(running_rule)
+            self.scheduler.remove_job(job_id=running_rule['name'])
+            elastalert_logger.info('Rule %s disabled', running_rule['name'])
+        else:
+            elastalert_logger.warn('Rule %s is already disabled', rule['name'])
+
     def handle_uncaught_exception(self, exception, rule):
         """ Disables a rule and sends a notification. """
         logging.error(traceback.format_exc())
         self.handle_error('Uncaught exception running rule %s: %s' % (rule['name'], exception), {'rule': rule['name']})
         if self.disable_rules_on_error:
-            self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
-            self.disabled_rules.append(rule)
-            self.scheduler.pause_job(job_id=rule['name'])
-            elastalert_logger.info('Rule %s disabled', rule['name'])
+            self.disable_rule(rule)
         if self.notify_email:
             self.send_notification_email(exception=exception, rule=rule)
 
