@@ -1944,7 +1944,7 @@ class ElastAlerter(object):
         logging.error(traceback.format_exc())
         self.handle_error('Uncaught exception running rule %s: %s' % (rule['name'], exception), {'rule': rule['name']})
         if self.disable_rules_on_error:
-            self.disable_rule(rule)
+            self.stop_rule(rule['rule_file'])
         if self.notify_email:
             self.send_notification_email(exception=exception, rule=rule)
 
