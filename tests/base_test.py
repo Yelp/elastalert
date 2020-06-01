@@ -400,7 +400,7 @@ def test_agg_matchtime(ea):
 
     assert call2['match_body']['@timestamp'] == '2014-09-26T12:40:45'
     assert not call2['alert_sent']
-    assert call2['aggregate_id'] == '"ABCD"'
+    assert call2['aggregate_id'] == 'ABCD'
 
     assert call3['match_body']['@timestamp'] == '2014-09-26T12:47:45'
     assert not call3['alert_sent']
@@ -455,11 +455,11 @@ def test_agg_not_matchtime(ea):
 
     assert call2['match_body']['@timestamp'] == '2014-09-26T12:40:45'
     assert not call2['alert_sent']
-    assert call2['aggregate_id'] == '"ABCD"'
+    assert call2['aggregate_id'] == 'ABCD'
 
     assert call3['match_body']['@timestamp'] == '2014-09-26T12:47:45'
     assert not call3['alert_sent']
-    assert call3['aggregate_id'] == '"ABCD"'
+    assert call3['aggregate_id'] == 'ABCD'
 
 
 def test_agg_cron(ea):
@@ -491,7 +491,7 @@ def test_agg_cron(ea):
 
     assert call2['match_body']['@timestamp'] == '2014-09-26T12:40:45'
     assert not call2['alert_sent']
-    assert call2['aggregate_id'] == '"ABCD"'
+    assert call2['aggregate_id'] == 'ABCD'
 
     assert call3['match_body']['@timestamp'] == '2014-09-26T12:47:45'
     assert call3['alert_time'] == alerttime2
@@ -569,7 +569,7 @@ def test_agg_with_aggregation_key(ea):
     assert not call3['alert_sent']
     # Call3 should have it's aggregate_id set to call1's _id
     # It should also have the same alert_time as call1
-    assert call3['aggregate_id'] == '"ABCD"'
+    assert call3['aggregate_id'] == 'ABCD'
     assert 'aggregation_key' in call3
     assert call3['aggregation_key'] == 'Key Value 1'
     assert call3['alert_time'] == dt_to_ts(match_time + datetime.timedelta(minutes=10))
