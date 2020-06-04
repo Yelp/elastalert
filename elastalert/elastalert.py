@@ -157,7 +157,7 @@ class ElastAlerter(object):
         self.silence_cache = {}
         self.rule_hashes = self.rules_loader.get_hashes(self.conf, self.args.rule)
         self.starttime = self.args.start
-        self.disabled_rules = []
+        self.disabled_rules = self.rules_loader.get_disabled_rules()
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
         self.thread_data.num_hits = 0
         self.thread_data.num_dupes = 0
@@ -1064,6 +1064,8 @@ class ElastAlerter(object):
 
         # Check each current rule for changes
         for rule_file, hash_value in self.rule_hashes.items():
+            # Assume the rule is not new
+            new = False
             if rule_file not in new_rule_hashes:
                 # Rule file was deleted
                 elastalert_logger.info('Rule file %s not found, stopping rule execution' % (rule_file))
@@ -1085,6 +1087,8 @@ class ElastAlerter(object):
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         elastalert_logger.info('Rule file %s is now disabled.' % (rule_file))
                         # Remove this rule if it's been disabled
+                        self.disabled_rules.append(new_rule)
+                        self.scheduler.remove_job(job_id=new_rule['name'])
                         self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
                         continue
                 except EAException as e:
@@ -1106,10 +1110,12 @@ class ElastAlerter(object):
                     if disabled_rule['name'] == new_rule['name']:
                         self.rules.append(disabled_rule)
                         self.disabled_rules.remove(disabled_rule)
+                        # If rule was previosuly disabled there is no existing job, treat as new rule
+                        new = True
                         break
 
                 # Initialize the rule that matches rule_file
-                new_rule = self.init_rule(new_rule, False)
+                new_rule = self.init_rule(new_rule, new)
                 self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
                 if new_rule:
                     self.rules.append(new_rule)
@@ -1701,22 +1707,23 @@ class ElastAlerter(object):
 
         # Send in memory aggregated alerts
         for rule in self.rules:
-            if rule['agg_matches']:
-                for aggregation_key_value, aggregate_alert_time in rule['aggregate_alert_time'].items():
-                    if ts_now() > aggregate_alert_time:
-                        alertable_matches = [
-                            agg_match
-                            for agg_match
-                            in rule['agg_matches']
-                            if self.get_aggregation_key_value(rule, agg_match) == aggregation_key_value
-                        ]
-                        self.alert(alertable_matches, rule)
-                        rule['agg_matches'] = [
-                            agg_match
-                            for agg_match
-                            in rule['agg_matches']
-                            if self.get_aggregation_key_value(rule, agg_match) != aggregation_key_value
-                        ]
+            if 'agg_matches' in rule:
+                if rule['agg_matches']:
+                    for aggregation_key_value, aggregate_alert_time in rule['aggregate_alert_time'].items():
+                        if ts_now() > aggregate_alert_time:
+                            alertable_matches = [
+                                agg_match
+                                for agg_match
+                                in rule['agg_matches']
+                                if self.get_aggregation_key_value(rule, agg_match) == aggregation_key_value
+                            ]
+                            self.alert(alertable_matches, rule)
+                            rule['agg_matches'] = [
+                                agg_match
+                                for agg_match
+                                in rule['agg_matches']
+                                if self.get_aggregation_key_value(rule, agg_match) != aggregation_key_value
+                            ]
 
     def get_aggregated_matches(self, _id):
         """ Removes and returns all matches from writeback_es that have aggregate_id == _id """
