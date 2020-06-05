@@ -27,10 +27,10 @@ from elasticsearch.exceptions import NotFoundError
 from elasticsearch.exceptions import TransportError
 
 from . import kibana
-from .kibana_discover import generate_kibana_discover_url
 from .alerts import DebugAlerter
 from .config import load_conf
 from .enhancements import DropMatchException
+from .kibana_discover import generate_kibana_discover_url
 from .ruletypes import FlatlineRule
 from .util import add_raw_postfix
 from .util import cronite_datetime_to_timestamp
@@ -1022,8 +1022,7 @@ class ElastAlerter(object):
                            'processed_hits',
                            'starttime',
                            'minimum_starttime',
-                           'has_run_once',
-                           'run_every']
+                           'has_run_once']
         for prop in copy_properties:
             if prop not in rule:
                 continue
@@ -1467,8 +1466,8 @@ class ElastAlerter(object):
         # Compute top count keys
         if rule.get('top_count_keys'):
             for match in matches:
-                if 'query_key' in rule and rule['query_key'] in match:
-                    qk = match[rule['query_key']]
+                if 'query_key' in rule:
+                    qk = lookup_es_key(match, rule['query_key'])
                 else:
                     qk = None
 
