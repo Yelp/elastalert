@@ -821,9 +821,9 @@ class JiraAlerter(Alerter):
                     except JIRAError as e:
                         logging.exception("Error while commenting on ticket %s: %s" % (ticket, e))
                     if self.labels:
-                        for l in self.labels:
+                        for label in self.labels:
                             try:
-                                ticket.fields.labels.append(l)
+                                ticket.fields.labels.append(label)
                             except JIRAError as e:
                                 logging.exception("Error while appending labels to ticket %s: %s" % (ticket, e))
                 if self.transition:

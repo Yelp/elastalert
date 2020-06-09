@@ -549,7 +549,7 @@ kibana_discover_version
 
 ``kibana_discover_version``: Specifies the version of the Kibana Discover application.
 
-The currently supported versions of Kibana Discover are: 
+The currently supported versions of Kibana Discover are:
 
 - `5.6`
 - `6.0`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `6.7`, `6.8`
@@ -2205,7 +2205,7 @@ Optional:
 
 Example usage::
 
-	alert: hivealerter
+    alert: hivealerter
 
      hive_connection:
        hive_host: http://localhost
