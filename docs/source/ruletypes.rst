@@ -2171,11 +2171,11 @@ Alerts can be sent to Squadcast using the `http post` method described above and
 
 Configuration variables in rules YAML file::
 
-	alert: post
-	http_post_url: <ElastAlert Webhook URL copied from Squadcast dashboard>
-	http_post_static_payload:
-       Title: <Incident Title>
-	http_post_all_values: true
+    alert: post
+    http_post_url: <ElastAlert Webhook URL copied from Squadcast dashboard>
+    http_post_static_payload:
+      Title: <Incident Title>
+    http_post_all_values: true
 
 For more details, you can refer the `Squadcast documentation <https://support.squadcast.com/docs/elastalert>`_.
 
