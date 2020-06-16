@@ -2165,7 +2165,7 @@ Example usage::
       authorization: Basic 123dr3234
 
 Squadcast
-~~~~~~~~
+~~~~~~~~~
 
 Alerts can be sent to Squadcast using the `http post` method described above and Squadcast will process it and send Phone, SMS, Email and Push notifications to the relevant person(s) and let them take actions.
 
