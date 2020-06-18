@@ -1389,8 +1389,6 @@ class ServiceNowAlerter(Alerter):
         super(ServiceNowAlerter, self).__init__(rule)
         self.servicenow_rest_url = self.rule['servicenow_rest_url']
         self.servicenow_proxy = self.rule.get('servicenow_proxy', None)
-        self.service_offering = self.rule.get('service_offering', None)
-        self.u_second_class = self.rule.get('u_second_class', None)
 
     def alert(self, matches):
         for match in matches:
