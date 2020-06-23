@@ -876,15 +876,16 @@ class ElastAlerter(object):
         rule['original_starttime'] = rule['starttime']
         rule['scrolling_cycle'] = 0
 
+        self.thread_data.num_hits = 0
+        self.thread_data.num_dupes = 0
+        self.thread_data.cumulative_hits = 0
+
         # Don't run if starttime was set to the future
         if ts_now() <= rule['starttime']:
             logging.warning("Attempted to use query start time in the future (%s), sleeping instead" % (starttime))
             return 0
 
         # Run the rule. If querying over a large time period, split it up into segments
-        self.thread_data.num_hits = 0
-        self.thread_data.num_dupes = 0
-        self.thread_data.cumulative_hits = 0
         segment_size = self.get_segment_size(rule)
 
         tmp_endtime = rule['starttime']
