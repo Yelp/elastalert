@@ -16,6 +16,9 @@ install-hooks:
 test:
 	tox
 
+test-elasticsearch:
+	tox -- --runelasticsearch
+
 test-docker:
 	docker-compose --project-name elastalert build tox
 	docker-compose --project-name elastalert run tox

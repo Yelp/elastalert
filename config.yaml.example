@@ -46,12 +46,70 @@ es_port: 9200
 #es_username: someusername
 #es_password: somepassword
 
+# Use SSL authentication with client certificates client_cert must be
+# a pem file containing both cert and key for client
+#verify_certs: True
+#ca_certs: /path/to/cacert.pem
+#client_cert: /path/to/client_cert.pem
+#client_key: /path/to/client_key.key
+
 # The index on es_host which is used for metadata storage
 # This can be a unmapped index, but it is recommended that you run
 # elastalert-create-index to set a mapping
 writeback_index: elastalert_status
+writeback_alias: elastalert_alerts
 
 # If an alert fails for some reason, ElastAlert will retry
 # sending the alert until this time period has elapsed
 alert_time_limit:
   days: 2
+
+# Custom logging configuration
+# If you want to setup your own logging configuration to log into
+# files as well or to Logstash and/or modify log levels, use
+# the configuration below and adjust to your needs.
+# Note: if you run ElastAlert with --verbose/--debug, the log level of
+# the "elastalert" logger is changed to INFO, if not already INFO/DEBUG.
+#logging:
+#  version: 1
+#  incremental: false
+#  disable_existing_loggers: false
+#  formatters:
+#    logline:
+#      format: '%(asctime)s %(levelname)+8s %(name)+20s %(message)s'
+#
+#    handlers:
+#      console:
+#        class: logging.StreamHandler
+#        formatter: logline
+#        level: DEBUG
+#        stream: ext://sys.stderr
+#
+#      file:
+#        class : logging.FileHandler
+#        formatter: logline
+#        level: DEBUG
+#        filename: elastalert.log
+#
+#    loggers:
+#      elastalert:
+#        level: WARN
+#        handlers: []
+#        propagate: true
+#
+#      elasticsearch:
+#        level: WARN
+#        handlers: []
+#        propagate: true
+#
+#      elasticsearch.trace:
+#        level: WARN
+#        handlers: []
+#        propagate: true
+#
+#      '':  # root logger
+#        level: WARN
+#          handlers:
+#            - console
+#            - file
+#        propagate: false

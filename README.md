@@ -1,5 +1,5 @@
-[![Stories in Ready](https://badge.waffle.io/Yelp/elastalert.png?label=ready&title=Ready)](https://waffle.io/Yelp/elastalert)
-[![Stories in In Progress](https://badge.waffle.io/Yelp/elastalert.png?label=in%20progress&title=In%20Progress)](https://waffle.io/Yelp/elastalert)
+Recent changes: As of Elastalert 0.2.0, you must use Python 3.6. Python 2 will not longer be supported.
+
 [![Build Status](https://travis-ci.org/Yelp/elastalert.svg)](https://travis-ci.org/Yelp/elastalert)
 [![Join the chat at https://gitter.im/Yelp/elastalert](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Yelp/elastalert?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -28,16 +28,16 @@ This is configured by a set of rules, each of which defines a query, a rule type
 
 Several rule types with common monitoring paradigms are included with ElastAlert:
 
-- "Match where there are X events in Y time" (``frequency`` type)
-- "Match when the rate of events increases or decreases" (``spike`` type)
-- "Match when there are less than X events in Y time" (``flatline`` type)
-- "Match when a certain field matches a blacklist/whitelist" (``blacklist`` and ``whitelist`` type)
-- "Match on any event matching a given filter" (``any`` type)
-- "Match when a field has two different values within some time" (``change`` type)
-- "Match when a never before seen term appears in a field" (``new_term`` type)
-- "Match when the number of unique values for a field is above or below a threshold (``cardinality`` type)
+- Match where there are at least X events in Y time" (``frequency`` type)
+- Match when the rate of events increases or decreases" (``spike`` type)
+- Match when there are less than X events in Y time" (``flatline`` type)
+- Match when a certain field matches a blacklist/whitelist" (``blacklist`` and ``whitelist`` type)
+- Match on any event matching a given filter" (``any`` type)
+- Match when a field has two different values within some time" (``change`` type)
+- Match when a never before seen term appears in a field" (``new_term`` type)
+- Match when the number of unique values for a field is above or below a threshold (``cardinality`` type)
 
-Currently, we have support built in for the following alert types:
+Currently, we have built-in support for the following alert types:
 
 - Email
 - JIRA
@@ -47,12 +47,16 @@ Currently, we have support built in for the following alert types:
 - MS Teams
 - Slack
 - Telegram
+- GoogleChat
 - AWS SNS
 - VictorOps
 - PagerDuty
+- PagerTree
 - Exotel
 - Twilio
 - Gitter
+- Line Notify
+- Zabbix
 
 Additional rule types and alerts can be easily imported or written.
 
@@ -67,12 +71,27 @@ In addition to this basic usage, there are many other features that make alerts 
 To get started, check out `Running ElastAlert For The First Time` in the [documentation](http://elastalert.readthedocs.org).
 
 ## Running ElastAlert
+You can either install the latest released version of ElastAlert using pip:
 
-``$ python elastalert/elastalert.py [--debug] [--verbose] [--start <timestamp>] [--end <timestamp>] [--rule <filename.yaml>] [--config <filename.yaml>]``
+```pip install elastalert```
 
-``--debug`` will print additional information to the screen as well as suppresses alerts and instead prints the alert body.
+or you can clone the ElastAlert repository for the most recent changes:
 
-``--verbose`` will print additional information without supressing alerts.
+```git clone https://github.com/Yelp/elastalert.git```
+
+Install the module:
+
+```pip install "setuptools>=11.3"```
+
+```python setup.py install```
+
+The following invocation can be used to run ElastAlert after installing
+
+``$ elastalert [--debug] [--verbose] [--start <timestamp>] [--end <timestamp>] [--rule <filename.yaml>] [--config <filename.yaml>]``
+
+``--debug`` will print additional information to the screen as well as suppresses alerts and instead prints the alert body. Not compatible with `--verbose`.
+
+``--verbose`` will print additional information without suppressing alerts. Not compatible with `--debug.`
 
 ``--start`` will begin querying at the given timestamp. By default, ElastAlert will begin querying from the present.
 Timestamp format is ``YYYY-MM-DDTHH-MM-SS[-/+HH:MM]`` (Note the T between date and hour).
@@ -87,8 +106,23 @@ Eg: ``--rule this_rule.yaml``
 ``--config`` allows you to specify the location of the configuration. By default, it is will look for config.yaml in the current directory.
 
 ## Third Party Tools And Extras
-### Bitsensor Kibana plugin
-[Configure and test rules via a Kibana plugin](https://bitsensor.io/blog/elastalert-kibana-plugin-centralized-logging-with-integrated-alerting)
+### Kibana plugin
+![img](https://raw.githubusercontent.com/bitsensor/elastalert-kibana-plugin/master/showcase.gif)
+Available at the [ElastAlert Kibana plugin repository](https://github.com/bitsensor/elastalert-kibana-plugin).
+
+### Docker
+A [Dockerized version](https://github.com/bitsensor/elastalert) of ElastAlert including a REST api is build from `master` to `bitsensor/elastalert:latest`.
+
+```bash
+git clone https://github.com/bitsensor/elastalert.git; cd elastalert
+docker run -d -p 3030:3030 \
+    -v `pwd`/config/elastalert.yaml:/opt/elastalert/config.yaml \
+    -v `pwd`/config/config.json:/opt/elastalert-server/config/config.json \
+    -v `pwd`/rules:/opt/elastalert/rules \
+    -v `pwd`/rule_templates:/opt/elastalert/rule_templates \
+    --net="host" \
+    --name elastalert bitsensor/elastalert:latest
+```
 
 ## Documentation
 

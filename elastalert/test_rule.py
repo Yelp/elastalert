@@ -1,27 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import print_function
-
+import argparse
 import copy
 import datetime
+import json
 import logging
-import os
 import random
 import re
 import string
 import sys
 
-import argparse
 import mock
-import simplejson
-import yaml
 
-import elastalert.config
-from elastalert.config import load_modules
-from elastalert.config import load_options
-from elastalert.config import load_rule_yaml
+from elastalert.config import load_conf
 from elastalert.elastalert import ElastAlerter
+from elastalert.util import EAException
 from elastalert.util import elasticsearch_client
 from elastalert.util import lookup_es_key
 from elastalert.util import ts_now
@@ -29,6 +22,14 @@ from elastalert.util import ts_to_dt
 
 logging.getLogger().setLevel(logging.INFO)
 logging.getLogger('elasticsearch').setLevel(logging.WARNING)
+
+"""
+Error Codes:
+    1: Error connecting to ElasticSearch
+    2: Error querying ElasticSearch
+    3: Invalid Rule
+    4: Missing/invalid timestamp
+"""
 
 
 def print_terms(terms, parent):
@@ -43,6 +44,7 @@ def print_terms(terms, parent):
 class MockElastAlerter(object):
     def __init__(self):
         self.data = []
+        self.formatted_output = {}
 
     def test_file(self, conf, args):
         """ Loads a rule config file, performs a query over the last day (args.days), lists available keys
@@ -54,21 +56,29 @@ class MockElastAlerter(object):
         es_client = elasticsearch_client(conf)
 
         try:
-            is_five = es_client.info()['version']['number'].startswith('5')
+            ElastAlerter.modify_rule_for_ES5(conf)
+        except EAException as ea:
+            print('Invalid filter provided:', str(ea), file=sys.stderr)
+            if args.stop_error:
+                exit(3)
+            return None
         except Exception as e:
             print("Error connecting to ElasticSearch:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
             if args.stop_error:
                 exit(1)
             return None
-
-        if is_five:
-            ElastAlerter.modify_rule_for_ES5(conf)
-
         start_time = ts_now() - datetime.timedelta(days=args.days)
         end_time = ts_now()
         ts = conf.get('timestamp_field', '@timestamp')
-        query = ElastAlerter.get_query(conf['filter'], starttime=start_time, endtime=end_time, timestamp_field=ts, five=is_five)
+        query = ElastAlerter.get_query(
+            conf['filter'],
+            starttime=start_time,
+            endtime=end_time,
+            timestamp_field=ts,
+            to_ts_func=conf['dt_to_ts'],
+            five=conf['five']
+        )
         index = ElastAlerter.get_index(conf, start_time, end_time)
 
         # Get one document for schema
@@ -78,10 +88,11 @@ class MockElastAlerter(object):
             print("Error running your filter:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
             if args.stop_error:
-                exit(1)
+                exit(3)
             return None
         num_hits = len(res['hits']['hits'])
         if not num_hits:
+            print("Didn't get any results.")
             return []
 
         terms = res['hits']['hits'][0]['_source']
@@ -93,8 +104,9 @@ class MockElastAlerter(object):
             starttime=start_time,
             endtime=end_time,
             timestamp_field=ts,
+            to_ts_func=conf['dt_to_ts'],
             sort=False,
-            five=is_five
+            five=conf['five']
         )
         try:
             res = es_client.count(index, doc_type=doc_type, body=count_query, ignore_unavailable=True)
@@ -102,13 +114,20 @@ class MockElastAlerter(object):
             print("Error querying Elasticsearch:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)
             if args.stop_error:
-                exit(1)
+                exit(2)
             return None
 
         num_hits = res['count']
-        print("Got %s hits from the last %s day%s" % (num_hits, args.days, 's' if args.days > 1 else ''))
-        print("\nAvailable terms in first hit:")
-        print_terms(terms, '')
+
+        if args.formatted_output:
+            self.formatted_output['hits'] = num_hits
+            self.formatted_output['days'] = args.days
+            self.formatted_output['terms'] = list(terms.keys())
+            self.formatted_output['result'] = terms
+        else:
+            print("Got %s hits from the last %s day%s" % (num_hits, args.days, 's' if args.days > 1 else ''))
+            print("\nAvailable terms in first hit:")
+            print_terms(terms, '')
 
         # Check for missing keys
         pk = conf.get('primary_key')
@@ -128,20 +147,23 @@ class MockElastAlerter(object):
             # If the index starts with 'logstash', fields with .raw will be available but won't in _source
             if term not in terms and not (term.endswith('.raw') and term[:-4] in terms and index.startswith('logstash')):
                 print("top_count_key %s may be missing" % (term), file=sys.stderr)
-        print('')  # Newline
+        if not args.formatted_output:
+            print('')  # Newline
 
-        # Download up to 10,000 documents to save
-        if args.save and not args.count:
+        # Download up to max_query_size (defaults to 10,000) documents to save
+        if (args.save or args.formatted_output) and not args.count:
             try:
-                res = es_client.search(index, size=10000, body=query, ignore_unavailable=True)
+                res = es_client.search(index, size=args.max_query_size, body=query, ignore_unavailable=True)
             except Exception as e:
                 print("Error running your filter:", file=sys.stderr)
                 print(repr(e)[:2048], file=sys.stderr)
                 if args.stop_error:
-                    exit(1)
+                    exit(2)
                 return None
             num_hits = len(res['hits']['hits'])
-            print("Downloaded %s documents to save" % (num_hits))
+
+            if args.save:
+                print("Downloaded %s documents to save" % (num_hits))
             return res['hits']['hits']
 
     def mock_count(self, rule, start, end, index):
@@ -166,7 +188,7 @@ class MockElastAlerter(object):
                 if field != '_id':
                     if not any([re.match(incl.replace('*', '.*'), field) for incl in rule['include']]):
                         fields_to_remove.append(field)
-            map(doc.pop, fields_to_remove)
+            list(map(doc.pop, fields_to_remove))
 
         # Separate _source and _id, convert timestamps
         resp = [{'_source': doc, '_id': doc['_id']} for doc in docs]
@@ -186,7 +208,7 @@ class MockElastAlerter(object):
                 if qk is None or doc[rule['query_key']] == qk:
                     buckets.setdefault(doc[key], 0)
                     buckets[doc[key]] += 1
-        counts = buckets.items()
+        counts = list(buckets.items())
         counts.sort(key=lambda x: x[1], reverse=True)
         if size:
             counts = counts[:size]
@@ -204,8 +226,11 @@ class MockElastAlerter(object):
         """ Creates an ElastAlert instance and run's over for a specific rule using either real or mock data. """
 
         # Load and instantiate rule
-        load_modules(rule)
-        conf['rules'] = [rule]
+        # Pass an args containing the context of whether we're alerting or not
+        # It is needed to prevent unnecessary initialization of unused alerters
+        load_modules_args = argparse.Namespace()
+        load_modules_args.debug = not args.alert
+        conf['rules_loader'].load_modules(rule, load_modules_args)
 
         # If using mock data, make sure it's sorted and find appropriate time range
         timestamp_field = rule.get('timestamp_field', '@timestamp')
@@ -220,14 +245,14 @@ class MockElastAlerter(object):
             except KeyError as e:
                 print("All documents must have a timestamp and _id: %s" % (e), file=sys.stderr)
                 if args.stop_error:
-                    exit(1)
+                    exit(4)
                 return None
 
             # Create mock _id for documents if it's missing
             used_ids = []
 
             def get_id():
-                _id = ''.join([random.choice(string.letters) for i in range(16)])
+                _id = ''.join([random.choice(string.ascii_letters) for i in range(16)])
                 if _id in used_ids:
                     return get_id()
                 used_ids.append(_id)
@@ -236,8 +261,34 @@ class MockElastAlerter(object):
             for doc in self.data:
                 doc.update({'_id': doc.get('_id', get_id())})
         else:
-            endtime = ts_now()
-            starttime = endtime - datetime.timedelta(days=args.days)
+            if args.end:
+                if args.end == 'NOW':
+                    endtime = ts_now()
+                else:
+                    try:
+                        endtime = ts_to_dt(args.end)
+                    except (TypeError, ValueError):
+                        self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (args.end))
+                        exit(4)
+            else:
+                endtime = ts_now()
+            if args.start:
+                try:
+                    starttime = ts_to_dt(args.start)
+                except (TypeError, ValueError):
+                    self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (args.start))
+                    exit(4)
+            else:
+                # if days given as command line argument
+                if args.days > 0:
+                    starttime = endtime - datetime.timedelta(days=args.days)
+                else:
+                    # if timeframe is given in rule
+                    if 'timeframe' in rule:
+                        starttime = endtime - datetime.timedelta(seconds=rule['timeframe'].total_seconds() * 1.01)
+                    # default is 1 days / 24 hours
+                    else:
+                        starttime = endtime - datetime.timedelta(days=1)
 
         # Set run_every to cover the entire time range unless count query, terms query or agg query used
         # This is to prevent query segmenting which unnecessarily slows down tests
@@ -245,13 +296,15 @@ class MockElastAlerter(object):
             conf['run_every'] = endtime - starttime
 
         # Instantiate ElastAlert to use mock config and special rule
-        with mock.patch('elastalert.elastalert.get_rule_hashes'):
-            with mock.patch('elastalert.elastalert.load_rules') as load_conf:
-                load_conf.return_value = conf
-                if args.alert:
-                    client = ElastAlerter(['--verbose'])
-                else:
-                    client = ElastAlerter(['--debug'])
+        with mock.patch.object(conf['rules_loader'], 'get_hashes'):
+            with mock.patch.object(conf['rules_loader'], 'load') as load_rules:
+                load_rules.return_value = [rule]
+                with mock.patch('elastalert.elastalert.load_conf') as load_conf:
+                    load_conf.return_value = conf
+                    if args.alert:
+                        client = ElastAlerter(['--verbose'])
+                    else:
+                        client = ElastAlerter(['--debug'])
 
         # Replace get_hits_* functions to use mock data
         if args.json:
@@ -265,58 +318,23 @@ class MockElastAlerter(object):
             client.run_rule(rule, endtime, starttime)
 
             if mock_writeback.call_count:
-                print("\nWould have written the following documents to writeback index (default is elastalert_status):\n")
+
+                if args.formatted_output:
+                    self.formatted_output['writeback'] = {}
+                else:
+                    print("\nWould have written the following documents to writeback index (default is elastalert_status):\n")
+
                 errors = False
                 for call in mock_writeback.call_args_list:
-                    print("%s - %s\n" % (call[0][0], call[0][1]))
+                    if args.formatted_output:
+                        self.formatted_output['writeback'][call[0][0]] = json.loads(json.dumps(call[0][1], default=str))
+                    else:
+                        print("%s - %s\n" % (call[0][0], call[0][1]))
+
                     if call[0][0] == 'elastalert_error':
                         errors = True
                 if errors and args.stop_error:
-                    exit(1)
-
-    def load_conf(self, rules, args):
-        """ Loads a default conf dictionary (from global config file, if provided, or hard-coded mocked data),
-            for initializing rules. Also initializes rules.
-
-            :return: the default rule configuration, a dictionary """
-        if args.config is not None:
-            with open(args.config) as fh:
-                conf = yaml.load(fh)
-        else:
-            if os.path.isfile('config.yaml'):
-                with open('config.yaml') as fh:
-                    conf = yaml.load(fh)
-            else:
-                conf = {}
-
-        # Need to convert these parameters to datetime objects
-        for key in ['buffer_time', 'run_every', 'alert_time_limit', 'old_query_limit']:
-            if key in conf:
-                conf[key] = datetime.timedelta(**conf[key])
-
-        # Mock configuration. This specifies the base values for attributes, unless supplied otherwise.
-        conf_default = {
-            'rules_folder': 'rules',
-            'es_host': 'localhost',
-            'es_port': 14900,
-            'writeback_index': 'wb',
-            'max_query_size': 10000,
-            'alert_time_limit': datetime.timedelta(hours=24),
-            'old_query_limit': datetime.timedelta(weeks=1),
-            'run_every': datetime.timedelta(minutes=5),
-            'disable_rules_on_error': False,
-            'buffer_time': datetime.timedelta(minutes=45),
-            'scroll_keepalive': '30s'
-        }
-
-        for key in conf_default:
-            if key not in conf:
-                conf[key] = conf_default[key]
-        elastalert.config.base_config = copy.deepcopy(conf)
-        load_options(rules, conf, args.file)
-        print("Successfully loaded %s\n" % (rules['name']))
-
-        return conf
+                    exit(2)
 
     def run_rule_test(self):
         """
@@ -325,8 +343,12 @@ class MockElastAlerter(object):
         parser = argparse.ArgumentParser(description='Validate a rule configuration')
         parser.add_argument('file', metavar='rule', type=str, help='rule configuration filename')
         parser.add_argument('--schema-only', action='store_true', help='Show only schema errors; do not run query')
-        parser.add_argument('--days', type=int, default=1, action='store', help='Query the previous N days with this rule')
+        parser.add_argument('--days', type=int, default=0, action='store', help='Query the previous N days with this rule')
+        parser.add_argument('--start', dest='start', help='YYYY-MM-DDTHH:MM:SS Start querying from this timestamp.')
+        parser.add_argument('--end', dest='end', help='YYYY-MM-DDTHH:MM:SS Query to this timestamp. (Default: present) '
+                                                      'Use "NOW" to start from current time. (Default: present)')
         parser.add_argument('--stop-error', action='store_true', help='Stop the entire test right after the first error')
+        parser.add_argument('--formatted-output', action='store_true', help='Output results in formatted JSON')
         parser.add_argument(
             '--data',
             type=str,
@@ -343,6 +365,19 @@ class MockElastAlerter(object):
             dest='save',
             help='A file to which documents from the last day or --days will be saved')
         parser.add_argument(
+            '--use-downloaded',
+            action='store_true',
+            dest='use_downloaded',
+            help='Use the downloaded '
+        )
+        parser.add_argument(
+            '--max-query-size',
+            type=int,
+            default=10000,
+            action='store',
+            dest='max_query_size',
+            help='Maximum size of any query')
+        parser.add_argument(
             '--count-only',
             action='store_true',
             dest='count',
@@ -350,23 +385,59 @@ class MockElastAlerter(object):
         parser.add_argument('--config', action='store', dest='config', help='Global config file.')
         args = parser.parse_args()
 
-        rule_yaml = load_rule_yaml(args.file)
+        defaults = {
+            'rules_folder': 'rules',
+            'es_host': 'localhost',
+            'es_port': 14900,
+            'writeback_index': 'wb',
+            'writeback_alias': 'wb_a',
+            'max_query_size': 10000,
+            'alert_time_limit': {'hours': 24},
+            'old_query_limit': {'weeks': 1},
+            'run_every': {'minutes': 5},
+            'disable_rules_on_error': False,
+            'buffer_time': {'minutes': 45},
+            'scroll_keepalive': '30s'
+        }
+        overwrites = {
+            'rules_loader': 'file',
+        }
 
-        conf = self.load_conf(rule_yaml, args)
+        # Set arguments that ElastAlerter needs
+        args.verbose = args.alert
+        args.debug = not args.alert
+        args.es_debug = False
+        args.es_debug_trace = False
+
+        conf = load_conf(args, defaults, overwrites)
+        rule_yaml = conf['rules_loader'].load_yaml(args.file)
+        conf['rules_loader'].load_options(rule_yaml, conf, args.file)
 
         if args.json:
             with open(args.json, 'r') as data_file:
-                self.data = simplejson.loads(data_file.read())
+                self.data = json.loads(data_file.read())
         else:
             hits = self.test_file(copy.deepcopy(rule_yaml), args)
+            if hits and args.formatted_output:
+                self.formatted_output['results'] = json.loads(json.dumps(hits))
             if hits and args.save:
                 with open(args.save, 'wb') as data_file:
                     # Add _id to _source for dump
                     [doc['_source'].update({'_id': doc['_id']}) for doc in hits]
-                    data_file.write(simplejson.dumps([doc['_source'] for doc in hits], indent='    '))
+                    data_file.write(json.dumps([doc['_source'] for doc in hits], indent=4))
+            if args.use_downloaded:
+                if hits:
+                    args.json = args.save
+                    with open(args.json, 'r') as data_file:
+                        self.data = json.loads(data_file.read())
+                else:
+                    self.data = []
 
         if not args.schema_only and not args.count:
             self.run_elastalert(rule_yaml, conf, args)
+
+        if args.formatted_output:
+            print(json.dumps(self.formatted_output))
 
 
 def main():

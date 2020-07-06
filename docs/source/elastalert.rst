@@ -39,8 +39,10 @@ Currently, we have support built in for these alert types:
 - HipChat
 - Slack
 - Telegram
+- GoogleChat
 - Debug
 - Stomp
+- TheHive
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
 
@@ -115,19 +117,28 @@ The environment variable ``ES_USE_SSL`` will override this field.
 
 ``verify_certs``: Optional; whether or not to verify TLS certificates; set to ``True`` or ``False``. The default is ``True``.
 
+``client_cert``: Optional; path to a PEM certificate to use as the client certificate.
+
+``client_key``: Optional; path to a private key file to use as the client key.
+
+``ca_certs``: Optional; path to a CA cert bundle to use to verify SSL connections
+
 ``es_username``: Optional; basic-auth username for connecting to ``es_host``. The environment variable ``ES_USERNAME`` will override this field.
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``. The environment variable ``ES_PASSWORD`` will override this field.
 
-``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
+``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.  The environment variable ``ES_URL_PREFIX`` will override this field.
 
 ``es_send_get_body_as``: Optional; Method for querying Elasticsearch - ``GET``, ``POST`` or ``source``. The default is ``GET``
 
-``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``10``.
+``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``20``.
+
+``rules_loader``: Optional; sets the loader class to be used by ElastAlert to retrieve rules and hashes.
+Defaults to ``FileRulesLoader`` if not set.
 
 ``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all
 files in this folder, and all subdirectories, that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
-or remove rules based on their respective config files.
+or remove rules based on their respective config files. (only required when using ``FileRulesLoader``).
 
 ``scan_subdirectories``: Optional; Sets whether or not ElastAlert should recursively descend the rules directory - ``true`` or ``false``. The default is ``true``
 
@@ -140,7 +151,11 @@ configuration.
 
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. The
 default is 10,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
-limit is reached, ElastAlert will `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_ through pages the size of ``max_query_size`` until processing all results.
+limit is reached, ElastAlert will `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_
+using the size of ``max_query_size`` through the set amount of pages, when ``max_scrolling_count`` is set or until processing all results.
+
+``max_scrolling_count``: The maximum amount of pages to scroll through. The default is ``0``, which means the scrolling has no limit.
+For example if this value is set to ``5`` and the ``max_query_size`` is set to ``10000`` then ``50000`` documents will be downloaded at most.
 
 ``scroll_keepalive``: The maximum time (formatted in `Time Units <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units>`_) the scrolling context should be kept alive. Avoid using high values as it abuses resources in Elasticsearch, but be mindful to allow sufficient time to finish processing all the results.
 
@@ -154,6 +169,8 @@ from that time, unless it is older than ``old_query_limit``, in which case it wi
 ``disable_rules_on_error``: If true, ElastAlert will disable rules which throw uncaught (not EAException) exceptions. It
 will upload a traceback message to ``elastalert_metadata`` and if ``notify_email`` is set, send an email notification. The
 rule will no longer be run until either ElastAlert restarts or the rule file has been modified. This defaults to True.
+
+``show_disabled_rules``: If true, ElastAlert show the disable rules' list when finishes the execution. This defaults to True.
 
 ``notify_email``: An email address, or list of email addresses, to which notification emails will be sent. Currently,
 only an uncaught exception will send a notification email. The from address, SMTP host, and reply-to header can be set
@@ -182,6 +199,24 @@ The default value is ``False``. Elasticsearch 2.0 - 2.3 does not support dots in
 ``string_multi_field_name``: If set, the suffix to use for the subfield for string multi-fields in Elasticsearch.
 The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticsearch 5.
 
+``add_metadata_alert``: If set, alerts will include metadata described in rules (``category``, ``description``, ``owner`` and ``priority``); set to ``True`` or ``False``. The default is ``False``.
+
+``skip_invalid``: If ``True``, skip invalid files instead of exiting.
+
+Logging
+-------
+
+By default, ElastAlert uses a simple basic logging configuration to print log messages to standard error.
+You can change the log level to ``INFO`` messages by using the ``--verbose`` or ``--debug`` command line options.
+
+If you need a more sophisticated logging configuration, you can provide a full logging configuration
+in the config file. This way you can also configure logging to a file, to Logstash and
+adjust the logging format.
+
+For details, see the end of ``config.yaml.example`` where you can find an example logging
+configuration.
+
+
 .. _runningelastalert:
 
 Running ElastAlert
@@ -195,7 +230,10 @@ Several arguments are available when running ElastAlert:
 
 ``--debug`` will run ElastAlert in debug mode. This will increase the logging verboseness, change
 all alerts to ``DebugAlerter``, which prints alerts and suppresses their normal action, and skips writing
-search and alert metadata back to Elasticsearch.
+search and alert metadata back to Elasticsearch. Not compatible with `--verbose`.
+
+``--verbose`` will increase the logging verboseness, which allows you to see information about the state
+of queries. Not compatible with `--debug`.
 
 ``--start <timestamp>`` will force ElastAlert to begin querying from the given time, instead of the default,
 querying from the present. The timestamp should be ISO8601, e.g.  ``YYYY-MM-DDTHH:MM:SS`` (UTC) or with timezone
@@ -212,12 +250,12 @@ or its subdirectories.
 ``--rule``. <unit> is one of days, weeks, hours, minutes or seconds. <number> is an integer. For example,
 ``--rule noisy_rule.yaml --silence hours=4`` will stop noisy_rule from generating any alerts for 4 hours.
 
-``--verbose`` will increase the logging verboseness, which allows you to see information about the state
-of queries.
-
 ``--es_debug`` will enable logging for all queries made to Elasticsearch.
 
-``--es_debug_trace`` will enable logging curl commands for all queries made to Elasticsearch to a file.
+``--es_debug_trace <trace.log>`` will enable logging curl commands for all queries made to Elasticsearch to the
+specified log file. ``--es_debug_trace`` is passed through to `elasticsearch.py
+<http://elasticsearch-py.readthedocs.io/en/master/index.html#logging>`_ which logs `localhost:9200`
+instead of the actual ``es_host``:``es_port``.
 
 ``--end <timestamp>`` will force ElastAlert to stop querying after the given time, instead of the default,
 querying to the present time. This really only makes sense when running standalone. The timestamp is formatted

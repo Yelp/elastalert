@@ -1,0 +1,12 @@
+{
+  "properties": {
+    "data": {
+      "type": "object",
+      "enabled": "false"
+    },
+    "@timestamp": {
+      "type": "date",
+      "format": "dateOptionalTime"
+    }
+  }
+}

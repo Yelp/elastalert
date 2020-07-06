@@ -1,17 +1,34 @@
 # -*- coding: utf-8 -*-
-import os
+import collections
 import datetime
 import logging
+import os
+import re
+import sys
 
 import dateutil.parser
-import dateutil.tz
-from auth import Auth
-from elasticsearch import RequestsHttpConnection
-from elasticsearch.client import Elasticsearch
+import pytz
 from six import string_types
+
+from . import ElasticSearchClient
+from .auth import Auth
 
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')
+
+
+def get_module(module_name):
+    """ Loads a module and returns a specific object.
+    module_name should 'module.file.object'.
+    Returns object or raises EAException on error. """
+    sys.path.append(os.getcwd())
+    try:
+        module_path, module_class = module_name.rsplit('.', 1)
+        base_module = __import__(module_path, globals(), locals(), [module_class])
+        module = getattr(base_module, module_class)
+    except (ImportError, AttributeError, ValueError) as e:
+        raise EAException("Could not import module %s: %s" % (module_name, e)).with_traceback(sys.exc_info()[2])
+    return module
 
 
 def new_get_event_ts(ts_field):
@@ -46,7 +63,6 @@ def _find_es_dict_by_key(lookup_dict, term):
     """
     if term in lookup_dict:
         return lookup_dict, term
-
     # If the term does not match immediately, perform iterative lookup:
     # 1. Split the search term into tokens
     # 2. Recurrently concatenate these together to traverse deeper into the dictionary,
@@ -60,24 +76,45 @@ def _find_es_dict_by_key(lookup_dict, term):
     # For example:
     #  {'foo.bar': {'bar': 'ray'}} to look up foo.bar will return {'bar': 'ray'}, not 'ray'
     dict_cursor = lookup_dict
-    subkeys = term.split('.')
-    subkey = ''
 
-    while len(subkeys) > 0:
-        subkey += subkeys.pop(0)
-
-        if subkey in dict_cursor:
-            if len(subkeys) == 0:
-                break
-
-            dict_cursor = dict_cursor[subkey]
-            subkey = ''
-        elif len(subkeys) == 0:
-            # If there are no keys left to match, return None values
-            dict_cursor = None
-            subkey = None
+    while term:
+        split_results = re.split(r'\[(\d)\]', term, maxsplit=1)
+        if len(split_results) == 3:
+            sub_term, index, term = split_results
+            index = int(index)
         else:
-            subkey += '.'
+            sub_term, index, term = split_results + [None, '']
+
+        subkeys = sub_term.split('.')
+
+        subkey = ''
+
+        while len(subkeys) > 0:
+            if not dict_cursor:
+                return {}, None
+
+            subkey += subkeys.pop(0)
+
+            if subkey in dict_cursor:
+                if len(subkeys) == 0:
+                    break
+                dict_cursor = dict_cursor[subkey]
+                subkey = ''
+            elif len(subkeys) == 0:
+                # If there are no keys left to match, return None values
+                dict_cursor = None
+                subkey = None
+            else:
+                subkey += '.'
+
+        if index is not None and subkey:
+            dict_cursor = dict_cursor[subkey]
+            if type(dict_cursor) == list and len(dict_cursor) > index:
+                subkey = index
+                if term:
+                    dict_cursor = dict_cursor[subkey]
+            else:
+                return {}, None
 
     return dict_cursor, subkey
 
@@ -105,12 +142,11 @@ def lookup_es_key(lookup_dict, term):
 
 def ts_to_dt(timestamp):
     if isinstance(timestamp, datetime.datetime):
-        logging.warning('Expected str timestamp, got datetime')
         return timestamp
     dt = dateutil.parser.parse(timestamp)
     # Implicitly convert local timestamps to UTC
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=dateutil.tz.tzutc())
+        dt = dt.replace(tzinfo=pytz.utc)
     return dt
 
 
@@ -130,7 +166,6 @@ def dt_to_ts(dt):
 
 def ts_to_dt_with_format(timestamp, ts_format):
     if isinstance(timestamp, datetime.datetime):
-        logging.warning('Expected str timestamp, got datetime')
         return timestamp
     dt = datetime.datetime.strptime(timestamp, ts_format)
     # Implicitly convert local timestamps to UTC
@@ -184,19 +219,26 @@ def hashable(obj):
     return obj
 
 
-def format_index(index, start, end):
+def format_index(index, start, end, add_extra=False):
     """ Takes an index, specified using strftime format, start and end time timestamps,
     and outputs a wildcard based index string to match all possible timestamps. """
     # Convert to UTC
     start -= start.utcoffset()
     end -= end.utcoffset()
-
-    indexes = []
+    original_start = start
+    indices = set()
     while start.date() <= end.date():
-        indexes.append(start.strftime(index))
+        indices.add(start.strftime(index))
         start += datetime.timedelta(days=1)
+    num = len(indices)
+    if add_extra:
+        while len(indices) == num:
+            original_start -= datetime.timedelta(days=1)
+            new_index = original_start.strftime(index)
+            assert new_index != index, "You cannot use a static index with search_extra_index"
+            indices.add(new_index)
 
-    return ','.join(indexes)
+    return ','.join(indices)
 
 
 class EAException(Exception):
@@ -233,7 +275,7 @@ def unix_to_dt(ts):
 
 
 def dt_to_unix(dt):
-    return total_seconds(dt - datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzutc()))
+    return int(total_seconds(dt - datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzutc())))
 
 
 def dt_to_unixms(dt):
@@ -250,8 +292,8 @@ def cronite_datetime_to_timestamp(self, d):
     return total_seconds((d - datetime.datetime(1970, 1, 1)))
 
 
-def add_raw_postfix(field, is_five):
-    if is_five:
+def add_raw_postfix(field, is_five_or_above):
+    if is_five_or_above:
         end = '.keyword'
     else:
         end = '.raw'
@@ -273,7 +315,7 @@ def replace_dots_in_field_names(document):
 
 
 def elasticsearch_client(conf):
-    """ returns an Elasticsearch instance configured using an es_conn_config """
+    """ returns an :class:`ElasticSearchClient` instance configured using an es_conn_config """
     es_conn_conf = build_es_conn_config(conf)
     auth = Auth()
     es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
@@ -282,16 +324,7 @@ def elasticsearch_client(conf):
                                      aws_region=es_conn_conf['aws_region'],
                                      profile_name=es_conn_conf['profile'])
 
-    return Elasticsearch(host=es_conn_conf['es_host'],
-                         port=es_conn_conf['es_port'],
-                         url_prefix=es_conn_conf['es_url_prefix'],
-                         use_ssl=es_conn_conf['use_ssl'],
-                         verify_certs=es_conn_conf['verify_certs'],
-                         ca_certs=es_conn_conf['ca_certs'],
-                         connection_class=RequestsHttpConnection,
-                         http_auth=es_conn_conf['http_auth'],
-                         timeout=es_conn_conf['es_conn_timeout'],
-                         send_get_body_as=es_conn_conf['send_get_body_as'])
+    return ElasticSearchClient(es_conn_conf)
 
 
 def build_es_conn_config(conf):
@@ -303,6 +336,8 @@ def build_es_conn_config(conf):
     parsed_conf['use_ssl'] = os.environ.get('ES_USE_SSL', False)
     parsed_conf['verify_certs'] = True
     parsed_conf['ca_certs'] = None
+    parsed_conf['client_cert'] = None
+    parsed_conf['client_key'] = None
     parsed_conf['http_auth'] = None
     parsed_conf['es_username'] = None
     parsed_conf['es_password'] = None
@@ -314,9 +349,12 @@ def build_es_conn_config(conf):
     parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
     parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
 
-    if 'es_username' in conf:
-        parsed_conf['es_username'] = os.environ.get('ES_USERNAME', conf['es_username'])
-        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD', conf['es_password'])
+    if os.environ.get('ES_USERNAME'):
+        parsed_conf['es_username'] = os.environ.get('ES_USERNAME')
+        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD')
+    elif 'es_username' in conf:
+        parsed_conf['es_username'] = conf['es_username']
+        parsed_conf['es_password'] = conf['es_password']
 
     if 'aws_region' in conf:
         parsed_conf['aws_region'] = conf['aws_region']
@@ -338,10 +376,25 @@ def build_es_conn_config(conf):
     if 'ca_certs' in conf:
         parsed_conf['ca_certs'] = conf['ca_certs']
 
+    if 'client_cert' in conf:
+        parsed_conf['client_cert'] = conf['client_cert']
+
+    if 'client_key' in conf:
+        parsed_conf['client_key'] = conf['client_key']
+
     if 'es_url_prefix' in conf:
         parsed_conf['es_url_prefix'] = conf['es_url_prefix']
 
     return parsed_conf
+
+
+def pytzfy(dt):
+    # apscheduler requires pytz timezone objects
+    # This function will replace a dateutil.tz one with a pytz one
+    if dt.tzinfo is not None:
+        new_tz = pytz.timezone(dt.tzinfo.tzname('Y is this even required??'))
+        return dt.replace(tzinfo=new_tz)
+    return dt
 
 
 def parse_duration(value):
@@ -354,3 +407,56 @@ def parse_deadline(value):
     """Convert ``unit=num`` spec into a ``datetime`` object."""
     duration = parse_duration(value)
     return ts_now() + duration
+
+
+def flatten_dict(dct, delim='.', prefix=''):
+    ret = {}
+    for key, val in list(dct.items()):
+        if type(val) == dict:
+            ret.update(flatten_dict(val, prefix=prefix + key + delim))
+        else:
+            ret[prefix + key] = val
+    return ret
+
+
+def resolve_string(string, match, missing_text='<MISSING VALUE>'):
+    """
+        Given a python string that may contain references to fields on the match dictionary,
+            the strings are replaced using the corresponding values.
+        However, if the referenced field is not found on the dictionary,
+            it is replaced by a default string.
+        Strings can be formatted using the old-style format ('%(field)s') or
+            the new-style format ('{match[field]}').
+
+        :param string: A string that may contain references to values of the 'match' dictionary.
+        :param match: A dictionary with the values to replace where referenced by keys in the string.
+        :param missing_text: The default text to replace a formatter with if the field doesnt exist.
+    """
+    flat_match = flatten_dict(match)
+    flat_match.update(match)
+    dd_match = collections.defaultdict(lambda: missing_text, flat_match)
+    dd_match['_missing_value'] = missing_text
+    while True:
+        try:
+            string = string % dd_match
+            string = string.format(**dd_match)
+            break
+        except KeyError as e:
+            if '{%s}' % str(e).strip("'") not in string:
+                break
+            string = string.replace('{%s}' % str(e).strip("'"), '{_missing_value}')
+
+    return string
+
+
+def should_scrolling_continue(rule_conf):
+    """
+    Tells about a rule config if it can scroll still or should stop the scrolling.
+
+    :param: rule_conf as dict
+    :rtype: bool
+    """
+    max_scrolling = rule_conf.get('max_scrolling_count')
+    stop_the_scroll = 0 < max_scrolling <= rule_conf.get('scrolling_cycle')
+
+    return not stop_the_scroll
