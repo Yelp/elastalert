@@ -347,6 +347,7 @@ properties:
   telegram_bot_token: {type: string}
   telegram_room_id: {type: string}
   telegram_api_url: {type: string}
+  telegram_use_markdown: {type: string}
 
   ### Gitter
   gitter_webhook_url: {type: string}

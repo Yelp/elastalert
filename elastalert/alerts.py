@@ -1612,17 +1612,37 @@ class TelegramAlerter(Alerter):
         self.telegram_proxy = self.rule.get('telegram_proxy', None)
         self.telegram_proxy_login = self.rule.get('telegram_proxy_login', None)
         self.telegram_proxy_password = self.rule.get('telegram_proxy_pass', None)
+        self.telegram_use_markdown = self.telegram_use_markdown['telegram_use_markdown']
 
     def alert(self, matches):
-        body = '⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
-        for match in matches:
-            body += str(BasicMatchString(self.rule, match))
-            # Separate text of aggregated alerts with dashes
-            if len(matches) > 1:
-                body += '\n----------------------------------------\n'
-        if len(body) > 4095:
-            body = body[0:4000] + "\n⚠ *message was cropped according to telegram limits!* ⚠"
-        body += ' ```'
+        if self.telegram_use_markdown == 'custom':
+            telegram_lim_end = '----------------------------------------'
+            telegram_lim_check = 4095
+
+            for match in matches:
+                body += str(BasicMatchString(self.rule, match))
+                # Separate text of aggregated alerts with dashes
+                if len(matches) > 1:
+                    body += '\n%s\n' % telegram_lim_end
+
+            if len(body) > telegram_lim_check:
+                telegram_lim_search = telegram_lim_check
+                while telegram_lim_search > 0:
+                    telegram_lim_40 = body[(telegram_lim_search-40):telegram_lim_search]
+                    if telegram_lim_40 == telegram_lim_end:
+                        body = body[0:(telegram_lim_search-40)] + "\n *message was cropped according to telegram limits!* \n"
+                        break
+                    telegram_lim_search -= 1
+        else:
+            body = '⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
+            for match in matches:
+                body += str(BasicMatchString(self.rule, match))
+                # Separate text of aggregated alerts with dashes
+                if len(matches) > 1:
+                    body += '\n----------------------------------------\n'
+            if len(body) > 4095:
+                body = body[0:4000] + "\n⚠ *message was cropped according to telegram limits!* ⚠"
+            body += ' ```'
 
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
