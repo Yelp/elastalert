@@ -19,6 +19,9 @@ es_host: elasticsearch.example.com
 # The Elasticsearch port
 es_port: 9200
 
+# The Elasticsearch version
+#es_version: 7.8.0
+
 # The AWS region to use. Set this when using AWS-managed elasticsearch
 #aws_region: us-east-1
 

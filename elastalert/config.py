@@ -20,6 +20,7 @@ env_settings = {'ES_USE_SSL': 'use_ssl',
                 'ES_USERNAME': 'es_username',
                 'ES_HOST': 'es_host',
                 'ES_PORT': 'es_port',
+                'ES_VERSION': 'es_version',
                 'ES_URL_PREFIX': 'es_url_prefix'}
 
 env = Env(ES_USE_SSL=bool)

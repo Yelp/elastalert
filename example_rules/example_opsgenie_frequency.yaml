@@ -8,6 +8,10 @@
 # Elasticsearch port
 #es_port: 9200
 
+# (Optional)
+# Elasticsearch version
+# es_version: 7.8.0
+
 # (Required)
 # OpsGenie credentials
 opsgenie_key: ogkey
@@ -24,7 +28,7 @@ opsgenie_key: ogkey
 # (Optional)
 # OpsGenie recipients with args
 # opsgenie_recipients:
-#   - {recipient} 
+#   - {recipient}
 # opsgenie_recipients_args:
 #     team_prefix:'user.email'
 
@@ -36,7 +40,7 @@ opsgenie_key: ogkey
 # (Optional)
 # OpsGenie teams with args
 # opsgenie_teams:
-#   - {team_prefix}-Team 
+#   - {team_prefix}-Team
 # opsgenie_teams_args:
 #     team_prefix:'team'
 

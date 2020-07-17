@@ -8,6 +8,10 @@
 # Elasticsearch port
 # es_port: 14900
 
+# (Optional)
+# Elasticsearch version
+# es_version: 7.8.0
+
 # (OptionaL) Connect with SSL to Elasticsearch
 #use_ssl: True
 

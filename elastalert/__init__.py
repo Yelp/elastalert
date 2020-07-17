@@ -29,7 +29,7 @@ class ElasticSearchClient(Elasticsearch):
                                                   client_cert=conf['client_cert'],
                                                   client_key=conf['client_key'])
         self._conf = copy.copy(conf)
-        self._es_version = None
+        self._es_version = conf['es_version']
 
     @property
     def conf(self):
