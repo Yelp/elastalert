@@ -2155,7 +2155,7 @@ class HiveAlerter(Alerter):
                         custom_fields[cf_key] = cf
                 elif isinstance(alert_config_value, str):
                     alert_value = alert_config_value.format(**context)
-                    if alert_config_field in ['severity','tlp']:
+                    if alert_config_field in ['severity', 'tlp']:
                         alert_value = int(alert_value)
                     alert_config[alert_config_field] = alert_value
                 elif isinstance(alert_config_value, (list, tuple)):
