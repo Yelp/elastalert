@@ -270,12 +270,6 @@ properties:
   hipchat_from: {type: string}
   hipchat_mentions: {type: array, items: {type: string}}
 
-  ### Stride
-  stride_access_token: {type: string}
-  stride_cloud_id: {type: string}
-  stride_conversation_id: {type: string}
-  stride_ignore_ssl_errors: {type: boolean}
-
   ### Slack
   slack_webhook_url: *arrayOfString
   slack_username_override: {type: string}
