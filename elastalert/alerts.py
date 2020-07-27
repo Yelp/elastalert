@@ -413,7 +413,7 @@ class EmailAlerter(Alerter):
         super(EmailAlerter, self).__init__(*args)
 
         self.assets_dir = self.rule.get('assets_dir', '/tmp')
-        self.images_dictionary = dict(zip( self.rule.get('email_image_keys', []),  self.rule.get('email_image_values', [])));
+        self.images_dictionary = dict(zip(self.rule.get('email_image_keys', []),  self.rule.get('email_image_values', [])))
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
         self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
@@ -458,7 +458,7 @@ class EmailAlerter(Alerter):
                 if 'email_add_domain' in self.rule:
                     to_addr = [name + self.rule['email_add_domain'] for name in to_addr]
         if self.rule.get('email_format') == 'html':
-            #email_msg = MIMEText(body, 'html', _charset='UTF-8') # old way
+            # email_msg = MIMEText(body, 'html', _charset='UTF-8') # old way
             email_msg = MIMEMultipart()
             msgText = MIMEText(body, 'html', _charset='UTF-8')
             email_msg.attach(msgText)   # Added, and edited the previous line
