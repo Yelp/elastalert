@@ -37,7 +37,7 @@ definitions:
   filter: &filter {}
 
   mattermostField: &mattermostField
-    type: object
+    type: array
     additionalProperties: false
     properties:
       title: {type: string}
