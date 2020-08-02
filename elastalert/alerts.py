@@ -1263,16 +1263,19 @@ class MattermostAlerter(Alerter):
     def populate_fields(self, matches):
         alert_fields = []
         missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
-        for field in self.mattermost_msg_fields:
-            field = copy.copy(field)
-            if 'args' in field:
-                args_values = [lookup_es_key(matches[0], arg) or missing for arg in field['args']]
-                if 'value' in field:
-                    field['value'] = field['value'].format(*args_values)
+        for field_template in self.mattermost_msg_fields:
+            field_instance = {
+                'short': field_template.get('short', False) is True,
+                'title': field_template.get('title', ''),
+                'value': field_template.get('value', '')
+            }
+            if 'args' in field_template:
+                args_values = [lookup_es_key(matches[0], arg) or missing for arg in field_template['args']]
+                if 'value' in field_template:
+                    field_instance['value'] = field_template['value'].format(*args_values)
                 else:
-                    field['value'] = "\n".join(str(arg) for arg in args_values)
-                del(field['args'])
-            alert_fields.append(field)
+                    field_instance['value'] = "\n".join(str(arg) for arg in args_values)
+            alert_fields.append(field_instance)
         return alert_fields
 
     def alert(self, matches):
@@ -1283,25 +1286,27 @@ class MattermostAlerter(Alerter):
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
         proxies = {'https': self.mattermost_proxy} if self.mattermost_proxy else None
+
+        attachment = {
+            'fallback': "{0}: {1}".format(title, self.mattermost_msg_pretext),
+            'color': self.mattermost_msg_color,
+            'pretext': self.mattermost_msg_pretext,
+            'fields': [],
+            'text': body,
+            'title': title
+        }
+
         payload = {
-            'attachments': [
-                {
-                    'fallback': "{0}: {1}".format(title, self.mattermost_msg_pretext),
-                    'color': self.mattermost_msg_color,
-                    'title': title,
-                    'pretext': self.mattermost_msg_pretext,
-                    'fields': []
-                }
-            ]
+            'attachments': [attachment],
+            'text': '',
         }
 
         if self.rule.get('alert_text_type') == 'alert_text_only':
-            payload['attachments'][0]['text'] = body
-        else:
             payload['text'] = body
+            attachment['text'] = ''
 
         if self.mattermost_msg_fields != '':
-            payload['attachments'][0]['fields'] = self.populate_fields(matches)
+            attachment['fields'] = self.populate_fields(matches)
 
         if self.mattermost_icon_url_override != '':
             payload['icon_url'] = self.mattermost_icon_url_override
