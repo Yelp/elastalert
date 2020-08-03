@@ -1798,6 +1798,24 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 Mattermost
 ~~~~~~~~~~
+.. code-block:: yaml
+
+    alert:
+    - "mattermost"
+    mattermost_webhook_url: "https://...."
+
+    mattermost_username_override: ....
+    mattermost_icon_url_override: ....
+    mattermost_msg_fields:
+        - title: Stack
+        value: "{0} with {1}" # interpolate fields mentioned in args
+        short: false
+        args: ["type", "msg.status_code"] # fields from doc
+        - title: Name
+        value: static field
+        short: false
+
+
 
 Mattermost alerter will send a notification to a predefined Mattermost channel. The body of the notification is formatted the same as with other alerters.
 
