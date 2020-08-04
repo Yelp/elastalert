@@ -48,6 +48,7 @@ setup(
         'texttable>=0.8.8',
         'twilio>=6.0.0,<6.1',
         'python-magic>=0.4.15',
-        'cffi>=1.11.5'
+        'cffi>=1.11.5',
+        'prelude>=5.0'
     ]
 )

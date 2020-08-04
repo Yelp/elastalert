@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import os
+import pkg_resources
 import re
 import subprocess
 import sys
@@ -18,6 +19,7 @@ from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
 from smtplib import SMTPException
 from socket import error
+from prelude import ClientEasy, IDMEF
 
 import boto3
 import requests
@@ -2182,3 +2184,144 @@ class HiveAlerter(Alerter):
             'type': 'hivealerter',
             'hive_host': self.rule.get('hive_connection', {}).get('hive_host', '')
         }
+
+
+class IDMEFAlerter(Alerter):
+    """Define the IDMEF alerter."""
+
+    REQUIRED = ["classification", "severity", "description"]
+
+    ALERT_CONFIG_OPTS = {
+        "classification": "alert.classification.text",
+        "description": "alert.assessment.impact.description",
+        "severity": "alert.assessment.impact.severity",
+        "impact_type": "alert.assessment.impact.type",
+        "target_address": "alert.target.node.address.address",
+        "target_port": "alert.target.service.port",
+        "target_process": "alert.target.process.name",
+        "target_pid": "alert.target.process.pid",
+        "src_address": "alert.source.node.address.address",
+        "src_port": "alert.source.service.port",
+        "user_category": "alert.target(0).user.category",
+        "user_type": "alert.target(0).user.user_id(0).type",
+        "user": "alert.target(0).user.user_id(0).name"
+    }
+
+    client = ClientEasy(
+        "prelude-ai",
+        ClientEasy.PERMISSION_IDMEF_WRITE,
+        "Prelude AI",
+        "Behavior Analyzer",
+        "CS GROUP",
+        pkg_resources.get_distribution('prelude-ai').version
+    )
+
+    try:
+        client.start()
+    except Exception as e:
+        logging.error("Error while trying to start Elastalert IDMEF Alerter: %s" % e)
+        sys.exit(1)
+
+    def __init__(self, rule):
+        # Check if all required options for alert creation are present
+        self.alerting = self._check_required(rule)
+        self.rule = rule
+
+    def _check_required(self, rule):
+        missing_fields = []
+        alert_fields = {}
+
+        try:
+            alert_fields = rule["alert_fields"]
+        except KeyError:
+            elastalert_logger.warning("Missing 'alert_fields' configuration for IDMEF alerter in the '%s' rule. "
+                                      "No alerts will be sent." % rule["name"])
+            return False
+
+        for field in self.REQUIRED:
+            if not alert_fields.get(field):
+                missing_fields.append(field)
+
+        if missing_fields:
+            elastalert_logger.warning("Required fields [%s] for IDMEF alerter are missing in the '%s' rule. No alerts"
+                                      "will be sent.", ', '.join(missing_fields), rule["name"])
+
+            return False
+
+        return True
+
+    def _add_additional_data(self, idmef, key, value_type, value):
+        idmef.set("alert.additional_data(>>).meaning", key)
+        idmef.set("alert.additional_data(-1).type", value_type)
+        idmef.set("alert.additional_data(-1).data", value)
+
+    def _add_idmef_path_value(self, idmef, match, opt_name, default=None):
+        if opt_name not in self.ALERT_CONFIG_OPTS:
+            return
+
+        alert_fields = self.rule["alert_fields"]
+        try:
+            m = {}
+            for k, v in match.items():
+                m[k.replace('.keyword', '')] = v
+
+            idmef.set(self.ALERT_CONFIG_OPTS[opt_name], alert_fields[opt_name].format(**m))
+        except (KeyError, RuntimeError):
+            if not default:
+                return
+
+            idmef.set(self.ALERT_CONFIG_OPTS[opt_name], default)
+
+    def _fill_additional_data(self, idmef, match):
+        if match.get("message"):
+            self._add_additional_data(idmef, "Original Log", "string", match["message"])
+
+        self._add_additional_data(idmef, "Rule ID", "string", self.rule["name"])
+
+        if self.rule.get("query_key"):
+            grouping_field = self.rule["query_key"]
+            if grouping_field in match:
+                self._add_additional_data(idmef, "Grouping key", "string", grouping_field)
+                self._add_additional_data(idmef, "Grouping value", "string", match[grouping_field])
+
+    def _fill_source(self, idmef, match):
+        self._add_idmef_path_value(idmef, match, "src_address")
+        self._add_idmef_path_value(idmef, match, "src_port")
+
+    def _fill_target(self, idmef, match):
+        for field in ["target_address", "target_process", "target_pid", "user", "user_category", "user_type"]:
+            self._add_idmef_path_value(idmef, match, field)
+
+    def _fill_impact_info(self, idmef, match):
+        self._add_idmef_path_value(idmef, match, "severity", default="low")
+        self._add_idmef_path_value(idmef, match, "impact_type")
+        self._add_idmef_path_value(idmef, match, "description", default=self.rule["alert_fields"]["description"])
+
+    def _fill_detect_time(self, idmef, match):
+        timestamp_field = self.rule["timestamp_field"]
+
+        detect_time = match[timestamp_field]
+        if detect_time:
+            idmef.set("alert.detect_time", detect_time)
+
+    def _fill_classification(self, idmef, match):
+        self._add_idmef_path_value(idmef, match, "classification", default=self.rule["alert_fields"]["classification"])
+
+    def alert(self, matches):
+        if not self.alerting:
+            return
+
+        for match in matches:
+            idmef = IDMEF()
+
+            self._fill_classification(idmef, match)
+            self._fill_detect_time(idmef, match)
+            self._fill_impact_info(idmef, match)
+            self._fill_source(idmef, match)
+            self._fill_target(idmef, match)
+            self._fill_additional_data(idmef, match)
+
+            self.client.sendIDMEF(idmef)
+
+    def get_info(self):
+        return {'type': 'IDMEF Alerter'}
