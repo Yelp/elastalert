@@ -1666,7 +1666,7 @@ class PagerDutyAlerter(Alerter):
                         matches,
                     ),
                     'summary': self.create_title(matches),
-                    'custom_details': {'information': body,},
+                    'custom_details': {'information': body, },
                 },
             }
             match_timestamp = lookup_es_key(
@@ -1681,7 +1681,7 @@ class PagerDutyAlerter(Alerter):
                 'event_type': self.pagerduty_event_type,
                 'incident_key': self.get_incident_key(matches),
                 'client': self.pagerduty_client_name,
-                'details': {"information": body,},
+                'details': {"information": body, },
             }
 
         # set https proxy, if it was provided
@@ -2397,7 +2397,7 @@ class HTTPPostAlerter(Alerter):
 
 
 class HTTPPostJWTAlerter(Alerter):
-    """ Requested elasticsearch indices are sent by HTTP POST. Encoded with JSON and ecrypted with JWT. """
+    """ Requested elasticsearch indices are sent by HTTP POST. Encoded with JSON. """
 
     def __init__(self, rule):
         super(HTTPPostJWTAlerter, self).__init__(rule)
