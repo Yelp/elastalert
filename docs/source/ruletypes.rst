@@ -2164,6 +2164,43 @@ Example usage::
     http_post_headers:
       authorization: Basic 123dr3234
 
+HTTP JWT POST
+~~~~~~~~~~~~~
+
+This alert type will send results to a JSON endpoint encrypted with JWT using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON encrypted with JWT will contain all the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
+
+Required:
+
+``http_post_url``: The URL to POST.
+``http_post_jwt_key``: The secret key
+``http_post_jwt_algorithm``: The encrypt algorithm
+
+Optional:
+
+``http_post_payload``: List of keys:values to use as the content of the POST. Example - ip:clientip will map the value from the clientip index of Elasticsearch to JSON key named ip. If not defined, all the Elasticsearch keys will be sent.
+
+``http_post_static_payload``: Key:value pairs of static parameters to be sent, along with the Elasticsearch results. Put your authentication or other information here.
+
+``http_post_headers``: Key:value pairs of headers to be sent as part of the request.
+
+``http_post_proxy``: URL of proxy, if required.
+
+``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
+
+``http_post_timeout``: The timeout value, in seconds, for making the post. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
+
+Example usage::
+
+    alert: jwt_post
+    http_post_jwt_key: "secret"
+    http_post_jwt_algorithm: "HS256"
+    http_post_url: "http://example.com/api"
+    http_post_payload:
+      ip: clientip
+    http_post_static_payload:
+      apikey: abc123
+    http_post_headers:
+      authorization: Basic 123dr3234
 
 Alerter
 ~~~~~~~
