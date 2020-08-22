@@ -77,6 +77,7 @@ class RulesLoader(object):
         'servicenow': alerts.ServiceNowAlerter,
         'alerta': alerts.AlertaAlerter,
         'post': alerts.HTTPPostAlerter,
+        'pagertree': alerts.PagerTreeAlerter,
         'hivealerter': alerts.HiveAlerter
     }
 
