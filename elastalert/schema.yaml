@@ -299,6 +299,8 @@ properties:
   mattermost_channel_override: {type: string}
   mattermost_msg_color: {enum: [good, warning, danger]}
   mattermost_msg_pretext: {type: string}
+  mattermost_msg_title: {type: string}
+  mattermost_msg_no_alert_text: {type: boolean}
   mattermost_msg_fields: *mattermostField
 
   ## Opsgenie

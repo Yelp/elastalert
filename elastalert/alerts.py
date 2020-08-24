@@ -1246,6 +1246,8 @@ class MattermostAlerter(Alerter):
 
         # Message properties
         self.mattermost_msg_pretext = self.rule.get('mattermost_msg_pretext', '')
+        self.mattermost_msg_title = self.rule.get('mattermost_msg_title', '')
+        self.mattermost_msg_no_alert_text = self.rule.get('mattermost_msg_no_alert_text', False)
         self.mattermost_msg_color = self.rule.get('mattermost_msg_color', 'danger')
         self.mattermost_msg_fields = self.rule.get('mattermost_msg_fields', '')
 
@@ -1304,6 +1306,13 @@ class MattermostAlerter(Alerter):
         if self.rule.get('alert_text_type') == 'alert_text_only':
             payload['text'] = body
             attachment['text'] = ''
+        
+        if self.mattermost_msg_no_alert_text:
+            payload['text'] = ''
+            attachment['text'] = ''
+        
+        if self.mattermost_msg_title:
+            attachment['title'] = self.mattermost_msg_title
 
         if self.mattermost_msg_fields != '':
             attachment['fields'] = self.populate_fields(matches)
