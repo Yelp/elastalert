@@ -1306,11 +1306,11 @@ class MattermostAlerter(Alerter):
         if self.rule.get('alert_text_type') == 'alert_text_only':
             payload['text'] = body
             attachment['text'] = ''
-        
+
         if self.mattermost_msg_no_alert_text:
             payload['text'] = ''
             attachment['text'] = ''
-        
+
         if self.mattermost_msg_title:
             attachment['title'] = self.mattermost_msg_title
 
