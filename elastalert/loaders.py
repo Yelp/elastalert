@@ -315,6 +315,10 @@ class RulesLoader(object):
             rule.setdefault('client_cert', conf.get('client_cert'))
             rule.setdefault('client_key', conf.get('client_key'))
 
+        # Add supoprt for custom http headers
+        if 'http_headers' in conf:
+            rule.setdefault('http_headers', conf.get('http_headers'))
+
         # Set HipChat options from global config
         rule.setdefault('hipchat_msg_color', 'red')
         rule.setdefault('hipchat_domain', 'api.hipchat.com')

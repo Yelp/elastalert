@@ -338,6 +338,7 @@ def build_es_conn_config(conf):
     parsed_conf['ca_certs'] = None
     parsed_conf['client_cert'] = None
     parsed_conf['client_key'] = None
+    parsed_conf['http_headers'] = None
     parsed_conf['http_auth'] = None
     parsed_conf['es_username'] = None
     parsed_conf['es_password'] = None
@@ -378,6 +379,9 @@ def build_es_conn_config(conf):
 
     if 'client_cert' in conf:
         parsed_conf['client_cert'] = conf['client_cert']
+
+    if 'http_headers' in conf:
+        parsed_conf['http_headers'] = conf['http_headers']
 
     if 'client_key' in conf:
         parsed_conf['client_key'] = conf['client_key']
