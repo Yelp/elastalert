@@ -549,7 +549,7 @@ kibana_discover_version
 
 ``kibana_discover_version``: Specifies the version of the Kibana Discover application.
 
-The currently supported versions of Kibana Discover are: 
+The currently supported versions of Kibana Discover are:
 
 - `5.6`
 - `6.0`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `6.7`, `6.8`
@@ -1931,7 +1931,7 @@ Developers in India can use Exotel alerter, it will trigger an incident to a mob
 
 The alerter requires the following option:
 
-``exotel_accout_sid``: This is sid of your Exotel account.
+``exotel_account_sid``: This is sid of your Exotel account.
 
 ``exotel_auth_token``: Auth token assosiated with your Exotel account.
 
@@ -2205,7 +2205,7 @@ Optional:
 
 Example usage::
 
-	alert: hivealerter
+    alert: hivealerter
 
      hive_connection:
        hive_host: http://localhost

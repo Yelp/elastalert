@@ -204,6 +204,7 @@ def ea_sixsix():
               'index': 'idx',
               'filter': [],
               'include': ['@timestamp'],
+              'run_every': datetime.timedelta(seconds=1),
               'aggregation': datetime.timedelta(0),
               'realert': datetime.timedelta(0),
               'processed_hits': {},
