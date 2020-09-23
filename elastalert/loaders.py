@@ -117,9 +117,6 @@ class RulesLoader(object):
                 if not rule:
                     logging.error('Invalid rule file skipped: %s' % rule_file)
                     continue
-                # By setting "is_enabled: False" in rule file, a rule is easily disabled
-                if 'is_enabled' in rule and not rule['is_enabled']:
-                    continue
                 if rule['name'] in names:
                     raise EAException('Duplicate rule named %s' % (rule['name']))
             except EAException as e:
