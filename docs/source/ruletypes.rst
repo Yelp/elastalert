@@ -1915,6 +1915,9 @@ See https://v2.developer.pagerduty.com/docs/send-an-event-events-api-v2
 
 ``pagerduty_v2_payload_source_args``: If set, and ``pagerduty_v2_payload_source`` is a formattable string, Elastalert will format the source based on the provided array of fields from the rule or match.
 
+``pagerduty_v2_custom_details``: List of keys:values to use as the content of the custom_details payload. Example - ip:clientip will map the value from the clientip index of Elasticsearch to JSON key named ip. If not defined, all the Elasticsearch keys will be sent as a custom detail field named "information".
+
+
 PagerTree
 ~~~~~~~~~
 

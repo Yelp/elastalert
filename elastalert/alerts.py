@@ -1357,6 +1357,7 @@ class PagerDutyAlerter(Alerter):
         self.pagerduty_v2_payload_severity = self.rule.get('pagerduty_v2_payload_severity', 'critical')
         self.pagerduty_v2_payload_source = self.rule.get('pagerduty_v2_payload_source', 'ElastAlert')
         self.pagerduty_v2_payload_source_args = self.rule.get('pagerduty_v2_payload_source_args', None)
+        self.pagerduty_v2_custom_details = self.rule.get('pagerduty_v2_custom_details', {})
 
         if self.pagerduty_api_version == 'v2':
             self.url = 'https://events.pagerduty.com/v2/enqueue'
@@ -1369,6 +1370,16 @@ class PagerDutyAlerter(Alerter):
         # post to pagerduty
         headers = {'content-type': 'application/json'}
         if self.pagerduty_api_version == 'v2':
+            # set custom_details for v2
+            custom_details_payload = {
+                'information': body
+            }
+            if self.pagerduty_v2_custom_details:
+                for match in matches:
+                    for custom_details_key, es_key in list(self.pagerduty_v2_custom_details.items()):
+                        elastalert_logger.info("PD - PagerDuty custom details: %s => %s" % (custom_details_key, es_key))
+                        custom_details_payload[custom_details_key] = lookup_es_key(match, es_key)
+
             payload = {
                 'routing_key': self.pagerduty_service_key,
                 'event_action': self.pagerduty_event_type,
@@ -1389,9 +1400,7 @@ class PagerDutyAlerter(Alerter):
                                                          self.pagerduty_v2_payload_source_args,
                                                          matches),
                     'summary': self.create_title(matches),
-                    'custom_details': {
-                        'information': body,
-                    },
+                    'custom_details': custom_details_payload,
                 },
             }
             match_timestamp = lookup_es_key(matches[0], self.rule.get('timestamp_field', '@timestamp'))

@@ -61,6 +61,7 @@ def _find_es_dict_by_key(lookup_dict, term):
     element which is the last subkey used to access the target specified by the term. None is
     returned for both if the key can not be found.
     """
+
     if term in lookup_dict:
         return lookup_dict, term
     # If the term does not match immediately, perform iterative lookup:
@@ -76,6 +77,10 @@ def _find_es_dict_by_key(lookup_dict, term):
     # For example:
     #  {'foo.bar': {'bar': 'ray'}} to look up foo.bar will return {'bar': 'ray'}, not 'ray'
     dict_cursor = lookup_dict
+
+    if not term:
+        elastalert_logger.error("ElasticSearch term not found!")
+        return dict_cursor, '<NOT FOUND>'
 
     while term:
         split_results = re.split(r'\[(\d)\]', term, maxsplit=1)
