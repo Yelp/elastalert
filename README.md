@@ -230,7 +230,24 @@ The data for when an alert will fire again is stored in Elasticsearch in the ``e
 
 ### How can I change what's in the alert?
 
-You can use the field ``alert_text`` to add custom text to an alert. By setting ``alert_text_type: alert_text_only``, it will be the entirety of the alert. You can also add different fields from the alert by using Python style string formatting and ``alert_text_args``. For example
+You can use the field ``alert_text`` to add custom text to an alert. By setting ``alert_text_type: alert_text_only`` Or ``alert_text_type: alert_text_jinja``, it will be the entirety of the alert. You can also add different fields from the alert:
+
+With ``alert_text_type: alert_text_jinja`` by using [Jinja2](https://pypi.org/project/Jinja2/) Template.
+
+```
+alert_text_type: alert_text_jinja
+
+alert_text: |
+  Alert triggered! *({{num_hits}} Matches!)*
+  Something happened with {{username}} ({{email}})
+  {{description|truncate}}
+
+```
+
+> Top fields are accessible via `{{field_name}}` or `{{_data['field_name']}}`, `_data` is useful when accessing *fields with dots in their keys*, as Jinja treat dot as a nested field.
+> If `_data` conflicts with your top level data, use  ``jinja_root_name`` to change its name.
+
+With ``alert_text_type: alert_text_only`` by using Python style string formatting and ``alert_text_args``. For example
 
 ```
 alert_text: "Something happened with {0} at {1}"
