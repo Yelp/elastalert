@@ -16,6 +16,8 @@ from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
 from socket import error
+import statsd
+
 
 import dateutil.tz
 import pytz
@@ -163,6 +165,14 @@ class ElastAlerter(object):
         self.thread_data.num_dupes = 0
         self.scheduler = BackgroundScheduler()
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
+        self.statsd_prefix = os.environ.get('statsd_metrics_prefix', '')
+        self.statsd_host = os.environ.get('statsd_host', '')
+        if self.statsd_host and len(self.statsd_host) > 0:
+            self.statsd = statsd.StatsClient(host=self.statsd_host,
+                                             port=8125,
+                                             prefix=self.statsd_prefix)
+        else:
+            self.statsd = None
         self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
         self.show_disabled_rules = self.conf.get('show_disabled_rules', True)
 
@@ -1279,6 +1289,14 @@ class ElastAlerter(object):
                                    " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
                                                         self.thread_data.num_hits, self.thread_data.num_dupes, num_matches,
                                                         self.thread_data.alerts_sent))
+            rule_duration = seconds(endtime - rule.get('original_starttime'))
+            elastalert_logger.info("%s range %s" % (rule['name'], rule_duration))
+            if self.statsd:
+                self.statsd.gauge('query.hits', self.thread_data.num_hits, tags={"rule_name": rule['name']})
+                self.statsd.gauge('already_seen.hits', self.thread_data.num_dupes,tags={"rule_name": rule['name']})
+                self.statsd.gauge('query.matches', num_matches, tags={"rule_name": rule['name']})
+                self.statsd.gauge('query.alerts_sent', self.thread_data.alerts_sent, tags={"rule_name": rule['name']})
+
             self.thread_data.alerts_sent = 0
 
             if next_run < datetime.datetime.utcnow():

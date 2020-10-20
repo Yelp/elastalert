@@ -193,6 +193,7 @@ class RulesLoader(object):
         }
 
         self.import_rules.pop(filename, None)  # clear `filename` dependency
+        files_to_import = []
         while True:
             loaded = self.get_yaml(filename)
 
@@ -203,14 +204,16 @@ class RulesLoader(object):
             loaded.update(rule)
             rule = loaded
             if 'import' in rule:
-                # Find the path of the next file.
-                import_filename = self.get_import_rule(rule)
-                # set dependencies
-                rules = self.import_rules.get(filename, [])
-                rules.append(import_filename)
-                self.import_rules[filename] = rules
-                filename = import_filename
+                # add all of the files to load into the load queue
+                files_to_import += self.get_import_rule(rule)
                 del (rule['import'])  # or we could go on forever!
+            if len(files_to_import) > 0:
+                # set the next file to load
+                next_file_to_import = files_to_import.pop()
+                rules = self.import_rules.get(filename, [])
+                rules.append(next_file_to_import)
+                self.import_rules[filename] = rules
+                filename = next_file_to_import
             else:
                 break
 
@@ -534,10 +537,16 @@ class FileRulesLoader(RulesLoader):
         :return: Path the import rule
         :rtype: str
         """
-        if os.path.isabs(rule['import']):
-            return rule['import']
-        else:
-            return os.path.join(os.path.dirname(rule['rule_file']), rule['import'])
+        rule_imports = rule['import']
+        if type(rule_imports) is str:
+            rule_imports = [rule_imports]
+        expanded_imports = []
+        for rule_import in rule_imports:
+            if os.path.isabs(rule_import):
+                expanded_imports.append(rule_import)
+            else:
+                expanded_imports.append(os.path.join(os.path.dirname(rule['rule_file']), rule_import))
+        return expanded_imports
 
     def get_rule_file_hash(self, rule_file):
         rule_file_hash = ''

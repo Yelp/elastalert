@@ -40,6 +40,10 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_url_prefix`` (string, no default)                       |           |
 +--------------------------------------------------------------+           |
+| ``statsd_metrics_prefix`` (string, no default)               |           |
++--------------------------------------------------------------+           |
+| ``statsd_host`` (string, no default)                         |           |
++--------------------------------------------------------------+           |
 | ``es_send_get_body_as`` (string, default "GET")              |           |
 +--------------------------------------------------------------+           |
 | ``aggregation`` (time, no default)                           |           |
@@ -288,6 +292,17 @@ es_url_prefix
 ^^^^^^^^^^^^^
 
 ``es_url_prefix``: URL prefix for the Elasticsearch endpoint. (Optional, string, no default)
+
+statsd_metrics_prefix
+^^^^^^^^^^^^^
+
+``statsd_metrics_prefix``: prefix for statsd metrics. (Optional, string, no default)
+
+
+statsd_host
+^^^^^^^^^^^^^
+
+``statsd_host``: statsd host. (Optional, string, no default)
 
 es_send_get_body_as
 ^^^^^^^^^^^^^^^^^^^
