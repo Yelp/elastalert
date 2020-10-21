@@ -1290,10 +1290,13 @@ class ElastAlerter(object):
             rule_duration = seconds(endtime - rule.get('original_starttime'))
             elastalert_logger.info("%s range %s" % (rule['name'], rule_duration))
             if self.statsd:
-                self.statsd.gauge('query.hits', self.thread_data.num_hits, tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
-                self.statsd.gauge('already_seen.hits', self.thread_data.num_dupes,tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
-                self.statsd.gauge('query.matches', num_matches, tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
-                self.statsd.gauge('query.alerts_sent', self.thread_data.alerts_sent, tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
+                try:
+                    self.statsd.gauge('query.hits', self.thread_data.num_hits, tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
+                    self.statsd.gauge('already_seen.hits', self.thread_data.num_dupes,tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
+                    self.statsd.gauge('query.matches', num_matches, tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
+                    self.statsd.gauge('query.alerts_sent', self.thread_data.alerts_sent, tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
+                except BaseException as e:
+                    elastalert_logger.error("unable to send metrics:\n%s" % str(e))
 
             self.thread_data.alerts_sent = 0
 
