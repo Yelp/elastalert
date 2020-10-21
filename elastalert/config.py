@@ -21,7 +21,7 @@ env_settings = {'ES_USE_SSL': 'use_ssl',
                 'ES_HOST': 'es_host',
                 'ES_PORT': 'es_port',
                 'ES_URL_PREFIX': 'es_url_prefix',
-                'STATSD_METRICS_PREFIX': 'statsd_metrics_prefix',
+                'STATSD_INSTANCE_TAG': 'statsd_instance_tag',
                 'STATSD_HOST': 'statsd_host'}
 
 env = Env(ES_USE_SSL=bool)

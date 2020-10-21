@@ -31,7 +31,7 @@ es_port: 9200
 #es_url_prefix: elasticsearch
 
 # Optional prefix for statsd metrics
-#statsd_metrics_prefix: elastalert
+#statsd_instance_tag: elastalert
 
 # Optional statsd host
 #statsd_host: dogstatsd

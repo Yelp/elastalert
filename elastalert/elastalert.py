@@ -165,12 +165,10 @@ class ElastAlerter(object):
         self.thread_data.num_dupes = 0
         self.scheduler = BackgroundScheduler()
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
-        self.statsd_prefix = os.environ.get('statsd_metrics_prefix', '')
-        self.statsd_host = os.environ.get('statsd_host', '')
+        self.statsd_instance_tag = self.conf.get('statsd_instance_tag', '')
+        self.statsd_host = self.conf.get('statsd_host', '')
         if self.statsd_host and len(self.statsd_host) > 0:
-            self.statsd = statsd.StatsClient(host=self.statsd_host,
-                                             port=8125,
-                                             prefix=self.statsd_prefix)
+            self.statsd = statsd.StatsClient(host=self.statsd_host, port=8125)
         else:
             self.statsd = None
         self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
@@ -1292,10 +1290,10 @@ class ElastAlerter(object):
             rule_duration = seconds(endtime - rule.get('original_starttime'))
             elastalert_logger.info("%s range %s" % (rule['name'], rule_duration))
             if self.statsd:
-                self.statsd.gauge('query.hits', self.thread_data.num_hits, tags={"rule_name": rule['name']})
-                self.statsd.gauge('already_seen.hits', self.thread_data.num_dupes,tags={"rule_name": rule['name']})
-                self.statsd.gauge('query.matches', num_matches, tags={"rule_name": rule['name']})
-                self.statsd.gauge('query.alerts_sent', self.thread_data.alerts_sent, tags={"rule_name": rule['name']})
+                self.statsd.gauge('query.hits', self.thread_data.num_hits, tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
+                self.statsd.gauge('already_seen.hits', self.thread_data.num_dupes,tags={"elastalert_instance": self.statsd_instance_tag"rule_name": rule['name']})
+                self.statsd.gauge('query.matches', num_matches, tags={"elastalert_instance": self.statsd_instance_tag"rule_name": rule['name']})
+                self.statsd.gauge('query.alerts_sent', self.thread_data.alerts_sent, tags={"elastalert_instance": self.statsd_instance_tag"rule_name": rule['name']})
 
             self.thread_data.alerts_sent = 0
 
