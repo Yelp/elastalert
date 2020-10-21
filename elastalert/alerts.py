@@ -29,10 +29,6 @@ from requests.auth import HTTPProxyAuth
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from texttable import Texttable
-from thehive4py.api import TheHiveApi
-from thehive4py.models import Alert
-from thehive4py.models import AlertArtifact
-from thehive4py.models import CustomFieldHelper
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
 
@@ -798,9 +794,9 @@ class JiraAlerter(Alerter):
                     except JIRAError as e:
                         logging.exception("Error while commenting on ticket %s: %s" % (ticket, e))
                     if self.labels:
-                        for l in self.labels:
+                        for label in self.labels:
                             try:
-                                ticket.fields.labels.append(l)
+                                ticket.fields.labels.append(label)
                             except JIRAError as e:
                                 logging.exception("Error while appending labels to ticket %s: %s" % (ticket, e))
                 if self.transition:
@@ -918,10 +914,10 @@ class CommandAlerter(Alerter):
 
             if self.rule.get('pipe_match_json'):
                 match_json = json.dumps(matches, cls=DateTimeEncoder) + '\n'
-                stdout, stderr = subp.communicate(input=match_json)
+                stdout, stderr = subp.communicate(input=match_json.encode())
             elif self.rule.get('pipe_alert_text'):
                 alert_text = self.create_alert_body(matches)
-                stdout, stderr = subp.communicate(input=alert_text)
+                stdout, stderr = subp.communicate(input=alert_text.encode())
             if self.rule.get("fail_on_non_zero_exit", False) and subp.wait():
                 raise EAException("Non-zero exit code while running command %s" % (' '.join(command)))
         except OSError as e:
@@ -1131,6 +1127,9 @@ class SlackAlerter(Alerter):
         self.slack_ca_certs = self.rule.get('slack_ca_certs')
         self.footer = self.rule.get('slack_footer', '')
         self.footer_icon = self.rule.get('slack_footer_icon', '')
+        self.slack_attach_kibana_discover_url = self.rule.get('slack_attach_kibana_discover_url', False)
+        self.slack_kibana_discover_color = self.rule.get('slack_kibana_discover_color', '#ec4b98')
+        self.slack_kibana_discover_title = self.rule.get('slack_kibana_discover_title', 'Discover in Kibana')
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1194,6 +1193,15 @@ class SlackAlerter(Alerter):
 
         if self.slack_title_link != '':
             payload['attachments'][0]['title_link'] = self.slack_title_link
+
+        if self.slack_attach_kibana_discover_url:
+            kibana_discover_url = lookup_es_key(matches[0], 'kibana_discover_url')
+            if kibana_discover_url:
+                payload['attachments'].append({
+                    'color': self.slack_kibana_discover_color,
+                    'title': self.slack_kibana_discover_title,
+                    'title_link': kibana_discover_url
+                })
 
         for url in self.slack_webhook_url:
             for channel_override in self.slack_channel_override:
@@ -2114,12 +2122,6 @@ class HiveAlerter(Alerter):
 
         connection_details = self.rule['hive_connection']
 
-        api = TheHiveApi(
-            '{hive_host}:{hive_port}'.format(**connection_details),
-            connection_details.get('hive_apikey', ''),
-            proxies=connection_details.get('hive_proxies', {'http': '', 'https': ''}),
-            cert=connection_details.get('hive_verify', False))
-
         for match in matches:
             context = {'rule': self.rule, 'match': match}
 
@@ -2132,28 +2134,29 @@ class HiveAlerter(Alerter):
                         data_keys = match_data_keys + rule_data_keys
                         context_keys = list(context['match'].keys()) + list(context['rule'].keys())
                         if all([True if k in context_keys else False for k in data_keys]):
-                            artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
+                            artifact = {'tlp': 2, 'tags': [], 'message': None, 'dataType': observable_type,
+                                        'data': match_data_key.format(**context)}
+                            artifacts.append(artifact)
                     except KeyError:
                         raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
 
             alert_config = {
                 'artifacts': artifacts,
                 'sourceRef': str(uuid.uuid4())[0:6],
-                'title': '{rule[index]}_{rule[name]}'.format(**context)
+                'customFields': {},
+                'caseTemplate': None,
+                'title': '{rule[index]}_{rule[name]}'.format(**context),
+                'date': int(time.time()) * 1000
             }
             alert_config.update(self.rule.get('hive_alert_config', {}))
-
+            custom_fields = {}
             for alert_config_field, alert_config_value in alert_config.items():
                 if alert_config_field == 'customFields':
-                    custom_fields = CustomFieldHelper()
+                    n = 0
                     for cf_key, cf_value in alert_config_value.items():
-                        try:
-                            func = getattr(custom_fields, 'add_{}'.format(cf_value['type']))
-                        except AttributeError:
-                            raise Exception('unsupported custom field type {}'.format(cf_value['type']))
-                        value = cf_value['value'].format(**context)
-                        func(cf_key, value)
-                    alert_config[alert_config_field] = custom_fields.build()
+                        cf = {'order': n, cf_value['type']: cf_value['value'].format(**context)}
+                        n += 1
+                        custom_fields[cf_key] = cf
                 elif isinstance(alert_config_value, str):
                     alert_config[alert_config_field] = alert_config_value.format(**context)
                 elif isinstance(alert_config_value, (list, tuple)):
@@ -2164,9 +2167,15 @@ class HiveAlerter(Alerter):
                         except (AttributeError, KeyError, IndexError):
                             formatted_list.append(element)
                     alert_config[alert_config_field] = formatted_list
+            if custom_fields:
+                alert_config['customFields'] = custom_fields
 
-            alert = Alert(**alert_config)
-            response = api.create_alert(alert)
+            alert_body = json.dumps(alert_config, indent=4, sort_keys=True)
+            req = '{}:{}/api/alert'.format(connection_details['hive_host'], connection_details['hive_port'])
+            headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer {}'.format(connection_details.get('hive_apikey', ''))}
+            proxies = connection_details.get('hive_proxies', {'http': '', 'https': ''})
+            verify = connection_details.get('hive_verify', False)
+            response = requests.post(req, headers=headers, data=alert_body, proxies=proxies, verify=verify)
 
             if response.status_code != 201:
                 raise Exception('alert not successfully created in TheHive\n{}'.format(response.text))
