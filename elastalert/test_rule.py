@@ -77,7 +77,7 @@ class MockElastAlerter(object):
             endtime=end_time,
             timestamp_field=ts,
             to_ts_func=conf['dt_to_ts'],
-            five=conf['five']
+            five=conf['five'], must_not=conf['must_not'],
         )
         index = ElastAlerter.get_index(conf, start_time, end_time)
 
@@ -106,7 +106,7 @@ class MockElastAlerter(object):
             timestamp_field=ts,
             to_ts_func=conf['dt_to_ts'],
             sort=False,
-            five=conf['five']
+            five=conf['five'], must_not=conf['must_not'],
         )
         try:
             res = es_client.count(index, doc_type=doc_type, body=count_query, ignore_unavailable=True)

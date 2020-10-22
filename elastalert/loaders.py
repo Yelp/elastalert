@@ -199,6 +199,8 @@ class RulesLoader(object):
             # Special case for merging filters - if both files specify a filter merge (AND) them
             if 'filter' in rule and 'filter' in loaded:
                 rule['filter'] = loaded['filter'] + rule['filter']
+            if 'must_not' in rule and 'must_not' in loaded:
+                rule['must_not'] = loaded['must_not'] + rule['must_not']
 
             loaded.update(rule)
             rule = loaded
@@ -274,6 +276,7 @@ class RulesLoader(object):
         rule.setdefault('query_delay', datetime.timedelta(seconds=0))
         rule.setdefault('timestamp_field', '@timestamp')
         rule.setdefault('filter', [])
+        rule.setdefault('must_not', [])
         rule.setdefault('timestamp_type', 'iso')
         rule.setdefault('timestamp_format', '%Y-%m-%dT%H:%M:%SZ')
         rule.setdefault('_source_enabled', True)
@@ -370,6 +373,7 @@ class RulesLoader(object):
         rule['include'] = list(set(include))
 
         # Check that generate_kibana_url is compatible with the filters
+        # TODO must_not support ?
         if rule.get('generate_kibana_link'):
             for es_filter in rule.get('filter'):
                 if es_filter:
