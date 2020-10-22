@@ -674,7 +674,7 @@ class NewTermsRule(RuleType):
 
             time_filter = {self.rules['timestamp_field']: {'lt': self.rules['dt_to_ts'](tmp_end), 'gte': self.rules['dt_to_ts'](tmp_start)}}
             query_template['filter'] = {'bool': {'must': [{'range': time_filter}]}}
-            query = {'aggs': {'filtered': query_template}}
+            query = {'aggs': {'filtered': query_template}, 'size': 0}
 
             if 'filter' in self.rules:
                 for item in self.rules['filter']:
