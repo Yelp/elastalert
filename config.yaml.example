@@ -53,6 +53,10 @@ es_port: 9200
 #client_cert: /path/to/client_cert.pem
 #client_key: /path/to/client_key.key
 
+# Add custom http_headers to the request to elasticsearch
+#http_headers:
+#  Bearer: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+
 # The index on es_host which is used for metadata storage
 # This can be a unmapped index, but it is recommended that you run
 # elastalert-create-index to set a mapping

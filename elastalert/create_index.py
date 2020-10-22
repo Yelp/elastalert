@@ -204,6 +204,7 @@ def main():
         send_get_body_as = data.get('send_get_body_as', 'GET')
         ca_certs = data.get('ca_certs')
         client_cert = data.get('client_cert')
+        http_headers = data.get('http_headers')
         client_key = data.get('client_key')
         index = args.index if args.index is not None else data.get('writeback_index')
         alias = args.alias if args.alias is not None else data.get('writeback_alias')
@@ -229,6 +230,7 @@ def main():
         send_get_body_as = args.send_get_body_as
         ca_certs = None
         client_cert = None
+        http_headers = None
         client_key = None
         index = args.index if args.index is not None else input('New index name? (Default elastalert_status) ')
         if not index:
@@ -254,6 +256,7 @@ def main():
         use_ssl=use_ssl,
         verify_certs=verify_certs,
         connection_class=RequestsHttpConnection,
+        headers=http_headers,
         http_auth=http_auth,
         url_prefix=url_prefix,
         send_get_body_as=send_get_body_as,
