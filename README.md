@@ -1,4 +1,4 @@
-Recent changes: As of Elastalert 0.2.0, you must use Python 3.6. Python 2 will not longer be supported.
+Recent changes: As of Elastalert 0.2.0, you must use Python 3.8. Python 2 will not longer be supported.
 
 [![Build Status](https://travis-ci.org/Yelp/elastalert.svg)](https://travis-ci.org/Yelp/elastalert)
 [![Join the chat at https://gitter.im/Yelp/elastalert](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Yelp/elastalert?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)

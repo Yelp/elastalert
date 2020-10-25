@@ -8,7 +8,7 @@ Requirements
 
 - Elasticsearch
 - ISO8601 or Unix timestamped data
-- Python 3.6
+- Python 3.8
 - pip, see requirements.txt
 - Packages on Ubuntu 14.x: python-pip python-dev libffi-dev libssl-dev
 
