@@ -107,21 +107,23 @@ Eg: ``--rule this_rule.yaml``
 
 ## Third Party Tools And Extras
 ### Kibana plugin
-![img](https://raw.githubusercontent.com/bitsensor/elastalert-kibana-plugin/master/showcase.gif)
-Available at the [ElastAlert Kibana plugin repository](https://github.com/bitsensor/elastalert-kibana-plugin).
+![img](https://raw.githubusercontent.com/nsano-rururu/elastalert-kibana-plugin/master/showcase.gif)
+Available at the [ElastAlert Kibana plugin fork repository](https://github.com/nsano-rururu/elastalert-kibana-plugin).
 
 ### Docker
-A [Dockerized version](https://github.com/bitsensor/elastalert) of ElastAlert including a REST api is build from `master` to `bitsensor/elastalert:latest`.
+A [Dockerized version fork repository](https://github.com/johnsusek/elastalert-server) of ElastAlert including a REST api is build from `master` to `praecoapp/elastalert-server:latest`.
 
 ```bash
-git clone https://github.com/bitsensor/elastalert.git; cd elastalert
-docker run -d -p 3030:3030 \
+git clone https://github.com/johnsusek/elastalert-server.git; cd elastalert-server
+mkdir -p rules rule_templates
+chmod -R 777 rules rule_templates
+docker run -d -p 3030:3030 -p 3333:3333 \
     -v `pwd`/config/elastalert.yaml:/opt/elastalert/config.yaml \
     -v `pwd`/config/config.json:/opt/elastalert-server/config/config.json \
     -v `pwd`/rules:/opt/elastalert/rules \
     -v `pwd`/rule_templates:/opt/elastalert/rule_templates \
     --net="host" \
-    --name elastalert bitsensor/elastalert:latest
+    --name elastalert praecoapp/elastalert-server:latest
 ```
 
 ## Documentation
