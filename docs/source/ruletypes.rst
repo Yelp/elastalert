@@ -1657,14 +1657,14 @@ Example usage::
       Environment: '$VAR'          # environment variable
       Message: { field: message }  # field in the first match
 
-SNS
-~~~
+AWS SNS
+~~~~~~~
 
-The SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters.
-The SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
+The AWS SNS alerter will send an AWS SNS notification. The body of the notification is formatted the same as with other alerters.
+The AWS SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
 via environment variables. See http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html for details.
 
-SNS requires one option:
+AWS SNS requires one option:
 
 ``sns_topic_arn``: The SNS topic's ARN. For example, ``arn:aws:sns:us-east-1:123456789:somesnstopic``
 
