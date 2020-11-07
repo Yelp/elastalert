@@ -1620,7 +1620,7 @@ OpsGenie alerter will create an alert which can be used to notify Operations peo
 integration must be created in order to acquire the necessary ``opsgenie_key`` rule variable. Currently the OpsGenieAlerter only creates
 an alert, however it could be extended to update or close existing alerts.
 
-It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://app.opsgenie.com/integration>`_ in order to create alerts.
+It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://docs.opsgenie.com/docs/alert-api>`_ in order to create alerts.
 
 The OpsGenie alert requires one option:
 
@@ -1776,7 +1776,7 @@ Optional:
 ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
 
 ``slack_icon_url_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can provide icon_url to use custom image.
-Provide absolute address of the pciture, for example: http://some.address.com/image.jpg .
+Provide absolute address of the pciture.
 
 ``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
 
@@ -1816,7 +1816,7 @@ Optional:
 ``mattermost_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
 
 ``mattermost_icon_url_override``: By default ElastAlert will use the default webhook icon when posting to the channel. You can provide icon_url to use custom image.
-Provide absolute address of the picture (for example: http://some.address.com/image.jpg) or Base64 data url.
+Provide absolute address of the picture or Base64 data url.
 
 ``mattermost_msg_pretext``: You can set the message attachment pretext using this option.
 
@@ -1832,7 +1832,7 @@ Telegram alerter will send a notification to a predefined Telegram username or c
 
 The alerter requires the following two options:
 
-``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#botfather
+``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#6-botfather
 
 ``telegram_room_id``: Unique identifier for the target chat or username of the target channel using telegram chat_id (in the format "-xxxxxxxx")
 
@@ -1893,7 +1893,7 @@ V2 API Options (Optional):
 
 These options are specific to the PagerDuty V2 API
 
-See https://v2.developer.pagerduty.com/docs/send-an-event-events-api-v2
+See https://developer.pagerduty.com/docs/events-api-v2/trigger-events/
 
 ``pagerduty_api_version``: Defaults to `v1`.  Set to `v2` to enable the PagerDuty V2 Event API.
 
@@ -1935,7 +1935,7 @@ The alerter requires the following option:
 
 ``exotel_auth_token``: Auth token assosiated with your Exotel account.
 
-If you don't know how to find your accound sid and auth token, refer - http://support.exotel.in/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid-
+If you don't know how to find your accound sid and auth token, refer - https://support.exotel.com/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid
 
 ``exotel_to_number``: The phone number where you would like send the notification.
 
@@ -2006,7 +2006,7 @@ The ServiceNow alerter will create a ne Incident in ServiceNow. The body of the 
 
 The alerter requires the following options:
 
-``servicenow_rest_url``: The ServiceNow RestApi url, this will look like https://instancename.service-now.com/api/now/v1/table/incident
+``servicenow_rest_url``: The ServiceNow RestApi url, this will look like https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/c_TableAPI#r_TableAPI-POST
 
 ``username``: The ServiceNow Username to access the api.
 
@@ -2057,7 +2057,7 @@ Alerta
 ~~~~~~
 
 Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint.
-See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on the Alerta JSON format.
+See https://docs.alerta.io/en/latest/api/alert.html for more details on the Alerta JSON format.
 
 For Alerta 5.0
 
