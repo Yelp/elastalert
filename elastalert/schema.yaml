@@ -336,7 +336,7 @@ properties:
   twilio_to_number: {type: string}
   twilio_from_number: {type: string}
 
-  ### VictorOps
+  ### Splunk On-Call
   victorops_api_key: {type: string}
   victorops_routing_key: {type: string}
   victorops_message_type: {enum: [INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY]}

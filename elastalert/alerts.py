@@ -1557,7 +1557,7 @@ class TwilioAlerter(Alerter):
 
 
 class VictorOpsAlerter(Alerter):
-    """ Creates a VictorOps Incident for each alert """
+    """ Creates a Splunk On-Call Incident for each alert """
     required_options = frozenset(['victorops_api_key', 'victorops_routing_key', 'victorops_message_type'])
 
     def __init__(self, rule):
@@ -1574,7 +1574,7 @@ class VictorOpsAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
-        # post to victorops
+        # post to splunk on-call
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
         proxies = {'https': self.victorops_proxy} if self.victorops_proxy else None

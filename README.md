@@ -49,7 +49,7 @@ Currently, we have built-in support for the following alert types:
 - Telegram
 - GoogleChat
 - AWS SNS
-- VictorOps
+- Splunk On-Call
 - PagerDuty
 - PagerTree
 - Exotel

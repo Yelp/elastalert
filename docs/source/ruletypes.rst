@@ -1962,26 +1962,26 @@ The alerter requires the following option:
 ``twilio_from_number``: Your twilio phone number from which message will be sent.
 
 
-VictorOps
-~~~~~~~~~
+Splunk On-Call
+~~~~~~~~~~~~~~
 
-VictorOps alerter will trigger an incident to a predefined VictorOps routing key. The body of the notification is formatted the same as with other alerters.
+Splunk On-Call alerter will trigger an incident to a predefined Splunk On-Call routing key. The body of the notification is formatted the same as with other alerters.
 
 The alerter requires the following options:
 
 ``victorops_api_key``: API key generated under the 'REST Endpoint' in the Integrations settings.
 
-``victorops_routing_key``: VictorOps routing key to route the alert to.
+``victorops_routing_key``: Splunk On-Call routing key to route the alert to.
 
-``victorops_message_type``: VictorOps field to specify severity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
+``victorops_message_type``: Splunk On-Call field to specify severity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
 
 Optional:
 
-``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents throughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
+``victorops_entity_id``: The identity of the incident used by Splunk On-Call to correlate incidents throughout the alert lifecycle. If not defined, Splunk On-Call will assign a random string to each alert.
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
 
-``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
+``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to Splunk On-Call. Set this option using ``hostname:port`` if you need to use a proxy.
 
 Gitter
 ~~~~~~
