@@ -2073,6 +2073,8 @@ Optional:
 
 ``alerta_use_match_timestamp``: If true, it will use the timestamp of the first match as the ``createTime`` of the alert. otherwise, the current server time is used.
 
+``alerta_api_skip_ssl``: Defaults to False.
+
 ``alert_missing_value``: Text to replace any match field not found when formating strings. Defaults to ``<MISSING_TEXT>``.
 
 The following options dictate the values of the API JSON payload:
