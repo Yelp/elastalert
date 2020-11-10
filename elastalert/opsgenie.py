@@ -46,11 +46,11 @@ class OpsGenieAlerter(Alerter):
                 try:
                     formated_responders.append(responder.format(**responders_values))
                 except KeyError as error:
-                    logging.warn("OpsGenieAlerter: Cannot create responder for OpsGenie Alert. Key not foud: %s. " % (error))
+                    logging.warning("OpsGenieAlerter: Cannot create responder for OpsGenie Alert. Key not foud: %s. " % (error))
             if not formated_responders:
-                logging.warn("OpsGenieAlerter: no responders can be formed. Trying the default responder ")
+                logging.warning("OpsGenieAlerter: no responders can be formed. Trying the default responder ")
                 if not default_responders:
-                    logging.warn("OpsGenieAlerter: default responder not set. Falling back")
+                    logging.warning("OpsGenieAlerter: default responder not set. Falling back")
                     formated_responders = responders
                 else:
                     formated_responders = default_responders
@@ -90,7 +90,7 @@ class OpsGenieAlerter(Alerter):
         post['tags'] = self.tags
 
         if self.priority and self.priority not in ('P1', 'P2', 'P3', 'P4', 'P5'):
-            logging.warn("Priority level does not appear to be specified correctly. \
+            logging.warning("Priority level does not appear to be specified correctly. \
                          Please make sure to set it to a value between P1 and P5")
         else:
             post['priority'] = self.priority
