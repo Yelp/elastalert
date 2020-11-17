@@ -198,7 +198,7 @@ class ElastAlerter(object):
 
     @staticmethod
     def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False,
-                  five=False):
+                  five=False, must_not=[]):
         """ Returns a query dict that will apply a list of filters, filter by
         start and end time, and sort results by timestamp.
 
@@ -211,14 +211,15 @@ class ElastAlerter(object):
         starttime = to_ts_func(starttime)
         endtime = to_ts_func(endtime)
         filters = copy.copy(filters)
-        es_filters = {'filter': {'bool': {'must': filters}}}
+        es_filters = {'filter': {'bool': {'filter': filters, 'must_not': must_not}}}
         if starttime and endtime:
-            es_filters['filter']['bool']['must'].insert(0, {'range': {timestamp_field: {'gt': starttime,
-                                                                                        'lte': endtime}}})
+            es_filters['filter']['bool']['filter'].insert(0, {'range': {timestamp_field: {'gt': starttime,
+                                                                                          'lte': endtime}}})
         if five:
             query = {'query': {'bool': es_filters}}
         else:
-            query = {'query': {'filtered': es_filters}}
+            raise Exception('Unsupported operation - the five parameter is not supported')
+
         if sort:
             query['sort'] = [{timestamp_field: {'order': 'desc' if desc else 'asc'}}]
         return query
@@ -358,7 +359,7 @@ class ElastAlerter(object):
             endtime,
             timestamp_field=rule['timestamp_field'],
             to_ts_func=rule['dt_to_ts'],
-            five=rule['five'],
+            five=rule['five'], must_not=rule['must_not'],
         )
         if self.thread_data.current_es.is_atleastsixsix():
             extra_args = {'_source_includes': rule['include']}
@@ -448,7 +449,7 @@ class ElastAlerter(object):
             timestamp_field=rule['timestamp_field'],
             sort=False,
             to_ts_func=rule['dt_to_ts'],
-            five=rule['five']
+            five=rule['five'], must_not=rule['must_not'],
         )
 
         try:
@@ -499,7 +500,7 @@ class ElastAlerter(object):
             timestamp_field=rule['timestamp_field'],
             sort=False,
             to_ts_func=rule['dt_to_ts'],
-            five=rule['five']
+            five=rule['five'], must_not=rule['must_not'],
         )
         if size is None:
             size = rule.get('terms_size', 50)
@@ -547,7 +548,7 @@ class ElastAlerter(object):
             timestamp_field=rule['timestamp_field'],
             sort=False,
             to_ts_func=rule['dt_to_ts'],
-            five=rule['five']
+            five=rule['five'], must_not=rule['must_not'],
         )
         if term_size is None:
             term_size = rule.get('terms_size', 50)
