@@ -23,6 +23,7 @@ import boto3
 import requests
 import stomp
 from exotel import Exotel
+from jinja2 import Template
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 from requests.auth import HTTPProxyAuth
@@ -2181,4 +2182,42 @@ class HiveAlerter(Alerter):
         return {
             'type': 'hivealerter',
             'hive_host': self.rule.get('hive_connection', {}).get('hive_host', '')
+        }
+
+
+class WebhookAlerter(Alerter):
+
+    required_options = set(['webhook_method', 'webhook_endpoint'])
+
+    def __init__(self, rule):
+        super(WebhookAlerter, self).__init__(rule)
+        self.type = 'webhook'
+        self.method = self.rule.get('webhook_method')
+        self.endpoint = self.rule.get('webhook_endpoint')
+        self.headers = self.rule.get('webhook_headers')
+        self.content = self.rule.get('webhook_content')
+        self.timeout = self.rule.get('webhook_timeout')
+        self.expected_status_codes = self.rule.get('webhook_expected_status_codes', list(range(200, 299)))
+
+    def alert(self, matches):
+        endpoint_template = Template(self.endpoint)
+        content_template = Template(self.content)
+        for match in matches:
+            endpoint = endpoint_template.render(match=match)
+            content = content_template.render(match=match)
+            try:
+                response = requests.request(method=self.method, url=endpoint, timeout=self.timeout,
+                                            data=content, headers=self.headers)
+                if response.status_code not in self.expected_status_codes:
+                    elastalert_logger.error('Got response : %s' % (response.content))
+                    raise RequestException('Status code %s of webhook not expected' % (response.status_code))
+            except Exception as e:
+                raise EAException('Error sending alert via Webhook: %s' % (str(e)))
+
+    def get_info(self):
+
+        return {
+            'type': self.type,
+            'method': self.method,
+            'endpoint': self.endpoint
         }

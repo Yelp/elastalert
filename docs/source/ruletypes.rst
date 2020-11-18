@@ -2243,3 +2243,47 @@ Required:
 ``zbx_sender_port``: The port where zabbix server is listenning.
 ``zbx_host``: This field setup the host in zabbix that receives the value sent by Elastalert.
 ``zbx_item``: This field setup the item in the host that receives the value sent by Elastalert.
+
+Webhook
+~~~~~~~
+
+The Webhook alert type is a customisable alerter which uses Jinja to format the endpoint and the payload.
+Webhook can use any standard HTTP method as well as user defined HTTP methods.
+
+Required:
+
+``webhook_method``: The HTTP method to be used in the request. Usually GET and POST.
+
+``webhook_endpoint``: The endpoint for the request. This string is used as a Jinja template and thus can be injected with fields in elasticsearch.
+                      The variable match can be used to access fields for a particular match.
+                      Example :
+
+                      webhook_endpoint : 'http://localhost:8080?q={{match["<ES_FIELD_HERE>"]}}'
+
+Optional:
+
+``webhook_headers``: A list of key-value pairs which will be used as headers for the request.
+                    Example:
+
+                    webhook_headers :
+                        content-type: application/json
+                        authorization: Basic 1234
+
+                    Please set the content-type header to avoid any decoding issues on the server end.
+
+
+``webhook_content``: Jinja string which can be used to build any kind of body. Default content will be the match in JSON format.
+                     Examples :
+
+                     1. To post all values as json
+                        webhook_content : '{{ match|tojson }}'
+                     2. To create a custom JSON body :
+                        webhook_content : '"field1" : "{{ match["field1"]}}"'
+                     3. To send the match as string :
+                        webhook_content: '{{ match|string }}'
+
+``webhook_expected_status_codes``: List of status codes which can be considered as a successful response.
+                                   Default successful status codes range is from 200 to 299
+                                   Example:
+
+                                   webhook_expected_status_codes : [200,201]
