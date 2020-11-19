@@ -106,6 +106,18 @@ Eg: ``--rule this_rule.yaml``
 ``--config`` allows you to specify the location of the configuration. By default, it is will look for config.yaml in the current directory.
 
 ## Third Party Tools And Extras
+
+### ElastAlert-Docker
+
+This Dockerfile will build a Docker image for Elastalert. This image is compatible with the accompanying Helm chart for Kubernetes.
+https://github.com/jertel/elastalert-docker
+
+### ElastAlert uses ElastAlert Helm Chart almost as it is *Use original Docker Image to fix bugs
+
+[ElastAlert Server Helm Chart](https://github.com/daichi703n/elastalert-helm)<br>
+[Praeco Helm Chart](https://github.com/daichi703n/praeco-helm)<br>
+[Installing Praeco (ElastAlert GUI) into Kubernetes with Helm](https://en-designetwork.daichi703n.com/entry/2020/02/24/praeco-helm-kubernetes)
+
 ### Kibana plugin
 ![img](https://raw.githubusercontent.com/nsano-rururu/elastalert-kibana-plugin/master/showcase.gif)
 Available at the [ElastAlert Kibana plugin fork repository](https://github.com/nsano-rururu/elastalert-kibana-plugin).
