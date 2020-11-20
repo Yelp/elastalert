@@ -1,0 +1,83 @@
+# Alert when the rate of events exceeds a threshold
+
+# (Optional)
+# Elasticsearch host
+#es_host: localhost
+
+# (Optional)
+# Elasticsearch port
+#es_port: 9200
+
+# (OptionaL) Connect with SSL to Elasticsearch
+#use_ssl: True
+
+# (Optional) basic-auth username and password for Elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# (Required)
+# Rule name, must be unique
+name: webhook_based_rule_name
+
+# (Required)
+# Type of alert.
+# the frequency rule type alerts when num_events events occur with timeframe time
+type: frequency
+
+# (Required)
+# Index to search, wildcard supported
+index: logstash-*
+
+#doc_type: "golog"
+
+# (Required, frequency specific)
+# Alert when this many documents matching the query occur within a timeframe
+num_events: 50
+
+# (Required, frequency specific)
+# num_events must occur within this amount of time to trigger an alert
+timeframe:
+  hours: 2
+
+# (Required)
+# A list of Elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter:
+- query:
+    query_string:
+      query: "@message: *hihi*"
+
+# (Required)
+# The alert is use when a match is found
+alert:
+- "webhook"
+
+# (Required)
+# Webhook Method such as GET, POST or any user defined method which the endpoint supports
+webhook_method: 'POST'
+
+# (Required)
+# This can be a static endpoint or any elasticsearch field from the match can be added
+webhook_endpoint: 'http://localhost:8080?q={{match["ES-FIELD-HERE"]}}'
+
+# (Optional)
+# Any required headers can be added as a key value pair list
+# It is advisable to add content-type header for the endpoint to understand the type of body you are sending.
+# By default, no headers are sent with the request
+# webhook_headers:
+#   content-type: application/json
+
+# (Optional)
+# The body can be defined in formats such as JSON, XML or string. By default, no body is sent.
+# This is an example of a JSON body being created. The match variable can be used to access any field from elasticsearch
+
+# webhook_content: '{ "container_name": "{{ match["container_name"] }}",
+#                     "service": "{{ match["service"] }}" }'
+
+# To send all the fields in match as JSON, the tojson filter can be used. (Don't forget to set headers as application/json)
+# webhook_content: '{{ match|tojson }}'
+
+# (Optional)
+# The default status codes are 200 to 299. If the endpoint sends a different status code for success, they can be mentioned as a list.
+# webhook_expected_status_codes: [302, 307]
