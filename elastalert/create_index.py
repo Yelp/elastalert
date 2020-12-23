@@ -152,6 +152,7 @@ def main():
     parser.add_argument('--port', default=os.environ.get('ES_PORT', None), type=int, help='Elasticsearch port')
     parser.add_argument('--username', default=os.environ.get('ES_USERNAME', None), help='Elasticsearch username')
     parser.add_argument('--password', default=os.environ.get('ES_PASSWORD', None), help='Elasticsearch password')
+    parser.add_argument('--bearer', default=os.environ.get('ES_BEARER', None), help='Elasticsearch bearer token')
     parser.add_argument('--url-prefix', help='Elasticsearch URL prefix')
     parser.add_argument('--no-auth', action='store_const', const=True, help='Suppress prompt for basic auth')
     parser.add_argument('--ssl', action='store_true', default=env('ES_USE_SSL', None), help='Use TLS')
@@ -197,6 +198,7 @@ def main():
         port = args.port if args.port else data.get('es_port')
         username = args.username if args.username else data.get('es_username')
         password = args.password if args.password else data.get('es_password')
+        bearer = args.bearer if args.bearer else data.get('es_bearer')
         url_prefix = args.url_prefix if args.url_prefix is not None else data.get('es_url_prefix', '')
         use_ssl = args.ssl if args.ssl is not None else data.get('use_ssl')
         verify_certs = args.verify_certs if args.verify_certs is not None else data.get('verify_certs') is not False
@@ -211,6 +213,7 @@ def main():
     else:
         username = args.username if args.username else None
         password = args.password if args.password else None
+        bearer = args.bearer if args.bearer else None
         aws_region = args.aws_region
         host = args.host if args.host else input('Enter Elasticsearch host: ')
         port = args.port if args.port else int(input('Enter Elasticsearch port: '))
@@ -255,6 +258,7 @@ def main():
         verify_certs=verify_certs,
         connection_class=RequestsHttpConnection,
         http_auth=http_auth,
+        headers=bearer,
         url_prefix=url_prefix,
         send_get_body_as=send_get_body_as,
         client_cert=client_cert,

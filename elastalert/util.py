@@ -319,10 +319,13 @@ def elasticsearch_client(conf):
     es_conn_conf = build_es_conn_config(conf)
     auth = Auth()
     es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
-                                     username=es_conn_conf['es_username'],
-                                     password=es_conn_conf['es_password'],
+                                     username= None if es_conn_conf['es_bearer'] else es_conn_conf['es_username'],
+                                     password= None if es_conn_conf['es_bearer'] else es_conn_conf['es_password'],
                                      aws_region=es_conn_conf['aws_region'],
                                      profile_name=es_conn_conf['profile'])
+
+    if es_conn_conf['es_bearer']:
+        es_conn_conf['headers'] = {"Authorization": "Bearer " + es_conn_conf['es_bearer']}
 
     return ElasticSearchClient(es_conn_conf)
 
@@ -341,8 +344,10 @@ def build_es_conn_config(conf):
     parsed_conf['http_auth'] = None
     parsed_conf['es_username'] = None
     parsed_conf['es_password'] = None
+    parsed_conf['es_bearer'] = None
     parsed_conf['aws_region'] = None
     parsed_conf['profile'] = None
+    parsed_conf['headers'] = None
     parsed_conf['es_host'] = os.environ.get('ES_HOST', conf['es_host'])
     parsed_conf['es_port'] = int(os.environ.get('ES_PORT', conf['es_port']))
     parsed_conf['es_url_prefix'] = ''
@@ -355,6 +360,11 @@ def build_es_conn_config(conf):
     elif 'es_username' in conf:
         parsed_conf['es_username'] = conf['es_username']
         parsed_conf['es_password'] = conf['es_password']
+
+    if os.environ.get('ES_BEARER'):
+        parsed_conf['es_bearer'] =  os.environ.get('ES_BEARER')
+    elif 'es_bearer' in conf:
+        parsed_conf['es_bearer'] = conf['es_bearer']
 
     if 'aws_region' in conf:
         parsed_conf['aws_region'] = conf['aws_region']

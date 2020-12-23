@@ -15,4 +15,7 @@ build/
 .pytest_cache/
 my_rules
 *.swp
+rules/
+elastalert_config.yaml
+Dockerfile
 *~

@@ -16,6 +16,7 @@ required_globals = frozenset(['run_every', 'es_host', 'es_port', 'writeback_inde
 
 # Settings that can be derived from ENV variables
 env_settings = {'ES_USE_SSL': 'use_ssl',
+                'ES_BEARER': 'es_bearer',
                 'ES_PASSWORD': 'es_password',
                 'ES_USERNAME': 'es_username',
                 'ES_HOST': 'es_host',
