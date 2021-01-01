@@ -553,9 +553,9 @@ The currently supported versions of Kibana Discover are:
 
 - `5.6`
 - `6.0`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `6.7`, `6.8`
-- `7.0`, `7.1`, `7.2`, `7.3`
+- `7.0`, `7.1`, `7.2`, `7.3`, `7.4`, `7.5`, `7.6`, `7.7`, `7.8`, `7.9`, `7.10`
 
-``kibana_discover_version: '7.3'``
+``kibana_discover_version: '7.10'``
 
 kibana_discover_index_pattern_id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1632,7 +1632,7 @@ Optional:
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
 ``opsgenie_recipients_args``: Map of arguments used to format opsgenie_recipients.
-``opsgenie_default_recipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful.
+``opsgenie_default_receipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful.
 ``opsgenie_teams``: A list of OpsGenie teams to notify (useful for schedules with escalation).
 ``opsgenie_teams_args``: Map of arguments used to format opsgenie_teams (useful for assigning the alerts to teams based on some data)
 ``opsgenie_default_teams``: List of default teams to notify when the formatting of opsgenie_teams is unsuccesful.
@@ -1650,6 +1650,8 @@ Optional:
 
 ``opsgenie_details``: Map of custom key/value pairs to include in the alert's details. The value can sourced from either fields in the first match, environment variables, or a constant value.
 
+``opsgenie_proxy``: By default ElastAlert will not use a network proxy to send notifications to OpsGenie. Set this option using ``hostname:port`` if you need to use a proxy.
+
 Example usage::
 
     opsgenie_details:
@@ -1657,26 +1659,55 @@ Example usage::
       Environment: '$VAR'          # environment variable
       Message: { field: message }  # field in the first match
 
-SNS
-~~~
+AWS SNS
+~~~~~~~
 
-The SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters.
-The SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
+The AWS SNS alerter will send an AWS SNS notification. The body of the notification is formatted the same as with other alerters.
+The AWS SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
 via environment variables. See http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html for details.
 
-SNS requires one option:
+AWS SNS requires one option:
 
 ``sns_topic_arn``: The SNS topic's ARN. For example, ``arn:aws:sns:us-east-1:123456789:somesnstopic``
 
 Optional:
 
-``aws_access_key``: An access key to connect to SNS with.
+``sns_aws_access_key_id``: An access key to connect to SNS with.
 
-``aws_secret_key``: The secret key associated with the access key.
+``sns_aws_secret_access_key``: The secret key associated with the access key.
 
-``aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
+``sns_aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
 
-``profile``: The AWS profile to use. If none specified, the default will be used.
+``sns_aws_profile``: The AWS profile to use. If none specified, the default will be used.
+
+Example When not using aws_profile usage::
+
+    alert:
+      - sns
+    sns_topic_arn: 'arn:aws:sns:us-east-1:123456789:somesnstopic'
+    sns_aws_access_key_id: 'XXXXXXXXXXXXXXXXXX''
+    sns_aws_secret_access_key: 'YYYYYYYYYYYYYYYYYYYY'
+    sns_aws_region: 'us-east-1' # You must nest aws_region within your alert configuration so it is not used to sign AWS requests.
+ 
+Example When to use aws_profile usage::
+
+    # Create ~/.aws/credentials
+
+    [default]
+    aws_access_key_id = xxxxxxxxxxxxxxxxxxxx
+    aws_secret_access_key = yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+
+    # Create ~/.aws/config
+
+    [default]
+    region = us-east-1
+
+    # alert rule setting
+
+    alert:
+      - sns
+    sns_topic_arn: 'arn:aws:sns:us-east-1:123456789:somesnstopic'
+    sns_aws_profile: 'default'
 
 HipChat
 ~~~~~~~
@@ -1714,26 +1745,6 @@ In that case, you can set ``hipchat_mentions`` to a list of users which will be 
 If set, it will mention the users, no matter if the original message format is set to HTML or text.
 Valid values: list of strings.
 Defaults to ``[]``.
-
-
-Stride
-~~~~~~~
-
-Stride alerter will send a notification to a predefined Stride room. The body of the notification is formatted the same as with other alerters.
-Simple HTML such as <a> and <b> tags will be parsed into a format that Stride can consume.
-
-The alerter requires the following two options:
-
-``stride_access_token``: The randomly generated notification token created by Stride.
-
-``stride_cloud_id``: The site_id associated with the Stride site you want to send the alert to.
-
-``stride_conversation_id``: The conversation_id associated with the Stride conversation you want to send the alert to.
-
-``stride_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
-
-``stride_proxy``: By default ElastAlert will not use a network proxy to send notifications to Stride. Set this option using ``hostname:port`` if you need to use a proxy.
-
 
 MS Teams
 ~~~~~~~~
@@ -1796,6 +1807,8 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
 
+``slack_ca_certs``: path to a CA cert bundle to use to verify SSL connections.
+
 Mattermost
 ~~~~~~~~~~
 
@@ -1841,6 +1854,10 @@ Optional:
 ``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
 
 ``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``telegram_proxy_login``: The Telegram proxy auth username.
+
+``telegram_proxy_pass``: The Telegram proxy auth password.
 
 GoogleChat
 ~~~~~~~~~~
@@ -1924,6 +1941,8 @@ The alerter requires the following options:
 
 ``pagertree_integration_url``: URL generated by PagerTree for the integration.
 
+``pagertree_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerTree. Set this option using hostname:port if you need to use a proxy.
+
 Exotel
 ~~~~~~
 
@@ -1931,7 +1950,7 @@ Developers in India can use Exotel alerter, it will trigger an incident to a mob
 
 The alerter requires the following option:
 
-``exotel_accout_sid``: This is sid of your Exotel account.
+``exotel_account_sid``: This is sid of your Exotel account.
 
 ``exotel_auth_token``: Auth token assosiated with your Exotel account.
 
@@ -2242,4 +2261,4 @@ Required:
 ``zbx_sender_host``: The address where zabbix server is running.
 ``zbx_sender_port``: The port where zabbix server is listenning.
 ``zbx_host``: This field setup the host in zabbix that receives the value sent by Elastalert.
-``zbx_item``: This field setup the item in the host that receives the value sent by Elastalert.
+``zbx_key``: This field setup the key in the host that receives the value sent by Elastalert.

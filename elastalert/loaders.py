@@ -63,7 +63,6 @@ class RulesLoader(object):
         'command': alerts.CommandAlerter,
         'sns': alerts.SnsAlerter,
         'hipchat': alerts.HipChatAlerter,
-        'stride': alerts.StrideAlerter,
         'ms_teams': alerts.MsTeamsAlerter,
         'slack': alerts.SlackAlerter,
         'mattermost': alerts.MattermostAlerter,
@@ -77,8 +76,9 @@ class RulesLoader(object):
         'servicenow': alerts.ServiceNowAlerter,
         'alerta': alerts.AlertaAlerter,
         'post': alerts.HTTPPostAlerter,
-        'pagertree': alerts.PagerTreeAlerter,
-        'hivealerter': alerts.HiveAlerter
+        'hivealerter': alerts.HiveAlerter,
+        'linenotify': alerts.LineNotifyAlerter,
+        'pagertree': alerts.PagerTreeAlerter
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
@@ -93,7 +93,7 @@ class RulesLoader(object):
     def __init__(self, conf):
         # schema for rule yaml
         self.rule_schema = jsonschema.Draft7Validator(
-            yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml')), Loader=yaml.FullLoader))
+            yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml')), Loader=yaml.UnsafeLoader))
 
         self.base_config = copy.deepcopy(conf)
 
