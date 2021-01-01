@@ -1853,6 +1853,10 @@ Optional:
 
 ``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
 
+``telegram_proxy_login``: The Telegram proxy auth username.
+
+``telegram_proxy_pass``: The Telegram proxy auth password.
+
 GoogleChat
 ~~~~~~~~~~
 GoogleChat alerter will send a notification to a predefined GoogleChat channel. The body of the notification is formatted the same as with other alerters.
