@@ -63,7 +63,6 @@ class RulesLoader(object):
         'command': alerts.CommandAlerter,
         'sns': alerts.SnsAlerter,
         'hipchat': alerts.HipChatAlerter,
-        'stride': alerts.StrideAlerter,
         'ms_teams': alerts.MsTeamsAlerter,
         'slack': alerts.SlackAlerter,
         'mattermost': alerts.MattermostAlerter,
