@@ -31,7 +31,6 @@ setup(
         'aws-requests-auth>=0.3.0',
         'blist>=1.3.6',
         'boto3>=1.4.4',
-        'configparser>=3.5.0',
         'croniter>=0.3.16',
         'elasticsearch==7.0.0',
         'envparse>=0.2.0',
@@ -42,12 +41,13 @@ setup(
         'prison>=0.1.2',
         'PyStaticConfiguration>=0.10.3',
         'python-dateutil>=2.6.0,<2.7.0',
-        'PyYAML>=3.12',
+        'PyYAML>=5.1',
         'requests>=2.10.0',
         'stomp.py>=4.1.17',
         'texttable>=0.8.8',
         'twilio>=6.0.0,<6.1',
         'cffi>=1.11.5',
-        'tzlocal==2.1'
+        'tzlocal==2.1',
+        'py-zabbix>=1.1.3'
     ]
 )
