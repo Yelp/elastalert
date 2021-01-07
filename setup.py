@@ -20,10 +20,13 @@ setup(
         'Operating System :: OS Independent',
     ],
     entry_points={
-        'console_scripts': ['elastalert-create-index=elastalert.create_index:main',
-                            'elastalert-test-rule=elastalert.test_rule:main',
-                            'elastalert-rule-from-kibana=elastalert.rule_from_kibana:main',
-                            'elastalert=elastalert.elastalert:main']},
+        'console_scripts': [
+            'elastalert-create-index=elastalert.create_index:main',
+            'elastalert-test-rule=elastalert.test_rule:main',
+            'elastalert-rule-from-kibana=elastalert.rule_from_kibana:main',
+            'elastalert=elastalert.elastalert:main',
+        ]
+    },
     packages=find_packages(),
     package_data={'elastalert': ['schema.yaml', 'es_mappings/**/*.json']},
     install_requires=[
@@ -47,8 +50,7 @@ setup(
         'stomp.py>=4.1.17',
         'texttable>=0.8.8',
         'twilio>=6.0.0,<6.1',
-        'python-magic>=0.4.15',
         'cffi>=1.11.5',
-        'PyJWT==1.7.1'
-    ]
+        'PyJWT==1.7.1',
+    ],
 )

@@ -181,7 +181,7 @@ class JiraFormattedMatchString(BasicMatchString):
 
 
 class Alerter(object):
-    """ Base class for types of alerts.
+    """Base class for types of alerts.
 
     :param rule: The rule configuration.
     """
@@ -227,19 +227,19 @@ class Alerter(object):
             return value
 
     def alert(self, match):
-        """ Send an alert. Match is a dictionary of information about the alert.
+        """Send an alert. Match is a dictionary of information about the alert.
 
         :param match: A dictionary of relevant information to the alert.
         """
         raise NotImplementedError()
 
     def get_info(self):
-        """ Returns a dictionary of data related to this alert. At minimum, this should contain
-        a field type corresponding to the type of Alerter. """
+        """Returns a dictionary of data related to this alert. At minimum, this should contain
+        a field type corresponding to the type of Alerter."""
         return {'type': 'Unknown'}
 
     def create_title(self, matches):
-        """ Creates custom alert title to be used, e.g. as an e-mail subject or JIRA issue summary.
+        """Creates custom alert title to be used, e.g. as an e-mail subject or JIRA issue summary.
 
         :param matches: A list of dictionaries of relevant information to the alert.
         """
@@ -331,7 +331,7 @@ class Alerter(object):
         return self.rule['name']
 
     def get_account(self, account_file):
-        """ Gets the username and password from an account file.
+        """Gets the username and password from an account file.
 
         :param account_file: Path to the file which contains user and password information.
         It can be either an absolute file path or one that is relative to the given rule.
@@ -1044,12 +1044,9 @@ class JiraAlerter(Alerter):
         if for_search:
             return title
 
-        title += ' - %s' % (
-            pretty_ts(
-                matches[0][self.rule['timestamp_field']],
-                self.rule.get('use_local_time'),
-            )
-        )
+        timestamp = matches[0].get(self.rule['timestamp_field'])
+        if timestamp:
+            title += ' - %s' % (pretty_ts(timestamp, self.rule.get('use_local_time')))
 
         # Add count for spikes
         count = matches[0].get('spike_count')
@@ -1666,7 +1663,9 @@ class PagerDutyAlerter(Alerter):
                         matches,
                     ),
                     'summary': self.create_title(matches),
-                    'custom_details': {'information': body, },
+                    'custom_details': {
+                        'information': body,
+                    },
                 },
             }
             match_timestamp = lookup_es_key(
@@ -1681,7 +1680,9 @@ class PagerDutyAlerter(Alerter):
                 'event_type': self.pagerduty_event_type,
                 'incident_key': self.get_incident_key(matches),
                 'client': self.pagerduty_client_name,
-                'details': {"information": body, },
+                'details': {
+                    "information": body,
+                },
             }
 
         # set https proxy, if it was provided
@@ -2274,10 +2275,10 @@ class AlertaAlerter(Alerter):
 
     def get_json_payload(self, match):
         """
-            Builds the API Create Alert body, as in
-            http://alerta.readthedocs.io/en/latest/api/reference.html#create-an-alert
+        Builds the API Create Alert body, as in
+        http://alerta.readthedocs.io/en/latest/api/reference.html#create-an-alert
 
-            For the values that could have references to fields on the match, resolve those references.
+        For the values that could have references to fields on the match, resolve those references.
 
         """
 
