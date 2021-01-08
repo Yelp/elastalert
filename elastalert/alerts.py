@@ -794,9 +794,9 @@ class JiraAlerter(Alerter):
                     except JIRAError as e:
                         logging.exception("Error while commenting on ticket %s: %s" % (ticket, e))
                     if self.labels:
-                        for l in self.labels:
+                        for label in self.labels:
                             try:
-                                ticket.fields.labels.append(l)
+                                ticket.fields.labels.append(label)
                             except JIRAError as e:
                                 logging.exception("Error while appending labels to ticket %s: %s" % (ticket, e))
                 if self.transition:
@@ -868,7 +868,9 @@ class JiraAlerter(Alerter):
         if for_search:
             return title
 
-        title += ' - %s' % (pretty_ts(matches[0][self.rule['timestamp_field']], self.rule.get('use_local_time')))
+        timestamp = matches[0].get(self.rule['timestamp_field'])
+        if timestamp:
+            title += ' - %s' % (pretty_ts(timestamp, self.rule.get('use_local_time')))
 
         # Add count for spikes
         count = matches[0].get('spike_count')
