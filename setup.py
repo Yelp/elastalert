@@ -40,6 +40,7 @@ setup(
         'jsonschema>=3.0.2',
         'mock>=2.0.0',
         'prison>=0.1.2',
+        'py-zabbix>=1.1.3',
         'PyStaticConfiguration>=0.10.3',
         'python-dateutil>=2.6.0,<2.7.0',
         'PyYAML>=5.1',
@@ -47,7 +48,6 @@ setup(
         'stomp.py>=4.1.17',
         'texttable>=0.8.8',
         'twilio>=6.0.0,<6.1',
-        'cffi>=1.11.5',
-        'py-zabbix>=1.1.3'
+        'cffi>=1.11.5'
     ]
 )
