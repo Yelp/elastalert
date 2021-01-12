@@ -39,16 +39,16 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 
 Currently, we have built-in support for the following alert types:
 
-- Email
+- E-mail
 - JIRA
 - OpsGenie
 - Commands
 - HipChat
-- MS Teams
+- Microsoft Teams
 - Slack
 - Telegram
-- GoogleChat
-- AWS SNS
+- Google Chat
+- Amazon Simple Notification Service (AWS SNS)
 - VictorOps
 - PagerDuty
 - PagerTree
