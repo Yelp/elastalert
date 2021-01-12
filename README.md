@@ -42,20 +42,27 @@ Currently, we have built-in support for the following alert types:
 - Email
 - JIRA
 - OpsGenie
-- Commands
+- Command
 - HipChat
 - MS Teams
 - Slack
+- Mattermost
 - Telegram
 - GoogleChat
 - AWS SNS
-- VictorOps
+- Splunk On-Call (Formerly VictorOps)
 - PagerDuty
 - PagerTree
 - Exotel
 - Twilio
 - Gitter
+- ServiceNow
+- Debug
+- Stomp
+- Alerta
+- HTTP POST
 - Line Notify
+- TheHive
 - Zabbix
 
 Additional rule types and alerts can be easily imported or written.
@@ -115,7 +122,7 @@ A [Dockerized version](https://github.com/bitsensor/elastalert) of ElastAlert in
 
 ```bash
 git clone https://github.com/bitsensor/elastalert.git; cd elastalert
-docker run -d -p 3030:3030 \
+docker run -d -p 3030:3030 -p 3333:3333 \
     -v `pwd`/config/elastalert.yaml:/opt/elastalert/config.yaml \
     -v `pwd`/config/config.json:/opt/elastalert-server/config/config.json \
     -v `pwd`/rules:/opt/elastalert/rules \

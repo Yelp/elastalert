@@ -1620,7 +1620,7 @@ OpsGenie alerter will create an alert which can be used to notify Operations peo
 integration must be created in order to acquire the necessary ``opsgenie_key`` rule variable. Currently the OpsGenieAlerter only creates
 an alert, however it could be extended to update or close existing alerts.
 
-It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://app.opsgenie.com/integration>`_ in order to create alerts.
+It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://docs.opsgenie.com/docs/alert-api>`_ in order to create alerts.
 
 The OpsGenie alert requires one option:
 
@@ -1632,7 +1632,7 @@ Optional:
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
 ``opsgenie_recipients_args``: Map of arguments used to format opsgenie_recipients.
-``opsgenie_default_recipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful.
+``opsgenie_default_receipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful.
 ``opsgenie_teams``: A list of OpsGenie teams to notify (useful for schedules with escalation).
 ``opsgenie_teams_args``: Map of arguments used to format opsgenie_teams (useful for assigning the alerts to teams based on some data)
 ``opsgenie_default_teams``: List of default teams to notify when the formatting of opsgenie_teams is unsuccesful.
@@ -1650,6 +1650,8 @@ Optional:
 
 ``opsgenie_details``: Map of custom key/value pairs to include in the alert's details. The value can sourced from either fields in the first match, environment variables, or a constant value.
 
+``opsgenie_proxy``: By default ElastAlert will not use a network proxy to send notifications to OpsGenie. Set this option using ``hostname:port`` if you need to use a proxy.
+
 Example usage::
 
     opsgenie_details:
@@ -1657,11 +1659,11 @@ Example usage::
       Environment: '$VAR'          # environment variable
       Message: { field: message }  # field in the first match
 
-SNS
-~~~
+AWS SNS
+~~~~~~~
 
-The SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters.
-The SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
+The AWS SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters.
+The AWS SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
 via environment variables. See http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html for details.
 
 SNS requires one option:
@@ -1670,13 +1672,22 @@ SNS requires one option:
 
 Optional:
 
-``aws_access_key``: An access key to connect to SNS with.
+``aws_access_key_id``: An access key to connect to SNS with.
 
-``aws_secret_key``: The secret key associated with the access key.
+``aws_secret_access_key``: The secret key associated with the access key.
 
 ``aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
 
-``profile``: The AWS profile to use. If none specified, the default will be used.
+``aws_profile``: The AWS profile to use. If none specified, the default will be used.
+
+Example usage::
+
+    alert:
+      - sns:
+          aws_region: 'us-east-1' # You must nest aws_region within your alert configuration so it is not used to sign AWS requests.
+    sns_topic_arn: 'arn:aws:sns:us-east-1:123456789:somesnstopic'
+    aws_access_key_id: 'XXXXXXXXXXXXXXXXXX''
+    aws_secret_access_key: 'YYYYYYYYYYYYYYYYYYYY'
 
 HipChat
 ~~~~~~~
@@ -1776,13 +1787,15 @@ Optional:
 ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
 
 ``slack_icon_url_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can provide icon_url to use custom image.
-Provide absolute address of the pciture, for example: http://some.address.com/image.jpg .
+Provide absolute address of the pciture.
 
 ``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
 
 ``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
 
 ``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
+
+``slack_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to False if you want to ignore SSL errors.
 
 ``slack_title``: Sets a title for the message, this shows up as a blue text at the start of the message
 
@@ -1795,6 +1808,8 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 ``slack_kibana_discover_color``: The color of the Kibana Discover url attachment. Defaults to ``#ec4b98``.
 
 ``slack_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
+
+``slack_ca_certs``: path to a CA cert bundle to use to verify SSL connections.
 
 Mattermost
 ~~~~~~~~~~
@@ -1816,7 +1831,7 @@ Optional:
 ``mattermost_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
 
 ``mattermost_icon_url_override``: By default ElastAlert will use the default webhook icon when posting to the channel. You can provide icon_url to use custom image.
-Provide absolute address of the picture (for example: http://some.address.com/image.jpg) or Base64 data url.
+Provide absolute address of the picture or Base64 data url.
 
 ``mattermost_msg_pretext``: You can set the message attachment pretext using this option.
 
@@ -1832,7 +1847,7 @@ Telegram alerter will send a notification to a predefined Telegram username or c
 
 The alerter requires the following two options:
 
-``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#botfather
+``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#6-botfather
 
 ``telegram_room_id``: Unique identifier for the target chat or username of the target channel using telegram chat_id (in the format "-xxxxxxxx")
 
@@ -1841,6 +1856,10 @@ Optional:
 ``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
 
 ``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``telegram_proxy_login``: The Telegram proxy auth username.
+
+``telegram_proxy_pass``: The Telegram proxy auth password.
 
 GoogleChat
 ~~~~~~~~~~
@@ -1893,7 +1912,7 @@ V2 API Options (Optional):
 
 These options are specific to the PagerDuty V2 API
 
-See https://v2.developer.pagerduty.com/docs/send-an-event-events-api-v2
+See https://developer.pagerduty.com/docs/events-api-v2/trigger-events/
 
 ``pagerduty_api_version``: Defaults to `v1`.  Set to `v2` to enable the PagerDuty V2 Event API.
 
@@ -1924,6 +1943,8 @@ The alerter requires the following options:
 
 ``pagertree_integration_url``: URL generated by PagerTree for the integration.
 
+``pagertree_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerTree. Set this option using hostname:port if you need to use a proxy.
+
 Exotel
 ~~~~~~
 
@@ -1935,7 +1956,7 @@ The alerter requires the following option:
 
 ``exotel_auth_token``: Auth token assosiated with your Exotel account.
 
-If you don't know how to find your accound sid and auth token, refer - http://support.exotel.in/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid-
+If you don't know how to find your accound sid and auth token, refer - https://support.exotel.com/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid
 
 ``exotel_to_number``: The phone number where you would like send the notification.
 
@@ -1962,26 +1983,26 @@ The alerter requires the following option:
 ``twilio_from_number``: Your twilio phone number from which message will be sent.
 
 
-VictorOps
-~~~~~~~~~
+Splunk On-Call (Formerly VictorOps)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-VictorOps alerter will trigger an incident to a predefined VictorOps routing key. The body of the notification is formatted the same as with other alerters.
+Splunk On-Call (Formerly VictorOps) alerter will trigger an incident to a predefined Splunk On-Call (Formerly VictorOps) routing key. The body of the notification is formatted the same as with other alerters.
 
 The alerter requires the following options:
 
 ``victorops_api_key``: API key generated under the 'REST Endpoint' in the Integrations settings.
 
-``victorops_routing_key``: VictorOps routing key to route the alert to.
+``victorops_routing_key``: Splunk On-Call (Formerly VictorOps) routing key to route the alert to.
 
-``victorops_message_type``: VictorOps field to specify severity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
+``victorops_message_type``: Splunk On-Call (Formerly VictorOps) field to specify severity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
 
 Optional:
 
-``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents throughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
+``victorops_entity_id``: The identity of the incident used by Splunk On-Call (Formerly VictorOps) to correlate incidents throughout the alert lifecycle. If not defined, Splunk On-Call (Formerly VictorOps) will assign a random string to each alert.
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
 
-``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
+``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to Splunk On-Call (Formerly VictorOps). Set this option using ``hostname:port`` if you need to use a proxy.
 
 Gitter
 ~~~~~~
@@ -2006,7 +2027,7 @@ The ServiceNow alerter will create a ne Incident in ServiceNow. The body of the 
 
 The alerter requires the following options:
 
-``servicenow_rest_url``: The ServiceNow RestApi url, this will look like https://instancename.service-now.com/api/now/v1/table/incident
+``servicenow_rest_url``: The ServiceNow RestApi url, this will look like https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/c_TableAPI#r_TableAPI-POST
 
 ``username``: The ServiceNow Username to access the api.
 
@@ -2043,12 +2064,20 @@ Stomp
 This alert type will use the STOMP protocol in order to push a message to a broker like ActiveMQ or RabbitMQ. The message body is a JSON string containing the alert details.
 The default values will work with a pristine ActiveMQ installation.
 
-Optional:
+The alerter requires the following options:
 
 ``stomp_hostname``: The STOMP host to use, defaults to localhost.
+
 ``stomp_hostport``: The STOMP port to use, defaults to 61613.
+
 ``stomp_login``: The STOMP login to use, defaults to admin.
+
 ``stomp_password``: The STOMP password to use, defaults to admin.
+
+Optional:
+
+``stomp_ssl``: Connect the STOMP host using TLS, defaults to False.
+
 ``stomp_destination``: The STOMP destination to use, defaults to /queue/ALERT
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
@@ -2057,7 +2086,7 @@ Alerta
 ~~~~~~
 
 Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint.
-See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on the Alerta JSON format.
+See https://docs.alerta.io/en/latest/api/alert.html for more details on the Alerta JSON format.
 
 For Alerta 5.0
 
@@ -2072,6 +2101,8 @@ Optional:
 ``alerta_use_qk_as_resource``: If true and query_key is present, this will override ``alerta_resource`` field with the ``query_key value`` (Can be useful if ``query_key`` is a hostname).
 
 ``alerta_use_match_timestamp``: If true, it will use the timestamp of the first match as the ``createTime`` of the alert. otherwise, the current server time is used.
+
+``alerta_api_skip_ssl``: Defaults to False.
 
 ``alert_missing_value``: Text to replace any match field not found when formating strings. Defaults to ``<MISSING_TEXT>``.
 
@@ -2200,6 +2231,8 @@ Required:
 Optional:
 
 ``hive_proxies``: Proxy configuration.
+
+``hive_verify``: Wether or not to enable SSL certificate validation. Defaults to False.
 
 ``hive_observable_data_mapping``: If needed, matched data fields can be mapped to TheHive observable types using python string formatting.
 
