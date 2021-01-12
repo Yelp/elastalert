@@ -79,8 +79,7 @@ class RulesLoader(object):
         'post': alerts.HTTPPostAlerter,
         'pagertree': alerts.PagerTreeAlerter,
         'linenotify': alerts.LineNotifyAlerter,
-        'hivealerter': alerts.HiveAlerter
-        
+        'hivealerter': alerts.HiveAlerter        
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
