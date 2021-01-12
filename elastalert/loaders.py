@@ -77,7 +77,9 @@ class RulesLoader(object):
         'servicenow': alerts.ServiceNowAlerter,
         'alerta': alerts.AlertaAlerter,
         'post': alerts.HTTPPostAlerter,
-        'hivealerter': alerts.HiveAlerter
+        'pagertree': alerts.PagerTreeAlerter,
+        'linenotify': alerts.LineNotifyAlerter,
+        'hivealerter': alerts.HiveAlerter     
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
