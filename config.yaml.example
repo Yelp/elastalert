@@ -77,38 +77,38 @@ alert_time_limit:
 #    logline:
 #      format: '%(asctime)s %(levelname)+8s %(name)+20s %(message)s'
 #
-#    handlers:
-#      console:
-#        class: logging.StreamHandler
-#        formatter: logline
-#        level: DEBUG
-#        stream: ext://sys.stderr
+#  handlers:
+#    console:
+#      class: logging.StreamHandler
+#      formatter: logline
+#      level: DEBUG
+#      stream: ext://sys.stderr
 #
-#      file:
-#        class : logging.FileHandler
-#        formatter: logline
-#        level: DEBUG
-#        filename: elastalert.log
+#    file:
+#      class : logging.FileHandler
+#      formatter: logline
+#      level: DEBUG
+#      filename: elastalert.log
 #
-#    loggers:
-#      elastalert:
-#        level: WARN
-#        handlers: []
-#        propagate: true
+#  loggers:
+#    elastalert:
+#      level: WARN
+#      handlers: []
+#      propagate: true
 #
-#      elasticsearch:
-#        level: WARN
-#        handlers: []
-#        propagate: true
+#    elasticsearch:
+#      level: WARN
+#      handlers: []
+#      propagate: true
 #
-#      elasticsearch.trace:
-#        level: WARN
-#        handlers: []
-#        propagate: true
+#    elasticsearch.trace:
+#      level: WARN
+#      handlers: []
+#      propagate: true
 #
-#      '':  # root logger
-#        level: WARN
-#          handlers:
-#            - console
-#            - file
-#        propagate: false
+#    '':  # root logger
+#      level: WARN
+#      handlers:
+#        - console
+#        - file
+#      propagate: false
