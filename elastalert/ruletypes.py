@@ -3,7 +3,7 @@ import copy
 import datetime
 import sys
 
-from sortedcontainers import SortedKeyList
+from sortedcontainers import SortedKeyList as sortedlist
 
 from .util import add_raw_postfix
 from .util import dt_to_ts
@@ -306,11 +306,11 @@ class EventWindow(object):
         self.timeframe = timeframe
         self.onRemoved = onRemoved
         self.get_ts = getTimestamp
-        self.data = SortedKeyList(key=self.get_ts)
+        self.data = sortedlist(key=self.get_ts)
         self.running_count = 0
 
     def clear(self):
-        self.data = SortedKeyList(key=self.get_ts)
+        self.data = sortedlist(key=self.get_ts)
         self.running_count = 0
 
     def append(self, event):
