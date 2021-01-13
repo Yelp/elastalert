@@ -1,6 +1,8 @@
 FROM ubuntu:latest
 
 RUN apt-get update && apt-get upgrade -y
+RUN apt-get install software-properties-common -y
+RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get -y install build-essential python3.6 python3.6-dev python3-pip libssl-dev git
 
 WORKDIR /home/elastalert
