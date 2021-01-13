@@ -62,7 +62,6 @@ class RulesLoader(object):
         'debug': alerts.DebugAlerter,
         'command': alerts.CommandAlerter,
         'sns': alerts.SnsAlerter,
-        'hipchat': alerts.HipChatAlerter,
         'ms_teams': alerts.MsTeamsAlerter,
         'slack': alerts.SlackAlerter,
         'mattermost': alerts.MattermostAlerter,
@@ -78,7 +77,7 @@ class RulesLoader(object):
         'post': alerts.HTTPPostAlerter,
         'pagertree': alerts.PagerTreeAlerter,
         'linenotify': alerts.LineNotifyAlerter,
-        'hivealerter': alerts.HiveAlerter     
+        'hivealerter': alerts.HiveAlerter
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
@@ -315,13 +314,6 @@ class RulesLoader(object):
             rule.setdefault('ca_certs', conf.get('ca_certs'))
             rule.setdefault('client_cert', conf.get('client_cert'))
             rule.setdefault('client_key', conf.get('client_key'))
-
-        # Set HipChat options from global config
-        rule.setdefault('hipchat_msg_color', 'red')
-        rule.setdefault('hipchat_domain', 'api.hipchat.com')
-        rule.setdefault('hipchat_notify', True)
-        rule.setdefault('hipchat_from', '')
-        rule.setdefault('hipchat_ignore_ssl_errors', False)
 
         # Make sure we have required options
         if self.required_locals - frozenset(list(rule.keys())):
