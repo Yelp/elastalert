@@ -1659,11 +1659,11 @@ Example usage::
       Environment: '$VAR'          # environment variable
       Message: { field: message }  # field in the first match
 
-AWS SNS
-~~~~~~~
+SNS
+~~~
 
-The AWS SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters.
-The AWS SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
+The SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters.
+The SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
 via environment variables. See http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html for details.
 
 SNS requires one option:
@@ -1672,22 +1672,13 @@ SNS requires one option:
 
 Optional:
 
-``aws_access_key_id``: An access key to connect to SNS with.
+``aws_access_key``: An access key to connect to SNS with.
 
-``aws_secret_access_key``: The secret key associated with the access key.
+``aws_secret_key``: The secret key associated with the access key.
 
 ``aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
 
-``aws_profile``: The AWS profile to use. If none specified, the default will be used.
-
-Example usage::
-
-    alert:
-      - sns:
-          aws_region: 'us-east-1' # You must nest aws_region within your alert configuration so it is not used to sign AWS requests.
-    sns_topic_arn: 'arn:aws:sns:us-east-1:123456789:somesnstopic'
-    aws_access_key_id: 'XXXXXXXXXXXXXXXXXX''
-    aws_secret_access_key: 'YYYYYYYYYYYYYYYYYYYY'
+``profile``: The AWS profile to use. If none specified, the default will be used.
 
 HipChat
 ~~~~~~~
