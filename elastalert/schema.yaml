@@ -380,4 +380,4 @@ properties:
   zbx_sender_host: {type: string}
   zbx_sender_port: {type: integer}
   zbx_host: {type: string}
-  zbx_item: {type: string}
+  zbx_key: {type: string}
