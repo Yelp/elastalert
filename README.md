@@ -39,22 +39,29 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 
 Currently, we have built-in support for the following alert types:
 
+- Command
 - Email
 - JIRA
 - OpsGenie
-- Commands
+- AWS SNS
 - MS Teams
 - Slack
+- Mattermost
 - Telegram
 - GoogleChat
-- AWS SNS
-- VictorOps
 - PagerDuty
 - PagerTree
 - Exotel
 - Twilio
+- Splunk On-Call (Formerly VictorOps)
 - Gitter
+- ServiceNow
+- Debug
+- Stomp
+- Alerta
+- HTTP POST
 - Line Notify
+- TheHive
 - Zabbix
 
 Additional rule types and alerts can be easily imported or written.
@@ -114,7 +121,7 @@ A [Dockerized version](https://github.com/bitsensor/elastalert) of ElastAlert in
 
 ```bash
 git clone https://github.com/bitsensor/elastalert.git; cd elastalert
-docker run -d -p 3030:3030 \
+docker run -d -p 3030:3030 -p 3333:3333 \
     -v `pwd`/config/elastalert.yaml:/opt/elastalert/config.yaml \
     -v `pwd`/config/config.json:/opt/elastalert-server/config/config.json \
     -v `pwd`/rules:/opt/elastalert/rules \
@@ -122,6 +129,24 @@ docker run -d -p 3030:3030 \
     --net="host" \
     --name elastalert bitsensor/elastalert:latest
 ```
+
+### ElastAlert-Docker
+
+This Dockerfile will build a Docker image for Elastalert. This image is compatible with the accompanying Helm chart for Kubernetes.
+
+https://github.com/jertel/elastalert-docker
+
+### ElastAlert uses ElastAlert Helm Chart almost as it is *Use original Docker Image to fix bugs
+
+[ElastAlert Server Helm Chart](https://github.com/daichi703n/elastalert-helm)
+
+[Praeco Helm Chart](https://github.com/daichi703n/praeco-helm)
+
+[Installing Praeco (ElastAlert GUI) into Kubernetes with Helm](https://en-designetwork.daichi703n.com/entry/2020/02/24/praeco-helm-kubernetes)
+
+### Praeco
+![Praeco screenshot](https://user-images.githubusercontent.com/611996/47752071-7c4a9080-dc61-11e8-8ccf-2196f13429b2.png)
+[Praeco](https://github.com/johnsusek/praeco) is a free open source GUI for ElastAlert.
 
 ## Documentation
 
