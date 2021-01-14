@@ -37,6 +37,7 @@ setup(
         'envparse>=0.2.0',
         'exotel>=0.1.3',
         'jira>=2.0.0',
+        'Jinja2==2.10.1',
         'jsonschema>=3.0.2',
         'mock>=2.0.0',
         'prison>=0.1.2',
@@ -48,6 +49,7 @@ setup(
         'stomp.py>=4.1.17',
         'texttable>=0.8.8',
         'twilio>=6.0.0,<6.1',
-        'cffi>=1.11.5'
+        'cffi>=1.11.5',
+        'tzlocal<3.0'
     ]
 )

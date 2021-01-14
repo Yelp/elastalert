@@ -938,7 +938,7 @@ Optional:
 ``field_value``: When set, uses the value of the field in the document and not the number of matching documents.
 This is useful to monitor for example a temperature sensor and raise an alarm if the temperature grows too fast.
 Note that the means of the field on the reference and current windows are used to determine if the ``spike_height`` value is reached.
-Note also that the threshold parameters are ignored in this smode.
+Note also that the threshold parameters are ignored in this mode.
 
 
 ``threshold_ref``: The minimum number of events that must exist in the reference window for an alert to trigger. For example, if
@@ -1361,9 +1361,30 @@ There are several ways to format the body text of the various types of events. I
     top_counts          = top_counts_header, LF, top_counts_value
     field_values        = Field, ": ", Value
 
-Similarly to ``alert_subject``, ``alert_text`` can be further formatted using standard Python formatting syntax.
+Similarly to ``alert_subject``, ``alert_text`` can be further formatted using Jinja2 Templates or Standard Python Formatting Syntax
+
+1. Jinja Template
+
+By setting ``alert_text_type: alert_text_jinja`` you can use jinja2 templates in ``alert_text``. ::
+
+    alert_text_type: alert_text_jinja
+
+    alert_text: |
+      Alert triggered! *({{num_hits}} Matches!)*
+      Something happened with {{username}} ({{email}})
+      {{description|truncate}}
+
+Top fields are accessible via `{{field_name}}` or `{{_data['field_name']}}`, `_data` is useful when accessing *fields with dots in their keys*, as Jinja treat dot as a nested field.
+If `_data` conflicts with your top level data, use  ``jinja_root_name`` to change its name.
+
+2. Standard Python Formatting Syntax
+
 The field names whose values will be used as the arguments can be passed with ``alert_text_args`` or ``alert_text_kw``.
-You may also refer to any top-level rule property in the ``alert_subject_args``, ``alert_text_args``, ``alert_missing_value``, and ``alert_text_kw fields``.  However, if the matched document has a key with the same name, that will take preference over the rule property.
+You may also refer to any top-level rule property in the ``alert_subject_args``, ``alert_text_args``, ``alert_missing_value``, and ``alert_text_kw fields``.  However, if the matched document has a key with the same name, that will take preference over the rule property. ::
+
+    alert_text: "Something happened with {0} at {1}"
+    alert_text_type: alert_text_only
+    alert_text_args: ["username", "@timestamp"]
 
 By default::
 
@@ -1382,6 +1403,14 @@ With ``alert_text_type: alert_text_only``::
     body                = rule_name
 
                           alert_text
+
+
+With ``alert_text_type: alert_text_jinja``::
+
+    body                = rule_name
+
+                          alert_text
+
 
 With ``alert_text_type: exclude_fields``::
 
@@ -1501,7 +1530,7 @@ by the smtp server.
 ``bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
 
 ``email_format``: If set to ``html``, the email's MIME type will be set to HTML, and HTML content should correctly render. If you use this,
-you need to put your own HTML into ``alert_text`` and use ``alert_text_type: alert_text_only``.
+you need to put your own HTML into ``alert_text`` and use ``alert_text_type: alert_text_jinja`` Or ``alert_text_type: alert_text_only``.
 
 Jira
 ~~~~
@@ -1629,7 +1658,7 @@ The OpsGenie alert requires one option:
 Optional:
 
 ``opsgenie_account``: The OpsGenie account to integrate with.
-
+``opsgenie_addr``: The OpsGenie URL to to connect against, default is ``https://api.opsgenie.com/v2/alerts``
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
 ``opsgenie_recipients_args``: Map of arguments used to format opsgenie_recipients.
 ``opsgenie_default_receipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful.
