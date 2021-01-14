@@ -83,6 +83,11 @@ class ElastAlerter(object):
         parser.add_argument('--rule', dest='rule', help='Run only a specific rule (by filename, must still be in rules folder)')
         parser.add_argument('--silence', dest='silence', help='Silence rule for a time period. Must be used with --rule. Usage: '
                                                               '--silence <units>=<number>, eg. --silence hours=2')
+        parser.add_argument(
+            "--silence_qk_value",
+            dest="silence_qk_value",
+            help="Silence the rule only for this specific query key value.",
+        )
         parser.add_argument('--start', dest='start', help='YYYY-MM-DDTHH:MM:SS Start querying from this timestamp. '
                                                           'Use "NOW" to start from current time. (Default: present)')
         parser.add_argument('--end', dest='end', help='YYYY-MM-DDTHH:MM:SS Query to this timestamp. (Default: present)')
@@ -159,6 +164,7 @@ class ElastAlerter(object):
         self.starttime = self.args.start
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
+        self.thread_data.alerts_sent = 0
         self.thread_data.num_hits = 0
         self.thread_data.num_dupes = 0
         self.scheduler = BackgroundScheduler()
@@ -1855,7 +1861,10 @@ class ElastAlerter(object):
 
         # With --rule, self.rules will only contain that specific rule
         if not silence_cache_key:
-            silence_cache_key = self.rules[0]['name'] + "._silence"
+            if self.args.silence_qk_value:
+                silence_cache_key = self.rules[0]['name'] + "." + self.args.silence_qk_value
+            else:
+                silence_cache_key = self.rules[0]['name'] + "._silence"
 
         try:
             silence_ts = parse_deadline(self.args.silence)
