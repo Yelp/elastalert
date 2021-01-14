@@ -152,7 +152,7 @@ def ts_to_dt(timestamp):
 
 def dt_to_ts(dt):
     if not isinstance(dt, datetime.datetime):
-        logging.warning('Expected datetime, got %s' % (type(dt)))
+        elastalert_logger.warning('Expected datetime, got %s' % (type(dt)))
         return dt
     ts = dt.isoformat()
     # Round microseconds to milliseconds
@@ -176,7 +176,7 @@ def ts_to_dt_with_format(timestamp, ts_format):
 
 def dt_to_ts_with_format(dt, ts_format):
     if not isinstance(dt, datetime.datetime):
-        logging.warning('Expected datetime, got %s' % (type(dt)))
+        elastalert_logger.warning('Expected datetime, got %s' % (type(dt)))
         return dt
     ts = dt.strftime(ts_format)
     return ts
@@ -361,7 +361,7 @@ def build_es_conn_config(conf):
 
     # Deprecated
     if 'boto_profile' in conf:
-        logging.warning('Found deprecated "boto_profile", use "profile" instead!')
+        elastalert_logger.warning('Found deprecated "boto_profile", use "profile" instead!')
         parsed_conf['profile'] = conf['boto_profile']
 
     if 'profile' in conf:
