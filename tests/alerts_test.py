@@ -1214,7 +1214,7 @@ def test_slack_uses_custom_title():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1260,7 +1260,7 @@ def test_slack_uses_custom_timeout():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=20
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1304,7 +1304,7 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1349,7 +1349,7 @@ def test_slack_uses_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1410,7 +1410,7 @@ def test_slack_uses_list_of_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data1 == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1461,7 +1461,7 @@ def test_slack_attach_kibana_discover_url_when_generated():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1506,7 +1506,7 @@ def test_slack_attach_kibana_discover_url_when_not_generated():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1558,7 +1558,7 @@ def test_slack_kibana_discover_title():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1610,11 +1610,56 @@ def test_slack_kibana_discover_color():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
+
+
+def test_slack_ignore_ssl_errors():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_ignore_ssl_errors': True,
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
 def test_http_alerter_with_payload():
