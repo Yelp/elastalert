@@ -901,10 +901,6 @@ class CommandAlerter(Alerter):
                 elastalert_logger.warning('Warning! You could be vulnerable to shell injection!')
             self.rule['command'] = [self.rule['command']]
 
-        self.new_style_string_format = False
-        if 'new_style_string_format' in self.rule and self.rule['new_style_string_format']:
-            self.new_style_string_format = True
-
     def alert(self, matches):
         # Format the command and arguments
         try:
