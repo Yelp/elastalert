@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from .util import pretty_ts
 
 
 class BaseEnhancement(object):
@@ -12,6 +13,11 @@ class BaseEnhancement(object):
     def process(self, match):
         """ Modify the contents of match, a dictionary, in some way """
         raise NotImplementedError()
+
+
+class TimeEnhancement(BaseEnhancement):
+    def process(self, match):
+        match['@timestamp'] = pretty_ts(match['@timestamp'])
 
 
 class DropMatchException(Exception):

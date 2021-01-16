@@ -56,22 +56,23 @@ Note that a term query may not behave as expected if a field is analyzed. By def
 a field that appears to have the value "foo bar", unless it is not analyzed. Conversely, a term query for "foo" will match analyzed strings "foo bar" and "foo baz". For full text
 matching on analyzed fields, use query_string. See https://www.elastic.co/guide/en/elasticsearch/guide/current/term-vs-full-text.html
 
-terms
-*****
+`terms <https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-terms-query.html>`_
+*****************************************************************************************************
+
+
 
 Terms allows for easy combination of multiple term filters::
 
     filter:
     - terms:
-        field: ["value1", "value2"]
+        field: ["value1", "value2"] # value1 OR value2
 
-Using the minimum_should_match option, you can define a set of term filters of which a certain number must match::
+You can also match on multiple fields::
 
     - terms:
         fieldX: ["value1", "value2"]
         fieldY: ["something", "something_else"]
         fieldZ: ["foo", "bar", "baz"]
-        minimum_should_match: 2
 
 wildcard
 ********

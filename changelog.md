@@ -1,5 +1,50 @@
 # Change Log
 
+# v0.2.4
+
+### Added
+- Added back customFields support for The Hive
+
+# v0.2.3
+
+### Added
+- Added back TheHive alerter without TheHive4py library
+
+# v0.2.2
+
+### Added
+- Integration with Kibana Discover app
+- Addied ability to specify opsgenie alert details 
+
+### Fixed
+- Fix some encoding issues with command alerter
+- Better error messages for missing config file
+- Fixed an issue with run_every not applying per-rule
+- Fixed an issue with rules not being removed
+- Fixed an issue with top count keys and nested query keys
+- Various documentation fixes
+- Fixed an issue with not being able to use spike aggregation
+
+### Removed
+- Remove The Hive alerter
+
+# v0.2.1
+
+### Fixed
+- Fixed an AttributeError introduced in 0.2.0
+
+# v0.2.0
+
+- Switched to Python 3
+
+### Added
+- Add rule loader class for customized rule loading
+- Added thread based rules and limit_execution
+- Run_every can now be customized per rule
+
+### Fixed
+- Various small fixes
+
 # v0.1.39
 
 ### Added

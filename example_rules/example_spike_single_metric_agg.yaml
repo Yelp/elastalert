@@ -6,6 +6,9 @@ type: spike_aggregation
 
 index: metricbeat-*
 
+timeframe:
+  hours: 4
+
 buffer_time:
   hours: 1
 
