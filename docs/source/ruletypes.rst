@@ -294,7 +294,7 @@ es_url_prefix
 ``es_url_prefix``: URL prefix for the Elasticsearch endpoint. (Optional, string, no default)
 
 statsd_instance_tag
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 
 ``statsd_instance_tag``: prefix for statsd metrics. (Optional, string, no default)
 
