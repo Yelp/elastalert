@@ -371,3 +371,6 @@ properties:
   zbx_sender_port: {type: integer}
   zbx_host: {type: string}
   zbx_key: {type: string}
+
+  ## Discord
+  discord_webhook_url: {type: string}

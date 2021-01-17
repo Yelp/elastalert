@@ -2282,3 +2282,31 @@ Required:
 ``zbx_sender_port``: The port where zabbix server is listenning.
 ``zbx_host``: This field setup the host in zabbix that receives the value sent by Elastalert.
 ``zbx_key``: This field setup the key in the host that receives the value sent by Elastalert.
+
+
+Discord
+~~~~~~~
+
+Discord will send notification to a Line application. The body of the notification is formatted the same as with other alerters.
+
+Required:
+
+``discord_webhook_url``:  The webhook URL.
+
+Optional:
+
+``discord_emoji_title``: By default ElastAlert will use the ``:warning:`` emoji when posting to the channel. You can use a different emoji per ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
+
+``discord_http_proxy``: By default ElastAlert will not use a network http proxy to send notifications to Discord. Set this option using hostname:port if you need to use a proxy.
+
+``discord_https_proxy``: By default ElastAlert will not use a network https proxy to send notifications to Discord. Set this option using hostname:port if you need to use a proxy.
+
+``discord_proxy_login``: The Discord proxy auth username.
+
+``discord_proxy_password``: The Discord proxy auth username.
+
+``discord_embed_color``: embed color. By default ``0xffffff``.
+
+``discord_embed_footer``: embed footer.
+
+``discord_embed_icon_url``: You can provide icon_url to use custom image. Provide absolute address of the pciture.
