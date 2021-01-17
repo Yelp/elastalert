@@ -40,7 +40,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_url_prefix`` (string, no default)                       |           |
 +--------------------------------------------------------------+           |
-| ``statsd_instance_tag`` (string, no default)               |           |
+| ``statsd_instance_tag`` (string, no default)                 |           |
 +--------------------------------------------------------------+           |
 | ``statsd_host`` (string, no default)                         |           |
 +--------------------------------------------------------------+           |
