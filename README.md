@@ -1,3 +1,18 @@
+# Fork of yelp/elastalert
+
+The original [yelp/elastalert](https://github.com/yelp/elastalert) repository has become mostly stale, with hundreds of open PRs and over 1000 open issues. The yelp team has acknowledged that they are winding down support of Elastalert. Consequently, it is difficult to merge fixes, dependency upgrades, and new features into Elastalert. Because of this, a fork of elastalert has been created. [jertel/elastalert](https://github.com/jertel/elastalert) will be an alternate repository for updates, until a new maintainer is appointed by the Yelp team and it's clear that the new maintainers are responding to PRs and issues. 
+
+PRs are welcome, but must include tests, when possible. PRs will not be merged if they do not pass the automated CI workflows. 
+
+The current status of the _alt_ branch CI workflow:
+
+![CI Workflow](https://github.com/jertel/elastalert/workflows/alt_build_test/badge.svg)
+
+If you're interested in a pre-built Docker image for either the official yelp/elastalert release, or for this fork, check out the [elastalert-docker](https://hub.docker.com/r/jertel/elastalert-docker) project on Docker Hub. 
+
+
+# Original README from yelp/elastalert follows...
+
 Recent changes: As of Elastalert 0.2.0, you must use Python 3.6. Python 2 will not longer be supported.
 
 [![Build Status](https://travis-ci.org/Yelp/elastalert.svg)](https://travis-ci.org/Yelp/elastalert)
