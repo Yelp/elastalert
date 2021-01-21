@@ -1,5 +1,5 @@
-[![Stories in Ready](https://badge.waffle.io/Yelp/elastalert.png?label=ready&title=Ready)](https://waffle.io/Yelp/elastalert)
-[![Stories in In Progress](https://badge.waffle.io/Yelp/elastalert.png?label=in%20progress&title=In%20Progress)](https://waffle.io/Yelp/elastalert)
+Recent changes: As of Elastalert 0.2.0, you must use Python 3.6. Python 2 will not longer be supported.
+
 [![Build Status](https://travis-ci.org/Yelp/elastalert.svg)](https://travis-ci.org/Yelp/elastalert)
 [![Join the chat at https://gitter.im/Yelp/elastalert](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Yelp/elastalert?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -56,6 +56,7 @@ Currently, we have built-in support for the following alert types:
 - Twilio
 - Gitter
 - Line Notify
+- Zabbix
 
 Additional rule types and alerts can be easily imported or written.
 
@@ -70,8 +71,23 @@ In addition to this basic usage, there are many other features that make alerts 
 To get started, check out `Running ElastAlert For The First Time` in the [documentation](http://elastalert.readthedocs.org).
 
 ## Running ElastAlert
+You can either install the latest released version of ElastAlert using pip:
 
-``$ python elastalert/elastalert.py [--debug] [--verbose] [--start <timestamp>] [--end <timestamp>] [--rule <filename.yaml>] [--config <filename.yaml>]``
+```pip install elastalert```
+
+or you can clone the ElastAlert repository for the most recent changes:
+
+```git clone https://github.com/Yelp/elastalert.git```
+
+Install the module:
+
+```pip install "setuptools>=11.3"```
+
+```python setup.py install```
+
+The following invocation can be used to run ElastAlert after installing
+
+``$ elastalert [--debug] [--verbose] [--start <timestamp>] [--end <timestamp>] [--rule <filename.yaml>] [--config <filename.yaml>]``
 
 ``--debug`` will print additional information to the screen as well as suppresses alerts and instead prints the alert body. Not compatible with `--verbose`.
 

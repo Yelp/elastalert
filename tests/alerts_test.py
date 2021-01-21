@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
+import base64
 import datetime
 import json
 import subprocess
-from contextlib import nested
 
 import mock
 import pytest
@@ -21,7 +21,7 @@ from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
 from elastalert.alerts import SlackAlerter
 from elastalert.alerts import StrideAlerter
-from elastalert.config import load_modules
+from elastalert.loaders import FileRulesLoader
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
 from elastalert.util import ts_now
@@ -35,7 +35,7 @@ class mock_rule:
 def test_basic_match_string(ea):
     ea.rules[0]['top_count_keys'] = ['username']
     match = {'@timestamp': '1918-01-17', 'field': 'value', 'top_events_username': {'bob': 10, 'mallory': 5}}
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'anytest' in alert_text
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
@@ -44,32 +44,32 @@ def test_basic_match_string(ea):
 
     # Non serializable objects don't cause errors
     match['non-serializable'] = {open: 10}
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = str(BasicMatchString(ea.rules[0], match))
 
     # unicode objects dont cause errors
-    match['snowman'] = u'☃'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    match['snowman'] = '☃'
+    alert_text = str(BasicMatchString(ea.rules[0], match))
 
     # Pretty printed objects
     match.pop('non-serializable')
     match['object'] = {'this': {'that': [1, 2, "3"]}}
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
-    assert '"this": {\n        "that": [\n            1, \n            2, \n            "3"\n        ]\n    }' in alert_text
+    alert_text = str(BasicMatchString(ea.rules[0], match))
+    assert '"this": {\n        "that": [\n            1,\n            2,\n            "3"\n        ]\n    }' in alert_text
 
     ea.rules[0]['alert_text'] = 'custom text'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'anytest' not in alert_text
 
     ea.rules[0]['alert_text_type'] = 'alert_text_only'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'some stuff happened' not in alert_text
     assert 'username' not in alert_text
     assert 'field: value' not in alert_text
 
     ea.rules[0]['alert_text_type'] = 'exclude_fields'
-    alert_text = unicode(BasicMatchString(ea.rules[0], match))
+    alert_text = str(BasicMatchString(ea.rules[0], match))
     assert 'custom text' in alert_text
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
@@ -83,8 +83,8 @@ def test_jira_formatted_match_string(ea):
     expected_alert_text_snippet = '{code}{\n' \
         + tab + '"foo": {\n' \
         + 2 * tab + '"bar": [\n' \
-        + 3 * tab + '"one", \n' \
-        + 3 * tab + '2, \n' \
+        + 3 * tab + '"one",\n' \
+        + 3 * tab + '2,\n' \
         + 3 * tab + '"three"\n' \
         + 2 * tab + ']\n' \
         + tab + '}\n' \
@@ -95,7 +95,7 @@ def test_jira_formatted_match_string(ea):
 def test_email():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com', 'owner': 'owner_value',
-            'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': u'☃'}
+            'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': '☃'}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
@@ -106,7 +106,7 @@ def test_email():
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
@@ -158,9 +158,9 @@ def test_email_from_field():
 
 
 def test_email_with_unicode_strings():
-    rule = {'name': 'test alert', 'email': u'testing@test.test', 'from_addr': 'testfrom@test.test',
+    rule = {'name': 'test alert', 'email': 'testing@test.test', 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com', 'owner': 'owner_value',
-            'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': u'☃'}
+            'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': '☃'}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
@@ -170,8 +170,8 @@ def test_email_with_unicode_strings():
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
-                    mock.call().sendmail(mock.ANY, [u'testing@test.test'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().sendmail(mock.ANY, ['testing@test.test'], mock.ANY),
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
@@ -200,7 +200,7 @@ def test_email_with_auth():
                     mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().login('someone', 'hunter2'),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
 
@@ -222,7 +222,7 @@ def test_email_with_cert_key():
                     mock.call().starttls(certfile='dummy/cert.crt', keyfile='dummy/client.key'),
                     mock.call().login('someone', 'hunter2'),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
 
@@ -240,7 +240,7 @@ def test_email_with_cc():
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
@@ -265,7 +265,7 @@ def test_email_with_bcc():
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test', 'tester@testing.testing'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
@@ -300,7 +300,7 @@ def test_email_with_cc_and_bcc():
                         ],
                         mock.ANY
         ),
-            mock.call().close()]
+            mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
@@ -329,18 +329,18 @@ def test_email_with_args():
         mock_smtp.return_value = mock.Mock()
 
         alert = EmailAlerter(rule)
-        alert.alert([{'test_term': 'test_value', 'test_arg1': 'testing', 'test': {'term': ':)', 'arg3': u'☃'}}])
+        alert.alert([{'test_term': 'test_value', 'test_arg1': 'testing', 'test': {'term': ':)', 'arg3': '☃'}}])
         expected = [mock.call('localhost'),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
                     mock.call().sendmail(mock.ANY, ['testing@test.test', 'test@test.test'], mock.ANY),
-                    mock.call().close()]
+                    mock.call().quit()]
         assert mock_smtp.mock_calls == expected
 
         body = mock_smtp.mock_calls[4][1][2]
         # Extract the MIME encoded message body
-        body_text = body.split('\n\n')[-1][:-1].decode('base64')
+        body_text = base64.b64decode(body.split('\n\n')[-1][:-1]).decode('utf-8')
 
         assert 'testing' in body_text
         assert '<CUSTOM MISSING VALUE>' in body_text
@@ -380,9 +380,9 @@ def test_opsgenie_basic():
 
         alert = OpsGenieAlerter(rule)
         alert.alert([{'@timestamp': '2014-10-31T00:00:00'}])
-        print("mock_post: {0}".format(mock_post._mock_call_args_list))
+        print(("mock_post: {0}".format(mock_post._mock_call_args_list)))
         mcal = mock_post._mock_call_args_list
-        print('mcal: {0}'.format(mcal[0]))
+        print(('mcal: {0}'.format(mcal[0])))
         assert mcal[0][0][0] == ('https://api.opsgenie.com/v2/alerts')
 
         assert mock_post.called
@@ -406,9 +406,9 @@ def test_opsgenie_frequency():
 
         assert alert.get_info()['recipients'] == rule['opsgenie_recipients']
 
-        print("mock_post: {0}".format(mock_post._mock_call_args_list))
+        print(("mock_post: {0}".format(mock_post._mock_call_args_list)))
         mcal = mock_post._mock_call_args_list
-        print('mcal: {0}'.format(mcal[0]))
+        print(('mcal: {0}'.format(mcal[0])))
         assert mcal[0][0][0] == ('https://api.opsgenie.com/v2/alerts')
 
         assert mock_post.called
@@ -456,6 +456,261 @@ def test_opsgenie_default_alert_routing():
         assert alert.get_info()['recipients'] == ['devops@test.com']
 
 
+def test_opsgenie_details_with_constant_value():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {'Foo': 'Bar'}
+    }
+    match = {
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {'Foo': 'Bar'},
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
+def test_opsgenie_details_with_field():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {'Foo': {'field': 'message'}}
+    }
+    match = {
+        'message': 'Bar',
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {'Foo': 'Bar'},
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
+def test_opsgenie_details_with_nested_field():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {'Foo': {'field': 'nested.field'}}
+    }
+    match = {
+        'nested': {
+            'field': 'Bar'
+        },
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {'Foo': 'Bar'},
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
+def test_opsgenie_details_with_non_string_field():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {
+            'Age': {'field': 'age'},
+            'Message': {'field': 'message'}
+        }
+    }
+    match = {
+        'age': 10,
+        'message': {
+            'format': 'The cow goes %s!',
+            'arg0': 'moo'
+        }
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {
+            'Age': '10',
+            'Message': "{'format': 'The cow goes %s!', 'arg0': 'moo'}"
+        },
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
+def test_opsgenie_details_with_missing_field():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {
+            'Message': {'field': 'message'},
+            'Missing': {'field': 'missing'}
+        }
+    }
+    match = {
+        'message': 'Testing',
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {'Message': 'Testing'},
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
+def test_opsgenie_details_with_environment_variable_replacement(environ):
+    environ.update({
+        'TEST_VAR': 'Bar'
+    })
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {'Foo': '$TEST_VAR'}
+    }
+    match = {
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': BasicMatchString(rule, match).__str__(),
+        'details': {'Foo': 'Bar'},
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
 def test_jira():
     description_txt = "Description stuff goes here like a runbook link."
     rule = {
@@ -478,10 +733,8 @@ def test_jira():
 
     mock_priority = mock.Mock(id='5')
 
-    with nested(
-        mock.patch('elastalert.alerts.JIRA'),
-        mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
+    with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
+            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value.priorities.return_value = [mock_priority]
         mock_jira.return_value.fields.return_value = []
@@ -511,10 +764,8 @@ def test_jira():
 
     # Search called if jira_bump_tickets
     rule['jira_bump_tickets'] = True
-    with nested(
-        mock.patch('elastalert.alerts.JIRA'),
-        mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
+    with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
+            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value = mock.Mock()
         mock_jira.return_value.search_issues.return_value = []
@@ -529,10 +780,8 @@ def test_jira():
 
     # Remove a field if jira_ignore_in_title set
     rule['jira_ignore_in_title'] = 'test_term'
-    with nested(
-        mock.patch('elastalert.alerts.JIRA'),
-        mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
+    with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
+            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value = mock.Mock()
         mock_jira.return_value.search_issues.return_value = []
@@ -545,10 +794,8 @@ def test_jira():
     assert 'test_value' not in mock_jira.mock_calls[3][1][0]
 
     # Issue is still created if search_issues throws an exception
-    with nested(
-        mock.patch('elastalert.alerts.JIRA'),
-        mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
+    with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
+            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value = mock.Mock()
         mock_jira.return_value.search_issues.side_effect = JIRAError
@@ -566,10 +813,8 @@ def test_jira():
 
     # Check ticket is bumped if it is updated 4 days ago
     mock_issue.fields.updated = str(ts_now() - datetime.timedelta(days=4))
-    with nested(
-        mock.patch('elastalert.alerts.JIRA'),
-        mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
+    with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
+            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value = mock.Mock()
         mock_jira.return_value.search_issues.return_value = [mock_issue]
@@ -584,10 +829,8 @@ def test_jira():
 
     # Check ticket is bumped is not bumped if ticket is updated right now
     mock_issue.fields.updated = str(ts_now())
-    with nested(
-        mock.patch('elastalert.alerts.JIRA'),
-        mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
+    with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
+            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value = mock.Mock()
         mock_jira.return_value.search_issues.return_value = [mock_issue]
@@ -621,10 +864,8 @@ def test_jira():
         mock_fields = [
             {'name': 'affected user', 'id': 'affected_user_id', 'schema': {'type': 'string'}}
         ]
-        with nested(
-            mock.patch('elastalert.alerts.JIRA'),
-            mock.patch('elastalert.alerts.yaml_loader')
-        ) as (mock_jira, mock_open):
+        with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
+                mock.patch('elastalert.alerts.yaml_loader') as mock_open:
             mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
             mock_jira.return_value = mock.Mock()
             mock_jira.return_value.search_issues.return_value = [mock_issue]
@@ -696,10 +937,8 @@ def test_jira_arbitrary_field_support():
         },
     ]
 
-    with nested(
-            mock.patch('elastalert.alerts.JIRA'),
-            mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
+    with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
+            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value.priorities.return_value = [mock_priority]
         mock_jira.return_value.fields.return_value = mock_fields
@@ -739,10 +978,8 @@ def test_jira_arbitrary_field_support():
     # Reference an arbitrary string field that is not defined on the JIRA server
     rule['jira_nonexistent_field'] = 'nonexistent field value'
 
-    with nested(
-            mock.patch('elastalert.alerts.JIRA'),
-            mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
+    with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
+            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value.priorities.return_value = [mock_priority]
         mock_jira.return_value.fields.return_value = mock_fields
@@ -757,10 +994,8 @@ def test_jira_arbitrary_field_support():
     # Reference a watcher that does not exist
     rule['jira_watchers'] = 'invalid_watcher'
 
-    with nested(
-            mock.patch('elastalert.alerts.JIRA'),
-            mock.patch('elastalert.alerts.yaml_loader')
-    ) as (mock_jira, mock_open):
+    with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
+            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value.priorities.return_value = [mock_priority]
         mock_jira.return_value.fields.return_value = mock_fields
@@ -902,7 +1137,8 @@ def test_ms_teams():
         'alert_subject': 'Cool subject',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = MsTeamsAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -938,7 +1174,8 @@ def test_ms_teams_uses_color_and_fixed_width_text():
         'alert_subject': 'Cool subject',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = MsTeamsAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -974,7 +1211,8 @@ def test_slack_uses_custom_title():
         'alert_subject': 'Cool subject',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1004,7 +1242,7 @@ def test_slack_uses_custom_title():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify=False,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1019,7 +1257,8 @@ def test_slack_uses_custom_timeout():
         'alert': [],
         'slack_timeout': 20
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1049,7 +1288,7 @@ def test_slack_uses_custom_timeout():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify=False,
         timeout=20
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1062,7 +1301,8 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
         'slack_webhook_url': ['http://please.dontgohere.slack'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1092,7 +1332,7 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify=False,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1106,7 +1346,8 @@ def test_slack_uses_custom_slack_channel():
         'slack_channel_override': '#test-alert',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1136,7 +1377,7 @@ def test_slack_uses_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify=False,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1150,7 +1391,8 @@ def test_slack_uses_list_of_custom_slack_channel():
         'slack_channel_override': ['#test-alert', '#test-alert2'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1196,11 +1438,211 @@ def test_slack_uses_list_of_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify=False,
         timeout=10
     )
     assert expected_data1 == json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data2 == json.loads(mock_post_request.call_args_list[1][1]['data'])
+
+
+def test_slack_attach_kibana_discover_url_when_generated():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'kibana_discover_url': 'http://kibana#discover'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            },
+            {
+                'color': '#ec4b98',
+                'title': 'Discover in Kibana',
+                'title_link': 'http://kibana#discover'
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_slack_attach_kibana_discover_url_when_not_generated():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_slack_kibana_discover_title():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_kibana_discover_title': 'Click to discover in Kibana',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'kibana_discover_url': 'http://kibana#discover'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            },
+            {
+                'color': '#ec4b98',
+                'title': 'Click to discover in Kibana',
+                'title_link': 'http://kibana#discover'
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_slack_kibana_discover_color():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_attach_kibana_discover_url': True,
+        'slack_kibana_discover_color': 'blue',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'kibana_discover_url': 'http://kibana#discover'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'parse': 'none',
+        'text': '',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            },
+            {
+                'color': 'blue',
+                'title': 'Discover in Kibana',
+                'title_link': 'http://kibana#discover'
+            }
+        ],
+        'icon_emoji': ':ghost:',
+        'channel': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
 
 
 def test_http_alerter_with_payload():
@@ -1212,7 +1654,8 @@ def test_http_alerter_with_payload():
         'http_post_static_payload': {'name': 'somestaticname'},
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = HTTPPostAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1244,7 +1687,8 @@ def test_http_alerter_with_payload_all_values():
         'http_post_all_values': True,
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = HTTPPostAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1276,7 +1720,8 @@ def test_http_alerter_without_payload():
         'http_post_static_payload': {'name': 'somestaticname'},
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = HTTPPostAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1307,7 +1752,8 @@ def test_pagerduty_alerter():
         'pagerduty_client_name': 'ponies inc.',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1344,7 +1790,8 @@ def test_pagerduty_alerter_v2():
         'pagerduty_v2_payload_source': 'mysql.host.name',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1364,6 +1811,7 @@ def test_pagerduty_alerter_v2():
             'custom_details': {
                 'information': 'Test PD Rule\n\n@timestamp: 2017-01-01T00:00:00\nsomefield: foobarbaz\n'
             },
+            'timestamp': '2017-01-01T00:00:00'
         },
         'event_action': 'trigger',
         'dedup_key': '',
@@ -1383,7 +1831,8 @@ def test_pagerduty_alerter_custom_incident_key():
         'pagerduty_incident_key': 'custom key',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1415,7 +1864,8 @@ def test_pagerduty_alerter_custom_incident_key_with_args():
         'pagerduty_incident_key_args': ['somefield'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1448,7 +1898,8 @@ def test_pagerduty_alerter_custom_alert_subject():
         'pagerduty_incident_key_args': ['somefield'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1482,7 +1933,8 @@ def test_pagerduty_alerter_custom_alert_subject_with_args():
         'pagerduty_incident_key_args': ['someotherfield'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1518,7 +1970,8 @@ def test_pagerduty_alerter_custom_alert_subject_with_args_specifying_trigger():
         'pagerduty_incident_key_args': ['someotherfield'],
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = PagerDutyAlerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
@@ -1549,7 +2002,7 @@ def test_alert_text_kw(ea):
         'field': 'field',
     }
     match = {'@timestamp': '1918-01-17', 'field': 'value'}
-    alert_text = unicode(BasicMatchString(rule, match))
+    alert_text = str(BasicMatchString(rule, match))
     body = '{field} at {@timestamp}'.format(**match)
     assert body in alert_text
 
@@ -1568,7 +2021,7 @@ def test_alert_text_global_substitution(ea):
         'abc': 'abc from match',
     }
 
-    alert_text = unicode(BasicMatchString(rule, match))
+    alert_text = str(BasicMatchString(rule, match))
     assert 'Priority: priority from rule' in alert_text
     assert 'Owner: the owner from rule' in alert_text
 
@@ -1594,7 +2047,7 @@ def test_alert_text_kw_global_substitution(ea):
         'abc': 'abc from match',
     }
 
-    alert_text = unicode(BasicMatchString(rule, match))
+    alert_text = str(BasicMatchString(rule, match))
     assert 'Owner: the owner from rule' in alert_text
     assert 'Foo: foo from rule' in alert_text
 
@@ -1643,7 +2096,8 @@ def test_stride_plain_text():
         'alert_subject': 'Cool subject',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1688,7 +2142,8 @@ def test_stride_underline_text():
         'alert_text_type': 'alert_text_only',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1733,7 +2188,8 @@ def test_stride_bold_text():
         'alert_text_type': 'alert_text_only',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1778,7 +2234,8 @@ def test_stride_strong_text():
         'alert_text_type': 'alert_text_only',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1823,7 +2280,8 @@ def test_stride_hyperlink():
         'alert_text_type': 'alert_text_only',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1868,7 +2326,8 @@ def test_stride_html():
         'alert_text_type': 'alert_text_only',
         'alert': []
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = StrideAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
@@ -1920,7 +2379,8 @@ def test_hipchat_body_size_limit_text():
             'message': 'message',
         },
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = HipChatAlerter(rule)
     match = {
         '@timestamp': '2018-01-01T00:00:00',
@@ -1947,7 +2407,8 @@ def test_hipchat_body_size_limit_html():
             'message': 'message',
         },
     }
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = HipChatAlerter(rule)
     match = {
         '@timestamp': '2018-01-01T00:00:00',
@@ -1964,7 +2425,7 @@ def test_alerta_no_auth(ea):
         'name': 'Test Alerta rule!',
         'alerta_api_url': 'http://elastalerthost:8080/api/alert',
         'timeframe': datetime.timedelta(hours=1),
-        'timestamp_field': u'@timestamp',
+        'timestamp_field': '@timestamp',
         'alerta_api_skip_ssl': True,
         'alerta_attributes_keys': ["hostname", "TimestampEvent", "senderIP"],
         'alerta_attributes_values': ["%(key)s", "%(logdate)s", "%(sender_ip)s"],
@@ -1981,14 +2442,15 @@ def test_alerta_no_auth(ea):
     }
 
     match = {
-        u'@timestamp': '2014-10-10T00:00:00',
+        '@timestamp': '2014-10-10T00:00:00',
         # 'key': ---- missing field on purpose, to verify that simply the text is left empty
         # 'logdate': ---- missing field on purpose, to verify that simply the text is left empty
         'sender_ip': '1.1.1.1',
         'hostname': 'aProbe'
     }
 
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = AlertaAlerter(rule)
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
@@ -2042,7 +2504,8 @@ def test_alerta_auth(ea):
         'hostname': 'aProbe'
     }
 
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = AlertaAlerter(rule)
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
@@ -2085,7 +2548,8 @@ def test_alerta_new_style(ea):
         'hostname': 'aProbe'
     }
 
-    load_modules(rule)
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
     alert = AlertaAlerter(rule)
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])

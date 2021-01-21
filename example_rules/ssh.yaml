@@ -1,0 +1,64 @@
+# Rule name, must be unique
+  name: SSH abuse (ElastAlert 3.0.1) - 2
+
+# Alert on x events in y seconds
+type: frequency
+
+# Alert when this many documents matching the query occur within a timeframe
+num_events: 20
+
+# num_events must occur within this amount of time to trigger an alert
+timeframe:
+  minutes: 60
+
+# A list of elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter:
+- query:
+    query_string:
+      query: "event.type:authentication_failure"
+
+index: auditbeat-*
+
+# When the attacker continues, send a new alert after x minutes
+realert:
+  minutes: 1
+
+query_key:
+  - source.ip
+
+include:
+  - host.hostname
+  - user.name
+  - source.ip
+
+include_match_in_root: true
+
+alert_subject: "SSH abuse on <{}> | <{}|Show Dashboard>"
+alert_subject_args:
+  - host.hostname
+  - kibana_link
+
+alert_text: |-
+  An attack on {} is detected.
+  The attacker looks like:
+  User: {}
+  IP: {}
+alert_text_args:
+  - host.hostname
+  - user.name
+  - source.ip
+
+# The alert is use when a match is found
+alert:
+  - debug
+
+slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_username_override: "ElastAlert"
+
+# Alert body only cointains a title and text
+alert_text_type: alert_text_only
+
+# Link to BitSensor Kibana Dashboard
+use_kibana4_dashboard: "https://dev.securely.ai/app/kibana#/dashboard/37739d80-a95c-11e9-b5ba-33a34ca252fb"

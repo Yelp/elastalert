@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+import os.path
 import requests
-from alerts import Alerter
-from alerts import BasicMatchString
-from util import EAException
-from util import elastalert_logger
-from util import lookup_es_key
+
+from .alerts import Alerter
+from .alerts import BasicMatchString
+from .util import EAException
+from .util import elastalert_logger
+from .util import lookup_es_key
 
 
 class OpsGenieAlerter(Alerter):
@@ -31,15 +33,16 @@ class OpsGenieAlerter(Alerter):
         self.alias = self.rule.get('opsgenie_alias')
         self.opsgenie_proxy = self.rule.get('opsgenie_proxy', None)
         self.priority = self.rule.get('opsgenie_priority')
+        self.opsgenie_details = self.rule.get('opsgenie_details', {})
 
     def _parse_responders(self, responders, responder_args, matches, default_responders):
         if responder_args:
             formated_responders = list()
-            responders_values = dict((k, lookup_es_key(matches[0], v)) for k, v in responder_args.iteritems())
-            responders_values = dict((k, v) for k, v in responders_values.iteritems() if v)
+            responders_values = dict((k, lookup_es_key(matches[0], v)) for k, v in responder_args.items())
+            responders_values = dict((k, v) for k, v in responders_values.items() if v)
 
             for responder in responders:
-                responder = unicode(responder)
+                responder = str(responder)
                 try:
                     formated_responders.append(responder.format(**responders_values))
                 except KeyError as error:
@@ -60,7 +63,7 @@ class OpsGenieAlerter(Alerter):
     def alert(self, matches):
         body = ''
         for match in matches:
-            body += unicode(BasicMatchString(self.rule, match))
+            body += str(BasicMatchString(self.rule, match))
             # Separate text of aggregated alerts with dashes
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
@@ -81,7 +84,11 @@ class OpsGenieAlerter(Alerter):
             post['teams'] = [{'name': r, 'type': 'team'} for r in self.teams]
         post['description'] = body
         post['source'] = 'ElastAlert'
+
+        for i, tag in enumerate(self.tags):
+            self.tags[i] = tag.format(**matches[0])
         post['tags'] = self.tags
+
         if self.priority and self.priority not in ('P1', 'P2', 'P3', 'P4', 'P5'):
             logging.warn("Priority level does not appear to be specified correctly. \
                          Please make sure to set it to a value between P1 and P5")
@@ -90,6 +97,10 @@ class OpsGenieAlerter(Alerter):
 
         if self.alias is not None:
             post['alias'] = self.alias.format(**matches[0])
+
+        details = self.get_details(matches)
+        if details:
+            post['details'] = details
 
         logging.debug(json.dumps(post))
 
@@ -131,7 +142,7 @@ class OpsGenieAlerter(Alerter):
         return self.create_default_title(matches)
 
     def create_custom_title(self, matches):
-        opsgenie_subject = unicode(self.rule['opsgenie_subject'])
+        opsgenie_subject = str(self.rule['opsgenie_subject'])
 
         if self.opsgenie_subject_args:
             opsgenie_subject_values = [lookup_es_key(matches[0], arg) for arg in self.opsgenie_subject_args]
@@ -156,3 +167,19 @@ class OpsGenieAlerter(Alerter):
         if self.teams:
             ret['teams'] = self.teams
         return ret
+
+    def get_details(self, matches):
+        details = {}
+
+        for key, value in self.opsgenie_details.items():
+
+            if type(value) is dict:
+                if 'field' in value:
+                    field_value = lookup_es_key(matches[0], value['field'])
+                    if field_value is not None:
+                        details[key] = str(field_value)
+
+            elif type(value) is str:
+                details[key] = os.path.expandvars(value)
+
+        return details
