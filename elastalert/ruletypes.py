@@ -1030,6 +1030,7 @@ class MetricAggregationRule(BaseAggregationRule):
     """ A rule that matches when there is a low number of events given a timeframe. """
     required_options = frozenset(['metric_agg_key', 'metric_agg_type'])
     allowed_aggregations = frozenset(['min', 'max', 'avg', 'sum', 'cardinality', 'value_count'])
+    allowed_percent_aggregations = frozenset(['percentiles'])
 
     def __init__(self, *args):
         super(MetricAggregationRule, self).__init__(*args)
@@ -1039,8 +1040,10 @@ class MetricAggregationRule(BaseAggregationRule):
 
         self.metric_key = 'metric_' + self.rules['metric_agg_key'] + '_' + self.rules['metric_agg_type']
 
-        if not self.rules['metric_agg_type'] in self.allowed_aggregations:
+        if not self.rules['metric_agg_type'] in self.allowed_aggregations.union(self.allowed_percent_aggregations):
             raise EAException("metric_agg_type must be one of %s" % (str(self.allowed_aggregations)))
+        if self.rules['metric_agg_type'] in self.allowed_percent_aggregations and self.rules['percentile_range'] is None:
+            raise EAException("percentile_range must be specified for percentiles aggregation")
 
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
 
@@ -1055,14 +1058,20 @@ class MetricAggregationRule(BaseAggregationRule):
         return message
 
     def generate_aggregation_query(self):
-        return {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
+        query = {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
+        if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
+            query[self.metric_key][self.rules['metric_agg_type']]['percents'] = [self.rules['percentile_range']]
+        return query
 
     def check_matches(self, timestamp, query_key, aggregation_data):
         if "compound_query_key" in self.rules:
             self.check_matches_recursive(timestamp, query_key, aggregation_data, self.rules['compound_query_key'], dict())
 
         else:
-            metric_val = aggregation_data[self.metric_key]['value']
+            if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
+                metric_val = list(aggregation_data[self.metric_key]['values'].values())[0]
+            else:
+                metric_val = aggregation_data[self.metric_key]['value']
             if self.crossed_thresholds(metric_val):
                 match = {self.rules['timestamp_field']: timestamp,
                          self.metric_key: metric_val}
@@ -1110,6 +1119,7 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
     """ A rule that matches when there is a spike in an aggregated event compared to its reference point """
     required_options = frozenset(['metric_agg_key', 'metric_agg_type', 'spike_height', 'spike_type'])
     allowed_aggregations = frozenset(['min', 'max', 'avg', 'sum', 'cardinality', 'value_count'])
+    allowed_percent_aggregations = frozenset(['percentiles'])
 
     def __init__(self, *args):
         # We inherit everything from BaseAggregation and Spike, overwrite only what we need in functions below
@@ -1117,8 +1127,11 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
 
         # MetricAgg alert things
         self.metric_key = 'metric_' + self.rules['metric_agg_key'] + '_' + self.rules['metric_agg_type']
-        if not self.rules['metric_agg_type'] in self.allowed_aggregations:
+
+        if not self.rules['metric_agg_type'] in self.allowed_aggregations.union(self.allowed_percent_aggregations):
             raise EAException("metric_agg_type must be one of %s" % (str(self.allowed_aggregations)))
+        if self.rules['metric_agg_type'] in self.allowed_percent_aggregations and self.rules['percentile_range'] is None:
+            raise EAException("percentile_range must be specified for percentiles aggregation")
 
         # Disabling bucket intervals (doesn't make sense in context of spike to split up your time period)
         if self.rules.get('bucket_interval'):
@@ -1130,7 +1143,10 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
         """Lifted from MetricAggregationRule, added support for scripted fields"""
         if self.rules.get('metric_agg_script'):
             return {self.metric_key: {self.rules['metric_agg_type']: self.rules['metric_agg_script']}}
-        return {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
+        query = {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
+        if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
+            query[self.metric_key][self.rules['metric_agg_type']]['percents'] = [self.rules['percentile_range']]
+        return query
 
     def add_aggregation_data(self, payload):
         """
@@ -1144,7 +1160,10 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
             else:
                 # no time / term split, just focus on the agg
                 event = {self.ts_field: timestamp}
-                agg_value = payload_data[self.metric_key]['value']
+                if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
+                    agg_value = list(payload_data[self.metric_key]['values'].values())[0]
+                else:
+                    agg_value = payload_data[self.metric_key]['value']
                 self.handle_event(event, agg_value, 'all')
         return
 
@@ -1164,7 +1183,10 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
                 continue
 
             qk_str = ','.join(qk)
-            agg_value = term_data[self.metric_key]['value']
+            if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
+                agg_value = list(term_data[self.metric_key]['values'].values())[0]
+            else:
+                agg_value = term_data[self.metric_key]['value']
             event = {self.ts_field: timestamp,
                      self.rules['query_key']: qk_str}
             # pass to SpikeRule's tracker

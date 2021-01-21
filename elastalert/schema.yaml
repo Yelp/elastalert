@@ -110,7 +110,7 @@ oneOf:
       type: {enum: [spike_aggregation]}
       spike_height: {type: number}
       spike_type: {enum: ["up", "down", "both"]}
-      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count"]}
+      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count", "percentiles"]}
       timeframe: *timeframe
       use_count_query: {type: boolean}
       doc_type: {type: string}
@@ -120,6 +120,7 @@ oneOf:
       threshold_ref: {type: number}
       threshold_cur: {type: number}
       min_doc_count: {type: integer}
+      percentile_range: {type: integer}
 
   - title: Flatline
     required: [threshold, timeframe]
@@ -153,8 +154,9 @@ oneOf:
     required: [metric_agg_key,metric_agg_type]
     properties:
       type: {enum: [metric_aggregation]}
-      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count"]}
+      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count", "percentiles"]}
       #timeframe: *timeframe
+      percentile_range: {type: integer}
 
   - title: Percentage Match
     required: [match_bucket_filter]
