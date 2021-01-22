@@ -1931,7 +1931,7 @@ Developers in India can use Exotel alerter, it will trigger an incident to a mob
 
 The alerter requires the following option:
 
-``exotel_accout_sid``: This is sid of your Exotel account.
+``exotel_account_sid``: This is sid of your Exotel account.
 
 ``exotel_auth_token``: Auth token assosiated with your Exotel account.
 

@@ -652,7 +652,8 @@ class ElastAlerter(object):
 
         try:
             if rule.get('scroll_id') and self.thread_data.num_hits < self.thread_data.total_hits and should_scrolling_continue(rule):
-                self.run_query(rule, start, end, scroll=True)
+                if not self.run_query(rule, start, end, scroll=True):
+                    return False
         except RuntimeError:
             # It's possible to scroll far enough to hit max recursive depth
             pass
@@ -894,7 +895,8 @@ class ElastAlerter(object):
 
         if rule.get('aggregation_query_element'):
             if endtime - tmp_endtime == segment_size:
-                self.run_query(rule, tmp_endtime, endtime)
+                if not self.run_query(rule, tmp_endtime, endtime):
+                    return 0
                 self.thread_data.cumulative_hits += self.thread_data.num_hits
             elif total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
                 rule['starttime'] = rule['original_starttime']
