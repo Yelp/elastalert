@@ -353,6 +353,20 @@ class EventWindow(object):
         else:
             return None
 
+    def min(self):
+        """ The minimum of the value_field in the window. """
+        if len(self.data) > 0:
+            return min([x[1] for x in self.data])
+        else:
+            return None
+
+    def max(self):
+        """ The maximum of the value_field in the window. """
+        if len(self.data) > 0:
+            return max([x[1] for x in self.data])
+        else:
+            return None
+
     def __iter__(self):
         return iter(self.data)
 
@@ -426,16 +440,32 @@ class SpikeRule(RuleType):
                 if qk is None:
                     qk = 'other'
             if self.field_value is not None:
-                count = lookup_es_key(event, self.field_value)
-                if count is not None:
-                    try:
-                        count = int(count)
-                    except ValueError:
-                        elastalert_logger.warn('{} is not a number: {}'.format(self.field_value, count))
-                    else:
-                        self.handle_event(event, count, qk)
+                if self.field_value in event:
+                    count = lookup_es_key(event, self.field_value)
+                    if count is not None:
+                        try:
+                            count = int(count)
+                        except ValueError:
+                            elastalert_logger.warn('{} is not a number: {}'.format(self.field_value, count))
+                        else:
+                            self.handle_event(event, count, qk)
             else:
                 self.handle_event(event, 1, qk)
+
+    def get_spike_values(self, qk):
+        """
+        extending ref/cur value retrieval logic for spike aggregations
+        """
+        spike_check_type = self.rules.get('metric_agg_type')
+        if spike_check_type in [None, 'sum', 'value_count']:
+            # default count logic is appropriate in all these cases
+            return self.ref_windows[qk].count(), self.cur_windows[qk].count()
+        elif spike_check_type == 'avg':
+            return self.ref_windows[qk].mean(), self.cur_windows[qk].mean()
+        elif spike_check_type == 'min':
+            return self.ref_windows[qk].min(), self.cur_windows[qk].min()
+        elif spike_check_type == 'max':
+            return self.ref_windows[qk].max(), self.cur_windows[qk].max()
 
     def clear_windows(self, qk, event):
         # Reset the state and prevent alerts until windows filled again
@@ -474,7 +504,8 @@ class SpikeRule(RuleType):
                 self.add_match(match, qk)
                 self.clear_windows(qk, match)
         else:
-            if self.find_matches(self.ref_windows[qk].count(), self.cur_windows[qk].count()):
+            ref, cur = self.get_spike_values(qk)
+            if self.find_matches(ref, cur):
                 # skip over placeholder events which have count=0
                 for match, count in self.cur_windows[qk].data:
                     if count:
@@ -486,8 +517,7 @@ class SpikeRule(RuleType):
     def add_match(self, match, qk):
         extra_info = {}
         if self.field_value is None:
-            spike_count = self.cur_windows[qk].count()
-            reference_count = self.ref_windows[qk].count()
+            reference_count, spike_count = self.get_spike_values(qk)
         else:
             spike_count = self.cur_windows[qk].mean()
             reference_count = self.ref_windows[qk].mean()
