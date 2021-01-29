@@ -2308,3 +2308,63 @@ Optional:
 ``discord_embed_footer``: embed footer.
 
 ``discord_embed_icon_url``: You can provide icon_url to use custom image. Provide absolute address of the pciture.
+
+Dingtalk
+~~~~~~~~
+
+Dingtalk will send notification to a Line application. The body of the notification is formatted the same as with other alerters.
+
+Required:
+
+``dingtalk_access_token``:  Dingtalk access token.
+
+``dingtalk_msgtype``:  Dingtalk msgtype. ``text``, ``markdown``, ``single_action_card``, ``action_card``.
+
+dingtalk_msgtype single_action_card Required:
+
+``dingtalk_single_title``: The title of a single button..
+
+``dingtalk_single_url``: Jump link for a single button.
+
+dingtalk_msgtype action_card Required:
+
+``dingtalk_btns``:  Button.
+
+dingtalk_msgtype action_card Optional:
+
+``dingtalk_btn_orientation``:  "0": Buttons are arranged vertically "1": Buttons are arranged horizontally.
+
+Example msgtype : text::
+
+    alert:
+    - dingtalk
+    dingtalk_access_token: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    dingtalk_msgtype: 'text'
+
+
+Example msgtype : markdown::
+
+    alert:
+    - dingtalk
+    dingtalk_access_token: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    dingtalk_msgtype: 'markdown'
+
+
+Example msgtype : single_action_card::
+
+    alert:
+    - dingtalk
+    dingtalk_access_token: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    dingtalk_msgtype: 'single_action_card'
+    dingtalk_single_title: 'test3'
+    dingtalk_single_url: 'https://xxxx.xxx'
+
+
+Example msgtype : action_card::
+
+    alert:
+    - dingtalk
+    dingtalk_access_token: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    dingtalk_msgtype: 'action_card'
+    dingtalk_btn_orientation: '0'
+    dingtalk_btns: [{'title': 'a', 'actionURL': 'https://xxxx1.xxx'}, {'title': 'b', 'actionURL': 'https://xxxx2.xxx'}]

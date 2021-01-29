@@ -79,6 +79,7 @@ Currently, we have built-in support for the following alert types:
 - TheHive
 - Zabbix
 - Discord
+- Dingtalk
 
 Additional rule types and alerts can be easily imported or written.
 
