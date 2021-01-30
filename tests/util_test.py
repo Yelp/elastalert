@@ -6,7 +6,7 @@ import mock
 import pytest
 from dateutil.parser import parse as dt
 
-from elastalert.util import add_raw_postfix
+from elastalert.util import add_raw_postfix, parse_host
 from elastalert.util import format_index
 from elastalert.util import lookup_es_key
 from elastalert.util import parse_deadline
@@ -228,3 +228,10 @@ def test_should_scrolling_continue():
     assert should_scrolling_continue(rule_before_first_run) is True
     assert should_scrolling_continue(rule_before_max_scrolling) is True
     assert should_scrolling_continue(rule_over_max_scrolling) is False
+
+
+def test_parse_host():
+    assert parse_host("localhost", port=9200) == ["localhost:9200"]
+    assert parse_host("host1:9200, host2:9200, host3:9300") ==["host1:9200",
+                                                                        "host2:9200",
+                                                                        "host3:9300"]
