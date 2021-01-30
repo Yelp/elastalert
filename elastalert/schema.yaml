@@ -383,3 +383,7 @@ properties:
   dingtalk_single_title: {type: string}
   dingtalk_single_url: {type: string}
   dingtalk_btn_orientation: {type: string}
+
+  ### Chatwork
+  chatwork_apikey: {type: string}
+  chatwork_room_id: {type: string}
