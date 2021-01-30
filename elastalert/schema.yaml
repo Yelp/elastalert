@@ -376,3 +376,10 @@ properties:
 
   ## Discord
   discord_webhook_url: {type: string}
+
+  ### Dingtalk
+  dingtalk_access_token: {type: string}
+  dingtalk_msgtype: {type: string}
+  dingtalk_single_title: {type: string}
+  dingtalk_single_url: {type: string}
+  dingtalk_btn_orientation: {type: string}

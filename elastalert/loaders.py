@@ -81,7 +81,8 @@ class RulesLoader(object):
         'linenotify': alerts.LineNotifyAlerter,
         'hivealerter': alerts.HiveAlerter,
         'zabbix': ZabbixAlerter,
-        'discord': alerts.DiscordAlerter
+        'discord': alerts.DiscordAlerter,
+        'dingtalk': alerts.DingTalkAlerter
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
