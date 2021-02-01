@@ -17,7 +17,7 @@
 
 # (Required)
 # Rule name, must be unique
-name: legacy mail client pop3/IMAP any rule
+name: blacklist any rule
 
 # (Required)
 # Type of alert.
@@ -48,30 +48,24 @@ index: filebeat-*
 # petrusUncommented
 #filter:
 #- term:
-#    event.module: "o365"    
+#    event.module: "o365"
 
 filter:
-- query_string: 
-    query: "NOT whitelist.for_rule:legacy_mail AND event.module:o365 AND o365.audit.ClientInfoString:/Client=POP3.*/"     
+- query_string:
+        query: "tags:blacklisted"
 
-#compare_key: client.ip
 
-#ignore_null: false
-
-#whitelist
-#        - "!file /elastalert_lists/knownPopImapSource.txt"
-    
 # (Required)
 # The alert is use when a match is found
 
-# petrusUncommented    
+# petrusUncommented
 #alert:
 #- "email"
 
 # (required, email specific)
 # a list of email addresses to send alerts to
 
-# petrusUncommented  
+# petrusUncommented
 #email:
 #- "elastalert@example.com"
 
@@ -99,12 +93,13 @@ alert_text_args:
         - event.action
         - source.geo.country_name
         - source.geo.city_name
-        - o365.audit.UserId
+        - user.id
         - "@timestamp"
-        - o365.audit.ClientInfoString
         - client.ip
         - host.name
-            
-alert_subject: "Legacy Mail Client POP3/IMAP {1}"
-alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**Client string**: {5}<br>**From ip**: {6}<br>**Tenant**: {7}<br><br>"
+        - blacklist.dns
+        - blacklist.threat_type
+        - blacklist.threat_info
+alert_subject: "Blacklist IP address detected activity: {1}"
+alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**User action**: {0}<br>**Blacklist ip**: {5}<br>**Tenant**: {6}<br>**Blacklist url**: {7}<br>**Threat type**: {8}<br>**Threat info**: {9}<br>"
 alert_text_type: "alert_text_only"
