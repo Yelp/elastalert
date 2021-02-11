@@ -18,7 +18,7 @@ index: filebeat-*
 
 filter:
 - query_string:
-    query: "event.module:sophos AND sophos.xg.log_component:'SSL VPN' AND sophos.xg.log_subtype:Denied"
+    query: 'event.module:sophos AND sophos.xg.log_component:"SSL VPN" AND sophos.xg.log_subtype:Denied'
 
 # Ms Teams Alert
 alert:
