@@ -18,7 +18,7 @@ index: filebeat-*
 
 filter:
 - query_string:
-    query: 'event.module:sophos AND sophos.xg.log_component:"SSL VPN" AND sophos.xg.log_subtype:Denied'
+    query: 'event.module:sophos AND sophos.xg.log_component:"SSL VPN" AND NOT sophos.xg.log_subtype:Denied'
 
 # Ms Teams Alert
 alert:
@@ -29,6 +29,7 @@ ms_teams_theme_color: "ff0000"
 ms_teams_alert_fixed_width:
 alert_subject_args:
         - "@timestamp"
+        - "sophos.xg.status"
 
 alert_text_args:
         - "@timestamp"
@@ -38,6 +39,6 @@ alert_text_args:
         - "sophos.xg.status"
         - "sophos.xg.message"
 
-alert_subject: "SSL VPN Access Denied"
+alert_subject: "SSL VPN {1}"
 alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}"
 alert_text_type: "alert_text_only"
