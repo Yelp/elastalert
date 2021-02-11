@@ -1,6 +1,6 @@
 # (Required)
 # Rule name, must be unique
-name: sophos_xg_sslvpn any rule
+name: sophos_xg_sslvpn_denied any rule
 
 # (Required)
 # Type of alert.
@@ -18,7 +18,7 @@ index: filebeat-*
 
 filter:
 - query_string:
-    query: 'event.module:sophos AND sophos.xg.log_component:"SSL VPN" AND sophos.xg.log_subtype:Denied'
+    query: 'event.module:sophos AND sophos.xg.log_component:"SSL VPN" AND NOT sophos.xg.log_subtype:Denied'
 
 # Ms Teams Alert
 alert:
@@ -29,15 +29,14 @@ ms_teams_theme_color: "ff0000"
 ms_teams_alert_fixed_width:
 alert_subject_args:
         - "@timestamp"
+        - "sophos.xg.status"
 
 alert_text_args:
         - "@timestamp"
-        - "sophos.xg.user_name"
         - "sophos.xg.src_ip"
         - "sophos.xg.dst_ip"
-        - "sophos.xg.status"
-        - "sophos.xg.message"
 
-alert_subject: "SSL VPN Access Denied"
-alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}"
+
+alert_subject: "SSL VPN {1}"
+alert_text: "**At**: {0}<br>**Source ip**: {1}<br>**Destination ip**: {2}<br>**Status**: {3}<br>"
 alert_text_type: "alert_text_only"
