@@ -1,0 +1,41 @@
+# (Required)
+# Rule name, must be unique
+name: sophos_xg_sslvpn any rule
+
+# (Required)
+# Type of alert.
+# the frequency rule type alerts when num_events events occur with timeframe time
+type: any
+
+# (Required)
+# Index to search, wildcard supported
+index: filebeat-*
+
+# (Required)
+# A list of Elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+
+filter:
+- query_string:
+    query: "event.module:sophos AND sophos.xg.log_component:'SSL VPN' AND sophos.xg.log_subtype:Denied"
+
+# Ms Teams Alert
+alert:
+  - "ms_teams"
+ms_teams_webhook_url: "https://outlook.office.com/webhook/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/264dca8cee2343b9a5cdbfa020b17c67/ae25c5f2-48db-4846-b5be-1031b406cafb"
+ms_teams_alert_summary: "Elastic Siem Alert"
+ms_teams_theme_color: "ff0000"
+ms_teams_alert_fixed_width:
+alert_subject_args:
+        - "@timestamp"
+
+alert_text_args:
+        - "@timestamp"
+        - "sophos.xg.src_ip"
+        - "sophos.xg.dst_ip"
+
+
+alert_subject: "SSL VPN Access Denied"
+alert_text: "**At**: {0}<br>**Source ip**: {1}<br>**Destination ip**: {2}<br>"
+alert_text_type: "alert_text_only"
