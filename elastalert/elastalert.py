@@ -636,11 +636,15 @@ class ElastAlerter(object):
                 old_len = len(data)
                 data = self.remove_duplicate_events(data, rule)
                 self.thread_data.num_dupes += old_len - len(data)
-
         # There was an exception while querying
-        if data is None:
+        try:
+            #allows to always enter add_data of the rule if something has to be done
+            run_always = rule_inst.run_always()
+        except AttributeError:
+            run_always = False
+        if data is None and not run_always:
             return False
-        elif data:
+        elif data or run_always:
             if rule.get('use_count_query'):
                 rule_inst.add_count_data(data)
             elif rule.get('use_terms_query'):
