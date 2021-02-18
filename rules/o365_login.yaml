@@ -52,7 +52,7 @@ index: filebeat-*
 
 filter:
 - query_string: 
-    query: "event.module:o365 AND event.action:UserLoggedIn AND NOT source.geo.country_iso_code:AU AND NOT whitelist.for_rule:out_of_country"
+    query: "event.module:o365 AND event.action:UserLoggedIn AND NOT source.geo.country_iso_code:AU AND NOT (whitelist.for_rule:out_of_country OR source.geo.country_iso_code:o365_location.usage_location)"
 
 # (Required)
 # The alert is use when a match is found
