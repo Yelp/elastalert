@@ -4,7 +4,12 @@ python:
 env:
 - TOXENV=docs
 - TOXENV=py36
+before_script:
+- sudo apt-get update -y
+- sudo apt-get install -y cargo
 install:
+- pip install --upgrade pip
+- pip install cryptography
 - pip install tox
 - >
   if [[ -n "${ES_VERSION}" ]] ; then
