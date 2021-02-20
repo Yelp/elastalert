@@ -6,7 +6,7 @@ env:
 - TOXENV=py36
 before_script:
 - sudo apt-get update -y
-- sudo apt-get install -y cargo
+- sudo apt-get install -y cargo python3-dev
 install:
 - pip install --upgrade pip
 - pip install cryptography
