@@ -7,8 +7,9 @@ env:
 before_script:
 - sudo apt-get update -y
 - sudo apt-get install -y build-essential libssl-dev libffi-dev python3-dev cargo
+- python -m pip install --upgrade pip
 install:
-- pip install 'cryptography<3.4'
+- pip install cryptography
 - pip install tox
 - >
   if [[ -n "${ES_VERSION}" ]] ; then
