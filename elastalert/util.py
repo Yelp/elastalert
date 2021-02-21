@@ -185,6 +185,9 @@ def dt_to_ts_with_format(dt, ts_format):
 def ts_now():
     return datetime.datetime.utcnow().replace(tzinfo=dateutil.tz.tzutc())
 
+def ts_utc_to_local(ts):
+    """Convert utc time to local time."""
+    return ts.astimezone(dateutil.tz.tzlocal())
 
 def inc_ts(timestamp, milliseconds=1):
     """Increment a timestamp by milliseconds."""
@@ -202,7 +205,7 @@ def pretty_ts(timestamp, tz=True):
         dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
-    return dt.strftime('%Y-%m-%d %H:%M %Z')
+    return dt.strftime('%Y-%m-%d %H:%M %z')
 
 
 def ts_add(ts, td):
