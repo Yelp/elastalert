@@ -39,7 +39,8 @@ alert_text_args:
         - "sophos.xg.status"
         - "sophos.xg.message"
         - "sophos.xg.src_country"
+        - _id
 
 alert_subject: "SSL VPN {1}"
-alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source Country**: {6}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}"
+alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source Country**: {6}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{0}%27,kind:absolute,to:%27{0}%27)),timeline:(linkTo:!(global),timerange:(from:%27{0}%27,kind:absolute,to:%27{0}%27))))<br>"
 alert_text_type: "alert_text_only"

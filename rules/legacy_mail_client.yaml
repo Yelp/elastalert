@@ -52,13 +52,13 @@ index: filebeat-*
 
 filter:
 - query_string: 
-    query: "NOT whitelist.for_rule:legacy_mail AND event.module:o365 AND o365.audit.ClientInfoString:/Client=POP3.*/"     
+    query: "event.module:o365 AND o365.audit.ClientInfoString:/Client=POP3.*/ AND NOT whitelist.for_rule:legacy_mail"
 
 #compare_key: client.ip
 
 #ignore_null: false
 
-#whitelist
+#whitelist:
 #        - "!file /elastalert_lists/knownPopImapSource.txt"
     
 # (Required)
@@ -86,8 +86,7 @@ filter:
 
 alert:
   - "ms_teams"
-ms_teams_webhook_url: "https://outlook.office.com/webhook/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/7286705abbaf4fd0a8c529230b638d8e/ae25c5f2-48db-4846-b5be-1031b406cafb"
-#(to testing channel) ms_teams_webhook_url: "https://outlook.office.com/webhook/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/264dca8cee2343b9a5cdbfa020b17c67/ae25c5f2-48db-4846-b5be-1031b406cafb"
+ms_teams_webhook_url: "https://outlook.office.com/webhook/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/264dca8cee2343b9a5cdbfa020b17c67/ae25c5f2-48db-4846-b5be-1031b406cafb"
 ms_teams_alert_summary: "Elastic Siem Alert"
 ms_teams_theme_color: "ff0000"
 ms_teams_alert_fixed_width:
@@ -104,7 +103,8 @@ alert_text_args:
         - o365.audit.ClientInfoString
         - client.ip
         - host.name
+        - _id
             
 alert_subject: "Legacy Mail Client POP3/IMAP {1}"
-alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**Client string**: {5}<br>**From ip**: {6}<br>**Tenant**: {7}<br><br>"
+alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**Client string**: {5}<br>**From ip**: {6}<br>**Tenant**: {7}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{8}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27)),timeline:(linkTo:!(global),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27))))<br>"
 alert_text_type: "alert_text_only"

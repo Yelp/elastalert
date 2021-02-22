@@ -34,7 +34,8 @@ alert_text_args:
         - "@timestamp"
         - "sophos.xg.src_ip"
         - "sophos.xg.dst_ip"
+        - _id
 
 alert_subject: "SSL VPN Access Denied"
-alert_text: "**At**: {0}<br>**Source ip**: {1}<br>**Destination ip**: {2}<br>"
+alert_text: "**At**: {0}<br>**Source ip**: {1}<br>**Destination ip**: {2}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{0}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{3}%27,kind:absolute,to:%27{3}%27)),timeline:(linkTo:!(global),timerange:(from:%27{3}%27,kind:absolute,to:%27{3}%27))))<br>"
 alert_text_type: "alert_text_only"
