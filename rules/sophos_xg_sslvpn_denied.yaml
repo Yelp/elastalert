@@ -23,6 +23,9 @@ filter:
 # Ms Teams Alert
 alert:
   - "ms_teams"
+# to prod channel
+# ms_teams_webhook_url: "https://outlook.office.com/webhook/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/7286705abbaf4fd0a8c529230b638d8e/ae25c5f2-48db-4846-b5be-1031b406cafb"
+# to testing channel
 ms_teams_webhook_url: "https://outlook.office.com/webhook/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/264dca8cee2343b9a5cdbfa020b17c67/ae25c5f2-48db-4846-b5be-1031b406cafb"
 ms_teams_alert_summary: "Elastic Siem Alert"
 ms_teams_theme_color: "ff0000"
@@ -37,5 +40,8 @@ alert_text_args:
         - _id
 
 alert_subject: "SSL VPN Access Denied"
-alert_text: "**At**: {0}<br>**Source ip**: {1}<br>**Destination ip**: {2}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{0}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{3}%27,kind:absolute,to:%27{3}%27)),timeline:(linkTo:!(global),timerange:(from:%27{3}%27,kind:absolute,to:%27{3}%27))))<br>"
+# to prod siem
+#alert_text: "**At**: {0}<br>**Source ip**: {1}<br>**Destination ip**: {2}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{0}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{3}%27,kind:absolute,to:%27{3}%27)),timeline:(linkTo:!(global),timerange:(from:%27{3}%27,kind:absolute,to:%27{3}%27))))<br>"
+# to dev siem
+alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**User action**: {0}<br>**Blacklist ip**: {5}<br>**Tenant**: {6}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27)),timeline:(linkTo:!(global),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27))))<br>"
 alert_text_type: "alert_text_only"

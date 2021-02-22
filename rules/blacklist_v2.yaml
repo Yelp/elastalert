@@ -103,5 +103,8 @@ alert_text_args:
         - _id
 
 alert_subject: "Blacklist IP address detected activity: {1}"
-alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**User action**: {0}<br>**Blacklist ip**: {5}<br>**Tenant**: {6}<br>**Blacklist url**: {7}<br>**Threat type**: {8}<br>**Threat info**: {9}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{10}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27)),timeline:(linkTo:!(global),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27))))<br>"
+# to prod siem
+#alert_text: "**At**: {0}<br>**Source ip**: {1}<br>**Destination ip**: {2}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{0}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{3}%27,kind:absolute,to:%27{3}%27)),timeline:(linkTo:!(global),timerange:(from:%27{3}%27,kind:absolute,to:%27{3}%27))))<br>"
+# to dev siem
+alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**User action**: {0}<br>**Blacklist ip**: {5}<br>**Tenant**: {6}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27)),timeline:(linkTo:!(global),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27))))<br>"
 alert_text_type: "alert_text_only"
