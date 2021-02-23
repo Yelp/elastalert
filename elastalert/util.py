@@ -186,9 +186,9 @@ def ts_now():
     return datetime.datetime.utcnow().replace(tzinfo=dateutil.tz.tzutc())
 
 
-def ts_utc_to_local(ts):
+def ts_utc_to_tz(ts,tz_name):
     """Convert utc time to local time."""
-    return ts.astimezone(dateutil.tz.tzlocal())
+    return ts.astimezone(dateutil.tz.gettz(tz_name))
 
 
 def inc_ts(timestamp, milliseconds=1):

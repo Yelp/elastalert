@@ -53,7 +53,7 @@ from .util import ts_add
 from .util import ts_now
 from .util import ts_to_dt
 from .util import unix_to_dt
-from .util import ts_utc_to_local
+from .util import ts_utc_to_tz
 
 
 class ElastAlerter(object):
@@ -630,9 +630,10 @@ class ElastAlerter(object):
         if end is None:
             end = ts_now()
 
-        if rule.get('use_local_time_for_query'):
-            start = ts_utc_to_local(start)
-            end = ts_utc_to_local(end)
+        if rule.get('query_timezone') != "":
+            elastalert_logger.info("Query start and end time converting UTC to query_timezone : {}".format(rule.get('query_timezone')))
+            start = ts_utc_to_tz(start, rule.get('query_timezone'))
+            end = ts_utc_to_tz(end, rule.get('query_timezone'))
 
         # Reset hit counter and query
         rule_inst = rule['type']
