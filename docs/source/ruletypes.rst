@@ -102,6 +102,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``scan_entire_timeframe`` (bool, default False)              |           |
 +--------------------------------------------------------------+           |
+| ``query_timezone`` (string, default empty string)            |           |
++--------------------------------------------------------------+           |
 | ``import`` (string)                                          |           |
 |                                                              |           |
 | IGNORED IF ``use_count_query`` or ``use_terms_query`` is true|           |
@@ -695,6 +697,13 @@ scan the same range again, triggering duplicate alerts.
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
 
+query_timezone
+^^^^^^^^^^^^^^
+
+``query_timezone``: Whether to convert UTC time to the specified time zone in rule queries. 
+If not set, start and end time of query will be used UTC. (Optional, string, default empty string)
+
+Example value : query_timezone: "Europe/Istanbul"
 
 .. _testing :
 
