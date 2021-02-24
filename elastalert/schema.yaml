@@ -343,7 +343,7 @@ properties:
   ### Alerta
   alerta_api_url: {type: string}
   alerta_api_key: {type: string}
-  alerta_severity: {enum: [unknown, security, debug, informational, ok, normal, cleared, indeterminate, warning, minor, major, critical]}
+  alerta_severity: {type: string}
   alerta_resource: {type: string}   # Python format string
   alerta_environment: {type: string}  # Python format string
   alerta_origin: {type: string}   # Python format string
