@@ -1856,7 +1856,7 @@ class AlertaAlerter(Alerter):
 
         alerta_payload_dict = {
             'resource': resolve_string(self.resource, match, self.missing_text),
-            'severity': self.severity,
+            'severity': resolve_string(self.severity, match),
             'timeout': self.timeout,
             'createTime': createTime,
             'type': self.type,
