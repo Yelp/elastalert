@@ -15,7 +15,7 @@ from .util import ts_add
 kibana_default_timedelta = datetime.timedelta(minutes=10)
 
 kibana5_kibana6_versions = frozenset(['5.6', '6.0', '6.1', '6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8'])
-kibana7_versions = frozenset(['7.0', '7.1', '7.2', '7.3', '7.4', '7.5', '7.6', '7.7', '7.8', '7.9', '7.10'])
+kibana7_versions = frozenset(['7.0', '7.1', '7.2', '7.3', '7.4', '7.5', '7.6', '7.7', '7.8', '7.9', '7.10', '7.11'])
 
 def generate_kibana_discover_url(rule, match):
     ''' Creates a link for a kibana discover app. '''
