@@ -49,5 +49,7 @@ setup(
         'twilio>=6.0.0,<6.1',
         'cffi>=1.11.5',
         'tzlocal<3.0',
+        'cffi>=1.11.5',
+        'tzlocal<3.0'
     ]
 )

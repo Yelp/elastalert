@@ -26,7 +26,6 @@ from .util import ts_to_dt_with_format
 from .util import unix_to_dt
 from .util import unixms_to_dt
 
-
 class RulesLoader(object):
     # import rule dependency
     import_rules = {}

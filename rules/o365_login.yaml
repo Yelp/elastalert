@@ -52,7 +52,7 @@ index: filebeat-*
 
 filter:
 - query_string: 
-    query: "event.module:o365 AND event.action:UserLoggedIn AND NOT source.geo.country_iso_code:AU AND NOT (whitelist.for_rule:out_of_country OR source.geo.country_name:o365_location.country)"
+    query: "event.module:o365 AND event.action:UserLoggedIn AND NOT source.geo.country_iso_code:AU AND NOT (whitelisted_for:out_of_country OR source.geo.country_name:o365_location.country)"
 
 # (Required)
 # The alert is use when a match is found
@@ -100,10 +100,12 @@ alert_text_args:
         - client.ip
         - host.name
         - _id
+        - filter.start_time
+        - filter.end_time
 
 alert_subject: "O365 out of Country {1}"
 # to prod siem
-#alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**From ip**: {5}<br>**Tenant**: {6}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27)),timeline:(linkTo:!(global),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27))))<br>"
+#alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**From ip**: {5}<br>**Tenant**: {6}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27)),timeline:(linkTo:!(global),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27))))<br>"
 # to dev siem
-alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**From ip**: {5}<br>**Tenant**: {6}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27)),timeline:(linkTo:!(global),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27))))<br>"
+alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**From ip**: {5}<br>**Tenant**: {6}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27)),timeline:(linkTo:!(global),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27))))<br>"
 alert_text_type: "alert_text_only"

@@ -52,7 +52,7 @@ index: filebeat-*
 
 filter:
 - query_string: 
-    query: "event.module:o365 AND o365.audit.ClientInfoString:/Client=POP3.*/ AND NOT whitelist.for_rule:legacy_mail"
+    query: "event.module:o365 AND o365.audit.ClientInfoString:/Client=POP3.*/ AND NOT whitelisted_for:legacy_mail"
 
 #compare_key: client.ip
 
@@ -107,10 +107,12 @@ alert_text_args:
         - client.ip
         - host.name
         - _id
+        - filter.start_time
+        - filter.end_time
             
 alert_subject: "Legacy Mail Client POP3/IMAP {1}"
 # to prod siem
-#alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**Client string**: {5}<br>**From ip**: {6}<br>**Tenant**: {7}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{8}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27)),timeline:(linkTo:!(global),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27))))<br>"
+#alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**Client string**: {5}<br>**From ip**: {6}<br>**Tenant**: {7}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{8}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{9}%27,kind:absolute,to:%27{10}%27)),timeline:(linkTo:!(global),timerange:(from:%27{9}%27,kind:absolute,to:%27{10}%27))))<br>"
 # to dev siem
-alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**Client string**: {5}<br>**From ip**: {6}<br>**Tenant**: {7}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{8}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27)),timeline:(linkTo:!(global),timerange:(from:%27{4}%27,kind:absolute,to:%27{4}%27))))<br>"
+alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**Client string**: {5}<br>**From ip**: {6}<br>**Tenant**: {7}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{8}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{9}%27,kind:absolute,to:%27{10}%27)),timeline:(linkTo:!(global),timerange:(from:%27{9}%27,kind:absolute,to:%27{10}%27))))<br>"
 alert_text_type: "alert_text_only"

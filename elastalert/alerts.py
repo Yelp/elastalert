@@ -1086,6 +1086,7 @@ class MsTeamsAlerter(Alerter):
             'title': self.create_title(matches),
             'text': body
         }
+
         if self.ms_teams_theme_color != '':
             payload['themeColor'] = self.ms_teams_theme_color
 

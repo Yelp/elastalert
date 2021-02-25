@@ -26,11 +26,14 @@ type: frequency
 
 # (Required)
 # Index to search, wildcard supported
-index: logstash-*
+
+# petrusUncommented
+#index: logstash-*
+index: filebeat-*
 
 # (Required, frequency specific)
 # Alert when this many documents matching the query occur within a timeframe
-num_events: 50
+num_events: 5
 
 # (Required, frequency specific)
 # num_events must occur within this amount of time to trigger an alert
@@ -41,16 +44,35 @@ timeframe:
 # A list of Elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
 # For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+
+# petrusUncommented
+#filter:
+#- term:
+#    some_field: "some_value"
+
 filter:
-- term:
-    some_field: "some_value"
+- query_string: 
+    query: "process.name:filebeat"
 
 # (Required)
 # The alert is use when a match is found
-alert:
-- "email"
+
+# petrusUncommented    
+#alert:
+#- "email"
 
 # (required, email specific)
 # a list of email addresses to send alerts to
-email:
-- "elastalert@example.com"
+
+# petrusUncommented  
+#email:
+#- "elastalert@example.com"
+
+alert:
+ - "slack"
+slack:
+slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_username_override: "Fosslinux-Elastic-Bot"
+slack_channel_override: "#fosslinuxalert"
+slack_emoji_override: ":robot_face:"
+slack_msg_color: "danger"

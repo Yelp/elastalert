@@ -42,10 +42,12 @@ alert_text_args:
         - "sophos.xg.status"
         - "sophos.xg.message"
         - _id
+        - filter.start_time
+        - filter.end_time
 
 alert_subject: "SSL VPN {1}"
 # to prod siem
-#alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{6}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{0}%27,kind:absolute,to:%27{0}%27)),timeline:(linkTo:!(global),timerange:(from:%27{0}%27,kind:absolute,to:%27{0}%27))))<br>"
+#alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{6}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27)),timeline:(linkTo:!(global),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27))))<br>"
 # to dev siem
-alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{6}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{0}%27,kind:absolute,to:%27{0}%27)),timeline:(linkTo:!(global),timerange:(from:%27{0}%27,kind:absolute,to:%27{0}%27))))<br>"
+alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{6}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27)),timeline:(linkTo:!(global),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27))))<br>"
 alert_text_type: "alert_text_only"
