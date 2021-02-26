@@ -1992,11 +1992,12 @@ class HiveAlerter(Alerter):
 
             alert_config = {
                 'artifacts': artifacts,
-                'sourceRef': str(uuid.uuid4())[0:6],
-                'customFields': {},
                 'caseTemplate': None,
+                'customFields': {},
+                'date': int(time.time()) * 1000,
+                'description': self.create_alert_body(matches),
+                'sourceRef': str(uuid.uuid4())[0:6],
                 'title': '{rule[index]}_{rule[name]}'.format(**context),
-                'date': int(time.time()) * 1000
             }
             alert_config.update(self.rule.get('hive_alert_config', {}))
             custom_fields = {}
