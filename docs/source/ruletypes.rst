@@ -1566,6 +1566,8 @@ For an example JIRA account file, see ``example_rules/jira_acct.yaml``. The acco
 
 Optional:
 
+``jira_assignee``: Assigns an issue to a user.
+
 ``jira_component``: The name of the component or components to set the ticket to. This can be a single string or a list of strings. This is provided for backwards compatibility and will eventually be deprecated. It is preferable to use the plural ``jira_components`` instead.
 
 ``jira_components``: The name of the component or components to set the ticket to. This can be a single string or a list of strings.
