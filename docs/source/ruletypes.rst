@@ -1566,6 +1566,8 @@ For an example JIRA account file, see ``example_rules/jira_acct.yaml``. The acco
 
 Optional:
 
+``jira_assignee``: Assigns an issue to a user.
+
 ``jira_component``: The name of the component or components to set the ticket to. This can be a single string or a list of strings. This is provided for backwards compatibility and will eventually be deprecated. It is preferable to use the plural ``jira_components`` instead.
 
 ``jira_components``: The name of the component or components to set the ticket to. This can be a single string or a list of strings.
@@ -1791,6 +1793,10 @@ ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ .
 Provide absolute address of the pciture.
 
 ``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
+
+``slack_parse_override``: By default the notification message is escaped 'none'. You can also use 'full'.
+
+``slack_text_string``: Notification message you want to add.
 
 ``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
 
