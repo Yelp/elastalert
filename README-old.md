@@ -67,9 +67,6 @@ Currently, we have built-in support for the following alert types:
 - Line Notify
 - TheHive
 - Zabbix
-- Discord
-- Dingtalk
-- Chatwork
 
 Additional rule types and alerts can be easily imported or written.
 
