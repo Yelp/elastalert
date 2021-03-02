@@ -1,6 +1,6 @@
 # (Required)
 # Rule name, must be unique
-name: sophos_xg_sslvpn_auth any rule
+name: sophos_xg_sslvpn any rule
 
 # (Required)
 # Type of alert.
@@ -18,7 +18,7 @@ index: filebeat-*
 
 filter:
 - query_string:
-    query: 'event.module:sophos AND sophos.xg.log_component:"SSL VPN Authentication" AND NOT tags:"profile_country_match"'
+    query: 'event.module:sophos AND sophos.xg.log_component:"SSL VPN" AND NOT sophos.xg.log_subtype:Denied'
 
 # Ms Teams Alert
 alert:
@@ -32,7 +32,7 @@ ms_teams_theme_color: "ff0000"
 ms_teams_alert_fixed_width:
 alert_subject_args:
         - "@timestamp"
-        - "sophos.xg.log_subtype"
+        - "sophos.xg.status"
 
 alert_text_args:
         - "@timestamp"
@@ -41,14 +41,13 @@ alert_text_args:
         - "sophos.xg.dst_ip"
         - "sophos.xg.status"
         - "sophos.xg.message"
-        - "sophos.xg.src_country"
         - _id
         - filter.start_time
         - filter.end_time
 
 alert_subject: "SSL VPN {1}"
 # to prod siem
-alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source Country**: {6}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27)),timeline:(linkTo:!(global),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27))))<br>"
+alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}<br><br>[View Event In Siem](http://10.80.121.201:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{6}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27)),timeline:(linkTo:!(global),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27))))<br>"
 # to dev siem
-#alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source Country**: {6}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27)),timeline:(linkTo:!(global),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27))))<br>"
+#alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{6}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27)),timeline:(linkTo:!(global),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27))))<br>"
 alert_text_type: "alert_text_only"
