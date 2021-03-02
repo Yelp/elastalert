@@ -22,6 +22,7 @@ Contents:
    recipes/adding_enhancements
    recipes/adding_loaders
    recipes/signing_requests
+   recipes/faq
 
 Indices and Tables
 ==================
