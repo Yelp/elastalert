@@ -357,7 +357,6 @@ properties:
   alerta_value: {type: string} # Python format string
   alerta_attributes_keys: {type: array, items: {type: string}}
   alerta_attributes_values: {type: array, items: {type: string}}  # Python format string
-  
 
   ### Simple
   simple_webhook_url: *arrayOfString
