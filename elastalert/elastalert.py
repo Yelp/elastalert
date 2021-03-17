@@ -20,6 +20,7 @@ from socket import error
 import dateutil.tz
 import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 from croniter import croniter
 from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
@@ -1031,13 +1032,22 @@ class ElastAlerter(object):
                 continue
             new_rule[prop] = rule[prop]
 
-        job = self.scheduler.add_job(self.handle_rule_execution, 'interval',
-                                     args=[new_rule],
-                                     seconds=new_rule['run_every'].total_seconds(),
-                                     id=new_rule['name'],
-                                     max_instances=1,
-                                     jitter=5)
-        job.modify(next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=random.randint(0, 15)))
+        cron_schedule = new_rule.get('cron_schedule')
+        # Cron trigger - shaig 16.3
+        if cron_schedule is not None:
+            job = self.scheduler.add_job(self.handle_rule_execution, CronTrigger.from_crontab(cron_schedule),
+                                         args=[new_rule],
+                                         id=new_rule['name'],
+                                         max_instances=1,
+                                         jitter=5)
+        else:
+            job = self.scheduler.add_job(self.handle_rule_execution, 'interval',
+                                         args=[new_rule],
+                                         seconds=new_rule['run_every'].total_seconds(),
+                                         id=new_rule['name'],
+                                         max_instances=1,
+                                         jitter=5)
+            job.modify(next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=random.randint(0, 15)))
 
         return new_rule
 
