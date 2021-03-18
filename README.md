@@ -320,4 +320,20 @@ ElastAlert is licensed under the Apache License, Version 2.0: http://www.apache.
 
 ### Read the documentation at [Read the Docs](http://elastalert.readthedocs.org).
 
+### Bigdata Boutique Additions
+There is now a `must_not` field which behaves similarly to the filter field, only excludes hits.
+
+A cron scheduler is added. This works by running jobs based on a cron scheduler rather than
+the default interval scheduling. To use this, instead of defining "run_every" in the rule,
+use cron_schedule. See the below example.
+
+`cron_schedule: "0 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 * * *"`
+
+Format is:
+minute (0-59), hour (0-23), day of month (1-31), month (1-12), day of week (MON-SUN)
+
+Fields are separated by space, values separated by comma, * for all values
+
 ### Questions? Drop by #elastalert on Freenode IRC.
+### BDB enhancements Questions? Contact us at info@bigdataboutique.com
+
