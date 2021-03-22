@@ -9,6 +9,8 @@ import jsonschema
 import yaml
 import yaml.scanner
 from jinja2 import Template
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
 from staticconf.loader import yaml_loader
 
 from . import alerts
@@ -94,6 +96,8 @@ class RulesLoader(object):
     }
 
     base_config = {}
+
+    jinja_environment = Environment(loader=FileSystemLoader(""))
 
     def __init__(self, conf):
         # schema for rule yaml
@@ -401,7 +405,11 @@ class RulesLoader(object):
 
         # Compile Jinja Template
         if rule.get('alert_text_type') == 'alert_text_jinja':
-            rule["jinja_template"] = Template(str(rule.get('alert_text', '')))
+            jinja_template_path = rule.get('jinja_template_path')
+            if jinja_template_path:
+                rule["jinja_template"] = self.jinja_environment.get_or_select_template(jinja_template_path)
+            else:
+                rule["jinja_template"] = Template(str(rule.get('alert_text', '')))
 
     def load_modules(self, rule, args=None):
         """ Loads things that could be modules. Enhancements, alerts and rule type. """

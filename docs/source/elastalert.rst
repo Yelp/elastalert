@@ -220,6 +220,8 @@ The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticse
 
 ``jinja_root_name``: When using a Jinja template, specify the name of the root field name in the template. The default is ``_data``.
 
+``jinja_template_path``: When using a Jinja template, specify filesystem path to template, this overrides the default behaviour of using alert_text as the template.
+
 Logging
 -------
 
