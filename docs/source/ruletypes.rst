@@ -1822,7 +1822,7 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_title_link``: You can add a link in your Slack notification by setting this to a valid URL. Requires slack_title to be set.
 
-``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slac. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
+``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slack. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
 
 ``slack_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the slack notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
 
