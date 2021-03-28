@@ -78,6 +78,7 @@ class RulesLoader(object):
         'alerta': alerts.AlertaAlerter,
         'post': alerts.HTTPPostAlerter,
         'pagertree': alerts.PagerTreeAlerter,
+        'linenotify': alerts.LineNotifyAlerter,
         'hivealerter': alerts.HiveAlerter
     }
 
