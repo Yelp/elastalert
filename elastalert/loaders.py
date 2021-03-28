@@ -2,7 +2,6 @@
 import copy
 import datetime
 import hashlib
-import logging
 import os
 import sys
 
@@ -20,6 +19,7 @@ from .util import dt_to_ts_with_format
 from .util import dt_to_unix
 from .util import dt_to_unixms
 from .util import EAException
+from .util import elastalert_logger
 from .util import get_module
 from .util import ts_to_dt
 from .util import ts_to_dt_with_format
@@ -117,7 +117,7 @@ class RulesLoader(object):
                 rule = self.load_configuration(rule_file, conf, args)
                 # A rule failed to load, don't try to process it
                 if not rule:
-                    logging.error('Invalid rule file skipped: %s' % rule_file)
+                    elastalert_logger.error('Invalid rule file skipped: %s' % rule_file)
                     continue
                 # By setting "is_enabled: False" in rule file, a rule is easily disabled
                 if 'is_enabled' in rule and not rule['is_enabled']:
@@ -395,10 +395,10 @@ class RulesLoader(object):
         if rule.get('use_strftime_index'):
             for token in ['%y', '%M', '%D']:
                 if token in rule.get('index'):
-                    logging.warning('Did you mean to use %s in the index? '
-                                    'The index will be formatted like %s' % (token,
-                                                                             datetime.datetime.now().strftime(
-                                                                                 rule.get('index'))))
+                    elastalert_logger.warning('Did you mean to use %s in the index? '
+                                              'The index will be formatted like %s' % (token,
+                                                                                       datetime.datetime.now().strftime(
+                                                                                            rule.get('index'))))
 
         if rule.get('scan_entire_timeframe') and not rule.get('timeframe'):
             raise EAException('scan_entire_timeframe can only be used if there is a timeframe specified')
@@ -487,7 +487,7 @@ class RulesLoader(object):
                 rule['http_post_proxy'] = rule['simple_proxy']
             if 'simple_webhook_url' in rule:
                 rule['http_post_url'] = rule['simple_webhook_url']
-            logging.warning(
+            elastalert_logger.warning(
                 '"simple" alerter has been renamed "post" and comptability may be removed in a future release.')
 
 
