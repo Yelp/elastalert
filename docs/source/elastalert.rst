@@ -35,7 +35,7 @@ Currently, we have support built in for these alert types:
 - Email
 - JIRA
 - OpsGenie
-- SNS
+- AWS SNS
 - HipChat
 - Slack
 - Telegram
