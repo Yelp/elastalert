@@ -2085,12 +2085,20 @@ Stomp
 This alert type will use the STOMP protocol in order to push a message to a broker like ActiveMQ or RabbitMQ. The message body is a JSON string containing the alert details.
 The default values will work with a pristine ActiveMQ installation.
 
-Optional:
+The alerter requires the following options:
 
 ``stomp_hostname``: The STOMP host to use, defaults to localhost.
+
 ``stomp_hostport``: The STOMP port to use, defaults to 61613.
+
 ``stomp_login``: The STOMP login to use, defaults to admin.
+
 ``stomp_password``: The STOMP password to use, defaults to admin.
+
+Optional:
+
+``stomp_ssl``: Connect the STOMP host using TLS, defaults to False.
+
 ``stomp_destination``: The STOMP destination to use, defaults to /queue/ALERT
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
