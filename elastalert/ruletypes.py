@@ -3,7 +3,7 @@ import copy
 import datetime
 import sys
 
-from blist import sortedlist
+from sortedcontainers import SortedKeyList as sortedlist
 
 from .util import add_raw_postfix
 from .util import dt_to_ts

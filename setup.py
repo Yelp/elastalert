@@ -29,7 +29,6 @@ setup(
     install_requires=[
         'apscheduler>=3.3.0',
         'aws-requests-auth>=0.3.0',
-        'blist>=1.3.6',
         'boto3>=1.4.4',
         'configparser>=3.5.0',
         'croniter>=0.3.16',
@@ -45,6 +44,7 @@ setup(
         'python-dateutil>=2.6.0,<2.7.0',
         'PyYAML>=3.12',
         'requests>=2.10.0',
+        'sortedcontainers>=2.2.2',
         'stomp.py>=4.1.17',
         'texttable>=0.8.8',
         'twilio>=6.0.0,<6.1',
