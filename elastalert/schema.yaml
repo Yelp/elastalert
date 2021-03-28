@@ -362,7 +362,6 @@ properties:
   alerta_origin: {type: string}   # Python format string
   alerta_group: {type: string}  # Python format string
   alerta_service: {type: array, items: {type: string}}  # Python format string
-  alerta_service: {type: array, items: {type: string}}  # Python format string
   alerta_correlate: {type: array, items: {type: string}}  # Python format string
   alerta_tags: {type: array, items: {type: string}}   # Python format string
   alerta_event: {type: string} # Python format string
