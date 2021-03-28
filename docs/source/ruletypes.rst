@@ -1816,6 +1816,8 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
 
+``slack_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to False if you want to ignore SSL errors.
+
 ``slack_title``: Sets a title for the message, this shows up as a blue text at the start of the message
 
 ``slack_title_link``: You can add a link in your Slack notification by setting this to a valid URL. Requires slack_title to be set.
