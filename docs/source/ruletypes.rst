@@ -1814,6 +1814,10 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
 
+``slack_parse_override``: By default the notification message is escaped 'none'. You can also use 'full'.
+
+``slack_text_string``: Notification message you want to add.
+
 ``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
 
 ``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
