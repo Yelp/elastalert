@@ -445,7 +445,7 @@ def test_opsgenie_default_alert_routing():
             'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
             'alert': 'opsgenie',
             'opsgenie_teams': ['{TEAM_PREFIX}-Team'],
-            'opsgenie_default_receipients': ["devops@test.com"], 'opsgenie_default_teams': ["Test"]
+            'opsgenie_default_recipients': ["devops@test.com"], 'opsgenie_default_teams': ["Test"]
             }
     with mock.patch('requests.post'):
 

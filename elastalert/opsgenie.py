@@ -19,7 +19,7 @@ class OpsGenieAlerter(Alerter):
         super(OpsGenieAlerter, self).__init__(*args)
         self.account = self.rule.get('opsgenie_account')
         self.api_key = self.rule.get('opsgenie_key', 'key')
-        self.default_reciepients = self.rule.get('opsgenie_default_receipients', None)
+        self.default_reciepients = self.rule.get('opsgenie_default_recipients', None)
         self.recipients = self.rule.get('opsgenie_recipients')
         self.recipients_args = self.rule.get('opsgenie_recipients_args')
         self.default_teams = self.rule.get('opsgenie_default_teams', None)
