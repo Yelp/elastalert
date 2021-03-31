@@ -1122,7 +1122,13 @@ class MetricAggregationRule(BaseAggregationRule):
                                              result,
                                              compound_keys[1:],
                                              match_data)
-
+        elif 'interval_aggs' in aggregation_data:
+            for result in aggregation_data['interval_aggs']['buckets']:
+                self.check_matches_recursive(timestamp,
+                                             query_key,
+                                             result,
+                                             compound_keys[1:],
+                                             match_data)
         else:
             metric_val = aggregation_data[self.metric_key]['value']
             if self.crossed_thresholds(metric_val):
