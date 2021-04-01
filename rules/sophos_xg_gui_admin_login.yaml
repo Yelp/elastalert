@@ -18,7 +18,7 @@ index: filebeat-*
 
 filter:
 - query_string:
-    query: 'event.module:sophos AND sophos.xg.log_component:GUI AND NOT sophos.geo.country_iso_code:"TEST/AU"'
+    query: 'event.module:sophos AND sophos.xg.log_component:GUI AND NOT source.geo.country_iso_code:AU'
 
 # Ms Teams Alert
 alert:
@@ -37,7 +37,7 @@ alert_subject_args:
 
 alert_text_args:
         - "@timestamp"
-        - related.user
+        - source.user.name
         - source.ip
         - sophos.xg.status
         - message

@@ -1,6 +1,6 @@
 # (Required)
 # Rule name, must be unique
-name: sophos_xg_sslvpn_auth any rule
+name: sophos_central_test any rule
 
 # (Required)
 # Type of alert.
@@ -9,7 +9,7 @@ type: any
 
 # (Required)
 # Index to search, wildcard supported
-index: filebeat-*
+index: sophos_central-*
 
 # (Required)
 # A list of Elasticsearch filters used for find events
@@ -18,7 +18,7 @@ index: filebeat-*
 
 filter:
 - query_string:
-    query: 'event.module:sophos AND sophos.xg.log_component:"SSL VPN Authentication" AND NOT source.geo.country_iso_code:AU'
+    query: 'type:sophos_central AND (message:/blocked.*/ OR message:/failed.*/ OR event.action:Treat OR (event.action:WebControlViolation AND message:/warn.*/))'
 
 # Ms Teams Alert
 alert:
@@ -32,23 +32,24 @@ ms_teams_theme_color: "ff0000"
 ms_teams_alert_fixed_width:
 alert_subject_args:
         - "@timestamp"
-        - sophos.xg.log_subtype
+        - severity_label
+        - sophos.severity
 
 alert_text_args:
         - "@timestamp"
-        - source.user.name
+        - severity_label
+        - sophos.severity
+        - user.name
         - source.ip
-        - destination.ip
-        - sophos.xg.status
         - message
-        - sophos.geo.country_name
         - _id
         - filter.start_time
         - filter.end_time
+        - host.name
 
-alert_subject: "SSL VPN {1}"
+alert_subject: "Sophos Central {1} Event Severity: {2}"
 # to prod siem
-alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source Country**: {6}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}<br><br>[View Event In Siem](http://10.80.111.101/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27)),timeline:(linkTo:!(global),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27))))<br>"
+alert_text: "**Username**: {3}<br>**At**: {0}<br>**Source ip**: {4}<br>**Hostname**: {9}<br>**Status**: {2}<br>**Message**: {5}<br><br>[View Event In Siem](http://10.80.111.101/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{6}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27)),timeline:(linkTo:!(global),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27))))<br>"
 # to dev siem
-#alert_text: "**Username**: {1}<br>**At**: {0}<br>**Source Country**: {6}<br>**Source ip**: {2}<br>**Destination ip**: {3}<br>**Status**: {4}<br>**Message**: {5}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27)),timeline:(linkTo:!(global),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27))))<br>"
+#alert_text: "**Username**: {3}<br>**At**: {0}<br>**Source ip**: {4}<br>**Hostname**: {9}<br>**Status**: {2}<br>**Message**: {5}<br><br>[View Event In Siem](http://elastic:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{6}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27)),timeline:(linkTo:!(global),timerange:(from:%27{7}%27,kind:absolute,to:%27{8}%27))))<br>"
 alert_text_type: "alert_text_only"
