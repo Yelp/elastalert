@@ -721,7 +721,7 @@ class ElastAlerter(object):
 
         # Use buffer for normal queries, or run_every increments otherwise
         # or, if scan_entire_timeframe, use timeframe
-
+        #TODO handle cron interval for non "use_count_query" case
         if not rule.get('use_count_query') and not rule.get('use_terms_query'):
             if not rule.get('scan_entire_timeframe'):
                 buffer_time = rule.get('buffer_time', self.buffer_time)
@@ -741,11 +741,14 @@ class ElastAlerter(object):
             self.adjust_start_time_for_interval_sync(rule, endtime)
 
         else:
-            if not rule.get('scan_entire_timeframe'):
-                # Query from the end of the last run, if it exists, otherwise a run_every sized window
-                rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
+            if not rule.get('cron_schedule'):
+                if not rule.get('scan_entire_timeframe'):
+                    # Query from the end of the last run, if it exists, otherwise a run_every sized window
+                    rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
+                else:
+                    rule['starttime'] = rule.get('previous_endtime', endtime - rule['timeframe'])
             else:
-                rule['starttime'] = rule.get('previous_endtime', endtime - rule['timeframe'])
+                rule['starttime'] = endtime - rule['timeframe']
 
     def adjust_start_time_for_overlapping_agg_query(self, rule):
         if rule.get('aggregation_query_element'):
