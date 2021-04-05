@@ -334,6 +334,9 @@ minute (0-59), hour (0-23), day of month (1-31), month (1-12), day of week (MON-
 
 Fields are separated by space, values separated by comma, * for all values
 
+notice that cron_schedule is currently only supported for use_count_query uses.
+
+
 ### Questions? Drop by #elastalert on Freenode IRC.
 ### BDB enhancements Questions? Contact us at info@bigdataboutique.com
 
