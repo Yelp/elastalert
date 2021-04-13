@@ -1,4 +1,4 @@
-apscheduler>=3.3.0
+apscheduler>=3.3.0,<4.0
 aws-requests-auth>=0.3.0
 sortedcontainers>=2.2.2
 boto3>=1.4.4
