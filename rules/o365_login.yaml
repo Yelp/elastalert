@@ -52,7 +52,7 @@ index: filebeat-*
 
 filter:
 - query_string: 
-        query: "event.module:o365 AND event.action:UserLoggedIn AND NOT source.geo.country_iso_code:AU AND NOT (whitelisted_for:out_of_country OR tags:profile_country_match)"
+        query: "event.module:o365 AND event.action:UserLoggedIn AND NOT source.geo.country_iso_code:AU AND NOT (tags:profile_country_match)"
 
 # (Required)
 # The alert is use when a match is found
@@ -78,8 +78,10 @@ filter:
 #slack_msg_color: "danger"
 
 alert:
+  - "elastalert_modules.custom_alerts.HttpPostAlerter"       
   - "ms_teams"
 
+# parameters for MS_Teams alerts   
 # to prod channel
 ms_teams_webhook_url: "https://insanetechnologies.webhook.office.com/webhookb2/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/7286705abbaf4fd0a8c529230b638d8e/ae25c5f2-48db-4846-b5be-1031b406cafb"
 # to testing channel
@@ -109,3 +111,27 @@ alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**From ip
 # to dev siem
 #alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**From ip**: {5}<br>**Tenant**: {6}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27)),timeline:(linkTo:!(global),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27))))<br>"
 alert_text_type: "alert_text_only"
+
+# parameters for custom http post alerts
+http_post_url: "http://localhost:1337/api/v1.0/create/accelo_ticket"
+
+siem_manager_alert_subject_args:
+  - "@timestamp"
+  - event.action
+siem_manager_alert_subject: "Siem Alert - O365 out of Country {1} -"
+siem_manager_alert_body_args:
+  - event.action
+  - source.geo.country_name
+  - source.geo.city_name
+  - o365.audit.UserId
+  - "@timestamp"
+  - client.ip
+  - host.name
+  - _id
+  - filter.start_time
+  - filter.end_time
+  - accelo_company_id
+siem_manager_alert_body: "Username: {3}\nFrom: {1}, {2}\nAt: {4}\nFrom ip: {5}\nTenant: {6}\nView in Siem: http://10.80.111.101/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{7}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27)),timeline:(linkTo:!(global),timerange:(from:%27{8}%27,kind:absolute,to:%27{9}%27)))"
+
+http_post_payload:
+  ticket_for: accelo_company_id
