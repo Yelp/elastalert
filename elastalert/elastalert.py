@@ -2079,7 +2079,7 @@ def main(args=None):
     if not args:
         args = sys.argv[1:]
     client = ElastAlerter(args)
-    
+
     if client.prometheus_port and not client.debug:
         p = PrometheusWrapper(client)
         p.start()
