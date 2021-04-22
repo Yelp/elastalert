@@ -1122,18 +1122,20 @@ class MetricAggregationRule(BaseAggregationRule):
                                              result,
                                              compound_keys[1:],
                                              match_data)
-
         else:
-            metric_val = aggregation_data[self.metric_key]['value']
-            if self.crossed_thresholds(metric_val):
-                match_data[self.rules['timestamp_field']] = timestamp
-                match_data[self.metric_key] = metric_val
+            if 'interval_aggs' in aggregation_data:
+                metric_val_arr = [term[self.metric_key]['value'] for term in aggregation_data['interval_aggs']['buckets']]
+            else:
+                metric_val_arr = [aggregation_data[self.metric_key]['value']]
+            for metric_val in metric_val_arr:
+                if self.crossed_thresholds(metric_val):
+                    match_data[self.rules['timestamp_field']] = timestamp
+                    match_data[self.metric_key] = metric_val
 
-                # add compound key to payload to allow alerts to trigger for every unique occurence
-                compound_value = [match_data[key] for key in self.rules['compound_query_key']]
-                match_data[self.rules['query_key']] = ",".join([str(value) for value in compound_value])
-
-                self.add_match(match_data)
+                    # add compound key to payload to allow alerts to trigger for every unique occurence
+                    compound_value = [match_data[key] for key in self.rules['compound_query_key']]
+                    match_data[self.rules['query_key']] = ",".join([str(value) for value in compound_value])
+                    self.add_match(match_data)
 
     def crossed_thresholds(self, metric_value):
         if metric_value is None:
