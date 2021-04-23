@@ -85,7 +85,8 @@ class RulesLoader(object):
         'zabbix': ZabbixAlerter,
         'discord': alerts.DiscordAlerter,
         'dingtalk': alerts.DingTalkAlerter,
-        'chatwork': alerts.ChatworkAlerter
+        'chatwork': alerts.ChatworkAlerter,
+        'datadog': alerts.DatadogAlerter
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
