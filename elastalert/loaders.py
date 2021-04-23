@@ -2,13 +2,15 @@
 import copy
 import datetime
 import hashlib
-import logging
 import os
 import sys
 
 import jsonschema
 import yaml
 import yaml.scanner
+from jinja2 import Template
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
 from staticconf.loader import yaml_loader
 
 from . import alerts
@@ -20,11 +22,13 @@ from .util import dt_to_ts_with_format
 from .util import dt_to_unix
 from .util import dt_to_unixms
 from .util import EAException
+from .util import elastalert_logger
 from .util import get_module
 from .util import ts_to_dt
 from .util import ts_to_dt_with_format
 from .util import unix_to_dt
 from .util import unixms_to_dt
+from .zabbix import ZabbixAlerter
 
 
 class RulesLoader(object):
@@ -62,8 +66,6 @@ class RulesLoader(object):
         'debug': alerts.DebugAlerter,
         'command': alerts.CommandAlerter,
         'sns': alerts.SnsAlerter,
-        'hipchat': alerts.HipChatAlerter,
-        'stride': alerts.StrideAlerter,
         'ms_teams': alerts.MsTeamsAlerter,
         'slack': alerts.SlackAlerter,
         'mattermost': alerts.MattermostAlerter,
@@ -77,7 +79,13 @@ class RulesLoader(object):
         'servicenow': alerts.ServiceNowAlerter,
         'alerta': alerts.AlertaAlerter,
         'post': alerts.HTTPPostAlerter,
+        'pagertree': alerts.PagerTreeAlerter,
+        'linenotify': alerts.LineNotifyAlerter,
         'hivealerter': alerts.HiveAlerter,
+        'zabbix': ZabbixAlerter,
+        'discord': alerts.DiscordAlerter,
+        'dingtalk': alerts.DingTalkAlerter,
+        'chatwork': alerts.ChatworkAlerter,
         'datadog': alerts.DatadogAlerter
     }
 
@@ -89,6 +97,8 @@ class RulesLoader(object):
     }
 
     base_config = {}
+
+    jinja_environment = Environment(loader=FileSystemLoader(""))
 
     def __init__(self, conf):
         # schema for rule yaml
@@ -116,10 +126,7 @@ class RulesLoader(object):
                 rule = self.load_configuration(rule_file, conf, args)
                 # A rule failed to load, don't try to process it
                 if not rule:
-                    logging.error('Invalid rule file skipped: %s' % rule_file)
-                    continue
-                # By setting "is_enabled: False" in rule file, a rule is easily disabled
-                if 'is_enabled' in rule and not rule['is_enabled']:
+                    elastalert_logger.error('Invalid rule file skipped: %s' % rule_file)
                     continue
                 if rule['name'] in names:
                     raise EAException('Duplicate rule named %s' % (rule['name']))
@@ -280,6 +287,8 @@ class RulesLoader(object):
         rule.setdefault('_source_enabled', True)
         rule.setdefault('use_local_time', True)
         rule.setdefault('description', "")
+        rule.setdefault('jinja_root_name', "_data")
+        rule.setdefault('query_timezone', "")
 
         # Set timestamp_type conversion function, used when generating queries and processing hits
         rule['timestamp_type'] = rule['timestamp_type'].strip().lower()
@@ -315,13 +324,6 @@ class RulesLoader(object):
             rule.setdefault('ca_certs', conf.get('ca_certs'))
             rule.setdefault('client_cert', conf.get('client_cert'))
             rule.setdefault('client_key', conf.get('client_key'))
-
-        # Set HipChat options from global config
-        rule.setdefault('hipchat_msg_color', 'red')
-        rule.setdefault('hipchat_domain', 'api.hipchat.com')
-        rule.setdefault('hipchat_notify', True)
-        rule.setdefault('hipchat_from', '')
-        rule.setdefault('hipchat_ignore_ssl_errors', False)
 
         # Make sure we have required options
         if self.required_locals - frozenset(list(rule.keys())):
@@ -394,13 +396,21 @@ class RulesLoader(object):
         if rule.get('use_strftime_index'):
             for token in ['%y', '%M', '%D']:
                 if token in rule.get('index'):
-                    logging.warning('Did you mean to use %s in the index? '
-                                    'The index will be formatted like %s' % (token,
-                                                                             datetime.datetime.now().strftime(
-                                                                                 rule.get('index'))))
+                    elastalert_logger.warning('Did you mean to use %s in the index? '
+                                              'The index will be formatted like %s' % (token,
+                                                                                       datetime.datetime.now().strftime(
+                                                                                            rule.get('index'))))
 
         if rule.get('scan_entire_timeframe') and not rule.get('timeframe'):
             raise EAException('scan_entire_timeframe can only be used if there is a timeframe specified')
+
+        # Compile Jinja Template
+        if rule.get('alert_text_type') == 'alert_text_jinja':
+            jinja_template_path = rule.get('jinja_template_path')
+            if jinja_template_path:
+                rule["jinja_template"] = self.jinja_environment.get_or_select_template(jinja_template_path)
+            else:
+                rule["jinja_template"] = Template(str(rule.get('alert_text', '')))
 
     def load_modules(self, rule, args=None):
         """ Loads things that could be modules. Enhancements, alerts and rule type. """
@@ -486,7 +496,7 @@ class RulesLoader(object):
                 rule['http_post_proxy'] = rule['simple_proxy']
             if 'simple_webhook_url' in rule:
                 rule['http_post_url'] = rule['simple_webhook_url']
-            logging.warning(
+            elastalert_logger.warning(
                 '"simple" alerter has been renamed "post" and comptability may be removed in a future release.')
 
 
