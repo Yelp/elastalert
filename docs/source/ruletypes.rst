@@ -1489,6 +1489,18 @@ Example usage using new-style format::
     command: ["/bin/send_alert", "--username", "{match[username]}"]
 
 
+Datadog
+~~~~~~~
+
+This alert will create a [Datadog Event](https://docs.datadoghq.com/events/). Events are limited to 4000 characters. If an event is sent that contains 
+a message that is longer than 4000 characters, only his first 4000 characters will be displayed.
+
+This alert requires two additional options:
+
+``datadog_api_key``: [Datadog API key](https://docs.datadoghq.com/account_management/api-app-keys/#api-keys)
+
+``datadog_app_key``: [Datadog application key](https://docs.datadoghq.com/account_management/api-app-keys/#application-keys)
+
 Email
 ~~~~~
 
