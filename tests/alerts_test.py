@@ -12,6 +12,7 @@ from elastalert.alerts import AlertaAlerter
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
 from elastalert.alerts import CommandAlerter
+from elastalert.alerts import DatadogAlerter
 from elastalert.alerts import EmailAlerter
 from elastalert.alerts import HTTPPostAlerter
 from elastalert.alerts import JiraAlerter
@@ -2296,3 +2297,38 @@ def test_alert_subject_size_limit_with_args(ea):
     alert = Alerter(rule)
     alertSubject = alert.create_custom_title([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
     assert 6 == len(alertSubject)
+
+def test_datadog_alerter():
+    rule = {
+        'name': 'Test Datadog Event Alerter',
+        'type': 'any',
+        'datadog_api_key': 'test-api-key',
+        'datadog_app_key': 'test-app-key',
+        'alert': [],
+        'alert_subject': 'Test Datadog Event Alert'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = DatadogAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'name': 'datadog-test-name'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'title': rule['alert_subject'],
+        'text': "Test Datadog Event Alerter\n\n@timestamp: 2021-01-01T00:00:00\nname: datadog-test-name\n"
+    }
+    mock_post_request.assert_called_once_with(
+        "https://api.datadoghq.com/api/v1/events",
+        data=mock.ANY,
+        headers={
+            'Content-Type': 'application/json',
+            'DD-API-KEY': rule['datadog_api_key'],
+            'DD-APPLICATION-KEY': rule['datadog_app_key']
+        }
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
