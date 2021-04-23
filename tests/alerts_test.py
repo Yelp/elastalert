@@ -2298,6 +2298,7 @@ def test_alert_subject_size_limit_with_args(ea):
     alertSubject = alert.create_custom_title([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
     assert 6 == len(alertSubject)
 
+
 def test_datadog_alerter():
     rule = {
         'name': 'Test Datadog Event Alerter',

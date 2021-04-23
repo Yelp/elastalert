@@ -2232,6 +2232,7 @@ class ChatworkAlerter(Alerter):
             "chatwork_room_id": self.chatwork_room_id
         }
 
+
 class DatadogAlerter(Alerter):
     ''' Creates a Datadog Event for each alert '''
     required_options = frozenset(['datadog_api_key', 'datadog_app_key'])
