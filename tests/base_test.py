@@ -427,8 +427,8 @@ def test_agg_matchtime(ea):
     call4 = ea.writeback_es.deprecated_search.call_args_list[10][1]['body']
 
     assert 'alert_time' in call2['filter']['range']
-    assert call3['query']['query_string']['query'] == 'aggregate_id:ABCD'
-    assert call4['query']['query_string']['query'] == 'aggregate_id:CDEF'
+    assert call3['query']['query_string']['query'] == 'aggregate_id:"ABCD"'
+    assert call4['query']['query_string']['query'] == 'aggregate_id:"CDEF"'
     assert ea.writeback_es.deprecated_search.call_args_list[9][1]['size'] == 1337
 
 
@@ -596,8 +596,8 @@ def test_agg_with_aggregation_key(ea):
     call4 = ea.writeback_es.deprecated_search.call_args_list[10][1]['body']
 
     assert 'alert_time' in call2['filter']['range']
-    assert call3['query']['query_string']['query'] == 'aggregate_id:ABCD'
-    assert call4['query']['query_string']['query'] == 'aggregate_id:CDEF'
+    assert call3['query']['query_string']['query'] == 'aggregate_id:"ABCD"'
+    assert call4['query']['query_string']['query'] == 'aggregate_id:"CDEF"'
     assert ea.writeback_es.deprecated_search.call_args_list[9][1]['size'] == 1337
 
 

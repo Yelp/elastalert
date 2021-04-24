@@ -8,20 +8,21 @@ import prison
 import urllib.parse
 
 from .util import EAException
+from .util import elastalert_logger
 from .util import lookup_es_key
 from .util import ts_add
 
 kibana_default_timedelta = datetime.timedelta(minutes=10)
 
 kibana5_kibana6_versions = frozenset(['5.6', '6.0', '6.1', '6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8'])
-kibana7_versions = frozenset(['7.0', '7.1', '7.2', '7.3'])
+kibana7_versions = frozenset(['7.0', '7.1', '7.2', '7.3', '7.4', '7.5', '7.6', '7.7', '7.8', '7.9', '7.10', '7.11', '7.12'])
 
 def generate_kibana_discover_url(rule, match):
     ''' Creates a link for a kibana discover app. '''
 
     discover_app_url = rule.get('kibana_discover_app_url')
     if not discover_app_url:
-        logging.warning(
+        elastalert_logger.warning(
             'Missing kibana_discover_app_url for rule %s' % (
                 rule.get('name', '<MISSING NAME>')
             )
@@ -30,7 +31,7 @@ def generate_kibana_discover_url(rule, match):
 
     kibana_version = rule.get('kibana_discover_version')
     if not kibana_version:
-        logging.warning(
+        elastalert_logger.warning(
             'Missing kibana_discover_version for rule %s' % (
                 rule.get('name', '<MISSING NAME>')
             )
@@ -39,7 +40,7 @@ def generate_kibana_discover_url(rule, match):
 
     index = rule.get('kibana_discover_index_pattern_id')
     if not index:
-        logging.warning(
+        elastalert_logger.warning(
             'Missing kibana_discover_index_pattern_id for rule %s' % (
                 rule.get('name', '<MISSING NAME>')
             )
@@ -70,7 +71,7 @@ def generate_kibana_discover_url(rule, match):
         appState = kibana_discover_app_state(index, columns, filters, query_keys, match)
 
     else:
-        logging.warning(
+        elastalert_logger.warning(
             'Unknown kibana discover application version %s for rule %s' % (
                 kibana_version,
                 rule.get('name', '<MISSING NAME>')
