@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import json
-import logging
 import os.path
 import requests
 
@@ -46,11 +45,11 @@ class OpsGenieAlerter(Alerter):
                 try:
                     formated_responders.append(responder.format(**responders_values))
                 except KeyError as error:
-                    logging.warn("OpsGenieAlerter: Cannot create responder for OpsGenie Alert. Key not foud: %s. " % (error))
+                    elastalert_logger.warning("OpsGenieAlerter: Cannot create responder for OpsGenie Alert. Key not foud: %s. " % (error))
             if not formated_responders:
-                logging.warn("OpsGenieAlerter: no responders can be formed. Trying the default responder ")
+                elastalert_logger.warning("OpsGenieAlerter: no responders can be formed. Trying the default responder ")
                 if not default_responders:
-                    logging.warn("OpsGenieAlerter: default responder not set. Falling back")
+                    elastalert_logger.warning("OpsGenieAlerter: default responder not set. Falling back")
                     formated_responders = responders
                 else:
                     formated_responders = default_responders
@@ -90,7 +89,7 @@ class OpsGenieAlerter(Alerter):
         post['tags'] = self.tags
 
         if self.priority and self.priority not in ('P1', 'P2', 'P3', 'P4', 'P5'):
-            logging.warn("Priority level does not appear to be specified correctly. \
+            elastalert_logger.warning("Priority level does not appear to be specified correctly. \
                          Please make sure to set it to a value between P1 and P5")
         else:
             post['priority'] = self.priority
@@ -102,7 +101,7 @@ class OpsGenieAlerter(Alerter):
         if details:
             post['details'] = details
 
-        logging.debug(json.dumps(post))
+        elastalert_logger.debug(json.dumps(post))
 
         headers = {
             'Content-Type': 'application/json',
@@ -114,12 +113,12 @@ class OpsGenieAlerter(Alerter):
         try:
             r = requests.post(self.to_addr, json=post, headers=headers, proxies=proxies)
 
-            logging.debug('request response: {0}'.format(r))
+            elastalert_logger.debug('request response: {0}'.format(r))
             if r.status_code != 202:
                 elastalert_logger.info("Error response from {0} \n "
                                        "API Response: {1}".format(self.to_addr, r))
                 r.raise_for_status()
-            logging.info("Alert sent to OpsGenie")
+            elastalert_logger.info("Alert sent to OpsGenie")
         except Exception as err:
             raise EAException("Error sending alert: {0}".format(err))
 
