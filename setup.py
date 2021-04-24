@@ -7,15 +7,13 @@ from setuptools import setup
 
 base_dir = os.path.dirname(__file__)
 setup(
-    name='elastalert',
-    version='0.2.4',
+    name='elastalert2',
+    version='2.0.2',
     description='Runs custom filters on Elasticsearch and alerts on matches',
-    author='Quentin Long',
-    author_email='qlo@yelp.com',
     setup_requires='setuptools',
-    license='Copyright 2014 Yelp',
+    license='Apache 2.0',
     classifiers=[
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.9',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ],
