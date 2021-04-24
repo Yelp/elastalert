@@ -38,13 +38,13 @@ docker build . -t elastalert
 
 ## Kubernetes
 
-See the Helm chart [README.md](chart/elastalert/README.md) for information on installing this application into an existing Kubernetes cluster.
+See the Helm chart [README.md](chart/elastalert2/README.md) for information on installing this application into an existing Kubernetes cluster.
 
 ## Releases
 
 As Elastalert 2 is a community-maintained project, releases will typically contain unrelated contributions without a common theme. It's up to the maintainers to determine when the project is ready for a release, however, if you are looking to use a newly merged feature that hasn't yet been released, feel free to open a [discussion][6] and let us know.
 
-Maintainers, when creating a new release, following the procedure below:
+Maintainers, when creating a new release, follow the procedure below:
 
 1. Determine an appropriate new version number in the format _a.b.c_, using the following guidelines:
 	- The major version (a) should not change.
