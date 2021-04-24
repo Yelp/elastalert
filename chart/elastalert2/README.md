@@ -8,7 +8,7 @@ An Elastalert 2 helm chart is available in the jertel Helm repository, and can b
 Add the jertel repository to your Helm configuration:
 
 ```console
-helm repo add codesim https://helm.jertel.com
+helm repo add jertel https://helm.jertel.com
 ```
 
 Next, install the chart with a release name, such as _elastalert2_:
