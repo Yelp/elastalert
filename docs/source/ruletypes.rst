@@ -40,6 +40,10 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_url_prefix`` (string, no default)                       |           |
 +--------------------------------------------------------------+           |
+| ``statsd_instance_tag`` (string, no default)                 |           |
++--------------------------------------------------------------+           |
+| ``statsd_host`` (string, no default)                         |           |
++--------------------------------------------------------------+           |
 | ``es_send_get_body_as`` (string, default "GET")              |           |
 +--------------------------------------------------------------+           |
 | ``aggregation`` (time, no default)                           |           |
@@ -247,8 +251,8 @@ import
 
 ``import``: If specified includes all the settings from this yaml file. This allows common config options to be shared. Note that imported files that aren't
 complete rules should not have a ``.yml`` or ``.yaml`` suffix so that ElastAlert doesn't treat them as rules. Filters in imported files are merged (ANDed)
-with any filters in the rule. You can only have one import per rule, though the imported file can import another file, recursively. The filename
-can be an absolute path or relative to the rules directory. (Optional, string, no default)
+with any filters in the rule. You can only have one import per rule, though the imported file can import another file or multiple files, recursively.
+The filename can be an absolute path or relative to the rules directory. (Optional, string or array of strings, no default)
 
 use_ssl
 ^^^^^^^
@@ -290,6 +294,17 @@ es_url_prefix
 ^^^^^^^^^^^^^
 
 ``es_url_prefix``: URL prefix for the Elasticsearch endpoint. (Optional, string, no default)
+
+statsd_instance_tag
+^^^^^^^^^^^^^^^^^^^
+
+``statsd_instance_tag``: prefix for statsd metrics. (Optional, string, no default)
+
+
+statsd_host
+^^^^^^^^^^^^^
+
+``statsd_host``: statsd host. (Optional, string, no default)
 
 es_send_get_body_as
 ^^^^^^^^^^^^^^^^^^^
