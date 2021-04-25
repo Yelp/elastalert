@@ -26,3 +26,7 @@ Maintainers, when creating a new release, follow the procedure below:
  	- Docker Hub image was [published][8] successfully.
 6. Wait a minimum of a few hours for community feedback in case someone notices a problem with the the upcoming release.
 7. Publish the release.
+
+[8]: https://hub.docker.com/r/jertel/elastalert2/builds
+[9]: https://github.com/jertel/elastalert2/actions/workflows/python-publish.yml
+[10]: https://github.com/jertel/elastalert2/actions/workflows/upload_chart.yml

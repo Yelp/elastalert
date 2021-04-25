@@ -52,6 +52,3 @@ Elastalert is licensed under the [Apache License, Version 2.0][5].
 [5]: http://www.apache.org/licenses/LICENSE-2
 [6]: https://github.com/jertel/elastalert2/discussions
 [7]: https://github.com/jertel/elastalert2/releases/new
-[8]: https://hub.docker.com/r/jertel/elastalert2/builds
-[9]: https://github.com/jertel/elastalert2/actions/workflows/python-publish.yml
-[10]: https://github.com/jertel/elastalert2/actions/workflows/upload_chart.yml
