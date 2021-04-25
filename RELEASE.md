@@ -23,9 +23,9 @@ Maintainers, when creating a new release, follow the procedure below:
 	- Check the box to 'Create a discussion for this release'.
 	- Save the draft.
 5. Verify that artifacts have been published:
- 	- Python PIP package was [published][2] successfully.
- 	- Helm chart has been [published][3] successfully.
- 	- Docker Hub image was [published][4] successfully.
+ 	- Python PIP package was [published][3] successfully.
+ 	- Helm chart has been [published][4] successfully.
+ 	- Docker Hub image was [published][2] successfully.
 6. Wait a minimum of a few hours for community feedback in case someone notices a problem with the the upcoming release.
 7. Publish the release.
 
