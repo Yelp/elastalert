@@ -62,8 +62,12 @@ Maintainers, when creating a new release, follow the procedure below:
 		`- PR/commit message #000 - @committer`
 	- Check the box to 'Create a discussion for this release'.
 	- Save the draft.
-5. Wait a minimum of a few hours for community feedback in case someone notices a problem with the the upcoming release.
-6. Publish the release.
+5. Verify that artifacts have been published:
+ 	- Python PIP package was [published][9] successfully.
+ 	- Helm chart has been [published][10] successfully.
+ 	- Docker Hub image was [published][8] successfully.
+6. Wait a minimum of a few hours for community feedback in case someone notices a problem with the the upcoming release.
+7. Publish the release.
 
 ## License
 
@@ -77,3 +81,6 @@ Elastalert is licensed under the [Apache License, Version 2.0][5].
 [5]: http://www.apache.org/licenses/LICENSE-2
 [6]: https://github.com/jertel/elastalert2/discussions
 [7]: https://github.com/jertel/elastalert2/releases/new
+[8]: https://hub.docker.com/r/jertel/elastalert2/builds
+[9]: https://github.com/jertel/elastalert2/actions/workflows/python-publish.yml
+[10]: https://github.com/jertel/elastalert2/actions/workflows/upload_chart.yml
