@@ -50,5 +50,4 @@ Elastalert is licensed under the [Apache License, Version 2.0][5].
 [3]: https://elastalert2.readthedocs.io/
 [4]: https://elastalert2.readthedocs.io/en/latest/ruletypes.html#alerts
 [5]: http://www.apache.org/licenses/LICENSE-2
-[6]: https://github.com/jertel/elastalert2/discussions
-[7]: https://github.com/jertel/elastalert2/releases/new
+
