@@ -15,12 +15,14 @@ Contents:
    running_elastalert
    ruletypes
    elastalert_status
+   elasticsearch_security_privileges
    recipes/adding_rules
    recipes/adding_alerts
    recipes/writing_filters
    recipes/adding_enhancements
    recipes/adding_loaders
    recipes/signing_requests
+   recipes/faq
 
 Indices and Tables
 ==================

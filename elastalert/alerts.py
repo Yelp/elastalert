@@ -2,7 +2,6 @@
 import copy
 import datetime
 import json
-import logging
 import os
 import re
 import subprocess
@@ -11,8 +10,9 @@ import time
 import uuid
 import warnings
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 from email.utils import formatdate
-from html.parser import HTMLParser
 from smtplib import SMTP
 from smtplib import SMTP_SSL
 from smtplib import SMTPAuthenticationError
@@ -63,7 +63,13 @@ class BasicMatchString(object):
     def _add_custom_alert_text(self):
         missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
         alert_text = str(self.rule.get('alert_text', ''))
-        if 'alert_text_args' in self.rule:
+        if 'alert_text_jinja' == self.rule.get('alert_text_type'):
+            #  Top fields are accessible via `{{field_name}}` or `{{jinja_root_name['field_name']}}`
+            #  `jinja_root_name` dict is useful when accessing *fields with dots in their keys*,
+            #  as Jinja treat dot as a nested field.
+            alert_text = self.rule.get("jinja_template").render(**self.match,
+                                                                **{self.rule['jinja_root_name']: self.match})
+        elif 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
             alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
 
@@ -142,7 +148,7 @@ class BasicMatchString(object):
 
         self._add_custom_alert_text()
         self._ensure_new_line()
-        if self.rule.get('alert_text_type') != 'alert_text_only':
+        if self.rule.get('alert_text_type') != 'alert_text_only' and self.rule.get('alert_text_type') != 'alert_text_jinja':
             self._add_rule_text()
             self._ensure_new_line()
             if self.rule.get('top_count_keys'):
@@ -371,7 +377,6 @@ class StompAlerter(Alerter):
 
         conn = stomp.Connection([(self.stomp_hostname, self.stomp_hostport)], use_ssl=self.stomp_ssl)
 
-        conn.start()
         conn.connect(self.stomp_login, self.stomp_password)
         # Ensures that the CONNECTED frame is received otherwise, the disconnect call will fail.
         time.sleep(1)
@@ -406,6 +411,8 @@ class EmailAlerter(Alerter):
     def __init__(self, *args):
         super(EmailAlerter, self).__init__(*args)
 
+        self.assets_dir = self.rule.get('assets_dir', '/tmp')
+        self.images_dictionary = dict(zip(self.rule.get('email_image_keys', []),  self.rule.get('email_image_values', [])))
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
         self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
@@ -450,7 +457,17 @@ class EmailAlerter(Alerter):
                 if 'email_add_domain' in self.rule:
                     to_addr = [name + self.rule['email_add_domain'] for name in to_addr]
         if self.rule.get('email_format') == 'html':
-            email_msg = MIMEText(body, 'html', _charset='UTF-8')
+            # email_msg = MIMEText(body, 'html', _charset='UTF-8') # old way
+            email_msg = MIMEMultipart()
+            msgText = MIMEText(body, 'html', _charset='UTF-8')
+            email_msg.attach(msgText)   # Added, and edited the previous line
+
+            for image_key in self.images_dictionary:
+                fp = open(os.path.join(self.assets_dir, self.images_dictionary[image_key]), 'rb')
+                img = MIMEImage(fp.read())
+                fp.close()
+                img.add_header('Content-ID', '<{}>'.format(image_key))
+                email_msg.attach(img)
         else:
             email_msg = MIMEText(body, _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
@@ -586,7 +603,7 @@ class JiraAlerter(Alerter):
                 msg = '%s Both have common statuses of (%s). As such, no tickets will ever be found.' % (
                     msg, ','.join(intersection))
             msg += ' This should be simplified to use only one or the other.'
-            logging.warning(msg)
+            elastalert_logger.warning(msg)
 
         self.reset_jira_args()
 
@@ -606,7 +623,7 @@ class JiraAlerter(Alerter):
             if self.priority is not None and self.client is not None:
                 self.jira_args['priority'] = {'id': self.priority_ids[self.priority]}
         except KeyError:
-            logging.error("Priority %s not found. Valid priorities are %s" % (self.priority, list(self.priority_ids.keys())))
+            elastalert_logger.error("Priority %s not found. Valid priorities are %s" % (self.priority, list(self.priority_ids.keys())))
 
     def reset_jira_args(self):
         self.jira_args = {'project': {'key': self.project},
@@ -749,7 +766,7 @@ class JiraAlerter(Alerter):
         try:
             issues = self.client.search_issues(jql)
         except JIRAError as e:
-            logging.exception("Error while searching for JIRA ticket using jql '%s': %s" % (jql, e))
+            elastalert_logger.exception("Error while searching for JIRA ticket using jql '%s': %s" % (jql, e))
             return None
 
         if len(issues):
@@ -792,19 +809,19 @@ class JiraAlerter(Alerter):
                     try:
                         self.comment_on_ticket(ticket, match)
                     except JIRAError as e:
-                        logging.exception("Error while commenting on ticket %s: %s" % (ticket, e))
+                        elastalert_logger.exception("Error while commenting on ticket %s: %s" % (ticket, e))
                     if self.labels:
                         for label in self.labels:
                             try:
                                 ticket.fields.labels.append(label)
                             except JIRAError as e:
-                                logging.exception("Error while appending labels to ticket %s: %s" % (ticket, e))
+                                elastalert_logger.exception("Error while appending labels to ticket %s: %s" % (ticket, e))
                 if self.transition:
                     elastalert_logger.info('Transitioning existing ticket %s' % (ticket.key))
                     try:
                         self.transition_ticket(ticket)
                     except JIRAError as e:
-                        logging.exception("Error while transitioning ticket %s: %s" % (ticket, e))
+                        elastalert_logger.exception("Error while transitioning ticket %s: %s" % (ticket, e))
 
                 if self.pipeline is not None:
                     self.pipeline['jira_ticket'] = ticket
@@ -868,7 +885,9 @@ class JiraAlerter(Alerter):
         if for_search:
             return title
 
-        title += ' - %s' % (pretty_ts(matches[0][self.rule['timestamp_field']], self.rule.get('use_local_time')))
+        timestamp = matches[0].get(self.rule['timestamp_field'])
+        if timestamp:
+            title += ' - %s' % (pretty_ts(timestamp, self.rule.get('use_local_time')))
 
         # Add count for spikes
         count = matches[0].get('spike_count')
@@ -893,12 +912,8 @@ class CommandAlerter(Alerter):
         if isinstance(self.rule['command'], str):
             self.shell = True
             if '%' in self.rule['command']:
-                logging.warning('Warning! You could be vulnerable to shell injection!')
+                elastalert_logger.warning('Warning! You could be vulnerable to shell injection!')
             self.rule['command'] = [self.rule['command']]
-
-        self.new_style_string_format = False
-        if 'new_style_string_format' in self.rule and self.rule['new_style_string_format']:
-            self.new_style_string_format = True
 
     def alert(self, matches):
         # Format the command and arguments
@@ -935,11 +950,11 @@ class SnsAlerter(Alerter):
     def __init__(self, *args):
         super(SnsAlerter, self).__init__(*args)
         self.sns_topic_arn = self.rule.get('sns_topic_arn', '')
-        self.aws_access_key_id = self.rule.get('aws_access_key_id')
-        self.aws_secret_access_key = self.rule.get('aws_secret_access_key')
-        self.aws_region = self.rule.get('aws_region', 'us-east-1')
+        self.sns_aws_access_key_id = self.rule.get('sns_aws_access_key_id')
+        self.sns_aws_secret_access_key = self.rule.get('sns_aws_secret_access_key')
+        self.sns_aws_region = self.rule.get('sns_aws_region', 'us-east-1')
         self.profile = self.rule.get('boto_profile', None)  # Deprecated
-        self.profile = self.rule.get('aws_profile', None)
+        self.profile = self.rule.get('sns_aws_profile', None)
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -948,12 +963,15 @@ class SnsAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
-        session = boto3.Session(
-            aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
-            region_name=self.aws_region,
-            profile_name=self.profile
-        )
+        if self.profile is None:
+            session = boto3.Session(
+                aws_access_key_id=self.sns_aws_access_key_id,
+                aws_secret_access_key=self.sns_aws_access_key_id,
+                region_name=self.sns_aws_region
+            )
+        else:
+            session = boto3.Session(profile_name=self.profile)
+
         sns_client = session.client('sns')
         sns_client.publish(
             TopicArn=self.sns_topic_arn,
@@ -961,92 +979,6 @@ class SnsAlerter(Alerter):
             Subject=self.create_title(matches)
         )
         elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
-
-
-class HipChatAlerter(Alerter):
-    """ Creates a HipChat room notification for each alert """
-    required_options = frozenset(['hipchat_auth_token', 'hipchat_room_id'])
-
-    def __init__(self, rule):
-        super(HipChatAlerter, self).__init__(rule)
-        self.hipchat_msg_color = self.rule.get('hipchat_msg_color', 'red')
-        self.hipchat_message_format = self.rule.get('hipchat_message_format', 'html')
-        self.hipchat_auth_token = self.rule['hipchat_auth_token']
-        self.hipchat_room_id = self.rule['hipchat_room_id']
-        self.hipchat_domain = self.rule.get('hipchat_domain', 'api.hipchat.com')
-        self.hipchat_ignore_ssl_errors = self.rule.get('hipchat_ignore_ssl_errors', False)
-        self.hipchat_notify = self.rule.get('hipchat_notify', True)
-        self.hipchat_from = self.rule.get('hipchat_from', '')
-        self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (
-            self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
-        self.hipchat_proxy = self.rule.get('hipchat_proxy', None)
-
-    def create_alert_body(self, matches):
-        body = super(HipChatAlerter, self).create_alert_body(matches)
-
-        # HipChat sends 400 bad request on messages longer than 10000 characters
-        if self.hipchat_message_format == 'html':
-            # Use appropriate line ending for text/html
-            br = '<br/>'
-            body = body.replace('\n', br)
-
-            truncated_message = '<br/> ...(truncated)'
-            truncate_to = 10000 - len(truncated_message)
-        else:
-            truncated_message = '..(truncated)'
-            truncate_to = 10000 - len(truncated_message)
-
-        if (len(body) > 9999):
-            body = body[:truncate_to] + truncated_message
-
-        return body
-
-    def alert(self, matches):
-        body = self.create_alert_body(matches)
-
-        # Post to HipChat
-        headers = {'content-type': 'application/json'}
-        # set https proxy, if it was provided
-        proxies = {'https': self.hipchat_proxy} if self.hipchat_proxy else None
-        payload = {
-            'color': self.hipchat_msg_color,
-            'message': body,
-            'message_format': self.hipchat_message_format,
-            'notify': self.hipchat_notify,
-            'from': self.hipchat_from
-        }
-
-        try:
-            if self.hipchat_ignore_ssl_errors:
-                requests.packages.urllib3.disable_warnings()
-
-            if self.rule.get('hipchat_mentions', []):
-                ping_users = self.rule.get('hipchat_mentions', [])
-                ping_msg = payload.copy()
-                ping_msg['message'] = "ping {}".format(
-                    ", ".join("@{}".format(user) for user in ping_users)
-                )
-                ping_msg['message_format'] = "text"
-
-                response = requests.post(
-                    self.url,
-                    data=json.dumps(ping_msg, cls=DateTimeEncoder),
-                    headers=headers,
-                    verify=not self.hipchat_ignore_ssl_errors,
-                    proxies=proxies)
-
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
-                                     verify=not self.hipchat_ignore_ssl_errors,
-                                     proxies=proxies)
-            warnings.resetwarnings()
-            response.raise_for_status()
-        except RequestException as e:
-            raise EAException("Error posting to HipChat: %s" % e)
-        elastalert_logger.info("Alert sent to HipChat room %s" % self.hipchat_room_id)
-
-    def get_info(self):
-        return {'type': 'hipchat',
-                'hipchat_room_id': self.hipchat_room_id}
 
 
 class MsTeamsAlerter(Alerter):
@@ -1205,7 +1137,7 @@ class SlackAlerter(Alerter):
                     if self.slack_ca_certs:
                         verify = self.slack_ca_certs
                     else:
-                        verify = self.slack_ignore_ssl_errors
+                        verify = not self.slack_ignore_ssl_errors
                     if self.slack_ignore_ssl_errors:
                         requests.packages.urllib3.disable_warnings()
                     payload['channel'] = channel_override
@@ -1357,6 +1289,8 @@ class PagerDutyAlerter(Alerter):
         self.pagerduty_v2_payload_severity = self.rule.get('pagerduty_v2_payload_severity', 'critical')
         self.pagerduty_v2_payload_source = self.rule.get('pagerduty_v2_payload_source', 'ElastAlert')
         self.pagerduty_v2_payload_source_args = self.rule.get('pagerduty_v2_payload_source_args', None)
+        self.pagerduty_v2_payload_custom_details = self.rule.get('pagerduty_v2_payload_custom_details', {})
+        self.pagerduty_v2_payload_include_all_info = self.rule.get('pagerduty_v2_payload_include_all_info', True)
 
         if self.pagerduty_api_version == 'v2':
             self.url = 'https://events.pagerduty.com/v2/enqueue'
@@ -1369,6 +1303,13 @@ class PagerDutyAlerter(Alerter):
         # post to pagerduty
         headers = {'content-type': 'application/json'}
         if self.pagerduty_api_version == 'v2':
+
+            custom_details_payload = {'information': body} if self.pagerduty_v2_payload_include_all_info else {}
+            if self.pagerduty_v2_payload_custom_details:
+                for match in matches:
+                    for custom_details_key, es_key in list(self.pagerduty_v2_payload_custom_details.items()):
+                        custom_details_payload[custom_details_key] = lookup_es_key(match, es_key)
+
             payload = {
                 'routing_key': self.pagerduty_service_key,
                 'event_action': self.pagerduty_event_type,
@@ -1389,9 +1330,7 @@ class PagerDutyAlerter(Alerter):
                                                          self.pagerduty_v2_payload_source_args,
                                                          matches),
                     'summary': self.create_title(matches),
-                    'custom_details': {
-                        'information': body,
-                    },
+                    'custom_details': custom_details_payload,
                 },
             }
             match_timestamp = lookup_es_key(matches[0], self.rule.get('timestamp_field', '@timestamp'))
@@ -1917,7 +1856,7 @@ class AlertaAlerter(Alerter):
 
         alerta_payload_dict = {
             'resource': resolve_string(self.resource, match, self.missing_text),
-            'severity': self.severity,
+            'severity': resolve_string(self.severity, match),
             'timeout': self.timeout,
             'createTime': createTime,
             'type': self.type,
@@ -1956,6 +1895,8 @@ class HTTPPostAlerter(Alerter):
         self.post_static_payload = self.rule.get('http_post_static_payload', {})
         self.post_all_values = self.rule.get('http_post_all_values', not self.post_payload)
         self.post_http_headers = self.rule.get('http_post_headers', {})
+        self.post_ca_certs = self.rule.get('http_post_ca_certs')
+        self.post_ignore_ssl_errors = self.rule.get('http_post_ignore_ssl_errors', False)
         self.timeout = self.rule.get('http_post_timeout', 10)
 
     def alert(self, matches):
@@ -1969,12 +1910,18 @@ class HTTPPostAlerter(Alerter):
                 "Content-Type": "application/json",
                 "Accept": "application/json;charset=utf-8"
             }
+            if self.post_ca_certs:
+                verify = self.post_ca_certs
+            else:
+                verify = not self.post_ignore_ssl_errors
+
             headers.update(self.post_http_headers)
             proxies = {'https': self.post_proxy} if self.post_proxy else None
             for url in self.post_url:
                 try:
                     response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder),
-                                             headers=headers, proxies=proxies, timeout=self.timeout)
+                                             headers=headers, proxies=proxies, timeout=self.timeout,
+                                             verify=verify)
                     response.raise_for_status()
                 except RequestException as e:
                     raise EAException("Error posting HTTP Post alert: %s" % e)
@@ -1983,99 +1930,6 @@ class HTTPPostAlerter(Alerter):
     def get_info(self):
         return {'type': 'http_post',
                 'http_post_webhook_url': self.post_url}
-
-
-class StrideHTMLParser(HTMLParser):
-    """Parse html into stride's fabric structure"""
-
-    def __init__(self):
-        """
-        Define a couple markup place holders.
-        """
-        self.content = []
-        self.mark = None
-        HTMLParser.__init__(self)
-
-    def handle_starttag(self, tag, attrs):
-        """Identify and verify starting tag is fabric compatible."""
-        if tag == 'b' or tag == 'strong':
-            self.mark = dict(type='strong')
-        if tag == 'u':
-            self.mark = dict(type='underline')
-        if tag == 'a':
-            self.mark = dict(type='link', attrs=dict(attrs))
-
-    def handle_endtag(self, tag):
-        """Clear mark on endtag."""
-        self.mark = None
-
-    def handle_data(self, data):
-        """Construct data node for our data."""
-        node = dict(type='text', text=data)
-        if self.mark:
-            node['marks'] = [self.mark]
-        self.content.append(node)
-
-
-class StrideAlerter(Alerter):
-    """ Creates a Stride conversation message for each alert """
-
-    required_options = frozenset(
-        ['stride_access_token', 'stride_cloud_id', 'stride_conversation_id'])
-
-    def __init__(self, rule):
-        super(StrideAlerter, self).__init__(rule)
-
-        self.stride_access_token = self.rule['stride_access_token']
-        self.stride_cloud_id = self.rule['stride_cloud_id']
-        self.stride_conversation_id = self.rule['stride_conversation_id']
-        self.stride_ignore_ssl_errors = self.rule.get('stride_ignore_ssl_errors', False)
-        self.stride_proxy = self.rule.get('stride_proxy', None)
-        self.url = 'https://api.atlassian.com/site/%s/conversation/%s/message' % (
-            self.stride_cloud_id, self.stride_conversation_id)
-
-    def alert(self, matches):
-        body = self.create_alert_body(matches).strip()
-
-        # parse body with StrideHTMLParser
-        parser = StrideHTMLParser()
-        parser.feed(body)
-
-        # Post to Stride
-        headers = {
-            'content-type': 'application/json',
-            'Authorization': 'Bearer {}'.format(self.stride_access_token)
-        }
-
-        # set https proxy, if it was provided
-        proxies = {'https': self.stride_proxy} if self.stride_proxy else None
-
-        # build stride json payload
-        # https://developer.atlassian.com/cloud/stride/apis/document/structure/
-        payload = {'body': {'version': 1, 'type': "doc", 'content': [
-            {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
-                {'type': 'paragraph', 'content': parser.content}
-            ]}
-        ]}}
-
-        try:
-            if self.stride_ignore_ssl_errors:
-                requests.packages.urllib3.disable_warnings()
-            response = requests.post(
-                self.url, data=json.dumps(payload, cls=DateTimeEncoder),
-                headers=headers, verify=not self.stride_ignore_ssl_errors,
-                proxies=proxies)
-            warnings.resetwarnings()
-            response.raise_for_status()
-        except RequestException as e:
-            raise EAException("Error posting to Stride: %s" % e)
-        elastalert_logger.info(
-            "Alert sent to Stride conversation %s" % self.stride_conversation_id)
-
-    def get_info(self):
-        return {'type': 'stride',
-                'stride_cloud_id': self.stride_cloud_id,
-                'stride_converstation_id': self.stride_converstation_id}
 
 
 class LineNotifyAlerter(Alerter):
@@ -2138,11 +1992,12 @@ class HiveAlerter(Alerter):
 
             alert_config = {
                 'artifacts': artifacts,
-                'sourceRef': str(uuid.uuid4())[0:6],
-                'customFields': {},
                 'caseTemplate': None,
+                'customFields': {},
+                'date': int(time.time()) * 1000,
+                'description': self.create_alert_body(matches),
+                'sourceRef': str(uuid.uuid4())[0:6],
                 'title': '{rule[index]}_{rule[name]}'.format(**context),
-                'date': int(time.time()) * 1000
             }
             alert_config.update(self.rule.get('hive_alert_config', {}))
             custom_fields = {}
@@ -2154,7 +2009,10 @@ class HiveAlerter(Alerter):
                         n += 1
                         custom_fields[cf_key] = cf
                 elif isinstance(alert_config_value, str):
-                    alert_config[alert_config_field] = alert_config_value.format(**context)
+                    alert_value = alert_config_value.format(**context)
+                    if alert_config_field in ['severity', 'tlp']:
+                        alert_value = int(alert_value)
+                    alert_config[alert_config_field] = alert_value
                 elif isinstance(alert_config_value, (list, tuple)):
                     formatted_list = []
                     for element in alert_config_value:
@@ -2182,3 +2040,225 @@ class HiveAlerter(Alerter):
             'type': 'hivealerter',
             'hive_host': self.rule.get('hive_connection', {}).get('hive_host', '')
         }
+
+
+class DiscordAlerter(Alerter):
+
+    required_options = frozenset(['discord_webhook_url'])
+
+    def __init__(self, rule):
+        super(DiscordAlerter, self).__init__(rule)
+        self.discord_webhook_url = self.rule['discord_webhook_url']
+        self.discord_emoji_title = self.rule.get('discord_emoji_title', ':warning:')
+        self.discord_proxy = self.rule.get('discord_proxy', None)
+        self.discord_proxy_login = self.rule.get('discord_proxy_login', None)
+        self.discord_proxy_password = self.rule.get('discord_proxy_password', None)
+        self.discord_embed_color = self.rule.get('discord_embed_color', 0xffffff)
+        self.discord_embed_footer = self.rule.get('discord_embed_footer', None)
+        self.discord_embed_icon_url = self.rule.get('discord_embed_icon_url', None)
+
+    def alert(self, matches):
+        body = ''
+        title = u'%s' % (self.create_title(matches))
+        for match in matches:
+            body += str(BasicMatchString(self.rule, match))
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        if len(body) > 2047:
+            body = body[0:1950] + '\n *message was cropped according to discord embed description limits!* '
+
+        body += '```'
+
+        proxies = {'https': self.discord_proxy} if self.discord_proxy else None
+        auth = HTTPProxyAuth(self.discord_proxy_login, self.discord_proxy_password) if self.discord_proxy_login else None
+        headers = {"Content-Type": "application/json"}
+
+        data = {}
+        data["content"] = "%s %s %s" % (self.discord_emoji_title, title, self.discord_emoji_title)
+        data["embeds"] = []
+        embed = {}
+        embed["description"] = "%s" % (body)
+        embed["color"] = (self.discord_embed_color)
+
+        if self.discord_embed_footer:
+            embed["footer"] = {}
+            embed["footer"]["text"] = (self.discord_embed_footer) if self.discord_embed_footer else None
+            embed["footer"]["icon_url"] = (self.discord_embed_icon_url) if self.discord_embed_icon_url else None
+        else:
+            None
+
+        data["embeds"].append(embed)
+
+        try:
+            response = requests.post(self.discord_webhook_url, data=json.dumps(data), headers=headers, proxies=proxies, auth=auth)
+            warnings.resetwarnings()
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Discord: %s. Details: %s" % (e, "" if e.response is None else e.response.text))
+
+        elastalert_logger.info(
+                "Alert sent to the webhook %s" % self.discord_webhook_url)
+
+    def get_info(self):
+        return {'type': 'discord',
+                'discord_webhook_url': self.discord_webhook_url}
+
+
+class DingTalkAlerter(Alerter):
+    """ Creates a DingTalk room message for each alert """
+    required_options = frozenset(['dingtalk_access_token', 'dingtalk_msgtype'])
+
+    def __init__(self, rule):
+        super(DingTalkAlerter, self).__init__(rule)
+        self.dingtalk_access_token = self.rule.get('dingtalk_access_token')
+        self.dingtalk_webhook_url = 'https://oapi.dingtalk.com/robot/send?access_token=%s' % (self.dingtalk_access_token)
+        self.dingtalk_msgtype = self.rule.get('dingtalk_msgtype')
+        self.dingtalk_single_title = self.rule.get('dingtalk_single_title', 'elastalert')
+        self.dingtalk_single_url = self.rule.get('dingtalk_single_url', '')
+        self.dingtalk_btn_orientation = self.rule.get('dingtalk_btn_orientation', '')
+        self.dingtalk_btns = self.rule.get('dingtalk_btns', [])
+        self.dingtalk_proxy = self.rule.get('dingtalk_proxy', None)
+        self.dingtalk_proxy_login = self.rule.get('dingtalk_proxy_login', None)
+        self.dingtalk_proxy_password = self.rule.get('dingtalk_proxy_pass', None)
+
+    def format_body(self, body):
+        return body.encode('utf8')
+
+    def alert(self, matches):
+        title = self.create_title(matches)
+        body = self.create_alert_body(matches)
+
+        proxies = {'https': self.dingtalk_proxy} if self.dingtalk_proxy else None
+        auth = HTTPProxyAuth(self.dingtalk_proxy_login, self.dingtalk_proxy_password) if self.dingtalk_proxy_login else None
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json;charset=utf-8'
+        }
+
+        if self.dingtalk_msgtype == 'text':
+            # text
+            payload = {
+                'msgtype': self.dingtalk_msgtype,
+                'text': {
+                    'content': body
+                }
+            }
+        elif self.dingtalk_msgtype == 'markdown':
+            # markdown
+            payload = {
+                'msgtype': self.dingtalk_msgtype,
+                'markdown': {
+                    'title': title,
+                    'text': body
+                }
+            }
+        elif self.dingtalk_msgtype == 'single_action_card':
+            # singleActionCard
+            payload = {
+                'msgtype': 'actionCard',
+                'actionCard': {
+                    'title': title,
+                    'text': body,
+                    'singleTitle': self.dingtalk_single_title,
+                    'singleURL': self.dingtalk_single_url
+                }
+            }
+        elif self.dingtalk_msgtype == 'action_card':
+            # actionCard
+            payload = {
+                'msgtype': 'actionCard',
+                'actionCard': {
+                    'title': title,
+                    'text': body
+                }
+            }
+            if self.dingtalk_btn_orientation != '':
+                payload['actionCard']['btnOrientation'] = self.dingtalk_btn_orientation
+            if self.dingtalk_btns:
+                payload['actionCard']['btns'] = self.dingtalk_btns
+
+        try:
+            response = requests.post(self.dingtalk_webhook_url, data=json.dumps(payload,
+                                     cls=DateTimeEncoder), headers=headers, proxies=proxies, auth=auth)
+            warnings.resetwarnings()
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to dingtalk: %s" % e)
+
+        elastalert_logger.info("Trigger sent to dingtalk")
+
+    def get_info(self):
+        return {
+            "type": "dingtalk",
+            "dingtalk_webhook_url": self.dingtalk_webhook_url
+        }
+
+
+class ChatworkAlerter(Alerter):
+    """ Creates a Chatwork room message for each alert """
+    required_options = frozenset(['chatwork_apikey', 'chatwork_room_id'])
+
+    def __init__(self, rule):
+        super(ChatworkAlerter, self).__init__(rule)
+        self.chatwork_apikey = self.rule.get('chatwork_apikey')
+        self.chatwork_room_id = self.rule.get('chatwork_room_id')
+        self.url = 'https://api.chatwork.com/v2/rooms/%s/messages' % (self.chatwork_room_id)
+        self.chatwork_proxy = self.rule.get('chatwork_proxy', None)
+        self.chatwork_proxy_login = self.rule.get('chatwork_proxy_login', None)
+        self.chatwork_proxy_pass = self.rule.get('chatwork_proxy_pass', None)
+
+    def alert(self, matches):
+        body = self.create_alert_body(matches)
+
+        headers = {'X-ChatWorkToken': self.chatwork_apikey}
+        # set https proxy, if it was provided
+        proxies = {'https': self.chatwork_proxy} if self.chatwork_proxy else None
+        auth = HTTPProxyAuth(self.chatwork_proxy_login, self.chatwork_proxy_pass) if self.chatwork_proxy_login else None
+        params = {'body': body}
+
+        try:
+            response = requests.post(self.url, params=params, headers=headers, proxies=proxies, auth=auth)
+            warnings.resetwarnings()
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Chattwork: %s. Details: %s" % (e, "" if e.response is None else e.response.text))
+
+        elastalert_logger.info(
+            "Alert sent to Chatwork room %s" % self.chatwork_room_id)
+
+    def get_info(self):
+        return {
+            "type": "chatwork",
+            "chatwork_room_id": self.chatwork_room_id
+        }
+
+
+class DatadogAlerter(Alerter):
+    ''' Creates a Datadog Event for each alert '''
+    required_options = frozenset(['datadog_api_key', 'datadog_app_key'])
+
+    def __init__(self, rule):
+        super(DatadogAlerter, self).__init__(rule)
+        self.dd_api_key = self.rule.get('datadog_api_key', None)
+        self.dd_app_key = self.rule.get('datadog_app_key', None)
+
+    def alert(self, matches):
+        url = 'https://api.datadoghq.com/api/v1/events'
+        headers = {
+            'Content-Type': 'application/json',
+            'DD-API-KEY': self.dd_api_key,
+            'DD-APPLICATION-KEY': self.dd_app_key
+        }
+        payload = {
+            'title': self.create_title(matches),
+            'text': self.create_alert_body(matches)
+        }
+        try:
+            response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException('Error posting event to Datadog: %s' % e)
+    elastalert_logger.info('Alert sent to Datadog')
+
+    def get_info(self):
+        return {'type': 'datadog'}
