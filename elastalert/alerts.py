@@ -1484,19 +1484,19 @@ class TwilioAlerter(Alerter):
 
         try:
             if self.twilio_use_copilot:
-                if self.twilio_message_service_sid == None:
+                if self.twilio_message_service_sid is None:
                     raise EAException("Twilio Copilot requires the 'twilio_message_service_sid' option")
 
                 client.messages.create(body=self.rule['name'],
                                        to=self.twilio_to_number,
                                        messaging_service_sid=self.twilio_message_service_sid)
             else:
-                if self.twilio_from_number == None:
+                if self.twilio_from_number is None:
                     raise EAException("Twilio SMS requires the 'twilio_from_number' option")
 
                 client.messages.create(body=self.rule['name'],
                                        to=self.twilio_to_number,
-                                       from_=self.twilio_from_number)  
+                                       from_=self.twilio_from_number)
         except TwilioRestException as e:
             raise EAException("Error posting to twilio: %s" % e)
 
