@@ -1,8 +1,8 @@
 apiVersion: v1
-description: Elastalert 2 is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
+description: Automated rule-based alerting for Elasticsearch
 name: elastalert2
-version: 2.0.2
-appVersion: 2.0.2
+version: 2.0.3
+appVersion: 2.0.3
 home: https://github.com/jertel/elastalert2
 sources:
 - https://github.com/jertel/elastalert2
