@@ -10,7 +10,10 @@ Requirements
 - ISO8601 or Unix timestamped data
 - Python 3.6
 - pip, see requirements.txt
-- Packages on Ubuntu 14.x: python-pip python-dev libffi-dev libssl-dev
+- Packages on Ubuntu 18.x: build-essential python3-pip python3.6 python3.6-dev libffi-dev libssl-dev
+- Packages on Ubuntu 20.x: build-essential python3-pip python3.6 python3.6-dev libffi-dev libssl-dev 
+- Packages on CentOS 7.x: 'Development Tools' python3-pip python36 python3-devel python3-libs python3-setuptools libffi-devel openssl-devel
+- Packages on CentOS 8.x: 'Development Tools' python3-pip python36 python3-devel python3-setuptools python3-libs libffi-devel openssl-devel
 
 Downloading and Configuring
 ---------------------------
@@ -65,6 +68,10 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
 
 ``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
+
+``statsd_instance_tag``: Optional; prefix for statsd metrics.
+
+``statsd_host``: Optional; statsd host.
 
 ``es_send_get_body_as``: Optional; Method for querying Elasticsearch - ``GET``, ``POST`` or ``source``. The default is ``GET``
 

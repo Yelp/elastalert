@@ -110,7 +110,7 @@ oneOf:
       type: {enum: [spike_aggregation]}
       spike_height: {type: number}
       spike_type: {enum: ["up", "down", "both"]}
-      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count"]}
+      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count", "percentiles"]}
       timeframe: *timeframe
       use_count_query: {type: boolean}
       doc_type: {type: string}
@@ -120,6 +120,7 @@ oneOf:
       threshold_ref: {type: number}
       threshold_cur: {type: number}
       min_doc_count: {type: integer}
+      percentile_range: {type: integer}
 
   - title: Flatline
     required: [threshold, timeframe]
@@ -153,8 +154,9 @@ oneOf:
     required: [metric_agg_key,metric_agg_type]
     properties:
       type: {enum: [metric_aggregation]}
-      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count"]}
+      metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count", "percentiles"]}
       #timeframe: *timeframe
+      percentile_range: {type: integer}
 
   - title: Percentage Match
     required: [match_bucket_filter]
@@ -181,7 +183,12 @@ properties:
   use_strftime_index: {type: boolean}
 
   # Optional Settings
-  import: {type: string}
+  import:
+    anyOf:
+      - type: array
+        items:
+          type: string
+      - type: string
   aggregation: *timeframe
   realert: *timeframe
   exponential_realert: *timeframe
@@ -217,7 +224,7 @@ properties:
   ### Kibana Discover App Link
   generate_kibana_discover_url: {type: boolean}
   kibana_discover_app_url: {type: string, format: uri}
-  kibana_discover_version: {type: string, enum: ['7.3', '7.2', '7.1', '7.0', '6.8', '6.7', '6.6', '6.5', '6.4', '6.3', '6.2', '6.1', '6.0', '5.6']}
+  kibana_discover_version: {type: string, enum: ['7.12', '7.11', '7.10', '7.9', '7.8', '7.7', '7.6', '7.5', '7.4', '7.3', '7.2', '7.1', '7.0', '6.8', '6.7', '6.6', '6.5', '6.4', '6.3', '6.2', '6.1', '6.0', '5.6']}
   kibana_discover_index_pattern_id: {type: string, minLength: 1}
   kibana_discover_columns: {type: array, items: {type: string, minLength: 1}, minItems: 1}
   kibana_discover_from_timedelta: *timedelta
@@ -227,7 +234,7 @@ properties:
   alert_text: {type: string} # Python format string
   alert_text_args: {type: array, items: {type: string}}
   alert_text_kw: {type: object}
-  alert_text_type: {enum: [alert_text_only, exclude_fields, aggregation_summary_only]}
+  alert_text_type: {enum: [alert_text_only, alert_text_jinja, exclude_fields, aggregation_summary_only]}
   alert_missing_value: {type: string}
   timestamp_field: {type: string}
   field: {}
@@ -260,21 +267,6 @@ properties:
   jira_bump_not_in_statuses: *arrayOfString
   jira_max_age: {type: number}
   jira_watchers: *arrayOfString
-
-  ### HipChat
-  hipchat_auth_token: {type: string}
-  hipchat_room_id: {type: [string, integer]}
-  hipchat_domain: {type: string}
-  hipchat_ignore_ssl_errors: {type: boolean}
-  hipchat_notify: {type: boolean}
-  hipchat_from: {type: string}
-  hipchat_mentions: {type: array, items: {type: string}}
-
-  ### Stride
-  stride_access_token: {type: string}
-  stride_cloud_id: {type: string}
-  stride_conversation_id: {type: string}
-  stride_ignore_ssl_errors: {type: boolean}
 
   ### Slack
   slack_webhook_url: *arrayOfString
@@ -356,24 +348,20 @@ properties:
   ### Alerta
   alerta_api_url: {type: string}
   alerta_api_key: {type: string}
-  alerta_severity: {enum: [unknown, security, debug, informational, ok, normal, cleared, indeterminate, warning, minor, major, critical]}
+  alerta_severity: {type: string}
   alerta_resource: {type: string}   # Python format string
   alerta_environment: {type: string}  # Python format string
   alerta_origin: {type: string}   # Python format string
   alerta_group: {type: string}  # Python format string
   alerta_service: {type: array, items: {type: string}}  # Python format string
-  alerta_service: {type: array, items: {type: string}}  # Python format string
   alerta_correlate: {type: array, items: {type: string}}  # Python format string
   alerta_tags: {type: array, items: {type: string}}   # Python format string
   alerta_event: {type: string} # Python format string
-  alerta_customer: {type: string}
   alerta_text: {type: string} # Python format string
   alerta_type: {type: string}
   alerta_value: {type: string} # Python format string
   alerta_attributes_keys: {type: array, items: {type: string}}
   alerta_attributes_values: {type: array, items: {type: string}}  # Python format string
-  alerta_new_style_string_format: {type: boolean}
-
 
   ### Simple
   simple_webhook_url: *arrayOfString
@@ -386,4 +374,18 @@ properties:
   zbx_sender_host: {type: string}
   zbx_sender_port: {type: integer}
   zbx_host: {type: string}
-  zbx_item: {type: string}
+  zbx_key: {type: string}
+
+  ## Discord
+  discord_webhook_url: {type: string}
+
+  ### Dingtalk
+  dingtalk_access_token: {type: string}
+  dingtalk_msgtype: {type: string}
+  dingtalk_single_title: {type: string}
+  dingtalk_single_url: {type: string}
+  dingtalk_btn_orientation: {type: string}
+
+  ### Chatwork
+  chatwork_apikey: {type: string}
+  chatwork_room_id: {type: string}

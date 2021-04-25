@@ -3,7 +3,7 @@ import copy
 import datetime
 import sys
 
-from blist import sortedlist
+from sortedcontainers import SortedKeyList as sortedlist
 
 from .util import add_raw_postfix
 from .util import dt_to_ts
@@ -318,12 +318,14 @@ class EventWindow(object):
         This will also pop the oldest events and call onRemoved on them until the
         window size is less than timeframe. """
         self.data.add(event)
-        self.running_count += event[1]
+        if event and event[1]:
+            self.running_count += event[1]
 
         while self.duration() >= self.timeframe:
             oldest = self.data[0]
             self.data.remove(oldest)
-            self.running_count -= oldest[1]
+            if oldest and oldest[1]:
+                self.running_count -= oldest[1]
             self.onRemoved and self.onRemoved(oldest)
 
     def duration(self):
@@ -351,6 +353,20 @@ class EventWindow(object):
         else:
             return None
 
+    def min(self):
+        """ The minimum of the value_field in the window. """
+        if len(self.data) > 0:
+            return min([x[1] for x in self.data])
+        else:
+            return None
+
+    def max(self):
+        """ The maximum of the value_field in the window. """
+        if len(self.data) > 0:
+            return max([x[1] for x in self.data])
+        else:
+            return None
+
     def __iter__(self):
         return iter(self.data)
 
@@ -363,7 +379,8 @@ class EventWindow(object):
         # Append left if ts is earlier than first event
         if self.get_ts(self.data[0]) > ts:
             self.data.appendleft(event)
-            self.running_count += event[1]
+            if event and event[1]:
+                self.running_count += event[1]
             return
 
         # Rotate window until we can insert event
@@ -374,7 +391,8 @@ class EventWindow(object):
                 # This should never happen
                 return
         self.data.append(event)
-        self.running_count += event[1]
+        if event and event[1]:
+            self.running_count += event[1]
         self.data.rotate(-rotation)
 
 
@@ -422,16 +440,32 @@ class SpikeRule(RuleType):
                 if qk is None:
                     qk = 'other'
             if self.field_value is not None:
-                count = lookup_es_key(event, self.field_value)
-                if count is not None:
-                    try:
-                        count = int(count)
-                    except ValueError:
-                        elastalert_logger.warn('{} is not a number: {}'.format(self.field_value, count))
-                    else:
-                        self.handle_event(event, count, qk)
+                if self.field_value in event:
+                    count = lookup_es_key(event, self.field_value)
+                    if count is not None:
+                        try:
+                            count = int(count)
+                        except ValueError:
+                            elastalert_logger.warn('{} is not a number: {}'.format(self.field_value, count))
+                        else:
+                            self.handle_event(event, count, qk)
             else:
                 self.handle_event(event, 1, qk)
+
+    def get_spike_values(self, qk):
+        """
+        extending ref/cur value retrieval logic for spike aggregations
+        """
+        spike_check_type = self.rules.get('metric_agg_type')
+        if spike_check_type in [None, 'sum', 'value_count']:
+            # default count logic is appropriate in all these cases
+            return self.ref_windows[qk].count(), self.cur_windows[qk].count()
+        elif spike_check_type == 'avg':
+            return self.ref_windows[qk].mean(), self.cur_windows[qk].mean()
+        elif spike_check_type == 'min':
+            return self.ref_windows[qk].min(), self.cur_windows[qk].min()
+        elif spike_check_type == 'max':
+            return self.ref_windows[qk].max(), self.cur_windows[qk].max()
 
     def clear_windows(self, qk, event):
         # Reset the state and prevent alerts until windows filled again
@@ -470,7 +504,8 @@ class SpikeRule(RuleType):
                 self.add_match(match, qk)
                 self.clear_windows(qk, match)
         else:
-            if self.find_matches(self.ref_windows[qk].count(), self.cur_windows[qk].count()):
+            ref, cur = self.get_spike_values(qk)
+            if self.find_matches(ref, cur):
                 # skip over placeholder events which have count=0
                 for match, count in self.cur_windows[qk].data:
                     if count:
@@ -482,8 +517,7 @@ class SpikeRule(RuleType):
     def add_match(self, match, qk):
         extra_info = {}
         if self.field_value is None:
-            spike_count = self.cur_windows[qk].count()
-            reference_count = self.ref_windows[qk].count()
+            reference_count, spike_count = self.get_spike_values(qk)
         else:
             spike_count = self.cur_windows[qk].mean()
             reference_count = self.ref_windows[qk].mean()
@@ -674,7 +708,7 @@ class NewTermsRule(RuleType):
 
             time_filter = {self.rules['timestamp_field']: {'lt': self.rules['dt_to_ts'](tmp_end), 'gte': self.rules['dt_to_ts'](tmp_start)}}
             query_template['filter'] = {'bool': {'must': [{'range': time_filter}]}}
-            query = {'aggs': {'filtered': query_template}}
+            query = {'aggs': {'filtered': query_template}, 'size': 0}
 
             if 'filter' in self.rules:
                 for item in self.rules['filter']:
@@ -1026,6 +1060,7 @@ class MetricAggregationRule(BaseAggregationRule):
     """ A rule that matches when there is a low number of events given a timeframe. """
     required_options = frozenset(['metric_agg_key', 'metric_agg_type'])
     allowed_aggregations = frozenset(['min', 'max', 'avg', 'sum', 'cardinality', 'value_count'])
+    allowed_percent_aggregations = frozenset(['percentiles'])
 
     def __init__(self, *args):
         super(MetricAggregationRule, self).__init__(*args)
@@ -1035,8 +1070,10 @@ class MetricAggregationRule(BaseAggregationRule):
 
         self.metric_key = 'metric_' + self.rules['metric_agg_key'] + '_' + self.rules['metric_agg_type']
 
-        if not self.rules['metric_agg_type'] in self.allowed_aggregations:
+        if not self.rules['metric_agg_type'] in self.allowed_aggregations.union(self.allowed_percent_aggregations):
             raise EAException("metric_agg_type must be one of %s" % (str(self.allowed_aggregations)))
+        if self.rules['metric_agg_type'] in self.allowed_percent_aggregations and self.rules['percentile_range'] is None:
+            raise EAException("percentile_range must be specified for percentiles aggregation")
 
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
 
@@ -1051,14 +1088,20 @@ class MetricAggregationRule(BaseAggregationRule):
         return message
 
     def generate_aggregation_query(self):
-        return {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
+        query = {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
+        if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
+            query[self.metric_key][self.rules['metric_agg_type']]['percents'] = [self.rules['percentile_range']]
+        return query
 
     def check_matches(self, timestamp, query_key, aggregation_data):
         if "compound_query_key" in self.rules:
             self.check_matches_recursive(timestamp, query_key, aggregation_data, self.rules['compound_query_key'], dict())
 
         else:
-            metric_val = aggregation_data[self.metric_key]['value']
+            if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
+                metric_val = list(aggregation_data[self.metric_key]['values'].values())[0]
+            else:
+                metric_val = aggregation_data[self.metric_key]['value']
             if self.crossed_thresholds(metric_val):
                 match = {self.rules['timestamp_field']: timestamp,
                          self.metric_key: metric_val}
@@ -1079,18 +1122,20 @@ class MetricAggregationRule(BaseAggregationRule):
                                              result,
                                              compound_keys[1:],
                                              match_data)
-
         else:
-            metric_val = aggregation_data[self.metric_key]['value']
-            if self.crossed_thresholds(metric_val):
-                match_data[self.rules['timestamp_field']] = timestamp
-                match_data[self.metric_key] = metric_val
+            if 'interval_aggs' in aggregation_data:
+                metric_val_arr = [term[self.metric_key]['value'] for term in aggregation_data['interval_aggs']['buckets']]
+            else:
+                metric_val_arr = [aggregation_data[self.metric_key]['value']]
+            for metric_val in metric_val_arr:
+                if self.crossed_thresholds(metric_val):
+                    match_data[self.rules['timestamp_field']] = timestamp
+                    match_data[self.metric_key] = metric_val
 
-                # add compound key to payload to allow alerts to trigger for every unique occurence
-                compound_value = [match_data[key] for key in self.rules['compound_query_key']]
-                match_data[self.rules['query_key']] = ",".join([str(value) for value in compound_value])
-
-                self.add_match(match_data)
+                    # add compound key to payload to allow alerts to trigger for every unique occurence
+                    compound_value = [match_data[key] for key in self.rules['compound_query_key']]
+                    match_data[self.rules['query_key']] = ",".join([str(value) for value in compound_value])
+                    self.add_match(match_data)
 
     def crossed_thresholds(self, metric_value):
         if metric_value is None:
@@ -1106,6 +1151,7 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
     """ A rule that matches when there is a spike in an aggregated event compared to its reference point """
     required_options = frozenset(['metric_agg_key', 'metric_agg_type', 'spike_height', 'spike_type'])
     allowed_aggregations = frozenset(['min', 'max', 'avg', 'sum', 'cardinality', 'value_count'])
+    allowed_percent_aggregations = frozenset(['percentiles'])
 
     def __init__(self, *args):
         # We inherit everything from BaseAggregation and Spike, overwrite only what we need in functions below
@@ -1113,8 +1159,11 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
 
         # MetricAgg alert things
         self.metric_key = 'metric_' + self.rules['metric_agg_key'] + '_' + self.rules['metric_agg_type']
-        if not self.rules['metric_agg_type'] in self.allowed_aggregations:
+
+        if not self.rules['metric_agg_type'] in self.allowed_aggregations.union(self.allowed_percent_aggregations):
             raise EAException("metric_agg_type must be one of %s" % (str(self.allowed_aggregations)))
+        if self.rules['metric_agg_type'] in self.allowed_percent_aggregations and self.rules['percentile_range'] is None:
+            raise EAException("percentile_range must be specified for percentiles aggregation")
 
         # Disabling bucket intervals (doesn't make sense in context of spike to split up your time period)
         if self.rules.get('bucket_interval'):
@@ -1126,7 +1175,10 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
         """Lifted from MetricAggregationRule, added support for scripted fields"""
         if self.rules.get('metric_agg_script'):
             return {self.metric_key: {self.rules['metric_agg_type']: self.rules['metric_agg_script']}}
-        return {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
+        query = {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
+        if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
+            query[self.metric_key][self.rules['metric_agg_type']]['percents'] = [self.rules['percentile_range']]
+        return query
 
     def add_aggregation_data(self, payload):
         """
@@ -1140,7 +1192,10 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
             else:
                 # no time / term split, just focus on the agg
                 event = {self.ts_field: timestamp}
-                agg_value = payload_data[self.metric_key]['value']
+                if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
+                    agg_value = list(payload_data[self.metric_key]['values'].values())[0]
+                else:
+                    agg_value = payload_data[self.metric_key]['value']
                 self.handle_event(event, agg_value, 'all')
         return
 
@@ -1160,7 +1215,10 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
                 continue
 
             qk_str = ','.join(qk)
-            agg_value = term_data[self.metric_key]['value']
+            if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
+                agg_value = list(term_data[self.metric_key]['values'].values())[0]
+            else:
+                agg_value = term_data[self.metric_key]['value']
             event = {self.ts_field: timestamp,
                      self.rules['query_key']: qk_str}
             # pass to SpikeRule's tracker
