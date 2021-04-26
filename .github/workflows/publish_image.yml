@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Publish image
+      - name: Build image
         run: docker build . --file Dockerfile --tag $IMAGE_NAME
 
       - name: Log into registry
