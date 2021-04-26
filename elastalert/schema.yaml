@@ -180,6 +180,7 @@ properties:
   verify_certs: {type: boolean}
   es_username: {type: string}
   es_password: {type: string}
+  es_bearer: {type: string}
   use_strftime_index: {type: boolean}
 
   # Optional Settings
