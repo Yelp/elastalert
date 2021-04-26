@@ -38,6 +38,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_password`` (string, no default)                         |           |
 +--------------------------------------------------------------+           |
+| ``es_bearer`` (string, no default)                           |           |
++--------------------------------------------------------------+           |
 | ``es_url_prefix`` (string, no default)                       |           |
 +--------------------------------------------------------------+           |
 | ``statsd_instance_tag`` (string, no default)                 |           |
@@ -289,6 +291,11 @@ es_password
 ^^^^^^^^^^^
 
 ``es_password``: basic-auth password for connecting to ``es_host``. (Optional, string, no default) The environment variable ``ES_PASSWORD`` will override this field.
+
+es_bearer
+^^^^^^^^^^^
+
+``es_bearer``: bearer-token authorization for connecting to ``es_host``. (Optional, string, no default) The environment variable ``ES_BEARER`` will override this field.
 
 es_url_prefix
 ^^^^^^^^^^^^^

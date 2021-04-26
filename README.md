@@ -25,6 +25,8 @@ The current status of the CI workflow:
 
 If you're interested in a pre-built Docker image check out the [elastalert2][2] project on Docker Hub.
 
+Be aware that the `latest` tag of the image represents the latest commit into the master branch. If you prefer to upgrade more slowly you will need utilize a versioned tag, such as `2.0.3` instead.
+
 A properly configured elastalert_config.json file must be mounted into the container during startup of the container. Use the [example file][1] provided as a template, and once saved locally to a file such as `/tmp/elastalert.yaml`, run the container as follows:
 
 ```bash
@@ -42,7 +44,7 @@ See the Helm chart [README.md](chart/elastalert2/README.md) for information on i
 
 ## License
 
-Elastalert is licensed under the [Apache License, Version 2.0][5].
+Elastalert 2 is licensed under the [Apache License, Version 2.0][5].
 
 [0]: https://github.com/yelp/elastalert
 [1]: https://github.com/jertel/elastalert2/blob/master/config.yaml.example
