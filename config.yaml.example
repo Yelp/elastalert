@@ -30,6 +30,12 @@ es_port: 9200
 # Optional URL prefix for Elasticsearch
 #es_url_prefix: elasticsearch
 
+# Optional prefix for statsd metrics
+#statsd_instance_tag: elastalert
+
+# Optional statsd host
+#statsd_host: dogstatsd
+
 # Connect with TLS to Elasticsearch
 #use_ssl: True
 
