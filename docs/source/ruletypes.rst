@@ -2030,6 +2030,22 @@ Optional:
 
 ``twilio_use_copilot``: Whether or not to use twilio copilot, False by default.
 
+Example usage::
+
+    alert:
+      - twilio # With Copilot
+         twilio_use_copilot: True
+         twilio_to_number: "0123456789"
+         twilio_auth_token: "abcdefghijklmnopqrstuvwxyz012345"
+         twilio_account_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
+         twilio_message_service_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
+
+      - twilio # With Legacy SMS
+         twilio_use_copilot: False
+         twilio_to_number: "0123456789"
+         twilio_from_number: "9876543210"
+         twilio_auth_token: "abcdefghijklmnopqrstuvwxyz012345"
+         twilio_account_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
 
 Splunk On-Call (Formerly VictorOps)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
