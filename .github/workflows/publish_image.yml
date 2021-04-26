@@ -11,6 +11,7 @@ on:
 
 env:
   IMAGE_NAME: elastalert2
+  DOCKER_REPO: jertel/elastalert2
 
 jobs:
   push:
@@ -21,8 +22,11 @@ jobs:
       - name: Build image
         run: docker build . --file Dockerfile --tag $IMAGE_NAME
 
-      - name: Log into registry
+      - name: Log into GitHub Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+
+      - name: Log into Docker Registry
+        run: echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
       - name: Push image
         run: |
@@ -40,5 +44,10 @@ jobs:
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
 
+          # Push to GitHub Package
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
+
+          # Push to Docker Hub
+          docker tag $IMAGE_NAME $DOCKER_REPO:$VERSION
+          docker push $DOCKER_REPO:$VERSION
