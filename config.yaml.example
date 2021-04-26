@@ -30,6 +30,12 @@ es_port: 9200
 # Optional URL prefix for Elasticsearch
 #es_url_prefix: elasticsearch
 
+# Optional prefix for statsd metrics
+#statsd_instance_tag: elastalert
+
+# Optional statsd host
+#statsd_host: dogstatsd
+
 # Connect with TLS to Elasticsearch
 #use_ssl: True
 
@@ -48,7 +54,6 @@ es_port: 9200
 
 # Use SSL authentication with client certificates client_cert must be
 # a pem file containing both cert and key for client
-#verify_certs: True
 #ca_certs: /path/to/cacert.pem
 #client_cert: /path/to/client_cert.pem
 #client_key: /path/to/client_key.key
@@ -78,38 +83,38 @@ alert_time_limit:
 #    logline:
 #      format: '%(asctime)s %(levelname)+8s %(name)+20s %(message)s'
 #
-#    handlers:
-#      console:
-#        class: logging.StreamHandler
-#        formatter: logline
-#        level: DEBUG
-#        stream: ext://sys.stderr
+#  handlers:
+#    console:
+#      class: logging.StreamHandler
+#      formatter: logline
+#      level: DEBUG
+#      stream: ext://sys.stderr
 #
-#      file:
-#        class : logging.FileHandler
-#        formatter: logline
-#        level: DEBUG
-#        filename: elastalert.log
+#    file:
+#      class : logging.FileHandler
+#      formatter: logline
+#      level: DEBUG
+#      filename: elastalert.log
 #
-#    loggers:
-#      elastalert:
-#        level: WARN
-#        handlers: []
-#        propagate: true
+#  loggers:
+#    elastalert:
+#      level: WARN
+#      handlers: []
+#      propagate: true
 #
-#      elasticsearch:
-#        level: WARN
-#        handlers: []
-#        propagate: true
+#    elasticsearch:
+#      level: WARN
+#      handlers: []
+#      propagate: true
 #
-#      elasticsearch.trace:
-#        level: WARN
-#        handlers: []
-#        propagate: true
+#    elasticsearch.trace:
+#      level: WARN
+#      handlers: []
+#      propagate: true
 #
-#      '':  # root logger
-#        level: WARN
-#          handlers:
-#            - console
-#            - file
-#        propagate: false
+#    '':  # root logger
+#      level: WARN
+#      handlers:
+#        - console
+#        - file
+#      propagate: false

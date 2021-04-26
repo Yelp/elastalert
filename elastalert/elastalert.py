@@ -16,6 +16,8 @@ from email.mime.text import MIMEText
 from smtplib import SMTP
 from smtplib import SMTPException
 from socket import error
+import statsd
+
 
 import dateutil.tz
 import pytz
@@ -25,6 +27,7 @@ from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch.exceptions import TransportError
+from .prometheus_wrapper import PrometheusWrapper
 
 from . import kibana
 from .alerts import DebugAlerter
@@ -53,6 +56,7 @@ from .util import ts_add
 from .util import ts_now
 from .util import ts_to_dt
 from .util import unix_to_dt
+from .util import ts_utc_to_tz
 
 
 class ElastAlerter(object):
@@ -83,6 +87,11 @@ class ElastAlerter(object):
         parser.add_argument('--rule', dest='rule', help='Run only a specific rule (by filename, must still be in rules folder)')
         parser.add_argument('--silence', dest='silence', help='Silence rule for a time period. Must be used with --rule. Usage: '
                                                               '--silence <units>=<number>, eg. --silence hours=2')
+        parser.add_argument(
+            "--silence_qk_value",
+            dest="silence_qk_value",
+            help="Silence the rule only for this specific query key value.",
+        )
         parser.add_argument('--start', dest='start', help='YYYY-MM-DDTHH:MM:SS Start querying from this timestamp. '
                                                           'Use "NOW" to start from current time. (Default: present)')
         parser.add_argument('--end', dest='end', help='YYYY-MM-DDTHH:MM:SS Query to this timestamp. (Default: present)')
@@ -105,6 +114,7 @@ class ElastAlerter(object):
             dest='es_debug_trace',
             help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file. Note that '
                  'this will incorrectly display localhost:9200 as the host/port')
+        parser.add_argument('--prometheus_port', type=int, dest='prometheus_port', help='Enables Prometheus metrics on specified port.')
         self.args = parser.parse_args(args)
 
     def __init__(self, args):
@@ -159,18 +169,29 @@ class ElastAlerter(object):
         self.starttime = self.args.start
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
+        self.thread_data.alerts_sent = 0
         self.thread_data.num_hits = 0
         self.thread_data.num_dupes = 0
         self.scheduler = BackgroundScheduler()
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
+        self.statsd_instance_tag = self.conf.get('statsd_instance_tag', '')
+        self.statsd_host = self.conf.get('statsd_host', '')
+        if self.statsd_host and len(self.statsd_host) > 0:
+            self.statsd = statsd.StatsClient(host=self.statsd_host, port=8125)
+        else:
+            self.statsd = None
         self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
+        self.prometheus_port = self.args.prometheus_port
         self.show_disabled_rules = self.conf.get('show_disabled_rules', True)
 
         self.writeback_es = elasticsearch_client(self.conf)
 
         remove = []
         for rule in self.rules:
-            if not self.init_rule(rule):
+            if 'is_enabled' in rule and not rule['is_enabled']:
+                self.disabled_rules.append(rule)
+                remove.append(rule)
+            elif not self.init_rule(rule):
                 remove.append(rule)
         list(map(self.rules.remove, remove))
 
@@ -401,7 +422,7 @@ class ElastAlerter(object):
                     # Different versions of ES have this formatted in different ways. Fallback to str-ing the whole thing
                     raise ElasticsearchException(str(res['_shards']['failures']))
 
-            logging.debug(str(res))
+            elastalert_logger.debug(str(res))
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
             # (so big that they will fill the entire terminal buffer)
@@ -619,6 +640,11 @@ class ElastAlerter(object):
             start = self.get_index_start(rule['index'])
         if end is None:
             end = ts_now()
+
+        if rule.get('query_timezone') != "":
+            elastalert_logger.info("Query start and end time converting UTC to query_timezone : {}".format(rule.get('query_timezone')))
+            start = ts_utc_to_tz(start, rule.get('query_timezone'))
+            end = ts_utc_to_tz(end, rule.get('query_timezone'))
 
         # Reset hit counter and query
         rule_inst = rule['type']
@@ -844,7 +870,7 @@ class ElastAlerter(object):
             filters.append(query_str_filter)
         else:
             filters.append({'query': query_str_filter})
-        logging.debug("Enhanced filter with {} terms: {}".format(listname, str(query_str_filter)))
+        elastalert_logger.debug("Enhanced filter with {} terms: {}".format(listname, str(query_str_filter)))
 
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
@@ -871,15 +897,16 @@ class ElastAlerter(object):
         rule['original_starttime'] = rule['starttime']
         rule['scrolling_cycle'] = 0
 
-        # Don't run if starttime was set to the future
-        if ts_now() <= rule['starttime']:
-            logging.warning("Attempted to use query start time in the future (%s), sleeping instead" % (starttime))
-            return 0
-
-        # Run the rule. If querying over a large time period, split it up into segments
         self.thread_data.num_hits = 0
         self.thread_data.num_dupes = 0
         self.thread_data.cumulative_hits = 0
+
+        # Don't run if starttime was set to the future
+        if ts_now() <= rule['starttime']:
+            elastalert_logger.warning("Attempted to use query start time in the future (%s), sleeping instead" % (starttime))
+            return 0
+
+        # Run the rule. If querying over a large time period, split it up into segments
         segment_size = self.get_segment_size(rule)
 
         tmp_endtime = rule['starttime']
@@ -968,7 +995,7 @@ class ElastAlerter(object):
 
     def init_rule(self, new_rule, new=True):
         ''' Copies some necessary non-config state from an exiting rule to a new rule. '''
-        if not new:
+        if not new and self.scheduler.get_job(job_id=new_rule['name']):
             self.scheduler.remove_job(job_id=new_rule['name'])
 
         try:
@@ -1082,12 +1109,21 @@ class ElastAlerter(object):
                 try:
                     new_rule = self.rules_loader.load_configuration(rule_file, self.conf)
                     if not new_rule:
-                        logging.error('Invalid rule file skipped: %s' % rule_file)
+                        elastalert_logger.error('Invalid rule file skipped: %s' % rule_file)
                         continue
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         elastalert_logger.info('Rule file %s is now disabled.' % (rule_file))
                         # Remove this rule if it's been disabled
                         self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
+                        # Stop job if is running
+                        if self.scheduler.get_job(job_id=new_rule['name']):
+                            self.scheduler.remove_job(job_id=new_rule['name'])
+                        # Append to disabled_rule
+                        for disabled_rule in self.disabled_rules:
+                            if disabled_rule['name'] == new_rule['name']:
+                                break
+                        else:
+                            self.disabled_rules.append(new_rule)
                         continue
                 except EAException as e:
                     message = 'Could not load rule %s: %s' % (rule_file, e)
@@ -1106,7 +1142,6 @@ class ElastAlerter(object):
                 # Re-enable if rule had been disabled
                 for disabled_rule in self.disabled_rules:
                     if disabled_rule['name'] == new_rule['name']:
-                        self.rules.append(disabled_rule)
                         self.disabled_rules.remove(disabled_rule)
                         break
 
@@ -1122,7 +1157,7 @@ class ElastAlerter(object):
                 try:
                     new_rule = self.rules_loader.load_configuration(rule_file, self.conf)
                     if not new_rule:
-                        logging.error('Invalid rule file skipped: %s' % rule_file)
+                        elastalert_logger.error('Invalid rule file skipped: %s' % rule_file)
                         continue
                     if 'is_enabled' in new_rule and not new_rule['is_enabled']:
                         continue
@@ -1205,12 +1240,12 @@ class ElastAlerter(object):
             time.sleep(1.0)
 
         if self.writeback_es.ping():
-            logging.error(
+            elastalert_logger.error(
                 'Writeback alias "%s" does not exist, did you run `elastalert-create-index`?',
                 self.writeback_alias,
             )
         else:
-            logging.error(
+            elastalert_logger.error(
                 'Could not reach ElasticSearch at "%s:%d".',
                 self.conf['es_host'],
                 self.conf['es_port'],
@@ -1279,13 +1314,32 @@ class ElastAlerter(object):
                                    " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
                                                         self.thread_data.num_hits, self.thread_data.num_dupes, num_matches,
                                                         self.thread_data.alerts_sent))
+            rule_duration = seconds(endtime - rule.get('original_starttime'))
+            elastalert_logger.info("%s range %s" % (rule['name'], rule_duration))
+            if self.statsd:
+                try:
+                    self.statsd.gauge(
+                        'query.hits', self.thread_data.num_hits,
+                        tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
+                    self.statsd.gauge(
+                        'already_seen.hits', self.thread_data.num_dupes,
+                        tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
+                    self.statsd.gauge(
+                        'query.matches', num_matches,
+                        tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
+                    self.statsd.gauge(
+                        'query.alerts_sent', self.thread_data.alerts_sent,
+                        tags={"elastalert_instance": self.statsd_instance_tag, "rule_name": rule['name']})
+                except BaseException as e:
+                    elastalert_logger.error("unable to send metrics:\n%s" % str(e))
+
             self.thread_data.alerts_sent = 0
 
             if next_run < datetime.datetime.utcnow():
                 # We were processing for longer than our refresh interval
                 # This can happen if --start was specified with a large time period
                 # or if we are running too slow to process events in real time.
-                logging.warning(
+                elastalert_logger.warning(
                     "Querying from %s to %s took longer than %s!" % (
                         old_starttime,
                         pretty_ts(endtime, rule.get('use_local_time')),
@@ -1618,7 +1672,7 @@ class ElastAlerter(object):
                 res = self.writeback_es.index(index=index, doc_type=doc_type, body=body)
             return res
         except ElasticsearchException as e:
-            logging.exception("Error writing alert info to Elasticsearch: %s" % (e))
+            elastalert_logger.exception("Error writing alert info to Elasticsearch: %s" % (e))
 
     def find_recent_pending_alerts(self, time_limit):
         """ Queries writeback_es to find alerts that did not send
@@ -1646,7 +1700,7 @@ class ElastAlerter(object):
             if res['hits']['hits']:
                 return res['hits']['hits']
         except ElasticsearchException as e:
-            logging.exception("Error finding recent pending alerts: %s %s" % (e, query))
+            elastalert_logger.exception("Error finding recent pending alerts: %s %s" % (e, query))
         return []
 
     def send_pending_alerts(self):
@@ -1724,7 +1778,7 @@ class ElastAlerter(object):
         """ Removes and returns all matches from writeback_es that have aggregate_id == _id """
 
         # XXX if there are more than self.max_aggregation matches, you have big alerts and we will leave entries in ES.
-        query = {'query': {'query_string': {'query': 'aggregate_id:%s' % (_id)}}, 'sort': {'@timestamp': 'asc'}}
+        query = {'query': {'query_string': {'query': 'aggregate_id:"%s"' % (_id)}}, 'sort': {'@timestamp': 'asc'}}
         matches = []
         try:
             if self.writeback_es.is_atleastsixtwo():
@@ -1846,25 +1900,28 @@ class ElastAlerter(object):
     def silence(self, silence_cache_key=None):
         """ Silence an alert for a period of time. --silence and --rule must be passed as args. """
         if self.debug:
-            logging.error('--silence not compatible with --debug')
+            elastalert_logger.error('--silence not compatible with --debug')
             exit(1)
 
         if not self.args.rule:
-            logging.error('--silence must be used with --rule')
+            elastalert_logger.error('--silence must be used with --rule')
             exit(1)
 
         # With --rule, self.rules will only contain that specific rule
         if not silence_cache_key:
-            silence_cache_key = self.rules[0]['name'] + "._silence"
+            if self.args.silence_qk_value:
+                silence_cache_key = self.rules[0]['name'] + "." + self.args.silence_qk_value
+            else:
+                silence_cache_key = self.rules[0]['name'] + "._silence"
 
         try:
             silence_ts = parse_deadline(self.args.silence)
         except (ValueError, TypeError):
-            logging.error('%s is not a valid time period' % (self.args.silence))
+            elastalert_logger.error('%s is not a valid time period' % (self.args.silence))
             exit(1)
 
         if not self.set_realert(silence_cache_key, silence_ts, 0):
-            logging.error('Failed to save silence command to Elasticsearch')
+            elastalert_logger.error('Failed to save silence command to Elasticsearch')
             exit(1)
 
         elastalert_logger.info('Success. %s will be silenced until %s' % (silence_cache_key, silence_ts))
@@ -1925,7 +1982,7 @@ class ElastAlerter(object):
 
     def handle_error(self, message, data=None):
         ''' Logs message at error level and writes message, data and traceback to Elasticsearch. '''
-        logging.error(message)
+        elastalert_logger.error(message)
         body = {'message': message}
         tb = traceback.format_exc()
         body['traceback'] = tb.strip().split('\n')
@@ -1935,7 +1992,7 @@ class ElastAlerter(object):
 
     def handle_uncaught_exception(self, exception, rule):
         """ Disables a rule and sends a notification. """
-        logging.error(traceback.format_exc())
+        elastalert_logger.error(traceback.format_exc())
         self.handle_error('Uncaught exception running rule %s: %s' % (rule['name'], exception), {'rule': rule['name']})
         if self.disable_rules_on_error:
             self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
@@ -2049,6 +2106,11 @@ def main(args=None):
     if not args:
         args = sys.argv[1:]
     client = ElastAlerter(args)
+
+    if client.prometheus_port and not client.debug:
+        p = PrometheusWrapper(client)
+        p.start()
+
     if not client.args.silence:
         client.start()
 

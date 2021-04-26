@@ -7,15 +7,13 @@ from setuptools import setup
 
 base_dir = os.path.dirname(__file__)
 setup(
-    name='elastalert',
-    version='0.2.4',
-    description='Runs custom filters on Elasticsearch and alerts on matches',
-    author='Quentin Long',
-    author_email='qlo@yelp.com',
+    name='elastalert2',
+    version='2.0.3',
+    description='Automated rule-based alerting for Elasticsearch',
     setup_requires='setuptools',
-    license='Copyright 2014 Yelp',
+    license='Apache 2.0',
     classifiers=[
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.9',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ],
@@ -27,26 +25,31 @@ setup(
     packages=find_packages(),
     package_data={'elastalert': ['schema.yaml', 'es_mappings/**/*.json']},
     install_requires=[
-        'apscheduler>=3.3.0',
+        'apscheduler>=3.3.0,<4.0',
         'aws-requests-auth>=0.3.0',
-        'blist>=1.3.6',
+        'sortedcontainers>=2.2.2',
         'boto3>=1.4.4',
         'configparser>=3.5.0',
         'croniter>=0.3.16',
-        'elasticsearch==7.0.0',
+        'elasticsearch>=7.0.0,<8.0.0',
         'envparse>=0.2.0',
         'exotel>=0.1.3',
         'jira>=2.0.0',
+        'Jinja2==2.11.3',
         'jsonschema>=3.0.2',
         'mock>=2.0.0',
         'prison>=0.1.2',
+        'prometheus_client>=0.10.1',
+        'py-zabbix>=1.1.3',
         'PyStaticConfiguration>=0.10.3',
         'python-dateutil>=2.6.0,<2.7.0',
-        'PyYAML>=3.12',
+        'PyYAML>=5.1',
         'requests>=2.10.0',
         'stomp.py>=4.1.17',
         'texttable>=0.8.8',
         'twilio>=6.0.0,<6.1',
-        'cffi>=1.11.5'
+        'cffi>=1.11.5',
+        'statsd-tags==3.2.1.post1',
+        'tzlocal<3.0'
     ]
 )

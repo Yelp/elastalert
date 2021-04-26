@@ -1,0 +1,19 @@
+name: upload_chart
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Helm push chart
+      env:
+        HELM_REPO_ACCESS_TOKEN: ${{ secrets.HELM_REPO_ACCESS_TOKEN }}
+      run: |
+        wget https://get.helm.sh/helm-v3.2.1-linux-amd64.tar.gz
+        tar xf helm-v3.2.1-linux-amd64.tar.gz
+        linux-amd64/helm plugin install https://github.com/chartmuseum/helm-push
+        linux-amd64/helm push chart/elastalert2 https://charts.banzaicloud.io/gh/Codesim-LLC

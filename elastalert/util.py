@@ -152,7 +152,7 @@ def ts_to_dt(timestamp):
 
 def dt_to_ts(dt):
     if not isinstance(dt, datetime.datetime):
-        logging.warning('Expected datetime, got %s' % (type(dt)))
+        elastalert_logger.warning('Expected datetime, got %s' % (type(dt)))
         return dt
     ts = dt.isoformat()
     # Round microseconds to milliseconds
@@ -176,7 +176,7 @@ def ts_to_dt_with_format(timestamp, ts_format):
 
 def dt_to_ts_with_format(dt, ts_format):
     if not isinstance(dt, datetime.datetime):
-        logging.warning('Expected datetime, got %s' % (type(dt)))
+        elastalert_logger.warning('Expected datetime, got %s' % (type(dt)))
         return dt
     ts = dt.strftime(ts_format)
     return ts
@@ -184,6 +184,11 @@ def dt_to_ts_with_format(dt, ts_format):
 
 def ts_now():
     return datetime.datetime.utcnow().replace(tzinfo=dateutil.tz.tzutc())
+
+
+def ts_utc_to_tz(ts, tz_name):
+    """Convert utc time to local time."""
+    return ts.astimezone(dateutil.tz.gettz(tz_name))
 
 
 def inc_ts(timestamp, milliseconds=1):
@@ -202,7 +207,7 @@ def pretty_ts(timestamp, tz=True):
         dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
-    return dt.strftime('%Y-%m-%d %H:%M %Z')
+    return dt.strftime('%Y-%m-%d %H:%M %z')
 
 
 def ts_add(ts, td):
@@ -319,10 +324,12 @@ def elasticsearch_client(conf):
     es_conn_conf = build_es_conn_config(conf)
     auth = Auth()
     es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
-                                     username=es_conn_conf['es_username'],
-                                     password=es_conn_conf['es_password'],
+                                     username=None if es_conn_conf['es_bearer'] else es_conn_conf['es_username'],
+                                     password=None if es_conn_conf['es_bearer'] else es_conn_conf['es_password'],
                                      aws_region=es_conn_conf['aws_region'],
                                      profile_name=es_conn_conf['profile'])
+    if es_conn_conf['es_bearer']:
+        es_conn_conf['headers'] = {"Authorization": "Bearer " + es_conn_conf['es_bearer']}
 
     return ElasticSearchClient(es_conn_conf)
 
@@ -341,8 +348,10 @@ def build_es_conn_config(conf):
     parsed_conf['http_auth'] = None
     parsed_conf['es_username'] = None
     parsed_conf['es_password'] = None
+    parsed_conf['es_bearer'] = None
     parsed_conf['aws_region'] = None
     parsed_conf['profile'] = None
+    parsed_conf['headers'] = None
     parsed_conf['es_host'] = os.environ.get('ES_HOST', conf['es_host'])
     parsed_conf['es_port'] = int(os.environ.get('ES_PORT', conf['es_port']))
     parsed_conf['es_url_prefix'] = ''
@@ -356,12 +365,17 @@ def build_es_conn_config(conf):
         parsed_conf['es_username'] = conf['es_username']
         parsed_conf['es_password'] = conf['es_password']
 
+    if os.environ.get('ES_BEARER'):
+        parsed_conf['es_bearer'] = os.environ.get('ES_BEARER')
+    elif 'es_bearer' in conf:
+        parsed_conf['es_bearer'] = conf['es_bearer']
+
     if 'aws_region' in conf:
         parsed_conf['aws_region'] = conf['aws_region']
 
     # Deprecated
     if 'boto_profile' in conf:
-        logging.warning('Found deprecated "boto_profile", use "profile" instead!')
+        elastalert_logger.warning('Found deprecated "boto_profile", use "profile" instead!')
         parsed_conf['profile'] = conf['boto_profile']
 
     if 'profile' in conf:
