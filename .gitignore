@@ -1,4 +1,4 @@
-config.yaml
+/config.yaml
 .tox/
 .coverage
 .idea/*
