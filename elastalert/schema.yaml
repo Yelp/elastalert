@@ -327,6 +327,8 @@ properties:
   twilio_auth_token: {type: string}
   twilio_to_number: {type: string}
   twilio_from_number: {type: string}
+  twilio_message_service_sid: {type: string}
+  twilio_use_copilot: {type: boolean}
 
   ### VictorOps
   victorops_api_key: {type: string}
