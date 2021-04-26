@@ -67,6 +67,8 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``es_password``: Optional; basic-auth password for connecting to ``es_host``.
 
+``es_bearer``: Optional; bearer token authorization for connecting to ``es_host``. If bearer token is specified, login and password are ignored.
+
 ``es_url_prefix``: Optional; URL prefix for the Elasticsearch endpoint.
 
 ``statsd_instance_tag``: Optional; prefix for statsd metrics.
