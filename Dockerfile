@@ -1,14 +1,15 @@
 FROM python:alpine as builder
 
-LABEL description="Elastalert 2 suitable for Kubernetes and Helm"
+LABEL description="Elastalert 2 Official Image"
 LABEL maintainer="Jason Ertel (jertel at codesim.com)"
 
 RUN apk --update upgrade && \
-    apk add git && \
-    rm -rf /var/cache/apk/*
+    rm -rf /var/cache/apk/* && \
+    mkdir -p /tmp/elastalert
+
+COPY . /tmp/elastalert
 
 RUN mkdir -p /opt/elastalert && \
-    git clone https://github.com/jertel/elastalert2 /tmp/elastalert && \
     cd /tmp/elastalert && \
     pip install setuptools wheel && \
     python setup.py sdist bdist_wheel
@@ -18,7 +19,7 @@ FROM python:alpine
 COPY --from=builder /tmp/elastalert/dist/*.tar.gz /tmp/
 
 RUN apk --update upgrade && \
-    apk add gcc libffi-dev musl-dev python3-dev openssl-dev tzdata libmagic cargo && \
+    apk add gcc libffi-dev musl-dev python3-dev openssl-dev tzdata libmagic cargo jq curl && \
 	pip install /tmp/*.tar.gz && \
     apk del gcc libffi-dev musl-dev python3-dev openssl-dev cargo && \
     rm -rf /var/cache/apk/*
