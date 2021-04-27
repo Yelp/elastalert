@@ -35,7 +35,7 @@ Maintainers, when creating a new release, follow the procedure below:
 4. Verify that artifacts have been published:
  	- Python PIP package was [published][3] successfully.
  	- Helm chart has been [published][4] successfully.
- 	- Container image was [built and published][2] successfully.
+ 	- Container image was [published][2] successfully.
 5. Wait a minimum of a few hours for community feedback in case someone notices a problem with the the upcoming release.
 6. Publish the release.
 
