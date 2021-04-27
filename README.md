@@ -5,21 +5,17 @@ but become mostly stale when the Yelp team ceased using Elastalert.
 
 Elastalert 2 is backwards compatible with the original Elastalert rules.
 
+![CI Workflow](https://github.com/jertel/elastalert/workflows/master_build_test/badge.svg)
+
 ## Documentation
 
 Documentation, including an FAQ, for Elastalert 2 can be found on [readthedocs.com][3]. This is the place to start if you're not familiar with Elastalert at all.
 
 The full list of platforms that Elastalert can fire alerts into can be found [in the documentation][4].
 
-
 ## Contributing
 
-PRs are welcome, but must include tests, when possible. PRs will not be merged if they do not pass
-the automated CI workflows. 
-
-The current status of the CI workflow:
-
-![CI Workflow](https://github.com/jertel/elastalert/workflows/master_build_test/badge.svg)
+Please see our [contributing guidelines](CONTRIBUTING.md).
 
 ## Docker
 
