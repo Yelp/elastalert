@@ -22,6 +22,7 @@ class ElasticSearchClient(Elasticsearch):
                                                   use_ssl=conf['use_ssl'],
                                                   verify_certs=conf['verify_certs'],
                                                   ca_certs=conf['ca_certs'],
+                                                  ssl_show_warn=conf['ssl_show_warn'],
                                                   connection_class=RequestsHttpConnection,
                                                   http_auth=conf['http_auth'],
                                                   headers=conf['headers'],
