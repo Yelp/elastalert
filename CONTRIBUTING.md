@@ -27,17 +27,14 @@ Maintainers, when creating a new release, follow the procedure below:
 	- [values.yaml](chart/elastalert2/values.yaml): Match the default image version to the new release version.
 	- [README.md](chart/elastalert2/README.md): Match the default image version to the new release version.
 	- [CHANGELOG.md](CHANGELOG.md): This must contain all PRs and any other relevent notes about this release.
-3. Create a [new][1] release.
+3. Publish a [new][1] release.
 	- The title (and tag) of the release will be the same value as the new version determined in step 1.
 	- Paste the new version change notes from CHANGELOG.md into the description field.
 	- Check the box to 'Create a discussion for this release'.
-	- Save the draft.
 4. Verify that artifacts have been published:
  	- Python PIP package was [published][3] successfully.
  	- Helm chart has been [published][4] successfully.
  	- Container image was [published][2] successfully.
-5. Wait a minimum of a few hours for community feedback in case someone notices a problem with the the upcoming release.
-6. Publish the release.
 
 [1]: https://github.com/jertel/elastalert2/releases/new
 [2]: https://github.com/jertel/elastalert2/actions/workflows/publish_image.yml

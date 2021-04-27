@@ -4,8 +4,9 @@
 name: upload_python_package
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 2.*
 
 jobs:
   deploy:
