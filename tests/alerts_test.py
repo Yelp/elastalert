@@ -12,15 +12,14 @@ from elastalert.alerts import AlertaAlerter
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
 from elastalert.alerts import CommandAlerter
+from elastalert.alerts import DatadogAlerter
 from elastalert.alerts import EmailAlerter
-from elastalert.alerts import HipChatAlerter
 from elastalert.alerts import HTTPPostAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
 from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
 from elastalert.alerts import SlackAlerter
-from elastalert.alerts import StrideAlerter
 from elastalert.loaders import FileRulesLoader
 from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.util import ts_add
@@ -1072,32 +1071,6 @@ def test_command():
         alert.alert([match])
     assert mock_popen.called_with('/bin/test/foo.sh', stdin=subprocess.PIPE, shell=True)
 
-    # Test command as string with formatted arg (new-style string format)
-    rule = {'command': '/bin/test/ --arg {match[somefield]}', 'new_style_string_format': True}
-    alert = CommandAlerter(rule)
-    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
-        alert.alert([match])
-    assert mock_popen.called_with('/bin/test --arg foobarbaz', stdin=subprocess.PIPE, shell=False)
-
-    rule = {'command': '/bin/test/ --arg {match[nested][field]}', 'new_style_string_format': True}
-    alert = CommandAlerter(rule)
-    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
-        alert.alert([match])
-    assert mock_popen.called_with('/bin/test --arg 1', stdin=subprocess.PIPE, shell=False)
-
-    # Test command as string without formatted arg (new-style string format)
-    rule = {'command': '/bin/test/foo.sh', 'new_style_string_format': True}
-    alert = CommandAlerter(rule)
-    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
-        alert.alert([match])
-    assert mock_popen.called_with('/bin/test/foo.sh', stdin=subprocess.PIPE, shell=True)
-
-    rule = {'command': '/bin/test/foo.sh {{bar}}', 'new_style_string_format': True}
-    alert = CommandAlerter(rule)
-    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
-        alert.alert([match])
-    assert mock_popen.called_with('/bin/test/foo.sh {bar}', stdin=subprocess.PIPE, shell=True)
-
     # Test command with pipe_match_json
     rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],
             'pipe_match_json': True}
@@ -1242,7 +1215,7 @@ def test_slack_uses_custom_title():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1288,7 +1261,7 @@ def test_slack_uses_custom_timeout():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=20
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1332,7 +1305,7 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1377,7 +1350,7 @@ def test_slack_uses_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1438,7 +1411,7 @@ def test_slack_uses_list_of_custom_slack_channel():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     assert expected_data1 == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1489,7 +1462,7 @@ def test_slack_attach_kibana_discover_url_when_generated():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1534,7 +1507,7 @@ def test_slack_attach_kibana_discover_url_when_not_generated():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1586,7 +1559,7 @@ def test_slack_kibana_discover_title():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1638,11 +1611,56 @@ def test_slack_kibana_discover_color():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=False,
+        verify=True,
         timeout=10
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
+
+
+def test_slack_ignore_ssl_errors():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_ignore_ssl_errors': True,
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=False,
+        timeout=10
+    )
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': []
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
 def test_http_alerter_with_payload():
@@ -1672,7 +1690,8 @@ def test_http_alerter_with_payload():
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
-        timeout=10
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1707,7 +1726,8 @@ def test_http_alerter_with_payload_all_values():
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
-        timeout=10
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1739,7 +1759,8 @@ def test_http_alerter_without_payload():
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
-        timeout=10
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -2086,340 +2107,6 @@ def test_resolving_rule_references(ea):
     assert 'the_owner' == alert.rule['nested_dict']['nested_owner']
 
 
-def test_stride_plain_text():
-    rule = {
-        'name': 'Test Rule',
-        'type': 'any',
-        'stride_access_token': 'token',
-        'stride_cloud_id': 'cloud_id',
-        'stride_conversation_id': 'conversation_id',
-        'alert_subject': 'Cool subject',
-        'alert': []
-    }
-    rules_loader = FileRulesLoader({})
-    rules_loader.load_modules(rule)
-    alert = StrideAlerter(rule)
-    match = {
-        '@timestamp': '2016-01-01T00:00:00',
-        'somefield': 'foobarbaz'
-    }
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    body = "{0}\n\n@timestamp: {1}\nsomefield: {2}".format(
-        rule['name'], match['@timestamp'], match['somefield']
-    )
-    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
-        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
-            {'type': 'paragraph', 'content': [
-                {'type': 'text', 'text': body}
-            ]}
-        ]}
-    ]}}
-
-    mock_post_request.assert_called_once_with(
-        alert.url,
-        data=mock.ANY,
-        headers={
-            'content-type': 'application/json',
-            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
-        verify=True,
-        proxies=None
-    )
-    assert expected_data == json.loads(
-        mock_post_request.call_args_list[0][1]['data'])
-
-
-def test_stride_underline_text():
-    rule = {
-        'name': 'Test Rule',
-        'type': 'any',
-        'stride_access_token': 'token',
-        'stride_cloud_id': 'cloud_id',
-        'stride_conversation_id': 'conversation_id',
-        'alert_subject': 'Cool subject',
-        'alert_text': '<u>Underline Text</u>',
-        'alert_text_type': 'alert_text_only',
-        'alert': []
-    }
-    rules_loader = FileRulesLoader({})
-    rules_loader.load_modules(rule)
-    alert = StrideAlerter(rule)
-    match = {
-        '@timestamp': '2016-01-01T00:00:00',
-        'somefield': 'foobarbaz'
-    }
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    body = "Underline Text"
-    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
-        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
-            {'type': 'paragraph', 'content': [
-                {'type': 'text', 'text': body, 'marks': [
-                    {'type': 'underline'}
-                ]}
-            ]}
-        ]}
-    ]}}
-
-    mock_post_request.assert_called_once_with(
-        alert.url,
-        data=mock.ANY,
-        headers={
-            'content-type': 'application/json',
-            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
-        verify=True,
-        proxies=None
-    )
-    assert expected_data == json.loads(
-        mock_post_request.call_args_list[0][1]['data'])
-
-
-def test_stride_bold_text():
-    rule = {
-        'name': 'Test Rule',
-        'type': 'any',
-        'stride_access_token': 'token',
-        'stride_cloud_id': 'cloud_id',
-        'stride_conversation_id': 'conversation_id',
-        'alert_subject': 'Cool subject',
-        'alert_text': '<b>Bold Text</b>',
-        'alert_text_type': 'alert_text_only',
-        'alert': []
-    }
-    rules_loader = FileRulesLoader({})
-    rules_loader.load_modules(rule)
-    alert = StrideAlerter(rule)
-    match = {
-        '@timestamp': '2016-01-01T00:00:00',
-        'somefield': 'foobarbaz'
-    }
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    body = "Bold Text"
-    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
-        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
-            {'type': 'paragraph', 'content': [
-                {'type': 'text', 'text': body, 'marks': [
-                    {'type': 'strong'}
-                ]}
-            ]}
-        ]}
-    ]}}
-
-    mock_post_request.assert_called_once_with(
-        alert.url,
-        data=mock.ANY,
-        headers={
-            'content-type': 'application/json',
-            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
-        verify=True,
-        proxies=None
-    )
-    assert expected_data == json.loads(
-        mock_post_request.call_args_list[0][1]['data'])
-
-
-def test_stride_strong_text():
-    rule = {
-        'name': 'Test Rule',
-        'type': 'any',
-        'stride_access_token': 'token',
-        'stride_cloud_id': 'cloud_id',
-        'stride_conversation_id': 'conversation_id',
-        'alert_subject': 'Cool subject',
-        'alert_text': '<strong>Bold Text</strong>',
-        'alert_text_type': 'alert_text_only',
-        'alert': []
-    }
-    rules_loader = FileRulesLoader({})
-    rules_loader.load_modules(rule)
-    alert = StrideAlerter(rule)
-    match = {
-        '@timestamp': '2016-01-01T00:00:00',
-        'somefield': 'foobarbaz'
-    }
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    body = "Bold Text"
-    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
-        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
-            {'type': 'paragraph', 'content': [
-                {'type': 'text', 'text': body, 'marks': [
-                    {'type': 'strong'}
-                ]}
-            ]}
-        ]}
-    ]}}
-
-    mock_post_request.assert_called_once_with(
-        alert.url,
-        data=mock.ANY,
-        headers={
-            'content-type': 'application/json',
-            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
-        verify=True,
-        proxies=None
-    )
-    assert expected_data == json.loads(
-        mock_post_request.call_args_list[0][1]['data'])
-
-
-def test_stride_hyperlink():
-    rule = {
-        'name': 'Test Rule',
-        'type': 'any',
-        'stride_access_token': 'token',
-        'stride_cloud_id': 'cloud_id',
-        'stride_conversation_id': 'conversation_id',
-        'alert_subject': 'Cool subject',
-        'alert_text': '<a href="http://stride.com">Link</a>',
-        'alert_text_type': 'alert_text_only',
-        'alert': []
-    }
-    rules_loader = FileRulesLoader({})
-    rules_loader.load_modules(rule)
-    alert = StrideAlerter(rule)
-    match = {
-        '@timestamp': '2016-01-01T00:00:00',
-        'somefield': 'foobarbaz'
-    }
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    body = "Link"
-    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
-        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
-            {'type': 'paragraph', 'content': [
-                {'type': 'text', 'text': body, 'marks': [
-                    {'type': 'link', 'attrs': {'href': 'http://stride.com'}}
-                ]}
-            ]}
-        ]}
-    ]}}
-
-    mock_post_request.assert_called_once_with(
-        alert.url,
-        data=mock.ANY,
-        headers={
-            'content-type': 'application/json',
-            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
-        verify=True,
-        proxies=None
-    )
-    assert expected_data == json.loads(
-        mock_post_request.call_args_list[0][1]['data'])
-
-
-def test_stride_html():
-    rule = {
-        'name': 'Test Rule',
-        'type': 'any',
-        'stride_access_token': 'token',
-        'stride_cloud_id': 'cloud_id',
-        'stride_conversation_id': 'conversation_id',
-        'alert_subject': 'Cool subject',
-        'alert_text': '<b>Alert</b>: we found something. <a href="http://stride.com">Link</a>',
-        'alert_text_type': 'alert_text_only',
-        'alert': []
-    }
-    rules_loader = FileRulesLoader({})
-    rules_loader.load_modules(rule)
-    alert = StrideAlerter(rule)
-    match = {
-        '@timestamp': '2016-01-01T00:00:00',
-        'somefield': 'foobarbaz'
-    }
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    expected_data = {'body': {'version': 1, 'type': "doc", 'content': [
-        {'type': "panel", 'attrs': {'panelType': "warning"}, 'content': [
-            {'type': 'paragraph', 'content': [
-                {'type': 'text', 'text': 'Alert', 'marks': [
-                    {'type': 'strong'}
-                ]},
-                {'type': 'text', 'text': ': we found something. '},
-                {'type': 'text', 'text': 'Link', 'marks': [
-                    {'type': 'link', 'attrs': {'href': 'http://stride.com'}}
-                ]}
-            ]}
-        ]}
-    ]}}
-
-    mock_post_request.assert_called_once_with(
-        alert.url,
-        data=mock.ANY,
-        headers={
-            'content-type': 'application/json',
-            'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
-        verify=True,
-        proxies=None
-    )
-    assert expected_data == json.loads(
-        mock_post_request.call_args_list[0][1]['data'])
-
-
-def test_hipchat_body_size_limit_text():
-    rule = {
-        'name': 'Test Rule',
-        'type': 'any',
-        'hipchat_auth_token': 'token',
-        'hipchat_room_id': 'room_id',
-        'hipchat_message_format': 'text',
-        'alert_subject': 'Cool subject',
-        'alert_text': 'Alert: we found something.\n\n{message}',
-        'alert_text_type': 'alert_text_only',
-        'alert': [],
-        'alert_text_kw': {
-            '@timestamp': 'time',
-            'message': 'message',
-        },
-    }
-    rules_loader = FileRulesLoader({})
-    rules_loader.load_modules(rule)
-    alert = HipChatAlerter(rule)
-    match = {
-        '@timestamp': '2018-01-01T00:00:00',
-        'message': 'foo bar\n' * 5000,
-    }
-    body = alert.create_alert_body([match])
-
-    assert len(body) <= 10000
-
-
-def test_hipchat_body_size_limit_html():
-    rule = {
-        'name': 'Test Rule',
-        'type': 'any',
-        'hipchat_auth_token': 'token',
-        'hipchat_room_id': 'room_id',
-        'hipchat_message_format': 'html',
-        'alert_subject': 'Cool subject',
-        'alert_text': 'Alert: we found something.\n\n{message}',
-        'alert_text_type': 'alert_text_only',
-        'alert': [],
-        'alert_text_kw': {
-            '@timestamp': 'time',
-            'message': 'message',
-        },
-    }
-    rules_loader = FileRulesLoader({})
-    rules_loader.load_modules(rule)
-    alert = HipChatAlerter(rule)
-    match = {
-        '@timestamp': '2018-01-01T00:00:00',
-        'message': 'foo bar\n' * 5000,
-    }
-
-    body = alert.create_alert_body([match])
-
-    assert len(body) <= 10000
-
-
 def test_alerta_no_auth(ea):
     rule = {
         'name': 'Test Alerta rule!',
@@ -2534,7 +2221,6 @@ def test_alerta_new_style(ea):
         'alerta_severity': "debug",
         'alerta_text': "Probe {hostname} is UP at {logdate} GMT",
         'alerta_value': "UP",
-        'alerta_new_style_string_format': True,
         'type': 'any',
         'alerta_use_match_timestamp': True,
         'alert': 'alerta'
@@ -2611,3 +2297,39 @@ def test_alert_subject_size_limit_with_args(ea):
     alert = Alerter(rule)
     alertSubject = alert.create_custom_title([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
     assert 6 == len(alertSubject)
+
+
+def test_datadog_alerter():
+    rule = {
+        'name': 'Test Datadog Event Alerter',
+        'type': 'any',
+        'datadog_api_key': 'test-api-key',
+        'datadog_app_key': 'test-app-key',
+        'alert': [],
+        'alert_subject': 'Test Datadog Event Alert'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = DatadogAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'name': 'datadog-test-name'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'title': rule['alert_subject'],
+        'text': "Test Datadog Event Alerter\n\n@timestamp: 2021-01-01T00:00:00\nname: datadog-test-name\n"
+    }
+    mock_post_request.assert_called_once_with(
+        "https://api.datadoghq.com/api/v1/events",
+        data=mock.ANY,
+        headers={
+            'Content-Type': 'application/json',
+            'DD-API-KEY': rule['datadog_api_key'],
+            'DD-APPLICATION-KEY': rule['datadog_app_key']
+        }
+    )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data

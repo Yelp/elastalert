@@ -1184,6 +1184,41 @@ def test_metric_aggregation_complex_query_key():
     assert rule.matches[1]['sub_qk'] == 'sub_qk_val2'
 
 
+def test_metric_aggregation_complex_query_key_bucket_interval():
+    rules = {'buffer_time': datetime.timedelta(minutes=5),
+             'timestamp_field': '@timestamp',
+             'metric_agg_type': 'avg',
+             'metric_agg_key': 'cpu_pct',
+             'bucket_interval': {'minutes': 1},
+             'bucket_interval_timedelta': datetime.timedelta(minutes=1),
+             'compound_query_key': ['qk', 'sub_qk'],
+             'query_key': 'qk,sub_qk',
+             'max_threshold': 0.8}
+
+    # Quoted from https://elastalert.readthedocs.io/en/latest/ruletypes.html#metric-aggregation
+    # bucket_interval: If present this will divide the metric calculation window into bucket_interval sized segments.
+    # The metric value will be calculated and evaluated against the threshold(s) for each segment.
+    interval_aggs = {"interval_aggs": {"buckets": [
+        {"metric_cpu_pct_avg": {"value": 0.91}, "key": "1617156690000"},
+        {"metric_cpu_pct_avg": {"value": 0.89}, "key": "1617156750000"},
+        {"metric_cpu_pct_avg": {"value": 0.78}, "key": "1617156810000"},
+        {"metric_cpu_pct_avg": {"value": 0.85}, "key": "1617156870000"},
+        {"metric_cpu_pct_avg": {"value": 0.86}, "key": "1617156930000"},
+    ]}, "key": "sub_qk_val1"}
+
+    query = {"bucket_aggs": {"buckets": [
+        interval_aggs
+    ]}, "key": "qk_val"}
+
+    rule = MetricAggregationRule(rules)
+    rule.check_matches(datetime.datetime.now(), 'qk_val', query)
+    assert len(rule.matches) == 4
+    assert rule.matches[0]['qk'] == 'qk_val'
+    assert rule.matches[1]['qk'] == 'qk_val'
+    assert rule.matches[0]['sub_qk'] == 'sub_qk_val1'
+    assert rule.matches[1]['sub_qk'] == 'sub_qk_val1'
+
+
 def test_percentage_match():
     rules = {'match_bucket_filter': {'term': 'term_val'},
              'buffer_time': datetime.timedelta(minutes=5),

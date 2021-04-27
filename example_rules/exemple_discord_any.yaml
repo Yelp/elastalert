@@ -1,0 +1,40 @@
+# This exemple will provide you every alerts that occured between the sleeping time your configured in your config file.
+# Every match will be send as a unique alert to discord. If you got 3 match, the alerter will send 3 alert to your discord.
+
+name: "Exemple discord webhook alert"
+type: any
+index: your_indice_%Y-%m-%d
+use_strftime_index: true
+
+# Exemple query
+filter:
+- query:
+    query_string:
+      query: "id: 2501 OR id: 5503"
+
+realert:
+  minutes: 0
+
+# I only add the code content here. This way, it prevent to encode the entire description section. Only the log will be encoded and it will provide more visibility.
+include: ["timestamp","name","computer"]
+alert_text: "Alerts at {0} on the computer {1}.\n```"
+alert_text_args: ["timestamp","computer"]
+
+# Needed
+alert:
+- discord
+discord_webhook_url: "Your discord webhook url"
+
+# ----- Optional Section -----
+
+discord_proxy: "proxy_address"
+
+# Must be in "" and must be valid emoji supported by discord.
+discord_emoji_title: ":lock:"
+
+# Must be an hexadecimal value according to the exemple below
+discord_embed_color: 0xE24D42
+
+# This content will be displayed at the very end of your embed message. If you don't add one of these 2 lines, the footer will not be added.
+discord_embed_footer: "Message sent by ElastAlert from your computer"
+discord_embed_icon_url: "https://humancoders-formations.s3.amazonaws.com/uploads/course/logo/38/thumb_bigger_formation-elasticsearch.png"
