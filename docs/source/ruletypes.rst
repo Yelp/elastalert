@@ -2016,9 +2016,12 @@ The alerter has one optional argument:
 Twilio
 ~~~~~~
 
-Twilio alerter will trigger an incident to a mobile phone as sms from your twilio phone number. Alert name will arrive as sms once this option is chosen.
+Twilio alerter will trigger an incident to a mobile phone as an sms from your twilio phone number. The sms will contain the alert name. You may use either twilio SMS or twilio copilot
+to send the message, controlled by the ``twilio_use_copilot`` option.
 
-The alerter requires the following option:
+Note that when twilio copilot *is* used the ``twilio_message_service_sid`` option is required. Likewise, when *not* using twilio copilot, the ``twilio_from_number`` option is required.
+
+The alerter requires the following options:
 
 ``twilio_account_sid``: This is sid of your twilio account.
 
@@ -2026,8 +2029,30 @@ The alerter requires the following option:
 
 ``twilio_to_number``: The phone number where you would like send the notification.
 
-``twilio_from_number``: Your twilio phone number from which message will be sent.
+Either one of
+ * ``twilio_from_number``: Your twilio phone number from which message will be sent.
+ * ``twilio_message_service_sid``: The SID of your twilio message service.
 
+Optional:
+
+``twilio_use_copilot``: Whether or not to use twilio copilot, False by default.
+
+Example usage::
+
+    alert:
+      - twilio # With Copilot
+         twilio_use_copilot: True
+         twilio_to_number: "0123456789"
+         twilio_auth_token: "abcdefghijklmnopqrstuvwxyz012345"
+         twilio_account_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
+         twilio_message_service_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
+
+      - twilio # With Legacy SMS
+         twilio_use_copilot: False
+         twilio_to_number: "0123456789"
+         twilio_from_number: "9876543210"
+         twilio_auth_token: "abcdefghijklmnopqrstuvwxyz012345"
+         twilio_account_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
 
 Splunk On-Call (Formerly VictorOps)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
