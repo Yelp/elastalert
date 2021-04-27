@@ -35,14 +35,29 @@ Currently, we have support built in for these alert types:
 - Email
 - JIRA
 - OpsGenie
-- SNS
-- HipChat
+- AWS SNS
+- MS Teams
 - Slack
+- Mattermost
 - Telegram
 - GoogleChat
+- PagerDuty
+- PagerTree
+- Exotel
+- Twilio
+- Splunk On-Call (Formerly VictorOps)
+- Gitter
+- ServiceNow
 - Debug
 - Stomp
+- Alerta
+- HTTP POST
+- Line Notify
 - TheHive
+- Zabbix
+- Discord
+- Dingtalk
+- Chatwork
 
 Additional rule types and alerts can be easily imported or written. (See :ref:`Writing rule types <writingrules>` and :ref:`Writing alerts <writingalerts>`)
 
@@ -202,6 +217,10 @@ The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticse
 ``add_metadata_alert``: If set, alerts will include metadata described in rules (``category``, ``description``, ``owner`` and ``priority``); set to ``True`` or ``False``. The default is ``False``.
 
 ``skip_invalid``: If ``True``, skip invalid files instead of exiting.
+
+``jinja_root_name``: When using a Jinja template, specify the name of the root field name in the template. The default is ``_data``.
+
+``jinja_template_path``: When using a Jinja template, specify filesystem path to template, this overrides the default behaviour of using alert_text as the template.
 
 Logging
 -------
