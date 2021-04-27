@@ -42,6 +42,9 @@ es_port: 9200
 # Verify TLS certificates
 #verify_certs: True
 
+# Show TLS or certificate related warnings
+#ssl_show_warn: True
+
 # GET request with body is the default option for Elasticsearch.
 # If it fails for some reason, you can pass 'GET', 'POST' or 'source'.
 # See http://elasticsearch-py.readthedocs.io/en/master/connection.html?highlight=send_get_body_as#transport

@@ -132,6 +132,8 @@ The environment variable ``ES_USE_SSL`` will override this field.
 
 ``verify_certs``: Optional; whether or not to verify TLS certificates; set to ``True`` or ``False``. The default is ``True``.
 
+``ssl_show_warn``: Optional; suppress TLS and certificate related warnings; set to ``True`` or ``False``. The default is ``True``.
+
 ``client_cert``: Optional; path to a PEM certificate to use as the client certificate.
 
 ``client_key``: Optional; path to a private key file to use as the client key.
