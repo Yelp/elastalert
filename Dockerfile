@@ -1,11 +1,7 @@
-FROM python:alpine as builder
+FROM python:slim-buster as builder
 
 LABEL description="Elastalert 2 Official Image"
 LABEL maintainer="Jason Ertel (jertel at codesim.com)"
-
-RUN apk --update upgrade && \
-    rm -rf /var/cache/apk/* && \
-    mkdir -p /tmp/elastalert
 
 COPY . /tmp/elastalert
 
@@ -14,23 +10,27 @@ RUN mkdir -p /opt/elastalert && \
     pip install setuptools wheel && \
     python setup.py sdist bdist_wheel
 
-FROM python:alpine
+FROM python:slim-buster
 
 COPY --from=builder /tmp/elastalert/dist/*.tar.gz /tmp/
 
-RUN apk --update upgrade && \
-    apk add gcc libffi-dev musl-dev python3-dev openssl-dev tzdata libmagic cargo jq curl && \
-	pip install /tmp/*.tar.gz && \
-    apk del gcc libffi-dev musl-dev python3-dev openssl-dev cargo && \
-    rm -rf /var/cache/apk/*
+RUN apt-get update && apt-get -y upgrade &&\
+    apt-get install -y tzdata cargo libmagic1 jq curl &&\
+    rm -rf /var/lib/apt/lists/* &&\
+    pip install /tmp/*.tar.gz &&\
+    rm -rf /tmp/* &&\
+    mkdir -p /opt/elastalert &&\
+    echo "#!/bin/sh" >> /opt/elastalert/run.sh &&\
+    echo "set -e" >> /opt/elastalert/run.sh &&\
+    echo "elastalert-create-index --config /opt/elastalert/config.yaml" \
+        >> /opt/elastalert/run.sh &&\
+    echo "elastalert --config /opt/elastalert/config.yaml \"\$@\"" \
+        >> /opt/elastalert/run.sh &&\
+    chmod +x /opt/elastalert/run.sh &&\
+    useradd -u 1000 -M -b /opt/elastalert -s /sbin/nologin \
+        -c "ElastAlert User" elastalert
 
-RUN mkdir -p /opt/elastalert && \
-	echo "#!/bin/sh" >> /opt/elastalert/run.sh && \
-    echo "set -e" >> /opt/elastalert/run.sh && \
-    echo "elastalert-create-index --config /opt/config/elastalert_config.yaml" >> /opt/elastalert/run.sh && \
-    echo "elastalert --config /opt/config/elastalert_config.yaml \"\$@\"" >> /opt/elastalert/run.sh && \
-    chmod +x /opt/elastalert/run.sh
-
+USER elastalert
 ENV TZ "UTC"
 
 WORKDIR /opt/elastalert

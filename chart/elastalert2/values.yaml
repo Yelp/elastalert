@@ -94,7 +94,7 @@ extraConfigOptions: {}
 #type: Opaque
 #stringData:
 #   elastalert_config: |-
-#     rules_folder: /opt/rules
+#     rules_folder: /opt/elastalert/rules
 #     scan_subdirectories: false
 #     run_every:
 #       minutes: 1
@@ -223,6 +223,6 @@ extraVolumes: []
 
 extraVolumeMounts: []
   # - name: smtp-auth
-  #   mountPath: /opt/config-smtp/smtp_auth.yaml
+  #   mountPath: /opt/elastalert/config-smtp/smtp_auth.yaml
   #   subPath: smtp_auth.yaml
   #   readOnly: true
