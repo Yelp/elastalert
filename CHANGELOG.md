@@ -9,6 +9,19 @@
 ## Other changes
 - None
 
+# 2.0.5
+
+## Breaking changes
+- Default base path changed to `/opt/elastalert` in the Dockerfile and in Helm charts.
+
+## New features
+
+## Other changes
+- Dockerfile base image changed to python/slim-buster to take advantage of pre-build python wheels and accelerate build times.
+- Dockerfile now creates and runs as a non-root user "elastalert".
+- tmp files and dev packages removed from the final container image.
+- Documentation updates in support of the modified container base path.
+
 # 2.0.4
 
 ## Breaking changes
