@@ -15,7 +15,8 @@ FROM python:slim-buster
 COPY --from=builder /tmp/elastalert/dist/*.tar.gz /tmp/
 
 RUN apt-get update && apt-get -y upgrade &&\
-    apt-get install -y tzdata cargo libmagic1 jq curl &&\
+    #apt-get install -y tzdata cargo libmagic1 jq curl &&\
+    apt-get -y autoremove &&\
     rm -rf /var/lib/apt/lists/* &&\
     pip install /tmp/*.tar.gz &&\
     rm -rf /tmp/* &&\
