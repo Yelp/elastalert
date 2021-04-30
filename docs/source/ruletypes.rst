@@ -1735,6 +1735,65 @@ Example usage::
       Environment: '$VAR'          # environment variable
       Message: { field: message }  # field in the first match
 
+AWS SES
+~~~~~~~
+
+The AWS SES alerter is similar to Email alerter but uses AWS SES to send emails. The AWS SES alerter can use AWS credentials
+from the rule yaml, standard AWS config files or environment variables.
+
+AWS SES requires one option:
+
+``ses_email``: An address or list of addresses to sent the alert to.
+
+``ses_from_addr``: This sets the From header in the email. 
+
+Optional:
+
+``ses_aws_access_key``: An access key to connect to AWS SES with.
+
+``ses_aws_secret_key``: The secret key associated with the access key.
+
+``ses_aws_region``: The AWS region in which the AWS SES resource is located. Default is us-east-1
+
+``ses_aws_profile``: The AWS profile to use. If none specified, the default will be used.
+
+``ses_email_reply_to``: This sets the Reply-To header in the email. 
+
+``ses_cc``: This adds the CC emails to the list of recipients. By default, this is left empty.
+
+``ses_bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
+
+Example When not using aws_profile usage::
+
+    alert:
+      - "ses"
+    ses_aws_access_key_id: "XXXXXXXXXXXXXXXXXX'"
+    ses_aws_secret_access_key: "YYYYYYYYYYYYYYYYYYYY"
+    ses_aws_region: "us-east-1"
+    ses_from_addr: "xxxx1@xxx.com"
+    ses_email: "xxxx1@xxx.com"
+
+Example When to use aws_profile usage::
+
+    # Create ~/.aws/credentials
+
+    [default]
+    aws_access_key_id = xxxxxxxxxxxxxxxxxxxx
+    aws_secret_access_key = yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+
+    # Create ~/.aws/config
+
+    [default]
+    region = us-east-1
+
+    # alert rule setting
+
+    alert:
+      - "ses"
+    ses_aws_profile: "default"
+    ses_from_addr: "xxxx1@xxx.com"
+    ses_email: "xxxx1@xxx.com"
+
 AWS SNS
 ~~~~~~~
 
