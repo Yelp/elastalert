@@ -9,6 +9,20 @@
 ## Other changes
 - None
 
+# 2.x.x
+## Breaking changes
+- Dockerfile Base image changed from `python/alpine` to `python/slim-buster` to take advantage of pre-build python wheels and accelerate build times.
+- System packages removed from the Dockerfile: All dev packages, cargo, libmagic, jq, curl. Image size reduced to 244Mb.
+- Default base path changed to `/opt/elastalert` in the Dockerfile and in Helm charts.
+
+## New features
+- None
+
+## Other changes
+- Dockerfile now creates and runs as a non-root user "elastalert".
+- tmp files and dev packages removed from the final container image.
+- Documentation updates in support of the modified container base path.
+
 # 2.0.4
 
 ## Breaking changes

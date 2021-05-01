@@ -1,7 +1,7 @@
 # Elastalert 2
 
 Elastalert 2 is the supported fork of [Elastalert][0], which had been maintained by the Yelp team
-but become mostly stale when the Yelp team ceased using Elastalert. 
+but become mostly stale when the Yelp team ceased using Elastalert.
 
 Elastalert 2 is backwards compatible with the original Elastalert rules.
 
@@ -23,14 +23,15 @@ If you're interested in a pre-built Docker image check out the [elastalert2][2] 
 
 Be aware that the `latest` tag of the image represents the latest commit into the master branch. If you prefer to upgrade more slowly you will need utilize a versioned tag, such as `2.0.4` instead.
 
-A properly configured elastalert_config.json file must be mounted into the container during startup of the container. Use the [example file][1] provided as a template, and once saved locally to a file such as `/tmp/elastalert.yaml`, run the container as follows:
+A properly configured config.yaml file must be mounted into the container during startup of the container. Use the [example file][1] provided as a template, and once saved locally to a file such as `/tmp/elastalert.yaml`, run the container as follows:
 
 ```bash
-docker run -d -v /tmp/elastalert.yaml:/opt/config/elastalert_config.yaml jertel/elastalert2
+docker run -d -v /tmp/elastalert.yaml:/opt/elastalert/config.yaml jertel/elastalert2
 ```
 
 To build the image locally, install Docker and then run the following command:
-```
+
+```bash
 docker build . -t elastalert
 ```
 
@@ -48,4 +49,3 @@ Elastalert 2 is licensed under the [Apache License, Version 2.0][5].
 [3]: https://elastalert2.readthedocs.io/
 [4]: https://elastalert2.readthedocs.io/en/latest/ruletypes.html#alerts
 [5]: http://www.apache.org/licenses/LICENSE-2
-
