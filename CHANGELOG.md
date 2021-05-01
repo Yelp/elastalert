@@ -1,4 +1,4 @@
-# Upcoming release
+# Template
 
 ## Breaking changes
 - None
@@ -9,19 +9,21 @@
 ## Other changes
 - None
 
-# 2.x.x
+# Upcoming Release
+
 ## Breaking changes
-- Dockerfile Base image changed from `python/alpine` to `python/slim-buster` to take advantage of pre-build python wheels and accelerate build times.
-- System packages removed from the Dockerfile: All dev packages, cargo, libmagic, jq, curl. Image size reduced to 244Mb.
-- Default base path changed to `/opt/elastalert` in the Dockerfile and in Helm charts.
+- Dockerfile refactor for performance and size improvements - [#102](https://github.com/jertel/elastalert2/pull/102) - @jgregmac
+	- Dockerfile base image changed from `python/alpine` to `python/slim-buster` to take advantage of pre-build python wheels, accelerate build times, and reduce image size. If you have customized an image, based on jertel/elastalert2, you may need to make adjustments.
+	- Default base path changed to `/opt/elastalert` in the Dockerfile and in Helm charts. Update your volume binds accordingly.
+	- Dockerfile now runs as a non-root user "elastalert". Ensure your volumes are accessible by this non-root user.
+	- System packages removed from the Dockerfile: All dev packages, cargo, libmagic. Image size reduced to 250Mb.
+	- `tmp` files and dev packages removed from the final container image.
 
 ## New features
-- None
+- Added support for alerting via Amazon Simple Email System (SES) - [#105](https://github.com/jertel/elastalert2/pull/105) - @nsano-rururu
 
 ## Other changes
-- Dockerfile now creates and runs as a non-root user "elastalert".
-- tmp files and dev packages removed from the final container image.
-- Documentation updates in support of the modified container base path.
+- Fix issue with testing alerts that contain Jinja templates - [#101](https://github.com/jertel/elastalert2/pull/101) - @jertel
 
 # 2.0.4
 
