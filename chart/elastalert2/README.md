@@ -1,7 +1,7 @@
 
-# Elastalert 2 Helm Chart for Kubernetes
+# ElastAlert 2 Helm Chart for Kubernetes
 
-An Elastalert 2 helm chart is available in the jertel Helm repository, and can be installed into an existing Kubernetes cluster by following the instructions below.
+An ElastAlert 2 helm chart is available in the jertel Helm repository, and can be installed into an existing Kubernetes cluster by following the instructions below.
 
 ## Installing the Chart
 
@@ -17,7 +17,7 @@ Next, install the chart with a release name, such as _elastalert2_:
 helm install elastalert2 jertel/elastalert2
 ```
 
-The command deploys Elastalert 2 on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+The command deploys ElastAlert 2 on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 See the comment in the default `values.yaml` for specifying a `writebackIndex` for ES 5.x.
 
@@ -34,7 +34,7 @@ PUT /elastalert/_mapping/elastalert
 
 ## Uninstalling the Chart
 
-To uninstall/delete the Elastalert 2 deployment:
+To uninstall/delete the ElastAlert 2 deployment:
 
 ```console
 helm delete elastalert2 --purge
@@ -68,8 +68,8 @@ The command removes all the Kubernetes components associated with the chart and 
 | `elasticsearch.certsVolumes`                 | certs volumes, required to mount ssl certificates when elasticsearch has tls enabled                                          | `NULL`                          |
 | `elasticsearch.certsVolumeMounts`            | mount certs volumes, required to mount ssl certificates when elasticsearch has tls enabled                                    | `NULL`                          |
 | `extraConfigOptions`                         | Additional options to propagate to all rules, cannot be `alert`, `type`, `name` or `index`                                    | `{}`                            |
-| `secretConfigName`                           | name of the secret which holds the Elastalert config. **Note:** this will completely overwrite the generated config           | `NULL`                          |
-| `secretRulesName`                            | name of the secret which holds the Elastalert rules. **Note:** this will overwrite the generated rules                        | `NULL`                          |
+| `secretConfigName`                           | name of the secret which holds the ElastAlert config. **Note:** this will completely overwrite the generated config           | `NULL`                          |
+| `secretRulesName`                            | name of the secret which holds the ElastAlert rules. **Note:** this will overwrite the generated rules                        | `NULL`                          |
 | `secretRulesList`                            | a list of rules to enable from the secret                                                                                     | []                              |
 | `optEnv`                                     | Additional pod environment variable definitions                                                                               | []                              |
 | `extraVolumes`                               | Additional volume definitions                                                                                                 | []                              |
@@ -79,7 +79,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | `serviceAccount.annotations`                 | ServiceAccount annotations                                                                                                    |                                 |
 | `podSecurityPolicy.create`                   | Create pod security policy resources                                                                                          | `false`                         |
 | `resources`                                  | Container resource requests and limits                                                                                        | {}                              |
-| `rules`                                      | Rule and alert configuration for Elastalert                                                                                   | {} example shown in values.yaml |
+| `rules`                                      | Rule and alert configuration for ElastAlert 2                                                                                 | {} example shown in values.yaml |
 | `runIntervalMins`                            | Default interval between alert checks, in minutes                                                                             | 1                               |
 | `realertIntervalMins`                        | Time between alarms for same rule, in minutes                                                                                 | `NULL`                          |
 | `alertRetryLimitMins`                        | Time to retry failed alert deliveries, in minutes                                                                             | 2880 (2 days)                   |

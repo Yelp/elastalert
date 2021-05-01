@@ -2366,7 +2366,7 @@ class SesAlerter(Alerter):
         elastalert_logger.info("Sent ses to %s" % (to_addr,))
 
     def create_default_title(self, matches):
-        subject = 'Elastalert2: %s' % (self.rule['name'])
+        subject = 'ElastAlert 2: %s' % (self.rule['name'])
 
         # If the rule has a query_key, add that value plus timestamp to subject
         if 'query_key' in self.rule:

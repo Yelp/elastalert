@@ -1,5 +1,5 @@
-ElastAlert - Easy & Flexible Alerting With Elasticsearch
-********************************************************
+ElastAlert 2 - Automated rule-based alerting for Elasticsearch
+**************************************************************
 
 ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
 

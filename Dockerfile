@@ -1,7 +1,7 @@
 FROM python:slim-buster as builder
 
-LABEL description="Elastalert 2 Official Image"
-LABEL maintainer="Jason Ertel (jertel at codesim.com)"
+LABEL description="ElastAlert 2 Official Image"
+LABEL maintainer="Jason Ertel"
 
 COPY . /tmp/elastalert
 
@@ -34,7 +34,7 @@ RUN apt-get update && apt-get -y upgrade && \
     chmod +x /opt/elastalert/run.sh && \
     groupadd -g ${GID} ${USERNAME} && \
     useradd -u ${UID} -g ${GID} -M -b /opt/elastalert -s /sbin/nologin \
-        -c "Elastalert2 User" ${USERNAME}
+        -c "ElastAlert 2 User" ${USERNAME}
 
 USER ${USERNAME}
 ENV TZ "UTC"

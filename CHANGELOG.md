@@ -50,4 +50,4 @@
 - Now publishing container images to both DockerHub and to GitHub Packages for redundancy.
 - Container images are now built and published via GitHub actions instead of relying on DockerHub's automated builds.
 - Update PIP library description and Helm chart description to be consistent.
-- Continue updates to change references from _Elastalert_ to _Elastalert 2_
+- Continue updates to change references from _ElastAlert_ to _ElastAlert 2_

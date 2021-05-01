@@ -2119,7 +2119,7 @@ def test_alerta_no_auth(ea):
         'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
         'alerta_event': "ProbeUP",
         'alerta_group': "Health",
-        'alerta_origin': "Elastalert",
+        'alerta_origin': "ElastAlert 2",
         'alerta_severity': "debug",
         'alerta_text': "Probe %(hostname)s is UP at %(logdate)s GMT",
         'alerta_value': "UP",
@@ -2143,7 +2143,7 @@ def test_alerta_no_auth(ea):
         alert.alert([match])
 
     expected_data = {
-        "origin": "Elastalert",
+        "origin": "ElastAlert 2",
         "resource": "elastalert",
         "severity": "debug",
         "service": ["elastalert"],
@@ -2217,7 +2217,7 @@ def test_alerta_new_style(ea):
         'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
         'alerta_event': "ProbeUP",
         'alerta_group': "Health",
-        'alerta_origin': "Elastalert",
+        'alerta_origin': "ElastAlert 2",
         'alerta_severity': "debug",
         'alerta_text': "Probe {hostname} is UP at {logdate} GMT",
         'alerta_value': "UP",
@@ -2241,7 +2241,7 @@ def test_alerta_new_style(ea):
         alert.alert([match])
 
     expected_data = {
-        "origin": "Elastalert",
+        "origin": "ElastAlert 2",
         "resource": "elastalert",
         "severity": "debug",
         "service": ["elastalert"],

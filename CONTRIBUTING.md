@@ -1,4 +1,4 @@
-# Contributing to Elastalert 2
+# Contributing to ElastAlert 2
 
 ## Introduction
 
@@ -15,7 +15,7 @@ Before submitting the PR review that you have included the following changes, wh
 
 This section is only applicable to "maintainers". PR "contributors" do not need to follow the below procedure.
 
-As Elastalert 2 is a community-maintained project, releases will typically contain unrelated contributions without a common theme. It's up to the maintainers to determine when the project is ready for a release, however, if you are looking to use a newly merged feature that hasn't yet been released, feel free to open a [discussion][5] and let us know.
+As ElastAlert 2 is a community-maintained project, releases will typically contain unrelated contributions without a common theme. It's up to the maintainers to determine when the project is ready for a release, however, if you are looking to use a newly merged feature that hasn't yet been released, feel free to open a [discussion][5] and let us know.
 
 Maintainers, when creating a new release, follow the procedure below:
 
