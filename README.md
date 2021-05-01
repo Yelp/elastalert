@@ -21,7 +21,7 @@ Please see our [contributing guidelines](CONTRIBUTING.md).
 
 If you're interested in a pre-built Docker image check out the [elastalert2][2] project on Docker Hub.
 
-Be aware that the `latest` tag of the image represents the latest commit into the master branch. If you prefer to upgrade more slowly you will need utilize a versioned tag, such as `2.0.4` instead.
+Be aware that the `latest` tag of the image represents the latest commit into the master branch. If you prefer to upgrade more slowly you will need utilize a versioned tag, such as `2.0.4` instead, or `2` if you are comfortable with always using the latest released version of Elastalert2.
 
 A properly configured config.yaml file must be mounted into the container during startup of the container. Use the [example file][1] provided as a template, and once saved locally to a file such as `/tmp/elastalert.yaml`, run the container as follows:
 
