@@ -15,7 +15,7 @@ The full list of platforms that Elastalert can fire alerts into can be found [in
 
 ## Contributing
 
-Please see our [contributing guidelines](CONTRIBUTING.md).
+Please see our [contributing guidelines][6].
 
 ## Docker
 
@@ -37,7 +37,7 @@ docker build . -t elastalert
 
 ## Kubernetes
 
-See the Helm chart [README.md](chart/elastalert2/README.md) for information on installing this application into an existing Kubernetes cluster.
+See the Helm chart [README.md][7] for information on installing this application into an existing Kubernetes cluster.
 
 ## License
 
@@ -48,4 +48,6 @@ Elastalert 2 is licensed under the [Apache License, Version 2.0][5].
 [2]: https://hub.docker.com/r/jertel/elastalert2
 [3]: https://elastalert2.readthedocs.io/
 [4]: https://elastalert2.readthedocs.io/en/latest/ruletypes.html#alerts
-[5]: http://www.apache.org/licenses/LICENSE-2
+[5]: https://www.apache.org/licenses/LICENSE-2.0
+[6]: https://github.com/jertel/elastalert2/blob/master/CONTRIBUTING.md
+[7]: https://github.com/jertel/elastalert2/chart/elastalert2/README.md
