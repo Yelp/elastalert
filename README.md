@@ -29,10 +29,10 @@ A properly configured config.yaml file must be mounted into the container during
 docker run -d -v /tmp/elastalert.yaml:/opt/elastalert/config.yaml jertel/elastalert2
 ```
 
-To build the image locally, install Docker and then run the following command:
+To build the image locally run the following command:
 
 ```bash
-docker build . -t elastalert
+docker build . -t elastalert2
 ```
 
 ## Kubernetes

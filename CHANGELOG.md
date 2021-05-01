@@ -24,6 +24,7 @@
 
 ## Other changes
 - Fix issue with testing alerts that contain Jinja templates - [#101](https://github.com/jertel/elastalert2/pull/101) - @jertel
+- Updated all references of Elastalert to use the mixed case ElastAlert, as that is the most prevalent formatting found in the documentation.
 
 # 2.0.4
 
