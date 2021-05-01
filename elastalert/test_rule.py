@@ -417,7 +417,18 @@ class MockElastAlerter(object):
             with open(args.json, 'r') as data_file:
                 self.data = json.loads(data_file.read())
         else:
-            hits = self.test_file(copy.deepcopy(rule_yaml), args)
+            # Temporarily remove the jinja_template, if it exists, to avoid deepcopy issues
+            template = rule_yaml.get("jinja_template")
+            rule_yaml["jinja_template"] = None
+
+            # Copy the rule object without the template in it
+            copied_rule = copy.deepcopy(rule_yaml)
+
+            # Set the template back onto the original rule object and the newly copied object
+            rule_yaml["jinja_template"] = template
+            copied_rule["jinja_template"] = template
+
+            hits = self.test_file(copied_rule, args)
             if hits and args.formatted_output:
                 self.formatted_output['results'] = json.loads(json.dumps(hits))
             if hits and args.save:
