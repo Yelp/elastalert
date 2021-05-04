@@ -3,6 +3,8 @@ import base64
 import datetime
 import json
 import subprocess
+import re
+import uuid
 
 import mock
 import pytest
@@ -11,17 +13,28 @@ from jira.exceptions import JIRAError
 from elastalert.alerts import AlertaAlerter
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
+from elastalert.alerts import ChatworkAlerter
 from elastalert.alerts import CommandAlerter
 from elastalert.alerts import DatadogAlerter
+from elastalert.alerts import DingTalkAlerter
+from elastalert.alerts import DiscordAlerter
 from elastalert.alerts import EmailAlerter
+from elastalert.alerts import GitterAlerter
+from elastalert.alerts import GoogleChatAlerter
 from elastalert.alerts import HTTPPostAlerter
 from elastalert.alerts import JiraAlerter
 from elastalert.alerts import JiraFormattedMatchString
+from elastalert.alerts import LineNotifyAlerter
+from elastalert.alerts import MattermostAlerter
 from elastalert.alerts import MsTeamsAlerter
 from elastalert.alerts import PagerDutyAlerter
+from elastalert.alerts import PagerTreeAlerter
+from elastalert.alerts import ServiceNowAlerter
 from elastalert.alerts import SlackAlerter
+from elastalert.alerts import TelegramAlerter
 from elastalert.loaders import FileRulesLoader
 from elastalert.opsgenie import OpsGenieAlerter
+from elastalert.alerts import VictorOpsAlerter
 from elastalert.util import ts_add
 from elastalert.util import ts_now
 
@@ -2331,5 +2344,1012 @@ def test_datadog_alerter():
             'DD-APPLICATION-KEY': rule['datadog_app_key']
         }
     )
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_pagertree():
+    rule = {
+        'name': 'Test PagerTree Rule',
+        'type': 'any',
+        'pagertree_integration_url': 'https://api.pagertree.com/integration/xxxxx',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = PagerTreeAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'event_type': 'create',
+        'Id': str(uuid.uuid4()),
+        'Title': 'Test PagerTree Rule',
+        'Description': 'Test PagerTree Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['pagertree_integration_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    uuid4hex = re.compile(r'^[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}\Z', re.I)
+    match = uuid4hex.match(actual_data['Id'])
+    assert bool(match) is True
+    assert expected_data["event_type"] == actual_data['event_type']
+    assert expected_data["Title"] == actual_data['Title']
+    assert expected_data["Description"] == actual_data['Description']
+
+
+def test_line_notify():
+    rule = {
+        'name': 'Test LineNotify Rule',
+        'type': 'any',
+        'linenotify_access_token': 'xxxxx',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = LineNotifyAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'message': 'Test LineNotify Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://notify-api.line.me/api/notify',
+        data=mock.ANY,
+        headers={
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Bearer {}'.format('xxxxx')
+        }
+    )
+
+    actual_data = mock_post_request.call_args_list[0][1]['data']
+    assert expected_data == actual_data
+
+
+def test_gitter_msg_level_default():
+    rule = {
+        'name': 'Test Gitter Rule',
+        'type': 'any',
+        'gitter_webhook_url': 'https://webhooks.gitter.im/e/xxxxx',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = GitterAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'message': 'Test Gitter Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+        'level': 'error'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['gitter_webhook_url'],
+        mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][0][1])
+    assert expected_data == actual_data
+    assert 'error' in actual_data['level']
+
+
+def test_gitter_msg_level_info():
+    rule = {
+        'name': 'Test Gitter Rule',
+        'type': 'any',
+        'gitter_webhook_url': 'https://webhooks.gitter.im/e/xxxxx',
+        'gitter_msg_level': 'info',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = GitterAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'message': 'Test Gitter Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+        'level': 'info'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['gitter_webhook_url'],
+        mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][0][1])
+    assert expected_data == actual_data
+    assert 'info' in actual_data['level']
+
+
+def test_gitter_msg_level_error():
+    rule = {
+        'name': 'Test Gitter Rule',
+        'type': 'any',
+        'gitter_webhook_url': 'https://webhooks.gitter.im/e/xxxxx',
+        'gitter_msg_level': 'error',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = GitterAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'message': 'Test Gitter Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+        'level': 'error'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['gitter_webhook_url'],
+        mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][0][1])
+    assert expected_data == actual_data
+    assert 'error' in actual_data['level']
+
+
+def test_chatwork():
+    rule = {
+        'name': 'Test Chatwork Rule',
+        'type': 'any',
+        'chatwork_apikey': 'xxxx1',
+        'chatwork_room_id': 'xxxx2',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = ChatworkAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'body': 'Test Chatwork Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://api.chatwork.com/v2/rooms/xxxx2/messages',
+        params=mock.ANY,
+        headers={'X-ChatWorkToken': 'xxxx1'},
+        proxies=None,
+        auth=None
+    )
+
+    actual_data = mock_post_request.call_args_list[0][1]['params']
+    assert expected_data == actual_data
+
+
+def test_telegram():
+    rule = {
+        'name': 'Test Telegram Rule',
+        'type': 'any',
+        'telegram_bot_token': 'xxxxx1',
+        'telegram_room_id': 'xxxxx2',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = TelegramAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'chat_id': rule['telegram_room_id'],
+        'text': '⚠ *Test Telegram Rule* ⚠ ```\nTest Telegram Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n ```',
+        'parse_mode': 'markdown',
+        'disable_web_page_preview': True
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://api.telegram.org/botxxxxx1/sendMessage',
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        auth=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_service_now():
+    rule = {
+        'name': 'Test ServiceNow Rule',
+        'type': 'any',
+        'username': 'ServiceNow username',
+        'password': 'ServiceNow password',
+        'servicenow_rest_url': 'https://xxxxxxxxxx',
+        'short_description': 'ServiceNow short_description',
+        'comments': 'ServiceNow comments',
+        'assignment_group': 'ServiceNow assignment_group',
+        'category': 'ServiceNow category',
+        'subcategory': 'ServiceNow subcategory',
+        'cmdb_ci': 'ServiceNow cmdb_ci',
+        'caller_id': 'ServiceNow caller_id',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = ServiceNowAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'description': 'Test ServiceNow Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+        'short_description': rule['short_description'],
+        'comments': rule['comments'],
+        'assignment_group': rule['assignment_group'],
+        'category': rule['category'],
+        'subcategory': rule['subcategory'],
+        'cmdb_ci': rule['cmdb_ci'],
+        'caller_id': rule['caller_id']
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['servicenow_rest_url'],
+        auth=(rule['username'], rule['password']),
+        headers={
+            'Content-Type': 'application/json',
+            'Accept': 'application/json;charset=utf-8'
+        },
+        data=mock.ANY,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_victor_ops():
+    rule = {
+        'name': 'Test VictorOps Rule',
+        'type': 'any',
+        'victorops_api_key': 'xxxx1',
+        'victorops_routing_key': 'xxxx2',
+        'victorops_message_type': 'INFO',
+        'victorops_entity_display_name': 'no entity display name',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = VictorOpsAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'message_type': rule['victorops_message_type'],
+        'entity_display_name': rule['victorops_entity_display_name'],
+        'monitoring_tool': 'ElastAlert',
+        'state_message': 'Test VictorOps Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://alert.victorops.com/integrations/generic/20131114/alert/xxxx1/xxxx2',
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_google_chat_basic():
+    rule = {
+        'name': 'Test GoogleChat Rule',
+        'type': 'any',
+        'googlechat_webhook_url': 'http://xxxxxxx',
+        'googlechat_format': 'basic',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = GoogleChatAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'text': 'Test GoogleChat Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['googlechat_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'}
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_google_chat_card():
+    rule = {
+        'name': 'Test GoogleChat Rule',
+        'type': 'any',
+        'googlechat_webhook_url': 'http://xxxxxxx',
+        'googlechat_format': 'card',
+        'googlechat_header_title': 'xxxx1',
+        'googlechat_header_subtitle': 'xxxx2',
+        'googlechat_header_image': 'http://xxxx/image.png',
+        'googlechat_footer_kibanalink': 'http://xxxxx/kibana',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = GoogleChatAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'cards': [{
+            'header': {
+                'title': rule['googlechat_header_title'],
+                'subtitle': rule['googlechat_header_subtitle'],
+                'imageUrl': rule['googlechat_header_image']
+            },
+            'sections': [
+                {
+                    'widgets': [{
+                        "textParagraph": {
+                            'text': 'Test GoogleChat Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
+                        }
+                    }]
+                },
+                {
+                    'widgets': [{
+                        'buttons': [{
+                            'textButton': {
+                                'text': 'VISIT KIBANA',
+                                'onClick': {
+                                    'openLink': {
+                                        'url': rule['googlechat_footer_kibanalink']
+                                    }
+                                }
+                            }
+                        }]
+                    }]
+                }
+            ]}
+        ]
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['googlechat_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'}
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_discord():
+    rule = {
+        'name': 'Test Discord Rule',
+        'type': 'any',
+        'discord_webhook_url': 'http://xxxxxxx',
+        'discord_emoji_title': ':warning:',
+        'discord_embed_color': 0xffffff,
+        'discord_embed_footer': 'footer',
+        'discord_embed_icon_url': 'http://xxxx/image.png',
+        'alert': [],
+        'alert_subject': 'Test Discord'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = DiscordAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'content': ':warning: Test Discord :warning:',
+        'embeds':
+            [{
+                'description': 'Test Discord Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n```',
+                'color': 0xffffff,
+                'footer': {
+                    'text': 'footer',
+                    'icon_url': 'http://xxxx/image.png'
+                }
+            }]
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['discord_webhook_url'],
+        data=mock.ANY,
+        headers={'Content-Type': 'application/json'},
+        proxies=None,
+        auth=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_discord_not_footer():
+    rule = {
+        'name': 'Test Discord Rule',
+        'type': 'any',
+        'discord_webhook_url': 'http://xxxxxxx',
+        'discord_emoji_title': ':warning:',
+        'discord_embed_color': 0xffffff,
+        'alert': [],
+        'alert_subject': 'Test Discord'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = DiscordAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'content': ':warning: Test Discord :warning:',
+        'embeds':
+            [{
+                'description': 'Test Discord Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n```',
+                'color': 0xffffff
+            }]
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['discord_webhook_url'],
+        data=mock.ANY,
+        headers={'Content-Type': 'application/json'},
+        proxies=None,
+        auth=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_dingtalk_text():
+    rule = {
+        'name': 'Test DingTalk Rule',
+        'type': 'any',
+        'dingtalk_access_token': 'xxxxxxx',
+        'dingtalk_msgtype': 'text',
+        'alert': [],
+        'alert_subject': 'Test DingTalk'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = DingTalkAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'msgtype': 'text',
+        'text': {'content': 'Test DingTalk Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'}
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://oapi.dingtalk.com/robot/send?access_token=xxxxxxx',
+        data=mock.ANY,
+        headers={
+            'Content-Type': 'application/json',
+            'Accept': 'application/json;charset=utf-8'
+        },
+        proxies=None,
+        auth=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_dingtalk_markdown():
+    rule = {
+        'name': 'Test DingTalk Rule',
+        'type': 'any',
+        'dingtalk_access_token': 'xxxxxxx',
+        'dingtalk_msgtype': 'markdown',
+        'alert': [],
+        'alert_subject': 'Test DingTalk'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = DingTalkAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'msgtype': 'markdown',
+        'markdown': {
+            'title': 'Test DingTalk',
+            'text': 'Test DingTalk Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
+        }
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://oapi.dingtalk.com/robot/send?access_token=xxxxxxx',
+        data=mock.ANY,
+        headers={
+            'Content-Type': 'application/json',
+            'Accept': 'application/json;charset=utf-8'
+        },
+        proxies=None,
+        auth=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_dingtalk_single_action_card():
+    rule = {
+        'name': 'Test DingTalk Rule',
+        'type': 'any',
+        'dingtalk_access_token': 'xxxxxxx',
+        'dingtalk_msgtype': 'single_action_card',
+        'dingtalk_single_title': 'elastalert',
+        'dingtalk_single_url': 'http://xxxxx2',
+        'alert': [],
+        'alert_subject': 'Test DingTalk'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = DingTalkAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'msgtype': 'actionCard',
+        'actionCard': {
+            'title': 'Test DingTalk',
+            'text': 'Test DingTalk Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+            'singleTitle': rule['dingtalk_single_title'],
+            'singleURL': rule['dingtalk_single_url']
+        }
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://oapi.dingtalk.com/robot/send?access_token=xxxxxxx',
+        data=mock.ANY,
+        headers={
+            'Content-Type': 'application/json',
+            'Accept': 'application/json;charset=utf-8'
+        },
+        proxies=None,
+        auth=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_dingtalk_action_card():
+    rule = {
+        'name': 'Test DingTalk Rule',
+        'type': 'any',
+        'dingtalk_access_token': 'xxxxxxx',
+        'dingtalk_msgtype': 'action_card',
+        'dingtalk_single_title': 'elastalert',
+        'dingtalk_single_url': 'http://xxxxx2',
+        'dingtalk_btn_orientation': '1',
+        'dingtalk_btns': [
+            {
+                'title': 'test1',
+                'actionURL': 'https://xxxxx0/'
+            },
+            {
+                'title': 'test2',
+                'actionURL': 'https://xxxxx1/'
+            }
+        ],
+        'alert': [],
+        'alert_subject': 'Test DingTalk'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = DingTalkAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'msgtype': 'actionCard',
+        'actionCard': {
+            'title': 'Test DingTalk',
+            'text': 'Test DingTalk Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+            'btnOrientation': rule['dingtalk_btn_orientation'],
+            'btns': rule['dingtalk_btns']
+        }
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://oapi.dingtalk.com/robot/send?access_token=xxxxxxx',
+        data=mock.ANY,
+        headers={
+            'Content-Type': 'application/json',
+            'Accept': 'application/json;charset=utf-8'
+        },
+        proxies=None,
+        auth=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_Mattermost_alert_text_only():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n'
+            }
+        ], 'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_Mattermost_not_alert_text_only():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'exclude_fields',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': []
+            }
+        ],
+        'text': 'Test Mattermost Rule\n\n',
+        'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    print(actual_data)
+    assert expected_data == actual_data
+
+
+def test_Mattermost_msg_fields():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_msg_fields': [
+            {
+                'title': 'Stack',
+                'value': "{0} {1}",
+                'short': False,
+                'args': ["type", "msg.status_code"]
+            },
+            {
+                'title': 'Name',
+                'value': 'static field',
+                'short': False
+            }
+        ],
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [
+                    {'title': 'Stack', 'value': '<MISSING VALUE> <MISSING VALUE>', 'short': False},
+                    {'title': 'Name', 'value': 'static field', 'short': False}
+                ],
+                'text': 'Test Mattermost Rule\n\n'
+            }
+        ], 'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_Mattermost_icon_url_override():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_icon_url_override': 'http://xxxx/icon.png',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n'
+            }
+        ],
+        'username': 'elastalert',
+        'icon_url': 'http://xxxx/icon.png'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_Mattermost_channel_override():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_channel_override': 'test channel',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n'
+            }
+        ],
+        'username': 'elastalert',
+        'channel': 'test channel'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_Mattermost_ignore_ssl_errors():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_ignore_ssl_errors': True,
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n'
+            }
+        ],
+        'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=False,
+        proxies=None
+    )
+
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
