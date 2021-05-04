@@ -50,7 +50,9 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_send_get_body_as`` (string, default "GET")              |           |
 +--------------------------------------------------------------+           |
-| ``aggregation`` (time, no default)                           |           |
+| ``aggregation`` (time, no default)                           |           | 
++--------------------------------------------------------------+           |
+| ``limit_execution`` (string, no default)                     |           |
 +--------------------------------------------------------------+           |
 | ``description`` (string, default empty string)               |           |
 +--------------------------------------------------------------+           |
@@ -399,6 +401,15 @@ Then, for the same sample data shown above listing alice and bob's events, Elast
    By default, aggregation time is relative to the current system time, not the time of the match. This means that running elastalert over
    past events will result in different alerts than if elastalert had been running while those events occured. This behavior can be changed
    by setting ``aggregate_by_match_time``.
+
+limit_execution
+^^^^^^^^^^^^^^^
+
+``limit_execution``: This option allows you to activate the rule during a limited period of time. This uses the cron format.
+
+For example, if you wish to activate the rule from monday to friday, between 10am to 6pm::
+
+    limit_execution: "* 10-18 * * 1-5"
 
 aggregate_by_match_time
 ^^^^^^^^^^^^^^^^^^^^^^^
