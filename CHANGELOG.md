@@ -1,4 +1,4 @@
-# Upcoming release
+# Template
 
 ## Breaking changes
 - None
@@ -8,6 +8,23 @@
 
 ## Other changes
 - None
+
+# Upcoming Release
+
+## Breaking changes
+- Dockerfile refactor for performance and size improvements - [#102](https://github.com/jertel/elastalert2/pull/102) - @jgregmac
+	- Dockerfile base image changed from `python/alpine` to `python/slim-buster` to take advantage of pre-build python wheels, accelerate build times, and reduce image size. If you have customized an image, based on jertel/elastalert2, you may need to make adjustments.
+	- Default base path changed to `/opt/elastalert` in the Dockerfile and in Helm charts. Update your volume binds accordingly.
+	- Dockerfile now runs as a non-root user "elastalert". Ensure your volumes are accessible by this non-root user.
+	- System packages removed from the Dockerfile: All dev packages, cargo, libmagic. Image size reduced to 250Mb.
+	- `tmp` files and dev packages removed from the final container image.
+
+## New features
+- Added support for alerting via Amazon Simple Email System (SES) - [#105](https://github.com/jertel/elastalert2/pull/105) - @nsano-rururu
+
+## Other changes
+- Fix issue with testing alerts that contain Jinja templates - [#101](https://github.com/jertel/elastalert2/pull/101) - @jertel
+- Updated all references of Elastalert to use the mixed case ElastAlert, as that is the most prevalent formatting found in the documentation.
 
 # 2.0.4
 
@@ -34,4 +51,4 @@
 - Now publishing container images to both DockerHub and to GitHub Packages for redundancy.
 - Container images are now built and published via GitHub actions instead of relying on DockerHub's automated builds.
 - Update PIP library description and Helm chart description to be consistent.
-- Continue updates to change references from _Elastalert_ to _Elastalert 2_
+- Continue updates to change references from _ElastAlert_ to _ElastAlert 2_

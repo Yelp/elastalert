@@ -50,7 +50,9 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_send_get_body_as`` (string, default "GET")              |           |
 +--------------------------------------------------------------+           |
-| ``aggregation`` (time, no default)                           |           |
+| ``aggregation`` (time, no default)                           |           | 
++--------------------------------------------------------------+           |
+| ``limit_execution`` (string, no default)                     |           |
 +--------------------------------------------------------------+           |
 | ``description`` (string, default empty string)               |           |
 +--------------------------------------------------------------+           |
@@ -376,7 +378,7 @@ Then, assuming an aggregation window of 10 minutes, if you receive the following
 
 This should result in 2 alerts: One containing alice's two events, sent at ``2016-09-20T00:10:00`` and one containing bob's one event sent at ``2016-09-20T00:16:00``
 
-For aggregations, there can sometimes be a large number of documents present in the viewing medium (email, jira ticket, etc..). If you set the ``summary_table_fields`` field, Elastalert will provide a summary of the specified fields from all the results.
+For aggregations, there can sometimes be a large number of documents present in the viewing medium (email, jira ticket, etc..). If you set the ``summary_table_fields`` field, ElastAlert 2 will provide a summary of the specified fields from all the results.
 
 For example, if you wish to summarize the usernames and event_types that appear in the documents so that you can see the most relevant fields at a quick glance, you can set::
 
@@ -384,7 +386,7 @@ For example, if you wish to summarize the usernames and event_types that appear 
         - my_data.username
         - my_data.event_type
 
-Then, for the same sample data shown above listing alice and bob's events, Elastalert will provide the following summary table in the alert medium::
+Then, for the same sample data shown above listing alice and bob's events, ElastAlert 2 will provide the following summary table in the alert medium::
 
     +------------------+--------------------+
     | my_data.username | my_data.event_type |
@@ -399,6 +401,15 @@ Then, for the same sample data shown above listing alice and bob's events, Elast
    By default, aggregation time is relative to the current system time, not the time of the match. This means that running elastalert over
    past events will result in different alerts than if elastalert had been running while those events occured. This behavior can be changed
    by setting ``aggregate_by_match_time``.
+
+limit_execution
+^^^^^^^^^^^^^^^
+
+``limit_execution``: This option allows you to activate the rule during a limited period of time. This uses the cron format.
+
+For example, if you wish to activate the rule from monday to friday, between 10am to 6pm::
+
+    limit_execution: "* 10-18 * * 1-5"
 
 aggregate_by_match_time
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -1735,6 +1746,65 @@ Example usage::
       Environment: '$VAR'          # environment variable
       Message: { field: message }  # field in the first match
 
+AWS SES
+~~~~~~~
+
+The AWS SES alerter is similar to Email alerter but uses AWS SES to send emails. The AWS SES alerter can use AWS credentials
+from the rule yaml, standard AWS config files or environment variables.
+
+AWS SES requires one option:
+
+``ses_email``: An address or list of addresses to sent the alert to.
+
+``ses_from_addr``: This sets the From header in the email. 
+
+Optional:
+
+``ses_aws_access_key``: An access key to connect to AWS SES with.
+
+``ses_aws_secret_key``: The secret key associated with the access key.
+
+``ses_aws_region``: The AWS region in which the AWS SES resource is located. Default is us-east-1
+
+``ses_aws_profile``: The AWS profile to use. If none specified, the default will be used.
+
+``ses_email_reply_to``: This sets the Reply-To header in the email. 
+
+``ses_cc``: This adds the CC emails to the list of recipients. By default, this is left empty.
+
+``ses_bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
+
+Example When not using aws_profile usage::
+
+    alert:
+      - "ses"
+    ses_aws_access_key_id: "XXXXXXXXXXXXXXXXXX'"
+    ses_aws_secret_access_key: "YYYYYYYYYYYYYYYYYYYY"
+    ses_aws_region: "us-east-1"
+    ses_from_addr: "xxxx1@xxx.com"
+    ses_email: "xxxx1@xxx.com"
+
+Example When to use aws_profile usage::
+
+    # Create ~/.aws/credentials
+
+    [default]
+    aws_access_key_id = xxxxxxxxxxxxxxxxxxxx
+    aws_secret_access_key = yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+
+    # Create ~/.aws/config
+
+    [default]
+    region = us-east-1
+
+    # alert rule setting
+
+    alert:
+      - "ses"
+    ses_aws_profile: "default"
+    ses_from_addr: "xxxx1@xxx.com"
+    ses_email: "xxxx1@xxx.com"
+
 AWS SNS
 ~~~~~~~
 
@@ -1947,7 +2017,7 @@ Optional:
 ``pagerduty_incident_key``: If not set PagerDuty will trigger a new incident for each alert sent. If set to a unique string per rule PagerDuty will identify the incident that this event should be applied.
 If there's no open (i.e. unresolved) incident with this key, a new one will be created. If there's already an open incident with a matching key, this event will be appended to that incident's log.
 
-``pagerduty_incident_key_args``: If set, and ``pagerduty_incident_key`` is a formattable string, Elastalert will format the incident key based on the provided array of fields from the rule or match.
+``pagerduty_incident_key_args``: If set, and ``pagerduty_incident_key`` is a formattable string, ElastAlert 2 will format the incident key based on the provided array of fields from the rule or match.
 
 ``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerDuty. Set this option using ``hostname:port`` if you need to use a proxy.
 
@@ -1961,21 +2031,21 @@ See https://developer.pagerduty.com/docs/events-api-v2/trigger-events/
 
 ``pagerduty_v2_payload_class``: Sets the class of the payload. (the event type in PagerDuty)
 
-``pagerduty_v2_payload_class_args``: If set, and ``pagerduty_v2_payload_class`` is a formattable string, Elastalert will format the class based on the provided array of fields from the rule or match.
+``pagerduty_v2_payload_class_args``: If set, and ``pagerduty_v2_payload_class`` is a formattable string, ElastAlert 2 will format the class based on the provided array of fields from the rule or match.
 
 ``pagerduty_v2_payload_component``: Sets the component of the payload. (what program/interface/etc the event came from)
 
-``pagerduty_v2_payload_component_args``: If set, and ``pagerduty_v2_payload_component`` is a formattable string, Elastalert will format the component based on the provided array of fields from the rule or match.
+``pagerduty_v2_payload_component_args``: If set, and ``pagerduty_v2_payload_component`` is a formattable string, ElastAlert 2 will format the component based on the provided array of fields from the rule or match.
 
 ``pagerduty_v2_payload_group``: Sets the logical grouping (e.g. app-stack)
 
-``pagerduty_v2_payload_group_args``: If set, and ``pagerduty_v2_payload_group`` is a formattable string, Elastalert will format the group based on the provided array of fields from the rule or match.
+``pagerduty_v2_payload_group_args``: If set, and ``pagerduty_v2_payload_group`` is a formattable string, ElastAlert 2 will format the group based on the provided array of fields from the rule or match.
 
 ``pagerduty_v2_payload_severity``: Sets the severity of the page. (defaults to `critical`, valid options: `critical`, `error`, `warning`, `info`)
 
 ``pagerduty_v2_payload_source``: Sets the source of the event, preferably the hostname or fqdn.
 
-``pagerduty_v2_payload_source_args``: If set, and ``pagerduty_v2_payload_source`` is a formattable string, Elastalert will format the source based on the provided array of fields from the rule or match.
+``pagerduty_v2_payload_source_args``: If set, and ``pagerduty_v2_payload_source`` is a formattable string, ElastAlert 2 will format the source based on the provided array of fields from the rule or match.
 
 ``pagerduty_v2_payload_custom_details``: List of keys:values to use as the content of the custom_details payload. Example - ip:clientip will map the value from the clientip index of Elasticsearch to JSON key named ip.
 
@@ -2361,8 +2431,8 @@ Required:
 
 ``zbx_sender_host``: The address where zabbix server is running.
 ``zbx_sender_port``: The port where zabbix server is listenning.
-``zbx_host``: This field setup the host in zabbix that receives the value sent by Elastalert.
-``zbx_key``: This field setup the key in the host that receives the value sent by Elastalert.
+``zbx_host``: This field setup the host in zabbix that receives the value sent by ElastAlert 2.
+``zbx_key``: This field setup the key in the host that receives the value sent by ElastAlert 2.
 
 
 Discord

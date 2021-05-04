@@ -42,9 +42,10 @@ spec:
 {{- end }}
         volumeMounts:
           - name: config
-            mountPath: '/opt/config'
+            mountPath: '/opt/elastalert/config.yaml'
+            subPath: config.yaml
           - name: rules
-            mountPath: '/opt/rules'
+            mountPath: '/opt/elastalert/rules'
 {{- if .Values.elasticsearch.certsVolumeMounts }}
 {{ toYaml .Values.elasticsearch.certsVolumeMounts | indent 10 }}
 {{- end }}
@@ -115,7 +116,7 @@ spec:
 {{- end }}
             items:
             - key: elastalert_config
-              path: elastalert_config.yaml
+              path: config.yaml
 {{- if .Values.elasticsearch.certsVolumes }}
 {{ toYaml .Values.elasticsearch.certsVolumes | indent 8 }}
 {{- end }}

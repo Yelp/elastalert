@@ -51,3 +51,13 @@ jobs:
           # Push to Docker Hub
           docker tag $IMAGE_NAME $DOCKER_REPO:$VERSION
           docker push $DOCKER_REPO:$VERSION
+
+          if [[ "$VERSION" == "2."* ]]; then
+            # Push to GitHub Package
+            docker tag $IMAGE_NAME $IMAGE_ID:2
+            docker push $IMAGE_ID:2
+
+            # Push to Docker Hub
+            docker tag $IMAGE_NAME $DOCKER_REPO:2
+            docker push $DOCKER_REPO:2
+          fi

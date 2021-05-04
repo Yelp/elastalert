@@ -82,7 +82,7 @@ extraConfigOptions: {}
   # kibana_url: https://kibana.yourdomain.com
   # slack_webhook_url: dummy
 
-# To load Elastalert 2 config via secret, uncomment the line below
+# To load ElastAlert 2 config via secret, uncomment the line below
 # secretConfigName: elastalert-config-secret
 
 # Example of a secret config
@@ -94,7 +94,7 @@ extraConfigOptions: {}
 #type: Opaque
 #stringData:
 #   elastalert_config: |-
-#     rules_folder: /opt/rules
+#     rules_folder: /opt/elastalert/rules
 #     scan_subdirectories: false
 #     run_every:
 #       minutes: 1
@@ -111,7 +111,7 @@ extraConfigOptions: {}
 #     slack_channel_override: '#alerts'
 
 
-# To load Elastalert's rules via secret, uncomment the line below
+# To load ElastAlert's rules via secret, uncomment the line below
 #secretRulesName: elastalert-rules-secret
 
 # Additionally, you must specificy which rules to load from the secret
@@ -181,7 +181,7 @@ rules: {}
   #   - "pagerduty"
   #   pagerduty:
   #   pagerduty_service_key: dummy
-  #   pagerduty_client_name: Elastalert Deadman Switch
+  #   pagerduty_client_name: ElastAlert Deadman Switch
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -223,6 +223,6 @@ extraVolumes: []
 
 extraVolumeMounts: []
   # - name: smtp-auth
-  #   mountPath: /opt/config-smtp/smtp_auth.yaml
+  #   mountPath: /opt/elastalert/config-smtp/smtp_auth.yaml
   #   subPath: smtp_auth.yaml
   #   readOnly: true
