@@ -34,8 +34,8 @@ source_suffix = ['.rst', '.md']
 master_doc = 'index'
 
 # General information about the project.
-project = u'ElastAlert'
-copyright = u'2014, Yelp'
+project = u'ElastAlert 2'
+copyright = u'2014-2021, Yelp, et al'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -171,7 +171,7 @@ htmlhelp_basename = 'elastalertdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ('index', 'elastalert.tex', u'ElastAlert Documentation',
+    ('index', 'elastalert.tex', u'ElastAlert 2 Documentation',
      u'Quentin Long', 'manual'),
 ]
 
