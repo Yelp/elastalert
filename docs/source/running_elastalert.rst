@@ -223,3 +223,11 @@ Note that if you stop ElastAlert and then run it again later, it will look up ``
 at the end time of the last query. This is to prevent duplication or skipping of alerts if ElastAlert is restarted.
 
 By using the ``--debug`` flag instead of ``--verbose``, the body of email will instead be logged and the email will not be sent. In addition, the queries will not be saved to ``elastalert_status``.
+
+Disabling a Rule
+----------------
+
+To stop a rule from executing, add or adjust the `is_enabled` option inside the rule's YAML file to `false`. When ElastAlert reloads the rules it will detect that the rule has been disabled and prevent it from executing. The rule reload interval defaults to 5 minutes but can be adjusted via the `run_every` configuration option.
+
+Optionally, once a rule has been disabled it is safe to remove the rule file, if there is no intention of re-activating the rule. However, be aware that removing a rule file without first disabling it will _not_ disable the rule!
+
