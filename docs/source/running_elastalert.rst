@@ -8,7 +8,7 @@ Requirements
 
 - Elasticsearch
 - ISO8601 or Unix timestamped data
-- Python 3.6
+- Python 3.9
 - pip, see requirements.txt
 - Packages on Ubuntu 18.x: build-essential python3-pip python3.6 python3.6-dev libffi-dev libssl-dev
 - Packages on Ubuntu 20.x: build-essential python3-pip python3.6 python3.6-dev libffi-dev libssl-dev 
@@ -18,13 +18,13 @@ Requirements
 Downloading and Configuring
 ---------------------------
 
-You can either install the latest released version of ElastAlert using pip::
+You can either install the latest released version of ElastAlert 2 using pip::
 
-    $ pip install elastalert
+    $ pip install elastalert2
 
-or you can clone the ElastAlert repository for the most recent changes::
+or you can clone the ElastAlert2 repository for the most recent changes::
 
-    $ git clone https://github.com/Yelp/elastalert.git
+    $ git clone https://github.com/jertel/elastalert2.git
 
 Install the module::
 
