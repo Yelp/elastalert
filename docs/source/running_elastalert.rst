@@ -8,7 +8,7 @@ Requirements
 
 - Elasticsearch
 - ISO8601 or Unix timestamped data
-- Python 3.6
+- Python 3.9
 - pip, see requirements.txt
 - Packages on Ubuntu 18.x: build-essential python3-pip python3.6 python3.6-dev libffi-dev libssl-dev
 - Packages on Ubuntu 20.x: build-essential python3-pip python3.6 python3.6-dev libffi-dev libssl-dev 
@@ -18,13 +18,13 @@ Requirements
 Downloading and Configuring
 ---------------------------
 
-You can either install the latest released version of ElastAlert using pip::
+You can either install the latest released version of ElastAlert 2 using pip::
 
-    $ pip install elastalert
+    $ pip install elastalert2
 
-or you can clone the ElastAlert repository for the most recent changes::
+or you can clone the ElastAlert2 repository for the most recent changes::
 
-    $ git clone https://github.com/Yelp/elastalert.git
+    $ git clone https://github.com/jertel/elastalert2.git
 
 Install the module::
 
@@ -223,3 +223,11 @@ Note that if you stop ElastAlert and then run it again later, it will look up ``
 at the end time of the last query. This is to prevent duplication or skipping of alerts if ElastAlert is restarted.
 
 By using the ``--debug`` flag instead of ``--verbose``, the body of email will instead be logged and the email will not be sent. In addition, the queries will not be saved to ``elastalert_status``.
+
+Disabling a Rule
+----------------
+
+To stop a rule from executing, add or adjust the `is_enabled` option inside the rule's YAML file to `false`. When ElastAlert reloads the rules it will detect that the rule has been disabled and prevent it from executing. The rule reload interval defaults to 5 minutes but can be adjusted via the `run_every` configuration option.
+
+Optionally, once a rule has been disabled it is safe to remove the rule file, if there is no intention of re-activating the rule. However, be aware that removing a rule file without first disabling it will _not_ disable the rule!
+

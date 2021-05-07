@@ -236,7 +236,30 @@ that it has stopped seeing them.
 How can I get a "resolve" event?
 ==========
 
-ElastAlert does not currently support stateful alerts or resolve events.
+ElastAlert does not currently support stateful alerts or resolve events. However, if you have a rule
+alerting you that a condition has occurred, such as a service being down, then you can create a
+second rule that will monitor the first rule, and alert you when the first rule ceases to trigger.
+
+For example, assuming you already have a rule named "Service is offline" that's working today, you 
+can add a second rule as follows:
+
+```
+name: Service is back online
+type: flatline
+index: elastalert*
+query_key: "rule_name"
+filter:
+- query:
+    query_string:
+      query: "rule_name:\"Service is offline\" AND matches:>0"
+forget_keys: true
+timeframe:
+  minutes: 30
+threshold: 1
+```
+
+This second rule will trigger after the timeframe of 30 minutes has elapsed with no further matches
+against the first rule.
 
 Can I set a warning threshold?
 ==========

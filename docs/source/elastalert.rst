@@ -3,10 +3,6 @@ ElastAlert 2 - Automated rule-based alerting for Elasticsearch
 
 ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
 
-At Yelp, we use Elasticsearch, Logstash and Kibana for managing our ever increasing amount of data and logs.
-Kibana is great for visualizing and querying data, but we quickly realized that it needed a companion tool for alerting
-on inconsistencies in our data. Out of this need, ElastAlert was created.
-
 If you have data being written into Elasticsearch in near real time and want to be alerted when that data matches certain patterns, ElastAlert is the tool for you.
 
 Overview
