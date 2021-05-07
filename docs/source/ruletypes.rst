@@ -2453,6 +2453,10 @@ Example slack_alert_fields::
 
 ``slack_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
 
+``slack_footer``: Add a static footer text for alert. Defaults to "".
+
+``slack_footer_icon``: A Public Url for a footer icon. Defaults to "".
+
 Splunk On-Call (Formerly VictorOps)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

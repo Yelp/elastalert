@@ -282,6 +282,8 @@ properties:
   slack_attach_kibana_discover_url: {type: boolean}
   slack_kibana_discover_color: {type: string}
   slack_kibana_discover_title: {type: string}
+  slack_footer: {type: string}
+  slack_footer_icon: {type: string}
 
   ### Mattermost
   mattermost_webhook_url: *arrayOfString
