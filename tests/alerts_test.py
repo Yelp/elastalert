@@ -2749,6 +2749,56 @@ def test_slack_ca_certs():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
+def test_slack_footer():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_username_override': 'elastalert',
+        'slack_footer': 'Elastic Alerts',
+        'slack_footer_icon': 'http://footer.icon.url',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['alert_subject'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': [],
+                'footer': 'Elastic Alerts',
+                'footer_icon': 'http://footer.icon.url'
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True,
+        timeout=10
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
 def test_http_alerter_with_payload():
     rule = {
         'name': 'Test HTTP Post Alerter With Payload',
