@@ -29,7 +29,6 @@ setup(
         'aws-requests-auth>=0.3.0',
         'sortedcontainers>=2.2.2',
         'boto3>=1.4.4',
-        'configparser>=3.5.0',
         'croniter>=0.3.16',
         'elasticsearch==7.0.0',
         'envparse>=0.2.0',

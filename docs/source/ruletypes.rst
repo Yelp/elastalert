@@ -1480,6 +1480,220 @@ come from an individual event, usually the one which triggers the alert.
 
 When using ``alert_text_args``, you can access nested fields and index into arrays. For example, if your match was ``{"data": {"ips": ["127.0.0.1", "12.34.56.78"]}}``, then by using ``"data.ips[1]"`` in ``alert_text_args``, it would replace value with ``"12.34.56.78"``. This can go arbitrarily deep into fields and will still work on keys that contain dots themselves.
 
+Alerter
+~~~~~~~
+
+For all Alerter subclasses, you may reference values from a top-level rule property in your Alerter fields by referring to the property name surrounded by dollar signs. This can be useful when you have rule-level properties that you would like to reference many times in your alert. For example:
+
+Example usage::
+
+    jira_priority: $priority$
+    jira_alert_owner: $owner$
+
+Alerta
+~~~~~~
+
+Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint.
+See https://docs.alerta.io/en/latest/api/alert.html for more details on the Alerta JSON format.
+
+For Alerta 5.0
+
+Required:
+
+``alerta_api_url``: API server URL.
+
+Optional:
+
+``alerta_api_key``: This is the api key for alerta server, sent in an ``Authorization`` HTTP header. If not defined, no Authorization header is sent.
+
+``alerta_use_qk_as_resource``: If true and query_key is present, this will override ``alerta_resource`` field with the ``query_key value`` (Can be useful if ``query_key`` is a hostname).
+
+``alerta_use_match_timestamp``: If true, it will use the timestamp of the first match as the ``createTime`` of the alert. otherwise, the current server time is used.
+
+``alerta_api_skip_ssl``: Defaults to False.
+
+``alert_missing_value``: Text to replace any match field not found when formating strings. Defaults to ``<MISSING_TEXT>``.
+
+The following options dictate the values of the API JSON payload:
+
+``alerta_severity``: Defaults to "warning".
+
+``alerta_timeout``: Defaults 84600 (1 Day).
+
+``alerta_type``: Defaults to "elastalert".
+
+The following options use Python-like string syntax ``{<field>}`` or ``%(<field>)s`` to access parts of the match, similar to the CommandAlerter. Ie: "Alert for {clientip}".
+If the referenced key is not found in the match, it is replaced by the text indicated by the option ``alert_missing_value``.
+
+``alerta_resource``: Defaults to "elastalert".
+
+``alerta_service``: Defaults to "elastalert".
+
+``alerta_origin``: Defaults to "elastalert".
+
+``alerta_environment``: Defaults to "Production".
+
+``alerta_group``: Defaults to "".
+
+``alerta_correlate``: Defaults to an empty list.
+
+``alerta_tags``: Defaults to an empty list.
+
+``alerta_event``: Defaults to the rule's name.
+
+``alerta_text``: Defaults to the rule's text according to its type.
+
+``alerta_value``: Defaults to "".
+
+The ``attributes`` dictionary is built by joining the lists from  ``alerta_attributes_keys`` and ``alerta_attributes_values``, considered in order.
+
+
+Example usage using old-style format::
+
+    alert:
+      - alerta
+    alerta_api_url: "http://youralertahost/api/alert"
+    alerta_attributes_keys:   ["hostname",   "TimestampEvent",  "senderIP" ]
+    alerta_attributes_values: ["%(key)s",    "%(logdate)s",     "%(sender_ip)s"  ]
+    alerta_correlate: ["ProbeUP","ProbeDOWN"]
+    alerta_event: "ProbeUP"
+    alerta_text:  "Probe %(hostname)s is UP at %(logdate)s GMT"
+    alerta_value: "UP"
+
+Example usage using new-style format::
+
+    alert:
+      - alerta
+    alerta_attributes_values: ["{key}",    "{logdate}",     "{sender_ip}"  ]
+    alerta_text:  "Probe {hostname} is UP at {logdate} GMT"
+
+AWS SES
+~~~~~~~
+
+The AWS SES alerter is similar to Email alerter but uses AWS SES to send emails. The AWS SES alerter can use AWS credentials
+from the rule yaml, standard AWS config files or environment variables.
+
+AWS SES requires one option:
+
+``ses_email``: An address or list of addresses to sent the alert to.
+
+``ses_from_addr``: This sets the From header in the email. 
+
+Optional:
+
+``ses_aws_access_key``: An access key to connect to AWS SES with.
+
+``ses_aws_secret_key``: The secret key associated with the access key.
+
+``ses_aws_region``: The AWS region in which the AWS SES resource is located. Default is us-east-1
+
+``ses_aws_profile``: The AWS profile to use. If none specified, the default will be used.
+
+``ses_email_reply_to``: This sets the Reply-To header in the email. 
+
+``ses_cc``: This adds the CC emails to the list of recipients. By default, this is left empty.
+
+``ses_bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
+
+Example When not using aws_profile usage::
+
+    alert:
+      - "ses"
+    ses_aws_access_key_id: "XXXXXXXXXXXXXXXXXX'"
+    ses_aws_secret_access_key: "YYYYYYYYYYYYYYYYYYYY"
+    ses_aws_region: "us-east-1"
+    ses_from_addr: "xxxx1@xxx.com"
+    ses_email: "xxxx1@xxx.com"
+
+Example When to use aws_profile usage::
+
+    # Create ~/.aws/credentials
+
+    [default]
+    aws_access_key_id = xxxxxxxxxxxxxxxxxxxx
+    aws_secret_access_key = yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+
+    # Create ~/.aws/config
+
+    [default]
+    region = us-east-1
+
+    # alert rule setting
+
+    alert:
+      - "ses"
+    ses_aws_profile: "default"
+    ses_from_addr: "xxxx1@xxx.com"
+    ses_email: "xxxx1@xxx.com"
+
+AWS SNS
+~~~~~~~
+
+The AWS SNS alerter will send an AWS SNS notification. The body of the notification is formatted the same as with other alerters.
+The AWS SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
+via environment variables. See http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html for details.
+
+AWS SNS requires one option:
+
+``sns_topic_arn``: The SNS topic's ARN. For example, ``arn:aws:sns:us-east-1:123456789:somesnstopic``
+
+Optional:
+
+``sns_aws_access_key_id``: An access key to connect to SNS with.
+
+``sns_aws_secret_access_key``: The secret key associated with the access key.
+
+``sns_aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
+
+``sns_aws_profile``: The AWS profile to use. If none specified, the default will be used.
+
+Example When not using aws_profile usage::
+
+    alert:
+      - sns
+    sns_topic_arn: 'arn:aws:sns:us-east-1:123456789:somesnstopic'
+    sns_aws_access_key_id: 'XXXXXXXXXXXXXXXXXX''
+    sns_aws_secret_access_key: 'YYYYYYYYYYYYYYYYYYYY'
+    sns_aws_region: 'us-east-1' # You must nest aws_region within your alert configuration so it is not used to sign AWS requests.
+ 
+Example When to use aws_profile usage::
+
+    # Create ~/.aws/credentials
+
+    [default]
+    aws_access_key_id = xxxxxxxxxxxxxxxxxxxx
+    aws_secret_access_key = yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+
+    # Create ~/.aws/config
+
+    [default]
+    region = us-east-1
+
+    # alert rule setting
+
+    alert:
+      - sns
+    sns_topic_arn: 'arn:aws:sns:us-east-1:123456789:somesnstopic'
+    sns_aws_profile: 'default'
+
+Chatwork
+~~~~~~~~
+
+Chatwork will send notification to a Chatwork application. The body of the notification is formatted the same as with other alerters.
+
+Required:
+
+``chatwork_apikey``:  ChatWork API KEY.
+
+``chatwork_room_id``: The ID of the room you are talking to in Chatwork. How to find the room ID is the part of the number after "rid" at the end of the URL of the browser.
+
+Example usage::
+
+    alert:
+      - "chatwork"
+    chatwork_apikey: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    chatwork_room_id: "xxxxxxxxx"
+
 Command
 ~~~~~~~
 
@@ -1523,7 +1737,6 @@ Example usage using new-style format::
       - command
     command: ["/bin/send_alert", "--username", "{match[username]}"]
 
-
 Datadog
 ~~~~~~~
 
@@ -1534,7 +1747,114 @@ This alert requires two additional options:
 
 ``datadog_api_key``: [Datadog API key](https://docs.datadoghq.com/account_management/api-app-keys/#api-keys)
 
-``datadog_app_key``: [Datadog application key](https://docs.datadoghq.com/account_management/api-app-keys/#application-keys)
+``datadog_app_key``: [Datadog application key](https://docs.datadoghq."com/account_management/api-app-keys/#application-keys)
+
+Example usage::
+
+    alert:
+      - "datadog"
+    datadog_api_key: "Datadog API Key"
+    datadog_app_key: "Datadog APP Key"
+
+Debug
+~~~~~
+
+The debug alerter will log the alert information using the Python logger at the info level. It is logged into a Python Logger object with the name ``elastalert`` that can be easily accessed using the ``getLogger`` command.
+
+Dingtalk
+~~~~~~~~
+
+Dingtalk will send notification to a Dingtalk application. The body of the notification is formatted the same as with other alerters.
+
+Required:
+
+``dingtalk_access_token``:  Dingtalk access token.
+
+``dingtalk_msgtype``:  Dingtalk msgtype. ``text``, ``markdown``, ``single_action_card``, ``action_card``.
+
+dingtalk_msgtype single_action_card Required:
+
+``dingtalk_single_title``: The title of a single button..
+
+``dingtalk_single_url``: Jump link for a single button.
+
+dingtalk_msgtype action_card Required:
+
+``dingtalk_btns``:  Button.
+
+dingtalk_msgtype action_card Optional:
+
+``dingtalk_btn_orientation``:  "0": Buttons are arranged vertically "1": Buttons are arranged horizontally.
+
+Example msgtype : text::
+
+    alert:
+      - "dingtalk"
+    dingtalk_access_token: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    dingtalk_msgtype: "text"
+
+
+Example msgtype : markdown::
+
+    alert:
+      - "dingtalk"
+    dingtalk_access_token: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    dingtalk_msgtype: "markdown"
+
+
+Example msgtype : single_action_card::
+
+    alert:
+      - "dingtalk"
+    dingtalk_access_token: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    dingtalk_msgtype: "single_action_card"
+    dingtalk_single_title: "test3"
+    dingtalk_single_url: "https://xxxx.xxx"
+
+
+Example msgtype : action_card::
+
+    alert:
+      - "dingtalk"
+    dingtalk_access_token: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    dingtalk_msgtype: "action_card"
+    dingtalk_btn_orientation: "0"
+    dingtalk_btns: [{"title": "a", "actionURL": "https://xxxx1.xxx"}, {"title": "b", "actionURL": "https://xxxx2.xxx"}]
+
+Discord
+~~~~~~~
+
+Discord will send notification to a Discord application. The body of the notification is formatted the same as with other alerters.
+
+Required:
+
+``discord_webhook_url``:  The webhook URL.
+
+Optional:
+
+``discord_emoji_title``: By default ElastAlert will use the ``:warning:`` emoji when posting to the channel. You can use a different emoji per ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
+
+``discord_proxy``: By default ElastAlert will not use a network proxy to send notifications to Discord. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``discord_proxy_login``: The Discord proxy auth username.
+
+``discord_proxy_password``: The Discord proxy auth username.
+
+``discord_embed_color``: embed color. By default ``0xffffff``.
+
+``discord_embed_footer``: embed footer.
+
+``discord_embed_icon_url``: You can provide icon_url to use custom image. Provide absolute address of the pciture.
+
+Example usage::
+
+    alert:
+    - "discord"
+    discord_webhook_url: "Your discord webhook url"
+    discord_emoji_title: ":lock:"
+    discord_embed_color: 0xE24D42
+    discord_embed_footer: "Message sent by ElastAlert from your computer"
+    discord_embed_icon_url: "https://humancoders-formations.s3.amazonaws.com/uploads/course/logo/38/thumb_bigger_formation-elasticsearch.png"
 
 Email
 ~~~~~
@@ -1588,7 +1908,114 @@ by the smtp server.
 ``email_format``: If set to ``html``, the email's MIME type will be set to HTML, and HTML content should correctly render. If you use this,
 you need to put your own HTML into ``alert_text`` and use ``alert_text_type: alert_text_jinja`` Or ``alert_text_type: alert_text_only``.
 
-Jira
+Exotel
+~~~~~~
+
+Developers in India can use Exotel alerter, it will trigger an incident to a mobile phone as sms from your exophone. Alert name along with the message body will be sent as an sms.
+
+The alerter requires the following option:
+
+``exotel_account_sid``: This is sid of your Exotel account.
+
+``exotel_auth_token``: Auth token assosiated with your Exotel account.
+
+If you don't know how to find your accound sid and auth token, refer - https://support.exotel.com/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid
+
+``exotel_to_number``: The phone number where you would like send the notification.
+
+``exotel_from_number``: Your exophone number from which message will be sent.
+
+The alerter has one optional argument:
+
+``exotel_message_body``: Message you want to send in the sms, is you don't specify this argument only the rule name is sent
+
+Example usage::
+
+    alert:
+      - "exotel"
+    exotel_account_sid: "Exotel Account sid"
+    exotel_auth_token: "Exotel Auth token"
+    exotel_to_number: "Exotel to Number"
+    exotel_from_number: "Exotel from Numbeer"
+
+Gitter
+~~~~~~
+
+Gitter alerter will send a notification to a predefined Gitter channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following option:
+
+``gitter_webhook_url``: The webhook URL that includes your auth data and the ID of the channel (room) you want to post to. Go to the Integration Settings
+of the channel https://gitter.im/ORGA/CHANNEL#integrations , click 'CUSTOM' and copy the resulting URL.
+
+Optional:
+
+``gitter_msg_level``: By default the alert will be posted with the 'error' level. You can use 'info' if you want the messages to be black instead of red.
+
+``gitter_proxy``: By default ElastAlert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy.
+
+Example usage::
+
+    alert:
+      - "gitter"
+    gitter_webhook_url: "Your Gitter Webhook URL"
+    gitter_msg_level: "error"
+
+GoogleChat
+~~~~~~~~~~
+GoogleChat alerter will send a notification to a predefined GoogleChat channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``googlechat_webhook_url``: The webhook URL that includes the channel (room) you want to post to. Go to the Google Chat website https://chat.google.com and choose the channel in which you wish to receive the notifications. Select 'Configure Webhooks' to create a new webhook or to copy the URL from an existing one. You can use a list of URLs to send to multiple channels.
+
+Optional:
+
+``googlechat_format``: Formatting for the notification. Can be either 'card' or 'basic' (default).
+
+``googlechat_header_title``: Sets the text for the card header title. (Only used if format=card)
+
+``googlechat_header_subtitle``: Sets the text for the card header subtitle. (Only used if format=card)
+
+``googlechat_header_image``: URL for the card header icon. (Only used if format=card)
+
+``googlechat_footer_kibanalink``: URL to Kibana to include in the card footer. (Only used if format=card)
+
+HTTP POST
+~~~~~~~~~
+
+This alert type will send results to a JSON endpoint using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON will contain all the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
+
+Required:
+
+``http_post_url``: The URL to POST.
+
+Optional:
+
+``http_post_payload``: List of keys:values to use as the content of the POST. Example - ip:clientip will map the value from the clientip index of Elasticsearch to JSON key named ip. If not defined, all the Elasticsearch keys will be sent.
+
+``http_post_static_payload``: Key:value pairs of static parameters to be sent, along with the Elasticsearch results. Put your authentication or other information here.
+
+``http_post_headers``: Key:value pairs of headers to be sent as part of the request.
+
+``http_post_proxy``: URL of proxy, if required.
+
+``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
+
+``http_post_timeout``: The timeout value, in seconds, for making the post. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
+
+Example usage::
+
+    alert: post
+    http_post_url: "http://example.com/api"
+    http_post_payload:
+      ip: clientip
+    http_post_static_payload:
+      apikey: abc123
+    http_post_headers:
+      authorization: Basic 123dr3234
+
+JIRA
 ~~~~
 
 The JIRA alerter will open a ticket on jira whenever an alert is triggered. You must have a service account for ElastAlert to connect with.
@@ -1700,6 +2127,89 @@ Example usage::
       - My Custom Value 1
       - My Custom Value 2
 
+Line Notify
+~~~~~~~~~~~
+
+Line Notify will send notification to a Line application. The body of the notification is formatted the same as with other alerters.
+
+Required:
+
+``linenotify_access_token``: The access token that you got from https://notify-bot.line.me/my/
+
+Example usage::
+
+    alert:
+      - "linenotify"
+    linenotify_access_token: "Your linenotify access token"
+
+Mattermost
+~~~~~~~~~~
+
+Mattermost alerter will send a notification to a predefined Mattermost channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following option:
+
+``mattermost_webhook_url``: The webhook URL. Follow the instructions on https://docs.mattermost.com/developer/webhooks-incoming.html to create an incoming webhook on your Mattermost installation.
+
+Optional:
+
+``mattermost_proxy``: By default ElastAlert will not use a network proxy to send notifications to Mattermost. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``mattermost_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+
+``mattermost_username_override``: By default Mattermost will use your username when posting to the channel. Use this option to change it (free text).
+
+``mattermost_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
+
+``mattermost_icon_url_override``: By default ElastAlert will use the default webhook icon when posting to the channel. You can provide icon_url to use custom image.
+Provide absolute address of the picture or Base64 data url.
+
+``mattermost_msg_pretext``: You can set the message attachment pretext using this option.
+
+``mattermost_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good', 'warning', or hex color code.
+
+``mattermost_msg_fields``: You can add fields to your Mattermost alerts using this option. You can specify the title using `title` and the text value using `value`. Additionally you can specify whether this field should be a `short` field using `short: true`. If you set `args` and `value` is a formattable string, ElastAlert will format the incident key based on the provided array of fields from the rule or match.
+See https://docs.mattermost.com/developer/message-attachments.html#fields for more information.
+
+Example mattermost_msg_fields::
+
+    mattermost_msg_fields:
+      - title: Stack
+        value: "{0} {1}" # interpolate fields mentioned in args
+        short: false
+        args: ["type", "msg.status_code"] # fields from doc
+      - title: Name
+        value: static field
+        short: false
+
+Microsoft Teams
+~~~~~~~~~~~~~~~
+
+Microsoft Teams alerter will send a notification to a predefined Microsoft Teams channel.
+
+The alerter requires the following options:
+
+``ms_teams_webhook_url``: The webhook URL that includes your auth data and the ID of the channel you want to post to. Go to the Connectors
+menu in your channel and configure an Incoming Webhook, then copy the resulting URL. You can use a list of URLs to send to multiple channels.
+
+``ms_teams_alert_summary``: Summary should be configured according to `MS documentation <https://docs.microsoft.com/en-us/outlook/actionable-messages/card-reference>`_, although it seems not displayed by Teams currently.
+
+Optional:
+
+``ms_teams_theme_color``: By default the alert will be posted without any color line. To add color, set this attribute to a HTML color value e.g. ``#ff0000`` for red.
+
+``ms_teams_proxy``: By default ElastAlert will not use a network proxy to send notifications to MS Teams. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``ms_teams_alert_fixed_width``: By default this is ``False`` and the notification will be sent to MS Teams as-is. Teams supports a partial Markdown implementation, which means asterisk, underscore and other characters may be interpreted as Markdown. Currenlty, Teams does not fully implement code blocks. Setting this attribute to ``True`` will enable line by line code blocks. It is recommended to enable this to get clearer notifications in Teams.
+
+Example usage::
+
+    alert:
+      - "ms_teams"
+    ms_teams_alert_summary: "Alert"
+    ms_teams_theme_color: "#6600ff"
+    ms_teams_webhook_url: "MS Teams Webhook URL"
+
 OpsGenie
 ~~~~~~~~
 
@@ -1745,255 +2255,6 @@ Example usage::
       Author: 'Bob Smith'          # constant value
       Environment: '$VAR'          # environment variable
       Message: { field: message }  # field in the first match
-
-AWS SES
-~~~~~~~
-
-The AWS SES alerter is similar to Email alerter but uses AWS SES to send emails. The AWS SES alerter can use AWS credentials
-from the rule yaml, standard AWS config files or environment variables.
-
-AWS SES requires one option:
-
-``ses_email``: An address or list of addresses to sent the alert to.
-
-``ses_from_addr``: This sets the From header in the email. 
-
-Optional:
-
-``ses_aws_access_key``: An access key to connect to AWS SES with.
-
-``ses_aws_secret_key``: The secret key associated with the access key.
-
-``ses_aws_region``: The AWS region in which the AWS SES resource is located. Default is us-east-1
-
-``ses_aws_profile``: The AWS profile to use. If none specified, the default will be used.
-
-``ses_email_reply_to``: This sets the Reply-To header in the email. 
-
-``ses_cc``: This adds the CC emails to the list of recipients. By default, this is left empty.
-
-``ses_bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
-
-Example When not using aws_profile usage::
-
-    alert:
-      - "ses"
-    ses_aws_access_key_id: "XXXXXXXXXXXXXXXXXX'"
-    ses_aws_secret_access_key: "YYYYYYYYYYYYYYYYYYYY"
-    ses_aws_region: "us-east-1"
-    ses_from_addr: "xxxx1@xxx.com"
-    ses_email: "xxxx1@xxx.com"
-
-Example When to use aws_profile usage::
-
-    # Create ~/.aws/credentials
-
-    [default]
-    aws_access_key_id = xxxxxxxxxxxxxxxxxxxx
-    aws_secret_access_key = yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
-
-    # Create ~/.aws/config
-
-    [default]
-    region = us-east-1
-
-    # alert rule setting
-
-    alert:
-      - "ses"
-    ses_aws_profile: "default"
-    ses_from_addr: "xxxx1@xxx.com"
-    ses_email: "xxxx1@xxx.com"
-
-AWS SNS
-~~~~~~~
-
-The AWS SNS alerter will send an AWS SNS notification. The body of the notification is formatted the same as with other alerters.
-The AWS SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
-via environment variables. See http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html for details.
-
-AWS SNS requires one option:
-
-``sns_topic_arn``: The SNS topic's ARN. For example, ``arn:aws:sns:us-east-1:123456789:somesnstopic``
-
-Optional:
-
-``sns_aws_access_key_id``: An access key to connect to SNS with.
-
-``sns_aws_secret_access_key``: The secret key associated with the access key.
-
-``sns_aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
-
-``sns_aws_profile``: The AWS profile to use. If none specified, the default will be used.
-
-Example When not using aws_profile usage::
-
-    alert:
-      - sns
-    sns_topic_arn: 'arn:aws:sns:us-east-1:123456789:somesnstopic'
-    sns_aws_access_key_id: 'XXXXXXXXXXXXXXXXXX''
-    sns_aws_secret_access_key: 'YYYYYYYYYYYYYYYYYYYY'
-    sns_aws_region: 'us-east-1' # You must nest aws_region within your alert configuration so it is not used to sign AWS requests.
- 
-Example When to use aws_profile usage::
-
-    # Create ~/.aws/credentials
-
-    [default]
-    aws_access_key_id = xxxxxxxxxxxxxxxxxxxx
-    aws_secret_access_key = yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
-
-    # Create ~/.aws/config
-
-    [default]
-    region = us-east-1
-
-    # alert rule setting
-
-    alert:
-      - sns
-    sns_topic_arn: 'arn:aws:sns:us-east-1:123456789:somesnstopic'
-    sns_aws_profile: 'default'
-
-MS Teams
-~~~~~~~~
-
-MS Teams alerter will send a notification to a predefined Microsoft Teams channel.
-
-The alerter requires the following options:
-
-``ms_teams_webhook_url``: The webhook URL that includes your auth data and the ID of the channel you want to post to. Go to the Connectors
-menu in your channel and configure an Incoming Webhook, then copy the resulting URL. You can use a list of URLs to send to multiple channels.
-
-``ms_teams_alert_summary``: Summary should be configured according to `MS documentation <https://docs.microsoft.com/en-us/outlook/actionable-messages/card-reference>`_, although it seems not displayed by Teams currently.
-
-Optional:
-
-``ms_teams_theme_color``: By default the alert will be posted without any color line. To add color, set this attribute to a HTML color value e.g. ``#ff0000`` for red.
-
-``ms_teams_proxy``: By default ElastAlert will not use a network proxy to send notifications to MS Teams. Set this option using ``hostname:port`` if you need to use a proxy.
-
-``ms_teams_alert_fixed_width``: By default this is ``False`` and the notification will be sent to MS Teams as-is. Teams supports a partial Markdown implementation, which means asterisk, underscore and other characters may be interpreted as Markdown. Currenlty, Teams does not fully implement code blocks. Setting this attribute to ``True`` will enable line by line code blocks. It is recommended to enable this to get clearer notifications in Teams.
-
-Slack
-~~~~~
-
-Slack alerter will send a notification to a predefined Slack channel. The body of the notification is formatted the same as with other alerters.
-
-The alerter requires the following option:
-
-``slack_webhook_url``: The webhook URL that includes your auth data and the ID of the channel (room) you want to post to. Go to the Incoming Webhooks
-section in your Slack account https://XXXXX.slack.com/services/new/incoming-webhook , choose the channel, click 'Add Incoming Webhooks Integration'
-and copy the resulting URL. You can use a list of URLs to send to multiple channels.
-
-Optional:
-
-``slack_username_override``: By default Slack will use your username when posting to the channel. Use this option to change it (free text).
-
-``slack_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
-
-``slack_emoji_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
-ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
-
-``slack_icon_url_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can provide icon_url to use custom image.
-Provide absolute address of the pciture.
-
-``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
-
-``slack_parse_override``: By default the notification message is escaped 'none'. You can also use 'full'.
-
-``slack_text_string``: Notification message you want to add.
-
-``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
-
-``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
-
-``slack_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to False if you want to ignore SSL errors.
-
-``slack_title``: Sets a title for the message, this shows up as a blue text at the start of the message
-
-``slack_title_link``: You can add a link in your Slack notification by setting this to a valid URL. Requires slack_title to be set.
-
-``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slack. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
-
-``slack_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the slack notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
-
-``slack_kibana_discover_color``: The color of the Kibana Discover url attachment. Defaults to ``#ec4b98``.
-
-``slack_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
-
-``slack_ca_certs``: path to a CA cert bundle to use to verify SSL connections.
-
-Mattermost
-~~~~~~~~~~
-
-Mattermost alerter will send a notification to a predefined Mattermost channel. The body of the notification is formatted the same as with other alerters.
-
-The alerter requires the following option:
-
-``mattermost_webhook_url``: The webhook URL. Follow the instructions on https://docs.mattermost.com/developer/webhooks-incoming.html to create an incoming webhook on your Mattermost installation.
-
-Optional:
-
-``mattermost_proxy``: By default ElastAlert will not use a network proxy to send notifications to Mattermost. Set this option using ``hostname:port`` if you need to use a proxy.
-
-``mattermost_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
-
-``mattermost_username_override``: By default Mattermost will use your username when posting to the channel. Use this option to change it (free text).
-
-``mattermost_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
-
-``mattermost_icon_url_override``: By default ElastAlert will use the default webhook icon when posting to the channel. You can provide icon_url to use custom image.
-Provide absolute address of the picture or Base64 data url.
-
-``mattermost_msg_pretext``: You can set the message attachment pretext using this option.
-
-``mattermost_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good', 'warning', or hex color code.
-
-``mattermost_msg_fields``: You can add fields to your Mattermost alerts using this option. You can specify the title using `title` and the text value using `value`. Additionally you can specify whether this field should be a `short` field using `short: true`. If you set `args` and `value` is a formattable string, ElastAlert will format the incident key based on the provided array of fields from the rule or match.
-See https://docs.mattermost.com/developer/message-attachments.html#fields for more information.
-
-
-Telegram
-~~~~~~~~
-Telegram alerter will send a notification to a predefined Telegram username or channel. The body of the notification is formatted the same as with other alerters.
-
-The alerter requires the following two options:
-
-``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#6-botfather
-
-``telegram_room_id``: Unique identifier for the target chat or username of the target channel using telegram chat_id (in the format "-xxxxxxxx")
-
-Optional:
-
-``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
-
-``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
-
-``telegram_proxy_login``: The Telegram proxy auth username.
-
-``telegram_proxy_pass``: The Telegram proxy auth password.
-
-GoogleChat
-~~~~~~~~~~
-GoogleChat alerter will send a notification to a predefined GoogleChat channel. The body of the notification is formatted the same as with other alerters.
-
-The alerter requires the following options:
-
-``googlechat_webhook_url``: The webhook URL that includes the channel (room) you want to post to. Go to the Google Chat website https://chat.google.com and choose the channel in which you wish to receive the notifications. Select 'Configure Webhooks' to create a new webhook or to copy the URL from an existing one. You can use a list of URLs to send to multiple channels.
-
-Optional:
-
-``googlechat_format``: Formatting for the notification. Can be either 'card' or 'basic' (default).
-
-``googlechat_header_title``: Sets the text for the card header title. (Only used if format=card)
-
-``googlechat_header_subtitle``: Sets the text for the card header subtitle. (Only used if format=card)
-
-``googlechat_header_image``: URL for the card header icon. (Only used if format=card)
-
-``googlechat_footer_kibanalink``: URL to Kibana to include in the card footer. (Only used if format=card)
-
 
 PagerDuty
 ~~~~~~~~~
@@ -2051,7 +2312,6 @@ See https://developer.pagerduty.com/docs/events-api-v2/trigger-events/
 
 ``pagerduty_v2_payload_include_all_info``: If True, this will include the entire Elasticsearch document as a custom detail field called "information" in the PagerDuty alert.
 
-
 PagerTree
 ~~~~~~~~~
 
@@ -2061,107 +2321,28 @@ The alerter requires the following options:
 
 ``pagertree_integration_url``: URL generated by PagerTree for the integration.
 
-``pagertree_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerTree. Set this option using hostname:port if you need to use a proxy.
-
-Exotel
-~~~~~~
-
-Developers in India can use Exotel alerter, it will trigger an incident to a mobile phone as sms from your exophone. Alert name along with the message body will be sent as an sms.
-
-The alerter requires the following option:
-
-``exotel_account_sid``: This is sid of your Exotel account.
-
-``exotel_auth_token``: Auth token assosiated with your Exotel account.
-
-If you don't know how to find your accound sid and auth token, refer - https://support.exotel.com/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid
-
-``exotel_to_number``: The phone number where you would like send the notification.
-
-``exotel_from_number``: Your exophone number from which message will be sent.
-
-The alerter has one optional argument:
-
-``exotel_message_body``: Message you want to send in the sms, is you don't specify this argument only the rule name is sent
-
-
-Twilio
-~~~~~~
-
-Twilio alerter will trigger an incident to a mobile phone as an sms from your twilio phone number. The sms will contain the alert name. You may use either twilio SMS or twilio copilot
-to send the message, controlled by the ``twilio_use_copilot`` option.
-
-Note that when twilio copilot *is* used the ``twilio_message_service_sid`` option is required. Likewise, when *not* using twilio copilot, the ``twilio_from_number`` option is required.
-
-The alerter requires the following options:
-
-``twilio_account_sid``: This is sid of your twilio account.
-
-``twilio_auth_token``: Auth token assosiated with your twilio account.
-
-``twilio_to_number``: The phone number where you would like send the notification.
-
-Either one of
- * ``twilio_from_number``: Your twilio phone number from which message will be sent.
- * ``twilio_message_service_sid``: The SID of your twilio message service.
-
-Optional:
-
-``twilio_use_copilot``: Whether or not to use twilio copilot, False by default.
+``pagertree_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerTree. Set this option using ``hostname:port`` if you need to use a proxy.
 
 Example usage::
 
     alert:
-      - twilio # With Copilot
-         twilio_use_copilot: True
-         twilio_to_number: "0123456789"
-         twilio_auth_token: "abcdefghijklmnopqrstuvwxyz012345"
-         twilio_account_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
-         twilio_message_service_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
+      - "pagertree"
+    pagertree_integration_url: "PagerTree Integration URL"
 
-      - twilio # With Legacy SMS
-         twilio_use_copilot: False
-         twilio_to_number: "0123456789"
-         twilio_from_number: "9876543210"
-         twilio_auth_token: "abcdefghijklmnopqrstuvwxyz012345"
-         twilio_account_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
+Squadcast
+~~~~~~~~~
 
-Splunk On-Call (Formerly VictorOps)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Alerts can be sent to Squadcast using the `http post` method described above and Squadcast will process it and send Phone, SMS, Email and Push notifications to the relevant person(s) and let them take actions.
 
-Splunk On-Call (Formerly VictorOps) alerter will trigger an incident to a predefined Splunk On-Call (Formerly VictorOps) routing key. The body of the notification is formatted the same as with other alerters.
+Configuration variables in rules YAML file::
 
-The alerter requires the following options:
+    alert: post
+    http_post_url: <ElastAlert Webhook URL copied from Squadcast dashboard>
+    http_post_static_payload:
+      Title: <Incident Title>
+    http_post_all_values: true
 
-``victorops_api_key``: API key generated under the 'REST Endpoint' in the Integrations settings.
-
-``victorops_routing_key``: Splunk On-Call (Formerly VictorOps) routing key to route the alert to.
-
-``victorops_message_type``: Splunk On-Call (Formerly VictorOps) field to specify severity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
-
-Optional:
-
-``victorops_entity_id``: The identity of the incident used by Splunk On-Call (Formerly VictorOps) to correlate incidents throughout the alert lifecycle. If not defined, Splunk On-Call (Formerly VictorOps) will assign a random string to each alert.
-
-``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
-
-``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to Splunk On-Call (Formerly VictorOps). Set this option using ``hostname:port`` if you need to use a proxy.
-
-Gitter
-~~~~~~
-
-Gitter alerter will send a notification to a predefined Gitter channel. The body of the notification is formatted the same as with other alerters.
-
-The alerter requires the following option:
-
-``gitter_webhook_url``: The webhook URL that includes your auth data and the ID of the channel (room) you want to post to. Go to the Integration Settings
-of the channel https://gitter.im/ORGA/CHANNEL#integrations , click 'CUSTOM' and copy the resulting URL.
-
-Optional:
-
-``gitter_msg_level``: By default the alert will be posted with the 'error' level. You can use 'info' if you want the messages to be black instead of red.
-
-``gitter_proxy``: By default ElastAlert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy.
+For more details, you can refer the `Squadcast documentation <https://support.squadcast.com/docs/elastalert>`_.
 
 ServiceNow
 ~~~~~~~~~~
@@ -2195,11 +2376,111 @@ Optional:
 
 ``servicenow_proxy``: By default ElastAlert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy.
 
+Example usage::
 
-Debug
+    alert:
+      - "servicenow"
+    servicenow_rest_url: "servicenow rest url"
+    username: "user"
+    password: "password"
+    short_description: "xxxxxx"
+    comments: "xxxxxx"
+    assignment_group: "xxxxxx"
+    category: "xxxxxx"
+    subcategory: "xxxxxx"
+    cmdb_ci: "xxxxxx"
+    caller_id: "xxxxxx"
+
+Slack
 ~~~~~
 
-The debug alerter will log the alert information using the Python logger at the info level. It is logged into a Python Logger object with the name ``elastalert`` that can be easily accessed using the ``getLogger`` command.
+Slack alerter will send a notification to a predefined Slack channel. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following option:
+
+``slack_webhook_url``: The webhook URL that includes your auth data and the ID of the channel (room) you want to post to. Go to the Incoming Webhooks
+section in your Slack account https://XXXXX.slack.com/services/new/incoming-webhook , choose the channel, click 'Add Incoming Webhooks Integration'
+and copy the resulting URL. You can use a list of URLs to send to multiple channels.
+
+Optional:
+
+``slack_username_override``: By default Slack will use your username when posting to the channel. Use this option to change it (free text).
+
+``slack_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
+
+``slack_emoji_override``: By default ElastAlert will use the ``:ghost:`` emoji when posting to the channel. You can use a different emoji per
+ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
+
+``slack_icon_url_override``: By default ElastAlert will use the ``:ghost:`` emoji when posting to the channel. You can provide icon_url to use custom image.
+Provide absolute address of the pciture.
+
+``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
+
+``slack_parse_override``: By default the notification message is escaped 'none'. You can also use 'full'.
+
+``slack_text_string``: Notification message you want to add.
+
+``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
+
+Example slack_alert_fields::
+
+    slack_alert_fields:
+      - title: Host
+        value: monitor.host
+        short: true
+      - title: Status
+        value: monitor.status
+        short: true
+      - title: Zone
+        value: beat.name
+        short: true
+
+``slack_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+
+``slack_title``: Sets a title for the message, this shows up as a blue text at the start of the message
+
+``slack_title_link``: You can add a link in your Slack notification by setting this to a valid URL. Requires slack_title to be set.
+
+``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slack. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
+
+``slack_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the slack notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
+
+``slack_kibana_discover_color``: The color of the Kibana Discover url attachment. Defaults to ``#ec4b98``.
+
+``slack_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
+
+``slack_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
+
+Splunk On-Call (Formerly VictorOps)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Splunk On-Call (Formerly VictorOps) alerter will trigger an incident to a predefined Splunk On-Call (Formerly VictorOps) routing key. The body of the notification is formatted the same as with other alerters.
+
+The alerter requires the following options:
+
+``victorops_api_key``: API key generated under the 'REST Endpoint' in the Integrations settings.
+
+``victorops_routing_key``: Splunk On-Call (Formerly VictorOps) routing key to route the alert to.
+
+``victorops_message_type``: Splunk On-Call (Formerly VictorOps) field to specify severity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
+
+Optional:
+
+``victorops_entity_id``: The identity of the incident used by Splunk On-Call (Formerly VictorOps) to correlate incidents throughout the alert lifecycle. If not defined, Splunk On-Call (Formerly VictorOps) will assign a random string to each alert.
+
+``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
+
+``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to Splunk On-Call (Formerly VictorOps). Set this option using ``hostname:port`` if you need to use a proxy.
+
+Example usage::
+
+    alert:
+      - "victorops"
+    victorops_api_key: "VictorOps API Key"
+    victorops_routing_key: "VictorOps routing Key"
+    victorops_message_type: "INFO"
 
 Stomp
 ~~~~~
@@ -2209,172 +2490,60 @@ The default values will work with a pristine ActiveMQ installation.
 
 The alerter requires the following options:
 
-``stomp_hostname``: The STOMP host to use, defaults to localhost.
+``stomp_hostname``: The STOMP host to use, defaults to ``localhost``.
 
-``stomp_hostport``: The STOMP port to use, defaults to 61613.
+``stomp_hostport``: The STOMP port to use, defaults to ``61613``.
 
-``stomp_login``: The STOMP login to use, defaults to admin.
+``stomp_login``: The STOMP login to use, defaults to ``admin``.
 
-``stomp_password``: The STOMP password to use, defaults to admin.
+``stomp_password``: The STOMP password to use, defaults to ``admin``.
 
 Optional:
 
-``stomp_ssl``: Connect the STOMP host using TLS, defaults to False.
+``stomp_ssl``: Connect the STOMP host using TLS, defaults to ``False``.
 
-``stomp_destination``: The STOMP destination to use, defaults to /queue/ALERT
+``stomp_destination``: The STOMP destination to use, defaults to ``/queue/ALERT``
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
 
-Alerta
-~~~~~~
+Example usage::
 
-Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint.
-See https://docs.alerta.io/en/latest/api/alert.html for more details on the Alerta JSON format.
+    alert:
+      - "stomp"
+    stomp_hostname: "localhost"
+    stomp_hostport: "61613"
+    stomp_login: "admin"
+    stomp_password: "admin"
+    stomp_destination: "/queue/ALERT"
 
-For Alerta 5.0
+Telegram
+~~~~~~~~
+Telegram alerter will send a notification to a predefined Telegram username or channel. The body of the notification is formatted the same as with other alerters.
 
-Required:
+The alerter requires the following two options:
 
-``alerta_api_url``: API server URL.
+``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#6-botfather
+
+``telegram_room_id``: Unique identifier for the target chat or username of the target channel using telegram chat_id (in the format "-xxxxxxxx")
 
 Optional:
 
-``alerta_api_key``: This is the api key for alerta server, sent in an ``Authorization`` HTTP header. If not defined, no Authorization header is sent.
+``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
 
-``alerta_use_qk_as_resource``: If true and query_key is present, this will override ``alerta_resource`` field with the ``query_key value`` (Can be useful if ``query_key`` is a hostname).
+``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
 
-``alerta_use_match_timestamp``: If true, it will use the timestamp of the first match as the ``createTime`` of the alert. otherwise, the current server time is used.
+``telegram_proxy_login``: The Telegram proxy auth username.
 
-``alerta_api_skip_ssl``: Defaults to False.
-
-``alert_missing_value``: Text to replace any match field not found when formating strings. Defaults to ``<MISSING_TEXT>``.
-
-The following options dictate the values of the API JSON payload:
-
-``alerta_severity``: Defaults to "warning".
-
-``alerta_timeout``: Defaults 84600 (1 Day).
-
-``alerta_type``: Defaults to "elastalert".
-
-The following options use Python-like string syntax ``{<field>}`` or ``%(<field>)s`` to access parts of the match, similar to the CommandAlerter. Ie: "Alert for {clientip}".
-If the referenced key is not found in the match, it is replaced by the text indicated by the option ``alert_missing_value``.
-
-``alerta_resource``: Defaults to "elastalert".
-
-``alerta_service``: Defaults to "elastalert".
-
-``alerta_origin``: Defaults to "elastalert".
-
-``alerta_environment``: Defaults to "Production".
-
-``alerta_group``: Defaults to "".
-
-``alerta_correlate``: Defaults to an empty list.
-
-``alerta_tags``: Defaults to an empty list.
-
-``alerta_event``: Defaults to the rule's name.
-
-``alerta_text``: Defaults to the rule's text according to its type.
-
-``alerta_value``: Defaults to "".
-
-The ``attributes`` dictionary is built by joining the lists from  ``alerta_attributes_keys`` and ``alerta_attributes_values``, considered in order.
-
-
-Example usage using old-style format::
-
-    alert:
-      - alerta
-    alerta_api_url: "http://youralertahost/api/alert"
-    alerta_attributes_keys:   ["hostname",   "TimestampEvent",  "senderIP" ]
-    alerta_attributes_values: ["%(key)s",    "%(logdate)s",     "%(sender_ip)s"  ]
-    alerta_correlate: ["ProbeUP","ProbeDOWN"]
-    alerta_event: "ProbeUP"
-    alerta_text:  "Probe %(hostname)s is UP at %(logdate)s GMT"
-    alerta_value: "UP"
-
-Example usage using new-style format::
-
-    alert:
-      - alerta
-    alerta_attributes_values: ["{key}",    "{logdate}",     "{sender_ip}"  ]
-    alerta_text:  "Probe {hostname} is UP at {logdate} GMT"
-
-
-
-HTTP POST
-~~~~~~~~~
-
-This alert type will send results to a JSON endpoint using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON will contain all the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
-
-Required:
-
-``http_post_url``: The URL to POST.
-
-Optional:
-
-``http_post_payload``: List of keys:values to use as the content of the POST. Example - ip:clientip will map the value from the clientip index of Elasticsearch to JSON key named ip. If not defined, all the Elasticsearch keys will be sent.
-
-``http_post_static_payload``: Key:value pairs of static parameters to be sent, along with the Elasticsearch results. Put your authentication or other information here.
-
-``http_post_headers``: Key:value pairs of headers to be sent as part of the request.
-
-``http_post_proxy``: URL of proxy, if required.
-
-``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
-
-``http_post_timeout``: The timeout value, in seconds, for making the post. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
+``telegram_proxy_pass``: The Telegram proxy auth password.
 
 Example usage::
 
-    alert: post
-    http_post_url: "http://example.com/api"
-    http_post_payload:
-      ip: clientip
-    http_post_static_payload:
-      apikey: abc123
-    http_post_headers:
-      authorization: Basic 123dr3234
+    alert:
+      - "telegram"
+    telegram_bot_token: "bot_token"
+    telegram_room_id: "chat_id"
 
-Squadcast
-~~~~~~~~~
-
-Alerts can be sent to Squadcast using the `http post` method described above and Squadcast will process it and send Phone, SMS, Email and Push notifications to the relevant person(s) and let them take actions.
-
-Configuration variables in rules YAML file::
-
-    alert: post
-    http_post_url: <ElastAlert Webhook URL copied from Squadcast dashboard>
-    http_post_static_payload:
-      Title: <Incident Title>
-    http_post_all_values: true
-
-For more details, you can refer the `Squadcast documentation <https://support.squadcast.com/docs/elastalert>`_.
-
-Alerter
-~~~~~~~
-
-For all Alerter subclasses, you may reference values from a top-level rule property in your Alerter fields by referring to the property name surrounded by dollar signs. This can be useful when you have rule-level properties that you would like to reference many times in your alert. For example:
-
-Example usage::
-
-    jira_priority: $priority$
-    jira_alert_owner: $owner$
-
-
-
-Line Notify
-~~~~~~~~~~~
-
-Line Notify will send notification to a Line application. The body of the notification is formatted the same as with other alerters.
-
-Required:
-
-``linenotify_access_token``: The access token that you got from https://notify-bot.line.me/my/
-
-theHive
+TheHive
 ~~~~~~~
 
 theHive alert type will send JSON request to theHive (Security Incident Response Platform) with TheHive4py API. Sent request will be stored like Hive Alert with description and observables.
@@ -2397,33 +2566,75 @@ Example usage::
 
     alert: hivealerter
 
-     hive_connection:
-       hive_host: http://localhost
-       hive_port: <hive_port>
-       hive_apikey: <hive_apikey>
-       hive_proxies:
-         http: ''
-         https: ''
+    hive_connection:
+      hive_host: http://localhost
+      hive_port: <hive_port>
+      hive_apikey: <hive_apikey>
+      hive_proxies:
+        http: ''
+        https: ''
 
-      hive_alert_config:
-        title: 'Title'  ## This will default to {rule[index]_rule[name]} if not provided
-        type: 'external'
-        source: 'elastalert'
-        description: '{match[field1]} {rule[name]} Sample description'
-        severity: 2
-        tags: ['tag1', 'tag2 {rule[name]}']
-        tlp: 3
-        status: 'New'
-        follow: True
+    hive_alert_config:
+      title: 'Title'  ## This will default to {rule[index]_rule[name]} if not provided
+      type: 'external'
+      source: 'elastalert'
+      description: '{match[field1]} {rule[name]} Sample description'
+      severity: 2
+      tags: ['tag1', 'tag2 {rule[name]}']
+      tlp: 3
+      status: 'New'
+      follow: True
 
     hive_observable_data_mapping:
-        - domain: "{match[field1]}_{rule[name]}"
-        - domain: "{match[field]}"
-        - ip: "{match[ip_field]}"
+      - domain: "{match[field1]}_{rule[name]}"
+      - domain: "{match[field]}"
+      - ip: "{match[ip_field]}"
 
+Twilio
+~~~~~~
+
+Twilio alerter will trigger an incident to a mobile phone as an sms from your twilio phone number. The sms will contain the alert name. You may use either twilio SMS or twilio copilot
+to send the message, controlled by the ``twilio_use_copilot`` option.
+
+Note that when twilio copilot *is* used the ``twilio_message_service_sid`` option is required. Likewise, when *not* using twilio copilot, the ``twilio_from_number`` option is required.
+
+The alerter requires the following options:
+
+``twilio_account_sid``: This is sid of your twilio account.
+
+``twilio_auth_token``: Auth token assosiated with your twilio account.
+
+``twilio_to_number``: The phone number where you would like send the notification.
+
+Either one of
+ * ``twilio_from_number``: Your twilio phone number from which message will be sent.
+ * ``twilio_message_service_sid``: The SID of your twilio message service.
+
+Optional:
+
+``twilio_use_copilot``: Whether or not to use twilio copilot, False by default.
+
+Example With Copilot usage::
+
+    alert:
+      - "twilio"
+    twilio_use_copilot: True
+    twilio_to_number: "0123456789"
+    twilio_auth_token: "abcdefghijklmnopqrstuvwxyz012345"
+    twilio_account_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
+    twilio_message_service_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
+
+Example With SMS usage::
+
+    alert:
+      - "twilio"
+    twilio_to_number: "0123456789"
+    twilio_from_number: "9876543210"
+    twilio_auth_token: "abcdefghijklmnopqrstuvwxyz012345"
+    twilio_account_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
 
 Zabbix
-~~~~~~~~~~~
+~~~~~~
 
 Zabbix will send notification to a Zabbix server. The item in the host specified receive a 1 value for each hit. For example, if the elastic query produce 3 hits in the last execution of elastalert, three '1' (integer) values will be send from elastalert to Zabbix Server. If the query have 0 hits, any value will be sent.
 
@@ -2434,106 +2645,11 @@ Required:
 ``zbx_host``: This field setup the host in zabbix that receives the value sent by ElastAlert 2.
 ``zbx_key``: This field setup the key in the host that receives the value sent by ElastAlert 2.
 
-
-Discord
-~~~~~~~
-
-Discord will send notification to a Discord application. The body of the notification is formatted the same as with other alerters.
-
-Required:
-
-``discord_webhook_url``:  The webhook URL.
-
-Optional:
-
-``discord_emoji_title``: By default ElastAlert will use the ``:warning:`` emoji when posting to the channel. You can use a different emoji per ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
-
-``discord_proxy``: By default ElastAlert will not use a network proxy to send notifications to Discord. Set this option using hostname:port if you need to use a proxy.
-
-``discord_proxy_login``: The Discord proxy auth username.
-
-``discord_proxy_password``: The Discord proxy auth username.
-
-``discord_embed_color``: embed color. By default ``0xffffff``.
-
-``discord_embed_footer``: embed footer.
-
-``discord_embed_icon_url``: You can provide icon_url to use custom image. Provide absolute address of the pciture.
-
-Dingtalk
-~~~~~~~~
-
-Dingtalk will send notification to a Dingtalk application. The body of the notification is formatted the same as with other alerters.
-
-Required:
-
-``dingtalk_access_token``:  Dingtalk access token.
-
-``dingtalk_msgtype``:  Dingtalk msgtype. ``text``, ``markdown``, ``single_action_card``, ``action_card``.
-
-dingtalk_msgtype single_action_card Required:
-
-``dingtalk_single_title``: The title of a single button..
-
-``dingtalk_single_url``: Jump link for a single button.
-
-dingtalk_msgtype action_card Required:
-
-``dingtalk_btns``:  Button.
-
-dingtalk_msgtype action_card Optional:
-
-``dingtalk_btn_orientation``:  "0": Buttons are arranged vertically "1": Buttons are arranged horizontally.
-
-Example msgtype : text::
-
-    alert:
-    - dingtalk
-    dingtalk_access_token: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-    dingtalk_msgtype: 'text'
-
-
-Example msgtype : markdown::
-
-    alert:
-    - dingtalk
-    dingtalk_access_token: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-    dingtalk_msgtype: 'markdown'
-
-
-Example msgtype : single_action_card::
-
-    alert:
-    - dingtalk
-    dingtalk_access_token: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-    dingtalk_msgtype: 'single_action_card'
-    dingtalk_single_title: 'test3'
-    dingtalk_single_url: 'https://xxxx.xxx'
-
-
-Example msgtype : action_card::
-
-    alert:
-    - dingtalk
-    dingtalk_access_token: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-    dingtalk_msgtype: 'action_card'
-    dingtalk_btn_orientation: '0'
-    dingtalk_btns: [{'title': 'a', 'actionURL': 'https://xxxx1.xxx'}, {'title': 'b', 'actionURL': 'https://xxxx2.xxx'}]
-
-Chatwork
-~~~~~~~~
-
-Chatwork will send notification to a Chatwork application. The body of the notification is formatted the same as with other alerters.
-
-Required:
-
-``chatwork_apikey``:  ChatWork API KEY.
-
-``chatwork_room_id``: The ID of the room you are talking to in Chatwork. How to find the room ID is the part of the number after "rid" at the end of the URL of the browser.
-
 Example usage::
 
     alert:
-    - chatwork
-    chatwork_apikey: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-    chatwork_room_id: 'xxxxxxxxx'
+      - "zabbix"
+    zbx_sender_host: "zabbix-server"
+    zbx_sender_port: 10051
+    zbx_host: "test001"
+    zbx_key: "sender_load1"

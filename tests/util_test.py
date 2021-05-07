@@ -7,14 +7,18 @@ import pytest
 from dateutil.parser import parse as dt
 
 from elastalert.util import add_raw_postfix
+from elastalert.util import dt_to_ts_with_format
+from elastalert.util import flatten_dict
 from elastalert.util import format_index
 from elastalert.util import lookup_es_key
 from elastalert.util import parse_deadline
 from elastalert.util import parse_duration
+from elastalert.util import pytzfy
 from elastalert.util import replace_dots_in_field_names
 from elastalert.util import resolve_string
 from elastalert.util import set_es_key
 from elastalert.util import should_scrolling_continue
+from elastalert.util import ts_to_dt_with_format
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
@@ -228,3 +232,22 @@ def test_should_scrolling_continue():
     assert should_scrolling_continue(rule_before_first_run) is True
     assert should_scrolling_continue(rule_before_max_scrolling) is True
     assert should_scrolling_continue(rule_over_max_scrolling) is False
+
+
+def test_ts_to_dt_with_format():
+    assert ts_to_dt_with_format('2021/02/01 12:30:00', '%Y/%m/%d %H:%M:%S') == dt('2021-02-01 12:30:00+00:00')
+    assert ts_to_dt_with_format('01/02/2021 12:30:00', '%d/%m/%Y %H:%M:%S') == dt('2021-02-01 12:30:00+00:00')
+
+
+def test_dt_to_ts_with_format():
+    assert dt_to_ts_with_format(dt('2021-02-01 12:30:00+00:00'), '%Y/%m/%d %H:%M:%S') == '2021/02/01 12:30:00'
+    assert dt_to_ts_with_format(dt('2021-02-01 12:30:00+00:00'), '%d/%m/%Y %H:%M:%S') == '01/02/2021 12:30:00'
+
+
+def test_flatten_dict():
+    assert flatten_dict({'test': 'value1', 'test2': 'value2'}) == {'test': 'value1', 'test2': 'value2'}
+
+
+def test_pytzfy():
+    assert pytzfy(dt('2021-02-01 12:30:00+00:00')) == dt('2021-02-01 12:30:00+00:00')
+    assert pytzfy(datetime(2018, 12, 31, 5, 0, 30, 1000)) == dt('2018-12-31 05:00:30.001000')
