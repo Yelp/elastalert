@@ -1060,8 +1060,14 @@ class SlackAlerter(Alerter):
         self.slack_attach_kibana_discover_url = self.rule.get('slack_attach_kibana_discover_url', False)
         self.slack_kibana_discover_color = self.rule.get('slack_kibana_discover_color', '#ec4b98')
         self.slack_kibana_discover_title = self.rule.get('slack_kibana_discover_title', 'Discover in Kibana')
-        self.footer = self.rule.get('slack_footer', '')
-        self.footer_icon = self.rule.get('slack_footer_icon', '')
+        self.slack_footer = self.rule.get('slack_footer', '')
+        self.slack_footer_icon = self.rule.get('slack_footer_icon', '')
+        self.slack_image_url = self.rule.get('slack_image_url', '')
+        self.slack_thumb_url = self.rule.get('slack_thumb_url', '')
+        self.slack_author_name = self.rule.get('slack_author_name', '')
+        self.slack_author_link = self.rule.get('slack_author_link', '')
+        self.slack_author_icon = self.rule.get('slack_author_icon', '')
+        self.slack_msg_pretext = self.rule.get('slack_msg_pretext', '')
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1124,9 +1130,29 @@ class SlackAlerter(Alerter):
         if self.slack_title_link != '':
             payload['attachments'][0]['title_link'] = self.slack_title_link
 
-        if self.footer != '' and self.footer_icon != '':
-            payload['attachments'][0]['footer'] = self.footer
-            payload['attachments'][0]['footer_icon'] = self.footer_icon
+        if self.slack_footer != '':
+            payload['attachments'][0]['footer'] = self.slack_footer
+
+        if self.slack_footer_icon != '':
+            payload['attachments'][0]['footer_icon'] = self.slack_footer_icon
+
+        if self.slack_image_url != '':
+            payload['attachments'][0]['image_url'] = self.slack_image_url
+
+        if self.slack_thumb_url != '':
+            payload['attachments'][0]['thumb_url'] = self.slack_thumb_url
+
+        if self.slack_author_name != '':
+            payload['attachments'][0]['author_name'] = self.slack_author_name
+
+        if self.slack_author_link != '':
+            payload['attachments'][0]['author_link'] = self.slack_author_link
+
+        if self.slack_author_icon != '':
+            payload['attachments'][0]['author_icon'] = self.slack_author_icon
+
+        if self.slack_msg_pretext != '':
+            payload['attachments'][0]['pretext'] = self.slack_msg_pretext
 
         if self.slack_attach_kibana_discover_url:
             kibana_discover_url = lookup_es_key(matches[0], 'kibana_discover_url')
@@ -1186,6 +1212,15 @@ class MattermostAlerter(Alerter):
         self.mattermost_msg_pretext = self.rule.get('mattermost_msg_pretext', '')
         self.mattermost_msg_color = self.rule.get('mattermost_msg_color', 'danger')
         self.mattermost_msg_fields = self.rule.get('mattermost_msg_fields', '')
+        self.mattermost_image_url = self.rule.get('mattermost_image_url', '')
+        self.mattermost_title_link = self.rule.get('mattermost_title_link', '')
+        self.mattermost_footer = self.rule.get('mattermost_footer', '')
+        self.mattermost_footer_icon = self.rule.get('mattermost_footer_icon', '')
+        self.mattermost_image_url = self.rule.get('mattermost_image_url', '')
+        self.mattermost_thumb_url = self.rule.get('mattermost_thumb_url', '')
+        self.mattermost_author_name = self.rule.get('mattermost_author_name', '')
+        self.mattermost_author_link = self.rule.get('mattermost_author_link', '')
+        self.mattermost_author_icon = self.rule.get('mattermost_author_icon', '')
 
     def get_aggregation_summary_text__maximum_width(self):
         width = super(MattermostAlerter, self).get_aggregation_summary_text__maximum_width()
@@ -1249,6 +1284,30 @@ class MattermostAlerter(Alerter):
 
         if self.mattermost_channel_override != '':
             payload['channel'] = self.mattermost_channel_override
+
+        if self.mattermost_title_link != '':
+            payload['attachments'][0]['title_link'] = self.mattermost_title_link
+
+        if self.mattermost_footer != '':
+            payload['attachments'][0]['footer'] = self.mattermost_footer
+
+        if self.mattermost_footer_icon != '':
+            payload['attachments'][0]['footer_icon'] = self.mattermost_footer_icon
+
+        if self.mattermost_image_url != '':
+            payload['attachments'][0]['image_url'] = self.mattermost_image_url
+
+        if self.mattermost_thumb_url != '':
+            payload['attachments'][0]['thumb_url'] = self.mattermost_thumb_url
+
+        if self.mattermost_author_name != '':
+            payload['attachments'][0]['author_name'] = self.mattermost_author_name
+
+        if self.mattermost_author_link != '':
+            payload['attachments'][0]['author_link'] = self.mattermost_author_link
+
+        if self.mattermost_author_icon != '':
+            payload['attachments'][0]['author_icon'] = self.mattermost_author_icon
 
         for url in self.mattermost_webhook_url:
             try:

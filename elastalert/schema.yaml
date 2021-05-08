@@ -284,6 +284,12 @@ properties:
   slack_kibana_discover_title: {type: string}
   slack_footer: {type: string}
   slack_footer_icon: {type: string}
+  slack_image_url: {type: string}
+  slack_thumb_url: {type: string}
+  slack_author_name: {type: string}
+  slack_author_link: {type: string}
+  slack_author_icon: {type: string}
+  slack_msg_pretext: {type: string}
 
   ### Mattermost
   mattermost_webhook_url: *arrayOfString
@@ -295,6 +301,14 @@ properties:
   mattermost_msg_color: {enum: [good, warning, danger]}
   mattermost_msg_pretext: {type: string}
   mattermost_msg_fields: *mattermostField
+  mattermost_title_link: {type: string}
+  mattermost_footer: {type: string}
+  mattermost_footer_icon: {type: string}
+  mattermost_image_url: {type: string}
+  mattermost_thumb_url: {type: string}
+  mattermost_author_name: {type: string}
+  mattermost_author_link: {type: string}
+  mattermost_author_icon: {type: string}
 
   ## Opsgenie
   opsgenie_details:
