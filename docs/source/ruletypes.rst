@@ -2182,6 +2182,22 @@ Example mattermost_msg_fields::
         value: static field
         short: false
 
+``mattermost_title_link``: You can add a link in your Slack notification by setting this to a valid URL. Requires mattermost_title to be set.  Defaults to "".
+
+``mattermost_footer``: Add a static footer text for alert. Defaults to "".
+
+``mattermost_footer_icon``: A Public Url for a footer icon. Defaults to "".
+
+``mattermost_image_url``: An optional URL to an image file (GIF, JPEG, PNG, BMP, or SVG). Defaults to "".
+
+``mattermost_thumb_url``:  An optional URL to an image file (GIF, JPEG, PNG, BMP, or SVG) that is displayed as thumbnail. Defaults to "".
+
+``mattermost_author_name``: An optional name used to identify the author. . Defaults to "".
+
+``mattermost_author_link``: An optional URL used to hyperlink the author_name. Defaults to "".
+
+``mattermost_author_icon``: An optional URL used to display a 16x16 pixel icon beside the author_name. Defaults to "".
+
 Microsoft Teams
 ~~~~~~~~~~~~~~~
 
@@ -2456,6 +2472,18 @@ Example slack_alert_fields::
 ``slack_footer``: Add a static footer text for alert. Defaults to "".
 
 ``slack_footer_icon``: A Public Url for a footer icon. Defaults to "".
+
+``slack_image_url``: An optional URL to an image file (GIF, JPEG, PNG, BMP, or SVG). Defaults to "".
+
+``slack_thumb_url``:  An optional URL to an image file (GIF, JPEG, PNG, BMP, or SVG) that is displayed as thumbnail. Defaults to "".
+
+``slack_author_name``: An optional name used to identify the author. Defaults to "".
+
+``slack_author_link``: An optional URL used to hyperlink the author_name. Defaults to "".
+
+``slack_author_icon``: An optional URL used to display a 16x16 pixel icon beside the author_name. Defaults to "".
+
+``slack_msg_pretext``: You can set the message attachment pretext using this option. Defaults to "".
 
 Splunk On-Call (Formerly VictorOps)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

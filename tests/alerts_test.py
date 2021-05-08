@@ -2799,6 +2799,294 @@ def test_slack_footer():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
+def test_slack_image_url():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_username_override': 'elastalert',
+        'slack_image_url': 'http://image.url',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['alert_subject'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': [],
+                'image_url': 'http://image.url',
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True,
+        timeout=10
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_slack_thumb_url():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_username_override': 'elastalert',
+        'slack_thumb_url': 'http://thumb.url',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['alert_subject'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': [],
+                'thumb_url': 'http://thumb.url',
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True,
+        timeout=10
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_slack_author_name():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_username_override': 'elastalert',
+        'slack_author_name': 'author name',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['alert_subject'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': [],
+                'author_name': 'author name',
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True,
+        timeout=10
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_slack_author_link():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_username_override': 'elastalert',
+        'slack_author_link': 'http://author.url',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['alert_subject'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': [],
+                'author_link': 'http://author.url',
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True,
+        timeout=10
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_slack_author_icon():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_username_override': 'elastalert',
+        'slack_author_icon': 'http://author.icon',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['alert_subject'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': [],
+                'author_icon': 'http://author.icon',
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True,
+        timeout=10
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_slack_msg_pretext():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_username_override': 'elastalert',
+        'slack_msg_pretext': 'pretext value',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert',
+        'channel': '',
+        'icon_emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': rule['alert_subject'],
+                'text': BasicMatchString(rule, match).__str__(),
+                'mrkdwn_in': ['text', 'pretext'],
+                'fields': [],
+                'pretext': 'pretext value'
+            }
+        ],
+        'text': '',
+        'parse': 'none'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['slack_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True,
+        timeout=10
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
 def test_http_alerter_with_payload():
     rule = {
         'name': 'Test HTTP Post Alerter With Payload',
@@ -5909,6 +6197,398 @@ def test_mattermost_ignore_ssl_errors():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         verify=False,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_title_link():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_title_link': 'http://title.url',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n',
+                'title_link': 'http://title.url'
+            }
+        ],
+        'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_footer():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_footer': 'Mattermost footer',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n',
+                'footer': 'Mattermost footer'
+            }
+        ],
+        'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_footer_icon():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_footer_icon': 'http://icon.url',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n',
+                'footer_icon': 'http://icon.url'
+            }
+        ],
+        'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_image_url():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_image_url': 'http://image.url',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n',
+                'image_url': 'http://image.url'
+            }
+        ],
+        'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_thumb_url():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_thumb_url': 'http://thumb.url',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n',
+                'thumb_url': 'http://thumb.url'
+            }
+        ],
+        'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_author_name():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_author_name': 'author name',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n',
+                'author_name': 'author name'
+            }
+        ],
+        'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_author_link():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_author_link': 'http://author.link.url',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n',
+                'author_link': 'http://author.link.url'
+            }
+        ],
+        'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_author_icon():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_author_icon': 'http://author.icon.url',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n',
+                'author_icon': 'http://author.icon.url'
+            }
+        ],
+        'username': 'elastalert'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
         proxies=None
     )
 
