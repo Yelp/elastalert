@@ -2116,10 +2116,12 @@ class HiveAlerter(Alerter):
 
         # Iterate through each match found, populating the alert tags and observables as required
         tags = set()
+        artifacts = []
         for match in matches:
-            alert_config['artifacts'].append(self.load_observable_artifacts(match))
+            artifacts = artifacts + self.load_observable_artifacts(match)
             tags.update(self.load_tags(alert_config['tags'], match))
 
+        alert_config['artifacts'] = artifacts
         alert_config['tags'] = list(tags)
 
         # Populate the customFields
