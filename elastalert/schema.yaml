@@ -330,6 +330,9 @@ properties:
   cc: *arrayOfString
   bcc: *arrayOfString
   email_format: {type: string}
+  assets_dir: {type: string}
+  email_image_keys: {type: array, items: {type: string}}
+  email_image_values: {type: array, items: {type: string}}
   notify_email: *arrayOfString # if rule is slow or erroring, send to this email
 
   ### Exotel
@@ -344,7 +347,7 @@ properties:
   gitter_proxy: {type: string}
 
   ### GoogleChat
-  googlechat_webhook_url: {type: string}
+  googlechat_webhook_url: *arrayOfString
   googlechat_format: {type: string, enum: ['basic', 'card']}
   googlechat_header_title: {type: string}
   googlechat_header_subtitle: {type: string}
@@ -352,7 +355,7 @@ properties:
   googlechat_footer_kibanalink: {type: string}
 
   ### HTTP POST
-  http_post_url: {type: string}
+  http_post_url: *arrayOfString
   http_post_proxy: {type: string}
   http_post_ca_certs: {type: boolean}
   http_post_ignore_ssl_errors: {type: boolean}
@@ -403,7 +406,7 @@ properties:
   mattermost_author_icon: {type: string}
 
   ### Microsoft Teams
-  ms_teams_webhook_url: {type: string}
+  ms_teams_webhook_url: *arrayOfString
   ms_teams_alert_summary: {type: string}
   ms_teams_theme_color: {type: string}
   ms_teams_proxy: {type: string}
