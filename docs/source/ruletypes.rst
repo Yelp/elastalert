@@ -1910,6 +1910,18 @@ by the smtp server.
 ``email_format``: If set to 'html', the email's MIME type will be set to HTML, and HTML content should correctly render. If you use this,
 you need to put your own HTML into ``alert_text`` and use ``alert_text_type: alert_text_jinja`` Or ``alert_text_type: alert_text_only``.
 
+``assets_dir``: images dir. default to ``/tmp``.
+
+``email_image_keys``: mapping between images keys.
+
+``email_image_values``: mapping between images values
+
+Example assets_dir, email_image_keys, email_image_values::
+
+	assets_dir: "/opt/elastalert/email_images"
+	email_image_keys: ["img1"]
+	email_image_values: ["my_logo.png"]
+
 Exotel
 ~~~~~~
 
