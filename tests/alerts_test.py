@@ -7075,6 +7075,7 @@ def test_mattermost_ea_exception():
     except EAException:
         assert True
 
+
 def test_thehive_alerter():
     rule = {'alert': [],
             'alert_text': '',
@@ -7155,4 +7156,3 @@ def test_thehive_alerter():
     del actual_data['sourceRef']
 
     assert expected_data == actual_data
-        
