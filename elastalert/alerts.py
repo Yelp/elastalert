@@ -2141,14 +2141,15 @@ class HiveAlerter(Alerter):
         headers = {'Content-Type': 'application/json',
                    'Authorization': f'Bearer {api_key}'}
 
-        response = requests.post(req,
-                                 headers=headers,
-                                 data=alert_body,
-                                 proxies=proxies,
-                                 verify=verify)
-
-        if response.status_code != 201:
-            raise Exception(f'Unable to create TheHive alert: {response.text}')
+        try:
+            response = requests.post(req,
+                                     headers=headers,
+                                     data=alert_body,
+                                     proxies=proxies,
+                                     verify=verify)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException(f"Error posting to TheHive: {e}")
 
     def get_info(self):
 
