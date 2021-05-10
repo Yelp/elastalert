@@ -416,7 +416,7 @@ class EmailAlerter(Alerter):
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
         self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
-        self.smtp_port = self.rule.get('smtp_port')
+        self.smtp_port = self.rule.get('smtp_port', 25)
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
         self.smtp_key_file = self.rule.get('smtp_key_file')
@@ -1960,6 +1960,7 @@ class AlertaAlerter(Alerter):
 
 class HTTPPostAlerter(Alerter):
     """ Requested elasticsearch indices are sent by HTTP POST. Encoded with JSON. """
+    required_options = frozenset(['http_post_url'])
 
     def __init__(self, rule):
         super(HTTPPostAlerter, self).__init__(rule)
@@ -2120,7 +2121,7 @@ class HiveAlerter(Alerter):
 
 
 class DiscordAlerter(Alerter):
-
+    """ Created a Discord for each alert """
     required_options = frozenset(['discord_webhook_url'])
 
     def __init__(self, rule):

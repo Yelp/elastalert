@@ -1720,6 +1720,8 @@ until the command exits or sends an EOF to stdout.
 ``pipe_alert_text``: If true, the standard alert body text will be passed to stdin of the command. Note that this will cause ElastAlert to block
 until the command exits or sends an EOF to stdout. It cannot be used at the same time as ``pipe_match_json``.
 
+``fail_on_non_zero_exit``: By default this is ``False``. Allows monitoring of when commands fail to run. When a command returns a non-zero exit status, the alert raises an exception.
+
 Example usage using old-style format::
 
     alert:
@@ -1905,8 +1907,20 @@ by the smtp server.
 
 ``bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
 
-``email_format``: If set to ``html``, the email's MIME type will be set to HTML, and HTML content should correctly render. If you use this,
+``email_format``: If set to 'html', the email's MIME type will be set to HTML, and HTML content should correctly render. If you use this,
 you need to put your own HTML into ``alert_text`` and use ``alert_text_type: alert_text_jinja`` Or ``alert_text_type: alert_text_only``.
+
+``assets_dir``: images dir. default to ``/tmp``.
+
+``email_image_keys``: mapping between images keys.
+
+``email_image_values``: mapping between images values
+
+Example assets_dir, email_image_keys, email_image_values::
+
+	assets_dir: "/opt/elastalert/email_images"
+	email_image_keys: ["img1"]
+	email_image_values: ["my_logo.png"]
 
 Exotel
 ~~~~~~
@@ -2242,13 +2256,21 @@ The OpsGenie alert requires one option:
 Optional:
 
 ``opsgenie_account``: The OpsGenie account to integrate with.
+
 ``opsgenie_addr``: The OpsGenie URL to to connect against, default is ``https://api.opsgenie.com/v2/alerts``
+
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
+
 ``opsgenie_recipients_args``: Map of arguments used to format opsgenie_recipients.
+
 ``opsgenie_default_receipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful.
+
 ``opsgenie_teams``: A list of OpsGenie teams to notify (useful for schedules with escalation).
-``opsgenie_teams_args``: Map of arguments used to format opsgenie_teams (useful for assigning the alerts to teams based on some data)
+
+``opsgenie_teams_args``: Map of arguments used to format opsgenie_teams (useful for assigning the alerts to teams based on some data).
+
 ``opsgenie_default_teams``: List of default teams to notify when the formatting of opsgenie_teams is unsuccesful.
+
 ``opsgenie_tags``: A list of tags for this alert.
 
 ``opsgenie_message``: Set the OpsGenie message to something other than the rule name. The message can be formatted with fields from the first match e.g. "Error occurred for {app_name} at {timestamp}.".
@@ -2673,8 +2695,11 @@ Zabbix will send notification to a Zabbix server. The item in the host specified
 Required:
 
 ``zbx_sender_host``: The address where zabbix server is running.
+
 ``zbx_sender_port``: The port where zabbix server is listenning.
+
 ``zbx_host``: This field setup the host in zabbix that receives the value sent by ElastAlert 2.
+
 ``zbx_key``: This field setup the key in the host that receives the value sent by ElastAlert 2.
 
 Example usage::
