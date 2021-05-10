@@ -240,66 +240,161 @@ properties:
   timestamp_field: {type: string}
   field: {}
 
-  ### Commands
+  ### Simple
+  simple_webhook_url: *arrayOfString
+  simple_proxy: {type: string}
+
+  ### Alerta
+  alerta_api_url: {type: string}
+  alerta_api_key: {type: string}
+  alerta_use_qk_as_resource: {type: boolean}
+  alerta_use_match_timestamp: {type: boolean}
+  alerta_api_skip_ssl: {type: boolean}
+  alerta_severity: {type: string}
+  alerta_timeout: {type: integer}
+  alerta_type: {type: string}
+  alerta_resource: {type: string}   # Python format string
+  alerta_service: {type: array, items: {type: string}}  # Python format string
+  alerta_origin: {type: string}   # Python format string
+  alerta_environment: {type: string}  # Python format string
+  alerta_group: {type: string}  # Python format string
+  alerta_correlate: {type: array, items: {type: string}}  # Python format string
+  alerta_tags: {type: array, items: {type: string}}   # Python format string
+  alerta_event: {type: string} # Python format stringalerta_use_match_timestamp
+  alerta_text: {type: string} # Python format string
+  alerta_value: {type: string} # Python format string
+  alerta_attributes_keys: {type: array, items: {type: string}}
+  alerta_attributes_values: {type: array, items: {type: string}}  # Python format string
+
+  ### AWS SES
+  ses_email: *arrayOfString
+  ses_from_addr: {type: string}
+  ses_aws_access_key: {type: string}
+  ses_aws_secret_key: {type: string}
+  ses_aws_region: {type: string}
+  ses_aws_profile: {type: string}
+  ses_email_reply_to: {type: string}
+  ses_cc: *arrayOfString
+  ses_bcc: *arrayOfString
+
+  ### AWS SNS
+  sns_topic_arn: {type: string}
+  sns_aws_access_key_id: {type: string}
+  sns_aws_secret_access_key: {type: string}
+  sns_aws_region: {type: string}
+  sns_aws_profile: {type: string}
+
+  ### Chatwork
+  chatwork_apikey: {type: string}
+  chatwork_room_id: {type: string}
+
+  ### Command
   command: *arrayOfString
   pipe_match_json: {type: boolean}
+  pipe_alert_text: {type: boolean}
   fail_on_non_zero_exit: {type: boolean}
+
+  ### Datadog
+  datadog_api_key: {type: string}
+  datadog_app_key: {type: string}
+
+  ### Dingtalk
+  dingtalk_access_token: {type: string}
+  dingtalk_msgtype: {type: string, enum: ['text', 'markdown', 'single_action_card', 'action_card']}
+  dingtalk_single_title: {type: string}
+  dingtalk_single_url: {type: string}
+  dingtalk_btn_orientation: {type: string}
+
+  ## Discord
+  discord_webhook_url: {type: string}
+  discord_emoji_title: {type: string}
+  discord_proxy: {type: string}
+  discord_proxy_login: {type: string}
+  discord_proxy_password: {type: string}
+  discord_embed_color: {type: integer}
+  discord_embed_footer: {type: string}
+  discord_embed_icon_url: {type: string}
 
   ### Email
   email: *arrayOfString
-  email_reply_to: {type: string}
-  notify_email: *arrayOfString # if rule is slow or erroring, send to this email
+  email_from_field: {type: string}
+  email_add_domain: {type: string}
   smtp_host: {type: string}
+  smtp_port: {type: integer}
+  smtp_ssl: {type: boolean}
+  smtp_auth_file: {type: string}
+  smtp_cert_file: {type: string}
+  smtp_key_file: {type: string}
+  email_reply_to: {type: string}
   from_addr: {type: string}
+  cc: *arrayOfString
+  bcc: *arrayOfString
+  email_format: {type: string}
+  assets_dir: {type: string}
+  email_image_keys: {type: array, items: {type: string}}
+  email_image_values: {type: array, items: {type: string}}
+  notify_email: *arrayOfString # if rule is slow or erroring, send to this email
+
+  ### Exotel
+  exotel_account_sid: {type: string}
+  exotel_auth_token: {type: string}
+  exotel_to_number: {type: string}
+  exotel_from_number: {type: string}
+
+  ### Gitter
+  gitter_webhook_url: {type: string}
+  gitter_msg_level: {enum: [info, error]}
+  gitter_proxy: {type: string}
+
+  ### GoogleChat
+  googlechat_webhook_url: *arrayOfString
+  googlechat_format: {type: string, enum: ['basic', 'card']}
+  googlechat_header_title: {type: string}
+  googlechat_header_subtitle: {type: string}
+  googlechat_header_image: {type: string}
+  googlechat_footer_kibanalink: {type: string}
+
+  ### HTTP POST
+  http_post_url: *arrayOfString
+  http_post_proxy: {type: string}
+  http_post_ca_certs: {type: boolean}
+  http_post_ignore_ssl_errors: {type: boolean}
+  http_post_timeout: {type: integer}
 
   ### JIRA
   jira_server: {type: string}
   jira_project: {type: string}
   jira_issuetype: {type: string}
   jira_account_file: {type: string} # a Yaml file that includes the keys {user:, password:}
-
   jira_assignee: {type: string}
   jira_component: *arrayOfString
   jira_components: *arrayOfString
+  jira_description: {type: string}
   jira_label: *arrayOfString
   jira_labels: *arrayOfString
-  jira_bump_tickets: {type: boolean}
-  jira_bump_in_statuses: *arrayOfString
-  jira_bump_not_in_statuses: *arrayOfString
-  jira_max_age: {type: number}
+  jira_priority: {type: number}
   jira_watchers: *arrayOfString
+  jira_bump_tickets: {type: boolean}
+  jira_ignore_in_title: {type: string}
+  jira_max_age: {type: number}
+  jira_bump_not_in_statuses: *arrayOfString
+  jira_bump_in_statuses: *arrayOfString
+  jira_bump_only: {type: boolean}
+  jira_transition_to: {type: boolean}
+  jira_bump_after_inactivity: {type: number}
 
-  ### Slack
-  slack_webhook_url: *arrayOfString
-  slack_username_override: {type: string}
-  slack_emoji_override: {type: string}
-  slack_icon_url_override: {type: string}
-  slack_msg_color: {enum: [good, warning, danger]}
-  slack_parse_override: {enum: [none, full]}
-  slack_text_string: {type: string}
-  slack_ignore_ssl_errors: {type: boolean}
-  slack_ca_certs: {type: string}
-  slack_attach_kibana_discover_url: {type: boolean}
-  slack_kibana_discover_color: {type: string}
-  slack_kibana_discover_title: {type: string}
-  slack_footer: {type: string}
-  slack_footer_icon: {type: string}
-  slack_image_url: {type: string}
-  slack_thumb_url: {type: string}
-  slack_author_name: {type: string}
-  slack_author_link: {type: string}
-  slack_author_icon: {type: string}
-  slack_msg_pretext: {type: string}
+  ### Line Notify
+  linenotify_access_token: {type: string}
 
   ### Mattermost
   mattermost_webhook_url: *arrayOfString
   mattermost_proxy: {type: string}
   mattermost_ignore_ssl_errors: {type: boolean}
   mattermost_username_override: {type: string}
-  mattermost_icon_url_override: {type: string}
   mattermost_channel_override: {type: string}
-  mattermost_msg_color: {enum: [good, warning, danger]}
+  mattermost_icon_url_override: {type: string}
   mattermost_msg_pretext: {type: string}
+  mattermost_msg_color: {enum: [good, warning, danger]}
   mattermost_msg_fields: *mattermostField
   mattermost_title_link: {type: string}
   mattermost_footer: {type: string}
@@ -310,7 +405,22 @@ properties:
   mattermost_author_link: {type: string}
   mattermost_author_icon: {type: string}
 
-  ## Opsgenie
+  ### Microsoft Teams
+  ms_teams_webhook_url: *arrayOfString
+  ms_teams_alert_summary: {type: string}
+  ms_teams_theme_color: {type: string}
+  ms_teams_proxy: {type: string}
+  ms_teams_alert_fixed_width: {type: boolean}
+
+  ### Opsgenie
+  opsgenie_key: {type: string}
+  opsgenie_account: {type: string}
+  opsgenie_addr: {type: string}
+  opsgenie_message: {type: string}
+  opsgenie_alias: {type: string}
+  opsgenie_subject: {type: string}
+  opsgenie_priority: {type: string}
+  opsgenie_proxy: {type: string}
   opsgenie_details:
     type: object
     minProperties: 1
@@ -328,16 +438,88 @@ properties:
   pagerduty_service_key: {type: string}
   pagerduty_client_name: {type: string}
   pagerduty_event_type: {enum: [none, trigger, resolve, acknowledge]}
+  pagerduty_incident_key: {type: string}
+  pagerduty_incident_key_args: {type: array, items: {type: string}}
+  pagerduty_proxy: {type: string}
+  pagerduty_api_version: {type: string, enum: ['v1', 'v2']}
+  pagerduty_v2_payload_class: {type: string}
+  pagerduty_v2_payload_class_args: {type: array, items: {type: string}}
+  pagerduty_v2_payload_component: {type: string}
+  pagerduty_v2_payload_component_args: {type: array, items: {type: string}}
+  pagerduty_v2_payload_group: {type: string}
+  pagerduty_v2_payload_group_args: {type: array, items: {type: string}}
+  pagerduty_v2_payload_severity: {type: string, enum: ['critical', 'error', 'warning', 'info']}
+  pagerduty_v2_payload_source: {type: string}
+  pagerduty_v2_payload_source_args: {type: array, items: {type: string}}
+  pagerduty_v2_payload_include_all_info: {type: boolean}
 
-### PagerTree
+  ### PagerTree
   pagertree_integration_url: {type: string}
+  pagertree_proxy: {type: string}
 
+  ### ServiceNow
+  servicenow_rest_url: {type: string}
+  username: {type: string}
+  password: {type: string}
+  short_description: {type: string}
+  comments: {type: string}
+  assignment_group: {type: string}
+  category: {type: string}
+  subcategory: {type: string}
+  cmdb_ci: {type: string}
+  caller_id: {type: string}
+  servicenow_proxy: {type: string}
 
-  ### Exotel
-  exotel_account_sid: {type: string}
-  exotel_auth_token: {type: string}
-  exotel_to_number: {type: string}
-  exotel_from_number: {type: string}
+  ### Slack
+  slack_webhook_url: *arrayOfString
+  slack_username_override: {type: string}
+  slack_channel_override: {type: string}
+  slack_emoji_override: {type: string}
+  slack_icon_url_override: {type: string}
+  slack_msg_color: {enum: [good, warning, danger]}
+  slack_parse_override: {enum: [none, full]}
+  slack_text_string: {type: string}
+  slack_proxy: {type: string}
+  slack_ignore_ssl_errors: {type: boolean}
+  slack_title: {type: string}
+  slack_title_link: {type: string}
+  slack_timeout: {type: integer}
+  slack_attach_kibana_discover_url: {type: boolean}
+  slack_kibana_discover_color: {type: string}
+  slack_kibana_discover_title: {type: string}
+  slack_ca_certs: {type: boolean}
+  slack_footer: {type: string}
+  slack_footer_icon: {type: string}
+  slack_image_url: {type: string}
+  slack_thumb_url: {type: string}
+  slack_author_name: {type: string}
+  slack_author_link: {type: string}
+  slack_author_icon: {type: string}
+  slack_msg_pretext: {type: string}
+
+  ### Splunk On-Call (Formerly VictorOps)
+  victorops_api_key: {type: string}
+  victorops_routing_key: {type: string}
+  victorops_message_type: {enum: [INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY]}
+  victorops_entity_id: {type: string}
+  victorops_entity_display_name: {type: string}
+  victorops_proxy: {type: string}
+
+  ### Stomp
+  stomp_hostname: {type: string}
+  stomp_hostport: {type: string}
+  stomp_login: {type: string}
+  stomp_password: {type: string}
+  stomp_ssl: {type: boolean}
+  stomp_destination: {type: string}
+
+  ### Telegram
+  telegram_bot_token: {type: string}
+  telegram_room_id: {type: string}
+  telegram_api_url: {type: string}
+  telegram_proxy: {type: string}
+  telegram_proxy_login: {type: string}
+  telegram_proxy_pass: {type: string}
 
   ### Twilio
   twilio_account_sid: {type: string}
@@ -347,64 +529,8 @@ properties:
   twilio_message_service_sid: {type: string}
   twilio_use_copilot: {type: boolean}
 
-  ### VictorOps
-  victorops_api_key: {type: string}
-  victorops_routing_key: {type: string}
-  victorops_message_type: {enum: [INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY]}
-  victorops_entity_id: {type: string}
-  victorops_entity_display_name: {type: string}
-
-  ### Telegram
-  telegram_bot_token: {type: string}
-  telegram_room_id: {type: string}
-  telegram_api_url: {type: string}
-
-  ### Gitter
-  gitter_webhook_url: {type: string}
-  gitter_proxy: {type: string}
-  gitter_msg_level: {enum: [info, error]}
-
-  ### Alerta
-  alerta_api_url: {type: string}
-  alerta_api_key: {type: string}
-  alerta_severity: {type: string}
-  alerta_resource: {type: string}   # Python format string
-  alerta_environment: {type: string}  # Python format string
-  alerta_origin: {type: string}   # Python format string
-  alerta_group: {type: string}  # Python format string
-  alerta_service: {type: array, items: {type: string}}  # Python format string
-  alerta_correlate: {type: array, items: {type: string}}  # Python format string
-  alerta_tags: {type: array, items: {type: string}}   # Python format string
-  alerta_event: {type: string} # Python format string
-  alerta_text: {type: string} # Python format string
-  alerta_type: {type: string}
-  alerta_value: {type: string} # Python format string
-  alerta_attributes_keys: {type: array, items: {type: string}}
-  alerta_attributes_values: {type: array, items: {type: string}}  # Python format string
-
-  ### Simple
-  simple_webhook_url: *arrayOfString
-  simple_proxy: {type: string}
-
-  ### LineNotify
-  linenotify_access_token: {type: string}
-
   ### Zabbix
   zbx_sender_host: {type: string}
   zbx_sender_port: {type: integer}
   zbx_host: {type: string}
   zbx_key: {type: string}
-
-  ## Discord
-  discord_webhook_url: {type: string}
-
-  ### Dingtalk
-  dingtalk_access_token: {type: string}
-  dingtalk_msgtype: {type: string}
-  dingtalk_single_title: {type: string}
-  dingtalk_single_url: {type: string}
-  dingtalk_btn_orientation: {type: string}
-
-  ### Chatwork
-  chatwork_apikey: {type: string}
-  chatwork_room_id: {type: string}
