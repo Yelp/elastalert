@@ -10,6 +10,7 @@ import mock
 import pytest
 from jira.exceptions import JIRAError
 from requests.auth import HTTPProxyAuth
+from requests.exceptions import RequestException
 
 from elastalert.alerts import AlertaAlerter
 from elastalert.alerts import Alerter
@@ -39,6 +40,7 @@ from elastalert.opsgenie import OpsGenieAlerter
 from elastalert.alerts import VictorOpsAlerter
 from elastalert.util import ts_add
 from elastalert.util import ts_now
+from elastalert.util import EAException
 
 
 class mock_rule:
@@ -115,7 +117,7 @@ def test_email():
 
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value'}])
-        expected = [mock.call('localhost'),
+        expected = [mock.call('localhost', 25),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
@@ -180,7 +182,7 @@ def test_email_with_unicode_strings():
 
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value'}])
-        expected = [mock.call('localhost'),
+        expected = [mock.call('localhost', 25),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
@@ -208,7 +210,7 @@ def test_email_with_auth():
             alert = EmailAlerter(rule)
 
         alert.alert([{'test_term': 'test_value'}])
-        expected = [mock.call('localhost'),
+        expected = [mock.call('localhost', 25),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
@@ -230,7 +232,7 @@ def test_email_with_cert_key():
             alert = EmailAlerter(rule)
 
         alert.alert([{'test_term': 'test_value'}])
-        expected = [mock.call('localhost'),
+        expected = [mock.call('localhost', 25),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile='dummy/cert.crt', keyfile='dummy/client.key'),
@@ -249,7 +251,7 @@ def test_email_with_cc():
 
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value'}])
-        expected = [mock.call('localhost'),
+        expected = [mock.call('localhost', 25),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
@@ -274,7 +276,7 @@ def test_email_with_bcc():
 
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value'}])
-        expected = [mock.call('localhost'),
+        expected = [mock.call('localhost', 25),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
@@ -299,7 +301,7 @@ def test_email_with_cc_and_bcc():
 
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value'}])
-        expected = [mock.call('localhost'),
+        expected = [mock.call('localhost', 25),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
@@ -344,7 +346,7 @@ def test_email_with_args():
 
         alert = EmailAlerter(rule)
         alert.alert([{'test_term': 'test_value', 'test_arg1': 'testing', 'test': {'term': ':)', 'arg3': '☃'}}])
-        expected = [mock.call('localhost'),
+        expected = [mock.call('localhost', 25),
                     mock.call().ehlo(),
                     mock.call().has_extn('STARTTLS'),
                     mock.call().starttls(certfile=None, keyfile=None),
@@ -1659,6 +1661,23 @@ def test_command():
     assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
     assert "Non-zero exit code while running command" in str(exception)
 
+    # Test OSError
+    try:
+        rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],
+                'pipe_alert_text': True, 'type': mock_rule(), 'name': 'Test'}
+        alert = CommandAlerter(rule)
+        match = {'@timestamp': '2014-01-01T00:00:00',
+                 'somefield': 'foobarbaz'}
+        alert_text = str(BasicMatchString(rule, match))
+        mock_run = mock.MagicMock(side_effect=OSError)
+        with mock.patch("elastalert.alerts.subprocess.Popen", mock_run), pytest.raises(OSError) as mock_popen:
+            mock_subprocess = mock.Mock()
+            mock_popen.return_value = mock_subprocess
+            mock_subprocess.communicate.return_value = (None, None)
+            alert.alert([match])
+    except EAException:
+        assert True
+
 
 def test_ms_teams():
     rule = {
@@ -1769,6 +1788,30 @@ def test_ms_teams_proxy():
         proxies={'https': rule['ms_teams_proxy']}
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_ms_teams_ea_exception():
+    try:
+        rule = {
+            'name': 'Test Rule',
+            'type': 'any',
+            'ms_teams_webhook_url': 'http://test.webhook.url',
+            'ms_teams_alert_summary': 'Alert from ElastAlert',
+            'alert_subject': 'Cool subject',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = MsTeamsAlerter(rule)
+        match = {
+            '@timestamp': '2016-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
 
 
 def test_slack_uses_custom_title():
@@ -3088,6 +3131,31 @@ def test_slack_msg_pretext():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
+def test_slack_ea_exception():
+    try:
+        rule = {
+            'name': 'Test Rule',
+            'type': 'any',
+            'slack_webhook_url': 'http://please.dontgohere.slack',
+            'slack_username_override': 'elastalert',
+            'slack_msg_pretext': 'pretext value',
+            'alert_subject': 'Cool subject',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = SlackAlerter(rule)
+        match = {
+            '@timestamp': '2016-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
+
+
 def test_http_alerter_with_payload():
     rule = {
         'name': 'Test HTTP Post Alerter With Payload',
@@ -3358,6 +3426,30 @@ def test_http_alerter_post_ca_certs_false():
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_http_alerter_post_ea_exception():
+    try:
+        rule = {
+            'name': 'Test HTTP Post Alerter Without Payload',
+            'type': 'any',
+            'http_post_url': 'http://test.webhook.url',
+            'http_post_static_payload': {'name': 'somestaticname'},
+            'http_post_ca_certs': False,
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = HTTPPostAlerter(rule)
+        match = {
+            '@timestamp': '2017-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
 
 
 def test_pagerduty_alerter():
@@ -3929,6 +4021,36 @@ def test_pagerduty_alerter_proxy():
     mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'},
                                               proxies={'https': 'http://proxy.url'})
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_pagerduty_ea_exception():
+    try:
+        rule = {
+            'name': 'Test PD Rule',
+            'type': 'any',
+            'alert_subject': '{0} kittens',
+            'alert_subject_args': ['somefield'],
+            'pagerduty_service_key': 'magicalbadgers',
+            'pagerduty_event_type': 'trigger',
+            'pagerduty_client_name': 'ponies inc.',
+            'pagerduty_incident_key': 'custom {0}',
+            'pagerduty_incident_key_args': ['someotherfield'],
+            'pagerduty_proxy': 'http://proxy.url',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = PagerDutyAlerter(rule)
+        match = {
+            '@timestamp': '2017-01-01T00:00:00',
+            'somefield': 'Stinkiest',
+            'someotherfield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
 
 
 def test_alert_text_kw(ea):
@@ -4628,6 +4750,44 @@ def test_alerta_tags():
         mock_post_request.call_args_list[0][1]['data'])
 
 
+def test_alerta_ea_exception():
+    try:
+        rule = {
+            'name': 'Test Alerta rule!',
+            'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+            'timeframe': datetime.timedelta(hours=1),
+            'timestamp_field': '@timestamp',
+            'alerta_attributes_keys': ["hostname", "TimestampEvent", "senderIP"],
+            'alerta_attributes_values': ["{hostname}", "{logdate}", "{sender_ip}"],
+            'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
+            'alerta_event': "ProbeUP",
+            'alerta_group': "Health",
+            'alerta_origin': "ElastAlert 2",
+            'alerta_severity': "debug",
+            'alerta_text': "Probe {hostname} is UP at {logdate} GMT",
+            'alerta_value': "UP",
+            'type': 'any',
+            'alerta_use_match_timestamp': True,
+            'alerta_tags': ['elastalert2'],
+            'alert': 'alerta'
+        }
+
+        match = {
+            '@timestamp': '2014-10-10T00:00:00',
+            'sender_ip': '1.1.1.1',
+            'hostname': 'aProbe'
+        }
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = AlertaAlerter(rule)
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
+
+
 def test_alert_subject_size_limit_no_args():
     rule = {
         'name': 'test_rule',
@@ -4726,6 +4886,30 @@ def test_datadog_alerter():
     assert expected_data == actual_data
 
 
+def test_datadog_alerterea_exception():
+    try:
+        rule = {
+            'name': 'Test Datadog Event Alerter',
+            'type': 'any',
+            'datadog_api_key': 'test-api-key',
+            'datadog_app_key': 'test-app-key',
+            'alert': [],
+            'alert_subject': 'Test Datadog Event Alert'
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = DatadogAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'name': 'datadog-test-name'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
+
+
 def test_pagertree():
     rule = {
         'name': 'Test PagerTree Rule',
@@ -4807,6 +4991,29 @@ def test_pagertree_proxy():
     assert expected_data["Description"] == actual_data['Description']
 
 
+def test_pagertree_ea_exception():
+    try:
+        rule = {
+            'name': 'Test PagerTree Rule',
+            'type': 'any',
+            'pagertree_integration_url': 'https://api.pagertree.com/integration/xxxxx',
+            'pagertree_proxy': 'http://proxy.url',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = PagerTreeAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
+
+
 def test_line_notify():
     rule = {
         'name': 'Test LineNotify Rule',
@@ -4839,6 +5046,28 @@ def test_line_notify():
 
     actual_data = mock_post_request.call_args_list[0][1]['data']
     assert expected_data == actual_data
+
+
+def test_line_notify_ea_exception():
+    try:
+        rule = {
+            'name': 'Test LineNotify Rule',
+            'type': 'any',
+            'linenotify_access_token': 'xxxxx',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = LineNotifyAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
 
 
 def test_gitter_msg_level_default():
@@ -4979,6 +5208,30 @@ def test_gitter_proxy():
     assert 'error' in actual_data['level']
 
 
+def test_gitter_ea_exception():
+    try:
+        rule = {
+            'name': 'Test Gitter Rule',
+            'type': 'any',
+            'gitter_webhook_url': 'https://webhooks.gitter.im/e/xxxxx',
+            'gitter_msg_level': 'error',
+            'gitter_proxy': 'http://proxy.url',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = GitterAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
+
+
 def test_chatwork():
     rule = {
         'name': 'Test Chatwork Rule',
@@ -5046,6 +5299,32 @@ def test_chatwork_proxy():
 
     actual_data = mock_post_request.call_args_list[0][1]['params']
     assert expected_data == actual_data
+
+
+def test_chatwork_ea_exception():
+    try:
+        rule = {
+            'name': 'Test Chatwork Rule',
+            'type': 'any',
+            'chatwork_apikey': 'xxxx1',
+            'chatwork_room_id': 'xxxx2',
+            'chatwork_proxy': 'http://proxy.url',
+            'chatwork_proxy_login': 'admin',
+            'chatwork_proxy_pass': 'password',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = ChatworkAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
 
 
 def test_telegram():
@@ -5160,6 +5439,29 @@ def test_telegram_text_maxlength():
     assert expected_data == actual_data
 
 
+def test_telegram_ea_exception():
+    try:
+        rule = {
+            'name': 'Test Telegram Rule' + ('a' * 3985),
+            'type': 'any',
+            'telegram_bot_token': 'xxxxx1',
+            'telegram_room_id': 'xxxxx2',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = TelegramAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
+
+
 def test_service_now():
     rule = {
         'name': 'Test ServiceNow Rule',
@@ -5265,6 +5567,38 @@ def test_service_now_proxy():
     assert expected_data == actual_data
 
 
+def test_service_now_ea_exception():
+    try:
+        rule = {
+            'name': 'Test ServiceNow Rule',
+            'type': 'any',
+            'username': 'ServiceNow username',
+            'password': 'ServiceNow password',
+            'servicenow_rest_url': 'https://xxxxxxxxxx',
+            'short_description': 'ServiceNow short_description',
+            'comments': 'ServiceNow comments',
+            'assignment_group': 'ServiceNow assignment_group',
+            'category': 'ServiceNow category',
+            'subcategory': 'ServiceNow subcategory',
+            'cmdb_ci': 'ServiceNow cmdb_ci',
+            'caller_id': 'ServiceNow caller_id',
+            'servicenow_proxy': 'http://proxy.url',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = ServiceNowAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
+
+
 def test_victor_ops():
     rule = {
         'name': 'Test VictorOps Rule',
@@ -5340,6 +5674,32 @@ def test_victor_ops_proxy():
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
+
+
+def test_victor_ops_ea_exception():
+    try:
+        rule = {
+            'name': 'Test VictorOps Rule',
+            'type': 'any',
+            'victorops_api_key': 'xxxx1',
+            'victorops_routing_key': 'xxxx2',
+            'victorops_message_type': 'INFO',
+            'victorops_entity_display_name': 'no entity display name',
+            'victorops_proxy': 'http://proxy.url',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = VictorOpsAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
 
 
 def test_google_chat_basic():
@@ -5437,6 +5797,33 @@ def test_google_chat_card():
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
+
+
+def test_google_chat_ea_exception():
+    try:
+        rule = {
+            'name': 'Test GoogleChat Rule',
+            'type': 'any',
+            'googlechat_webhook_url': 'http://xxxxxxx',
+            'googlechat_format': 'card',
+            'googlechat_header_title': 'xxxx1',
+            'googlechat_header_subtitle': 'xxxx2',
+            'googlechat_header_image': 'http://xxxx/image.png',
+            'googlechat_footer_kibanalink': 'http://xxxxx/kibana',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = GoogleChatAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
 
 
 def test_discord():
@@ -5611,6 +5998,31 @@ def test_discord_description_maxlength():
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
+
+
+def test_discord_ea_exception():
+    try:
+        rule = {
+            'name': 'Test Discord Rule' + ('a' * 2069),
+            'type': 'any',
+            'discord_webhook_url': 'http://xxxxxxx',
+            'discord_emoji_title': ':warning:',
+            'discord_embed_color': 0xffffff,
+            'alert': [],
+            'alert_subject': 'Test Discord'
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = DiscordAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
 
 
 def test_dingtalk_text():
@@ -5855,6 +6267,46 @@ def test_dingtalk_proxy():
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
+
+
+def test_dingtalk_ea_exception():
+    try:
+        rule = {
+            'name': 'Test DingTalk Rule',
+            'type': 'any',
+            'dingtalk_access_token': 'xxxxxxx',
+            'dingtalk_msgtype': 'action_card',
+            'dingtalk_single_title': 'elastalert',
+            'dingtalk_single_url': 'http://xxxxx2',
+            'dingtalk_btn_orientation': '1',
+            'dingtalk_btns': [
+                {
+                    'title': 'test1',
+                    'actionURL': 'https://xxxxx0/'
+                },
+                {
+                    'title': 'test2',
+                    'actionURL': 'https://xxxxx1/'
+                }
+            ],
+            'dingtalk_proxy': 'http://proxy.url',
+            'dingtalk_proxy_login': 'admin',
+            'dingtalk_proxy_pass': 'password',
+            'alert': [],
+            'alert_subject': 'Test DingTalk'
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = DingTalkAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
 
 
 def test_mattermost_proxy():
@@ -6597,6 +7049,32 @@ def test_mattermost_author_icon():
     assert expected_data == actual_data
 
 
+def test_mattermost_ea_exception():
+    try:
+        rule = {
+            'name': 'Test Mattermost Rule',
+            'type': 'any',
+            'alert_text_type': 'alert_text_only',
+            'mattermost_webhook_url': 'http://xxxxx',
+            'mattermost_msg_pretext': 'aaaaa',
+            'mattermost_msg_color': 'danger',
+            'mattermost_author_icon': 'http://author.icon.url',
+            'alert': [],
+            'alert_subject': 'Test Mattermost'
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = MattermostAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
+
 def test_thehive_alerter():
     rule = {'alert': [],
             'alert_text': '',
@@ -6677,3 +7155,4 @@ def test_thehive_alerter():
     del actual_data['sourceRef']
 
     assert expected_data == actual_data
+        
