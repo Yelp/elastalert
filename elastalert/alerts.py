@@ -3,7 +3,6 @@ import copy
 import datetime
 import json
 import os
-import re
 import subprocess
 import sys
 import time
@@ -2043,74 +2042,115 @@ class HiveAlerter(Alerter):
     """
     Use matched data to create alerts containing observables in an instance of TheHive
     """
-
     required_options = set(['hive_connection', 'hive_alert_config'])
 
-    def alert(self, matches):
+    def lookup_field(self, match: dict, field_name: str, default):
+        """Populates a field with values depending on the contents of the Elastalert match
+        provided to it.
 
+        Uses a similar algorithm to that implemented to populate the `alert_text_args`.
+        First checks any fields found in the match provided, then any fields defined in
+        the rule, finally returning the default value provided if no value can be found.
+        """
+        field_value = lookup_es_key(match, field_name)
+        if field_value is None:
+            field_value = self.rule.get(field_name, default)
+
+        return field_value
+
+    # Iterate through the matches, building up a list of observables
+    def load_observable_artifacts(self, match: dict):
+        artifacts = []
+        for mapping in self.rule.get('hive_observable_data_mapping', []):
+            for observable_type, mapping_key in mapping.items():
+                data = self.lookup_field(match, mapping_key, '')
+                artifact = {'tlp': 2,
+                            'tags': [],
+                            'message': None,
+                            'dataType': observable_type,
+                            'data': data}
+                artifacts.append(artifact)
+
+        return artifacts
+
+    def load_custom_fields(self, custom_fields_raw: list, match: dict):
+        custom_fields = {}
+        position = 0
+
+        for field in custom_fields_raw:
+            if (isinstance(field['value'], str)):
+                value = self.lookup_field(match, field['value'], field['value'])
+            else:
+                value = field['value']
+
+            custom_fields[field['name']] = {'order': position, field['type']: value}
+            position += 1
+
+        return custom_fields
+
+    def load_tags(self, tag_names: list, match: dict):
+        tag_values = set()
+        for tag in tag_names:
+            tag_value = self.lookup_field(match, tag, tag)
+            if isinstance(tag_value, list):
+                for sub_tag in tag_value:
+                    tag_values.add(sub_tag)
+            else:
+                tag_values.add(tag_value)
+
+        return tag_values
+
+    def alert(self, matches):
+        # Build TheHive alert object, starting with some defaults, updating with any
+        # user-specified config
+        alert_config = {
+            'artifacts': [],
+            'customFields': {},
+            'date': int(time.time()) * 1000,
+            'description': self.create_alert_body(matches),
+            'sourceRef': str(uuid.uuid4())[0:6],
+            'tags': [],
+            'title': self.create_title(matches),
+        }
+        alert_config.update(self.rule.get('hive_alert_config', {}))
+
+        # Iterate through each match found, populating the alert tags and observables as required
+        tags = set()
+        artifacts = []
+        for match in matches:
+            artifacts = artifacts + self.load_observable_artifacts(match)
+            tags.update(self.load_tags(alert_config['tags'], match))
+
+        alert_config['artifacts'] = artifacts
+        alert_config['tags'] = list(tags)
+
+        # Populate the customFields
+        alert_config['customFields'] = self.load_custom_fields(alert_config['customFields'],
+                                                               matches[0])
+
+        # POST the alert to TheHive
         connection_details = self.rule['hive_connection']
 
-        for match in matches:
-            context = {'rule': self.rule, 'match': match}
+        api_key = connection_details.get('hive_apikey', '')
+        hive_host = connection_details.get('hive_host', 'http://localhost')
+        hive_port = connection_details.get('hive_port', 9000)
+        proxies = connection_details.get('hive_proxies', {'http': '', 'https': ''})
+        verify = connection_details.get('hive_verify', False)
 
-            artifacts = []
-            for mapping in self.rule.get('hive_observable_data_mapping', []):
-                for observable_type, match_data_key in mapping.items():
-                    try:
-                        match_data_keys = re.findall(r'\{match\[([^\]]*)\]', match_data_key)
-                        rule_data_keys = re.findall(r'\{rule\[([^\]]*)\]', match_data_key)
-                        data_keys = match_data_keys + rule_data_keys
-                        context_keys = list(context['match'].keys()) + list(context['rule'].keys())
-                        if all([True if k in context_keys else False for k in data_keys]):
-                            artifact = {'tlp': 2, 'tags': [], 'message': None, 'dataType': observable_type,
-                                        'data': match_data_key.format(**context)}
-                            artifacts.append(artifact)
-                    except KeyError:
-                        raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
+        alert_body = json.dumps(alert_config, indent=4, sort_keys=True)
+        req = f'{hive_host}:{hive_port}/api/alert'
+        headers = {'Content-Type': 'application/json',
+                   'Authorization': f'Bearer {api_key}'}
 
-            alert_config = {
-                'artifacts': artifacts,
-                'caseTemplate': None,
-                'customFields': {},
-                'date': int(time.time()) * 1000,
-                'description': self.create_alert_body(matches),
-                'sourceRef': str(uuid.uuid4())[0:6],
-                'title': '{rule[index]}_{rule[name]}'.format(**context),
-            }
-            alert_config.update(self.rule.get('hive_alert_config', {}))
-            custom_fields = {}
-            for alert_config_field, alert_config_value in alert_config.items():
-                if alert_config_field == 'customFields':
-                    n = 0
-                    for cf_key, cf_value in alert_config_value.items():
-                        cf = {'order': n, cf_value['type']: cf_value['value'].format(**context)}
-                        n += 1
-                        custom_fields[cf_key] = cf
-                elif isinstance(alert_config_value, str):
-                    alert_value = alert_config_value.format(**context)
-                    if alert_config_field in ['severity', 'tlp']:
-                        alert_value = int(alert_value)
-                    alert_config[alert_config_field] = alert_value
-                elif isinstance(alert_config_value, (list, tuple)):
-                    formatted_list = []
-                    for element in alert_config_value:
-                        try:
-                            formatted_list.append(element.format(**context))
-                        except (AttributeError, KeyError, IndexError):
-                            formatted_list.append(element)
-                    alert_config[alert_config_field] = formatted_list
-            if custom_fields:
-                alert_config['customFields'] = custom_fields
-
-            alert_body = json.dumps(alert_config, indent=4, sort_keys=True)
-            req = '{}:{}/api/alert'.format(connection_details['hive_host'], connection_details['hive_port'])
-            headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer {}'.format(connection_details.get('hive_apikey', ''))}
-            proxies = connection_details.get('hive_proxies', {'http': '', 'https': ''})
-            verify = connection_details.get('hive_verify', False)
-            response = requests.post(req, headers=headers, data=alert_body, proxies=proxies, verify=verify)
-
-            if response.status_code != 201:
-                raise Exception('alert not successfully created in TheHive\n{}'.format(response.text))
+        try:
+            response = requests.post(req,
+                                     headers=headers,
+                                     data=alert_body,
+                                     proxies=proxies,
+                                     verify=verify)
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException(f"Error posting to TheHive: {e}")
 
     def get_info(self):
 

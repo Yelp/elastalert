@@ -18,6 +18,8 @@
 	- Dockerfile now runs as a non-root user "elastalert". Ensure your volumes are accessible by this non-root user.
 	- System packages removed from the Dockerfile: All dev packages, cargo, libmagic. Image size reduced to 250Mb.
 	- `tmp` files and dev packages removed from the final container image.
+- TheHive alerter refactoring - [#142](https://github.com/jertel/elastalert2/pull/142) - @ferozsalam  
+  - See the updated documentation for changes required to alert formatting
 
 ## New features
 - Added support for alerting via Amazon Simple Email System (SES) - [#105](https://github.com/jertel/elastalert2/pull/105) - @nsano-rururu

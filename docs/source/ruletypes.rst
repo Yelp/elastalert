@@ -2600,21 +2600,40 @@ Example usage::
 TheHive
 ~~~~~~~
 
-theHive alert type will send JSON request to theHive (Security Incident Response Platform) with TheHive4py API. Sent request will be stored like Hive Alert with description and observables.
+TheHive alerter can be used to create a new alert in TheHive. The alerter supports adding tags,
+custom fields, and observables from the alert matches and rule data.
 
 Required:
 
-``hive_connection``: The connection details as key:values. Required keys are ``hive_host``, ``hive_port`` and ``hive_apikey``.
+``hive_connection``: The connection details to your instance (see example below for the required syntax).
+Only ``hive_apikey`` is required, ``hive_host`` and ``hive_port`` default to ``http://localhost`` and
+``9000`` respectively.
 
-``hive_alert_config``: Configuration options for the alert.
+``hive_alert_config``: Configuration options for the alert, see example below for structure.
+
+If not supplied, the alert title and description will be populated from the ElastAlert default
+``title`` and ``alert_text`` fields, including any defined ``alert_text_args``.
 
 Optional:
 
+``tags`` can be populated from the matched record, using the same syntax used in ``alert_text_args``.
+If a record doesn't contain the specified value, the rule itself will be examined for the tag. If
+this doesn't contain the tag either, the tag is attached without modification to the alert. For
+aggregated alerts, all matches are examined individually, and tags generated for each one. All tags
+are then attached to the same alert.
+
+``customFields`` can also be populated from rule fields as well as matched results. Custom fields
+are only populated once. If an alert is an aggregated alert, the custom field values will be populated
+using the first matched record, before checking the rule. If neither matches, the ``customField.value``
+will be used directly.
+
+``hive_observable_data_mapping``: If needed, matched data fields can be mapped to TheHive
+observable types using the same syntax as ``tags``, described above. The algorithm used to populate
+the observable value is also the same, including the behaviour for aggregated alerts.
+
 ``hive_proxies``: Proxy configuration.
 
-``hive_verify``: Wether or not to enable SSL certificate validation. Defaults to False.
-
-``hive_observable_data_mapping``: If needed, matched data fields can be mapped to TheHive observable types using python string formatting.
+``hive_verify``: Whether or not to enable SSL certificate validation. Defaults to False.
 
 Example usage::
 
@@ -2629,20 +2648,24 @@ Example usage::
         https: ''
 
     hive_alert_config:
-      title: 'Title'  ## This will default to {rule[index]_rule[name]} if not provided
-      type: 'external'
-      source: 'elastalert'
-      description: '{match[field1]} {rule[name]} Sample description'
-      severity: 2
-      tags: ['tag1', 'tag2 {rule[name]}']
-      tlp: 3
-      status: 'New'
+      customFields:
+        - name: example
+          type: string
+          value: example
       follow: True
+      severity: 2
+      status: 'New'
+      source: 'elastalert'
+      description: 'Sample description'
+      tags: ['tag1', 'tag2']
+      title: 'Title'
+      tlp: 3
+      type: 'external'
 
     hive_observable_data_mapping:
-      - domain: "{match[field1]}_{rule[name]}"
-      - domain: "{match[field]}"
-      - ip: "{match[ip_field]}"
+      - domain: agent.hostname
+      - domain: response.domain
+      - ip: client.ip
 
 Twilio
 ~~~~~~
