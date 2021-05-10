@@ -3,7 +3,9 @@
 ## Introduction
 
 PRs are welcome, but must include tests, when possible. PRs will not be merged if they do not pass
-the automated CI workflows. 
+the automated CI workflows. To test your changes before creating a PR, run
+`sudo make clean; sudo make test-docker` from the root of the repository (requires Docker to be
+running on your machine).
 
 Before submitting the PR review that you have included the following changes, where applicable:
 - Documentation: If you're adding new functionality, any new configuration options should be documented appropriately in the docs/ folder.
