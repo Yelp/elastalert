@@ -204,7 +204,7 @@ def test_email_with_auth():
             'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt',
             'rule_file': '/tmp/foo.yaml'}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
-        with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+        with mock.patch('elastalert.alerts.read_yaml') as mock_open:
             mock_open.return_value = {'user': 'someone', 'password': 'hunter2'}
             mock_smtp.return_value = mock.Mock()
             alert = EmailAlerter(rule)
@@ -226,7 +226,7 @@ def test_email_with_cert_key():
             'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt',
             'smtp_cert_file': 'dummy/cert.crt', 'smtp_key_file': 'dummy/client.key', 'rule_file': '/tmp/foo.yaml'}
     with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
-        with mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+        with mock.patch('elastalert.alerts.read_yaml') as mock_open:
             mock_open.return_value = {'user': 'someone', 'password': 'hunter2'}
             mock_smtp.return_value = mock.Mock()
             alert = EmailAlerter(rule)
@@ -1279,7 +1279,7 @@ def test_jira():
     mock_priority = mock.Mock(id='5')
 
     with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
-            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock.patch('elastalert.alerts.read_yaml') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value.priorities.return_value = [mock_priority]
         mock_jira.return_value.fields.return_value = []
@@ -1310,7 +1310,7 @@ def test_jira():
     # Search called if jira_bump_tickets
     rule['jira_bump_tickets'] = True
     with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
-            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock.patch('elastalert.alerts.read_yaml') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value = mock.Mock()
         mock_jira.return_value.search_issues.return_value = []
@@ -1326,7 +1326,7 @@ def test_jira():
     # Remove a field if jira_ignore_in_title set
     rule['jira_ignore_in_title'] = 'test_term'
     with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
-            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock.patch('elastalert.alerts.read_yaml') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value = mock.Mock()
         mock_jira.return_value.search_issues.return_value = []
@@ -1340,7 +1340,7 @@ def test_jira():
 
     # Issue is still created if search_issues throws an exception
     with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
-            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock.patch('elastalert.alerts.read_yaml') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value = mock.Mock()
         mock_jira.return_value.search_issues.side_effect = JIRAError
@@ -1359,7 +1359,7 @@ def test_jira():
     # Check ticket is bumped if it is updated 4 days ago
     mock_issue.fields.updated = str(ts_now() - datetime.timedelta(days=4))
     with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
-            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock.patch('elastalert.alerts.read_yaml') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value = mock.Mock()
         mock_jira.return_value.search_issues.return_value = [mock_issue]
@@ -1375,7 +1375,7 @@ def test_jira():
     # Check ticket is bumped is not bumped if ticket is updated right now
     mock_issue.fields.updated = str(ts_now())
     with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
-            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock.patch('elastalert.alerts.read_yaml') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value = mock.Mock()
         mock_jira.return_value.search_issues.return_value = [mock_issue]
@@ -1410,7 +1410,7 @@ def test_jira():
             {'name': 'affected user', 'id': 'affected_user_id', 'schema': {'type': 'string'}}
         ]
         with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
-                mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+                mock.patch('elastalert.alerts.read_yaml') as mock_open:
             mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
             mock_jira.return_value = mock.Mock()
             mock_jira.return_value.search_issues.return_value = [mock_issue]
@@ -1483,7 +1483,7 @@ def test_jira_arbitrary_field_support():
     ]
 
     with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
-            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock.patch('elastalert.alerts.read_yaml') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value.priorities.return_value = [mock_priority]
         mock_jira.return_value.fields.return_value = mock_fields
@@ -1524,7 +1524,7 @@ def test_jira_arbitrary_field_support():
     rule['jira_nonexistent_field'] = 'nonexistent field value'
 
     with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
-            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock.patch('elastalert.alerts.read_yaml') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value.priorities.return_value = [mock_priority]
         mock_jira.return_value.fields.return_value = mock_fields
@@ -1540,7 +1540,7 @@ def test_jira_arbitrary_field_support():
     rule['jira_watchers'] = 'invalid_watcher'
 
     with mock.patch('elastalert.alerts.JIRA') as mock_jira, \
-            mock.patch('elastalert.alerts.yaml_loader') as mock_open:
+            mock.patch('elastalert.alerts.read_yaml') as mock_open:
         mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
         mock_jira.return_value.priorities.return_value = [mock_priority]
         mock_jira.return_value.fields.return_value = mock_fields
