@@ -4,12 +4,13 @@ import logging
 import logging.config
 
 from envparse import Env
-from staticconf.loader import yaml_loader
 
 from . import loaders
 from .util import EAException
 from .util import elastalert_logger
 from .util import get_module
+
+from elastalert.yaml import read_yaml
 
 # Required global (config.yaml) configuration options
 required_globals = frozenset(['run_every', 'es_host', 'es_port', 'writeback_index', 'buffer_time'])
@@ -45,10 +46,10 @@ def load_conf(args, defaults=None, overwrites=None):
         """
     filename = args.config
     if filename:
-        conf = yaml_loader(filename)
+        conf = read_yaml(filename)
     else:
         try:
-            conf = yaml_loader('config.yaml')
+            conf = read_yaml('config.yaml')
         except FileNotFoundError:
             raise EAException('No --config or config.yaml found')
 

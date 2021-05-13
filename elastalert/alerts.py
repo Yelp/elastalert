@@ -26,7 +26,6 @@ from jira.client import JIRA
 from jira.exceptions import JIRAError
 from requests.auth import HTTPProxyAuth
 from requests.exceptions import RequestException
-from staticconf.loader import yaml_loader
 from texttable import Texttable
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
@@ -38,6 +37,7 @@ from .util import pretty_ts
 from .util import resolve_string
 from .util import ts_now
 from .util import ts_to_dt
+from .yaml import read_yaml
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -312,7 +312,7 @@ class Alerter(object):
             account_file_path = account_file
         else:
             account_file_path = os.path.join(os.path.dirname(self.rule['rule_file']), account_file)
-        account_conf = yaml_loader(account_file_path)
+        account_conf = read_yaml(account_file_path)
         if 'user' not in account_conf or 'password' not in account_conf:
             raise EAException('Account file must have user and password fields')
         self.user = account_conf['user']

@@ -11,7 +11,6 @@ import yaml.scanner
 from jinja2 import Template
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
-from staticconf.loader import yaml_loader
 
 from . import alerts
 from . import enhancements
@@ -29,6 +28,7 @@ from .util import ts_to_dt_with_format
 from .util import unix_to_dt
 from .util import unixms_to_dt
 from .zabbix import ZabbixAlerter
+from .yaml import read_yaml
 
 
 class RulesLoader(object):
@@ -538,7 +538,7 @@ class FileRulesLoader(RulesLoader):
 
     def get_yaml(self, filename):
         try:
-            return yaml_loader(filename)
+            return read_yaml(filename)
         except yaml.scanner.ScannerError as e:
             raise EAException('Could not parse file %s: %s' % (filename, e))
 
