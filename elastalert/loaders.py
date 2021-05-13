@@ -513,20 +513,28 @@ class FileRulesLoader(RulesLoader):
         # Passing a filename directly can bypass rules_folder and .yaml checks
         if use_rule and os.path.isfile(use_rule):
             return [use_rule]
-        rule_folder = conf['rules_folder']
+
+        # In case of a bad type, convert string to list:
+        rule_folders = conf['rules_folder'] if isinstance(conf['rules_folder'], list) else [conf['rules_folder']]
         rule_files = []
         if 'scan_subdirectories' in conf and conf['scan_subdirectories']:
-            for root, folders, files in os.walk(rule_folder):
-                for filename in files:
-                    if use_rule and use_rule != filename:
-                        continue
-                    if self.is_yaml(filename):
-                        rule_files.append(os.path.join(root, filename))
+            for ruledir in rule_folders:
+                for root, folders, files in os.walk(ruledir):
+                    # Openshift/k8s configmap fix for ..data and ..2021_05..date directories that loop with os.walk()
+                    folders[:] = [d for d in folders if not d.startswith('..')]
+                    for filename in files:
+                        if use_rule and use_rule != filename:
+                            continue
+                        if self.is_yaml(filename):
+                            rule_files.append(os.path.join(root, filename))
         else:
-            for filename in os.listdir(rule_folder):
-                fullpath = os.path.join(rule_folder, filename)
-                if os.path.isfile(fullpath) and self.is_yaml(filename):
-                    rule_files.append(fullpath)
+            for ruledir in rule_folders:
+                if not os.path.isdir(ruledir):
+                    continue
+                for file in os.scandir(ruledir):
+                    fullpath = os.path.join(ruledir, file.name)
+                    if os.path.isfile(fullpath) and self.is_yaml(file.name):
+                        rule_files.append(fullpath)
         return rule_files
 
     def get_hashes(self, conf, use_rule=None):

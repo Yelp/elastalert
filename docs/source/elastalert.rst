@@ -152,7 +152,7 @@ The environment variable ``ES_USE_SSL`` will override this field.
 ``rules_loader``: Optional; sets the loader class to be used by ElastAlert to retrieve rules and hashes.
 Defaults to ``FileRulesLoader`` if not set.
 
-``rules_folder``: The name of the folder which contains rule configuration files. ElastAlert will load all
+``rules_folder``: The name of the folder or a list of folders which contains rule configuration files. ElastAlert will load all
 files in this folder, and all subdirectories, that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
 or remove rules based on their respective config files. (only required when using ``FileRulesLoader``).
 
