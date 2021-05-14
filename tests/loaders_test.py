@@ -169,9 +169,9 @@ def test_load_inline_alert_rule():
 def test_file_rules_loader_get_names_recursive():
     conf = {'scan_subdirectories': True, 'rules_folder': 'root'}
     rules_loader = FileRulesLoader(conf)
-    walk_paths = (('root', ('folder_a', 'folder_b'), ('rule.yaml',)),
-                  ('root/folder_a', (), ('a.yaml', 'ab.yaml')),
-                  ('root/folder_b', (), ('b.yaml',)))
+    walk_paths = (('root', ['folder_a', 'folder_b'], ('rule.yaml',)),
+                  ('root/folder_a', [], ('a.yaml', 'ab.yaml')),
+                  ('root/folder_b', [], ('b.yaml',)))
     with mock.patch('os.walk') as mock_walk:
         mock_walk.return_value = walk_paths
         paths = rules_loader.get_names(conf)
@@ -186,19 +186,26 @@ def test_file_rules_loader_get_names_recursive():
 
 
 def test_file_rules_loader_get_names():
+
+    class MockDirEntry:
+        # os.DirEntry of os.scandir
+        def __init__(self, name):
+            self.name = name
+
     # Check for no subdirectory
     conf = {'scan_subdirectories': False, 'rules_folder': 'root'}
     rules_loader = FileRulesLoader(conf)
-    files = ['badfile', 'a.yaml', 'b.yaml']
+    files = [MockDirEntry(name='badfile'), MockDirEntry('a.yaml'), MockDirEntry('b.yaml')]
 
-    with mock.patch('os.listdir') as mock_list:
-        with mock.patch('os.path.isfile') as mock_path:
-            mock_path.return_value = True
-            mock_list.return_value = files
-            paths = rules_loader.get_names(conf)
+    with mock.patch('os.path.isdir') as mock_dir:
+        with mock.patch('os.scandir') as mock_list:
+            with mock.patch('os.path.isfile') as mock_path:
+                mock_dir.return_value = conf['rules_folder']
+                mock_path.return_value = True
+                mock_list.return_value = files
+                paths = rules_loader.get_names(conf)
 
     paths = [p.replace(os.path.sep, '/') for p in paths]
-
     assert 'root/a.yaml' in paths
     assert 'root/b.yaml' in paths
     assert len(paths) == 2
