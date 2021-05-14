@@ -50,4 +50,4 @@ ElastAlert 2 is licensed under the [Apache License, Version 2.0][5].
 [4]: https://elastalert2.readthedocs.io/en/latest/ruletypes.html#alerts
 [5]: https://www.apache.org/licenses/LICENSE-2.0
 [6]: https://github.com/jertel/elastalert2/blob/master/CONTRIBUTING.md
-[7]: https://github.com/jertel/elastalert2/chart/elastalert2/README.md
+[7]: https://github.com/jertel/elastalert2/tree/master/chart/elastalert2
