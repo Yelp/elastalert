@@ -15,7 +15,8 @@ from jinja2 import FileSystemLoader
 from . import alerts
 from . import enhancements
 from . import ruletypes
-from .opsgenie import OpsGenieAlerter
+from .alerters.opsgenie import OpsGenieAlerter
+from .alerters.zabbix import ZabbixAlerter
 from .util import dt_to_ts
 from .util import dt_to_ts_with_format
 from .util import dt_to_unix
@@ -27,7 +28,6 @@ from .util import ts_to_dt
 from .util import ts_to_dt_with_format
 from .util import unix_to_dt
 from .util import unixms_to_dt
-from .zabbix import ZabbixAlerter
 from .yaml import read_yaml
 
 
