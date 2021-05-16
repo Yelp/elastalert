@@ -2,8 +2,8 @@ from datetime import datetime
 
 from pyzabbix import ZabbixSender, ZabbixMetric, ZabbixAPI
 
-from .alerts import Alerter
-from .util import elastalert_logger, EAException
+from ..alerts import Alerter
+from ..util import elastalert_logger, EAException
 
 
 class ZabbixClient(ZabbixAPI):

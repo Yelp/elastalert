@@ -3,11 +3,11 @@ import json
 import os.path
 import requests
 
-from .alerts import Alerter
-from .alerts import BasicMatchString
-from .util import EAException
-from .util import elastalert_logger
-from .util import lookup_es_key
+from ..alerts import Alerter
+from ..alerts import BasicMatchString
+from ..util import EAException
+from ..util import elastalert_logger
+from ..util import lookup_es_key
 
 
 class OpsGenieAlerter(Alerter):
