@@ -47,7 +47,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | Parameter                                    | Description                                                                                                                   | Default                         |
 |----------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
 | `image.repository`                           | docker image                                                                                                                  | jertel/elastalert2              |
-| `image.tag`                                  | docker image tag                                                                                                              | 2.0.4                           |
+| `image.tag`                                  | docker image tag                                                                                                              | 2.1.0                           |
 | `image.pullPolicy`                           | image pull policy                                                                                                             | IfNotPresent                    |
 | `podAnnotations`                             | Annotations to be added to pods                                                                                               | {}                              |
 | `command`                                    | command override for container                                                                                                | `NULL`                          |
