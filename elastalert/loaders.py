@@ -16,6 +16,7 @@ from . import alerts
 from . import enhancements
 from . import ruletypes
 from .alerters.email import EmailAlerter
+from .alerters.jira import JiraAlerter
 from .alerters.opsgenie import OpsGenieAlerter
 from .alerters.zabbix import ZabbixAlerter
 from .util import dt_to_ts
@@ -61,7 +62,7 @@ class RulesLoader(object):
     # Used to map names of alerts to their classes
     alerts_mapping = {
         'email': EmailAlerter,
-        'jira': alerts.JiraAlerter,
+        'jira': JiraAlerter,
         'opsgenie': OpsGenieAlerter,
         'stomp': alerts.StompAlerter,
         'debug': alerts.DebugAlerter,
