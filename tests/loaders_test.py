@@ -8,6 +8,7 @@ import pytest
 
 import elastalert.alerts
 import elastalert.ruletypes
+from elastalert.alerters.email import EmailAlerter
 from elastalert.config import load_conf
 from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
@@ -160,8 +161,8 @@ def test_load_inline_alert_rule():
     with mock.patch.object(rules_loader, 'get_yaml') as mock_open:
         mock_open.side_effect = [test_config_copy, test_rule_copy]
         rules_loader.load_modules(test_rule_copy)
-        assert isinstance(test_rule_copy['alert'][0], elastalert.alerts.EmailAlerter)
-        assert isinstance(test_rule_copy['alert'][1], elastalert.alerts.EmailAlerter)
+        assert isinstance(test_rule_copy['alert'][0], EmailAlerter)
+        assert isinstance(test_rule_copy['alert'][1], EmailAlerter)
         assert 'foo@bar.baz' in test_rule_copy['alert'][0].rule['email']
         assert 'baz@foo.bar' in test_rule_copy['alert'][1].rule['email']
 

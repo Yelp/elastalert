@@ -20,7 +20,6 @@ from elastalert.alerts import CommandAlerter
 from elastalert.alerts import DatadogAlerter
 from elastalert.alerts import DingTalkAlerter
 from elastalert.alerts import DiscordAlerter
-from elastalert.alerts import EmailAlerter
 from elastalert.alerts import GitterAlerter
 from elastalert.alerts import GoogleChatAlerter
 from elastalert.alerts import HiveAlerter
@@ -36,6 +35,7 @@ from elastalert.alerts import ServiceNowAlerter
 from elastalert.alerts import SlackAlerter
 from elastalert.alerts import TelegramAlerter
 from elastalert.loaders import FileRulesLoader
+from elastalert.alerters.email import EmailAlerter
 from elastalert.alerters.opsgenie import OpsGenieAlerter
 from elastalert.alerters.zabbix import ZabbixAlerter
 from elastalert.alerts import VictorOpsAlerter
@@ -113,7 +113,7 @@ def test_email():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com', 'owner': 'owner_value',
             'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': '☃'}
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
         alert = EmailAlerter(rule)
@@ -138,7 +138,7 @@ def test_email_from_field():
     rule = {'name': 'test alert', 'email': ['testing@test.test'], 'email_add_domain': 'example.com',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_from_field': 'data.user', 'owner': 'owner_value'}
     # Found, without @
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
         alert = EmailAlerter(rule)
         alert.alert([{'data': {'user': 'qlo'}}])
@@ -146,28 +146,28 @@ def test_email_from_field():
 
     # Found, with @
     rule['email_add_domain'] = '@example.com'
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
         alert = EmailAlerter(rule)
         alert.alert([{'data': {'user': 'qlo'}}])
         assert mock_smtp.mock_calls[4][1][1] == ['qlo@example.com']
 
     # Found, list
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
         alert = EmailAlerter(rule)
         alert.alert([{'data': {'user': ['qlo', 'foo']}}])
         assert mock_smtp.mock_calls[4][1][1] == ['qlo@example.com', 'foo@example.com']
 
     # Not found
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
         alert = EmailAlerter(rule)
         alert.alert([{'data': {'foo': 'qlo'}}])
         assert mock_smtp.mock_calls[4][1][1] == ['testing@test.test']
 
     # Found, wrong type
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
         alert = EmailAlerter(rule)
         alert.alert([{'data': {'user': 17}}])
@@ -178,7 +178,7 @@ def test_email_with_unicode_strings():
     rule = {'name': 'test alert', 'email': 'testing@test.test', 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com', 'owner': 'owner_value',
             'alert_subject': 'Test alert for {0}, owned by {1}', 'alert_subject_args': ['test_term', 'owner'], 'snowman': '☃'}
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
         alert = EmailAlerter(rule)
@@ -204,7 +204,7 @@ def test_email_with_auth():
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
             'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt',
             'rule_file': '/tmp/foo.yaml'}
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         with mock.patch('elastalert.alerts.read_yaml') as mock_open:
             mock_open.return_value = {'user': 'someone', 'password': 'hunter2'}
             mock_smtp.return_value = mock.Mock()
@@ -226,7 +226,7 @@ def test_email_with_cert_key():
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
             'alert_subject': 'Test alert for {0}', 'alert_subject_args': ['test_term'], 'smtp_auth_file': 'file.txt',
             'smtp_cert_file': 'dummy/cert.crt', 'smtp_key_file': 'dummy/client.key', 'rule_file': '/tmp/foo.yaml'}
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         with mock.patch('elastalert.alerts.read_yaml') as mock_open:
             mock_open.return_value = {'user': 'someone', 'password': 'hunter2'}
             mock_smtp.return_value = mock.Mock()
@@ -247,7 +247,7 @@ def test_email_with_cc():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
             'cc': 'tester@testing.testing'}
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
         alert = EmailAlerter(rule)
@@ -272,7 +272,7 @@ def test_email_with_bcc():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
             'bcc': 'tester@testing.testing'}
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
         alert = EmailAlerter(rule)
@@ -297,7 +297,7 @@ def test_email_with_cc_and_bcc():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'], 'from_addr': 'testfrom@test.test',
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
             'cc': ['test1@test.com', 'test2@test.com'], 'bcc': 'tester@testing.testing'}
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
         alert = EmailAlerter(rule)
@@ -342,7 +342,7 @@ def test_email_with_args():
         'alert_text_args': ['test_arg1', 'test_arg2', 'test.arg3'],
         'alert_missing_value': '<CUSTOM MISSING VALUE>'
     }
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
         alert = EmailAlerter(rule)
@@ -373,7 +373,7 @@ def test_email_query_key_in_subject():
     rule = {'name': 'test alert', 'email': ['testing@test.test', 'test@test.test'],
             'type': mock_rule(), 'timestamp_field': '@timestamp', 'email_reply_to': 'test@example.com',
             'query_key': 'username'}
-    with mock.patch('elastalert.alerts.SMTP') as mock_smtp:
+    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
 
         alert = EmailAlerter(rule)
