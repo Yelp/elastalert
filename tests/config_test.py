@@ -29,6 +29,5 @@ def test_config_loads():
     assert conf['es_password'] == 'password_from_env'
 
     assert conf['writeback_index'] == 'elastalert_status'
-    assert conf['writeback_alias'] == 'elastalert_alerts'
 
     assert conf['alert_time_limit'] == datetime.timedelta(days=2)

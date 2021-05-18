@@ -161,7 +161,6 @@ def main():
     parser.add_argument('--no-verify-certs', dest='verify_certs', action='store_false',
                         help='Do not verify TLS certificates')
     parser.add_argument('--index', help='Index name to create')
-    parser.add_argument('--alias', help='Alias name to create')
     parser.add_argument('--old-index', help='Old index name to copy')
     parser.add_argument('--send_get_body_as', default='GET',
                         help='Method for querying Elasticsearch - POST, GET or source')
@@ -208,7 +207,6 @@ def main():
         client_cert = data.get('client_cert')
         client_key = data.get('client_key')
         index = args.index if args.index is not None else data.get('writeback_index')
-        alias = args.alias if args.alias is not None else data.get('writeback_alias')
         old_index = args.old_index if args.old_index is not None else None
     else:
         username = args.username if args.username else None
@@ -236,9 +234,6 @@ def main():
         index = args.index if args.index is not None else input('New index name? (Default elastalert_status) ')
         if not index:
             index = 'elastalert_status'
-        alias = args.alias if args.alias is not None else input('New alias name? (Default elastalert_alerts) ')
-        if not alias:
-            alias = 'elastalert_alias'
         old_index = (args.old_index if args.old_index is not None
                      else input('Name of existing index to copy? (Default None) '))
 

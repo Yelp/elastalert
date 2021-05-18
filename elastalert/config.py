@@ -72,7 +72,6 @@ def load_conf(args, defaults=None, overwrites=None):
     if required_globals - frozenset(list(conf.keys())):
         raise EAException('%s must contain %s' % (filename, ', '.join(required_globals - frozenset(list(conf.keys())))))
 
-    conf.setdefault('writeback_alias', 'elastalert_alerts')
     conf.setdefault('max_query_size', 10000)
     conf.setdefault('scroll_keepalive', '30s')
     conf.setdefault('max_scrolling_count', 0)
