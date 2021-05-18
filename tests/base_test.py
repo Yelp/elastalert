@@ -1203,7 +1203,7 @@ def test_wait_until_responsive_timeout_index_does_not_exist(ea, caplog):
 
     # Ensure we get useful diagnostics.
     user, level, message = caplog.record_tuples[0]
-    assert 'Writeback alias "wb_a" does not exist, did you run `elastalert-create-index`?' in message
+    assert 'Writeback index "wb" does not exist, did you run `elastalert-create-index`?' in message
 
     # Slept until we passed the deadline.
     sleep.mock_calls == [
