@@ -66,7 +66,6 @@ es_port: 9200
 # This can be a unmapped index, but it is recommended that you run
 # elastalert-create-index to set a mapping
 writeback_index: elastalert_status
-writeback_alias: elastalert_alerts
 
 # If an alert fails for some reason, ElastAlert will retry
 # sending the alert until this time period has elapsed

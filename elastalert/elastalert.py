@@ -154,7 +154,6 @@ class ElastAlerter(object):
         self.max_query_size = self.conf['max_query_size']
         self.scroll_keepalive = self.conf['scroll_keepalive']
         self.writeback_index = self.conf['writeback_index']
-        self.writeback_alias = self.conf['writeback_alias']
         self.run_every = self.conf['run_every']
         self.alert_time_limit = self.conf['alert_time_limit']
         self.old_query_limit = self.conf['old_query_limit']
@@ -1233,7 +1232,7 @@ class ElastAlerter(object):
         ref = clock()
         while (clock() - ref) < timeout:
             try:
-                if self.writeback_es.indices.exists(self.writeback_alias):
+                if self.writeback_es.indices.exists(self.writeback_index):
                     return
             except ConnectionError:
                 pass
@@ -1241,8 +1240,8 @@ class ElastAlerter(object):
 
         if self.writeback_es.ping():
             elastalert_logger.error(
-                'Writeback alias "%s" does not exist, did you run `elastalert-create-index`?',
-                self.writeback_alias,
+                'Writeback index "%s" does not exist, did you run `elastalert-create-index`?',
+                self.writeback_index,
             )
         else:
             elastalert_logger.error(
