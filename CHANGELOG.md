@@ -19,6 +19,7 @@
 
 ## Other changes
 - Speed up unit tests by adding default parallelism - [164](https://github.com/jertel/elastalert2/pull/164) - @ferozsalam
+- Remove unused writeback_alias and fix --patience argument [167](https://github.com/jertel/elastalert2/pull/167) - @mrfroggg.
 
 # 2.1.0
 
