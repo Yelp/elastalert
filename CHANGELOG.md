@@ -9,6 +9,17 @@
 ## Other changes
 - None
 
+# Unreleased
+
+## Breaking changes
+- None
+
+## New features
+- None
+
+## Other changes
+- Speed up unit tests by adding default parallelism - [164](https://github.com/jertel/elastalert2/pull/164) - @ferozsalam
+
 # 2.1.0
 
 ## Breaking changes
