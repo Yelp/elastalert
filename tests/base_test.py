@@ -1159,7 +1159,7 @@ def test_wait_until_responsive(ea):
     ]
 
 
-def test_wait_until_responsive_timeout_es_not_available(ea, capsys):
+def test_wait_until_responsive_timeout_es_not_available(ea, caplog):
     """Bail out if ElasticSearch doesn't (quickly) become responsive."""
 
     # Never becomes responsive :-)
@@ -1175,8 +1175,8 @@ def test_wait_until_responsive_timeout_es_not_available(ea, capsys):
         assert exc.value.code == 1
 
     # Ensure we get useful diagnostics.
-    output, errors = capsys.readouterr()
-    assert 'Could not reach ElasticSearch at "es:14900".' in errors
+    user, level, message = caplog.record_tuples[0]
+    assert 'Could not reach ElasticSearch at "es:14900".' in message
 
     # Slept until we passed the deadline.
     sleep.mock_calls == [
@@ -1186,7 +1186,7 @@ def test_wait_until_responsive_timeout_es_not_available(ea, capsys):
     ]
 
 
-def test_wait_until_responsive_timeout_index_does_not_exist(ea, capsys):
+def test_wait_until_responsive_timeout_index_does_not_exist(ea, caplog):
     """Bail out if ElasticSearch doesn't (quickly) become responsive."""
 
     # Never becomes responsive :-)
@@ -1202,8 +1202,8 @@ def test_wait_until_responsive_timeout_index_does_not_exist(ea, capsys):
         assert exc.value.code == 1
 
     # Ensure we get useful diagnostics.
-    output, errors = capsys.readouterr()
-    assert 'Writeback alias "wb_a" does not exist, did you run `elastalert-create-index`?' in errors
+    user, level, message = caplog.record_tuples[0]
+    assert 'Writeback alias "wb_a" does not exist, did you run `elastalert-create-index`?' in message
 
     # Slept until we passed the deadline.
     sleep.mock_calls == [
