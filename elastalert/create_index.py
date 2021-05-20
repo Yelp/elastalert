@@ -245,6 +245,11 @@ def main():
                      password=password,
                      aws_region=aws_region,
                      profile_name=args.profile)
+
+    headers = {}
+    if bearer is not None:
+        headers.update({'Authorization': f'Bearer {bearer}'})
+
     es = Elasticsearch(
         host=host,
         port=port,
@@ -253,7 +258,7 @@ def main():
         verify_certs=verify_certs,
         connection_class=RequestsHttpConnection,
         http_auth=http_auth,
-        headers=bearer,
+        headers=headers,
         url_prefix=url_prefix,
         send_get_body_as=send_get_body_as,
         client_cert=client_cert,
