@@ -17,7 +17,11 @@ from . import enhancements
 from . import ruletypes
 from .alerters.email import EmailAlerter
 from .alerters.jira import JiraAlerter
+from .alerters.mattermost import MattermostAlerter
 from .alerters.opsgenie import OpsGenieAlerter
+from .alerters.teams import MsTeamsAlerter
+from .alerters.slack import SlackAlerter
+from .alerters.sns import SnsAlerter
 from .alerters.zabbix import ZabbixAlerter
 from .util import dt_to_ts
 from .util import dt_to_ts_with_format
@@ -67,10 +71,10 @@ class RulesLoader(object):
         'stomp': alerts.StompAlerter,
         'debug': alerts.DebugAlerter,
         'command': alerts.CommandAlerter,
-        'sns': alerts.SnsAlerter,
-        'ms_teams': alerts.MsTeamsAlerter,
-        'slack': alerts.SlackAlerter,
-        'mattermost': alerts.MattermostAlerter,
+        'sns': SnsAlerter,
+        'ms_teams': MsTeamsAlerter,
+        'slack': SlackAlerter,
+        'mattermost': MattermostAlerter,
         'pagerduty': alerts.PagerDutyAlerter,
         'exotel': alerts.ExotelAlerter,
         'twilio': alerts.TwilioAlerter,
