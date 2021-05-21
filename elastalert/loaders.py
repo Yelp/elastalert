@@ -12,6 +12,26 @@ from jinja2 import Template
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 
+import elastalert.alerters.alerta
+import elastalert.alerters.chatwork
+import elastalert.alerters.command
+import elastalert.alerters.datadog
+import elastalert.alerters.debug
+import elastalert.alerters.discord
+import elastalert.alerters.gitter
+import elastalert.alerters.googlechat
+import elastalert.alerters.httppost
+import elastalert.alerters.line
+import elastalert.alerters.pagertree
+import elastalert.alerters.exotel
+import elastalert.alerters.servicenow
+import elastalert.alerters.ses
+import elastalert.alerters.stomp
+import elastalert.alerters.telegram
+import elastalert.alerters.twilio
+import elastalert.alerters.victorops
+import elastalert.dingtalk
+import elastalert.thehive
 from . import alerts
 from . import enhancements
 from . import ruletypes
@@ -69,32 +89,32 @@ class RulesLoader(object):
         'email': EmailAlerter,
         'jira': JiraAlerter,
         'opsgenie': OpsGenieAlerter,
-        'stomp': alerts.StompAlerter,
-        'debug': alerts.DebugAlerter,
-        'command': alerts.CommandAlerter,
+        'stomp': elastalert.alerters.stomp.StompAlerter,
+        'debug': elastalert.alerters.debug.DebugAlerter,
+        'command': elastalert.alerters.command.CommandAlerter,
         'sns': SnsAlerter,
         'ms_teams': MsTeamsAlerter,
         'slack': SlackAlerter,
         'mattermost': MattermostAlerter,
         'pagerduty': PagerDutyAlerter,
-        'exotel': alerts.ExotelAlerter,
-        'twilio': alerts.TwilioAlerter,
-        'victorops': alerts.VictorOpsAlerter,
-        'telegram': alerts.TelegramAlerter,
-        'googlechat': alerts.GoogleChatAlerter,
-        'gitter': alerts.GitterAlerter,
-        'servicenow': alerts.ServiceNowAlerter,
-        'alerta': alerts.AlertaAlerter,
-        'post': alerts.HTTPPostAlerter,
-        'pagertree': alerts.PagerTreeAlerter,
-        'linenotify': alerts.LineNotifyAlerter,
-        'hivealerter': alerts.HiveAlerter,
+        'exotel': elastalert.alerters.exotel.ExotelAlerter,
+        'twilio': elastalert.alerters.twilio.TwilioAlerter,
+        'victorops': elastalert.alerters.victorops.VictorOpsAlerter,
+        'telegram': elastalert.alerters.telegram.TelegramAlerter,
+        'googlechat': elastalert.alerters.googlechat.GoogleChatAlerter,
+        'gitter': elastalert.alerters.gitter.GitterAlerter,
+        'servicenow': elastalert.alerters.servicenow.ServiceNowAlerter,
+        'alerta': elastalert.alerters.alerta.AlertaAlerter,
+        'post': elastalert.alerters.httppost.HTTPPostAlerter,
+        'pagertree': elastalert.alerters.pagertree.PagerTreeAlerter,
+        'linenotify': elastalert.alerters.line.LineNotifyAlerter,
+        'hivealerter': elastalert.thehive.HiveAlerter,
         'zabbix': ZabbixAlerter,
-        'discord': alerts.DiscordAlerter,
-        'dingtalk': alerts.DingTalkAlerter,
-        'chatwork': alerts.ChatworkAlerter,
-        'datadog': alerts.DatadogAlerter,
-        'ses': alerts.SesAlerter
+        'discord': elastalert.alerters.discord.DiscordAlerter,
+        'dingtalk': elastalert.dingtalk.DingTalkAlerter,
+        'chatwork': elastalert.alerters.chatwork.ChatworkAlerter,
+        'datadog': elastalert.alerters.datadog.DatadogAlerter,
+        'ses': elastalert.alerters.ses.SesAlerter
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list

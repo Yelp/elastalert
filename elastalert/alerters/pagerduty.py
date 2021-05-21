@@ -145,4 +145,3 @@ class PagerDutyAlerter(Alerter):
     def get_info(self):
         return {'type': 'pagerduty',
                 'pagerduty_client_name': self.pagerduty_client_name}
-
