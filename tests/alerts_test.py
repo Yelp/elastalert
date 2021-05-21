@@ -12,33 +12,33 @@ from jira.exceptions import JIRAError
 from requests.auth import HTTPProxyAuth
 from requests.exceptions import RequestException
 
-from elastalert.alerts import AlertaAlerter
+from elastalert.alerters.alerta import AlertaAlerter
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
-from elastalert.alerts import ChatworkAlerter
-from elastalert.alerts import CommandAlerter
-from elastalert.alerts import DatadogAlerter
-from elastalert.alerts import DingTalkAlerter
-from elastalert.alerts import DiscordAlerter
-from elastalert.alerts import GitterAlerter
-from elastalert.alerts import GoogleChatAlerter
-from elastalert.alerts import HiveAlerter
-from elastalert.alerts import HTTPPostAlerter
-from elastalert.alerts import LineNotifyAlerter
-from elastalert.alerts import PagerDutyAlerter
-from elastalert.alerts import PagerTreeAlerter
-from elastalert.alerts import ServiceNowAlerter
-from elastalert.alerts import TelegramAlerter
+from elastalert.alerters.chatwork import ChatworkAlerter
+from elastalert.alerters.command import CommandAlerter
+from elastalert.alerters.datadog import DatadogAlerter
+from elastalert.dingtalk import DingTalkAlerter
+from elastalert.alerters.discord import DiscordAlerter
+from elastalert.alerters.gitter import GitterAlerter
+from elastalert.alerters.googlechat import GoogleChatAlerter
+from elastalert.thehive import HiveAlerter
+from elastalert.alerters.httppost import HTTPPostAlerter
+from elastalert.alerters.line import LineNotifyAlerter
+from elastalert.alerters.pagertree import PagerTreeAlerter
+from elastalert.alerters.servicenow import ServiceNowAlerter
+from elastalert.alerters.telegram import TelegramAlerter
 from elastalert.loaders import FileRulesLoader
 from elastalert.alerters.jira import JiraAlerter
 from elastalert.alerters.jira import JiraFormattedMatchString
 from elastalert.alerters.email import EmailAlerter
 from elastalert.alerters.mattermost import MattermostAlerter
 from elastalert.alerters.opsgenie import OpsGenieAlerter
+from elastalert.alerters.pagerduty import PagerDutyAlerter
 from elastalert.alerters.slack import SlackAlerter
 from elastalert.alerters.teams import MsTeamsAlerter
 from elastalert.alerters.zabbix import ZabbixAlerter
-from elastalert.alerts import VictorOpsAlerter
+from elastalert.alerters.victorops import VictorOpsAlerter
 from elastalert.util import ts_add
 from elastalert.util import ts_now
 from elastalert.util import EAException
@@ -1600,21 +1600,21 @@ def test_command():
     match = {'@timestamp': '2014-01-01T00:00:00',
              'somefield': 'foobarbaz',
              'nested': {'field': 1}}
-    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+    with mock.patch("elastalert.alerters.command.subprocess.Popen") as mock_popen:
         alert.alert([match])
     assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
 
     # Test command as string with formatted arg (old-style string format)
     rule = {'command': '/bin/test/ --arg %(somefield)s'}
     alert = CommandAlerter(rule)
-    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+    with mock.patch("elastalert.alerters.command.subprocess.Popen") as mock_popen:
         alert.alert([match])
     assert mock_popen.called_with('/bin/test --arg foobarbaz', stdin=subprocess.PIPE, shell=False)
 
     # Test command as string without formatted arg (old-style string format)
     rule = {'command': '/bin/test/foo.sh'}
     alert = CommandAlerter(rule)
-    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+    with mock.patch("elastalert.alerters.command.subprocess.Popen") as mock_popen:
         alert.alert([match])
     assert mock_popen.called_with('/bin/test/foo.sh', stdin=subprocess.PIPE, shell=True)
 
@@ -1624,7 +1624,7 @@ def test_command():
     alert = CommandAlerter(rule)
     match = {'@timestamp': '2014-01-01T00:00:00',
              'somefield': 'foobarbaz'}
-    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+    with mock.patch("elastalert.alerters.command.subprocess.Popen") as mock_popen:
         mock_subprocess = mock.Mock()
         mock_popen.return_value = mock_subprocess
         mock_subprocess.communicate.return_value = (None, None)
@@ -1639,7 +1639,7 @@ def test_command():
     match = {'@timestamp': '2014-01-01T00:00:00',
              'somefield': 'foobarbaz'}
     alert_text = str(BasicMatchString(rule, match))
-    with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+    with mock.patch("elastalert.alerters.command.subprocess.Popen") as mock_popen:
         mock_subprocess = mock.Mock()
         mock_popen.return_value = mock_subprocess
         mock_subprocess.communicate.return_value = (None, None)
@@ -1654,7 +1654,7 @@ def test_command():
     match = {'@timestamp': '2014-01-01T00:00:00',
              'somefield': 'foobarbaz'}
     with pytest.raises(Exception) as exception:
-        with mock.patch("elastalert.alerts.subprocess.Popen") as mock_popen:
+        with mock.patch("elastalert.alerters.command.subprocess.Popen") as mock_popen:
             mock_subprocess = mock.Mock()
             mock_popen.return_value = mock_subprocess
             mock_subprocess.wait.return_value = 1
@@ -1671,7 +1671,7 @@ def test_command():
                  'somefield': 'foobarbaz'}
         alert_text = str(BasicMatchString(rule, match))
         mock_run = mock.MagicMock(side_effect=OSError)
-        with mock.patch("elastalert.alerts.subprocess.Popen", mock_run), pytest.raises(OSError) as mock_popen:
+        with mock.patch("elastalert.alerters.command.subprocess.Popen", mock_run), pytest.raises(OSError) as mock_popen:
             mock_subprocess = mock.Mock()
             mock_popen.return_value = mock_subprocess
             mock_subprocess.communicate.return_value = (None, None)

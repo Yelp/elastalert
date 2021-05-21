@@ -30,7 +30,7 @@ from elasticsearch.exceptions import TransportError
 from .prometheus_wrapper import PrometheusWrapper
 
 from . import kibana
-from .alerts import DebugAlerter
+from elastalert.alerters.debug import DebugAlerter
 from .config import load_conf
 from .enhancements import DropMatchException
 from .kibana_discover import generate_kibana_discover_url
