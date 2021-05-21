@@ -25,7 +25,6 @@ from elastalert.alerts import GoogleChatAlerter
 from elastalert.alerts import HiveAlerter
 from elastalert.alerts import HTTPPostAlerter
 from elastalert.alerts import LineNotifyAlerter
-from elastalert.alerts import PagerDutyAlerter
 from elastalert.alerts import PagerTreeAlerter
 from elastalert.alerts import ServiceNowAlerter
 from elastalert.alerts import TelegramAlerter
@@ -35,6 +34,7 @@ from elastalert.alerters.jira import JiraFormattedMatchString
 from elastalert.alerters.email import EmailAlerter
 from elastalert.alerters.mattermost import MattermostAlerter
 from elastalert.alerters.opsgenie import OpsGenieAlerter
+from elastalert.alerters.pagerduty import PagerDutyAlerter
 from elastalert.alerters.slack import SlackAlerter
 from elastalert.alerters.teams import MsTeamsAlerter
 from elastalert.alerters.zabbix import ZabbixAlerter

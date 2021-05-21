@@ -19,6 +19,7 @@ from .alerters.email import EmailAlerter
 from .alerters.jira import JiraAlerter
 from .alerters.mattermost import MattermostAlerter
 from .alerters.opsgenie import OpsGenieAlerter
+from elastalert.alerters.pagerduty import PagerDutyAlerter
 from .alerters.teams import MsTeamsAlerter
 from .alerters.slack import SlackAlerter
 from .alerters.sns import SnsAlerter
@@ -75,7 +76,7 @@ class RulesLoader(object):
         'ms_teams': MsTeamsAlerter,
         'slack': SlackAlerter,
         'mattermost': MattermostAlerter,
-        'pagerduty': alerts.PagerDutyAlerter,
+        'pagerduty': PagerDutyAlerter,
         'exotel': alerts.ExotelAlerter,
         'twilio': alerts.TwilioAlerter,
         'victorops': alerts.VictorOpsAlerter,
