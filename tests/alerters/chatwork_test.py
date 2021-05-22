@@ -1,0 +1,103 @@
+import mock
+import pytest
+from requests import RequestException
+from requests.auth import HTTPProxyAuth
+
+from elastalert.alerters.chatwork import ChatworkAlerter
+from elastalert.loaders import FileRulesLoader
+from elastalert.util import EAException
+
+
+def test_chatwork():
+    rule = {
+        'name': 'Test Chatwork Rule',
+        'type': 'any',
+        'chatwork_apikey': 'xxxx1',
+        'chatwork_room_id': 'xxxx2',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = ChatworkAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'body': 'Test Chatwork Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://api.chatwork.com/v2/rooms/xxxx2/messages',
+        params=mock.ANY,
+        headers={'X-ChatWorkToken': 'xxxx1'},
+        proxies=None,
+        auth=None
+    )
+
+    actual_data = mock_post_request.call_args_list[0][1]['params']
+    assert expected_data == actual_data
+
+
+def test_chatwork_proxy():
+    rule = {
+        'name': 'Test Chatwork Rule',
+        'type': 'any',
+        'chatwork_apikey': 'xxxx1',
+        'chatwork_room_id': 'xxxx2',
+        'chatwork_proxy': 'http://proxy.url',
+        'chatwork_proxy_login': 'admin',
+        'chatwork_proxy_pass': 'password',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = ChatworkAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'body': 'Test Chatwork Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://api.chatwork.com/v2/rooms/xxxx2/messages',
+        params=mock.ANY,
+        headers={'X-ChatWorkToken': 'xxxx1'},
+        proxies={'https': 'http://proxy.url'},
+        auth=HTTPProxyAuth('admin', 'password')
+    )
+
+    actual_data = mock_post_request.call_args_list[0][1]['params']
+    assert expected_data == actual_data
+
+
+def test_chatwork_ea_exception():
+    try:
+        rule = {
+            'name': 'Test Chatwork Rule',
+            'type': 'any',
+            'chatwork_apikey': 'xxxx1',
+            'chatwork_room_id': 'xxxx2',
+            'chatwork_proxy': 'http://proxy.url',
+            'chatwork_proxy_login': 'admin',
+            'chatwork_proxy_pass': 'password',
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = ChatworkAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
