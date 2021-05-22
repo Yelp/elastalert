@@ -6,30 +6,6 @@ import mock
 
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
-from elastalert.alerters.chatwork import ChatworkAlerter
-from elastalert.alerters.command import CommandAlerter
-from elastalert.alerters.datadog import DatadogAlerter
-from elastalert.alerters.dingtalk import DingTalkAlerter
-from elastalert.alerters.discord import DiscordAlerter
-from elastalert.alerters.gitter import GitterAlerter
-from elastalert.alerters.googlechat import GoogleChatAlerter
-from elastalert.alerters.thehive import HiveAlerter
-from elastalert.alerters.httppost import HTTPPostAlerter
-from elastalert.alerters.line import LineNotifyAlerter
-from elastalert.alerters.pagertree import PagerTreeAlerter
-from elastalert.alerters.servicenow import ServiceNowAlerter
-from elastalert.alerters.telegram import TelegramAlerter
-from elastalert.loaders import FileRulesLoader
-from elastalert.alerters.jira import JiraAlerter
-from elastalert.alerters.jira import JiraFormattedMatchString
-from elastalert.alerters.email import EmailAlerter
-from elastalert.alerters.mattermost import MattermostAlerter
-from elastalert.alerters.opsgenie import OpsGenieAlerter
-from elastalert.alerters.pagerduty import PagerDutyAlerter
-from elastalert.alerters.slack import SlackAlerter
-from elastalert.alerters.teams import MsTeamsAlerter
-from elastalert.alerters.zabbix import ZabbixAlerter
-from elastalert.alerters.victorops import VictorOpsAlerter
 from elastalert.util import ts_add
 
 
