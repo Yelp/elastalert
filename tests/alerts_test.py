@@ -18,11 +18,11 @@ from elastalert.alerts import BasicMatchString
 from elastalert.alerters.chatwork import ChatworkAlerter
 from elastalert.alerters.command import CommandAlerter
 from elastalert.alerters.datadog import DatadogAlerter
-from elastalert.dingtalk import DingTalkAlerter
+from elastalert.alerters.dingtalk import DingTalkAlerter
 from elastalert.alerters.discord import DiscordAlerter
 from elastalert.alerters.gitter import GitterAlerter
 from elastalert.alerters.googlechat import GoogleChatAlerter
-from elastalert.thehive import HiveAlerter
+from elastalert.alerters.thehive import HiveAlerter
 from elastalert.alerters.httppost import HTTPPostAlerter
 from elastalert.alerters.line import LineNotifyAlerter
 from elastalert.alerters.pagertree import PagerTreeAlerter
