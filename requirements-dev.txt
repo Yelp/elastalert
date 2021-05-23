@@ -1,4 +1,5 @@
 -r requirements.txt
+docutils<0.17
 pytest-cov==2.12.0
 flake8
 m2r2
