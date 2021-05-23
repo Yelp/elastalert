@@ -1,5 +1,6 @@
 -r requirements.txt
-coverage==5.5
+docutils<0.17
+pytest-cov==2.12.0
 flake8
 m2r2
 pluggy>=0.12.0
