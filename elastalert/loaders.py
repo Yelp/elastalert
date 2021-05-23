@@ -30,8 +30,8 @@ import elastalert.alerters.stomp
 import elastalert.alerters.telegram
 import elastalert.alerters.twilio
 import elastalert.alerters.victorops
-import elastalert.dingtalk
-import elastalert.thehive
+import elastalert.alerters.dingtalk
+import elastalert.alerters.thehive
 import elastalert.alerters.rocketchat
 
 from . import alerts
@@ -110,10 +110,10 @@ class RulesLoader(object):
         'post': elastalert.alerters.httppost.HTTPPostAlerter,
         'pagertree': elastalert.alerters.pagertree.PagerTreeAlerter,
         'linenotify': elastalert.alerters.line.LineNotifyAlerter,
-        'hivealerter': elastalert.thehive.HiveAlerter,
+        'hivealerter': elastalert.alerters.thehive.HiveAlerter,
         'zabbix': ZabbixAlerter,
         'discord': elastalert.alerters.discord.DiscordAlerter,
-        'dingtalk': elastalert.dingtalk.DingTalkAlerter,
+        'dingtalk': elastalert.alerters.dingtalk.DingTalkAlerter,
         'chatwork': elastalert.alerters.chatwork.ChatworkAlerter,
         'datadog': elastalert.alerters.datadog.DatadogAlerter,
         'ses': elastalert.alerters.ses.SesAlerter,
