@@ -48,6 +48,7 @@ Currently, we have support built in for these alert types:
 - OpsGenie
 - PagerDuty
 - PagerTree
+- RocketChat
 - Squadcast
 - ServiceNow
 - Slack

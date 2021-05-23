@@ -2371,6 +2371,46 @@ Example usage::
       - "pagertree"
     pagertree_integration_url: "PagerTree Integration URL"
 
+RocketChat
+~~~~~~~~~~
+
+RocketChat alerter will send a notification to a predefined channel. The body of the notification is formatted the same as with other alerters.
+https://developer.rocket.chat/api/rest-api/methods/chat/postmessage
+
+The alerter requires the following option:
+
+``rocket_chat_webhook_url``: The webhook URL that includes your auth data and the ID of the channel (room) you want to post to. You can use a list of URLs to send to multiple channels.
+
+Optional:
+
+``rocket_chat_username_override``: By default RocketChat will use username defined in Integration when posting to the channel. Use this option to change it (free text).
+
+``rocket_chat_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified “#other-channel”, and a Direct Message with “@username”.
+
+``rocket_chat_emoji_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
+ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If rocket_chat_icon_url_override parameter is provided, emoji is ignored.
+
+``rocket_chat_msg_color``: By default the alert will be posted with the ‘danger’ color. You can also use ‘good’ or ‘warning’ colors.
+
+``rocket_chat_text_string``: Notification message you want to add.
+
+``rocket_chat_proxy``: By default ElastAlert will not use a network proxy to send notifications to RocketChat. Set this option using ``hostname:port`` if you need to use a proxy.
+
+``slack_alert_fields``: You can add additional fields to your RocketChat alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
+
+Example rocket_chat_alert_fields::
+
+    rocket_chat_alert_fields:
+      - title: Host
+        value: monitor.host
+        short: true
+      - title: Status
+        value: monitor.status
+        short: true
+      - title: Zone
+        value: beat.name
+        short: true
+
 Squadcast
 ~~~~~~~~~
 

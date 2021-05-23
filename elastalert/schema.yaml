@@ -457,6 +457,15 @@ properties:
   pagertree_integration_url: {type: string}
   pagertree_proxy: {type: string}
 
+  ### RocketChat
+  rocket_chat_webhook_url: *arrayOfString
+  rocket_chat_username_override: {type: string}
+  rocket_chat_channel_override: {type: string}
+  rocket_chat_emoji_override: {type: string}
+  rocket_chat_msg_color: {enum: [good, warning, danger]}
+  rocket_chat_text_string: {type: string}
+  rocket_chat_proxy: {type: string}
+
   ### ServiceNow
   servicenow_rest_url: {type: string}
   username: {type: string}
