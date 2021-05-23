@@ -2396,7 +2396,7 @@ ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ .
 
 ``rocket_chat_proxy``: By default ElastAlert will not use a network proxy to send notifications to RocketChat. Set this option using ``hostname:port`` if you need to use a proxy.
 
-``slack_alert_fields``: You can add additional fields to your RocketChat alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
+```rocket_chat_alert_fields``: You can add additional fields to your RocketChat alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
 
 Example rocket_chat_alert_fields::
 
