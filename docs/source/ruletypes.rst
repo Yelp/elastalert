@@ -2371,10 +2371,10 @@ Example usage::
       - "pagertree"
     pagertree_integration_url: "PagerTree Integration URL"
 
-RocketChat
-~~~~~~~~~~
+Rocket.Chat
+~~~~~~~~~~~
 
-RocketChat alerter will send a notification to a predefined channel. The body of the notification is formatted the same as with other alerters.
+Rocket.Chat alerter will send a notification to a predefined channel. The body of the notification is formatted the same as with other alerters.
 https://developer.rocket.chat/api/rest-api/methods/chat/postmessage
 
 The alerter requires the following option:
