@@ -32,6 +32,8 @@ import elastalert.alerters.twilio
 import elastalert.alerters.victorops
 import elastalert.alerters.dingtalk
 import elastalert.alerters.thehive
+import elastalert.alerters.rocketchat
+
 from . import alerts
 from . import enhancements
 from . import ruletypes
@@ -114,7 +116,8 @@ class RulesLoader(object):
         'dingtalk': elastalert.alerters.dingtalk.DingTalkAlerter,
         'chatwork': elastalert.alerters.chatwork.ChatworkAlerter,
         'datadog': elastalert.alerters.datadog.DatadogAlerter,
-        'ses': elastalert.alerters.ses.SesAlerter
+        'ses': elastalert.alerters.ses.SesAlerter,
+        'rocketchat': elastalert.alerters.rocketchat.RocketChatAlerter
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
