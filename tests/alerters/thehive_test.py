@@ -3,7 +3,7 @@ import json
 import mock
 
 from elastalert.loaders import FileRulesLoader
-from elastalert.thehive import HiveAlerter
+from elastalert.alerters.thehive import HiveAlerter
 
 
 def test_thehive_alerter():

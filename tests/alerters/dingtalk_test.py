@@ -5,7 +5,7 @@ import pytest
 from requests import RequestException
 from requests.auth import HTTPProxyAuth
 
-from elastalert.dingtalk import DingTalkAlerter
+from elastalert.alerters.dingtalk import DingTalkAlerter
 from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
