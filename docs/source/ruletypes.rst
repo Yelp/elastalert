@@ -2371,10 +2371,10 @@ Example usage::
       - "pagertree"
     pagertree_integration_url: "PagerTree Integration URL"
 
-RocketChat
-~~~~~~~~~~
+Rocket.Chat
+~~~~~~~~~~~
 
-RocketChat alerter will send a notification to a predefined channel. The body of the notification is formatted the same as with other alerters.
+Rocket.Chat alerter will send a notification to a predefined channel. The body of the notification is formatted the same as with other alerters.
 https://developer.rocket.chat/api/rest-api/methods/chat/postmessage
 
 The alerter requires the following option:
@@ -2388,7 +2388,7 @@ Optional:
 ``rocket_chat_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified “#other-channel”, and a Direct Message with “@username”.
 
 ``rocket_chat_emoji_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
-ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If rocket_chat_icon_url_override parameter is provided, emoji is ignored.
+ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ .
 
 ``rocket_chat_msg_color``: By default the alert will be posted with the ‘danger’ color. You can also use ‘good’ or ‘warning’ colors.
 
