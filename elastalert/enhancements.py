@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import datetime
+
 from .util import pretty_ts
 
 
@@ -23,3 +25,25 @@ class TimeEnhancement(BaseEnhancement):
 class DropMatchException(Exception):
     """ ElastAlert will drop a match if this exception type is raised by an enhancement """
     pass
+
+
+class CopyFullRuleEnhancement(BaseEnhancement):
+    # The enhancement is run against every match
+    # The match is passed to the process function where it can be modified in any way
+    # ElastAlert will do this for each enhancement linked to a rule
+    def process(self, match):
+        rule_copy = dict(self.rule)
+        rule_copy.pop("type")
+        rule_copy.pop("match_enhancements")
+        rule_copy.pop("alert")
+        keys = []
+        for key in list(rule_copy.keys()):
+            if isinstance(rule_copy[key], datetime.timedelta) or callable(rule_copy[key]):
+                keys.append(key)
+        rule_copy["type"] = type(self.rule["type"]).__name__
+        match["rule"] = rule_copy
+
+
+class CopyRuleTypeEnhancement(BaseEnhancement):
+    def process(self, match):
+        match["rule_type"] = type(self.rule["type"]).__name__
