@@ -198,6 +198,8 @@ properties:
   query_delay: *timeframe
   max_query_size: {type: integer}
   max_scrolling: {type: integer}
+  max_threads: {type: integer}
+  misfire_grace_time: {type: integer}
 
   owner: {type: string}
   priority: {type: integer}

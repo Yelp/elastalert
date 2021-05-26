@@ -15,7 +15,7 @@
 - None
 
 ## New features
-- None
+- Expose rule scheduler properties as configurable settings - [#192](https://github.com/jertel/elastalert2/pull/192) - #jertel
 
 ## Other changes
 - Speed up unit tests by adding default parallelism - [164](https://github.com/jertel/elastalert2/pull/164) - @ferozsalam

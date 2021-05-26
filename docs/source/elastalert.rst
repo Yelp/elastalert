@@ -164,6 +164,8 @@ it ran the query for a given rule, and periodically query from that time until t
 this field is a nested unit of time, such as ``minutes: 5``. This is how time is defined in every ElastAlert
 configuration.
 
+``misfire_grace_time``: If the rule scheduler is running behind, due to large numbers of rules or long-running rules, this grace time settings allows a rule to still be executed, provided its next scheduled runt time is no more than this grace period, in seconds, overdue. The default is 5 seconds.
+
 ``writeback_index``: The index on ``es_host`` to use.
 
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. The
@@ -173,6 +175,8 @@ using the size of ``max_query_size`` through the set amount of pages, when ``max
 
 ``max_scrolling_count``: The maximum amount of pages to scroll through. The default is ``0``, which means the scrolling has no limit.
 For example if this value is set to ``5`` and the ``max_query_size`` is set to ``10000`` then ``50000`` documents will be downloaded at most.
+
+``max_threads``: The maximum number of concurrent threads available to process scheduled rules. Large numbers of long-running rules may require this value be increased, though this could overload the Elasticsearch cluster if too many complex queries are running concurrently. Default is 10.
 
 ``scroll_keepalive``: The maximum time (formatted in `Time Units <https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#time-units>`_) the scrolling context should be kept alive. Avoid using high values as it abuses resources in Elasticsearch, but be mindful to allow sufficient time to finish processing all the results.
 

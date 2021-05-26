@@ -22,6 +22,7 @@ import statsd
 import dateutil.tz
 import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.executors.pool import ThreadPoolExecutor
 from croniter import croniter
 from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
@@ -171,7 +172,15 @@ class ElastAlerter(object):
         self.thread_data.alerts_sent = 0
         self.thread_data.num_hits = 0
         self.thread_data.num_dupes = 0
-        self.scheduler = BackgroundScheduler()
+        executors = {
+            'default': ThreadPoolExecutor(max_workers=self.conf.get('max_threads', 10)),
+        }
+        job_defaults = {
+            'misfire_grace_time': self.conf.get('misfire_grace_time', 5),
+            'coalesce': True,
+            'max_instances': 1
+        }
+        self.scheduler = BackgroundScheduler(executors=executors, job_defaults=job_defaults)
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
         self.statsd_instance_tag = self.conf.get('statsd_instance_tag', '')
         self.statsd_host = self.conf.get('statsd_host', '')
