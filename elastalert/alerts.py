@@ -5,8 +5,7 @@ import os
 
 from texttable import Texttable
 
-from elastalert.util import EAException
-from elastalert.util import lookup_es_key
+from elastalert.util import EAException, lookup_es_key
 from elastalert.yaml import read_yaml
 
 

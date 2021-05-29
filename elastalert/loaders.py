@@ -34,9 +34,7 @@ import elastalert.alerters.dingtalk
 import elastalert.alerters.thehive
 import elastalert.alerters.rocketchat
 
-from elastalert import alerts
-from elastalert import enhancements
-from elastalert import ruletypes
+from elastalert import alerts, enhancements, ruletypes
 from elastalert.alerters.email import EmailAlerter
 from elastalert.alerters.jira import JiraAlerter
 from elastalert.alerters.mattermost import MattermostAlerter
