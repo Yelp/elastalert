@@ -28,36 +28,19 @@ from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch.exceptions import TransportError
-from .prometheus_wrapper import PrometheusWrapper
 
-from . import kibana
+from elastalert import kibana
 from elastalert.alerters.debug import DebugAlerter
-from .config import load_conf
-from .enhancements import DropMatchException
-from .kibana_discover import generate_kibana_discover_url
-from .ruletypes import FlatlineRule
-from .util import add_raw_postfix
-from .util import cronite_datetime_to_timestamp
-from .util import dt_to_ts
-from .util import dt_to_unix
-from .util import EAException
-from .util import elastalert_logger
-from .util import elasticsearch_client
-from .util import format_index
-from .util import lookup_es_key
-from .util import parse_deadline
-from .util import parse_duration
-from .util import pretty_ts
-from .util import replace_dots_in_field_names
-from .util import seconds
-from .util import set_es_key
-from .util import should_scrolling_continue
-from .util import total_seconds
-from .util import ts_add
-from .util import ts_now
-from .util import ts_to_dt
-from .util import unix_to_dt
-from .util import ts_utc_to_tz
+from elastalert.config import load_conf
+from elastalert.enhancements import DropMatchException
+from elastalert.kibana_discover import generate_kibana_discover_url
+from elastalert.prometheus_wrapper import PrometheusWrapper
+from elastalert.ruletypes import FlatlineRule
+from elastalert.util import (add_raw_postfix, cronite_datetime_to_timestamp, dt_to_ts, dt_to_unix, EAException,
+                             elastalert_logger, elasticsearch_client, format_index, lookup_es_key, parse_deadline,
+                             parse_duration, pretty_ts, replace_dots_in_field_names, seconds, set_es_key,
+                             should_scrolling_continue, total_seconds, ts_add, ts_now, ts_to_dt, unix_to_dt,
+                             ts_utc_to_tz)
 
 
 class ElastAlerter(object):

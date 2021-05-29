@@ -10,8 +10,8 @@ import dateutil.parser
 import pytz
 from six import string_types
 
-from . import ElasticSearchClient
-from .auth import Auth
+from elastalert import ElasticSearchClient
+from elastalert.auth import Auth
 
 logging.basicConfig()
 elastalert_logger = logging.getLogger('elastalert')

@@ -1,7 +1,7 @@
 import boto3
 
-from ..alerts import Alerter
-from ..util import elastalert_logger
+from elastalert.alerts import Alerter
+from elastalert.util import elastalert_logger
 
 
 class SnsAlerter(Alerter):

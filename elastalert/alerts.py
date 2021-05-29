@@ -5,9 +5,8 @@ import os
 
 from texttable import Texttable
 
-from .util import EAException
-from .util import lookup_es_key
-from .yaml import read_yaml
+from elastalert.util import EAException, lookup_es_key
+from elastalert.yaml import read_yaml
 
 
 class DateTimeEncoder(json.JSONEncoder):

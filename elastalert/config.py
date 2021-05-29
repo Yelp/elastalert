@@ -5,10 +5,8 @@ import logging.config
 
 from envparse import Env
 
-from . import loaders
-from .util import EAException
-from .util import elastalert_logger
-from .util import get_module
+from elastalert import loaders
+from elastalert.util import EAException, elastalert_logger, get_module
 
 from elastalert.yaml import read_yaml
 
