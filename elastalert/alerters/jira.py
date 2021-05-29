@@ -3,12 +3,8 @@ import sys
 
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
-from elastalert.util import elastalert_logger
-from elastalert.util import lookup_es_key
-from elastalert.util import pretty_ts
-from elastalert.util import ts_now
-from elastalert.util import ts_to_dt
-from elastalert.util import EAException
+from elastalert.util import (elastalert_logger, lookup_es_key, pretty_ts, ts_now,
+                             ts_to_dt, EAException)
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 
