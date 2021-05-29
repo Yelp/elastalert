@@ -1,14 +1,14 @@
 import datetime
 import sys
 
-from ..alerts import Alerter
-from ..alerts import BasicMatchString
-from ..util import elastalert_logger
-from ..util import lookup_es_key
-from ..util import pretty_ts
-from ..util import ts_now
-from ..util import ts_to_dt
-from ..util import EAException
+from elastalert.alerts import Alerter
+from elastalert.alerts import BasicMatchString
+from elastalert.util import elastalert_logger
+from elastalert.util import lookup_es_key
+from elastalert.util import pretty_ts
+from elastalert.util import ts_now
+from elastalert.util import ts_to_dt
+from elastalert.util import EAException
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 

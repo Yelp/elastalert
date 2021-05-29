@@ -5,10 +5,8 @@ import requests
 from requests.exceptions import RequestException
 import warnings
 
-from ..alerts import Alerter, DateTimeEncoder
-from ..util import EAException
-from ..util import elastalert_logger
-from ..util import lookup_es_key
+from elastalert.alerts import Alerter, DateTimeEncoder
+from elastalert.util import EAException, elastalert_logger, lookup_es_key
 
 
 class RocketChatAlerter(Alerter):

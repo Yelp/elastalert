@@ -3,11 +3,8 @@ import json
 import requests
 import warnings
 
-from ..alerts import Alerter
-from ..alerts import DateTimeEncoder
-from ..util import elastalert_logger
-from ..util import lookup_es_key
-from ..util import EAException
+from elastalert.alerts import Alerter, DateTimeEncoder
+from elastalert.util import elastalert_logger, lookup_es_key, EAException
 from requests import RequestException
 
 

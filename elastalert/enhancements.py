@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from .util import pretty_ts
+from elastalert.util import pretty_ts
 
 
 class BaseEnhancement(object):

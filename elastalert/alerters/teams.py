@@ -1,10 +1,8 @@
 import json
 import requests
 
-from ..alerts import Alerter
-from ..alerts import DateTimeEncoder
-from ..util import EAException
-from ..util import elastalert_logger
+from elastalert.alerts import Alerter, DateTimeEncoder
+from elastalert.util import EAException, elastalert_logger
 from requests.exceptions import RequestException
 
 

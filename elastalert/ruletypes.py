@@ -5,19 +5,9 @@ import sys
 
 from sortedcontainers import SortedKeyList as sortedlist
 
-from .util import add_raw_postfix
-from .util import dt_to_ts
-from .util import EAException
-from .util import elastalert_logger
-from .util import elasticsearch_client
-from .util import format_index
-from .util import hashable
-from .util import lookup_es_key
-from .util import new_get_event_ts
-from .util import pretty_ts
-from .util import total_seconds
-from .util import ts_now
-from .util import ts_to_dt
+from elastalert.util import (add_raw_postfix, dt_to_ts, EAException, elastalert_logger, elasticsearch_client,
+                             format_index, hashable, lookup_es_key, new_get_event_ts, pretty_ts, total_seconds,
+                             ts_now, ts_to_dt)
 
 
 class RuleType(object):

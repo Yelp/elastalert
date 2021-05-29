@@ -34,30 +34,22 @@ import elastalert.alerters.dingtalk
 import elastalert.alerters.thehive
 import elastalert.alerters.rocketchat
 
-from . import alerts
-from . import enhancements
-from . import ruletypes
-from .alerters.email import EmailAlerter
-from .alerters.jira import JiraAlerter
-from .alerters.mattermost import MattermostAlerter
-from .alerters.opsgenie import OpsGenieAlerter
+from elastalert import alerts
+from elastalert import enhancements
+from elastalert import ruletypes
+from elastalert.alerters.email import EmailAlerter
+from elastalert.alerters.jira import JiraAlerter
+from elastalert.alerters.mattermost import MattermostAlerter
+from elastalert.alerters.opsgenie import OpsGenieAlerter
 from elastalert.alerters.pagerduty import PagerDutyAlerter
-from .alerters.teams import MsTeamsAlerter
-from .alerters.slack import SlackAlerter
-from .alerters.sns import SnsAlerter
-from .alerters.zabbix import ZabbixAlerter
-from .util import dt_to_ts
-from .util import dt_to_ts_with_format
-from .util import dt_to_unix
-from .util import dt_to_unixms
-from .util import EAException
-from .util import elastalert_logger
-from .util import get_module
-from .util import ts_to_dt
-from .util import ts_to_dt_with_format
-from .util import unix_to_dt
-from .util import unixms_to_dt
-from .yaml import read_yaml
+from elastalert.alerters.teams import MsTeamsAlerter
+from elastalert.alerters.slack import SlackAlerter
+from elastalert.alerters.sns import SnsAlerter
+from elastalert.alerters.zabbix import ZabbixAlerter
+from elastalert.util import dt_to_ts
+from elastalert.util import (dt_to_ts_with_format, dt_to_unix, dt_to_unixms, EAException, elastalert_logger, get_module,
+                             ts_to_dt, ts_to_dt_with_format, unix_to_dt, unixms_to_dt)
+from elastalert.yaml import read_yaml
 
 
 class RulesLoader(object):

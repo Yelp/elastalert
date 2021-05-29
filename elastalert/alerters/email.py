@@ -1,9 +1,7 @@
 import os
 
-from ..alerts import Alerter
-from ..util import elastalert_logger
-from ..util import lookup_es_key
-from ..util import EAException
+from elastalert.alerts import Alerter
+from elastalert.util import elastalert_logger, lookup_es_key, EAException
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
