@@ -66,9 +66,9 @@ class HiveAlerter(Alerter):
             tag_value = self.lookup_field(match, tag, tag)
             if isinstance(tag_value, list):
                 for sub_tag in tag_value:
-                    tag_values.add(sub_tag)
+                    tag_values.add(str(sub_tag))
             else:
-                tag_values.add(tag_value)
+                tag_values.add(str(tag_value))
 
         return tag_values
 
