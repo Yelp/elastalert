@@ -182,13 +182,17 @@ Let's break down the response to see what's happening.
 
 ``Queried rule Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 hits``
 
-ElastAlert periodically queries the most recent ``buffer_time`` (default 45 minutes) for data matching the filters. Here we see that it matched 5 hits.
+ElastAlert periodically queries the most recent ``buffer_time`` (default 45 minutes) for data matching the filters. Here we see that it matched 5 hits:
 
-``POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]``
+.. code-block::
 
-This line showing that ElastAlert uploaded a document to the elastalert_status index with information about the query it just made.
+    POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]
 
-``Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits (0 already seen), 0 matches, 0 alerts sent``
+This line showing that ElastAlert uploaded a document to the elastalert_status index with information about the query it just made:
+
+.. code-block::
+
+    Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits (0 already seen), 0 matches, 0 alerts sent
 
 The line means ElastAlert has finished processing the rule. For large time periods, sometimes multiple queries may be run, but their data will be processed together. ``query hits`` is the number of documents that are downloaded from Elasticsearch, ``already seen`` refers to documents that were already counted in a previous overlapping query and will be ignored, ``matches`` is the number of matches the rule type outputted, and ``alerts sent`` is the number of alerts actually sent. This may differ from ``matches`` because of options like ``realert`` and ``aggregation`` or because of an error.
 
@@ -215,8 +219,9 @@ The body of the email will contain something like::
 
 If an error occurred, such as an unreachable SMTP server, you may see:
 
+.. code-block::
 
-``ERROR:root:Error while running alert email: Error connecting to SMTP host: [Errno 61] Connection refused``
+    ERROR:root:Error while running alert email: Error connecting to SMTP host: [Errno 61] Connection refused
 
 
 Note that if you stop ElastAlert and then run it again later, it will look up ``elastalert_status`` and begin querying
