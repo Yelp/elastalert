@@ -18,7 +18,7 @@ def test_thehive_alerter():
                                   'severity': 2,
                                   'source': 'elastalert',
                                   'status': 'New',
-                                  'tags': ['test.ip'],
+                                  'tags': ['test.port'],
                                   'tlp': 3,
                                   'type': 'external'},
             'hive_connection': {'hive_apikey': '',
@@ -33,7 +33,8 @@ def test_thehive_alerter():
     alert = HiveAlerter(rule)
     match = {
         "test": {
-          "ip": "127.0.0.1"
+          "ip": "127.0.0.1",
+          "port": 9876
         },
         "@timestamp": "2021-05-09T14:43:30",
     }
@@ -62,7 +63,7 @@ def test_thehive_alerter():
         "source": "elastalert",
         "status": "New",
         "tags": [
-            "127.0.0.1"
+            "9876"
         ],
         "title": "test-thehive",
         "tlp": 3,
