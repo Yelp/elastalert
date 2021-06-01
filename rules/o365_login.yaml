@@ -51,8 +51,9 @@ index: filebeat-*
 #    event.module: "o365"    
 
 filter:
-- query_string: 
-        query: "event.module:o365 AND event.action:UserLoggedIn AND NOT source.geo.country_iso_code:AU AND NOT (tags:profile_country_match)"
+- query_string:
+        # query: "event.module:o365" 
+        query: "event.module:o365 AND event.action:UserLoggedIn AND NOT source.geo.country_iso_code:AU AND NOT (whitelisted_for:out_of_country OR tags:profile_country_match)"
 
 # (Required)
 # The alert is use when a match is found
@@ -113,7 +114,7 @@ alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**From ip
 alert_text_type: "alert_text_only"
 
 # parameters for custom http post alerts
-http_post_url: "http://localhost:1337/api/v1.0/create/accelo_ticket"
+http_post_url: "http://localhost:1337/api/v1.0/create/alert"
 
 siem_manager_alert_subject_args:
   - "@timestamp"
@@ -135,3 +136,6 @@ siem_manager_alert_body: "Username: {3}\nFrom: {1}, {2}\nAt: {4}\nFrom ip: {5}\n
 
 http_post_payload:
   ticket_for: accelo_company_id
+
+http_post_static_payload:
+  alert_type_id: "1"  
