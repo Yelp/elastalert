@@ -1,0 +1,54 @@
+# (Required)
+# Rule name, must be unique
+name: limacharlie_detections any rule
+
+# (Required)
+# Type of alert.
+# the frequency rule type alerts when num_events events occur with timeframe time
+type: any
+
+# (Required)
+# Index to search, wildcard supported
+index: limacharlie-alerts-*
+
+# (Required)
+# A list of Elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+
+filter:
+- query_string:
+        query: 'event.dataset:limacharlie.alerts'
+
+# Ms Teams Alert
+alert:
+  - "ms_teams"
+# to prod channel
+#ms_teams_webhook_url: "https://insanetechnologies.webhook.office.com/webhookb2/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/7286705abbaf4fd0a8c529230b638d8e/ae25c5f2-48db-4846-b5be-1031b406cafb"
+# to testing channel
+ms_teams_webhook_url: "https://insanetechnologies.webhook.office.com/webhookb2/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/e81440764014410cb747cac199938c67/ae25c5f2-48db-4846-b5be-1031b406cafb"
+ms_teams_alert_summary: "Elastic Siem Alert"
+ms_teams_theme_color: "ff0000"
+ms_teams_alert_fixed_width:
+alert_subject_args:
+        - event.action
+
+alert_text_args:
+        - "@timestamp"
+        - user.name
+        - source.ip
+        - message
+        - _id
+        - filter.start_time
+        - filter.end_time
+        - host.name
+        - limacharlie.cat
+        - tenant
+
+alert_subject: "LimaCharlie Detection, Event Action: {0}"
+# to prod siem
+alert_text: "**Tenant**: {9} <br>**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Hostname**: {7}<br>**Message**: {3}<br>**Detection Category**: {8}<br><br>[View Event In Siem](http://10.80.111.101/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{4}%22%27)&sourcerer=(default:!(%27limacharlie-alerts-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{5}%27,kind:absolute,to:%27{6}%27)),timeline:(linkTo:!(global),timerange:(from:%27{5}%27,kind:absolute,to:%27{6}%27))))<br>"
+# to dev siem
+# alert_text: "**Tenant**: {9}<br>**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Hostname**: {7}<br>**Message**: {3}<br>**Detection Category**: {8}<br><br>[View Event In Siem](http://10.80.120.138:90/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{4}%22%27)&sourcerer=(default:!(%27limacharlie-alerts-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{5}%27,kind:absolute,to:%27{6}%27)),timeline:(linkTo:!(global),timerange:(from:%27{5}%27,kind:absolute,to:%27{6}%27))))<br>"
+alert_text_type: "alert_text_only"
+
