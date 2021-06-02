@@ -153,6 +153,7 @@ def main():
     parser.add_argument('--username', default=os.environ.get('ES_USERNAME', None), help='Elasticsearch username')
     parser.add_argument('--password', default=os.environ.get('ES_PASSWORD', None), help='Elasticsearch password')
     parser.add_argument('--bearer', default=os.environ.get('ES_BEARER', None), help='Elasticsearch bearer token')
+    parser.add_argument('--api-key', default=os.environ.get('ES_API_KEY', None), help='Elasticsearch api-key token')
     parser.add_argument('--url-prefix', help='Elasticsearch URL prefix')
     parser.add_argument('--no-auth', action='store_const', const=True, help='Suppress prompt for basic auth')
     parser.add_argument('--ssl', action='store_true', default=env('ES_USE_SSL', None), help='Use TLS')
@@ -198,6 +199,7 @@ def main():
         username = args.username if args.username else data.get('es_username')
         password = args.password if args.password else data.get('es_password')
         bearer = args.bearer if args.bearer else data.get('es_bearer')
+        api_key = args.api_key if args.api_key else data.get('es_api_key')
         url_prefix = args.url_prefix if args.url_prefix is not None else data.get('es_url_prefix', '')
         use_ssl = args.ssl if args.ssl is not None else data.get('use_ssl')
         verify_certs = args.verify_certs if args.verify_certs is not None else data.get('verify_certs') is not False
@@ -212,6 +214,7 @@ def main():
         username = args.username if args.username else None
         password = args.password if args.password else None
         bearer = args.bearer if args.bearer else None
+        api_key = args.api_key if args.api_key else None
         aws_region = args.aws_region
         host = args.host if args.host else input('Enter Elasticsearch host: ')
         port = args.port if args.port else int(input('Enter Elasticsearch port: '))
@@ -249,6 +252,8 @@ def main():
     headers = {}
     if bearer is not None:
         headers.update({'Authorization': f'Bearer {bearer}'})
+    if api_key is not None:
+        headers.update({'Authorization': f'ApiKey {api_key}'})
 
     es = Elasticsearch(
         host=host,
