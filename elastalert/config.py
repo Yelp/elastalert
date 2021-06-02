@@ -6,8 +6,9 @@ import logging.config
 from envparse import Env
 
 from elastalert import loaders
-from elastalert.util import EAException, elastalert_logger, get_module
-
+from elastalert.util import EAException
+from elastalert.util import elastalert_logger
+from elastalert.util import get_module
 from elastalert.yaml import read_yaml
 
 # Required global (config.yaml) configuration options
@@ -18,6 +19,7 @@ env_settings = {'ES_USE_SSL': 'use_ssl',
                 'ES_BEARER': 'es_bearer',
                 'ES_PASSWORD': 'es_password',
                 'ES_USERNAME': 'es_username',
+                'ES_API_KEY': 'es_api_key',
                 'ES_HOST': 'es_host',
                 'ES_PORT': 'es_port',
                 'ES_URL_PREFIX': 'es_url_prefix',

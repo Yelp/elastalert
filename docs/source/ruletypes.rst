@@ -42,6 +42,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_bearer`` (string, no default)                           |           |
 +--------------------------------------------------------------+           |
+| ``es_api_token`` (string, no default)                        |           |
++--------------------------------------------------------------+           |
 | ``es_url_prefix`` (string, no default)                       |           |
 +--------------------------------------------------------------+           |
 | ``statsd_instance_tag`` (string, no default)                 |           |
@@ -50,7 +52,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_send_get_body_as`` (string, default "GET")              |           |
 +--------------------------------------------------------------+           |
-| ``aggregation`` (time, no default)                           |           | 
+| ``aggregation`` (time, no default)                           |           |
 +--------------------------------------------------------------+           |
 | ``limit_execution`` (string, no default)                     |           |
 +--------------------------------------------------------------+           |
@@ -299,7 +301,12 @@ es_password
 es_bearer
 ^^^^^^^^^^^
 
-``es_bearer``: bearer-token authorization for connecting to ``es_host``. (Optional, string, no default) The environment variable ``ES_BEARER`` will override this field.
+``es_bearer``: bearer-token authorization for connecting to ``es_host``. (Optional, string, no default) The environment variable ``ES_BEARER`` will override this field. This authentication option will override the password authentication option.
+
+es_api_key
+^^^^^^^^^^^
+
+``es_api_key``: api-key-token authorization for connecting to ``es_host``. (Optional, base64 string, no default) The environment variable ``ES_API_KEY`` will override this field. This authentication option will override both the bearer and the password authentication options.
 
 es_url_prefix
 ^^^^^^^^^^^^^
@@ -735,7 +742,7 @@ Some rules and alerts require additional options, which also go in the top level
 query_timezone
 ^^^^^^^^^^^^^^
 
-``query_timezone``: Whether to convert UTC time to the specified time zone in rule queries. 
+``query_timezone``: Whether to convert UTC time to the specified time zone in rule queries.
 If not set, start and end time of query will be used UTC. (Optional, string, default empty string)
 
 Example value : query_timezone: "Europe/Istanbul"
@@ -1577,7 +1584,7 @@ AWS SES requires one option:
 
 ``ses_email``: An address or list of addresses to sent the alert to.
 
-``ses_from_addr``: This sets the From header in the email. 
+``ses_from_addr``: This sets the From header in the email.
 
 Optional:
 
@@ -1589,7 +1596,7 @@ Optional:
 
 ``ses_aws_profile``: The AWS profile to use. If none specified, the default will be used.
 
-``ses_email_reply_to``: This sets the Reply-To header in the email. 
+``ses_email_reply_to``: This sets the Reply-To header in the email.
 
 ``ses_cc``: This adds the CC emails to the list of recipients. By default, this is left empty.
 
@@ -1655,7 +1662,7 @@ Example When not using aws_profile usage::
     sns_aws_access_key_id: 'XXXXXXXXXXXXXXXXXX''
     sns_aws_secret_access_key: 'YYYYYYYYYYYYYYYYYYYY'
     sns_aws_region: 'us-east-1' # You must nest aws_region within your alert configuration so it is not used to sign AWS requests.
- 
+
 Example When to use aws_profile usage::
 
     # Create ~/.aws/credentials
@@ -1742,7 +1749,7 @@ Example usage using new-style format::
 Datadog
 ~~~~~~~
 
-This alert will create a [Datadog Event](https://docs.datadoghq.com/events/). Events are limited to 4000 characters. If an event is sent that contains 
+This alert will create a [Datadog Event](https://docs.datadoghq.com/events/). Events are limited to 4000 characters. If an event is sent that contains
 a message that is longer than 4000 characters, only his first 4000 characters will be displayed.
 
 This alert requires two additional options:

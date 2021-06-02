@@ -323,13 +323,20 @@ def elasticsearch_client(conf):
     """ returns an :class:`ElasticSearchClient` instance configured using an es_conn_config """
     es_conn_conf = build_es_conn_config(conf)
     auth = Auth()
+    username = es_conn_conf['es_username']
+    password = es_conn_conf['es_password']
+    if es_conn_conf['es_bearer'] or es_conn_conf['es_api_key']:
+        username = None
+        password = None
     es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
-                                     username=None if es_conn_conf['es_bearer'] else es_conn_conf['es_username'],
-                                     password=None if es_conn_conf['es_bearer'] else es_conn_conf['es_password'],
+                                     username=username,
+                                     password=password,
                                      aws_region=es_conn_conf['aws_region'],
                                      profile_name=es_conn_conf['profile'])
     if es_conn_conf['es_bearer']:
         es_conn_conf['headers'] = {"Authorization": "Bearer " + es_conn_conf['es_bearer']}
+    if es_conn_conf['es_api_key']:
+        es_conn_conf['headers'] = {"Authorization": "ApiKey " + es_conn_conf['es_api_key']}
 
     return ElasticSearchClient(es_conn_conf)
 
@@ -348,6 +355,7 @@ def build_es_conn_config(conf):
     parsed_conf['http_auth'] = None
     parsed_conf['es_username'] = None
     parsed_conf['es_password'] = None
+    parsed_conf['es_api_key'] = None
     parsed_conf['es_bearer'] = None
     parsed_conf['aws_region'] = None
     parsed_conf['profile'] = None
@@ -365,6 +373,11 @@ def build_es_conn_config(conf):
     elif 'es_username' in conf:
         parsed_conf['es_username'] = conf['es_username']
         parsed_conf['es_password'] = conf['es_password']
+
+    if os.environ.get('ES_API_KEY'):
+        parsed_conf['es_api_key'] = os.environ.get('ES_API_KEY')
+    elif 'es_api_key' in conf:
+        parsed_conf['es_api_key'] = conf['es_api_key']
 
     if os.environ.get('ES_BEARER'):
         parsed_conf['es_bearer'] = os.environ.get('ES_BEARER')
