@@ -42,6 +42,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_bearer`` (string, no default)                           |           |
 +--------------------------------------------------------------+           |
+| ``es_api_token`` (string, no default)                        |           |
++--------------------------------------------------------------+           |
 | ``es_url_prefix`` (string, no default)                       |           |
 +--------------------------------------------------------------+           |
 | ``statsd_instance_tag`` (string, no default)                 |           |
@@ -299,12 +301,12 @@ es_password
 es_bearer
 ^^^^^^^^^^^
 
-``es_bearer``: bearer-token authorization for connecting to ``es_host``. (Optional, string, no default) The environment variable ``ES_BEARER`` will override this field.
+``es_bearer``: bearer-token authorization for connecting to ``es_host``. (Optional, string, no default) The environment variable ``ES_BEARER`` will override this field. This authentication option will override the password authentication option.
 
 es_api_key
 ^^^^^^^^^^^
 
-``es_api_key``: api-key-token authorization for connecting to ``es_host``. (Optional, base64 string, no default) The environment variable ``ES_API_KEY`` will override this field.
+``es_api_key``: api-key-token authorization for connecting to ``es_host``. (Optional, base64 string, no default) The environment variable ``ES_API_KEY`` will override this field. This authentication option will override both the bearer and the password authentication options.
 
 es_url_prefix
 ^^^^^^^^^^^^^
