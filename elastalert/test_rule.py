@@ -434,7 +434,7 @@ class MockElastAlerter(object):
                 with open(args.save, 'wb') as data_file:
                     # Add _id to _source for dump
                     [doc['_source'].update({'_id': doc['_id']}) for doc in hits]
-                    data_file.write(json.dumps([doc['_source'] for doc in hits], indent=4))
+                    data_file.write(str.encode(json.dumps([doc['_source'] for doc in hits], indent=4)))
             if args.use_downloaded:
                 if hits:
                     args.json = args.save
