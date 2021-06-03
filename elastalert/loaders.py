@@ -8,45 +8,54 @@ import sys
 import jsonschema
 import yaml
 import yaml.scanner
-from jinja2 import Template
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
+from jinja2 import Template
 
 import elastalert.alerters.alerta
 import elastalert.alerters.chatwork
 import elastalert.alerters.command
 import elastalert.alerters.datadog
 import elastalert.alerters.debug
+import elastalert.alerters.dingtalk
 import elastalert.alerters.discord
+import elastalert.alerters.exotel
 import elastalert.alerters.gitter
 import elastalert.alerters.googlechat
 import elastalert.alerters.httppost
 import elastalert.alerters.line
 import elastalert.alerters.pagertree
-import elastalert.alerters.exotel
+import elastalert.alerters.rocketchat
 import elastalert.alerters.servicenow
 import elastalert.alerters.ses
 import elastalert.alerters.stomp
 import elastalert.alerters.telegram
+import elastalert.alerters.thehive
 import elastalert.alerters.twilio
 import elastalert.alerters.victorops
-import elastalert.alerters.dingtalk
-import elastalert.alerters.thehive
-import elastalert.alerters.rocketchat
-
-from elastalert import alerts, enhancements, ruletypes
+from elastalert import alerts
+from elastalert import enhancements
+from elastalert import ruletypes
 from elastalert.alerters.email import EmailAlerter
 from elastalert.alerters.jira import JiraAlerter
 from elastalert.alerters.mattermost import MattermostAlerter
 from elastalert.alerters.opsgenie import OpsGenieAlerter
 from elastalert.alerters.pagerduty import PagerDutyAlerter
-from elastalert.alerters.teams import MsTeamsAlerter
 from elastalert.alerters.slack import SlackAlerter
 from elastalert.alerters.sns import SnsAlerter
+from elastalert.alerters.teams import MsTeamsAlerter
 from elastalert.alerters.zabbix import ZabbixAlerter
 from elastalert.util import dt_to_ts
-from elastalert.util import (dt_to_ts_with_format, dt_to_unix, dt_to_unixms, EAException, elastalert_logger, get_module,
-                             ts_to_dt, ts_to_dt_with_format, unix_to_dt, unixms_to_dt)
+from elastalert.util import dt_to_ts_with_format
+from elastalert.util import dt_to_unix
+from elastalert.util import dt_to_unixms
+from elastalert.util import EAException
+from elastalert.util import elastalert_logger
+from elastalert.util import get_module
+from elastalert.util import ts_to_dt
+from elastalert.util import ts_to_dt_with_format
+from elastalert.util import unix_to_dt
+from elastalert.util import unixms_to_dt
 from elastalert.yaml import read_yaml
 
 
@@ -423,7 +432,7 @@ class RulesLoader(object):
                     elastalert_logger.warning('Did you mean to use %s in the index? '
                                               'The index will be formatted like %s' % (token,
                                                                                        datetime.datetime.now().strftime(
-                                                                                            rule.get('index'))))
+                                                                                           rule.get('index'))))
 
         if rule.get('scan_entire_timeframe') and not rule.get('timeframe'):
             raise EAException('scan_entire_timeframe can only be used if there is a timeframe specified')
@@ -539,7 +548,7 @@ class FileRulesLoader(RulesLoader):
         rule_files = []
         if 'scan_subdirectories' in conf and conf['scan_subdirectories']:
             for ruledir in rule_folders:
-                for root, folders, files in os.walk(ruledir):
+                for root, folders, files in os.walk(ruledir, followlinks=True):
                     # Openshift/k8s configmap fix for ..data and ..2021_05..date directories that loop with os.walk()
                     folders[:] = [d for d in folders if not d.startswith('..')]
                     for filename in files:
