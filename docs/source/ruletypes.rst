@@ -2233,9 +2233,9 @@ The alerter requires the following options:
 ``ms_teams_webhook_url``: The webhook URL that includes your auth data and the ID of the channel you want to post to. Go to the Connectors
 menu in your channel and configure an Incoming Webhook, then copy the resulting URL. You can use a list of URLs to send to multiple channels.
 
-``ms_teams_alert_summary``: Summary should be configured according to `MS documentation <https://docs.microsoft.com/en-us/outlook/actionable-messages/card-reference>`_, although it seems not displayed by Teams currently.
-
 Optional:
+
+``ms_teams_alert_summary``: Summary should be configured according to `MS documentation <https://docs.microsoft.com/en-us/outlook/actionable-messages/card-reference>`_, although it seems not displayed by Teams currently, defaults to ``ElastAlert Message``.
 
 ``ms_teams_theme_color``: By default the alert will be posted without any color line. To add color, set this attribute to a HTML color value e.g. ``#ff0000`` for red.
 
@@ -2768,9 +2768,9 @@ Zabbix will send notification to a Zabbix server. The item in the host specified
 
 Required:
 
-``zbx_sender_host``: The address where zabbix server is running.
+``zbx_sender_host``: The address where zabbix server is running, defaults to ``'localhost'``.
 
-``zbx_sender_port``: The port where zabbix server is listenning.
+``zbx_sender_port``: The port where zabbix server is listenning, defaults to ``10051``.
 
 ``zbx_host``: This field setup the host in zabbix that receives the value sent by ElastAlert 2.
 
