@@ -8,6 +8,7 @@ from elastalert.util import EAException, elastalert_logger
 
 
 class ExotelAlerter(Alerter):
+    """ Sends an exotel alert """
     required_options = frozenset(['exotel_account_sid', 'exotel_auth_token', 'exotel_to_number', 'exotel_from_number'])
 
     def __init__(self, rule):

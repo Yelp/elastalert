@@ -61,3 +61,51 @@ def test_line_notify_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_line_getinfo():
+    rule = {
+        'name': 'Test LineNotify Rule',
+        'type': 'any',
+        'linenotify_access_token': 'xxxxx',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = LineNotifyAlerter(rule)
+
+    expected_data = {
+        "type": "linenotify",
+        "linenotify_access_token": 'xxxxx'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('linenotify_access_token, expected_data', [
+    ('',  True),
+    ('xxxxx',
+        {
+            "type": "linenotify",
+            "linenotify_access_token": 'xxxxx'
+        }),
+])
+def test_line_key_error(linenotify_access_token, expected_data):
+    try:
+        rule = {
+            'name': 'Test LineNotify Rule',
+            'type': 'any',
+            'alert': []
+        }
+
+        if linenotify_access_token != '':
+            rule['linenotify_access_token'] = linenotify_access_token
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = LineNotifyAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data

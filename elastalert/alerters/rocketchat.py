@@ -93,4 +93,5 @@ class RocketChatAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'rocketchat',
-                'rocket_chat_username_override': self.rocket_chat_username_override}
+                'rocket_chat_username_override': self.rocket_chat_username_override,
+                'rocket_chat_webhook_url': self.rocket_chat_webhook_url}
