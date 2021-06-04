@@ -143,3 +143,53 @@ def test_ms_teams_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_ms_teams_getinfo():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'ms_teams_webhook_url': 'http://test.webhook.url',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MsTeamsAlerter(rule)
+
+    expected_data = {
+        'type': 'ms_teams',
+        'ms_teams_webhook_url': ['http://test.webhook.url']
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('ms_teams_webhook_url, expected_data', [
+    ('', True),
+    ('http://test.webhook.url',
+        {
+            'type': 'ms_teams',
+            'ms_teams_webhook_url': ['http://test.webhook.url']
+        })
+])
+def test_ms_teams_key_error(ms_teams_webhook_url, expected_data):
+    try:
+        rule = {
+            'name': 'Test Rule',
+            'type': 'any',
+            'alert_subject': 'Cool subject',
+            'alert': []
+        }
+
+        if ms_teams_webhook_url != '':
+            rule['ms_teams_webhook_url'] = ms_teams_webhook_url
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = MsTeamsAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data
