@@ -8,13 +8,13 @@ from elastalert.util import EAException, elastalert_logger
 
 
 class DatadogAlerter(Alerter):
-    ''' Creates a Datadog Event for each alert '''
+    """ Creates a Datadog Event for each alert """
     required_options = frozenset(['datadog_api_key', 'datadog_app_key'])
 
     def __init__(self, rule):
         super(DatadogAlerter, self).__init__(rule)
-        self.dd_api_key = self.rule.get('datadog_api_key', None)
-        self.dd_app_key = self.rule.get('datadog_app_key', None)
+        self.dd_api_key = self.rule['datadog_api_key']
+        self.dd_app_key = self.rule['datadog_app_key']
 
     def alert(self, matches):
         url = 'https://api.datadoghq.com/api/v1/events'
