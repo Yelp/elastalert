@@ -1574,8 +1574,8 @@ Example usage using new-style format::
     alerta_attributes_values: ["{key}",    "{logdate}",     "{sender_ip}"  ]
     alerta_text:  "Probe {hostname} is UP at {logdate} GMT"
 
-AWS SES
-~~~~~~~
+AWS SES (Amazon Simple Email Service)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The AWS SES alerter is similar to Email alerter but uses AWS SES to send emails. The AWS SES alerter can use AWS credentials
 from the rule yaml, standard AWS config files or environment variables.
@@ -1633,8 +1633,8 @@ Example When to use aws_profile usage::
     ses_from_addr: "xxxx1@xxx.com"
     ses_email: "xxxx1@xxx.com"
 
-AWS SNS
-~~~~~~~
+AWS SNS (Amazon Simple Notification Service)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The AWS SNS alerter will send an AWS SNS notification. The body of the notification is formatted the same as with other alerters.
 The AWS SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or

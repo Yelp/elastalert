@@ -28,8 +28,8 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 Currently, we have support built in for these alert types:
 
 - Alerta
-- AWS SES
-- AWS SNS
+- AWS SES (Amazon Simple Email Service)
+- AWS SNS (Amazon Simple Notification Service)
 - Chatwork
 - Command
 - Datadog

@@ -11,8 +11,8 @@ class SesAlerter(Alerter):
     def __init__(self, *args):
         super(SesAlerter, self).__init__(*args)
 
-        self.aws_access_key_id = self.rule.get('ses_aws_access_key_id')
-        self.aws_secret_access_key = self.rule.get('ses_aws_secret_access_key')
+        self.aws_access_key_id = self.rule['ses_aws_access_key_id']
+        self.aws_secret_access_key = self.rule['ses_aws_secret_access_key']
         self.aws_region = self.rule.get('ses_aws_region', 'us-east-1')
         self.aws_profile = self.rule.get('ses_aws_profile', '')
 

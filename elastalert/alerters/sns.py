@@ -10,9 +10,9 @@ class SnsAlerter(Alerter):
 
     def __init__(self, *args):
         super(SnsAlerter, self).__init__(*args)
-        self.sns_topic_arn = self.rule.get('sns_topic_arn', '')
-        self.sns_aws_access_key_id = self.rule.get('sns_aws_access_key_id')
-        self.sns_aws_secret_access_key = self.rule.get('sns_aws_secret_access_key')
+        self.sns_topic_arn = self.rule['sns_topic_arn']
+        self.sns_aws_access_key_id = self.rule['sns_aws_access_key_id']
+        self.sns_aws_secret_access_key = self.rule['sns_aws_secret_access_key']
         self.sns_aws_region = self.rule.get('sns_aws_region', 'us-east-1')
         self.profile = self.rule.get('sns_aws_profile', None)
 
@@ -39,3 +39,6 @@ class SnsAlerter(Alerter):
             Subject=self.create_title(matches)
         )
         elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
+
+    def get_info(self):
+        return {'type': 'sns'}
