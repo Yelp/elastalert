@@ -292,3 +292,53 @@ def test_dingtalk_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_dingtalk_getinfo():
+    rule = {
+        'name': 'Test DingTalk Rule',
+        'type': 'any',
+        'dingtalk_access_token': 'xxxxxxx',
+        'alert': [],
+        'alert_subject': 'Test DingTalk'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = DingTalkAlerter(rule)
+
+    expected_data = {
+        'type': 'dingtalk',
+        "dingtalk_webhook_url": 'https://oapi.dingtalk.com/robot/send?access_token=xxxxxxx'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('dingtalk_access_token,, expected_data', [
+    ('',        True),
+    ('xxxxxxx',
+        {
+            'type': 'dingtalk',
+            "dingtalk_webhook_url": 'https://oapi.dingtalk.com/robot/send?access_token=xxxxxxx'
+        }),
+])
+def test_dingtalk_key_error(dingtalk_access_token, expected_data):
+    try:
+        rule = {
+            'name': 'Test DingTalk Rule',
+            'type': 'any',
+            'alert': [],
+            'alert_subject': 'Test DingTalk'
+        }
+
+        if dingtalk_access_token != '':
+            rule['dingtalk_access_token'] = dingtalk_access_token
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = DingTalkAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data
