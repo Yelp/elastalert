@@ -1779,7 +1779,7 @@ Required:
 
 ``dingtalk_access_token``:  Dingtalk access token.
 
-``dingtalk_msgtype``:  Dingtalk msgtype. ``text``, ``markdown``, ``single_action_card``, ``action_card``.
+``dingtalk_msgtype``:  Dingtalk msgtype, default to ``text``. ``markdown``, ``single_action_card``, ``action_card``.
 
 dingtalk_msgtype single_action_card Required:
 
@@ -2768,9 +2768,9 @@ Zabbix will send notification to a Zabbix server. The item in the host specified
 
 Required:
 
-``zbx_sender_host``: The address where zabbix server is running.
+``zbx_sender_host``: The address where zabbix server is running, defaults to ``'localhost'``.
 
-``zbx_sender_port``: The port where zabbix server is listenning.
+``zbx_sender_port``: The port where zabbix server is listenning, defaults to ``10051``.
 
 ``zbx_host``: This field setup the host in zabbix that receives the value sent by ElastAlert 2.
 

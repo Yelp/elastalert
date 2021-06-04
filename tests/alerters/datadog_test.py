@@ -67,3 +67,56 @@ def test_datadog_alerterea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_datadog_getinfo():
+    rule = {
+        'name': 'Test Datadog Event Alerter',
+        'type': 'any',
+        'datadog_api_key': 'test-api-key',
+        'datadog_app_key': 'test-app-key',
+        'alert': [],
+        'alert_subject': 'Test Datadog Event Alert'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = DatadogAlerter(rule)
+
+    expected_data = {'type': 'datadog'}
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('datadog_api_key, datadog_app_key, expected_data', [
+    ('',      '',      True),
+    ('xxxx1', '',      True),
+    ('',      'xxxx2', True),
+    ('xxxx1', 'xxxx2',
+        {
+            'type': 'datadog'
+        }),
+])
+def test_datadog_key_error(datadog_api_key, datadog_app_key, expected_data):
+    try:
+        rule = {
+            'name': 'Test Datadog Event Alerter',
+            'type': 'any',
+            'alert': [],
+            'alert_subject': 'Test Datadog Event Alert'
+        }
+
+        if datadog_api_key != '':
+            rule['datadog_api_key'] = datadog_api_key
+
+        if datadog_app_key != '':
+            rule['datadog_app_key'] = datadog_app_key
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = DatadogAlerter(rule)
+
+        expected_data = {'type': 'datadog'}
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data
