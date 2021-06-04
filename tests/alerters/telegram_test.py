@@ -125,7 +125,7 @@ def test_telegram_text_maxlength():
 def test_telegram_ea_exception():
     try:
         rule = {
-            'name': 'Test Telegram Rule' + ('a' * 3985),
+            'name': 'Test Telegram Rule',
             'type': 'any',
             'telegram_bot_token': 'xxxxx1',
             'telegram_room_id': 'xxxxx2',
@@ -143,3 +143,57 @@ def test_telegram_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_telegram_getinfo():
+    rule = {
+        'name': 'Test Telegram Rule',
+        'type': 'any',
+        'telegram_bot_token': 'xxxxx1',
+        'telegram_room_id': 'xxxxx2',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = TelegramAlerter(rule)
+
+    expected_data = {
+        'type': 'telegram',
+        'telegram_room_id': 'xxxxx2'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('telegram_bot_token, telegram_room_id, expected_data', [
+    ('',       '',       True),
+    ('xxxxx1', '',       True),
+    ('',       'xxxxx2', True),
+    ('xxxxx1', 'xxxxx2',
+        {
+            'type': 'telegram',
+            'telegram_room_id': 'xxxxx2'
+        }),
+])
+def test_telegram_key_error(telegram_bot_token, telegram_room_id, expected_data):
+    try:
+        rule = {
+            'name': 'Test Telegram Rule',
+            'type': 'any',
+            'alert': []
+        }
+
+        if telegram_bot_token != '':
+            rule['telegram_bot_token'] = telegram_bot_token
+
+        if telegram_room_id != '':
+            rule['telegram_room_id'] = telegram_room_id
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = TelegramAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data

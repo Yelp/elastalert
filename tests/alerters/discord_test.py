@@ -207,3 +207,57 @@ def test_discord_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_discord_getinfo():
+    rule = {
+        'name': 'Test Discord Rule' + ('a' * 2069),
+        'type': 'any',
+        'discord_webhook_url': 'http://xxxxxxx',
+        'alert': [],
+        'alert_subject': 'Test Discord'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = DiscordAlerter(rule)
+
+    expected_data = {
+        'type': 'discord',
+        'discord_webhook_url': 'http://xxxxxxx'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('discord_webhook_url, expected_data', [
+    ('', True),
+    ('http://xxxxxxx',
+        {
+            'type': 'discord',
+            'discord_webhook_url': 'http://xxxxxxx'
+        }),
+])
+def test_discord_key_error(discord_webhook_url, expected_data):
+    try:
+        rule = {
+            'name': 'Test Discord Rule' + ('a' * 2069),
+            'type': 'any',
+            'alert': [],
+            'alert_subject': 'Test Discord'
+        }
+
+        if discord_webhook_url != '':
+            rule['discord_webhook_url'] = discord_webhook_url
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = DiscordAlerter(rule)
+
+        expected_data = {
+            'type': 'discord',
+            'discord_webhook_url': 'http://xxxxxxx'
+        }
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data

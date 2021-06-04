@@ -651,3 +651,57 @@ def test_alerta_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_alerta_getinfo():
+    rule = {
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+        'timeframe': datetime.timedelta(hours=1),
+        'timestamp_field': '@timestamp',
+        'type': 'any',
+        'alert': 'alerta'
+    }
+
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = AlertaAlerter(rule)
+
+    expected_data = {
+        'type': 'alerta',
+        'alerta_url': 'http://elastalerthost:8080/api/alert'
+    }
+    actual_data = alert.get_info()
+
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('alerta_api_url, expected_data', [
+    ('',  True),
+    ('http://elastalerthost:8080/api/alert',
+        {
+            'type': 'alerta',
+            'alerta_url': 'http://elastalerthost:8080/api/alert'
+        }),
+])
+def test_alerta_key_error(alerta_api_url, expected_data):
+    try:
+        rule = {
+            'name': 'Test Alerta rule!',
+            'timeframe': datetime.timedelta(hours=1),
+            'timestamp_field': '@timestamp',
+            'type': 'any',
+            'alert': 'alerta'
+        }
+
+        if alerta_api_url != '':
+            rule['alerta_api_url'] = alerta_api_url
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = AlertaAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except Exception:
+        assert expected_data

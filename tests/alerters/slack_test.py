@@ -452,51 +452,6 @@ def test_slack_kibana_discover_color():
     assert expected_data == actual_data
 
 
-def test_slack_ignore_ssl_errors():
-    rule = {
-        'name': 'Test Rule',
-        'type': 'any',
-        'slack_webhook_url': 'http://please.dontgohere.slack',
-        'slack_ignore_ssl_errors': True,
-        'alert': []
-    }
-    rules_loader = FileRulesLoader({})
-    rules_loader.load_modules(rule)
-    alert = SlackAlerter(rule)
-    match = {
-        '@timestamp': '2016-01-01T00:00:00'
-    }
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    mock_post_request.assert_called_once_with(
-        rule['slack_webhook_url'],
-        data=mock.ANY,
-        headers={'content-type': 'application/json'},
-        proxies=None,
-        verify=False,
-        timeout=10
-    )
-
-    expected_data = {
-        'username': 'elastalert',
-        'channel': '',
-        'icon_emoji': ':ghost:',
-        'attachments': [
-            {
-                'color': 'danger',
-                'title': 'Test Rule',
-                'text': BasicMatchString(rule, match).__str__(),
-                'mrkdwn_in': ['text', 'pretext'],
-                'fields': []
-            }
-        ],
-        'text': '',
-        'parse': 'none'
-    }
-    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-
-
 def test_slack_proxy():
     rule = {
         'name': 'Test Rule',
@@ -731,16 +686,25 @@ def test_slack_icon_url_override():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
-def test_slack_msg_color():
+@pytest.mark.parametrize('msg_color, except_msg_color', [
+    ('', 'danger'),
+    ('danger', 'danger'),
+    ('good', 'good'),
+    ('warning', 'warning')
+])
+def test_slack_msg_color(msg_color, except_msg_color):
     rule = {
         'name': 'Test Rule',
         'type': 'any',
         'slack_webhook_url': 'http://please.dontgohere.slack',
         'slack_username_override': 'elastalert',
-        'slack_msg_color': 'good',
         'alert_subject': 'Cool subject',
         'alert': []
     }
+
+    if msg_color != '':
+        rule['slack_msg_color'] = msg_color
+
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
@@ -757,7 +721,7 @@ def test_slack_msg_color():
         'icon_emoji': ':ghost:',
         'attachments': [
             {
-                'color': 'good',
+                'color': except_msg_color,
                 'title': rule['alert_subject'],
                 'text': BasicMatchString(rule, match).__str__(),
                 'mrkdwn_in': ['text', 'pretext'],
@@ -942,21 +906,36 @@ def test_slack_alert_fields():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
-def test_slack_ca_certs():
+@pytest.mark.parametrize('ca_certs, ignore_ssl_errors, excpet_verify', [
+    ('', '', True),
+    ('', True, False),
+    ('', False, True),
+    (True, '', True),
+    (True, True, True),
+    (True, False, True),
+    (False, '', True),
+    (False, True, False),
+    (False, False, True)
+])
+def test_slack_ca_certs(ca_certs, ignore_ssl_errors, excpet_verify):
     rule = {
         'name': 'Test Rule',
         'type': 'any',
         'slack_webhook_url': 'http://please.dontgohere.slack',
-        'slack_username_override': 'elastalert',
-        'slack_ca_certs': True,
         'alert_subject': 'Cool subject',
         'alert': []
     }
+    if ca_certs != '':
+        rule['slack_ca_certs'] = ca_certs
+
+    if ignore_ssl_errors != '':
+        rule['slack_ignore_ssl_errors'] = ignore_ssl_errors
+
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
     alert = SlackAlerter(rule)
     match = {
-        '@timestamp': '2016-01-01T00:00:00',
+        '@timestamp': '2017-01-01T00:00:00',
         'somefield': 'foobarbaz'
     }
     with mock.patch('requests.post') as mock_post_request:
@@ -972,7 +951,7 @@ def test_slack_ca_certs():
                 'title': rule['alert_subject'],
                 'text': BasicMatchString(rule, match).__str__(),
                 'mrkdwn_in': ['text', 'pretext'],
-                'fields': [],
+                'fields': []
             }
         ],
         'text': '',
@@ -983,7 +962,7 @@ def test_slack_ca_certs():
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None,
-        verify=True,
+        verify=excpet_verify,
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
@@ -1350,3 +1329,69 @@ def test_slack_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_slack_get_aggregation_summary_text__maximum_width():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'slack_username_override': 'elastalert',
+        'slack_msg_pretext': 'pretext value',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+    assert 75 == alert.get_aggregation_summary_text__maximum_width()
+
+
+def test_slack_getinfo():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'slack_webhook_url': 'http://please.dontgohere.slack',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = SlackAlerter(rule)
+
+    expected_data = {
+        'type': 'slack',
+        'slack_username_override': 'elastalert'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('slack_webhook_url, expected_data', [
+    ('',  True),
+    ('http://please.dontgohere.slack',
+        {
+            'type': 'slack',
+            'slack_username_override': 'elastalert'
+        }),
+])
+def test_slack_key_error(slack_webhook_url, expected_data):
+    try:
+        rule = {
+            'name': 'Test Rule',
+            'type': 'any',
+            'alert_subject': 'Cool subject',
+            'alert': []
+        }
+
+        if slack_webhook_url != '':
+            rule['slack_webhook_url'] = slack_webhook_url
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = SlackAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data
