@@ -53,8 +53,8 @@ class ZabbixAlerter(Alerter):
 
         self.zbx_sender_host = self.rule.get('zbx_sender_host', 'localhost')
         self.zbx_sender_port = self.rule.get('zbx_sender_port', 10051)
-        self.zbx_host = self.rule.get('zbx_host')
-        self.zbx_key = self.rule.get('zbx_key')
+        self.zbx_host = self.rule['zbx_host']
+        self.zbx_key = self.rule['zbx_key']
         self.timestamp_field = self.rule.get('timestamp_field', '@timestamp')
         self.timestamp_type = self.rule.get('timestamp_type', 'iso')
         self.timestamp_strptime = self.rule.get('timestamp_strptime', '%Y-%m-%dT%H:%M:%S.%fZ')

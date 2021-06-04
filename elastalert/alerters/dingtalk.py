@@ -11,13 +11,13 @@ from elastalert.util import EAException, elastalert_logger
 
 class DingTalkAlerter(Alerter):
     """ Creates a DingTalk room message for each alert """
-    required_options = frozenset(['dingtalk_access_token', 'dingtalk_msgtype'])
+    required_options = frozenset(['dingtalk_access_token'])
 
     def __init__(self, rule):
         super(DingTalkAlerter, self).__init__(rule)
-        self.dingtalk_access_token = self.rule.get('dingtalk_access_token')
+        self.dingtalk_access_token = self.rule['dingtalk_access_token']
         self.dingtalk_webhook_url = 'https://oapi.dingtalk.com/robot/send?access_token=%s' % (self.dingtalk_access_token)
-        self.dingtalk_msgtype = self.rule.get('dingtalk_msgtype')
+        self.dingtalk_msgtype = self.rule.get('dingtalk_msgtype', 'text')
         self.dingtalk_single_title = self.rule.get('dingtalk_single_title', 'elastalert')
         self.dingtalk_single_url = self.rule.get('dingtalk_single_url', '')
         self.dingtalk_btn_orientation = self.rule.get('dingtalk_btn_orientation', '')

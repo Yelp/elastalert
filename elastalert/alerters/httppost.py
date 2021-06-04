@@ -13,11 +13,11 @@ class HTTPPostAlerter(Alerter):
 
     def __init__(self, rule):
         super(HTTPPostAlerter, self).__init__(rule)
-        post_url = self.rule.get('http_post_url')
+        post_url = self.rule['http_post_url']
         if isinstance(post_url, str):
             post_url = [post_url]
         self.post_url = post_url
-        self.post_proxy = self.rule.get('http_post_proxy')
+        self.post_proxy = self.rule.get('http_post_proxy', None)
         self.post_payload = self.rule.get('http_post_payload', {})
         self.post_static_payload = self.rule.get('http_post_static_payload', {})
         self.post_all_values = self.rule.get('http_post_all_values', not self.post_payload)
@@ -41,6 +41,8 @@ class HTTPPostAlerter(Alerter):
                 verify = self.post_ca_certs
             else:
                 verify = not self.post_ignore_ssl_errors
+            if self.post_ignore_ssl_errors:
+                requests.packages.urllib3.disable_warnings()
 
             headers.update(self.post_http_headers)
             proxies = {'https': self.post_proxy} if self.post_proxy else None
