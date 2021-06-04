@@ -1,6 +1,6 @@
 import datetime
 
-import mock
+from unittest import mock
 import pytest
 from jira import JIRAError
 

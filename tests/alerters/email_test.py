@@ -1,6 +1,6 @@
 import base64
 
-import mock
+from unittest import mock
 import pytest
 
 from elastalert.alerters.email import EmailAlerter

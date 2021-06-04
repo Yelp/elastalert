@@ -1,7 +1,7 @@
 import json
 import subprocess
 
-import mock
+from unittest import mock
 import pytest
 
 from elastalert.alerters.command import CommandAlerter

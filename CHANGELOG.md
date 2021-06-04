@@ -43,6 +43,7 @@
 - Improve Gitter alerter by explicitly specifying arg names  - [#230](https://github.com/jertel/elastalert2/pull/230) - @nsano-rururu
 - Add more alerter test code coverage - [#231](https://github.com/jertel/elastalert2/pull/231) - @nsano-rururu
 - Upgrade pytest-cov from 2.12.0 to 2.12.1 - [#232](https://github.com/jertel/elastalert2/pull/232) - @nsano-rururu
+- Migrate away from external test mock dependency - [#233](https://github.com/jertel/elastalert2/pull/233) - @nsano-rururu
 
 # 2.1.0
 

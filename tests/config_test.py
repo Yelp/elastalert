@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import mock
+from unittest import mock
 import datetime
 
 from elastalert.config import load_conf
