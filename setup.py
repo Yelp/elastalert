@@ -36,7 +36,6 @@ setup(
         'jira>=2.0.0',
         'Jinja2==2.11.3',
         'jsonschema>=3.0.2',
-        'mock>=2.0.0',
         'prison>=0.1.2',
         'prometheus_client>=0.10.1',
         'py-zabbix>=1.1.3',

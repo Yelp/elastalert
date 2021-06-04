@@ -1,6 +1,6 @@
 import json
 
-import mock
+from unittest import mock
 import pytest
 from requests import RequestException
 from requests.auth import HTTPProxyAuth

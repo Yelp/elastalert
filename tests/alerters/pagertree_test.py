@@ -2,7 +2,7 @@ import json
 import re
 import uuid
 
-import mock
+from unittest import mock
 import pytest
 from requests import RequestException
 
