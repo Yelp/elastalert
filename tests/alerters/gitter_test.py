@@ -9,13 +9,22 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_gitter_msg_level_default():
+@pytest.mark.parametrize('msg_level, except_msg_level', [
+    ('', 'error'),
+    ('error', 'error'),
+    ('info', 'info')
+])
+def test_gitter_msg_level(msg_level, except_msg_level):
     rule = {
         'name': 'Test Gitter Rule',
         'type': 'any',
         'gitter_webhook_url': 'https://webhooks.gitter.im/e/xxxxx',
         'alert': []
     }
+
+    if msg_level != '':
+        rule['gitter_msg_level'] = msg_level
+
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
     alert = GitterAlerter(rule)
@@ -28,88 +37,18 @@ def test_gitter_msg_level_default():
 
     expected_data = {
         'message': 'Test Gitter Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
-        'level': 'error'
+        'level': except_msg_level
     }
 
     mock_post_request.assert_called_once_with(
         rule['gitter_webhook_url'],
-        mock.ANY,
+        data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None
     )
 
-    actual_data = json.loads(mock_post_request.call_args_list[0][0][1])
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
-    assert 'error' in actual_data['level']
-
-
-def test_gitter_msg_level_info():
-    rule = {
-        'name': 'Test Gitter Rule',
-        'type': 'any',
-        'gitter_webhook_url': 'https://webhooks.gitter.im/e/xxxxx',
-        'gitter_msg_level': 'info',
-        'alert': []
-    }
-    rules_loader = FileRulesLoader({})
-    rules_loader.load_modules(rule)
-    alert = GitterAlerter(rule)
-    match = {
-        '@timestamp': '2021-01-01T00:00:00',
-        'somefield': 'foobarbaz'
-    }
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    expected_data = {
-        'message': 'Test Gitter Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
-        'level': 'info'
-    }
-
-    mock_post_request.assert_called_once_with(
-        rule['gitter_webhook_url'],
-        mock.ANY,
-        headers={'content-type': 'application/json'},
-        proxies=None
-    )
-
-    actual_data = json.loads(mock_post_request.call_args_list[0][0][1])
-    assert expected_data == actual_data
-    assert 'info' in actual_data['level']
-
-
-def test_gitter_msg_level_error():
-    rule = {
-        'name': 'Test Gitter Rule',
-        'type': 'any',
-        'gitter_webhook_url': 'https://webhooks.gitter.im/e/xxxxx',
-        'gitter_msg_level': 'error',
-        'alert': []
-    }
-    rules_loader = FileRulesLoader({})
-    rules_loader.load_modules(rule)
-    alert = GitterAlerter(rule)
-    match = {
-        '@timestamp': '2021-01-01T00:00:00',
-        'somefield': 'foobarbaz'
-    }
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-    expected_data = {
-        'message': 'Test Gitter Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
-        'level': 'error'
-    }
-
-    mock_post_request.assert_called_once_with(
-        rule['gitter_webhook_url'],
-        mock.ANY,
-        headers={'content-type': 'application/json'},
-        proxies=None
-    )
-
-    actual_data = json.loads(mock_post_request.call_args_list[0][0][1])
-    assert expected_data == actual_data
-    assert 'error' in actual_data['level']
 
 
 def test_gitter_proxy():
@@ -137,14 +76,13 @@ def test_gitter_proxy():
 
     mock_post_request.assert_called_once_with(
         rule['gitter_webhook_url'],
-        mock.ANY,
+        data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies={'https': 'http://proxy.url'}
     )
 
-    actual_data = json.loads(mock_post_request.call_args_list[0][0][1])
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
-    assert 'error' in actual_data['level']
 
 
 def test_gitter_ea_exception():
@@ -169,3 +107,51 @@ def test_gitter_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_gitter_getinfo():
+    rule = {
+        'name': 'Test Gitter Rule',
+        'type': 'any',
+        'gitter_webhook_url': 'https://webhooks.gitter.im/e/xxxxx',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = GitterAlerter(rule)
+
+    expected_data = {
+        'type': 'gitter',
+        'gitter_webhook_url': 'https://webhooks.gitter.im/e/xxxxx'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('gitter_webhook_url, expected_data', [
+    ('',  True),
+    ('https://webhooks.gitter.im/e/xxxxx',
+        {
+           'type': 'gitter',
+           'gitter_webhook_url': 'https://webhooks.gitter.im/e/xxxxx'
+        })
+])
+def test_gitter_key_error(gitter_webhook_url, expected_data):
+    try:
+        rule = {
+            'name': 'Test Gitter Rule',
+            'type': 'any',
+            'alert': []
+        }
+
+        if gitter_webhook_url != '':
+            rule['gitter_webhook_url'] = gitter_webhook_url
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = GitterAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data

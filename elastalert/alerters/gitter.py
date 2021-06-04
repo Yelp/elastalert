@@ -30,7 +30,10 @@ class GitterAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.gitter_webhook_url, json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(self.gitter_webhook_url,
+                                     data=json.dumps(payload, cls=DateTimeEncoder),
+                                     headers=headers,
+                                     proxies=proxies)
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Gitter: %s" % e)

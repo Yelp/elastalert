@@ -1,3 +1,4 @@
+import pytest
 import mock
 
 from elastalert.alerters.zabbix import ZabbixAlerter
@@ -32,3 +33,59 @@ def test_zabbix_basic():
         }
         alerter_args = mock_zbx_send.call_args.args
         assert vars(alerter_args[0][0]) == zabbix_metrics
+
+
+def test_zabbix_getinfo():
+    rule = {
+        'name': 'Basic Zabbix test',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'alert': [],
+        'alert_subject': 'Test Zabbix',
+        'zbx_host': 'example.com',
+        'zbx_key': 'example-key'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = ZabbixAlerter(rule)
+
+    expected_data = {
+        'type': 'zabbix Alerter'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('zbx_host, zbx_key, expected_data', [
+    ('', '', True),
+    ('example.com', '', True),
+    ('', 'example-key', True),
+    ('example.com', 'example-key',
+        {
+            'type': 'zabbix Alerter'
+        })
+])
+def test_zabbix_key_error(zbx_host, zbx_key, expected_data):
+    try:
+        rule = {
+            'name': 'Basic Zabbix test',
+            'type': 'any',
+            'alert_text_type': 'alert_text_only',
+            'alert': [],
+            'alert_subject': 'Test Zabbix'
+        }
+
+        if zbx_host != '':
+            rule['zbx_host'] = zbx_host
+
+        if zbx_key != '':
+            rule['zbx_key'] = zbx_key
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = ZabbixAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data
