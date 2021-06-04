@@ -16,7 +16,7 @@ class SesAlerter(Alerter):
         self.aws_region = self.rule.get('ses_aws_region', 'us-east-1')
         self.aws_profile = self.rule.get('ses_aws_profile', '')
 
-        self.from_addr = self.rule.get('ses_from_addr')
+        self.from_addr = self.rule['ses_from_addr']
 
         # Convert email to a list if it isn't already
         if isinstance(self.rule['ses_email'], str):
