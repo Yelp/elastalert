@@ -101,3 +101,57 @@ def test_chatwork_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_chatwork_getinfo():
+    rule = {
+        'name': 'Test Chatwork Rule',
+        'type': 'any',
+        'chatwork_apikey': 'xxxx1',
+        'chatwork_room_id': 'xxxx2',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = ChatworkAlerter(rule)
+
+    expected_data = {
+        "type": "chatwork",
+        "chatwork_room_id": "xxxx2"
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('chatwork_apikey, chatwork_room_id, expected_data', [
+    ('',      '',      True),
+    ('xxxx1', '',      True),
+    ('',      'xxxx2', True),
+    ('xxxx1', 'xxxx2',
+        {
+            "type": "chatwork",
+            "chatwork_room_id": "xxxx2"
+        }),
+])
+def test_chatwork_key_error(chatwork_apikey, chatwork_room_id, expected_data):
+    try:
+        rule = {
+            'name': 'Test Chatwork Rule',
+            'type': 'any',
+            'alert': []
+        }
+
+        if chatwork_apikey != '':
+            rule['chatwork_apikey'] = chatwork_apikey
+
+        if chatwork_room_id != '':
+            rule['chatwork_room_id'] = chatwork_room_id
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = ChatworkAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data
