@@ -113,3 +113,55 @@ def test_pagertree_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_pagertree_getinfo():
+    rule = {
+        'name': 'Test PagerTree Rule',
+        'type': 'any',
+        'pagertree_integration_url': 'https://api.pagertree.com/integration/xxxxx',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = PagerTreeAlerter(rule)
+
+    expected_data = {
+        'type': 'pagertree',
+        'pagertree_integration_url': 'https://api.pagertree.com/integration/xxxxx'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('pagertree_integration_url, expected_data', [
+    ('',  True),
+    ('https://api.pagertree.com/integration/xxxxx',
+        {
+            'type': 'pagertree',
+            'pagertree_integration_url': 'https://api.pagertree.com/integration/xxxxx'
+        }),
+])
+def test_pagertree_key_error(pagertree_integration_url, expected_data):
+    try:
+        rule = {
+            'name': 'Test PagerTree Rule',
+            'type': 'any',
+            'alert': []
+        }
+
+        if pagertree_integration_url != '':
+            rule['pagertree_integration_url'] = pagertree_integration_url
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = PagerTreeAlerter(rule)
+
+        expected_data = {
+            'type': 'pagertree',
+            'pagertree_integration_url': 'https://api.pagertree.com/integration/xxxxx'
+        }
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data

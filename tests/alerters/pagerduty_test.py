@@ -608,3 +608,126 @@ def test_pagerduty_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+@pytest.mark.parametrize('severity, except_severity', [
+    ('', 'critical'),
+    ('critical', 'critical'),
+    ('error', 'error'),
+    ('warning', 'warning'),
+    ('info', 'info')
+])
+def test_pagerduty_alerter_v2_payload_severity(severity, except_severity):
+    rule = {}
+    if severity == '':
+        rule = {
+            'name': 'Test PD Rule',
+            'type': 'any',
+            'pagerduty_service_key': 'magicalbadgers',
+            'pagerduty_client_name': 'ponies inc.',
+            'pagerduty_api_version': 'v2',
+            'pagerduty_v2_payload_class': 'ping failure',
+            'pagerduty_v2_payload_component': 'mysql',
+            'pagerduty_v2_payload_group': 'app-stack',
+            'pagerduty_v2_payload_source': 'mysql.host.name',
+            'alert': []
+        }
+    else:
+        rule = {
+            'name': 'Test PD Rule',
+            'type': 'any',
+            'pagerduty_service_key': 'magicalbadgers',
+            'pagerduty_client_name': 'ponies inc.',
+            'pagerduty_api_version': 'v2',
+            'pagerduty_v2_payload_class': 'ping failure',
+            'pagerduty_v2_payload_component': 'mysql',
+            'pagerduty_v2_payload_group': 'app-stack',
+            'pagerduty_v2_payload_severity': severity,
+            'pagerduty_v2_payload_source': 'mysql.host.name',
+            'alert': []
+        }
+
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = PagerDutyAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'client': 'ponies inc.',
+        'payload': {
+            'class': 'ping failure',
+            'component': 'mysql',
+            'group': 'app-stack',
+            'severity': except_severity,
+            'source': 'mysql.host.name',
+            'summary': 'Test PD Rule',
+            'custom_details': {
+                'information': 'Test PD Rule\n\n@timestamp: 2017-01-01T00:00:00\nsomefield: foobarbaz\n'
+            },
+            'timestamp': '2017-01-01T00:00:00'
+        },
+        'event_action': 'trigger',
+        'dedup_key': '',
+        'routing_key': 'magicalbadgers',
+    }
+    mock_post_request.assert_called_once_with('https://events.pagerduty.com/v2/enqueue',
+                                              data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_pagerduty_getinfo():
+    rule = {
+        'name': 'Test PD Rule',
+        'type': 'any',
+        'pagerduty_service_key': 'magicalbadgers',
+        'pagerduty_client_name': 'ponies inc.',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = PagerDutyAlerter(rule)
+
+    expected_data = {
+        'type': 'pagerduty',
+        'pagerduty_client_name': 'ponies inc.'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('pagerduty_service_key, pagerduty_client_name, expected_data', [
+    ('',       '',       True),
+    ('xxxxx1', '',       True),
+    ('',       'xxxxx2', True),
+    ('xxxxx1', 'xxxxx2',
+        {
+            'type': 'pagerduty',
+            'pagerduty_client_name': 'xxxxx2'
+        }),
+])
+def test_pagerduty_key_error(pagerduty_service_key, pagerduty_client_name, expected_data):
+    try:
+        rule = {
+            'name': 'Test PD Rule',
+            'type': 'any',
+            'alert': []
+        }
+
+        if pagerduty_service_key != '':
+            rule['pagerduty_service_key'] = pagerduty_service_key
+
+        if pagerduty_client_name != '':
+            rule['pagerduty_client_name'] = pagerduty_client_name
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = PagerDutyAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data

@@ -1,5 +1,8 @@
 import mock
+import pytest
+from requests import RequestException
 
+from elastalert.util import EAException
 from elastalert.alerters.opsgenie import OpsGenieAlerter
 from elastalert.alerts import BasicMatchString
 from tests.alerts_test import mock_rule
@@ -566,7 +569,14 @@ def test_opsgenie_subject_args():
     assert expected_json == actual_json
 
 
-def test_opsgenie_priority_p1():
+@pytest.mark.parametrize('opsgenie_priority', [
+    ('P1'),
+    ('P2'),
+    ('P3'),
+    ('P4'),
+    ('P5')
+])
+def test_opsgenie_priority(opsgenie_priority):
     rule = {
         'name': 'Opsgenie Details',
         'type': mock_rule(),
@@ -576,7 +586,7 @@ def test_opsgenie_priority_p1():
             'Message': {'field': 'message'},
             'Missing': {'field': 'missing'}
         },
-        'opsgenie_priority': 'P1'
+        'opsgenie_priority': opsgenie_priority
     }
     match = {
         'message': 'Testing',
@@ -601,183 +611,7 @@ def test_opsgenie_priority_p1():
         'description': BasicMatchString(rule, match).__str__(),
         'details': {'Message': 'Testing'},
         'message': 'ElastAlert: Opsgenie Details',
-        'priority': 'P1',
-        'source': 'ElastAlert',
-        'tags': ['ElastAlert', 'Opsgenie Details'],
-        'user': 'genies'
-    }
-    actual_json = mock_post_request.call_args_list[0][1]['json']
-    assert expected_json == actual_json
-
-
-def test_opsgenie_priority_p2():
-    rule = {
-        'name': 'Opsgenie Details',
-        'type': mock_rule(),
-        'opsgenie_account': 'genies',
-        'opsgenie_key': 'ogkey',
-        'opsgenie_details': {
-            'Message': {'field': 'message'},
-            'Missing': {'field': 'missing'}
-        },
-        'opsgenie_priority': 'P2'
-    }
-    match = {
-        'message': 'Testing',
-        '@timestamp': '2014-10-31T00:00:00'
-    }
-    alert = OpsGenieAlerter(rule)
-
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    mock_post_request.assert_called_once_with(
-        'https://api.opsgenie.com/v2/alerts',
-        headers={
-            'Content-Type': 'application/json',
-            'Authorization': 'GenieKey ogkey'
-        },
-        json=mock.ANY,
-        proxies=None
-    )
-
-    expected_json = {
-        'description': BasicMatchString(rule, match).__str__(),
-        'details': {'Message': 'Testing'},
-        'message': 'ElastAlert: Opsgenie Details',
-        'priority': 'P2',
-        'source': 'ElastAlert',
-        'tags': ['ElastAlert', 'Opsgenie Details'],
-        'user': 'genies'
-    }
-    actual_json = mock_post_request.call_args_list[0][1]['json']
-    assert expected_json == actual_json
-
-
-def test_opsgenie_priority_p3():
-    rule = {
-        'name': 'Opsgenie Details',
-        'type': mock_rule(),
-        'opsgenie_account': 'genies',
-        'opsgenie_key': 'ogkey',
-        'opsgenie_details': {
-            'Message': {'field': 'message'},
-            'Missing': {'field': 'missing'}
-        },
-        'opsgenie_priority': 'P3'
-    }
-    match = {
-        'message': 'Testing',
-        '@timestamp': '2014-10-31T00:00:00'
-    }
-    alert = OpsGenieAlerter(rule)
-
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    mock_post_request.assert_called_once_with(
-        'https://api.opsgenie.com/v2/alerts',
-        headers={
-            'Content-Type': 'application/json',
-            'Authorization': 'GenieKey ogkey'
-        },
-        json=mock.ANY,
-        proxies=None
-    )
-
-    expected_json = {
-        'description': BasicMatchString(rule, match).__str__(),
-        'details': {'Message': 'Testing'},
-        'message': 'ElastAlert: Opsgenie Details',
-        'priority': 'P3',
-        'source': 'ElastAlert',
-        'tags': ['ElastAlert', 'Opsgenie Details'],
-        'user': 'genies'
-    }
-    actual_json = mock_post_request.call_args_list[0][1]['json']
-    assert expected_json == actual_json
-
-
-def test_opsgenie_priority_p4():
-    rule = {
-        'name': 'Opsgenie Details',
-        'type': mock_rule(),
-        'opsgenie_account': 'genies',
-        'opsgenie_key': 'ogkey',
-        'opsgenie_details': {
-            'Message': {'field': 'message'},
-            'Missing': {'field': 'missing'}
-        },
-        'opsgenie_priority': 'P4'
-    }
-    match = {
-        'message': 'Testing',
-        '@timestamp': '2014-10-31T00:00:00'
-    }
-    alert = OpsGenieAlerter(rule)
-
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    mock_post_request.assert_called_once_with(
-        'https://api.opsgenie.com/v2/alerts',
-        headers={
-            'Content-Type': 'application/json',
-            'Authorization': 'GenieKey ogkey'
-        },
-        json=mock.ANY,
-        proxies=None
-    )
-
-    expected_json = {
-        'description': BasicMatchString(rule, match).__str__(),
-        'details': {'Message': 'Testing'},
-        'message': 'ElastAlert: Opsgenie Details',
-        'priority': 'P4',
-        'source': 'ElastAlert',
-        'tags': ['ElastAlert', 'Opsgenie Details'],
-        'user': 'genies'
-    }
-    actual_json = mock_post_request.call_args_list[0][1]['json']
-    assert expected_json == actual_json
-
-
-def test_opsgenie_priority_p5():
-    rule = {
-        'name': 'Opsgenie Details',
-        'type': mock_rule(),
-        'opsgenie_account': 'genies',
-        'opsgenie_key': 'ogkey',
-        'opsgenie_details': {
-            'Message': {'field': 'message'},
-            'Missing': {'field': 'missing'}
-        },
-        'opsgenie_priority': 'P5'
-    }
-    match = {
-        'message': 'Testing',
-        '@timestamp': '2014-10-31T00:00:00'
-    }
-    alert = OpsGenieAlerter(rule)
-
-    with mock.patch('requests.post') as mock_post_request:
-        alert.alert([match])
-
-    mock_post_request.assert_called_once_with(
-        'https://api.opsgenie.com/v2/alerts',
-        headers={
-            'Content-Type': 'application/json',
-            'Authorization': 'GenieKey ogkey'
-        },
-        json=mock.ANY,
-        proxies=None
-    )
-
-    expected_json = {
-        'description': BasicMatchString(rule, match).__str__(),
-        'details': {'Message': 'Testing'},
-        'message': 'ElastAlert: Opsgenie Details',
-        'priority': 'P5',
+        'priority': opsgenie_priority,
         'source': 'ElastAlert',
         'tags': ['ElastAlert', 'Opsgenie Details'],
         'user': 'genies'
@@ -871,3 +705,58 @@ def test_opsgenie_proxy():
     }
     actual_json = mock_post_request.call_args_list[0][1]['json']
     assert expected_json == actual_json
+
+
+def test_opsgenie_ea_exception():
+    try:
+        rule = {
+            'name': 'Opsgenie Details',
+            'type': mock_rule(),
+            'opsgenie_account': 'genies',
+            'opsgenie_key': 'ogkey',
+            'opsgenie_details': {
+                'Message': {'field': 'message'},
+                'Missing': {'field': 'missing'}
+            },
+            'opsgenie_proxy': 'https://proxy.url'
+        }
+        match = {
+            'message': 'Testing',
+            '@timestamp': '2014-10-31T00:00:00'
+        }
+        alert = OpsGenieAlerter(rule)
+        match = {
+            '@timestamp': '2021-01-01T00:00:00',
+            'somefield': 'foobarbaz'
+        }
+        mock_run = mock.MagicMock(side_effect=RequestException)
+        with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
+            alert.alert([match])
+    except EAException:
+        assert True
+
+
+def test_opsgenie_getinfo():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {
+            'Message': {'field': 'message'},
+            'Missing': {'field': 'missing'}
+        },
+        'opsgenie_proxy': 'https://proxy.url',
+        'opsgenie_teams': ['{TEAM_PREFIX}-Team'],
+        'opsgenie_recipients': ['lytics']
+    }
+    alert = OpsGenieAlerter(rule)
+
+    expected_data = {
+        'type': 'opsgenie',
+        'recipients': ['lytics'],
+        'account': 'genies',
+        'teams': ['{TEAM_PREFIX}-Team']
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data

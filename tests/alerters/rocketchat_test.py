@@ -271,14 +271,12 @@ def test_rocketchat_emoji_override():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
-def test_rocketchat_msg_color_good():
+def test_rocketchat_emoji_override_blank():
     rule = {
         'name': 'Test Rule',
         'type': 'any',
-        'rocket_chat_webhook_url': 'http://please.dontgohere.rocketchat',
-        'rocket_chat_username_override': 'elastalert2',
-        'rocket_chat_msg_color': 'good',
-        'alert_subject': 'Cool subject',
+        'rocket_chat_webhook_url': ['http://please.dontgohere.rocketchat'],
+        'rocket_chat_emoji_override': '',
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -294,11 +292,10 @@ def test_rocketchat_msg_color_good():
     expected_data = {
         'username': 'elastalert2',
         'channel': '',
-        'emoji': ':ghost:',
         'attachments': [
             {
-                'color': 'good',
-                'title': rule['alert_subject'],
+                'color': 'danger',
+                'title': rule['name'],
                 'text': BasicMatchString(rule, match).__str__(),
                 'fields': []
             }
@@ -306,7 +303,7 @@ def test_rocketchat_msg_color_good():
         'text': ''
     }
     mock_post_request.assert_called_once_with(
-        rule['rocket_chat_webhook_url'],
+        rule['rocket_chat_webhook_url'][0],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
         proxies=None
@@ -314,16 +311,25 @@ def test_rocketchat_msg_color_good():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
-def test_rocketchat_msg_color_warning():
+@pytest.mark.parametrize('msg_color, except_msg_color', [
+    ('', 'danger'),
+    ('danger', 'danger'),
+    ('good', 'good'),
+    ('warning', 'warning')
+])
+def test_rocketchat_msg_color(msg_color, except_msg_color):
     rule = {
         'name': 'Test Rule',
         'type': 'any',
         'rocket_chat_webhook_url': 'http://please.dontgohere.rocketchat',
         'rocket_chat_username_override': 'elastalert2',
-        'rocket_chat_msg_color': 'warning',
         'alert_subject': 'Cool subject',
         'alert': []
     }
+
+    if msg_color != '':
+        rule['rocket_chat_msg_color'] = msg_color
+
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
     alert = RocketChatAlerter(rule)
@@ -340,7 +346,7 @@ def test_rocketchat_msg_color_warning():
         'emoji': ':ghost:',
         'attachments': [
             {
-                'color': 'warning',
+                'color': except_msg_color,
                 'title': rule['alert_subject'],
                 'text': BasicMatchString(rule, match).__str__(),
                 'fields': []
@@ -508,27 +514,6 @@ def test_rocketchat_alert_fields():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
-def test_rocketchat_required_options_key_error():
-    try:
-        rule = {
-            'name': 'Test Rule',
-            'type': 'any',
-            'alert_subject': 'Cool subject',
-            'alert': []
-        }
-        rules_loader = FileRulesLoader({})
-        rules_loader.load_modules(rule)
-        alert = RocketChatAlerter(rule)
-        match = {
-            '@timestamp': '2021-01-01T00:00:00',
-            'somefield': 'foobarbaz'
-        }
-        with mock.patch('requests.post'):
-            alert.alert([match])
-    except KeyError:
-        assert True
-
-
 def test_rocketchat_msg_color_key_error():
     try:
         rule = {
@@ -575,3 +560,71 @@ def test_rocketchat_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_rocketchat_get_aggregation_summary_text__maximum_width():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'rocket_chat_webhook_url': 'http://please.dontgohere.rocketchat',
+        'rocket_chat_username_override': 'elastalert2',
+        'rocket_chat_msg_pretext': 'pretext value',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = RocketChatAlerter(rule)
+    assert 75 == alert.get_aggregation_summary_text__maximum_width()
+
+
+def test_rocketchat_getinfo():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'rocket_chat_webhook_url': 'http://please.dontgohere.rocketchat',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = RocketChatAlerter(rule)
+
+    expected_data = {
+        'type': 'rocketchat',
+        'rocket_chat_username_override': 'elastalert2',
+        'rocket_chat_webhook_url': ['http://please.dontgohere.rocketchat']
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('rocket_chat_webhook_url, expected_data', [
+    ('',  True),
+    ('http://please.dontgohere.rocketchat',
+        {
+            'type': 'rocketchat',
+            'rocket_chat_username_override': 'elastalert2',
+            'rocket_chat_webhook_url': ['http://please.dontgohere.rocketchat']
+        })
+])
+def test_rocketchat_key_error(rocket_chat_webhook_url, expected_data):
+    try:
+        rule = {
+            'name': 'Test Rule',
+            'type': 'any',
+            'alert_subject': 'Cool subject',
+            'alert': []
+        }
+
+        if rocket_chat_webhook_url != '':
+            rule['rocket_chat_webhook_url'] = rocket_chat_webhook_url
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = RocketChatAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data

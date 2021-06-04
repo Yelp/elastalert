@@ -14,7 +14,6 @@ def test_google_chat_basic():
         'name': 'Test GoogleChat Rule',
         'type': 'any',
         'googlechat_webhook_url': 'http://xxxxxxx',
-        'googlechat_format': 'basic',
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -112,11 +111,6 @@ def test_google_chat_ea_exception():
             'name': 'Test GoogleChat Rule',
             'type': 'any',
             'googlechat_webhook_url': 'http://xxxxxxx',
-            'googlechat_format': 'card',
-            'googlechat_header_title': 'xxxx1',
-            'googlechat_header_subtitle': 'xxxx2',
-            'googlechat_header_image': 'http://xxxx/image.png',
-            'googlechat_footer_kibanalink': 'http://xxxxx/kibana',
             'alert': []
         }
         rules_loader = FileRulesLoader({})
@@ -131,3 +125,51 @@ def test_google_chat_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_google_chat_getinfo():
+    rule = {
+        'name': 'Test GoogleChat Rule',
+        'type': 'any',
+        'googlechat_webhook_url': 'http://xxxxxxx',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = GoogleChatAlerter(rule)
+
+    expected_data = {
+        'type': 'googlechat',
+        'googlechat_webhook_url': ['http://xxxxxxx']
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('googlechat_webhook_url, expected_data', [
+    ('',  True),
+    ('http://xxxxxxx',
+        {
+            'type': 'googlechat',
+            'googlechat_webhook_url': ['http://xxxxxxx']
+        }),
+])
+def test_google_chat_key_error(googlechat_webhook_url, expected_data):
+    try:
+        rule = {
+            'name': 'Test GoogleChat Rule',
+            'type': 'any',
+            'alert': []
+        }
+
+        if googlechat_webhook_url != '':
+            rule['googlechat_webhook_url'] = googlechat_webhook_url
+
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = GoogleChatAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except KeyError:
+        assert expected_data

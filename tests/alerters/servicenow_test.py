@@ -144,3 +144,32 @@ def test_service_now_ea_exception():
             alert.alert([match])
     except EAException:
         assert True
+
+
+def test_servicenow_getinfo():
+    rule = {
+        'name': 'Test ServiceNow Rule',
+        'type': 'any',
+        'username': 'ServiceNow username',
+        'password': 'ServiceNow password',
+        'servicenow_rest_url': 'https://xxxxxxxxxx',
+        'short_description': 'ServiceNow short_description',
+        'comments': 'ServiceNow comments',
+        'assignment_group': 'ServiceNow assignment_group',
+        'category': 'ServiceNow category',
+        'subcategory': 'ServiceNow subcategory',
+        'cmdb_ci': 'ServiceNow cmdb_ci',
+        'caller_id': 'ServiceNow caller_id',
+        'servicenow_proxy': 'http://proxy.url',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = ServiceNowAlerter(rule)
+
+    expected_data = {
+        'type': 'ServiceNow',
+        'self.servicenow_rest_url': 'https://xxxxxxxxxx'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data

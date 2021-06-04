@@ -6,6 +6,7 @@ from elastalert.util import elastalert_logger, resolve_string, EAException
 
 
 class CommandAlerter(Alerter):
+    """ Sends an command alert """
     required_options = set(['command'])
 
     def __init__(self, *args):

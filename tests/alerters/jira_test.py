@@ -321,3 +321,39 @@ def test_jira_arbitrary_field_support():
             alert = JiraAlerter(rule)
             alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
         assert "Exception encountered when trying to add 'invalid_watcher' as a watcher. Does the user exist?" in str(exception)
+
+
+def test_jira_getinfo():
+    description_txt = "Description stuff goes here like a runbook link."
+    rule = {
+        'name': 'test alert',
+        'jira_account_file': 'jirafile',
+        'type': mock_rule(),
+        'jira_project': 'testproject',
+        'jira_priority': 0,
+        'jira_issuetype': 'testtype',
+        'jira_server': 'jiraserver',
+        'jira_label': 'testlabel',
+        'jira_component': 'testcomponent',
+        'jira_description': description_txt,
+        'jira_watchers': ['testwatcher1', 'testwatcher2'],
+        'timestamp_field': '@timestamp',
+        'alert_subject': 'Issue {0} occurred at {1}',
+        'alert_subject_args': ['test_term', '@timestamp'],
+        'rule_file': '/tmp/foo.yaml'
+    }
+
+    mock_priority = mock.Mock(id='5')
+
+    with mock.patch('elastalert.alerters.jira.JIRA') as mock_jira, \
+            mock.patch('elastalert.alerts.read_yaml') as mock_open:
+        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+        mock_jira.return_value.priorities.return_value = [mock_priority]
+        mock_jira.return_value.fields.return_value = []
+        alert = JiraAlerter(rule)
+
+    expected_data = {
+        'type': 'jira'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data

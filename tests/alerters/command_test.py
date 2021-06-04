@@ -10,7 +10,7 @@ from elastalert.util import EAException
 from tests.alerts_test import mock_rule
 
 
-def test_command():
+def test_command_getinfo():
     # Test command as list with a formatted arg
     rule = {'command': ['/bin/test/', '--arg', '%(somefield)s']}
     alert = CommandAlerter(rule)
@@ -20,22 +20,39 @@ def test_command():
     with mock.patch("elastalert.alerters.command.subprocess.Popen") as mock_popen:
         alert.alert([match])
     assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
+    expected_data = {
+        'type': 'command',
+        'command': '/bin/test/ --arg foobarbaz'
+    }
+    actual_data = alert.get_info()
+    assert expected_data == actual_data
 
+
+def test_command_old_style_string_format1():
     # Test command as string with formatted arg (old-style string format)
     rule = {'command': '/bin/test/ --arg %(somefield)s'}
+    match = {'@timestamp': '2014-01-01T00:00:00',
+             'somefield': 'foobarbaz',
+             'nested': {'field': 1}}
     alert = CommandAlerter(rule)
     with mock.patch("elastalert.alerters.command.subprocess.Popen") as mock_popen:
         alert.alert([match])
     assert mock_popen.called_with('/bin/test --arg foobarbaz', stdin=subprocess.PIPE, shell=False)
 
+
+def test_command_old_style_string_format2():
     # Test command as string without formatted arg (old-style string format)
     rule = {'command': '/bin/test/foo.sh'}
+    match = {'@timestamp': '2014-01-01T00:00:00',
+             'somefield': 'foobarbaz',
+             'nested': {'field': 1}}
     alert = CommandAlerter(rule)
     with mock.patch("elastalert.alerters.command.subprocess.Popen") as mock_popen:
         alert.alert([match])
     assert mock_popen.called_with('/bin/test/foo.sh', stdin=subprocess.PIPE, shell=True)
 
-    # Test command with pipe_match_json
+
+def test_command_pipe_match_json():
     rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],
             'pipe_match_json': True}
     alert = CommandAlerter(rule)
@@ -49,7 +66,8 @@ def test_command():
     assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
     assert mock_subprocess.communicate.called_with(input=json.dumps(match))
 
-    # Test command with pipe_alert_text
+
+def test_command_pipe_alert_text():
     rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],
             'pipe_alert_text': True, 'type': mock_rule(), 'name': 'Test'}
     alert = CommandAlerter(rule)
@@ -64,7 +82,8 @@ def test_command():
     assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
     assert mock_subprocess.communicate.called_with(input=alert_text.encode())
 
-    # Test command with fail_on_non_zero_exit
+
+def test_command_fail_on_non_zero_exit():
     rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],
             'fail_on_non_zero_exit': True}
     alert = CommandAlerter(rule)
@@ -79,14 +98,14 @@ def test_command():
     assert mock_popen.called_with(['/bin/test', '--arg', 'foobarbaz'], stdin=subprocess.PIPE, shell=False)
     assert "Non-zero exit code while running command" in str(exception)
 
-    # Test OSError
+
+def test_command_os_error():
     try:
         rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],
                 'pipe_alert_text': True, 'type': mock_rule(), 'name': 'Test'}
         alert = CommandAlerter(rule)
         match = {'@timestamp': '2014-01-01T00:00:00',
                  'somefield': 'foobarbaz'}
-        alert_text = str(BasicMatchString(rule, match))
         mock_run = mock.MagicMock(side_effect=OSError)
         with mock.patch("elastalert.alerters.command.subprocess.Popen", mock_run), pytest.raises(OSError) as mock_popen:
             mock_subprocess = mock.Mock()
@@ -94,4 +113,17 @@ def test_command():
             mock_subprocess.communicate.return_value = (None, None)
             alert.alert([match])
     except EAException:
+        assert True
+
+
+def test_command_key_error():
+    try:
+        rule = {}
+        alert = CommandAlerter(rule)
+        match = {'@timestamp': '2014-01-01T00:00:00',
+                 'somefield': 'foobarbaz',
+                 'nested': {'field': 1}}
+        with mock.patch("elastalert.alerters.command.subprocess.Popen"):
+            alert.alert([match])
+    except KeyError:
         assert True
