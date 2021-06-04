@@ -1779,7 +1779,7 @@ Required:
 
 ``dingtalk_access_token``:  Dingtalk access token.
 
-``dingtalk_msgtype``:  Dingtalk msgtype. ``text``, ``markdown``, ``single_action_card``, ``action_card``.
+``dingtalk_msgtype``:  Dingtalk msgtype, default to ``text``. ``markdown``, ``single_action_card``, ``action_card``.
 
 dingtalk_msgtype single_action_card Required:
 
