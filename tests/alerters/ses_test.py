@@ -9,6 +9,7 @@ def test_ses_getinfo():
         'name': 'Test Rule',
         'type': 'any',
         'alert_subject': 'Cool subject',
+        'ses_from_addr': 'test2@aaa.com',
         'ses_email': 'test@aaa.com',
         'ses_aws_access_key_id': 'access key id',
         'ses_aws_secret_access_key': 'secret access key',
@@ -27,10 +28,10 @@ def test_ses_getinfo():
 
 
 @pytest.mark.parametrize('ses_email, ses_from_addr, expected_data', [
-    ('',             '',       True),
-    ('test@aaa.com', '',       True),
-    ('',             'xxxxx2', True),
-    ('test@aaa.com', 'xxxxx2',
+    ('',             '',              True),
+    ('test@aaa.com', '',              True),
+    ('',             'test2@aaa.com', True),
+    ('test@aaa.com', 'test2@aaa.com',
         {
             'type': 'ses',
             'recipients': ['test@aaa.com']
