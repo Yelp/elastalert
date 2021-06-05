@@ -406,6 +406,9 @@ properties:
   mattermost_author_name: {type: string}
   mattermost_author_link: {type: string}
   mattermost_author_icon: {type: string}
+  mattermost_attach_kibana_discover_url {type: boolean}
+  mattermost_kibana_discover_color {type: string}
+  mattermost_kibana_discover_title {type: string}
 
   ### Microsoft Teams
   ms_teams_webhook_url: *arrayOfString

@@ -2223,6 +2223,12 @@ Example mattermost_msg_fields::
 
 ``mattermost_author_icon``: An optional URL used to display a 16x16 pixel icon beside the author_name. Defaults to "".
 
+``mattermost_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the mattermost notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
+
+``mattermost_kibana_discover_color``: The color of the Kibana Discover url attachment. Defaults to ``#ec4b98``.
+
+``mattermost_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
+
 Microsoft Teams
 ~~~~~~~~~~~~~~~
 
