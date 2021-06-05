@@ -7,6 +7,13 @@ ElastAlert 2 is backwards compatible with the original ElastAlert rules.
 
 ![CI Workflow](https://github.com/jertel/elastalert/workflows/master_build_test/badge.svg)
 
+## Docker and Kubernetes
+
+ElastAlert 2 is well-suited to being run as a microservice, and is available
+as a [Docker container][2]. A [Helm chart ][7] is also maintained for easy
+configuration as a Kubernetes deployment. For more instructions on how to
+configure and run ElastAlert 2 in this way, see [here][8].
+
 ## Documentation
 
 Documentation, including an FAQ, for ElastAlert 2 can be found on [readthedocs.com][3]. This is the place to start if you're not familiar with ElastAlert 2 at all.
@@ -16,13 +23,6 @@ The full list of platforms that ElastAlert 2 can fire alerts into can be found [
 ## Contributing
 
 Please see our [contributing guidelines][6].
-
-## Docker and Kubernetes
-
-ElastAlert 2 is well-suited to being run as a microservice, and is available
-as a [Docker container][2]. A [Helm chart ][7] is also maintained for easy
-configuration as a Kubernetes deployment. For more instructions on how to
-configure and run ElastAlert 2 in this way, see [here][8].
 
 ## License
 
