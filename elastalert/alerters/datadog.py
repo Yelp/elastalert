@@ -13,8 +13,8 @@ class DatadogAlerter(Alerter):
 
     def __init__(self, rule):
         super(DatadogAlerter, self).__init__(rule)
-        self.dd_api_key = self.rule['datadog_api_key']
-        self.dd_app_key = self.rule['datadog_app_key']
+        self.dd_api_key = self.rule.get('datadog_api_key', None)
+        self.dd_app_key = self.rule.get('datadog_app_key', None)
 
     def alert(self, matches):
         url = 'https://api.datadoghq.com/api/v1/events'

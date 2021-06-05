@@ -13,7 +13,7 @@ class GitterAlerter(Alerter):
 
     def __init__(self, rule):
         super(GitterAlerter, self).__init__(rule)
-        self.gitter_webhook_url = self.rule['gitter_webhook_url']
+        self.gitter_webhook_url = self.rule.get('gitter_webhook_url', None)
         self.gitter_proxy = self.rule.get('gitter_proxy', None)
         self.gitter_msg_level = self.rule.get('gitter_msg_level', 'error')
 

@@ -46,15 +46,15 @@ class ZabbixAlerter(Alerter):
     # You can ensure that the rule config file specifies all
     # of the options. Otherwise, ElastAlert will throw an exception
     # when trying to load the rule.
-    required_options = frozenset(['zbx_sender_host', 'zbx_sender_port', 'zbx_host', 'zbx_key'])
+    required_options = frozenset(['zbx_host', 'zbx_key'])
 
     def __init__(self, *args):
         super(ZabbixAlerter, self).__init__(*args)
 
         self.zbx_sender_host = self.rule.get('zbx_sender_host', 'localhost')
         self.zbx_sender_port = self.rule.get('zbx_sender_port', 10051)
-        self.zbx_host = self.rule['zbx_host']
-        self.zbx_key = self.rule['zbx_key']
+        self.zbx_host = self.rule.get('zbx_host', None)
+        self.zbx_key = self.rule.get('zbx_key', None)
         self.timestamp_field = self.rule.get('timestamp_field', '@timestamp')
         self.timestamp_type = self.rule.get('timestamp_type', 'iso')
         self.timestamp_strptime = self.rule.get('timestamp_strptime', '%Y-%m-%dT%H:%M:%S.%fZ')

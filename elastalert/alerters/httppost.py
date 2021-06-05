@@ -13,7 +13,7 @@ class HTTPPostAlerter(Alerter):
 
     def __init__(self, rule):
         super(HTTPPostAlerter, self).__init__(rule)
-        post_url = self.rule['http_post_url']
+        post_url = self.rule.get('http_post_url', None)
         if isinstance(post_url, str):
             post_url = [post_url]
         self.post_url = post_url

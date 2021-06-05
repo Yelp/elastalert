@@ -24,7 +24,7 @@ class ServiceNowAlerter(Alerter):
 
     def __init__(self, rule):
         super(ServiceNowAlerter, self).__init__(rule)
-        self.servicenow_rest_url = self.rule['servicenow_rest_url']
+        self.servicenow_rest_url = self.rule.get('servicenow_rest_url', None)
         self.servicenow_proxy = self.rule.get('servicenow_proxy', None)
 
     def alert(self, matches):

@@ -14,7 +14,7 @@ class PagerTreeAlerter(Alerter):
 
     def __init__(self, rule):
         super(PagerTreeAlerter, self).__init__(rule)
-        self.url = self.rule['pagertree_integration_url']
+        self.url = self.rule.get('pagertree_integration_url', None)
         self.pagertree_proxy = self.rule.get('pagertree_proxy', None)
 
     def alert(self, matches):

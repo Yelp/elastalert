@@ -314,15 +314,15 @@ def test_dingtalk_getinfo():
     assert expected_data == actual_data
 
 
-@pytest.mark.parametrize('dingtalk_access_token,, expected_data', [
-    ('',        True),
+@pytest.mark.parametrize('dingtalk_access_token, expected_data', [
+    ('',        'Missing required option(s): dingtalk_access_token'),
     ('xxxxxxx',
         {
             'type': 'dingtalk',
             "dingtalk_webhook_url": 'https://oapi.dingtalk.com/robot/send?access_token=xxxxxxx'
         }),
 ])
-def test_dingtalk_key_error(dingtalk_access_token, expected_data):
+def test_dingtalk_required_error(dingtalk_access_token, expected_data):
     try:
         rule = {
             'name': 'Test DingTalk Rule',
@@ -340,5 +340,5 @@ def test_dingtalk_key_error(dingtalk_access_token, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

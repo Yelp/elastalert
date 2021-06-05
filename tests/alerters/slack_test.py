@@ -1368,14 +1368,14 @@ def test_slack_getinfo():
 
 
 @pytest.mark.parametrize('slack_webhook_url, expected_data', [
-    ('',  True),
+    ('',  'Missing required option(s): slack_webhook_url'),
     ('http://please.dontgohere.slack',
         {
             'type': 'slack',
             'slack_username_override': 'elastalert'
         }),
 ])
-def test_slack_key_error(slack_webhook_url, expected_data):
+def test_slack_required_error(slack_webhook_url, expected_data):
     try:
         rule = {
             'name': 'Test Rule',
@@ -1393,5 +1393,5 @@ def test_slack_key_error(slack_webhook_url, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

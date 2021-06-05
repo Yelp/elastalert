@@ -875,7 +875,7 @@ def test_mattermost_getinfo():
 
 
 @pytest.mark.parametrize('mattermost_webhook_url, expected_data', [
-    ('',  True),
+    ('',  'Missing required option(s): mattermost_webhook_url'),
     ('http://xxxxx',
         {
             'type': 'mattermost',
@@ -883,7 +883,7 @@ def test_mattermost_getinfo():
             'mattermost_webhook_url': ['http://xxxxx']
         }),
 ])
-def test_mattermost_key_error(mattermost_webhook_url, expected_data):
+def test_mattermost_required_error(mattermost_webhook_url, expected_data):
     try:
         rule = {
             'name': 'Test Mattermost Rule',
@@ -902,5 +902,5 @@ def test_mattermost_key_error(mattermost_webhook_url, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

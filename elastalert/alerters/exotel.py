@@ -13,10 +13,10 @@ class ExotelAlerter(Alerter):
 
     def __init__(self, rule):
         super(ExotelAlerter, self).__init__(rule)
-        self.exotel_account_sid = self.rule['exotel_account_sid']
-        self.exotel_auth_token = self.rule['exotel_auth_token']
-        self.exotel_to_number = self.rule['exotel_to_number']
-        self.exotel_from_number = self.rule['exotel_from_number']
+        self.exotel_account_sid = self.rule.get('exotel_account_sid', None)
+        self.exotel_auth_token = self.rule.get('exotel_auth_token', None)
+        self.exotel_to_number = self.rule.get('exotel_to_number', None)
+        self.exotel_from_number = self.rule.get('exotel_from_number', None)
         self.sms_body = self.rule.get('exotel_message_body', '')
 
     def alert(self, matches):

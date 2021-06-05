@@ -166,14 +166,14 @@ def test_ms_teams_getinfo():
 
 
 @pytest.mark.parametrize('ms_teams_webhook_url, expected_data', [
-    ('', True),
+    ('', 'Missing required option(s): ms_teams_webhook_url'),
     ('http://test.webhook.url',
         {
             'type': 'ms_teams',
             'ms_teams_webhook_url': ['http://test.webhook.url']
         })
 ])
-def test_ms_teams_key_error(ms_teams_webhook_url, expected_data):
+def test_ms_teams_required_error(ms_teams_webhook_url, expected_data):
     try:
         rule = {
             'name': 'Test Rule',
@@ -191,5 +191,5 @@ def test_ms_teams_key_error(ms_teams_webhook_url, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

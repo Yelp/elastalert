@@ -306,15 +306,15 @@ def test_http_getinfo():
     assert expected_data == actual_data
 
 
-@pytest.mark.parametrize('http_post_webhook_url, expected_data', [
-    ('',  True),
+@pytest.mark.parametrize('http_post_url, expected_data', [
+    ('',  'Missing required option(s): http_post_url'),
     ('http://test.webhook.url',
         {
             'type': 'http_post',
             'http_post_webhook_url': ['http://test.webhook.url']
         }),
 ])
-def test_http_key_error(http_post_webhook_url, expected_data):
+def test_http_required_error(http_post_url, expected_data):
     try:
         rule = {
             'name': 'Test HTTP Post Alerter Without Payload',
@@ -322,8 +322,8 @@ def test_http_key_error(http_post_webhook_url, expected_data):
             'alert': []
         }
 
-        if http_post_webhook_url != '':
-            rule['http_post_webhook_url'] = http_post_webhook_url
+        if http_post_url != '':
+            rule['http_post_url'] = http_post_url
 
         rules_loader = FileRulesLoader({})
         rules_loader.load_modules(rule)
@@ -331,5 +331,5 @@ def test_http_key_error(http_post_webhook_url, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

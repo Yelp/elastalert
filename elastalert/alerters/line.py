@@ -11,7 +11,7 @@ class LineNotifyAlerter(Alerter):
 
     def __init__(self, rule):
         super(LineNotifyAlerter, self).__init__(rule)
-        self.linenotify_access_token = self.rule["linenotify_access_token"]
+        self.linenotify_access_token = self.rule.get("linenotify_access_token", None)
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
