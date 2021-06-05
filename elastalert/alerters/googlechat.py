@@ -13,7 +13,7 @@ class GoogleChatAlerter(Alerter):
 
     def __init__(self, rule):
         super(GoogleChatAlerter, self).__init__(rule)
-        self.googlechat_webhook_url = self.rule['googlechat_webhook_url']
+        self.googlechat_webhook_url = self.rule.get('googlechat_webhook_url', None)
         if isinstance(self.googlechat_webhook_url, str):
             self.googlechat_webhook_url = [self.googlechat_webhook_url]
         self.googlechat_format = self.rule.get('googlechat_format', 'basic')

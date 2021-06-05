@@ -13,9 +13,9 @@ class VictorOpsAlerter(Alerter):
 
     def __init__(self, rule):
         super(VictorOpsAlerter, self).__init__(rule)
-        self.victorops_api_key = self.rule['victorops_api_key']
-        self.victorops_routing_key = self.rule['victorops_routing_key']
-        self.victorops_message_type = self.rule['victorops_message_type']
+        self.victorops_api_key = self.rule.get('victorops_api_key', None)
+        self.victorops_routing_key = self.rule.get('victorops_routing_key', None)
+        self.victorops_message_type = self.rule.get('victorops_message_type', None)
         self.victorops_entity_id = self.rule.get('victorops_entity_id', None)
         self.victorops_entity_display_name = self.rule.get('victorops_entity_display_name', 'no entity display name')
         self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (

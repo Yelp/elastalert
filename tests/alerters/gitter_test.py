@@ -129,14 +129,14 @@ def test_gitter_getinfo():
 
 
 @pytest.mark.parametrize('gitter_webhook_url, expected_data', [
-    ('',  True),
+    ('', 'Missing required option(s): gitter_webhook_url'),
     ('https://webhooks.gitter.im/e/xxxxx',
         {
            'type': 'gitter',
            'gitter_webhook_url': 'https://webhooks.gitter.im/e/xxxxx'
         })
 ])
-def test_gitter_key_error(gitter_webhook_url, expected_data):
+def test_gitter_required_error(gitter_webhook_url, expected_data):
     try:
         rule = {
             'name': 'Test Gitter Rule',
@@ -153,5 +153,5 @@ def test_gitter_key_error(gitter_webhook_url, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

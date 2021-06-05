@@ -15,8 +15,8 @@ class TelegramAlerter(Alerter):
 
     def __init__(self, rule):
         super(TelegramAlerter, self).__init__(rule)
-        self.telegram_bot_token = self.rule['telegram_bot_token']
-        self.telegram_room_id = self.rule['telegram_room_id']
+        self.telegram_bot_token = self.rule.get('telegram_bot_token', None)
+        self.telegram_room_id = self.rule.get('telegram_room_id', None)
         self.telegram_api_url = self.rule.get('telegram_api_url', 'api.telegram.org')
         self.url = 'https://%s/bot%s/%s' % (self.telegram_api_url, self.telegram_bot_token, "sendMessage")
         self.telegram_proxy = self.rule.get('telegram_proxy', None)

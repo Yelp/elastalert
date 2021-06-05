@@ -875,7 +875,7 @@ def test_mattermost_getinfo():
 
 
 @pytest.mark.parametrize('mattermost_webhook_url, expected_data', [
-    ('',  True),
+    ('',  'Missing required option(s): mattermost_webhook_url'),
     ('http://xxxxx',
         {
             'type': 'mattermost',
@@ -883,7 +883,7 @@ def test_mattermost_getinfo():
             'mattermost_webhook_url': ['http://xxxxx']
         }),
 ])
-def test_mattermost_key_error(mattermost_webhook_url, expected_data):
+def test_mattermost_required_error(mattermost_webhook_url, expected_data):
     try:
         rule = {
             'name': 'Test Mattermost Rule',
@@ -902,8 +902,8 @@ def test_mattermost_key_error(mattermost_webhook_url, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)
 
 
 def test_mattermost_attach_kibana_discover_url_when_generated():
@@ -1096,3 +1096,5 @@ def test_mattermost_kibana_discover_color():
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     print(actual_data)
     assert expected_data == actual_data
+    except Exception as ea:
+        assert expected_data in str(ea)

@@ -14,8 +14,8 @@ class ChatworkAlerter(Alerter):
 
     def __init__(self, rule):
         super(ChatworkAlerter, self).__init__(rule)
-        self.chatwork_apikey = self.rule['chatwork_apikey']
-        self.chatwork_room_id = self.rule['chatwork_room_id']
+        self.chatwork_apikey = self.rule.get('chatwork_apikey', None)
+        self.chatwork_room_id = self.rule.get('chatwork_room_id', None)
         self.url = 'https://api.chatwork.com/v2/rooms/%s/messages' % (self.chatwork_room_id)
         self.chatwork_proxy = self.rule.get('chatwork_proxy', None)
         self.chatwork_proxy_login = self.rule.get('chatwork_proxy_login', None)

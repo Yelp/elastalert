@@ -16,7 +16,7 @@ class MattermostAlerter(Alerter):
         super(MattermostAlerter, self).__init__(rule)
 
         # HTTP config
-        self.mattermost_webhook_url = self.rule['mattermost_webhook_url']
+        self.mattermost_webhook_url = self.rule.get('mattermost_webhook_url', None)
         if isinstance(self.mattermost_webhook_url, str):
             self.mattermost_webhook_url = [self.mattermost_webhook_url]
         self.mattermost_proxy = self.rule.get('mattermost_proxy', None)

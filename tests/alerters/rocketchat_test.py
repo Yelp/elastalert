@@ -514,7 +514,7 @@ def test_rocketchat_alert_fields():
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
-def test_rocketchat_msg_color_key_error():
+def test_rocketchat_msg_color_required_error():
     try:
         rule = {
             'name': 'Test Rule',
@@ -600,7 +600,7 @@ def test_rocketchat_getinfo():
 
 
 @pytest.mark.parametrize('rocket_chat_webhook_url, expected_data', [
-    ('',  True),
+    ('',  'Missing required option(s): rocket_chat_webhook_url'),
     ('http://please.dontgohere.rocketchat',
         {
             'type': 'rocketchat',
@@ -608,7 +608,7 @@ def test_rocketchat_getinfo():
             'rocket_chat_webhook_url': ['http://please.dontgohere.rocketchat']
         })
 ])
-def test_rocketchat_key_error(rocket_chat_webhook_url, expected_data):
+def test_rocketchat_required_error(rocket_chat_webhook_url, expected_data):
     try:
         rule = {
             'name': 'Test Rule',
@@ -626,5 +626,5 @@ def test_rocketchat_key_error(rocket_chat_webhook_url, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

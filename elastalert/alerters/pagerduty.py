@@ -12,8 +12,8 @@ class PagerDutyAlerter(Alerter):
 
     def __init__(self, rule):
         super(PagerDutyAlerter, self).__init__(rule)
-        self.pagerduty_service_key = self.rule['pagerduty_service_key']
-        self.pagerduty_client_name = self.rule['pagerduty_client_name']
+        self.pagerduty_service_key = self.rule.get('pagerduty_service_key', None)
+        self.pagerduty_client_name = self.rule.get('pagerduty_client_name', None)
         self.pagerduty_incident_key = self.rule.get('pagerduty_incident_key', '')
         self.pagerduty_incident_key_args = self.rule.get('pagerduty_incident_key_args', None)
         self.pagerduty_event_type = self.rule.get('pagerduty_event_type', 'trigger')

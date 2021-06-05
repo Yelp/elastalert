@@ -15,7 +15,7 @@ class RocketChatAlerter(Alerter):
 
     def __init__(self, rule):
         super(RocketChatAlerter, self).__init__(rule)
-        self.rocket_chat_webhook_url = self.rule['rocket_chat_webhook_url']
+        self.rocket_chat_webhook_url = self.rule.get('rocket_chat_webhook_url', None)
         if isinstance(self.rocket_chat_webhook_url, str):
             self.rocket_chat_webhook_url = [self.rocket_chat_webhook_url]
         self.rocket_chat_proxy = self.rule.get('rocket_chat_proxy', None)

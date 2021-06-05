@@ -14,7 +14,7 @@ class SlackAlerter(Alerter):
 
     def __init__(self, rule):
         super(SlackAlerter, self).__init__(rule)
-        self.slack_webhook_url = self.rule['slack_webhook_url']
+        self.slack_webhook_url = self.rule.get('slack_webhook_url', None)
         if isinstance(self.slack_webhook_url, str):
             self.slack_webhook_url = [self.slack_webhook_url]
         self.slack_proxy = self.rule.get('slack_proxy', None)

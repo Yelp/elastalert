@@ -135,14 +135,14 @@ def test_pagertree_getinfo():
 
 
 @pytest.mark.parametrize('pagertree_integration_url, expected_data', [
-    ('',  True),
+    ('',  'Missing required option(s): pagertree_integration_url'),
     ('https://api.pagertree.com/integration/xxxxx',
         {
             'type': 'pagertree',
             'pagertree_integration_url': 'https://api.pagertree.com/integration/xxxxx'
         }),
 ])
-def test_pagertree_key_error(pagertree_integration_url, expected_data):
+def test_pagertree_required_error(pagertree_integration_url, expected_data):
     try:
         rule = {
             'name': 'Test PagerTree Rule',
@@ -157,11 +157,7 @@ def test_pagertree_key_error(pagertree_integration_url, expected_data):
         rules_loader.load_modules(rule)
         alert = PagerTreeAlerter(rule)
 
-        expected_data = {
-            'type': 'pagertree',
-            'pagertree_integration_url': 'https://api.pagertree.com/integration/xxxxx'
-        }
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

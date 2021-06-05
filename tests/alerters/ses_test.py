@@ -28,16 +28,16 @@ def test_ses_getinfo():
 
 
 @pytest.mark.parametrize('ses_email, ses_from_addr, expected_data', [
-    ('',             '',              True),
-    ('test@aaa.com', '',              True),
-    ('',             'test2@aaa.com', True),
+    ('',             '',              'Missing required option(s): ses_email, ses_from_addr'),
+    ('test@aaa.com', '',              'Missing required option(s): ses_email, ses_from_addr'),
+    ('',             'test2@aaa.com', 'Missing required option(s): ses_email, ses_from_addr'),
     ('test@aaa.com', 'test2@aaa.com',
         {
             'type': 'ses',
             'recipients': ['test@aaa.com']
         }),
 ])
-def test_ses_key_error(ses_email, ses_from_addr, expected_data):
+def test_ses_required_error(ses_email, ses_from_addr, expected_data):
     try:
         rule = {
             'name': 'Test Telegram Rule',
@@ -57,5 +57,5 @@ def test_ses_key_error(ses_email, ses_from_addr, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

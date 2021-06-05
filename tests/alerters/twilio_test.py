@@ -29,20 +29,20 @@ def test_twilio_getinfo():
 
 
 @pytest.mark.parametrize('twilio_account_sid, twilio_auth_token, twilio_to_number, expected_data', [
-    ('',      '',      '',     True),
-    ('xxxx1', '',      '',     True),
-    ('',      'xxxx2', '',     True),
-    ('',      '',      'INFO', True),
-    ('xxxx1', 'xxxx2', '',     True),
-    ('xxxx1', '',      'INFO', True),
-    ('',      'xxxx2', 'INFO', True),
+    ('',      '',      '',     'Missing required option(s): twilio_account_sid, twilio_auth_token, twilio_to_number'),
+    ('xxxx1', '',      '',     'Missing required option(s): twilio_account_sid, twilio_auth_token, twilio_to_number'),
+    ('',      'xxxx2', '',     'Missing required option(s): twilio_account_sid, twilio_auth_token, twilio_to_number'),
+    ('',      '',      'INFO', 'Missing required option(s): twilio_account_sid, twilio_auth_token, twilio_to_number'),
+    ('xxxx1', 'xxxx2', '',     'Missing required option(s): twilio_account_sid, twilio_auth_token, twilio_to_number'),
+    ('xxxx1', '',      'INFO', 'Missing required option(s): twilio_account_sid, twilio_auth_token, twilio_to_number'),
+    ('',      'xxxx2', 'INFO', 'Missing required option(s): twilio_account_sid, twilio_auth_token, twilio_to_number'),
     ('xxxx1', 'xxxx2', 'INFO',
         {
             'type': 'twilio',
             'twilio_client_name': 'xxxxx4'
         }),
 ])
-def test_twilio_key_error(twilio_account_sid, twilio_auth_token, twilio_to_number, expected_data):
+def test_twilio_required_error(twilio_account_sid, twilio_auth_token, twilio_to_number, expected_data):
     try:
         rule = {
             'name': 'Test Rule',
@@ -67,8 +67,8 @@ def test_twilio_key_error(twilio_account_sid, twilio_auth_token, twilio_to_numbe
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)
 
 
 @pytest.mark.parametrize('twilio_use_copilot, twilio_message_service_sid, twilio_from_number, expected_data', [

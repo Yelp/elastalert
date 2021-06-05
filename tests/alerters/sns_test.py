@@ -27,13 +27,13 @@ def test_sns_getinfo():
 
 
 @pytest.mark.parametrize('sns_topic_arn, expected_data', [
-    ('', True),
+    ('', 'Missing required option(s): sns_topic_arn'),
     ('xxxx',
         {
             'type': 'sns'
         })
 ])
-def test_sns_key_error(sns_topic_arn, expected_data):
+def test_sns_required_error(sns_topic_arn, expected_data):
     try:
         rule = {
             'name': 'Test Rule',
@@ -51,5 +51,5 @@ def test_sns_key_error(sns_topic_arn, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

@@ -88,15 +88,15 @@ def test_datadog_getinfo():
 
 
 @pytest.mark.parametrize('datadog_api_key, datadog_app_key, expected_data', [
-    ('',      '',      True),
-    ('xxxx1', '',      True),
-    ('',      'xxxx2', True),
+    ('',      '',      'Missing required option(s): datadog_api_key, datadog_app_key'),
+    ('xxxx1', '',      'Missing required option(s): datadog_api_key, datadog_app_key'),
+    ('',      'xxxx2', 'Missing required option(s): datadog_api_key, datadog_app_key'),
     ('xxxx1', 'xxxx2',
         {
             'type': 'datadog'
         }),
 ])
-def test_datadog_key_error(datadog_api_key, datadog_app_key, expected_data):
+def test_datadog_required_error(datadog_api_key, datadog_app_key, expected_data):
     try:
         rule = {
             'name': 'Test Datadog Event Alerter',
@@ -115,8 +115,7 @@ def test_datadog_key_error(datadog_api_key, datadog_app_key, expected_data):
         rules_loader.load_modules(rule)
         alert = DatadogAlerter(rule)
 
-        expected_data = {'type': 'datadog'}
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

@@ -166,16 +166,16 @@ def test_telegram_getinfo():
 
 
 @pytest.mark.parametrize('telegram_bot_token, telegram_room_id, expected_data', [
-    ('',       '',       True),
-    ('xxxxx1', '',       True),
-    ('',       'xxxxx2', True),
+    ('',       '',       'Missing required option(s): telegram_bot_token, telegram_room_id'),
+    ('xxxxx1', '',       'Missing required option(s): telegram_bot_token, telegram_room_id'),
+    ('',       'xxxxx2', 'Missing required option(s): telegram_bot_token, telegram_room_id'),
     ('xxxxx1', 'xxxxx2',
         {
             'type': 'telegram',
             'telegram_room_id': 'xxxxx2'
         }),
 ])
-def test_telegram_key_error(telegram_bot_token, telegram_room_id, expected_data):
+def test_telegram_required_error(telegram_bot_token, telegram_room_id, expected_data):
     try:
         rule = {
             'name': 'Test Telegram Rule',
@@ -195,5 +195,5 @@ def test_telegram_key_error(telegram_bot_token, telegram_room_id, expected_data)
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)
