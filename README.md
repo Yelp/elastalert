@@ -17,27 +17,12 @@ The full list of platforms that ElastAlert 2 can fire alerts into can be found [
 
 Please see our [contributing guidelines][6].
 
-## Docker
+## Docker and Kubernetes
 
-If you're interested in a pre-built Docker image check out the [elastalert2][2] project on Docker Hub.
-
-Be aware that the `latest` tag of the image represents the latest commit into the master branch. If you prefer to upgrade more slowly you will need utilize a versioned tag, such as `2.1.0` instead, or `2` if you are comfortable with always using the latest released version of ElastAlert 2.
-
-A properly configured config.yaml file must be mounted into the container during startup of the container. Use the [example file][1] provided as a template, and once saved locally to a file such as `/tmp/elastalert.yaml`, run the container as follows:
-
-```bash
-docker run -d -v /tmp/elastalert.yaml:/opt/elastalert/config.yaml jertel/elastalert2
-```
-
-To build the image locally run the following command:
-
-```bash
-docker build . -t elastalert2
-```
-
-## Kubernetes
-
-See the Helm chart [README.md][7] for information on installing this application into an existing Kubernetes cluster.
+ElastAlert 2 is well-suited to being run as a microservice, and is available
+as a [Docker container][2]. A [Helm chart ][7] is also maintained for easy
+configuration as a Kubernetes deployment. For more instructions on how to
+configure and run ElastAlert 2 in this way, see [here][8].
 
 ## License
 
@@ -51,3 +36,4 @@ ElastAlert 2 is licensed under the [Apache License, Version 2.0][5].
 [5]: https://www.apache.org/licenses/LICENSE-2.0
 [6]: https://github.com/jertel/elastalert2/blob/master/CONTRIBUTING.md
 [7]: https://github.com/jertel/elastalert2/tree/master/chart/elastalert2
+[8]: https://elastalert2.readthedocs.io/en/latest/running_elastalert.html
