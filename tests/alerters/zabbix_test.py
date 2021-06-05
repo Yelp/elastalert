@@ -1,5 +1,5 @@
 import pytest
-import mock
+from unittest import mock
 
 from elastalert.alerters.zabbix import ZabbixAlerter
 from elastalert.loaders import FileRulesLoader

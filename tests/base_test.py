@@ -5,7 +5,7 @@ import json
 import threading
 
 import elasticsearch
-import mock
+from unittest import mock
 import pytest
 from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException

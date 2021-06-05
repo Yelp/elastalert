@@ -15,12 +15,35 @@
 - None
 
 ## New features
-- Expose rule scheduler properties as configurable settings - [#192](https://github.com/jertel/elastalert2/pull/192) - #jertel
+- Add support for RocketChat - [#182](https://github.com/jertel/elastalert2/pull/182) - @nsano-rururu
+- Expose rule scheduler properties as configurable settings - [#192](https://github.com/jertel/elastalert2/pull/192) - @jertel
+- Exclude empty observables from TheHive requests - [#193](https://github.com/jertel/elastalert2/pull/193) - @LaZyDK
+- Ensure TheHive tags are converted to strings before submitting TheHive request - [#206](https://github.com/jertel/elastalert2/pull/206) - @LaZyDK
+- Add support for Elasticsearch API key authentication - [#208](https://github.com/jertel/elastalert2/pull/208) - @vbisserie
+- Add support for Elasticsearch 7.13 for building Kibana Discover URLs - [#212](https://github.com/jertel/elastalert2/pull/212) - @nsano-rururu
+- Follow symbolic links when traversing rules folder for rule files - [#214](https://github.com/jertel/elastalert2/pull/214) - @vbisserie
+- Support optional suppression of SSL log warnings when http-posting alerts - [#222](https://github.com/jertel/elastalert2/pull/222/files) - @nsano-rururu
 
 ## Other changes
-- Speed up unit tests by adding default parallelism - [164](https://github.com/jertel/elastalert2/pull/164) - @ferozsalam
-- Remove unused writeback_alias and fix --patience argument [167](https://github.com/jertel/elastalert2/pull/167) - @mrfroggg.
-- Fix Bearer token auth in initialisation script - [169](https://github.com/jertel/elastalert2/pull/169) - @ferozsalam
+- Speed up unit tests by adding default parallelism - [#164](https://github.com/jertel/elastalert2/pull/164) - @ferozsalam
+- Remove unused writeback_alias and fix --patience argument - [#167](https://github.com/jertel/elastalert2/pull/167) - @mrfroggg
+- Fix Bearer token auth in initialisation script - [#169](https://github.com/jertel/elastalert2/pull/169) - @ferozsalam
+- Finish refactoring alerters and tests into individual files - [#175, et al](https://github.com/jertel/elastalert2/pull/175) - @ferozsalam
+- Improve HTTP POST alert documentation - [#178](https://github.com/jertel/elastalert2/pull/178) - @nsano-rururu
+- Upgrade Sphinx from 3.5.4 to 4.0.2 - [#179](https://github.com/jertel/elastalert2/pull/179) - @nsano-rururu
+- Fix Sphinx dependency version - [#181](https://github.com/jertel/elastalert2/pull/181) - @ferozsalam
+- Switch to absolute imports - [#198](https://github.com/jertel/elastalert2/pull/198) - @ferozsalam
+- Encode JSON output before writing test data - [#215](https://github.com/jertel/elastalert2/pull/215) - @vbisserie
+- Update pytest from 6.0.0 to 6.2.4 - [#223](https://github.com/jertel/elastalert2/pull/223/files) - @nsano-rururu
+- Ensure ChatWork alerter fails to initialize if missing required args - [#224](https://github.com/jertel/elastalert2/pull/224) - @nsano-rururu
+- Ensure DataDog alerter fails to initialize if missing required args - [#225](https://github.com/jertel/elastalert2/pull/225) - @nsano-rururu
+- Ensure DingTalk alerter fails to initialize if missing required args - [#226](https://github.com/jertel/elastalert2/pull/226) - @nsano-rururu
+- Ensure Zabbix alerter fails to initialize if missing required args - [#227](https://github.com/jertel/elastalert2/pull/227) - @nsano-rururu
+- MS Teams alerter no longer requires ms_teams_alert_summary arg - [#228](https://github.com/jertel/elastalert2/pull/228) - @nsano-rururu
+- Improve Gitter alerter by explicitly specifying arg names  - [#230](https://github.com/jertel/elastalert2/pull/230) - @nsano-rururu
+- Add more alerter test code coverage - [#231](https://github.com/jertel/elastalert2/pull/231) - @nsano-rururu
+- Upgrade pytest-cov from 2.12.0 to 2.12.1 - [#232](https://github.com/jertel/elastalert2/pull/232) - @nsano-rururu
+- Migrate away from external test mock dependency - [#233](https://github.com/jertel/elastalert2/pull/233) - @nsano-rururu
 
 # 2.1.0
 

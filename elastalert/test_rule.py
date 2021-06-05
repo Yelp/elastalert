@@ -10,7 +10,7 @@ import re
 import string
 import sys
 
-import mock
+from unittest import mock
 
 from elastalert.config import load_conf
 from elastalert.elastalert import ElastAlerter

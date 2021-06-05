@@ -2,7 +2,7 @@
 import datetime
 import json
 
-import mock
+from unittest import mock
 
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
