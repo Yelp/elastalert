@@ -8,6 +8,8 @@ or directly on your machine as :ref:`a Python package<python-instructions>`.
 If you are not interested in modifying the internals of  ElastAlert, the Docker
 container is recommended for ease of use.
 
+.. _elastalert-arguments:
+
 Configuration flags
 ===================
 
