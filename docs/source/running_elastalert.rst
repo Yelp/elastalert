@@ -17,7 +17,8 @@ However you choose to run ElastAlert, the ElastAlert process is started by invok
 This command accepts several configuration flags:
 
 ``--config`` will specify the configuration file to use. The default is
-``config.yaml``.
+``config.yaml``. See :ref:`here<configuration>` to understand what behaviour
+can be configured in this file.
 
 ``--debug`` will run ElastAlert in debug mode. This will increase the logging
 verboseness, change all alerts to ``DebugAlerter``, which prints alerts and
