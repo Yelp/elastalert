@@ -147,14 +147,14 @@ def test_google_chat_getinfo():
 
 
 @pytest.mark.parametrize('googlechat_webhook_url, expected_data', [
-    ('',  True),
+    ('', 'Missing required option(s): googlechat_webhook_url'),
     ('http://xxxxxxx',
         {
             'type': 'googlechat',
             'googlechat_webhook_url': ['http://xxxxxxx']
         }),
 ])
-def test_google_chat_key_error(googlechat_webhook_url, expected_data):
+def test_google_chat_required_error(googlechat_webhook_url, expected_data):
     try:
         rule = {
             'name': 'Test GoogleChat Rule',
@@ -171,5 +171,5 @@ def test_google_chat_key_error(googlechat_webhook_url, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

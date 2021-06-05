@@ -15,7 +15,7 @@ class DiscordAlerter(Alerter):
 
     def __init__(self, rule):
         super(DiscordAlerter, self).__init__(rule)
-        self.discord_webhook_url = self.rule['discord_webhook_url']
+        self.discord_webhook_url = self.rule.get('discord_webhook_url', None)
         self.discord_emoji_title = self.rule.get('discord_emoji_title', ':warning:')
         self.discord_proxy = self.rule.get('discord_proxy', None)
         self.discord_proxy_login = self.rule.get('discord_proxy_login', None)

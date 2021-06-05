@@ -83,14 +83,14 @@ def test_line_getinfo():
 
 
 @pytest.mark.parametrize('linenotify_access_token, expected_data', [
-    ('',  True),
+    ('',  'Missing required option(s): linenotify_access_token'),
     ('xxxxx',
         {
             "type": "linenotify",
             "linenotify_access_token": 'xxxxx'
         }),
 ])
-def test_line_key_error(linenotify_access_token, expected_data):
+def test_line_required_error(linenotify_access_token, expected_data):
     try:
         rule = {
             'name': 'Test LineNotify Rule',
@@ -107,5 +107,5 @@ def test_line_key_error(linenotify_access_token, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

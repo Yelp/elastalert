@@ -219,20 +219,20 @@ def test_victorops_getinfo():
 
 
 @pytest.mark.parametrize('victorops_api_key, victorops_routing_key, victorops_message_type, expected_data', [
-    ('',      '',      '',     True),
-    ('xxxx1', '',      '',     True),
-    ('',      'xxxx2', '',     True),
-    ('',      '',      'INFO', True),
-    ('xxxx1', 'xxxx2', '',     True),
-    ('xxxx1', '',      'INFO', True),
-    ('',      'xxxx2', 'INFO', True),
+    ('',      '',      '',     'Missing required option(s): victorops_api_key, victorops_routing_key, victorops_message_type'),
+    ('xxxx1', '',      '',     'Missing required option(s): victorops_api_key, victorops_routing_key, victorops_message_type'),
+    ('',      'xxxx2', '',     'Missing required option(s): victorops_api_key, victorops_routing_key, victorops_message_type'),
+    ('',      '',      'INFO', 'Missing required option(s): victorops_api_key, victorops_routing_key, victorops_message_type'),
+    ('xxxx1', 'xxxx2', '',     'Missing required option(s): victorops_api_key, victorops_routing_key, victorops_message_type'),
+    ('xxxx1', '',      'INFO', 'Missing required option(s): victorops_api_key, victorops_routing_key, victorops_message_type'),
+    ('',      'xxxx2', 'INFO', 'Missing required option(s): victorops_api_key, victorops_routing_key, victorops_message_type'),
     ('xxxx1', 'xxxx2', 'INFO',
         {
             'type': 'victorops',
             'victorops_routing_key': 'xxxx2'
         }),
 ])
-def test_victoropst_key_error(victorops_api_key, victorops_routing_key, victorops_message_type, expected_data):
+def test_victoropst_required_error(victorops_api_key, victorops_routing_key, victorops_message_type, expected_data):
     try:
         rule = {
             'name': 'Test VictorOps Rule',
@@ -255,5 +255,5 @@ def test_victoropst_key_error(victorops_api_key, victorops_routing_key, victorop
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

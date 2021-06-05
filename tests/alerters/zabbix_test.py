@@ -57,15 +57,15 @@ def test_zabbix_getinfo():
 
 
 @pytest.mark.parametrize('zbx_host, zbx_key, expected_data', [
-    ('', '', True),
-    ('example.com', '', True),
-    ('', 'example-key', True),
+    ('',            '',            'Missing required option(s): zbx_host, zbx_key'),
+    ('example.com', '',            'Missing required option(s): zbx_host, zbx_key'),
+    ('',            'example-key', 'Missing required option(s): zbx_host, zbx_key'),
     ('example.com', 'example-key',
         {
             'type': 'zabbix Alerter'
         })
 ])
-def test_zabbix_key_error(zbx_host, zbx_key, expected_data):
+def test_zabbix_required_error(zbx_host, zbx_key, expected_data):
     try:
         rule = {
             'name': 'Basic Zabbix test',
@@ -87,5 +87,5 @@ def test_zabbix_key_error(zbx_host, zbx_key, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

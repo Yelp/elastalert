@@ -12,7 +12,7 @@ class MsTeamsAlerter(Alerter):
 
     def __init__(self, rule):
         super(MsTeamsAlerter, self).__init__(rule)
-        self.ms_teams_webhook_url = self.rule['ms_teams_webhook_url']
+        self.ms_teams_webhook_url = self.rule.get('ms_teams_webhook_url', None)
         if isinstance(self.ms_teams_webhook_url, str):
             self.ms_teams_webhook_url = [self.ms_teams_webhook_url]
         self.ms_teams_proxy = self.rule.get('ms_teams_proxy', None)

@@ -124,16 +124,16 @@ def test_chatwork_getinfo():
 
 
 @pytest.mark.parametrize('chatwork_apikey, chatwork_room_id, expected_data', [
-    ('',      '',      True),
-    ('xxxx1', '',      True),
-    ('',      'xxxx2', True),
+    ('',    '',      'Missing required option(s): chatwork_apikey, chatwork_room_id'),
+    ('xxxx1', '',    'Missing required option(s): chatwork_apikey, chatwork_room_id'),
+    ('',    'xxxx2', '1Missing required option(s): chatwork_apikey, chatwork_room_id'),
     ('xxxx1', 'xxxx2',
         {
             "type": "chatwork",
             "chatwork_room_id": "xxxx2"
         }),
 ])
-def test_chatwork_key_error(chatwork_apikey, chatwork_room_id, expected_data):
+def test_chatwork_required_error(chatwork_apikey, chatwork_room_id, expected_data):
     try:
         rule = {
             'name': 'Test Chatwork Rule',
@@ -153,5 +153,5 @@ def test_chatwork_key_error(chatwork_apikey, chatwork_room_id, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

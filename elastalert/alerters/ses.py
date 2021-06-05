@@ -16,11 +16,12 @@ class SesAlerter(Alerter):
         self.aws_region = self.rule.get('ses_aws_region', 'us-east-1')
         self.aws_profile = self.rule.get('ses_aws_profile', '')
 
-        self.from_addr = self.rule['ses_from_addr']
+        self.email = self.rule.get('ses_email', None)
+        self.from_addr = self.rule.get('ses_from_addr', None)
 
         # Convert email to a list if it isn't already
-        if isinstance(self.rule['ses_email'], str):
-            self.rule['ses_email'] = [self.rule['ses_email']]
+        if isinstance(self.email, str):
+            self.email = [self.email]
 
         # If there is a cc then also convert it a list if it isn't
         cc = self.rule.get('ses_cc')
@@ -44,7 +45,7 @@ class SesAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
-        to_addr = self.rule['ses_email']
+        to_addr = self.email
         if 'ses_email_from_field' in self.rule:
             recipient = lookup_es_key(matches[0], self.rule['ses_email_from_field'])
             if isinstance(recipient, str):
@@ -106,4 +107,4 @@ class SesAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'ses',
-                'recipients': self.rule['ses_email']}
+                'recipients': self.email}

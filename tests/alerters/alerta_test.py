@@ -677,14 +677,14 @@ def test_alerta_getinfo():
 
 
 @pytest.mark.parametrize('alerta_api_url, expected_data', [
-    ('',  True),
+    ('',  'Missing required option(s): alerta_api_url'),
     ('http://elastalerthost:8080/api/alert',
         {
             'type': 'alerta',
             'alerta_url': 'http://elastalerthost:8080/api/alert'
         }),
 ])
-def test_alerta_key_error(alerta_api_url, expected_data):
+def test_alerta_required_error(alerta_api_url, expected_data):
     try:
         rule = {
             'name': 'Test Alerta rule!',
@@ -703,5 +703,5 @@ def test_alerta_key_error(alerta_api_url, expected_data):
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except Exception:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)

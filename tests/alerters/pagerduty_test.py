@@ -700,16 +700,16 @@ def test_pagerduty_getinfo():
 
 
 @pytest.mark.parametrize('pagerduty_service_key, pagerduty_client_name, expected_data', [
-    ('',       '',       True),
-    ('xxxxx1', '',       True),
-    ('',       'xxxxx2', True),
+    ('',       '',       'Missing required option(s): pagerduty_service_key, pagerduty_client_name'),
+    ('xxxxx1', '',       'Missing required option(s): pagerduty_service_key, pagerduty_client_name'),
+    ('',       'xxxxx2', 'Missing required option(s): pagerduty_service_key, pagerduty_client_name'),
     ('xxxxx1', 'xxxxx2',
         {
             'type': 'pagerduty',
             'pagerduty_client_name': 'xxxxx2'
         }),
 ])
-def test_pagerduty_key_error(pagerduty_service_key, pagerduty_client_name, expected_data):
+def test_pagerduty_required_error(pagerduty_service_key, pagerduty_client_name, expected_data):
     try:
         rule = {
             'name': 'Test PD Rule',
@@ -729,5 +729,5 @@ def test_pagerduty_key_error(pagerduty_service_key, pagerduty_client_name, expec
 
         actual_data = alert.get_info()
         assert expected_data == actual_data
-    except KeyError:
-        assert expected_data
+    except Exception as ea:
+        assert expected_data in str(ea)
