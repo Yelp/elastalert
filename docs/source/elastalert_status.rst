@@ -67,4 +67,4 @@ an alert with ``realert`` is triggered, a ``silence`` record will be written wit
   be 0 unless ``exponential_realert`` is set.
 
 Whenever an alert is triggered, ElastAlert will check for a matching ``silence`` document, and if the ``until`` timestamp is in the future, it will ignore
-the alert completely. See the :ref:`Running ElastAlert <runningelastalert>` section for information on how to silence an alert.
+the alert completely. See the :ref:`Running ElastAlert <elastalert-arguments>` section for information on how to silence an alert.
