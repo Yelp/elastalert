@@ -951,7 +951,6 @@ def test_mattermost_attach_kibana_discover_url_when_generated():
     )
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
-    print(actual_data)
     assert expected_data == actual_data
 
 
@@ -994,7 +993,6 @@ def test_mattermost_attach_kibana_discover_url_when_not_generated():
     )
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
-    print(actual_data)
     assert expected_data == actual_data
 
 
@@ -1044,7 +1042,6 @@ def test_mattermost_kibana_discover_title():
     )
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
-    print(actual_data)
     assert expected_data == actual_data
 
 
@@ -1094,7 +1091,4 @@ def test_mattermost_kibana_discover_color():
     )
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
-    print(actual_data)
     assert expected_data == actual_data
-    except Exception as ea:
-        assert expected_data in str(ea)
