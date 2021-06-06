@@ -252,7 +252,7 @@ class MockElastAlerter(object):
             used_ids = []
 
             def get_id():
-                _id = ''.join([random.choice(string.letters) for i in range(16)])
+                _id = ''.join([random.choice(string.ascii_letters) for i in range(16)])
                 if _id in used_ids:
                     return get_id()
                 used_ids.append(_id)

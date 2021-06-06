@@ -28,10 +28,10 @@ from elasticsearch.exceptions import NotFoundError
 from elasticsearch.exceptions import TransportError
 
 from . import kibana
-from .kibana_discover import generate_kibana_discover_url
 from .alerts import DebugAlerter
 from .config import load_conf
 from .enhancements import DropMatchException
+from .kibana_discover import generate_kibana_discover_url
 from .ruletypes import FlatlineRule
 from .util import add_raw_postfix
 from .util import cronite_datetime_to_timestamp
@@ -654,7 +654,8 @@ class ElastAlerter(object):
 
         try:
             if rule.get('scroll_id') and self.thread_data.num_hits < self.thread_data.total_hits and should_scrolling_continue(rule):
-                self.run_query(rule, start, end, scroll=True)
+                if not self.run_query(rule, start, end, scroll=True):
+                    return False
         except RuntimeError:
             # It's possible to scroll far enough to hit max recursive depth
             pass
@@ -896,7 +897,8 @@ class ElastAlerter(object):
 
         if rule.get('aggregation_query_element'):
             if endtime - tmp_endtime == segment_size:
-                self.run_query(rule, tmp_endtime, endtime)
+                if not self.run_query(rule, tmp_endtime, endtime):
+                    return 0
                 self.thread_data.cumulative_hits += self.thread_data.num_hits
             elif total_seconds(rule['original_starttime'] - tmp_endtime) == 0:
                 rule['starttime'] = rule['original_starttime']
@@ -1024,8 +1026,7 @@ class ElastAlerter(object):
                            'processed_hits',
                            'starttime',
                            'minimum_starttime',
-                           'has_run_once',
-                           'run_every']
+                           'has_run_once']
         for prop in copy_properties:
             if prop not in rule:
                 continue
@@ -1475,8 +1476,8 @@ class ElastAlerter(object):
         # Compute top count keys
         if rule.get('top_count_keys'):
             for match in matches:
-                if 'query_key' in rule and rule['query_key'] in match:
-                    qk = match[rule['query_key']]
+                if 'query_key' in rule:
+                    qk = lookup_es_key(match, rule['query_key'])
                 else:
                     qk = None
 
