@@ -34,6 +34,19 @@ definitions:
       milliseconds: {type: number}
       schedule: {type: string}
 
+  mattermostField: &mattermostField
+    type: object
+    additionalProperties: false
+    properties:
+      title: {type: string}
+      value: {type: string}
+      args: *arrayOfString
+      short: {type: boolean}
+
+  arrayOfMattermostFields: &arrayOfMattermostField
+    type: array
+    items: *mattermostField
+
   filter: &filter {}
 
 required: [type, index, alert]
@@ -388,6 +401,7 @@ properties:
   mattermost_icon_url_override: {type: string}
   mattermost_msg_pretext: {type: string}
   mattermost_msg_color: {enum: [good, warning, danger]}
+  mattermost_msg_fields: *arrayOfMattermostField
   mattermost_title_link: {type: string}
   mattermost_footer: {type: string}
   mattermost_footer_icon: {type: string}
