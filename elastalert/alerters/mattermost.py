@@ -40,6 +40,9 @@ class MattermostAlerter(Alerter):
         self.mattermost_author_name = self.rule.get('mattermost_author_name', '')
         self.mattermost_author_link = self.rule.get('mattermost_author_link', '')
         self.mattermost_author_icon = self.rule.get('mattermost_author_icon', '')
+        self.mattermost_attach_kibana_discover_url = self.rule.get('mattermost_attach_kibana_discover_url', False)
+        self.mattermost_kibana_discover_color = self.rule.get('mattermost_kibana_discover_color', '#ec4b98')
+        self.mattermost_kibana_discover_title = self.rule.get('mattermost_kibana_discover_title', 'Discover in Kibana')
 
     def get_aggregation_summary_text__maximum_width(self):
         width = super(MattermostAlerter, self).get_aggregation_summary_text__maximum_width()
@@ -127,6 +130,15 @@ class MattermostAlerter(Alerter):
 
         if self.mattermost_author_icon != '':
             payload['attachments'][0]['author_icon'] = self.mattermost_author_icon
+
+        if self.mattermost_attach_kibana_discover_url:
+            kibana_discover_url = lookup_es_key(matches[0], 'kibana_discover_url')
+            if kibana_discover_url:
+                payload['attachments'].append({
+                    'color': self.mattermost_kibana_discover_color,
+                    'title': self.mattermost_kibana_discover_title,
+                    'title_link': kibana_discover_url
+                })
 
         for url in self.mattermost_webhook_url:
             try:

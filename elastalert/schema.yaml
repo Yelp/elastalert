@@ -34,8 +34,6 @@ definitions:
       milliseconds: {type: number}
       schedule: {type: string}
 
-  filter: &filter {}
-
   mattermostField: &mattermostField
     type: object
     additionalProperties: false
@@ -44,6 +42,12 @@ definitions:
       value: {type: string}
       args: *arrayOfString
       short: {type: boolean}
+
+  arrayOfMattermostFields: &arrayOfMattermostField
+    type: array
+    items: *mattermostField
+
+  filter: &filter {}
 
 required: [type, index, alert]
 type: object
@@ -397,7 +401,7 @@ properties:
   mattermost_icon_url_override: {type: string}
   mattermost_msg_pretext: {type: string}
   mattermost_msg_color: {enum: [good, warning, danger]}
-  mattermost_msg_fields: *mattermostField
+  mattermost_msg_fields: *arrayOfMattermostField
   mattermost_title_link: {type: string}
   mattermost_footer: {type: string}
   mattermost_footer_icon: {type: string}
@@ -406,6 +410,9 @@ properties:
   mattermost_author_name: {type: string}
   mattermost_author_link: {type: string}
   mattermost_author_icon: {type: string}
+  mattermost_attach_kibana_discover_url {type: boolean}
+  mattermost_kibana_discover_color {type: string}
+  mattermost_kibana_discover_title {type: string}
 
   ### Microsoft Teams
   ms_teams_webhook_url: *arrayOfString

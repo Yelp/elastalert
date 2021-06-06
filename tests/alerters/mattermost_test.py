@@ -904,3 +904,191 @@ def test_mattermost_required_error(mattermost_webhook_url, expected_data):
         assert expected_data == actual_data
     except Exception as ea:
         assert expected_data in str(ea)
+
+
+def test_mattermost_attach_kibana_discover_url_when_generated():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_attach_kibana_discover_url': True,
+        'mattermost_webhook_url': 'http://please.dontgohere.mattermost',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'kibana_discover_url': 'http://localhost:5601/app/discover#/'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Rule: ',
+                'color': 'danger',
+                'title': 'Test Rule',
+                'pretext': '',
+                'fields': [],
+                'text': 'Test Rule\n\n'
+            },
+            {
+                'color': '#ec4b98',
+                'title': 'Discover in Kibana',
+                'title_link': 'http://localhost:5601/app/discover#/'
+            }
+        ], 'username': 'elastalert'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_attach_kibana_discover_url_when_not_generated():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_attach_kibana_discover_url': True,
+        'mattermost_webhook_url': 'http://please.dontgohere.mattermost',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Rule: ',
+                'color': 'danger',
+                'title': 'Test Rule',
+                'pretext': '',
+                'fields': [],
+                'text': 'Test Rule\n\n'
+            }
+        ], 'username': 'elastalert'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_kibana_discover_title():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_attach_kibana_discover_url': True,
+        'mattermost_kibana_discover_title': 'Click to discover in Kibana',
+        'mattermost_webhook_url': 'http://please.dontgohere.mattermost',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'kibana_discover_url': 'http://localhost:5601/app/discover#/'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Rule: ',
+                'color': 'danger',
+                'title': 'Test Rule',
+                'pretext': '',
+                'fields': [],
+                'text': 'Test Rule\n\n'
+            },
+            {
+                'color': '#ec4b98',
+                'title': 'Click to discover in Kibana',
+                'title_link': 'http://localhost:5601/app/discover#/'
+            }
+        ], 'username': 'elastalert'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_kibana_discover_color():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_attach_kibana_discover_url': True,
+        'mattermost_kibana_discover_color': 'blue',
+        'mattermost_webhook_url': 'http://please.dontgohere.mattermost',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'kibana_discover_url': 'http://localhost:5601/app/discover#/'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Rule: ',
+                'color': 'danger',
+                'title': 'Test Rule',
+                'pretext': '',
+                'fields': [],
+                'text': 'Test Rule\n\n'
+            },
+            {
+                'color': 'blue',
+                'title': 'Discover in Kibana',
+                'title_link': 'http://localhost:5601/app/discover#/'
+            }
+        ], 'username': 'elastalert'
+    }
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data

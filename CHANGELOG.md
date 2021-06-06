@@ -22,7 +22,8 @@
 - Add support for Elasticsearch API key authentication - [#208](https://github.com/jertel/elastalert2/pull/208) - @vbisserie
 - Add support for Elasticsearch 7.13 for building Kibana Discover URLs - [#212](https://github.com/jertel/elastalert2/pull/212) - @nsano-rururu
 - Follow symbolic links when traversing rules folder for rule files - [#214](https://github.com/jertel/elastalert2/pull/214) - @vbisserie
-- Support optional suppression of SSL log warnings when http-posting alerts - [#222](https://github.com/jertel/elastalert2/pull/222/files) - @nsano-rururu
+- Support optional suppression of SSL log warnings when http-posting alerts - [#222](https://github.com/jertel/elastalert2/pull/222) - @nsano-rururu
+- Add support for inclusion of Kibana Discover URLs in MatterMost messages - [#239](https://github.com/jertel/elastalert2/pull/239) - @nsano-rururu
 
 ## Other changes
 - Speed up unit tests by adding default parallelism - [#164](https://github.com/jertel/elastalert2/pull/164) - @ferozsalam
@@ -46,7 +47,8 @@
 - Migrate away from external test mock dependency - [#233](https://github.com/jertel/elastalert2/pull/233) - @nsano-rururu
 - Improve ElastAlert 2 documentation relating to running scenarios - [#234](https://github.com/jertel/elastalert2/pull/234) - @ferozsalam
 - Improve test coverage and correct dict lookup syntax for alerter init functions - [#235](https://github.com/jertel/elastalert2/pull/235) - @nsano-rururu
-
+- Fix schema bug with MatterMost alerts - [#239](https://github.com/jertel/elastalert2/pull/239) - @nsano-rururu
+- 
 # 2.1.0
 
 ## Breaking changes
