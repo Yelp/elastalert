@@ -10,9 +10,10 @@ ElastAlert 2 is backwards compatible with the original ElastAlert rules.
 ## Docker and Kubernetes
 
 ElastAlert 2 is well-suited to being run as a microservice, and is available
-as a [Docker container][2]. A [Helm chart][7] is also maintained for easy
-configuration as a Kubernetes deployment. For more instructions on how to
-configure and run ElastAlert 2 in this way, see [here][8].
+as a [Docker container][2]. For more instructions on how to
+configure and run ElastAlert 2 using Docker, see [here][8].
+
+A [Helm chart][7] is also included for easy configuration as a Kubernetes deployment. 
 
 ## Documentation
 
