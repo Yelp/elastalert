@@ -32,6 +32,7 @@ class MattermostAlerter(Alerter):
         self.mattermost_msg_color = self.rule.get('mattermost_msg_color', 'danger')
         self.mattermost_msg_fields = self.rule.get('mattermost_msg_fields', '')
         self.mattermost_image_url = self.rule.get('mattermost_image_url', '')
+        self.mattermost_title = self.rule.get('mattermost_title', '')
         self.mattermost_title_link = self.rule.get('mattermost_title_link', '')
         self.mattermost_footer = self.rule.get('mattermost_footer', '')
         self.mattermost_footer_icon = self.rule.get('mattermost_footer_icon', '')
@@ -106,6 +107,9 @@ class MattermostAlerter(Alerter):
 
         if self.mattermost_channel_override != '':
             payload['channel'] = self.mattermost_channel_override
+
+        if self.mattermost_title != '':
+            payload['attachments'][0]['title'] = self.mattermost_title
 
         if self.mattermost_title_link != '':
             payload['attachments'][0]['title_link'] = self.mattermost_title_link

@@ -365,6 +365,7 @@ def test_mattermost_title_link():
         'mattermost_webhook_url': 'http://xxxxx',
         'mattermost_msg_pretext': 'aaaaa',
         'mattermost_msg_color': 'danger',
+        'mattermost_title': 'mattermost.title',
         'mattermost_title_link': 'http://title.url',
         'alert': [],
         'alert_subject': 'Test Mattermost'
@@ -384,10 +385,10 @@ def test_mattermost_title_link():
             {
                 'fallback': 'Test Mattermost: aaaaa',
                 'color': 'danger',
-                'title': 'Test Mattermost',
                 'pretext': 'aaaaa',
                 'fields': [],
                 'text': 'Test Mattermost Rule\n\n',
+                'title': 'mattermost.title',
                 'title_link': 'http://title.url'
             }
         ],
