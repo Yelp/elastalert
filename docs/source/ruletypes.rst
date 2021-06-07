@@ -2207,7 +2207,9 @@ Example mattermost_msg_fields::
         value: static field
         short: false
 
-``mattermost_title_link``: You can add a link in your Mattermost notification by setting this to a valid URL. Defaults to "".
+``mattermost_title``: Sets a title for the message, this shows up as a blue text at the start of the message. Defaults to "".
+
+``mattermost_title_link``: You can add a link in your Mattermost notification by setting this to a valid URL. Requires mattermost_title to be set. Defaults to "".
 
 ``mattermost_footer``: Add a static footer text for alert. Defaults to "".
 

@@ -402,6 +402,7 @@ properties:
   mattermost_msg_pretext: {type: string}
   mattermost_msg_color: {enum: [good, warning, danger]}
   mattermost_msg_fields: *arrayOfMattermostField
+  mattermost_title: {type: string}
   mattermost_title_link: {type: string}
   mattermost_footer: {type: string}
   mattermost_footer_icon: {type: string}
