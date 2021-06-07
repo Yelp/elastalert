@@ -24,6 +24,7 @@
 - Follow symbolic links when traversing rules folder for rule files - [#214](https://github.com/jertel/elastalert2/pull/214) - @vbisserie
 - Support optional suppression of SSL log warnings when http-posting alerts - [#222](https://github.com/jertel/elastalert2/pull/222) - @nsano-rururu
 - Add support for inclusion of Kibana Discover URLs in MatterMost messages - [#239](https://github.com/jertel/elastalert2/pull/239) - @nsano-rururu
+- Add support for inclusion of alert Title in MatterMost messages - [#246](https://github.com/jertel/elastalert2/pull/246) - @nsano-rururu
 
 ## Other changes
 - Speed up unit tests by adding default parallelism - [#164](https://github.com/jertel/elastalert2/pull/164) - @ferozsalam
