@@ -10,6 +10,7 @@ on:
 
 jobs:
   deploy:
+    environment: Main
 
     runs-on: ubuntu-latest
 
