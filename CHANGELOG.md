@@ -49,7 +49,8 @@
 - Improve ElastAlert 2 documentation relating to running scenarios - [#234](https://github.com/jertel/elastalert2/pull/234) - @ferozsalam
 - Improve test coverage and correct dict lookup syntax for alerter init functions - [#235](https://github.com/jertel/elastalert2/pull/235) - @nsano-rururu
 - Fix schema bug with MatterMost alerts - [#239](https://github.com/jertel/elastalert2/pull/239) - @nsano-rururu
-- 
+- Fix prometheus wrapper writeback function signature - [#253](https://github.com/jertel/elastalert2/pull/253) - @greut
+
 # 2.1.0
 
 ## Breaking changes
