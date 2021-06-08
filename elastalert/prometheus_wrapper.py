@@ -33,7 +33,7 @@ class PrometheusWrapper:
         finally:
             return self.run_rule(rule, endtime, starttime)
 
-    def metrics_writeback(self, doc_type, body):
+    def metrics_writeback(self, doc_type, body, rule=None, match_body=None):
         """ Update various prometheus metrics accoording to the doc_type """
 
         res = self.writeback(doc_type, body)
