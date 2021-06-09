@@ -30,7 +30,7 @@ Maintainers, when creating a new release, follow the procedure below:
 	- [Chart.yaml](chart/elastalert2/Chart.yaml): Match chart version and the app version to the new release version (typically keep them in sync)
 	- [values.yaml](chart/elastalert2/values.yaml): Match the default image version to the new release version.
 	- [Chart README.md](chart/elastalert2/README.md): Match the default image version to the new release version.
-	- [Project README.md](README.md): Match the default image version to the new release version.
+	- [Docs](docs/source/running_elastalert.rst): Match the default image version to the new release version.
 	- [CHANGELOG.md](CHANGELOG.md): This must contain all PRs and any other relevent notes about this release
 3. Publish a [new][1] release.
 	- The title (and tag) of the release will be the same value as the new version determined in step 1.

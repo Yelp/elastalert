@@ -9,7 +9,7 @@
 ## Other changes
 - None
 
-# Unreleased
+# 2.1.1
 
 ## Breaking changes
 - None
