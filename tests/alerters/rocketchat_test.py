@@ -628,3 +628,201 @@ def test_rocketchat_required_error(rocket_chat_webhook_url, expected_data):
         assert expected_data == actual_data
     except Exception as ea:
         assert expected_data in str(ea)
+
+
+def test_rocket_chat_attach_kibana_discover_url_when_generated():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'alert_subject': 'Cool subject',
+        'alert': [],
+        'rocket_chat_webhook_url': 'http://please.dontgohere.rocketchat',
+        'rocket_chat_attach_kibana_discover_url': True
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = RocketChatAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz',
+        'kibana_discover_url': 'http://localhost:5601/app/discover#/'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert2',
+        'channel': '',
+        'emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Cool subject',
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            },
+            {
+                'color': '#ec4b98',
+                'title': 'Discover in Kibana',
+                'title_link': 'http://localhost:5601/app/discover#/'
+            }
+        ],
+        'text': ''
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['rocket_chat_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_rocket_chat_attach_kibana_discover_url_when_not_generated():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'alert_subject': 'Cool subject',
+        'alert': [],
+        'rocket_chat_webhook_url': 'http://please.dontgohere.rocketchat',
+        'rocket_chat_attach_kibana_discover_url': True
+    }
+
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = RocketChatAlerter(rule)
+    match = {
+        'somefield': 'foobarbaz',
+        '@timestamp': '2021-01-01T00:00:00'
+    }
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert2',
+        'channel': '',
+        'emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Cool subject',
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            }
+        ],
+        'text': ''
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['rocket_chat_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_rocket_chat_kibana_discover_title():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'alert_subject': 'Cool subject',
+        'alert': [],
+        'rocket_chat_webhook_url': 'http://please.dontgohere.rocketchat',
+        'rocket_chat_attach_kibana_discover_url': True,
+        'rocket_chat_kibana_discover_title': 'Click to discover in Kibana'
+    }
+
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = RocketChatAlerter(rule)
+    match = {
+        'somefield': 'foobarbaz',
+        '@timestamp': '2021-01-01T00:00:00',
+        'kibana_discover_url': 'http://localhost:5601/app/discover#/'
+    }
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert2',
+        'channel': '',
+        'emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Cool subject',
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            },
+            {
+                'color': '#ec4b98',
+                'title': 'Click to discover in Kibana',
+                'title_link': 'http://localhost:5601/app/discover#/'
+            }
+        ],
+        'text': ''
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['rocket_chat_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_rocket_chat_kibana_discover_color():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'alert': [],
+        'rocket_chat_webhook_url': 'http://please.dontgohere.rocket_chat',
+        'rocket_chat_attach_kibana_discover_url': True,
+        'rocket_chat_kibana_discover_color': 'blue'
+    }
+
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = RocketChatAlerter(rule)
+    match = {
+        'somefield': 'foobarbaz',
+        '@timestamp': '2021-01-01T00:00:00',
+        'kibana_discover_url': 'http://localhost:5601/app/discover#/'
+    }
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert2',
+        'channel': '',
+        'emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Test Rule',
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            },
+            {
+                'color': 'blue',
+                'title': 'Discover in Kibana',
+                'title_link': 'http://localhost:5601/app/discover#/'
+            }
+        ],
+        'text': ''
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['rocket_chat_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])

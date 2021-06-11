@@ -28,6 +28,9 @@ class RocketChatAlerter(Alerter):
         self.rocket_chat_msg_color = self.rule.get('rocket_chat_msg_color', 'danger')
         self.rocket_chat_text_string = self.rule.get('rocket_chat_text_string', '')
         self.rocket_chat_alert_fields = self.rule.get('rocket_chat_alert_fields', '')
+        self.rocket_chat_attach_kibana_discover_url = self.rule.get('rocket_chat_attach_kibana_discover_url', False)
+        self.rocket_chat_kibana_discover_color = self.rule.get('rocket_chat_kibana_discover_color', '#ec4b98')
+        self.rocket_chat_kibana_discover_title = self.rule.get('rocket_chat_kibana_discover_title', 'Discover in Kibana')
 
     def format_body(self, body):
         return body
@@ -76,6 +79,15 @@ class RocketChatAlerter(Alerter):
 
         if self.rocket_chat_emoji_override != '':
             payload['emoji'] = self.rocket_chat_emoji_override
+
+        if self.rocket_chat_attach_kibana_discover_url:
+            kibana_discover_url = lookup_es_key(matches[0], 'kibana_discover_url')
+            if kibana_discover_url:
+                payload['attachments'].append({
+                    'color': self.rocket_chat_kibana_discover_color,
+                    'title': self.rocket_chat_kibana_discover_title,
+                    'title_link': kibana_discover_url
+                })
 
         for url in self.rocket_chat_webhook_url:
             for channel_override in self.rocket_chat_channel_override:
