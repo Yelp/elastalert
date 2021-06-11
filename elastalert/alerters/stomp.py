@@ -5,7 +5,7 @@ import time
 import stomp
 
 from elastalert.alerts import Alerter, BasicMatchString
-from elastalert.util import lookup_es_key, elastalert_logger
+from elastalert.util import lookup_es_key, elastalert_logger, EAException
 
 
 class StompAlerter(Alerter):
@@ -63,13 +63,17 @@ class StompAlerter(Alerter):
             'stomp_destination', '/queue/ALERT')
         self.stomp_ssl = self.rule.get('stomp_ssl', False)
 
-        conn = stomp.Connection([(self.stomp_hostname, self.stomp_hostport)], use_ssl=self.stomp_ssl)
+        try:
+            conn = stomp.Connection([(self.stomp_hostname, self.stomp_hostport)], use_ssl=self.stomp_ssl)
 
-        conn.connect(self.stomp_login, self.stomp_password)
-        # Ensures that the CONNECTED frame is received otherwise, the disconnect call will fail.
-        time.sleep(1)
-        conn.send(self.stomp_destination, json.dumps(fullmessage))
-        conn.disconnect()
+            conn.connect(self.stomp_login, self.stomp_password)
+            # Ensures that the CONNECTED frame is received otherwise, the disconnect call will fail.
+            time.sleep(1)
+            conn.send(self.stomp_destination, json.dumps(fullmessage))
+            conn.disconnect()
+        except Exception as e:
+            raise EAException("Error posting to Stomp: %s" % e)
+        elastalert_logger.info("Alert sent to Stomp")
 
     def get_info(self):
         return {'type': 'stomp'}
