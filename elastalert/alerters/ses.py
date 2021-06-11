@@ -58,17 +58,18 @@ class SesAlerter(Alerter):
                 if 'ses_email_add_domain' in self.rule:
                     to_addr = [name + self.rule['ses_email_add_domain'] for name in to_addr]
 
-        if self.aws_profile != '':
-            session = boto3.Session(profile_name=self.aws_profile)
-        else:
-            session = boto3.Session(
-                aws_access_key_id=self.aws_access_key_id,
-                aws_secret_access_key=self.aws_secret_access_key,
-                region_name=self.aws_region
-            )
-
-        client = session.client('ses')
         try:
+            if self.aws_profile != '':
+                session = boto3.Session(profile_name=self.aws_profile)
+            else:
+                session = boto3.Session(
+                    aws_access_key_id=self.aws_access_key_id,
+                    aws_secret_access_key=self.aws_secret_access_key,
+                    region_name=self.aws_region
+                )
+
+            client = session.client('ses')
+
             client.send_email(
                 Source=self.from_addr,
                 Destination={
@@ -90,9 +91,9 @@ class SesAlerter(Alerter):
                 },
                 ReplyToAddresses=self.rule.get('ses_email_reply_to', []))
         except Exception as e:
-            raise EAException("Error sending ses: %s" % (e,))
+            raise EAException("Error sending Amazon SES: %s" % e)
 
-        elastalert_logger.info("Sent ses to %s" % (to_addr,))
+        elastalert_logger.info("Sent Amazon SES to %s" % (to_addr,))
 
     def create_default_title(self, matches):
         subject = 'ElastAlert 2: %s' % (self.rule['name'])

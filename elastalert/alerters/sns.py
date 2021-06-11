@@ -1,7 +1,7 @@
 import boto3
 
 from elastalert.alerts import Alerter
-from elastalert.util import elastalert_logger
+from elastalert.util import elastalert_logger, EAException
 
 
 class SnsAlerter(Alerter):
@@ -23,22 +23,25 @@ class SnsAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
-        if self.profile is None:
-            session = boto3.Session(
-                aws_access_key_id=self.sns_aws_access_key_id,
-                aws_secret_access_key=self.sns_aws_access_key_id,
-                region_name=self.sns_aws_region
-            )
-        else:
-            session = boto3.Session(profile_name=self.profile)
+        try:
+            if self.profile is None:
+                session = boto3.Session(
+                    aws_access_key_id=self.sns_aws_access_key_id,
+                    aws_secret_access_key=self.sns_aws_access_key_id,
+                    region_name=self.sns_aws_region
+                )
+            else:
+                session = boto3.Session(profile_name=self.profile)
 
-        sns_client = session.client('sns')
-        sns_client.publish(
-            TopicArn=self.sns_topic_arn,
-            Message=body,
-            Subject=self.create_title(matches)
-        )
-        elastalert_logger.info("Sent sns notification to %s" % (self.sns_topic_arn))
+            sns_client = session.client('sns')
+            sns_client.publish(
+                TopicArn=self.sns_topic_arn,
+                Message=body,
+                Subject=self.create_title(matches)
+            )
+        except Exception as e:
+            raise EAException("Error sending Amazon SNS: %s" % e)
+        elastalert_logger.info("Sent Amazon SNS notification to %s" % (self.sns_topic_arn))
 
     def get_info(self):
         return {'type': 'sns'}
