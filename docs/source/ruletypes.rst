@@ -2398,7 +2398,7 @@ The alerter requires the following option:
 
 Optional:
 
-``rocket_chat_username_override``: By default RocketChat will use username defined in Integration when posting to the channel. Use this option to change it (free text).
+``rocket_chat_username_override``: By default Rocket.Chat will use username defined in Integration when posting to the channel. Use this option to change it (free text).
 
 ``rocket_chat_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified “#other-channel”, and a Direct Message with “@username”.
 
@@ -2409,9 +2409,15 @@ ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ .
 
 ``rocket_chat_text_string``: Notification message you want to add.
 
-``rocket_chat_proxy``: By default ElastAlert will not use a network proxy to send notifications to RocketChat. Set this option using ``hostname:port`` if you need to use a proxy.
+``rocket_chat_proxy``: By default ElastAlert will not use a network proxy to send notifications to Rocket.Chat. Set this option using ``hostname:port`` if you need to use a proxy.
 
-```rocket_chat_alert_fields``: You can add additional fields to your RocketChat alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
+``rocket_chat_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the Rocket.Chat notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
+
+``rocket_chat_kibana_discover_color``: The color of the Kibana Discover url attachment. Defaults to ``#ec4b98``.
+
+``rocket_chat_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
+
+```rocket_chat_alert_fields``: You can add additional fields to your Rocket.Chat alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
 
 Example rocket_chat_alert_fields::
 
