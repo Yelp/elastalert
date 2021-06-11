@@ -36,7 +36,7 @@ class PrometheusWrapper:
     def metrics_writeback(self, doc_type, body, rule=None, match_body=None):
         """ Update various prometheus metrics accoording to the doc_type """
 
-        res = self.writeback(doc_type, body)
+        res = self.writeback(doc_type, body, rule, match_body)
         try:
             if doc_type == 'elastalert_status':
                 self.prom_hits.labels(body['rule_name']).inc(int(body['hits']))
