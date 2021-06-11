@@ -475,6 +475,9 @@ properties:
   rocket_chat_msg_color: {enum: [good, warning, danger]}
   rocket_chat_text_string: {type: string}
   rocket_chat_proxy: {type: string}
+  rocket_chat_attach_kibana_discover_url {type: boolean}
+  rocket_chat_kibana_discover_color {type: string}
+  rocket_chat_kibana_discover_title {type: string}
 
   ### ServiceNow
   servicenow_rest_url: {type: string}
