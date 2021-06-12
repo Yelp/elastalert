@@ -1,8 +1,8 @@
 import json
 import subprocess
 
-from unittest import mock
 import pytest
+from unittest import mock
 
 from elastalert.alerters.command import CommandAlerter
 from elastalert.alerts import BasicMatchString
@@ -100,24 +100,23 @@ def test_command_fail_on_non_zero_exit():
 
 
 def test_command_os_error():
-    try:
-        rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],
-                'pipe_alert_text': True, 'type': mock_rule(), 'name': 'Test'}
-        alert = CommandAlerter(rule)
-        match = {'@timestamp': '2014-01-01T00:00:00',
-                 'somefield': 'foobarbaz'}
+    rule = {'command': ['/bin/test/', '--arg', '%(somefield)s'],
+            'pipe_alert_text': True, 'type': mock_rule(), 'name': 'Test'}
+    alert = CommandAlerter(rule)
+    match = {'@timestamp': '2014-01-01T00:00:00',
+             'somefield': 'foobarbaz'}
+    with pytest.raises(EAException) as ea:
         mock_run = mock.MagicMock(side_effect=OSError)
         with mock.patch("elastalert.alerters.command.subprocess.Popen", mock_run), pytest.raises(OSError) as mock_popen:
             mock_subprocess = mock.Mock()
             mock_popen.return_value = mock_subprocess
             mock_subprocess.communicate.return_value = (None, None)
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error while running command /bin/test/ --arg foobarbaz: ' in str(ea)
 
 
 def test_command_key_error():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {}
         alert = CommandAlerter(rule)
         match = {'@timestamp': '2014-01-01T00:00:00',
@@ -125,5 +124,4 @@ def test_command_key_error():
                  'nested': {'field': 1}}
         with mock.patch("elastalert.alerters.command.subprocess.Popen"):
             alert.alert([match])
-    except KeyError:
-        assert True
+    assert 'Error formatting command:' in str(ea)
