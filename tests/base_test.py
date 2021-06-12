@@ -1378,3 +1378,51 @@ def test_query_with_blacklist_filter_es_five(ea_sixsix):
     ea_sixsix.init_rule(new_rule, True)
     assert 'username:"xudan1" OR username:"xudan12" OR username:"aa1"' in new_rule['filter'][-1]['query_string'][
         'query']
+
+
+def test_handle_rule_execution_error(ea, caplog):
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        ea.rules[0]['aggregate_by_match_time'] = True
+        ea.rules[0]['summary_table_fields'] = ['@timestamp']
+        ea.rules[0]['aggregation_key'] = ['service.name']
+        ea.rules[0]['alert_text_type'] = 'aggregation_summary_only'
+        ea.rules[0]['query_delay'] = 'a'
+        new_rule = copy.copy(ea.rules[0])
+        ea.init_rule(new_rule, True)
+
+        ea.handle_rule_execution(ea.rules[0])
+        user, level, message = caplog.record_tuples[0]
+        assert '[handle_rule_execution]Error parsing query_delay send time format' in message
+
+
+def test_remove_old_events_error(ea, caplog):
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        ea.rules[0]['aggregate_by_match_time'] = True
+        ea.rules[0]['summary_table_fields'] = ['@timestamp']
+        ea.rules[0]['aggregation_key'] = ['service.name']
+        ea.rules[0]['alert_text_type'] = 'aggregation_summary_only'
+        ea.rules[0]['query_delay'] = 'a'
+        new_rule = copy.copy(ea.rules[0])
+        ea.init_rule(new_rule, True)
+
+        ea.remove_old_events(ea.rules[0])
+        user, level, message = caplog.record_tuples[0]
+        assert '[remove_old_events]Error parsing query_delay send time format' in message
+
+
+def test_add_aggregated_alert_error(ea, caplog):
+    mod = BaseEnhancement(ea.rules[0])
+    mod.process = mock.Mock()
+    ea.rules[0]['match_enhancements'] = [mod]
+    ea.rules[0]['aggregation'] = {"hour": 5}
+    ea.rules[0]['run_enhancements_first'] = True
+    ea.rules[0]['aggregate_by_match_time'] = True
+    hits = generate_hits([START_TIMESTAMP, END_TIMESTAMP])
+    ea.thread_data.current_es.search.return_value = hits
+    ea.rules[0]['type'].matches = [{'@timestamp': END}]
+    with mock.patch('elastalert.elastalert.elasticsearch_client'):
+        ea.run_rule(ea.rules[0], END, START)
+        user, level, message = caplog.record_tuples[0]
+        exceptd = "[add_aggregated_alert]"
+        exceptd += "Error parsing aggregate send time format unsupported operand type(s) for +: 'datetime.datetime' and 'dict'"
+        assert exceptd in message
