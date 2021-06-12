@@ -456,6 +456,11 @@ query_delay
 ``query_delay``: This option will cause ElastAlert to subtract a time delta from every query, causing the rule to run with a delay.
 This is useful if the data is Elasticsearch doesn't get indexed immediately. (Optional, time)
 
+For example::
+
+    query_delay:
+      hours: 2
+
 owner
 ^^^^^
 
