@@ -1,4 +1,5 @@
 import json
+import logging
 
 from unittest import mock
 import pytest
@@ -9,7 +10,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_datadog_alerter():
+def test_datadog_alerter(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test Datadog Event Alerter',
         'type': 'any',
@@ -43,6 +45,7 @@ def test_datadog_alerter():
     )
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
+    assert ('elastalert', logging.INFO, 'Alert sent to Datadog') == caplog.record_tuples[0]
 
 
 def test_datadog_alerterea_exception():
@@ -65,8 +68,9 @@ def test_datadog_alerterea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+            assert False
+    except EAException as ea:
+        assert 'Error posting event to Datadog:' in str(ea)
 
 
 def test_datadog_getinfo():
