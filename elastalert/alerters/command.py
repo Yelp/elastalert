@@ -15,19 +15,19 @@ class CommandAlerter(Alerter):
         self.last_command = []
 
         self.shell = False
-        if isinstance(self.rule['command'], str):
-            self.shell = True
-            if '%' in self.rule['command']:
-                elastalert_logger.warning('Warning! You could be vulnerable to shell injection!')
-            self.rule['command'] = [self.rule['command']]
+        try:
+            if isinstance(self.rule['command'], str):
+                self.shell = True
+                if '%' in self.rule['command']:
+                    elastalert_logger.warning('Warning! You could be vulnerable to shell injection!')
+                self.rule['command'] = [self.rule['command']]
+        except KeyError as e:
+            raise EAException("Error formatting command: %s" % (e))
 
     def alert(self, matches):
         # Format the command and arguments
-        try:
-            command = [resolve_string(command_arg, matches[0]) for command_arg in self.rule['command']]
-            self.last_command = command
-        except KeyError as e:
-            raise EAException("Error formatting command: %s" % (e))
+        command = [resolve_string(command_arg, matches[0]) for command_arg in self.rule['command']]
+        self.last_command = command
 
         # Run command and pipe data
         try:
