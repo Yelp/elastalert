@@ -118,11 +118,10 @@ Requirements
 - Elasticsearch
 - ISO8601 or Unix timestamped data
 - Python 3.9
-- pip, see requirements.txt
-- Packages on Ubuntu 18.x: build-essential python3-pip python3.6 python3.6-dev libffi-dev libssl-dev
-- Packages on Ubuntu 20.x: build-essential python3-pip python3.6 python3.6-dev libffi-dev libssl-dev 
-- Packages on CentOS 7.x: 'Development Tools' python3-pip python36 python3-devel python3-libs python3-setuptools libffi-devel openssl-devel
-- Packages on CentOS 8.x: 'Development Tools' python3-pip python36 python3-devel python3-setuptools python3-libs libffi-devel openssl-devel
+- pip
+- Packages on Ubuntu 21.x: build-essential python3-pip python3.9 python3.9-dev libffi-dev libssl-dev
+
+If you want to install python 3.9 on CentOS, please install python 3.9 from the source code after installing 'Development Tools'.
 
 Downloading and Configuring
 ---------------------------
