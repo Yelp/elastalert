@@ -32,7 +32,7 @@ class DatadogAlerter(Alerter):
             response.raise_for_status()
         except RequestException as e:
             raise EAException('Error posting event to Datadog: %s' % e)
-    elastalert_logger.info('Alert sent to Datadog')
+        elastalert_logger.info('Alert sent to Datadog')
 
     def get_info(self):
         return {'type': 'datadog'}

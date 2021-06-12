@@ -47,14 +47,7 @@ class ElastAlerter(object):
     """ The main ElastAlert runner. This class holds all state about active rules,
     controls when queries are run, and passes information between rules and alerts.
 
-    :param args: An argparse arguments instance. Should contain debug and start
-
-    :param conf: The configuration dictionary. At the top level, this
-    contains global options, and under 'rules', contains all state relating
-    to rules and alerts. In each rule in conf['rules'], the RuleType and Alerter
-    instances live under 'type' and 'alerts', respectively. The conf dictionary
-    should not be passed directly from a configuration file, but must be populated
-    by config.py:load_rules instead. """
+    :param args: An argparse arguments instance. Should contain debug and start"""
 
     thread_data = threading.local()
 
