@@ -613,7 +613,10 @@ class ElastAlerter(object):
         remove = []
         buffer_time = rule.get('buffer_time', self.buffer_time)
         if rule.get('query_delay'):
-            buffer_time += rule['query_delay']
+            try:
+                buffer_time += rule['query_delay']
+            except Exception as e:
+                self.handle_error("[remove_old_events]Error parsing query_delay send time format %s" % e)
         for _id, timestamp in rule['processed_hits'].items():
             if now - timestamp > buffer_time:
                 remove.append(_id)
@@ -1271,7 +1274,10 @@ class ElastAlerter(object):
         if hasattr(self.args, 'end') and self.args.end:
             endtime = ts_to_dt(self.args.end)
         elif delay:
-            endtime = ts_now() - delay
+            try:
+                endtime = ts_now() - delay
+            except Exception as e:
+                self.handle_error("[handle_rule_execution]Error parsing query_delay send time format %s" % e)
         else:
             endtime = ts_now()
 
@@ -1847,11 +1853,14 @@ class ElastAlerter(object):
                     except Exception as e:
                         self.handle_error("Error parsing aggregate send time Cron format %s" % (e), rule['aggregation']['schedule'])
                 else:
-                    if rule.get('aggregate_by_match_time', False):
-                        match_time = ts_to_dt(lookup_es_key(match, rule['timestamp_field']))
-                        alert_time = match_time + rule['aggregation']
-                    else:
-                        alert_time = ts_now() + rule['aggregation']
+                    try:
+                        if rule.get('aggregate_by_match_time', False):
+                            match_time = ts_to_dt(lookup_es_key(match, rule['timestamp_field']))
+                            alert_time = match_time + rule['aggregation']
+                        else:
+                            alert_time = ts_now() + rule['aggregation']
+                    except Exception as e:
+                        self.handle_error("[add_aggregated_alert]Error parsing aggregate send time format %s" % (e), rule['aggregation'])
 
                 rule['aggregate_alert_time'][aggregation_key_value] = alert_time
                 agg_id = None
