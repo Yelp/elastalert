@@ -1,7 +1,7 @@
 # This is the folder that contains the rule yaml files
 # This can also be a list of directories
 # Any .yaml file will be loaded as a rule
-rules_folder: example_rules
+rules_folder: examples/rules
 
 # How often ElastAlert will query Elasticsearch
 # The unit can be anything from weeks to seconds

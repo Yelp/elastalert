@@ -130,7 +130,7 @@ Now, in a file named ``my_rules.py``, add
             pass
 
 
-In the rule configuration file, ``example_rules/example_login_rule.yaml``, we are going to specify this rule by writing
+In the rule configuration file, ``examples/rules/example_login_rule.yaml``, we are going to specify this rule by writing
 
 .. code-block:: yaml
 

@@ -1,7 +1,7 @@
 Rule Types and Configuration Options
 ************************************
 
-Examples of several types of rule configuration can be found in the example_rules folder.
+Examples of several types of rule configuration can be found in the ``examples/rules`` folder.
 
 .. _commonconfig:
 
@@ -913,7 +913,7 @@ It is possible to mix between whitelisted value definitions, or use either one. 
 Change
 ~~~~~~
 
-For an example configuration file using this rule type, look at ``example_rules/example_change.yaml``.
+For an example configuration file using this rule type, look at ``examples/rules/example_change.yaml``.
 
 ``change``: This rule will monitor a certain field and match if that field changes. The field
 must change with respect to the last event with the same ``query_key``.
@@ -936,7 +936,7 @@ of the ``compare_key`` field.
 Frequency
 ~~~~~~~~~
 
-For an example configuration file using this rule type, look at ``example_rules/example_frequency.yaml``.
+For an example configuration file using this rule type, look at ``example/rules/example_frequency.yaml``.
 
 ``frequency``: This rule matches when there are at least a certain number of events in a given time frame. This
 may be counted on a per-``query_key`` basis.
@@ -2062,7 +2062,7 @@ This alert requires four additional options:
 
 ``jira_account_file``: The path to the file which contains JIRA account credentials.
 
-For an example JIRA account file, see ``example_rules/jira_acct.yaml``. The account file is also yaml formatted and must contain two fields:
+For an example JIRA account file, see ``examples/rules/jira_acct.yaml``. The account file is also yaml formatted and must contain two fields:
 
 ``user``: The username.
 

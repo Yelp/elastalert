@@ -242,5 +242,5 @@ If you need a more sophisticated logging configuration, you can provide a full l
 in the config file. This way you can also configure logging to a file, to Logstash and
 adjust the logging format.
 
-For details, see the end of ``config.yaml.example`` where you can find an example logging
+For details, see the end of ``examples/config.yaml.example`` where you can find an example logging
 configuration.

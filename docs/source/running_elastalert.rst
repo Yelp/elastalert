@@ -82,7 +82,7 @@ always using the latest released version of ElastAlert 2.
 
 A properly configured config.yaml file must be mounted into the container during
 startup of the container. Use the `example file
-<https://github.com/jertel/elastalert2/blob/master/config.yaml.example>`_
+<https://github.com/jertel/elastalert2/blob/master/examples/config.yaml.example>`_
 provided as a template, and once saved locally to a file such as
 ``/tmp/elastalert.yaml``, run the container as follows:
 
@@ -146,14 +146,14 @@ Elasticsearch 5.0+::
 
     $ pip install "elasticsearch>=5.0.0"
 
-Next, open up config.yaml.example. In it, you will find several configuration
+Next, open up ``examples/config.yaml.example``. In it, you will find several configuration
 options. ElastAlert may be run without changing any of these settings.
 
 ``rules_folder`` is where ElastAlert will load rule configuration files from. It
 will attempt to load every .yaml file in the folder. Without any valid rules,
 ElastAlert will not start. ElastAlert will also load new rules, stop running
 missing rules, and restart modified rules as the files in this folder change.
-For this tutorial, we will use the example_rules folder.
+For this tutorial, we will use the ``examples/rules`` folder.
 
 ``run_every`` is how often ElastAlert will query Elasticsearch.
 
@@ -232,9 +232,9 @@ Creating a Rule
 
 Each rule defines a query to perform, parameters on what triggers a match, and a
 list of alerts to fire for each match. We are going to use
-``example_rules/example_frequency.yaml`` as a template::
+``examples/rules/example_frequency.yaml`` as a template::
 
-    # From example_rules/example_frequency.yaml
+    # From examples/rules/example_frequency.yaml
     es_host: elasticsearch.example.com
     es_port: 14900
     name: Example rule
@@ -300,12 +300,12 @@ Testing Your Rule
 Running the ``elastalert-test-rule`` tool will test that your config file
 successfully loads and run it in debug mode over the last 24 hours::
 
-    $ elastalert-test-rule example_rules/example_frequency.yaml
+    $ elastalert-test-rule examples/rules/example_frequency.yaml
 
 If you want to specify a configuration file to use, you can run it with the
 config flag::
 
-    $ elastalert-test-rule --config <path-to-config-file> example_rules/example_frequency.yaml
+    $ elastalert-test-rule --config <path-to-config-file> examples/rules/example_frequency.yaml
 
 The configuration preferences will be loaded as follows:
     1. Configurations specified in the yaml file.
@@ -331,7 +331,7 @@ purposes in this tutorial, we will invoke it directly::
 ElastAlert uses the python logging system and ``--verbose`` sets it to display
 INFO level messages. ``--rule example_frequency.yaml`` specifies the rule to
 run, otherwise ElastAlert will attempt to load the other rules in the
-example_rules folder.
+``examples/rules`` folder.
 
 Let's break down the response to see what's happening.
 
