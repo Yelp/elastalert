@@ -30,7 +30,7 @@ Please see our [contributing guidelines][6].
 ElastAlert 2 is licensed under the [Apache License, Version 2.0][5].
 
 [0]: https://github.com/yelp/elastalert
-[1]: https://github.com/jertel/elastalert2/blob/master/config.yaml.example
+[1]: https://github.com/jertel/elastalert2/blob/master/examples/config.yaml.example
 [2]: https://hub.docker.com/r/jertel/elastalert2
 [3]: https://elastalert2.readthedocs.io/
 [4]: https://elastalert2.readthedocs.io/en/latest/ruletypes.html#alerts

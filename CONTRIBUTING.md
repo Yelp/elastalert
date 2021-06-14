@@ -10,7 +10,7 @@ running on your machine).
 Before submitting the PR review that you have included the following changes, where applicable:
 - Documentation: If you're adding new functionality, any new configuration options should be documented appropriately in the docs/ folder.
 - Helm Chart: If your new feature introduces settings consider adding those to the Helm chart [README.md](chart/elastalert2/README.md) and [values.yaml](chart/elastalert2/values.yaml)
-- Examples: If your new feature includes new configuration options, review the [Example config file](config.yaml.example) to see if they should be added there for consistency with other configuration options.
+- Examples: If your new feature includes new configuration options, review the [Example config file](examples/config.yaml.example) to see if they should be added there for consistency with other configuration options.
 - Change log: Describe your contribution to the appropriate section(s) for the _Upcoming release_, in the [CHANGELOG.md](CHANGELOG.md) file.
 
 ## Releases

@@ -16,4 +16,4 @@ build/
 my_rules
 *.swp
 *~
-rules/
+/rules/
