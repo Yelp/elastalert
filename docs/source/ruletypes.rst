@@ -936,7 +936,7 @@ of the ``compare_key`` field.
 Frequency
 ~~~~~~~~~
 
-For an example configuration file using this rule type, look at ``example/rules/example_frequency.yaml``.
+For an example configuration file using this rule type, look at ``examples/rules/example_frequency.yaml``.
 
 ``frequency``: This rule matches when there are at least a certain number of events in a given time frame. This
 may be counted on a per-``query_key`` basis.
