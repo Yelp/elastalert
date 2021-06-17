@@ -1,0 +1,52 @@
+# This example will look at values in the query_key for a number of events that occured during the timeframe.
+# Unique alerts will be sent to TheHive containing a value from the alert in the tags as well as Kibana link in the description. We will be using alert_text in order to generate a custom description.
+
+name: "Example TheHive with frequency and query_key"
+index: your_indice_%Y-%m-%d
+
+type: frequency
+num_events: 30
+
+#Count frequecny based on values in "dest_ip"
+query_key: dest_ip
+
+# Exemple query
+filter:
+- query:
+    query_string:
+      query: "event_id:4625"
+
+# The alert text below allows for the alert description in TheHive to contain new lines for easier reading .
+alert_text_args: [ kibana_discover_url, dest_ip ]
+alert_text_type: alert_text_only
+alert_text:  |
+     'Example bruteforce alert to the destination IP {1} . '
+
+     Kibana URL:
+
+     {0}
+     
+# Details needed in order to generate Kibana discover URL in alert_text 
+generate_kibana_discover_url: true
+kibana_discover_app_url: http://your.kibana.server/app/kibana#/discover
+kibana_discover_version: '7.5'
+kibana_discover_index_pattern_id: 477b4a90-25ead-11b9-ad2c-19e82a454d17
+
+
+# Needed
+alert:
+- hivealerter
+
+hive_alert_config:
+   type: 'test'
+   source: 'elastalert'
+   # description: 'description disabled as we will be using alert_text to insert our Kibana URL'
+   severity: 1
+   tags: [field_1, 'bruteforce' ]
+   tlp: 2
+   status: 'New'
+   follow: True
+
+hive_observable_data_mapping:
+  - ip: dest_ip
+  - fqdn: host_name
