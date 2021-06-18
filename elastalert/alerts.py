@@ -31,12 +31,13 @@ class BasicMatchString(object):
     def _add_custom_alert_text(self):
         missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
         alert_text = str(self.rule.get('alert_text', ''))
-        if 'alert_text_jinja' == self.rule.get('alert_text_type'):
+        if self.rule.get('alert_text_type') == 'alert_text_jinja':
             #  Top fields are accessible via `{{field_name}}` or `{{jinja_root_name['field_name']}}`
             #  `jinja_root_name` dict is useful when accessing *fields with dots in their keys*,
             #  as Jinja treat dot as a nested field.
-            alert_text = self.rule.get("jinja_template").render(**self.match,
-                                                                **{self.rule['jinja_root_name']: self.match})
+            alert_text = self.rule.get("jinja_template").render(**self.match, **self.rule,
+                                                                **{self.rule['jinja_root_name']: {**self.match,
+                                                                                                  **self.rule}})
         elif 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
             alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
