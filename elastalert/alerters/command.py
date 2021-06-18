@@ -43,6 +43,7 @@ class CommandAlerter(Alerter):
                 raise EAException("Non-zero exit code while running command %s" % (' '.join(command)))
         except OSError as e:
             raise EAException("Error while running command %s: %s" % (' '.join(command), e))
+        elastalert_logger.info("Alert sent to Command")
 
     def get_info(self):
         return {'type': 'command',

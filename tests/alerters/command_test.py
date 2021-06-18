@@ -1,5 +1,6 @@
 import json
 import subprocess
+import logging
 
 import pytest
 from unittest import mock
@@ -28,7 +29,8 @@ def test_command_getinfo():
     assert expected_data == actual_data
 
 
-def test_command_old_style_string_format1():
+def test_command_old_style_string_format1(caplog):
+    caplog.set_level(logging.INFO)
     # Test command as string with formatted arg (old-style string format)
     rule = {'command': '/bin/test/ --arg %(somefield)s'}
     match = {'@timestamp': '2014-01-01T00:00:00',
@@ -38,6 +40,8 @@ def test_command_old_style_string_format1():
     with mock.patch("elastalert.alerters.command.subprocess.Popen") as mock_popen:
         alert.alert([match])
     assert mock_popen.called_with('/bin/test --arg foobarbaz', stdin=subprocess.PIPE, shell=False)
+    assert ('elastalert', logging.WARNING, 'Warning! You could be vulnerable to shell injection!') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'Alert sent to Command') == caplog.record_tuples[1]
 
 
 def test_command_old_style_string_format2():
