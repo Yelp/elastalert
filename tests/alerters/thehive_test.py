@@ -1,4 +1,5 @@
 import json
+import logging
 
 from unittest import mock
 import pytest
@@ -9,7 +10,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.alerters.thehive import HiveAlerter
 
 
-def test_thehive_alerter():
+def test_thehive_alerter(caplog):
+    caplog.set_level(logging.INFO)
     rule = {'alert': [],
             'alert_text': '',
             'alert_text_type': 'alert_text_only',
@@ -90,10 +92,11 @@ def test_thehive_alerter():
     del actual_data['sourceRef']
 
     assert expected_data == actual_data
+    assert ('elastalert', logging.INFO, 'Alert sent to TheHive') == caplog.record_tuples[0]
 
 
 def test_thehive_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {'alert': [],
                 'alert_text': '',
                 'alert_text_type': 'alert_text_only',
@@ -125,8 +128,7 @@ def test_thehive_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting to TheHive:' in str(ea)
 
 
 @pytest.mark.parametrize('hive_host, expect', [

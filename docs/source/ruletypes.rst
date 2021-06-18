@@ -1848,7 +1848,7 @@ Optional:
 
 ``discord_emoji_title``: By default ElastAlert will use the ``:warning:`` emoji when posting to the channel. You can use a different emoji per ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
 
-``discord_proxy``: By default ElastAlert will not use a network proxy to send notifications to Discord. Set this option using ``hostname:port`` if you need to use a proxy.
+``discord_proxy``: By default ElastAlert will not use a network proxy to send notifications to Discord. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``discord_proxy_login``: The Discord proxy auth username.
 
@@ -1896,7 +1896,7 @@ an email would be sent to ``qlo@example.com``
 
 ``smtp_host``: The SMTP host to use, defaults to localhost.
 
-``smtp_port``: The port to use. Default is 25.
+``smtp_port``: The port to use. Defaults to port 25 when SSL is not used, or 465 when SSL is used.
 
 ``smtp_ssl``: Connect the SMTP host using TLS, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
 STARTTLS.
@@ -1978,7 +1978,7 @@ Optional:
 
 ``gitter_msg_level``: By default the alert will be posted with the 'error' level. You can use 'info' if you want the messages to be black instead of red.
 
-``gitter_proxy``: By default ElastAlert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy.
+``gitter_proxy``: By default ElastAlert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 Example usage::
 
@@ -2024,7 +2024,7 @@ Optional:
 
 ``http_post_headers``: Key:value pairs of headers to be sent as part of the request.
 
-``http_post_proxy``: URL of proxy, if required.
+``http_post_proxy``: URL of proxy, if required. only supports https.
 
 ``http_post_all_values``: Boolean of whether or not to include every key value pair from the match in addition to those in http_post_payload and http_post_static_payload. Defaults to True if http_post_payload is not specified, otherwise False.
 
@@ -2183,7 +2183,7 @@ The alerter requires the following option:
 
 Optional:
 
-``mattermost_proxy``: By default ElastAlert will not use a network proxy to send notifications to Mattermost. Set this option using ``hostname:port`` if you need to use a proxy.
+``mattermost_proxy``: By default ElastAlert will not use a network proxy to send notifications to Mattermost. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``mattermost_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
 
@@ -2252,7 +2252,7 @@ Optional:
 
 ``ms_teams_theme_color``: By default the alert will be posted without any color line. To add color, set this attribute to a HTML color value e.g. ``#ff0000`` for red.
 
-``ms_teams_proxy``: By default ElastAlert will not use a network proxy to send notifications to MS Teams. Set this option using ``hostname:port`` if you need to use a proxy.
+``ms_teams_proxy``: By default ElastAlert will not use a network proxy to send notifications to MS Teams. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``ms_teams_alert_fixed_width``: By default this is ``False`` and the notification will be sent to MS Teams as-is. Teams supports a partial Markdown implementation, which means asterisk, underscore and other characters may be interpreted as Markdown. Currenlty, Teams does not fully implement code blocks. Setting this attribute to ``True`` will enable line by line code blocks. It is recommended to enable this to get clearer notifications in Teams.
 
@@ -2309,7 +2309,7 @@ Optional:
 
 ``opsgenie_details``: Map of custom key/value pairs to include in the alert's details. The value can sourced from either fields in the first match, environment variables, or a constant value.
 
-``opsgenie_proxy``: By default ElastAlert will not use a network proxy to send notifications to OpsGenie. Set this option using ``hostname:port`` if you need to use a proxy.
+``opsgenie_proxy``: By default ElastAlert will not use a network proxy to send notifications to OpsGenie. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 Example usage::
 
@@ -2342,7 +2342,7 @@ If there's no open (i.e. unresolved) incident with this key, a new one will be c
 
 ``pagerduty_incident_key_args``: If set, and ``pagerduty_incident_key`` is a formattable string, ElastAlert 2 will format the incident key based on the provided array of fields from the rule or match.
 
-``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerDuty. Set this option using ``hostname:port`` if you need to use a proxy.
+``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerDuty. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 V2 API Options (Optional):
 
@@ -2383,7 +2383,7 @@ The alerter requires the following options:
 
 ``pagertree_integration_url``: URL generated by PagerTree for the integration.
 
-``pagertree_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerTree. Set this option using ``hostname:port`` if you need to use a proxy.
+``pagertree_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerTree. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 Example usage::
 
@@ -2414,7 +2414,7 @@ ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ .
 
 ``rocket_chat_text_string``: Notification message you want to add.
 
-``rocket_chat_proxy``: By default ElastAlert will not use a network proxy to send notifications to Rocket.Chat. Set this option using ``hostname:port`` if you need to use a proxy.
+``rocket_chat_proxy``: By default ElastAlert will not use a network proxy to send notifications to Rocket.Chat. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``rocket_chat_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the Rocket.Chat notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
 
@@ -2482,7 +2482,7 @@ The alerter requires the following options:
 
 Optional:
 
-``servicenow_proxy``: By default ElastAlert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy.
+``servicenow_proxy``: By default ElastAlert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 Example usage::
 
@@ -2528,7 +2528,7 @@ Provide absolute address of the pciture.
 
 ``slack_text_string``: Notification message you want to add.
 
-``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy.
+``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
 
@@ -2596,7 +2596,7 @@ Optional:
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
 
-``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to Splunk On-Call (Formerly VictorOps). Set this option using ``hostname:port`` if you need to use a proxy.
+``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to Splunk On-Call (Formerly VictorOps). Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 Example usage::
 
@@ -2654,7 +2654,7 @@ Optional:
 
 ``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
 
-``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy.
+``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``telegram_proxy_login``: The Telegram proxy auth username.
 

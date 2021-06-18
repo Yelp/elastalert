@@ -25,7 +25,7 @@ class EmailAlerter(Alerter):
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
         self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
-        self.smtp_port = self.rule.get('smtp_port', 25)
+        self.smtp_port = self.rule.get('smtp_port')
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
         self.smtp_key_file = self.rule.get('smtp_key_file')
@@ -95,11 +95,13 @@ class EmailAlerter(Alerter):
                 if self.smtp_port:
                     self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port, keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
                 else:
+                    # default port : 465
                     self.smtp = SMTP_SSL(self.smtp_host, keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
             else:
                 if self.smtp_port:
                     self.smtp = SMTP(self.smtp_host, self.smtp_port)
                 else:
+                    # default port : 25
                     self.smtp = SMTP(self.smtp_host)
                 self.smtp.ehlo()
                 if self.smtp.has_extn('STARTTLS'):

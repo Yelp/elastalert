@@ -6,7 +6,7 @@ import requests
 from requests import RequestException
 
 from elastalert.alerts import Alerter
-from elastalert.util import lookup_es_key, EAException
+from elastalert.util import lookup_es_key, EAException, elastalert_logger
 
 
 class HiveAlerter(Alerter):
@@ -123,6 +123,7 @@ class HiveAlerter(Alerter):
             response.raise_for_status()
         except RequestException as e:
             raise EAException(f"Error posting to TheHive: {e}")
+        elastalert_logger.info("Alert sent to TheHive")
 
     def get_info(self):
 
