@@ -1896,7 +1896,7 @@ an email would be sent to ``qlo@example.com``
 
 ``smtp_host``: The SMTP host to use, defaults to localhost.
 
-``smtp_port``: The port to use. If smtp_port is not specified when smtp_ssl is False, 25 ports will be set internally. If smtp_port is not specified when smtp_ssl is True, 465 ports will be set internally.
+``smtp_port``: The port to use. Defaults to port 25 when SSL is not used, or 465 when SSL is used.
 
 ``smtp_ssl``: Connect the SMTP host using TLS, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
 STARTTLS.
