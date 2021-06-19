@@ -1,6 +1,7 @@
 import json
 import re
 import uuid
+import logging
 
 from unittest import mock
 import pytest
@@ -11,7 +12,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_pagertree():
+def test_pagertree(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test PagerTree Rule',
         'type': 'any',
@@ -49,6 +51,7 @@ def test_pagertree():
     assert expected_data["event_type"] == actual_data['event_type']
     assert expected_data["Title"] == actual_data['Title']
     assert expected_data["Description"] == actual_data['Description']
+    assert ('elastalert', logging.INFO, 'Trigger sent to PagerTree') == caplog.record_tuples[0]
 
 
 def test_pagertree_proxy():
@@ -93,7 +96,7 @@ def test_pagertree_proxy():
 
 
 def test_pagertree_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test PagerTree Rule',
             'type': 'any',
@@ -111,8 +114,7 @@ def test_pagertree_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting to PagerTree: ' in str(ea)
 
 
 def test_pagertree_getinfo():

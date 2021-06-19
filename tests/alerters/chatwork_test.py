@@ -1,3 +1,5 @@
+import logging
+
 from unittest import mock
 import pytest
 from requests import RequestException
@@ -8,7 +10,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_chatwork():
+def test_chatwork(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test Chatwork Rule',
         'type': 'any',
@@ -39,6 +42,7 @@ def test_chatwork():
 
     actual_data = mock_post_request.call_args_list[0][1]['params']
     assert expected_data == actual_data
+    assert ('elastalert', logging.INFO, 'Alert sent to Chatwork room xxxx2') == caplog.record_tuples[0]
 
 
 def test_chatwork_proxy():
@@ -78,7 +82,7 @@ def test_chatwork_proxy():
 
 
 def test_chatwork_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test Chatwork Rule',
             'type': 'any',
@@ -99,8 +103,7 @@ def test_chatwork_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting to Chattwork: . Details: ' in str(ea)
 
 
 def test_chatwork_getinfo():

@@ -1,4 +1,5 @@
 import json
+import logging
 
 from unittest import mock
 import pytest
@@ -9,7 +10,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_mattermost_proxy():
+def test_mattermost_proxy(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test Mattermost Rule',
         'type': 'any',
@@ -54,6 +56,7 @@ def test_mattermost_proxy():
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
+    assert ('elastalert', logging.INFO, 'Alert sent to Mattermost') == caplog.record_tuples[0]
 
 
 def test_mattermost_alert_text_only():
@@ -751,7 +754,7 @@ def test_mattermost_author_icon():
 
 
 def test_mattermost_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test Mattermost Rule',
             'type': 'any',
@@ -773,8 +776,7 @@ def test_mattermost_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting to Mattermost: ' in str(ea)
 
 
 def test_mattermost_get_aggregation_summary_text__maximum_width():
@@ -1083,6 +1085,53 @@ def test_mattermost_kibana_discover_color():
             }
         ], 'username': 'elastalert'
     }
+    mock_post_request.assert_called_once_with(
+        rule['mattermost_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        verify=True,
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_mattermost_username_override():
+    rule = {
+        'name': 'Test Mattermost Rule',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'mattermost_webhook_url': 'http://xxxxx',
+        'mattermost_msg_pretext': 'aaaaa',
+        'mattermost_msg_color': 'danger',
+        'mattermost_username_override': 'test user',
+        'alert': [],
+        'alert_subject': 'Test Mattermost'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MattermostAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'attachments': [
+            {
+                'fallback': 'Test Mattermost: aaaaa',
+                'color': 'danger',
+                'title': 'Test Mattermost',
+                'pretext': 'aaaaa',
+                'fields': [],
+                'text': 'Test Mattermost Rule\n\n'
+            }
+        ], 'username': 'test user'
+    }
+
     mock_post_request.assert_called_once_with(
         rule['mattermost_webhook_url'],
         data=mock.ANY,

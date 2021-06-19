@@ -1,4 +1,5 @@
 import json
+import logging
 
 from unittest import mock
 import pytest
@@ -10,7 +11,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_rocketchat_uses_custom_title():
+def test_rocketchat_uses_custom_title(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test Rule',
         'type': 'any',
@@ -49,6 +51,7 @@ def test_rocketchat_uses_custom_title():
         proxies=None
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert ('elastalert', logging.INFO, 'Alert sent to Rocket.Chat') == caplog.record_tuples[0]
 
 
 def test_rocketchat_uses_rule_name_when_custom_title_is_not_provided():
@@ -538,7 +541,7 @@ def test_rocketchat_msg_color_required_error():
 
 
 def test_rocketchat_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test Rule',
             'type': 'any',
@@ -558,8 +561,7 @@ def test_rocketchat_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting to Rocket.Chat: ' in str(ea)
 
 
 def test_rocketchat_get_aggregation_summary_text__maximum_width():

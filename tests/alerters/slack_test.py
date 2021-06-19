@@ -1,4 +1,5 @@
 import json
+import logging
 
 from unittest import mock
 import pytest
@@ -10,7 +11,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_slack_uses_custom_title():
+def test_slack_uses_custom_title(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test Rule',
         'type': 'any',
@@ -53,6 +55,7 @@ def test_slack_uses_custom_title():
         timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert ('elastalert', logging.INFO, "Alert 'Test Rule' sent to Slack") == caplog.record_tuples[0]
 
 
 def test_slack_uses_custom_timeout():
@@ -1307,7 +1310,7 @@ def test_slack_msg_pretext():
 
 
 def test_slack_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test Rule',
             'type': 'any',
@@ -1327,8 +1330,7 @@ def test_slack_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting to slack: ' in str(ea)
 
 
 def test_slack_get_aggregation_summary_text__maximum_width():

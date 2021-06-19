@@ -1,3 +1,5 @@
+import logging
+
 from unittest import mock
 import pytest
 from requests import RequestException
@@ -7,7 +9,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_line_notify():
+def test_line_notify(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test LineNotify Rule',
         'type': 'any',
@@ -39,10 +42,11 @@ def test_line_notify():
 
     actual_data = mock_post_request.call_args_list[0][1]['data']
     assert expected_data == actual_data
+    assert ('elastalert', logging.INFO, 'Alert sent to Line Notify') == caplog.record_tuples[0]
 
 
 def test_line_notify_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test LineNotify Rule',
             'type': 'any',
@@ -59,8 +63,8 @@ def test_line_notify_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+
+    assert 'Error posting to Line Notify: ' in str(ea)
 
 
 def test_line_getinfo():

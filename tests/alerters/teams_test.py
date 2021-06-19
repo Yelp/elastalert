@@ -1,4 +1,5 @@
 import json
+import logging
 
 from unittest import mock
 import pytest
@@ -10,7 +11,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_ms_teams():
+def test_ms_teams(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test Rule',
         'type': 'any',
@@ -43,6 +45,7 @@ def test_ms_teams():
         proxies=None
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert ('elastalert', logging.INFO, 'Alert sent to MS Teams') == caplog.record_tuples[0]
 
 
 def test_ms_teams_uses_color_and_fixed_width_text():
@@ -122,7 +125,7 @@ def test_ms_teams_proxy():
 
 
 def test_ms_teams_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test Rule',
             'type': 'any',
@@ -141,8 +144,7 @@ def test_ms_teams_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting to ms teams: ' in str(ea)
 
 
 def test_ms_teams_getinfo():
