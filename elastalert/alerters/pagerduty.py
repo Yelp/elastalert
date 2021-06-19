@@ -103,9 +103,9 @@ class PagerDutyAlerter(Alerter):
 
         if self.pagerduty_event_type == 'trigger':
             elastalert_logger.info("Trigger sent to PagerDuty")
-        elif self.pagerduty_event_type == 'resolve':
+        if self.pagerduty_event_type == 'resolve':
             elastalert_logger.info("Resolve sent to PagerDuty")
-        elif self.pagerduty_event_type == 'acknowledge':
+        if self.pagerduty_event_type == 'acknowledge':
             elastalert_logger.info("acknowledge sent to PagerDuty")
 
     def resolve_formatted_key(self, key, args, matches):

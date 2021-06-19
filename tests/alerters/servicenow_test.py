@@ -1,4 +1,5 @@
 import json
+import logging
 
 from unittest import mock
 import pytest
@@ -9,7 +10,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_service_now():
+def test_service_now(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test ServiceNow Rule',
         'type': 'any',
@@ -59,6 +61,7 @@ def test_service_now():
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
+    assert ('elastalert', logging.INFO, 'Alert sent to ServiceNow') == caplog.record_tuples[0]
 
 
 def test_service_now_proxy():
@@ -115,7 +118,7 @@ def test_service_now_proxy():
 
 
 def test_service_now_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test ServiceNow Rule',
             'type': 'any',
@@ -142,8 +145,7 @@ def test_service_now_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting to ServiceNow: ' in str(ea)
 
 
 def test_servicenow_getinfo():

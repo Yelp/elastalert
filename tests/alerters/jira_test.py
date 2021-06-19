@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 from unittest import mock
 import pytest
@@ -25,7 +26,8 @@ def test_jira_formatted_match_string(ea):
     assert expected_alert_text_snippet in alert_text
 
 
-def test_jira():
+def test_jira(caplog):
+    caplog.set_level(logging.INFO)
     description_txt = "Description stuff goes here like a runbook link."
     rule = {
         'name': 'test alert',
@@ -75,6 +77,10 @@ def test_jira():
     # We don't care about additional calls to mock_jira, such as __str__
     assert mock_jira.mock_calls[:6] == expected
     assert mock_jira.mock_calls[3][2]['description'].startswith(description_txt)
+    user, level, message = caplog.record_tuples[0]
+    assert 'elastalert' == user
+    assert logging.INFO == level
+    assert 'pened Jira ticket: ' in message
 
     # Search called if jira_bump_tickets
     rule['jira_bump_tickets'] = True

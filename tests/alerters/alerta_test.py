@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 
 from unittest import mock
 import pytest
@@ -10,7 +11,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_alerta_no_auth():
+def test_alerta_no_auth(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test Alerta rule!',
         'alerta_api_url': 'http://elastalerthost:8080/api/alert',
@@ -73,6 +75,7 @@ def test_alerta_no_auth():
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
+    assert ('elastalert', logging.INFO, 'Alert sent to Alerta') == caplog.record_tuples[0]
 
 
 def test_alerta_auth():
@@ -616,7 +619,7 @@ def test_alerta_tags():
 
 
 def test_alerta_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test Alerta rule!',
             'alerta_api_url': 'http://elastalerthost:8080/api/alert',
@@ -649,8 +652,7 @@ def test_alerta_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting to Alerta: ' in str(ea)
 
 
 def test_alerta_getinfo():
@@ -705,3 +707,194 @@ def test_alerta_required_error(alerta_api_url, expected_data):
         assert expected_data == actual_data
     except Exception as ea:
         assert expected_data in str(ea)
+
+
+@pytest.mark.parametrize('query_key, expected_data', [
+    ('hostname', 'Test Alerta rule!.aProbe'),
+    ('test',     'Test Alerta rule!'),
+    ('',         'Test Alerta rule!'),
+])
+def test_alerta_create_default_title(query_key, expected_data):
+    rule = {
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+        'timeframe': datetime.timedelta(hours=1),
+        'timestamp_field': '@timestamp',
+        'type': 'any',
+        'alert': 'alerta'
+    }
+    if query_key != '':
+        rule['query_key'] = query_key
+
+    match = [
+        {
+            '@timestamp': '2014-10-10T00:00:00',
+            'sender_ip': '1.1.1.1',
+            'hostname': 'aProbe'
+        },
+        {
+            '@timestamp': '2014-10-10T00:00:00',
+            'sender_ip': '1.1.1.1',
+            'hostname2': 'aProbe'
+        }
+    ]
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = AlertaAlerter(rule)
+
+    result = alert.create_default_title(match)
+    assert expected_data == result
+
+
+def test_alerta_match_timestamp_none():
+    rule = {
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+        'timeframe': datetime.timedelta(hours=1),
+        'alerta_attributes_keys': ["hostname", "TimestampEvent", "senderIP"],
+        'alerta_attributes_values': ["{hostname}", "{logdate}", "{sender_ip}"],
+        'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
+        'alerta_event': "ProbeUP",
+        'alerta_group': "Health",
+        'alerta_origin': "ElastAlert 2",
+        'alerta_severity': "debug",
+        'alerta_text': "Probe {hostname} is UP at {logdate} GMT",
+        'alerta_value': "UP",
+        'type': 'any',
+        'alerta_use_match_timestamp': True,
+        'alerta_tags': ['elastalert2'],
+        'alert': 'alerta'
+    }
+
+    match = {
+        'sender_ip': '1.1.1.1',
+        'hostname': 'aProbe'
+    }
+
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = AlertaAlerter(rule)
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        "origin": "ElastAlert 2",
+        "resource": "elastalert",
+        "severity": "debug",
+        "service": ["elastalert"],
+        "tags": ['elastalert2'],
+        "text": "Probe aProbe is UP at <MISSING VALUE> GMT",
+        "value": "UP",
+        "environment": "Production",
+        "timeout": 86400,
+        "correlate": ["ProbeUP", "ProbeDOWN"],
+        "group": "Health",
+        "attributes": {"senderIP": "1.1.1.1", "hostname": "aProbe", "TimestampEvent": "<MISSING VALUE>"},
+        "type": "elastalert",
+        "event": "ProbeUP"
+    }
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        verify=True,
+        headers={
+            'content-type': 'application/json'}
+    )
+
+    actual_data = json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
+    del actual_data['createTime']
+    del actual_data['rawData']
+    assert expected_data == actual_data
+
+
+def test_alerta_use_match_timestamp():
+    rule = {
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+        'timeframe': datetime.timedelta(hours=1),
+        'alerta_attributes_keys': ["hostname", "TimestampEvent", "senderIP"],
+        'alerta_attributes_values': ["{hostname}", "{logdate}", "{sender_ip}"],
+        'alerta_correlate': ["ProbeUP", "ProbeDOWN"],
+        'alerta_event': "ProbeUP",
+        'alerta_group': "Health",
+        'alerta_origin': "ElastAlert 2",
+        'alerta_severity': "debug",
+        'alerta_text': "Probe {hostname} is UP at {logdate} GMT",
+        'alerta_value': "UP",
+        'type': 'any',
+        'alerta_use_match_timestamp': False,
+        'alerta_tags': ['elastalert2'],
+        'alert': 'alerta'
+    }
+
+    match = {
+        'sender_ip': '1.1.1.1',
+        'hostname': 'aProbe'
+    }
+
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = AlertaAlerter(rule)
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        "origin": "ElastAlert 2",
+        "resource": "elastalert",
+        "severity": "debug",
+        "service": ["elastalert"],
+        "tags": ['elastalert2'],
+        "text": "Probe aProbe is UP at <MISSING VALUE> GMT",
+        "value": "UP",
+        "environment": "Production",
+        "timeout": 86400,
+        "correlate": ["ProbeUP", "ProbeDOWN"],
+        "group": "Health",
+        "attributes": {"senderIP": "1.1.1.1", "hostname": "aProbe", "TimestampEvent": "<MISSING VALUE>"},
+        "type": "elastalert",
+        "event": "ProbeUP"
+    }
+
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        verify=True,
+        headers={
+            'content-type': 'application/json'}
+    )
+
+    actual_data = json.loads(
+        mock_post_request.call_args_list[0][1]['data'])
+    del actual_data['createTime']
+    del actual_data['rawData']
+    assert expected_data == actual_data
+
+
+def test_get_json_payload_error():
+    rule = {
+        'name': 'Test Alerta rule!',
+        'alerta_api_url': 'http://elastalerthost:8080/api/alert',
+        'timeframe': datetime.timedelta(hours=1),
+        'timestamp_field': '@timestamp',
+        'type': 'any',
+        'alert': 'alerta',
+        'query_key': 'hostname'
+    }
+    match = {
+        '@timestamp': '2014-10-10T00:00:00',
+        'sender_ip': '1.1.1.1',
+        'hostname': 'aProbe'
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = AlertaAlerter(rule)
+
+    mock_run = mock.MagicMock(side_effect=Exception)
+    with mock.patch('json.dumps', mock_run):
+
+        with pytest.raises(Exception) as e:
+            alert.get_json_payload(match)
+
+        assert 'Error building Alerta request: ' in str(e)

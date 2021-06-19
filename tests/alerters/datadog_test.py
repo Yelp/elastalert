@@ -48,8 +48,8 @@ def test_datadog_alerter(caplog):
     assert ('elastalert', logging.INFO, 'Alert sent to Datadog') == caplog.record_tuples[0]
 
 
-def test_datadog_alerterea_exception():
-    try:
+def test_datadog_ea_exception():
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test Datadog Event Alerter',
             'type': 'any',
@@ -68,9 +68,7 @@ def test_datadog_alerterea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-            assert False
-    except EAException as ea:
-        assert 'Error posting event to Datadog:' in str(ea)
+    assert 'Error posting event to Datadog:' in str(ea)
 
 
 def test_datadog_getinfo():

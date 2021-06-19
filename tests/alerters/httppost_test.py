@@ -1,4 +1,5 @@
 import json
+import logging
 
 from unittest import mock
 import pytest
@@ -9,7 +10,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_http_alerter_with_payload():
+def test_http_alerter_with_payload(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test HTTP Post Alerter With Payload',
         'type': 'any',
@@ -40,6 +42,7 @@ def test_http_alerter_with_payload():
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_payload_all_values():
@@ -264,7 +267,7 @@ def test_http_alerter_post_ca_certs(ca_certs, ignore_ssl_errors, excpet_verify):
 
 
 def test_http_alerter_post_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test HTTP Post Alerter Without Payload',
             'type': 'any',
@@ -283,8 +286,7 @@ def test_http_alerter_post_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting HTTP Post alert: ' in str(ea)
 
 
 def test_http_getinfo():

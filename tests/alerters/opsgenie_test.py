@@ -1,3 +1,5 @@
+import logging
+
 from unittest import mock
 import pytest
 from requests import RequestException
@@ -8,10 +10,16 @@ from elastalert.alerts import BasicMatchString
 from tests.alerts_test import mock_rule
 
 
-def test_opsgenie_basic():
-    rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
-            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
-            'opsgenie_recipients': ['lytics'], 'type': mock_rule()}
+def test_opsgenie_basic(caplog):
+    caplog.set_level(logging.INFO)
+    rule = {
+        'name': 'testOGalert',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_account': 'genies',
+        'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
+        'opsgenie_recipients': ['lytics'],
+        'type': mock_rule()
+    }
     with mock.patch('requests.post') as mock_post:
 
         alert = OpsGenieAlerter(rule)
@@ -27,14 +35,22 @@ def test_opsgenie_basic():
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
         assert mcal[0][1]['json']['responders'] == [{'username': 'lytics', 'type': 'user'}]
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
+        user, level, message = caplog.record_tuples[0]
+        assert "Error response from https://api.opsgenie.com/v2/alerts \n API Response: <MagicMock name='post()' id=" in message
+        assert ('elastalert', logging.INFO, 'Alert sent to OpsGenie') == caplog.record_tuples[1]
 
 
 def test_opsgenie_frequency():
-    rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
-            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
-            'opsgenie_recipients': ['lytics'], 'type': mock_rule(),
-            'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
-            'alert': 'opsgenie'}
+    rule = {
+        'name': 'testOGalert',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_account': 'genies',
+        'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
+        'opsgenie_recipients': ['lytics'],
+        'type': mock_rule(),
+        'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
+        'alert': 'opsgenie'
+    }
     with mock.patch('requests.post') as mock_post:
 
         alert = OpsGenieAlerter(rule)
@@ -57,13 +73,19 @@ def test_opsgenie_frequency():
 
 
 def test_opsgenie_alert_routing():
-    rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
-            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
-            'opsgenie_recipients': ['{RECEIPIENT_PREFIX}'], 'opsgenie_recipients_args': {'RECEIPIENT_PREFIX': 'recipient'},
-            'type': mock_rule(),
-            'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
-            'alert': 'opsgenie',
-            'opsgenie_teams': ['{TEAM_PREFIX}-Team'], 'opsgenie_teams_args': {'TEAM_PREFIX': 'team'}}
+    rule = {
+        'name': 'testOGalert',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_account': 'genies',
+        'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
+        'opsgenie_recipients': ['{RECEIPIENT_PREFIX}'],
+        'opsgenie_recipients_args': {'RECEIPIENT_PREFIX': 'recipient'},
+        'type': mock_rule(),
+        'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
+        'alert': 'opsgenie',
+        'opsgenie_teams': ['{TEAM_PREFIX}-Team'],
+        'opsgenie_teams_args': {'TEAM_PREFIX': 'team'}
+    }
     with mock.patch('requests.post'):
 
         alert = OpsGenieAlerter(rule)
@@ -74,15 +96,20 @@ def test_opsgenie_alert_routing():
 
 
 def test_opsgenie_default_alert_routing():
-    rule = {'name': 'testOGalert', 'opsgenie_key': 'ogkey',
-            'opsgenie_account': 'genies', 'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
-            'opsgenie_recipients': ['{RECEIPIENT_PREFIX}'], 'opsgenie_recipients_args': {'RECEIPIENT_PREFIX': 'recipient'},
-            'type': mock_rule(),
-            'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
-            'alert': 'opsgenie',
-            'opsgenie_teams': ['{TEAM_PREFIX}-Team'],
-            'opsgenie_default_receipients': ["devops@test.com"], 'opsgenie_default_teams': ["Test"]
-            }
+    rule = {
+        'name': 'testOGalert',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_account': 'genies',
+        'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
+        'opsgenie_recipients': ['{RECEIPIENT_PREFIX}'],
+        'opsgenie_recipients_args': {'RECEIPIENT_PREFIX': 'recipient'},
+        'type': mock_rule(),
+        'filter': [{'query': {'query_string': {'query': '*hihi*'}}}],
+        'alert': 'opsgenie',
+        'opsgenie_teams': ['{TEAM_PREFIX}-Team'],
+        'opsgenie_default_receipients': ["devops@test.com"],
+        'opsgenie_default_teams': ["Test"]
+    }
     with mock.patch('requests.post'):
 
         alert = OpsGenieAlerter(rule)
@@ -708,7 +735,7 @@ def test_opsgenie_proxy():
 
 
 def test_opsgenie_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Opsgenie Details',
             'type': mock_rule(),
@@ -732,8 +759,7 @@ def test_opsgenie_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error sending alert: ' in str(ea)
 
 
 def test_opsgenie_getinfo():
@@ -760,3 +786,42 @@ def test_opsgenie_getinfo():
     }
     actual_data = alert.get_info()
     assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('query_key, expected_data', [
+    ('hostname',  'ElastAlert: Opsgenie Details - aProbe'),
+    ('test',      'ElastAlert: Opsgenie Details'),
+    ('',          'ElastAlert: Opsgenie Details'),
+])
+def test_opsgenie_create_default_title(query_key, expected_data):
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {
+            'Message': {'field': 'message'},
+            'Missing': {'field': 'missing'}
+        },
+        'opsgenie_proxy': 'https://proxy.url'
+    }
+    if query_key != '':
+        rule['query_key'] = query_key
+
+    match = [
+        {
+            '@timestamp': '2014-10-10T00:00:00',
+            'sender_ip': '1.1.1.1',
+            'hostname': 'aProbe'
+        },
+        {
+            '@timestamp': '2014-10-10T00:00:00',
+            'sender_ip': '1.1.1.1',
+            'hostname2': 'aProbe'
+        }
+    ]
+
+    alert = OpsGenieAlerter(rule)
+
+    result = alert.create_default_title(match)
+    assert expected_data == result

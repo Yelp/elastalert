@@ -1,4 +1,5 @@
 import json
+import logging
 
 from unittest import mock
 import pytest
@@ -14,7 +15,8 @@ from elastalert.util import EAException
     ('error', 'error'),
     ('info', 'info')
 ])
-def test_gitter_msg_level(msg_level, except_msg_level):
+def test_gitter_msg_level(msg_level, except_msg_level, caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test Gitter Rule',
         'type': 'any',
@@ -49,6 +51,7 @@ def test_gitter_msg_level(msg_level, except_msg_level):
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
+    assert ('elastalert', logging.INFO, 'Alert sent to Gitter') == caplog.record_tuples[0]
 
 
 def test_gitter_proxy():
@@ -86,7 +89,7 @@ def test_gitter_proxy():
 
 
 def test_gitter_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test Gitter Rule',
             'type': 'any',
@@ -105,8 +108,7 @@ def test_gitter_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting to Gitter: ' in str(ea)
 
 
 def test_gitter_getinfo():

@@ -1,4 +1,5 @@
 import json
+import logging
 
 from unittest import mock
 import pytest
@@ -9,7 +10,8 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
 
 
-def test_victorops():
+def test_victorops(caplog):
+    caplog.set_level(logging.INFO)
     rule = {
         'name': 'Test VictorOps Rule',
         'type': 'any',
@@ -45,6 +47,7 @@ def test_victorops():
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data == actual_data
+    assert ('elastalert', logging.INFO, 'Trigger sent to VictorOps') == caplog.record_tuples[0]
 
 
 def test_victorops_proxy():
@@ -87,7 +90,7 @@ def test_victorops_proxy():
 
 
 def test_victorops_ea_exception():
-    try:
+    with pytest.raises(EAException) as ea:
         rule = {
             'name': 'Test VictorOps Rule',
             'type': 'any',
@@ -108,8 +111,7 @@ def test_victorops_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    except EAException:
-        assert True
+    assert 'Error posting to VictorOps:' in str(ea)
 
 
 def test_victorops_entity_id():
