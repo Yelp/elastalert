@@ -50,6 +50,8 @@ The command removes all the Kubernetes components associated with the chart and 
 | `image.tag`                                  | docker image tag                                                                                                              | 2.1.1                           |
 | `image.pullPolicy`                           | image pull policy                                                                                                             | IfNotPresent                    |
 | `podAnnotations`                             | Annotations to be added to pods                                                                                               | {}                              |
+| `podSecurityContext`                         | Configurable podSecurityContext for pod execution environment                                                                 | {}                              |
+| `securityContext`                            | Allows you to set the securityContext for the container                                                                       | {}                              |
 | `command`                                    | command override for container                                                                                                | `NULL`                          |
 | `args`                                       | args override for container                                                                                                   | `NULL`                          |
 | `replicaCount`                               | number of replicas to run                                                                                                     | 1                               |

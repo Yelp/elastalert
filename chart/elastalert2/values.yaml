@@ -197,6 +197,15 @@ serviceAccount:
 podSecurityPolicy:
   create: false
 
+# securityContext:
+#   runAsNonRoot: true
+#   runAsUser: 1000
+
+# podSecurityContext:
+#   fsGroup: 1000
+#   runAsUser: 1000
+#   runAsGroup: 1000
+
 # Support using node selectors and tolerations
 # nodeSelector:
 #   "node-role.kubernetes.io/infra_worker": "true"

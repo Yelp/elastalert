@@ -9,6 +9,16 @@
 ## Other changes
 - None
 
+# 2.x.x
+## Breaking changes
+- None
+
+## New features
+- Add securityContext and podSecurityContext to Helm chart - [#289](https://github.com/jertel/elastalert2/pull/289) - @lepouletsuisse
+
+## Other changes
+- None
+
 # 2.1.1
 
 ## Breaking changes
