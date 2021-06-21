@@ -628,7 +628,7 @@ class ElastAlerter(object):
         if end is None:
             end = ts_now()
 
-        if rule.get('query_timezone') is not None:
+        if rule.get('query_timezone'):
             elastalert_logger.info("Query start and end time converting UTC to query_timezone : {}".format(rule.get('query_timezone')))
             start = ts_utc_to_tz(start, rule.get('query_timezone'))
             end = ts_utc_to_tz(end, rule.get('query_timezone'))
