@@ -194,17 +194,18 @@ serviceAccount:
 
 # Enable pod security policy
 # https://kubernetes.io/docs/concepts/policy/pod-security-policy/
+# DEPRECATED in Kubernetes 1.21 (https://kubernetes.io/blog/2021/04/06/podsecuritypolicy-deprecation-past-present-and-future/)
 podSecurityPolicy:
   create: false
 
-# securityContext:
-#   runAsNonRoot: true
-#   runAsUser: 1000
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
 
-# podSecurityContext:
-#   fsGroup: 1000
-#   runAsUser: 1000
-#   runAsGroup: 1000
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsGroup: 1000
 
 # Support using node selectors and tolerations
 # nodeSelector:
