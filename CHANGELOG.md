@@ -14,9 +14,26 @@
 - None
 
 ## New features
+- Add support for generating Kibana Discover URLs to Rocket.Chat alerter - [#260](https://github.com/jertel/elastalert2/pull/260) - @nsanorururu
+- Provide rule key/values as possible Jinja data inputs - [#281](https://github.com/jertel/elastalert2/pull/281) - @mrfroggg
 - Add securityContext and podSecurityContext to Helm chart - [#289](https://github.com/jertel/elastalert2/pull/289) - @lepouletsuisse
 
 ## Other changes
+- Continue fix for prometheus wrapper writeback function signature - [#256](https://github.com/jertel/elastalert2/pull/256) - @greut
+- Improve exception handling in Stomp alerter - [#261](https://github.com/jertel/elastalert2/pull/261) - @nsanorururu
+- Improve exception handling in Amazon SES and SNS alerters - [#264](https://github.com/jertel/elastalert2/pull/264) - @nsanorururu
+- Clarify documentation for starting ElastAlert 2 - [#265](https://github.com/jertel/elastalert2/pull/265) - @ferozsalam
+- Add exception handling for unsupported operand type - [#266](https://github.com/jertel/elastalert2/pull/266) - @nsanorururu
+- Improve documentation for Python build requirements - [#267](https://github.com/jertel/elastalert2/pull/267) - @nsanorururu
+- Correct DataDog alerter logging - [#268](https://github.com/jertel/elastalert2/pull/268) - @nsanorururu
+- Correct parameter code documentation for main ElastAlert runner - [#269](https://github.com/jertel/elastalert2/pull/269) - @ferozsalam
+- Command alerter will now fail during init instead of during alert if given invalid command setting - [#270](https://github.com/jertel/elastalert2/pull/270) - @nsanorururu
+- Consolidate all examples into a new examples/ sub folder - [#271](https://github.com/jertel/elastalert2/pull/271) - @ferozsalam
+- Add TheHive example rule with Kibana Discover URL and query values in alert text - [#276](https://github.com/jertel/elastalert2/pull/276) - @markus-nclose
+- Upgrade pytest-xdist from 2.2.1 to 2.3.0; clarify HTTPS support in docs; Add additional logging - [#283](https://github.com/jertel/elastalert2/pull/283) - @nsanorururu
+- Add more alerter test coverage - [#284](https://github.com/jertel/elastalert2/pull/284) - @nsanorururu
+- Improve structure and placement of test-related files in project tree - [#287](https://github.com/jertel/elastalert2/pull/287) - @ferozsalam
+- Only attempt to adjust timezone if timezone is set to a non-empty string - [#288](https://github.com/jertel/elastalert2/pull/288) - @ferozsalam
 - Deprecated `podSecurityPolicy` feature in Helm Chart as [it's deprecated in Kubernetes 1.21](https://kubernetes.io/blog/2021/04/06/podsecuritypolicy-deprecation-past-present-and-future/) - [#289](https://github.com/jertel/elastalert2/pull/289) - @lepouletsuisse
 
 # 2.1.1
