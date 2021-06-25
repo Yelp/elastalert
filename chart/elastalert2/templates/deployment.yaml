@@ -28,10 +28,18 @@ spec:
         release: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ include "elastalert.serviceAccountName" . }}
+{{- if .Values.podSecurityContext }}
+      securityContext:
+{{ toYaml .Values.podSecurityContext | indent 8 }}
+{{- end }}
       containers:
       - name: elastalert
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.securityContext }}
+        securityContext:
+{{ toYaml .Values.securityContext | indent 10 }}
+{{- end }}
 {{- if .Values.command }}
         command:
 {{ toYaml .Values.command | indent 10 }}
