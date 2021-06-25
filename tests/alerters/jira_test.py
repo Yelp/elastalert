@@ -126,10 +126,10 @@ def test_jira(caplog):
         alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
 
     assert mock_jira.mock_calls == expected
-    log_messeage = 'Error while searching for JIRA ticket using jql \'project=testproject'
-    log_messeage += ' AND summary~"Issue  occurred at 2014-10-31T00:00:00" and'
-    log_messeage += ' created >= "2021-05-25"\': JiraError HTTP None\n\t'
-    assert ('elastalert', logging.ERROR, log_messeage) == caplog.record_tuples[3]
+    user, level, message = caplog.record_tuples[3]
+    assert 'elastalert' in user
+    assert logging.ERROR == level
+    assert 'Error while searching for JIRA ticket using jql' in message
 
     # Only bump after 3d of inactivity
     rule['jira_bump_after_inactivity'] = 3
