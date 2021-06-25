@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.googlechat import GoogleChatAlerter
@@ -164,7 +165,7 @@ def test_google_chat_required_error(googlechat_webhook_url, expected_data):
             'alert': []
         }
 
-        if googlechat_webhook_url != '':
+        if googlechat_webhook_url:
             rule['googlechat_webhook_url'] = googlechat_webhook_url
 
         rules_loader = FileRulesLoader({})

@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.httppost import HTTPPostAlerter
@@ -235,10 +236,10 @@ def test_http_alerter_post_ca_certs(ca_certs, ignore_ssl_errors, excpet_verify):
         'http_post_static_payload': {'name': 'somestaticname'},
         'alert': []
     }
-    if ca_certs != '':
+    if ca_certs:
         rule['http_post_ca_certs'] = ca_certs
 
-    if ignore_ssl_errors != '':
+    if ignore_ssl_errors:
         rule['http_post_ignore_ssl_errors'] = ignore_ssl_errors
 
     rules_loader = FileRulesLoader({})
@@ -324,7 +325,7 @@ def test_http_required_error(http_post_url, expected_data):
             'alert': []
         }
 
-        if http_post_url != '':
+        if http_post_url:
             rule['http_post_url'] = http_post_url
 
         rules_loader = FileRulesLoader({})

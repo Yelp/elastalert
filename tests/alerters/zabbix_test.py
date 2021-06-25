@@ -1,11 +1,15 @@
+import logging
 import pytest
+
 from unittest import mock
 
 from elastalert.alerters.zabbix import ZabbixAlerter
 from elastalert.loaders import FileRulesLoader
+from elastalert.util import EAException
 
 
-def test_zabbix_basic():
+def test_zabbix_basic(caplog):
+    caplog.set_level(logging.WARNING)
     rule = {
         'name': 'Basic Zabbix test',
         'type': 'any',
@@ -33,6 +37,8 @@ def test_zabbix_basic():
         }
         alerter_args = mock_zbx_send.call_args.args
         assert vars(alerter_args[0][0]) == zabbix_metrics
+        log_messeage = "Missing zabbix host 'example.com' or host's item 'example-key', alert will be discarded"
+        assert ('elastalert', logging.WARNING, log_messeage) == caplog.record_tuples[0]
 
 
 def test_zabbix_getinfo():
@@ -75,10 +81,10 @@ def test_zabbix_required_error(zbx_host, zbx_key, expected_data):
             'alert_subject': 'Test Zabbix'
         }
 
-        if zbx_host != '':
+        if zbx_host:
             rule['zbx_host'] = zbx_host
 
-        if zbx_key != '':
+        if zbx_key:
             rule['zbx_key'] = zbx_key
 
         rules_loader = FileRulesLoader({})
@@ -89,3 +95,26 @@ def test_zabbix_required_error(zbx_host, zbx_key, expected_data):
         assert expected_data == actual_data
     except Exception as ea:
         assert expected_data in str(ea)
+
+
+def test_zabbix_ea_exception():
+    with pytest.raises(EAException) as ea:
+        rule = {
+            'name': 'Basic Zabbix test',
+            'type': 'any',
+            'alert_text_type': 'alert_text_only',
+            'alert': [],
+            'alert_subject': 'Test Zabbix',
+            'zbx_host': 'example.com',
+            'zbx_key': 'example-key'
+        }
+        match = {
+            '@timestamp': '2021-01-01T00:00:00Z',
+            'somefield': 'foobarbaz'
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = ZabbixAlerter(rule)
+        alert.alert([match])
+
+    assert 'Error sending alert to Zabbix: ' in str(ea)

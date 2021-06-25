@@ -1,9 +1,9 @@
 import datetime
 import logging
-
-from unittest import mock
 import pytest
+
 from jira import JIRAError
+from unittest import mock
 
 from elastalert.alerters.jira import JiraFormattedMatchString, JiraAlerter
 from elastalert.util import ts_now
@@ -126,6 +126,10 @@ def test_jira(caplog):
         alert.alert([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
 
     assert mock_jira.mock_calls == expected
+    user, level, message = caplog.record_tuples[3]
+    assert 'elastalert' in user
+    assert logging.ERROR == level
+    assert 'Error while searching for JIRA ticket using jql' in message
 
     # Only bump after 3d of inactivity
     rule['jira_bump_after_inactivity'] = 3
@@ -363,3 +367,32 @@ def test_jira_getinfo():
     }
     actual_data = alert.get_info()
     assert expected_data == actual_data
+
+
+def test_jira_set_priority(caplog):
+    description_txt = "Description stuff goes here like a runbook link."
+    rule = {
+        'name': 'test alert',
+        'jira_account_file': 'jirafile',
+        'type': mock_rule(),
+        'jira_project': 'testproject',
+        'jira_priority': 0,
+        'jira_issuetype': 'testtype',
+        'jira_server': 'jiraserver',
+        'jira_description': description_txt,
+        'jira_assignee': 'testuser',
+        'timestamp_field': '@timestamp',
+        'alert_subject': 'Issue {0} occurred at {1}',
+        'alert_subject_args': ['test_term', '@timestamp'],
+        'rule_file': '/tmp/foo.yaml'
+    }
+    with mock.patch('elastalert.alerters.jira.JIRA'), \
+            mock.patch('elastalert.alerts.read_yaml') as mock_open:
+        mock_open.return_value = {'user': 'jirauser', 'password': 'jirapassword'}
+        alert = JiraAlerter(rule)
+        alert.set_priority
+
+    assert ('elastalert', logging.ERROR,
+            'Priority 0 not found. Valid priorities are []') == caplog.record_tuples[0]
+    assert ('elastalert', logging.ERROR,
+            'Priority 0 not found. Valid priorities are []') == caplog.record_tuples[1]

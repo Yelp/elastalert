@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.datadog import DatadogAlerter
@@ -107,10 +108,10 @@ def test_datadog_required_error(datadog_api_key, datadog_app_key, expected_data)
             'alert_subject': 'Test Datadog Event Alert'
         }
 
-        if datadog_api_key != '':
+        if datadog_api_key:
             rule['datadog_api_key'] = datadog_api_key
 
-        if datadog_app_key != '':
+        if datadog_app_key:
             rule['datadog_app_key'] = datadog_app_key
 
         rules_loader = FileRulesLoader({})

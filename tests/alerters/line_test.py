@@ -1,7 +1,8 @@
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.line import LineNotifyAlerter
@@ -102,7 +103,7 @@ def test_line_required_error(linenotify_access_token, expected_data):
             'alert': []
         }
 
-        if linenotify_access_token != '':
+        if linenotify_access_token:
             rule['linenotify_access_token'] = linenotify_access_token
 
         rules_loader = FileRulesLoader({})

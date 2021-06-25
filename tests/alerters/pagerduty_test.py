@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.pagerduty import PagerDutyAlerter
@@ -717,10 +718,10 @@ def test_pagerduty_required_error(pagerduty_service_key, pagerduty_client_name, 
             'alert': []
         }
 
-        if pagerduty_service_key != '':
+        if pagerduty_service_key:
             rule['pagerduty_service_key'] = pagerduty_service_key
 
-        if pagerduty_client_name != '':
+        if pagerduty_client_name:
             rule['pagerduty_client_name'] = pagerduty_client_name
 
         rules_loader = FileRulesLoader({})
@@ -749,7 +750,7 @@ def test_pagerduty_alerter_event_type(pagerduty_event_type, excepted_pagerduty_e
         'alert': []
     }
 
-    if pagerduty_event_type != '':
+    if pagerduty_event_type:
         rule['pagerduty_event_type'] = pagerduty_event_type
 
     rules_loader = FileRulesLoader({})

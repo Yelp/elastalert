@@ -1,9 +1,10 @@
 import datetime
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.alerta import AlertaAlerter
@@ -696,7 +697,7 @@ def test_alerta_required_error(alerta_api_url, expected_data):
             'alert': 'alerta'
         }
 
-        if alerta_api_url != '':
+        if alerta_api_url:
             rule['alerta_api_url'] = alerta_api_url
 
         rules_loader = FileRulesLoader({})
@@ -723,7 +724,7 @@ def test_alerta_create_default_title(query_key, expected_data):
         'type': 'any',
         'alert': 'alerta'
     }
-    if query_key != '':
+    if query_key:
         rule['query_key'] = query_key
 
     match = [

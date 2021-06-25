@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 from requests.auth import HTTPProxyAuth
 
@@ -377,7 +378,7 @@ def test_dingtalk_required_error(dingtalk_access_token, expected_data):
             'alert_subject': 'Test DingTalk'
         }
 
-        if dingtalk_access_token != '':
+        if dingtalk_access_token:
             rule['dingtalk_access_token'] = dingtalk_access_token
 
         rules_loader = FileRulesLoader({})

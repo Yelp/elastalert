@@ -26,9 +26,6 @@ class DingTalkAlerter(Alerter):
         self.dingtalk_proxy_login = self.rule.get('dingtalk_proxy_login', None)
         self.dingtalk_proxy_password = self.rule.get('dingtalk_proxy_pass', None)
 
-    def format_body(self, body):
-        return body.encode('utf8')
-
     def alert(self, matches):
         title = self.create_title(matches)
         body = self.create_alert_body(matches)
@@ -48,7 +45,7 @@ class DingTalkAlerter(Alerter):
                     'content': body
                 }
             }
-        elif self.dingtalk_msgtype == 'markdown':
+        if self.dingtalk_msgtype == 'markdown':
             # markdown
             payload = {
                 'msgtype': self.dingtalk_msgtype,
@@ -57,7 +54,7 @@ class DingTalkAlerter(Alerter):
                     'text': body
                 }
             }
-        elif self.dingtalk_msgtype == 'single_action_card':
+        if self.dingtalk_msgtype == 'single_action_card':
             # singleActionCard
             payload = {
                 'msgtype': 'actionCard',
@@ -68,7 +65,7 @@ class DingTalkAlerter(Alerter):
                     'singleURL': self.dingtalk_single_url
                 }
             }
-        elif self.dingtalk_msgtype == 'action_card':
+        if self.dingtalk_msgtype == 'action_card':
             # actionCard
             payload = {
                 'msgtype': 'actionCard',

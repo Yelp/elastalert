@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.victorops import VictorOpsAlerter
@@ -242,13 +243,13 @@ def test_victoropst_required_error(victorops_api_key, victorops_routing_key, vic
             'alert': []
         }
 
-        if victorops_api_key != '':
+        if victorops_api_key:
             rule['victorops_api_key'] = victorops_api_key
 
-        if victorops_routing_key != '':
+        if victorops_routing_key:
             rule['victorops_routing_key'] = victorops_routing_key
 
-        if victorops_message_type != '':
+        if victorops_message_type:
             rule['victorops_message_type'] = victorops_message_type
 
         rules_loader = FileRulesLoader({})

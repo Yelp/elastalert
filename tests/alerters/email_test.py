@@ -53,7 +53,15 @@ def test_email(caplog):
         assert ('elastalert', logging.INFO, "Sent email to ['testing@test.test', 'test@test.test']") == caplog.record_tuples[0]
 
 
-def test_email_from_field():
+@pytest.mark.parametrize('email_from_field, email_add_domain, match_data, expected_data', [
+    ('data.user', '',             [{'data': {'user': 'qlo'}}],          ['qlo@example.com']),
+    ('data.user', '@example.com', [{'data': {'user': 'qlo'}}],          ['qlo@example.com']),
+    ('data.user', 'example.com',  [{'data': {'user': '@qlo'}}],         ['@qlo']),
+    ('data.user', 'example.com',  [{'data': {'user': ['qlo', 'foo']}}], ['qlo@example.com', 'foo@example.com']),
+    ('data.user', 'example.com',  [{'data': {'foo': 'qlo'}}],           ['testing@test.test']),
+    ('data.user', 'example.com',  [{'data': {'user': 17}}],             ['testing@test.test'])
+])
+def test_email_from_field(email_from_field, email_add_domain, match_data, expected_data):
     rule = {
         'name': 'test alert',
         'email': ['testing@test.test'],
@@ -63,41 +71,15 @@ def test_email_from_field():
         'email_from_field': 'data.user',
         'owner': 'owner_value'
     }
-    # Found, without @
+    if email_from_field:
+        rule['email_from_field'] = email_from_field
+    if email_add_domain:
+        rule['email_add_domain'] = email_add_domain
     with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
         mock_smtp.return_value = mock.Mock()
         alert = EmailAlerter(rule)
-        alert.alert([{'data': {'user': 'qlo'}}])
-        assert mock_smtp.mock_calls[4][1][1] == ['qlo@example.com']
-
-    # Found, with @
-    rule['email_add_domain'] = '@example.com'
-    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
-        mock_smtp.return_value = mock.Mock()
-        alert = EmailAlerter(rule)
-        alert.alert([{'data': {'user': 'qlo'}}])
-        assert mock_smtp.mock_calls[4][1][1] == ['qlo@example.com']
-
-    # Found, list
-    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
-        mock_smtp.return_value = mock.Mock()
-        alert = EmailAlerter(rule)
-        alert.alert([{'data': {'user': ['qlo', 'foo']}}])
-        assert mock_smtp.mock_calls[4][1][1] == ['qlo@example.com', 'foo@example.com']
-
-    # Not found
-    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
-        mock_smtp.return_value = mock.Mock()
-        alert = EmailAlerter(rule)
-        alert.alert([{'data': {'foo': 'qlo'}}])
-        assert mock_smtp.mock_calls[4][1][1] == ['testing@test.test']
-
-    # Found, wrong type
-    with mock.patch('elastalert.alerters.email.SMTP') as mock_smtp:
-        mock_smtp.return_value = mock.Mock()
-        alert = EmailAlerter(rule)
-        alert.alert([{'data': {'user': 17}}])
-        assert mock_smtp.mock_calls[4][1][1] == ['testing@test.test']
+        alert.alert(match_data)
+        assert mock_smtp.mock_calls[4][1][1] == expected_data
 
 
 def test_email_with_unicode_strings():
@@ -447,7 +429,7 @@ def test_email_key_error(email, expected_data):
             'snowman': '☃'
         }
 
-        if email != '':
+        if email:
             rule['email'] = email
 
         alert = EmailAlerter(rule)
@@ -473,7 +455,7 @@ def test_email_create_default_title(query_key, expected_data):
         'alert': 'email',
         'email': 'test@test.com'
     }
-    if query_key != '':
+    if query_key:
         rule['query_key'] = query_key
 
     match = [
@@ -629,13 +611,11 @@ def test_email_smtp_exception():
             'smtp_auth_file': 'file.txt',
             'rule_file': '/tmp/foo.yaml'
         }
-        with mock.patch('elastalert.alerters.email.SMTP_SSL') as mock_smtp:
+        with mock.patch('elastalert.alerters.email.SMTP_SSL'):
             with mock.patch('elastalert.alerts.read_yaml') as mock_open:
                 mock_open.return_value = {'user': 'someone', 'password': 'hunter2'}
-                mock_smtp.return_value = mock.Mock()
                 alert = EmailAlerter(rule)
-
-            alert.alert([{'test_term': 'test_value'}])
+                alert.alert([{'test_term': 'test_value'}])
     assert 'Error connecting to SMTP host: ' in str(ea)
 
 

@@ -80,6 +80,7 @@ class MattermostAlerter(Alerter):
         # set https proxy, if it was provided
         proxies = {'https': self.mattermost_proxy} if self.mattermost_proxy else None
         payload = {
+            'username': self.mattermost_username_override,
             'attachments': [
                 {
                     'fallback': "{0}: {1}".format(title, self.mattermost_msg_pretext),
@@ -101,9 +102,6 @@ class MattermostAlerter(Alerter):
 
         if self.mattermost_icon_url_override != '':
             payload['icon_url'] = self.mattermost_icon_url_override
-
-        if self.mattermost_username_override != '':
-            payload['username'] = self.mattermost_username_override
 
         if self.mattermost_channel_override != '':
             payload['channel'] = self.mattermost_channel_override

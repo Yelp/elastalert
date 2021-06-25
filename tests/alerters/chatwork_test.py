@@ -1,7 +1,8 @@
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 from requests.auth import HTTPProxyAuth
 
@@ -127,9 +128,9 @@ def test_chatwork_getinfo():
 
 
 @pytest.mark.parametrize('chatwork_apikey, chatwork_room_id, expected_data', [
-    ('',    '',      'Missing required option(s): chatwork_apikey, chatwork_room_id'),
-    ('xxxx1', '',    'Missing required option(s): chatwork_apikey, chatwork_room_id'),
-    ('',    'xxxx2', '1Missing required option(s): chatwork_apikey, chatwork_room_id'),
+    ('',      '',      'Missing required option(s): chatwork_apikey, chatwork_room_id'),
+    ('xxxx1', '',      'Missing required option(s): chatwork_apikey, chatwork_room_id'),
+    ('',      'xxxx2', '1Missing required option(s): chatwork_apikey, chatwork_room_id'),
     ('xxxx1', 'xxxx2',
         {
             "type": "chatwork",
@@ -144,10 +145,10 @@ def test_chatwork_required_error(chatwork_apikey, chatwork_room_id, expected_dat
             'alert': []
         }
 
-        if chatwork_apikey != '':
+        if chatwork_apikey:
             rule['chatwork_apikey'] = chatwork_apikey
 
-        if chatwork_room_id != '':
+        if chatwork_room_id:
             rule['chatwork_room_id'] = chatwork_room_id
 
         rules_loader = FileRulesLoader({})

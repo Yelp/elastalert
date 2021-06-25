@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 from requests.auth import HTTPProxyAuth
 
@@ -248,7 +249,7 @@ def test_discord_required_error(discord_webhook_url, expected_data):
             'alert_subject': 'Test Discord'
         }
 
-        if discord_webhook_url != '':
+        if discord_webhook_url:
             rule['discord_webhook_url'] = discord_webhook_url
 
         rules_loader = FileRulesLoader({})

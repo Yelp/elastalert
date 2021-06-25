@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.gitter import GitterAlerter
@@ -11,9 +12,9 @@ from elastalert.util import EAException
 
 
 @pytest.mark.parametrize('msg_level, except_msg_level', [
-    ('', 'error'),
+    ('',      'error'),
     ('error', 'error'),
-    ('info', 'info')
+    ('info',  'info')
 ])
 def test_gitter_msg_level(msg_level, except_msg_level, caplog):
     caplog.set_level(logging.INFO)
@@ -24,7 +25,7 @@ def test_gitter_msg_level(msg_level, except_msg_level, caplog):
         'alert': []
     }
 
-    if msg_level != '':
+    if msg_level:
         rule['gitter_msg_level'] = msg_level
 
     rules_loader = FileRulesLoader({})
@@ -146,7 +147,7 @@ def test_gitter_required_error(gitter_webhook_url, expected_data):
             'alert': []
         }
 
-        if gitter_webhook_url != '':
+        if gitter_webhook_url:
             rule['gitter_webhook_url'] = gitter_webhook_url
 
         rules_loader = FileRulesLoader({})
