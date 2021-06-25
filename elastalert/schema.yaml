@@ -495,7 +495,7 @@ properties:
   ### Slack
   slack_webhook_url: *arrayOfString
   slack_username_override: {type: string}
-  slack_channel_override: {type: string}
+  slack_channel_override: *arrayOfString
   slack_emoji_override: {type: string}
   slack_icon_url_override: {type: string}
   slack_msg_color: {enum: [good, warning, danger]}
