@@ -53,9 +53,6 @@ class OpsGenieAlerter(Alerter):
             responders = formated_responders
         return responders
 
-    def _fill_responders(self, responders, type_):
-        return [{'id': r, 'type': type_} for r in responders]
-
     def alert(self, matches):
         body = ''
         for match in matches:

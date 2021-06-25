@@ -1,16 +1,49 @@
 import logging
+import pytest
+import requests
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
-from elastalert.util import EAException
 from elastalert.alerters.opsgenie import OpsGenieAlerter
 from elastalert.alerts import BasicMatchString
+from elastalert.util import EAException
 from tests.alerts_test import mock_rule
 
 
 def test_opsgenie_basic(caplog):
+    caplog.set_level(logging.INFO)
+    rule = {
+        'name': 'testOGalert',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_addr': 'https://api.opsgenie.com/v2/alerts',
+        'type': mock_rule()
+    }
+    with mock.patch('requests.post') as mock_post:
+        rep = requests
+        rep.status_code = 202
+        mock_post.return_value = rep
+
+        alert = OpsGenieAlerter(rule)
+        alert.alert([{'@timestamp': '2014-10-31T00:00:00'}])
+        print(("mock_post: {0}".format(mock_post._mock_call_args_list)))
+        mcal = mock_post._mock_call_args_list
+
+        print(('mcal: {0}'.format(mcal[0])))
+        assert mcal[0][0][0] == ('https://api.opsgenie.com/v2/alerts')
+
+        assert mock_post.called
+
+        assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
+        assert mcal[0][1]['json']['source'] == 'ElastAlert'
+        assert mcal[0][1]['json']['source'] == 'ElastAlert'
+        user, level, message = caplog.record_tuples[0]
+        assert "Error response from https://api.opsgenie.com/v2/alerts \n API Response: <MagicMock name='post()' id=" not in message
+        assert ('elastalert', logging.INFO, 'Alert sent to OpsGenie') == caplog.record_tuples[0]
+
+
+def test_opsgenie_basic_not_status_code_202(caplog):
     caplog.set_level(logging.INFO)
     rule = {
         'name': 'testOGalert',
@@ -21,7 +54,6 @@ def test_opsgenie_basic(caplog):
         'type': mock_rule()
     }
     with mock.patch('requests.post') as mock_post:
-
         alert = OpsGenieAlerter(rule)
         alert.alert([{'@timestamp': '2014-10-31T00:00:00'}])
         print(("mock_post: {0}".format(mock_post._mock_call_args_list)))
@@ -55,8 +87,6 @@ def test_opsgenie_frequency():
 
         alert = OpsGenieAlerter(rule)
         alert.alert([{'@timestamp': '2014-10-31T00:00:00'}])
-
-        assert alert.get_info()['recipients'] == rule['opsgenie_recipients']
 
         print(("mock_post: {0}".format(mock_post._mock_call_args_list)))
         mcal = mock_post._mock_call_args_list
@@ -762,28 +792,26 @@ def test_opsgenie_ea_exception():
     assert 'Error sending alert: ' in str(ea)
 
 
-def test_opsgenie_getinfo():
+@pytest.mark.parametrize('opsgenie_account, opsgenie_recipients, opsgenie_teams, expected_data', [
+    ('',       '',         '',                     {'type': 'opsgenie'}),
+    ('genies', '',         '',                     {'type': 'opsgenie', 'account': 'genies'}),
+    ('',       ['lytics'], '',                     {'type': 'opsgenie', 'recipients': ['lytics']}),
+    ('',       '',         ['{TEAM_PREFIX}-Team'], {'type': 'opsgenie', 'teams': ['{TEAM_PREFIX}-Team']}),
+])
+def test_opsgenie_getinfo(opsgenie_account, opsgenie_recipients, opsgenie_teams, expected_data):
     rule = {
         'name': 'Opsgenie Details',
-        'type': mock_rule(),
-        'opsgenie_account': 'genies',
-        'opsgenie_key': 'ogkey',
-        'opsgenie_details': {
-            'Message': {'field': 'message'},
-            'Missing': {'field': 'missing'}
-        },
-        'opsgenie_proxy': 'https://proxy.url',
-        'opsgenie_teams': ['{TEAM_PREFIX}-Team'],
-        'opsgenie_recipients': ['lytics']
+        'type': mock_rule()
     }
+    if opsgenie_account:
+        rule['opsgenie_account'] = opsgenie_account
+    if opsgenie_recipients:
+        rule['opsgenie_recipients'] = opsgenie_recipients
+    if opsgenie_teams:
+        rule['opsgenie_teams'] = opsgenie_teams
+
     alert = OpsGenieAlerter(rule)
 
-    expected_data = {
-        'type': 'opsgenie',
-        'recipients': ['lytics'],
-        'account': 'genies',
-        'teams': ['{TEAM_PREFIX}-Team']
-    }
     actual_data = alert.get_info()
     assert expected_data == actual_data
 
@@ -805,7 +833,7 @@ def test_opsgenie_create_default_title(query_key, expected_data):
         },
         'opsgenie_proxy': 'https://proxy.url'
     }
-    if query_key != '':
+    if query_key:
         rule['query_key'] = query_key
 
     match = [
@@ -825,3 +853,28 @@ def test_opsgenie_create_default_title(query_key, expected_data):
 
     result = alert.create_default_title(match)
     assert expected_data == result
+
+
+@pytest.mark.parametrize('opsgenie_key, expected_data', [
+    ('',  'Missing required option(s): opsgenie_key'),
+    ('a',
+        {
+            "type": "opsgenie"
+        }),
+])
+def test_opsgenie_required_error(opsgenie_key, expected_data):
+    try:
+        rule = {
+            'name': 'Opsgenie Details',
+            'type': mock_rule(),
+        }
+
+        if opsgenie_key:
+            rule['opsgenie_key'] = opsgenie_key
+
+        alert = OpsGenieAlerter(rule)
+
+        actual_data = alert.get_info()
+        assert expected_data == actual_data
+    except Exception as ea:
+        assert expected_data in str(ea)

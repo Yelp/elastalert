@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.slack import SlackAlerter
@@ -705,7 +706,7 @@ def test_slack_msg_color(msg_color, except_msg_color):
         'alert': []
     }
 
-    if msg_color != '':
+    if msg_color:
         rule['slack_msg_color'] = msg_color
 
     rules_loader = FileRulesLoader({})
@@ -928,10 +929,10 @@ def test_slack_ca_certs(ca_certs, ignore_ssl_errors, excpet_verify):
         'alert_subject': 'Cool subject',
         'alert': []
     }
-    if ca_certs != '':
+    if ca_certs:
         rule['slack_ca_certs'] = ca_certs
 
-    if ignore_ssl_errors != '':
+    if ignore_ssl_errors:
         rule['slack_ignore_ssl_errors'] = ignore_ssl_errors
 
     rules_loader = FileRulesLoader({})
@@ -1386,7 +1387,7 @@ def test_slack_required_error(slack_webhook_url, expected_data):
             'alert': []
         }
 
-        if slack_webhook_url != '':
+        if slack_webhook_url:
             rule['slack_webhook_url'] = slack_webhook_url
 
         rules_loader = FileRulesLoader({})

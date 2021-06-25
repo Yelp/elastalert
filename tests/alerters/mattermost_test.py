@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.mattermost import MattermostAlerter
@@ -798,9 +799,9 @@ def test_mattermost_get_aggregation_summary_text__maximum_width():
 
 
 @pytest.mark.parametrize('msg_color, except_msg_color', [
-    ('', 'danger'),
-    ('danger', 'danger'),
-    ('good', 'good'),
+    ('',        'danger'),
+    ('danger',  'danger'),
+    ('good',    'good'),
     ('warning', 'warning')
 ])
 def test_mattermost_msg_color(msg_color, except_msg_color):
@@ -815,7 +816,7 @@ def test_mattermost_msg_color(msg_color, except_msg_color):
         'alert_subject': 'Test Mattermost'
     }
 
-    if msg_color != '':
+    if msg_color:
         rule['mattermost_msg_color'] = msg_color
 
     rules_loader = FileRulesLoader({})
@@ -896,7 +897,7 @@ def test_mattermost_required_error(mattermost_webhook_url, expected_data):
             'alert_subject': 'Test Mattermost'
         }
 
-        if mattermost_webhook_url != '':
+        if mattermost_webhook_url:
             rule['mattermost_webhook_url'] = mattermost_webhook_url
 
         rules_loader = FileRulesLoader({})

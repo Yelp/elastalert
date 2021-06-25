@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 from requests.auth import HTTPProxyAuth
 
@@ -185,10 +186,10 @@ def test_telegram_required_error(telegram_bot_token, telegram_room_id, expected_
             'alert': []
         }
 
-        if telegram_bot_token != '':
+        if telegram_bot_token:
             rule['telegram_bot_token'] = telegram_bot_token
 
-        if telegram_room_id != '':
+        if telegram_room_id:
             rule['telegram_room_id'] = telegram_room_id
 
         rules_loader = FileRulesLoader({})

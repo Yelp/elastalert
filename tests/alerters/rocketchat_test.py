@@ -1,8 +1,9 @@
 import json
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.rocketchat import RocketChatAlerter
@@ -315,9 +316,9 @@ def test_rocketchat_emoji_override_blank():
 
 
 @pytest.mark.parametrize('msg_color, except_msg_color', [
-    ('', 'danger'),
-    ('danger', 'danger'),
-    ('good', 'good'),
+    ('',        'danger'),
+    ('danger',  'danger'),
+    ('good',    'good'),
     ('warning', 'warning')
 ])
 def test_rocketchat_msg_color(msg_color, except_msg_color):
@@ -330,7 +331,7 @@ def test_rocketchat_msg_color(msg_color, except_msg_color):
         'alert': []
     }
 
-    if msg_color != '':
+    if msg_color:
         rule['rocket_chat_msg_color'] = msg_color
 
     rules_loader = FileRulesLoader({})
@@ -619,7 +620,7 @@ def test_rocketchat_required_error(rocket_chat_webhook_url, expected_data):
             'alert': []
         }
 
-        if rocket_chat_webhook_url != '':
+        if rocket_chat_webhook_url:
             rule['rocket_chat_webhook_url'] = rocket_chat_webhook_url
 
         rules_loader = FileRulesLoader({})

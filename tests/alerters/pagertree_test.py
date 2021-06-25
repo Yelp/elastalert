@@ -2,9 +2,10 @@ import json
 import re
 import uuid
 import logging
+import pytest
 
 from unittest import mock
-import pytest
+
 from requests import RequestException
 
 from elastalert.alerters.pagertree import PagerTreeAlerter
@@ -152,7 +153,7 @@ def test_pagertree_required_error(pagertree_integration_url, expected_data):
             'alert': []
         }
 
-        if pagertree_integration_url != '':
+        if pagertree_integration_url:
             rule['pagertree_integration_url'] = pagertree_integration_url
 
         rules_loader = FileRulesLoader({})
