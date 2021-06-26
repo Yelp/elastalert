@@ -34,6 +34,18 @@ definitions:
       milliseconds: {type: number}
       schedule: {type: string}
 
+  slackField: &slackField
+    type: object
+    additionalProperties: false
+    properties:
+      title: {type: string}
+      value: {type: string}
+      short: {type: boolean}
+
+  arrayOfSlackFields: &arrayOfSlackField
+    type: array
+    items: *slackField
+
   mattermostField: &mattermostField
     type: object
     additionalProperties: false
@@ -502,6 +514,7 @@ properties:
   slack_parse_override: {enum: [none, full]}
   slack_text_string: {type: string}
   slack_proxy: {type: string}
+  slack_alert_fields: *arrayOfSlackField
   slack_ignore_ssl_errors: {type: boolean}
   slack_title: {type: string}
   slack_title_link: {type: string}
