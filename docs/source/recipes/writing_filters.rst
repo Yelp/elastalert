@@ -67,11 +67,13 @@ Terms allows for easy combination of multiple term filters::
     - terms:
         field: ["value1", "value2"] # value1 OR value2
 
-You can also match on multiple fields::
+You can also match on multiple fields (All terms must match at least one of the given values)::
 
     - terms:
         fieldX: ["value1", "value2"]
+    - terms:
         fieldY: ["something", "something_else"]
+    - terms:
         fieldZ: ["foo", "bar", "baz"]
 
 wildcard
