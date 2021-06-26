@@ -213,8 +213,6 @@ unless overwritten in the rule config. The default is "localhost".
 ``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon Elasticsearch Service. It'll use instance role keys to sign the requests.
 The environment variable ``AWS_DEFAULT_REGION`` will override this field.
 
-``boto_profile``: Deprecated! Boto profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
-
 ``profile``: AWS profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
 The environment variable ``AWS_DEFAULT_PROFILE`` will override this field.
 
