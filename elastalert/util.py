@@ -387,11 +387,6 @@ def build_es_conn_config(conf):
     if 'aws_region' in conf:
         parsed_conf['aws_region'] = conf['aws_region']
 
-    # Deprecated
-    if 'boto_profile' in conf:
-        elastalert_logger.warning('Found deprecated "boto_profile", use "profile" instead!')
-        parsed_conf['profile'] = conf['boto_profile']
-
     if 'profile' in conf:
         parsed_conf['profile'] = conf['profile']
 
