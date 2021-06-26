@@ -850,12 +850,12 @@ def test_slack_alert_fields():
             {
                 'title': 'Host',
                 'value': 'somefield',
-                'short': 'true'
+                'short': True
             },
             {
                 'title': 'Sensors',
                 'value': '@timestamp',
-                'short': 'true'
+                'short': True
             }
         ],
         'alert_subject': 'Cool subject',
@@ -884,12 +884,12 @@ def test_slack_alert_fields():
                 'fields':
                 [
                     {
-                        'short': 'true',
+                        'short': True,
                         'title': 'Host',
                         'value': 'foobarbaz'
                     },
                     {
-                        'short': 'true',
+                        'short': True,
                         'title': 'Sensors',
                         'value': '2016-01-01T00:00:00'
                     }
