@@ -585,6 +585,20 @@ This setting requires the following settings are also configured:
 
 ``generate_kibana_discover_url: true``
 
+Example usage::
+
+    generate_kibana_discover_url: True
+    kibana_discover_app_url: "http://localhost:5601/app/discover#/"
+    kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
+    kibana_discover_version: "7.13"
+    kibana_discover_from_timedelta:
+      minutes: 10
+    kibana_discover_to_timedelta:
+      minutes: 10
+    alert_text: '{0}'
+    alert_text_args: [ kibana_discover_url ]
+    alert_text_type: alert_text_only
+
 kibana_discover_app_url
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -2236,6 +2250,27 @@ Example mattermost_msg_fields::
 
 ``mattermost_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
 
+Example mattermost_attach_kibana_discover_url, mattermost_kibana_discover_color, mattermost_kibana_discover_title::
+
+    # (Required)
+    generate_kibana_discover_url: True
+    kibana_discover_app_url: "http://localhost:5601/app/discover#/"
+    kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
+    kibana_discover_version: "7.13"
+
+    # (Optional)
+    kibana_discover_from_timedelta:
+      minutes: 10
+    kibana_discover_to_timedelta:
+      minutes: 10
+
+    # (Required)
+    mattermost_attach_kibana_discover_url: True
+
+    # (Optional)
+    mattermost_kibana_discover_color: "#ec4b98"
+    mattermost_kibana_discover_title: "Discover in Kibana"
+
 Microsoft Teams
 ~~~~~~~~~~~~~~~
 
@@ -2317,6 +2352,26 @@ Example usage::
       Author: 'Bob Smith'          # constant value
       Environment: '$VAR'          # environment variable
       Message: { field: message }  # field in the first match
+
+Example opsgenie_details with kibana_discover_url::
+
+    # (Required)
+    generate_kibana_discover_url: True
+    kibana_discover_app_url: "http://localhost:5601/app/discover#/"
+    kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
+    kibana_discover_version: "7.13"
+
+    # (Optional)
+    kibana_discover_from_timedelta:
+      minutes: 10
+    kibana_discover_to_timedelta:
+      minutes: 10
+
+    # (Required)
+    opsgenie_details:
+      Kibana Url: { field: kibana_discover_url }
+      Message: { field: message }
+      Testing: 'yes'
 
 PagerDuty
 ~~~~~~~~~
@@ -2421,6 +2476,27 @@ ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ .
 ``rocket_chat_kibana_discover_color``: The color of the Kibana Discover url attachment. Defaults to ``#ec4b98``.
 
 ``rocket_chat_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
+
+Example rocket_chat_attach_kibana_discover_url, rocket_chat_kibana_discover_color, rocket_chat_kibana_discover_title::
+
+    # (Required)
+    generate_kibana_discover_url: True
+    kibana_discover_app_url: "http://localhost:5601/app/discover#/"
+    kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
+    kibana_discover_version: "7.13"
+
+    # (Optional)
+    kibana_discover_from_timedelta:
+      minutes: 10
+    kibana_discover_to_timedelta:
+      minutes: 10
+
+    # (Required)
+    rocket_chat_attach_kibana_discover_url: True
+
+    # (Optional)
+    rocket_chat_kibana_discover_color: "#ec4b98"
+    rocket_chat_kibana_discover_title: "Discover in Kibana"
 
 ```rocket_chat_alert_fields``: You can add additional fields to your Rocket.Chat alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
 
@@ -2558,6 +2634,27 @@ Example slack_alert_fields::
 ``slack_kibana_discover_color``: The color of the Kibana Discover url attachment. Defaults to ``#ec4b98``.
 
 ``slack_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
+
+Example slack_attach_kibana_discover_url, slack_kibana_discover_color, slack_kibana_discover_title::
+
+    # (Required)
+    generate_kibana_discover_url: True
+    kibana_discover_app_url: "http://localhost:5601/app/discover#/"
+    kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
+    kibana_discover_version: "7.13"
+
+    # (Optional)
+    kibana_discover_from_timedelta:
+      minutes: 10
+    kibana_discover_to_timedelta:
+      minutes: 10
+
+    # (Required)
+    slack_attach_kibana_discover_url: True
+
+    # (Optional)
+    slack_kibana_discover_color: "#ec4b98"
+    slack_kibana_discover_title: "Discover in Kibana"
 
 ``slack_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
 
