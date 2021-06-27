@@ -490,6 +490,9 @@ properties:
   rocket_chat_attach_kibana_discover_url {type: boolean}
   rocket_chat_kibana_discover_color {type: string}
   rocket_chat_kibana_discover_title {type: string}
+  rocket_chat_ca_certs: {type: boolean}
+  rocket_chat_ignore_ssl_errors: {type: boolean}
+  rocket_chat_timeout: {type: integer}
 
   ### ServiceNow
   servicenow_rest_url: {type: string}
