@@ -31,6 +31,9 @@ class RocketChatAlerter(Alerter):
         self.rocket_chat_attach_kibana_discover_url = self.rule.get('rocket_chat_attach_kibana_discover_url', False)
         self.rocket_chat_kibana_discover_color = self.rule.get('rocket_chat_kibana_discover_color', '#ec4b98')
         self.rocket_chat_kibana_discover_title = self.rule.get('rocket_chat_kibana_discover_title', 'Discover in Kibana')
+        self.rocket_chat_ignore_ssl_errors = self.rule.get('rocket_chat_ignore_ssl_errors', False)
+        self.rocket_chat_timeout = self.rule.get('rocket_chat_timeout', 10)
+        self.rocket_chat_ca_certs = self.rule.get('rocket_chat_ca_certs')
 
     def format_body(self, body):
         return body
@@ -92,11 +95,19 @@ class RocketChatAlerter(Alerter):
         for url in self.rocket_chat_webhook_url:
             for channel_override in self.rocket_chat_channel_override:
                 try:
+                    if self.rocket_chat_ca_certs:
+                        verify = self.rocket_chat_ca_certs
+                    else:
+                        verify = not self.rocket_chat_ignore_ssl_errors
+                    if self.rocket_chat_ignore_ssl_errors:
+                        requests.packages.urllib3.disable_warnings()
                     payload['channel'] = channel_override
                     response = requests.post(
                         url, data=json.dumps(payload, cls=DateTimeEncoder),
                         headers=headers,
-                        proxies=proxies)
+                        verify=verify,
+                        proxies=proxies,
+                        timeout=self.rocket_chat_timeout)
                     warnings.resetwarnings()
                     response.raise_for_status()
                 except RequestException as e:

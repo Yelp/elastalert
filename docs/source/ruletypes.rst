@@ -2462,14 +2462,20 @@ Optional:
 
 ``rocket_chat_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified “#other-channel”, and a Direct Message with “@username”.
 
-``rocket_chat_emoji_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
+``rocket_chat_emoji_override``: By default ElastAlert 2 will use the :ghost: emoji when posting to the channel. You can use a different emoji per
 ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ .
 
 ``rocket_chat_msg_color``: By default the alert will be posted with the ‘danger’ color. You can also use ‘good’ or ‘warning’ colors.
 
 ``rocket_chat_text_string``: Notification message you want to add.
 
-``rocket_chat_proxy``: By default ElastAlert will not use a network proxy to send notifications to Rocket.Chat. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``rocket_chat_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Rocket.Chat. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+
+``rocket_chat_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
+
+``rocket_chat_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+
+``rocket_chat_timeout``: You can specify a timeout value, in seconds, for making communicating with Rocket.Chat. The default is 10. If a timeout occurs, the alert will be retried next time ElastAlert 2 cycles.
 
 ``rocket_chat_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the Rocket.Chat notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
 
@@ -2498,7 +2504,7 @@ Example rocket_chat_attach_kibana_discover_url, rocket_chat_kibana_discover_colo
     rocket_chat_kibana_discover_color: "#ec4b98"
     rocket_chat_kibana_discover_title: "Discover in Kibana"
 
-```rocket_chat_alert_fields``: You can add additional fields to your Rocket.Chat alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
+``rocket_chat_alert_fields``: You can add additional fields to your Rocket.Chat alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
 
 Example rocket_chat_alert_fields::
 
