@@ -28,7 +28,7 @@ clean:
 	make -C docs clean
 	find . -name '*.pyc' -delete
 	find . -name '__pycache__' -delete
-	rm -rf virtualenv_run .tox .coverage *.egg-info build
+	rm -rf virtualenv_run tests/.tox tests/.coverage *.egg-info docs/build
 
 %:
 	@:
