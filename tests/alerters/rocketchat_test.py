@@ -49,7 +49,9 @@ def test_rocketchat_uses_custom_title(caplog):
         rule['rocket_chat_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert ('elastalert', logging.INFO, 'Alert sent to Rocket.Chat') == caplog.record_tuples[0]
@@ -90,7 +92,9 @@ def test_rocketchat_uses_rule_name_when_custom_title_is_not_provided():
         rule['rocket_chat_webhook_url'][0],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -132,7 +136,9 @@ def test_rocketchat_username_override():
         rule['rocket_chat_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -173,7 +179,9 @@ def test_rocketchat_chat_channel():
         rule['rocket_chat_webhook_url'][0],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -228,7 +236,9 @@ def test_rocketchat_uses_list_of_custom_rocket_chat_channel():
         rule['rocket_chat_webhook_url'][0],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data1 == json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert expected_data2 == json.loads(mock_post_request.call_args_list[1][1]['data'])
@@ -270,7 +280,9 @@ def test_rocketchat_emoji_override():
         rule['rocket_chat_webhook_url'][0],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -310,7 +322,9 @@ def test_rocketchat_emoji_override_blank():
         rule['rocket_chat_webhook_url'][0],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -362,7 +376,9 @@ def test_rocketchat_msg_color(msg_color, except_msg_color):
         rule['rocket_chat_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -405,7 +421,9 @@ def test_rocketchat_text_string():
         rule['rocket_chat_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -447,7 +465,9 @@ def test_rocketchat_proxy():
         rule['rocket_chat_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies={'https': rule['rocket_chat_proxy']}
+        proxies={'https': rule['rocket_chat_proxy']},
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -513,7 +533,9 @@ def test_rocketchat_alert_fields():
         rule['rocket_chat_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -677,7 +699,9 @@ def test_rocket_chat_attach_kibana_discover_url_when_generated():
         rule['rocket_chat_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -722,7 +746,9 @@ def test_rocket_chat_attach_kibana_discover_url_when_not_generated():
         rule['rocket_chat_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -774,7 +800,9 @@ def test_rocket_chat_kibana_discover_title():
         rule['rocket_chat_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -826,6 +854,112 @@ def test_rocket_chat_kibana_discover_color():
         rule['rocket_chat_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10,
+        verify=True
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+@pytest.mark.parametrize('ca_certs, ignore_ssl_errors, excpet_verify', [
+    ('', '', True),
+    ('', True, False),
+    ('', False, True),
+    (True, '', True),
+    (True, True, True),
+    (True, False, True),
+    (False, '', True),
+    (False, True, False),
+    (False, False, True)
+])
+def test_rocket_chat_ca_certs(ca_certs, ignore_ssl_errors, excpet_verify):
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'rocket_chat_webhook_url': 'http://please.dontgohere.rocketchat',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    if ca_certs:
+        rule['rocket_chat_ca_certs'] = ca_certs
+
+    if ignore_ssl_errors:
+        rule['rocket_chat_ignore_ssl_errors'] = ignore_ssl_errors
+
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = RocketChatAlerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert2',
+        'channel': '',
+        'emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Cool subject',
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            }
+        ],
+        'text': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['rocket_chat_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=excpet_verify,
+        timeout=10
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_rocket_chat_uses_custom_timeout():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'rocket_chat_webhook_url': 'http://please.dontgohere.rocketchat',
+        'alert_subject': 'Cool subject',
+        'alert': [],
+        'rocket_chat_timeout': 20
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = RocketChatAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'username': 'elastalert2',
+        'channel': '',
+        'emoji': ':ghost:',
+        'attachments': [
+            {
+                'color': 'danger',
+                'title': 'Cool subject',
+                'text': BasicMatchString(rule, match).__str__(),
+                'fields': []
+            }
+        ],
+        'text': ''
+    }
+    mock_post_request.assert_called_once_with(
+        rule['rocket_chat_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True,
+        timeout=20
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
