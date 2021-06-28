@@ -57,7 +57,7 @@ class ZabbixAlerter(Alerter):
         self.zbx_key = self.rule.get('zbx_key', None)
         self.timestamp_field = self.rule.get('timestamp_field', '@timestamp')
         self.timestamp_type = self.rule.get('timestamp_type', 'iso')
-        self.timestamp_strptime = self.rule.get('timestamp_strptime', '%Y-%m-%dT%H:%M:%S.%fZ')
+        self.timestamp_strptime = self.rule.get('timestamp_strptime', '%Y-%m-%dT%H:%M:%S.%f%z')
 
     # Alert is called
     def alert(self, matches):
@@ -72,10 +72,10 @@ class ZabbixAlerter(Alerter):
             else:
                 try:
                     ts_epoch = int(datetime.strptime(match[self.timestamp_field], self.timestamp_strptime)
-                                   .strftime('%s'))
+                                   .timestamp())
                 except ValueError:
-                    ts_epoch = int(datetime.strptime(match[self.timestamp_field], '%Y-%m-%dT%H:%M:%SZ')
-                                   .strftime('%s'))
+                    ts_epoch = int(datetime.strptime(match[self.timestamp_field], '%Y-%m-%dT%H:%M:%S%z')
+                                   .timestamp())
             zm.append(ZabbixMetric(host=self.zbx_host, key=self.zbx_key, value='1', clock=ts_epoch))
 
         try:
