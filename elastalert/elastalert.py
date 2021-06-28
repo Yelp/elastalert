@@ -859,6 +859,14 @@ class ElastAlerter(object):
             filters.append({'query': query_str_filter})
         elastalert_logger.debug("Enhanced filter with {} terms: {}".format(listname, str(query_str_filter)))
 
+    def get_elasticsearch_client(self, rule):
+        key = rule['name']
+        es_client = self.es_clients.get(key)
+        if es_client is None:
+            es_client = elasticsearch_client(rule)
+            self.es_clients[key] = es_client
+        return es_client
+
     def run_rule(self, rule, endtime, starttime=None):
         """ Run a rule for a given time period, including querying and alerting on results.
 
@@ -868,7 +876,7 @@ class ElastAlerter(object):
         :return: The number of matches that the rule produced.
         """
         run_start = time.time()
-        self.thread_data.current_es = self.es_clients.setdefault(rule['name'], elasticsearch_client(rule))
+        self.thread_data.current_es = self.get_elasticsearch_client(rule)
 
         # If there are pending aggregate matches, try processing them
         for x in range(len(rule['agg_matches'])):

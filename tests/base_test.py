@@ -1426,3 +1426,20 @@ def test_add_aggregated_alert_error(ea, caplog):
         exceptd = "[add_aggregated_alert]"
         exceptd += "Error parsing aggregate send time format unsupported operand type(s) for +: 'datetime.datetime' and 'dict'"
         assert exceptd in message
+
+
+def test_get_elasticsearch_client_same_rule(ea):
+    x = ea.get_elasticsearch_client(ea.rules[0])
+    y = ea.get_elasticsearch_client(ea.rules[0])
+    assert x is y, "Should return same client for the same rule"
+
+
+def test_get_elasticsearch_client_different_rule(ea):
+    x_rule = ea.rules[0]
+    x = ea.get_elasticsearch_client(x_rule)
+
+    y_rule = copy.copy(x_rule)
+    y_rule['name'] = 'different_rule'
+    y = ea.get_elasticsearch_client(y_rule)
+
+    assert x is not y, 'Should return unique client for each rule'
