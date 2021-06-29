@@ -1056,6 +1056,7 @@ class ElastAlerter(object):
                                      args=[new_rule],
                                      seconds=new_rule['run_every'].total_seconds(),
                                      id=new_rule['name'],
+                                     name="Rule: %s" % (new_rule['name']),
                                      max_instances=1,
                                      jitter=5)
         job.modify(next_run_time=datetime.datetime.now() + datetime.timedelta(seconds=random.randint(0, 15)))
@@ -1188,9 +1189,13 @@ class ElastAlerter(object):
         self.running = True
         elastalert_logger.info("Starting up")
         self.scheduler.add_job(self.handle_pending_alerts, 'interval',
-                               seconds=self.run_every.total_seconds(), id='_internal_handle_pending_alerts')
+                               seconds=self.run_every.total_seconds(),
+                               id='_internal_handle_pending_alerts',
+                               name='Internal: Handle Pending Alerts')
         self.scheduler.add_job(self.handle_config_change, 'interval',
-                               seconds=self.run_every.total_seconds(), id='_internal_handle_config_change')
+                               seconds=self.run_every.total_seconds(),
+                               id='_internal_handle_config_change',
+                               name='Internal: Handle Config Change')
         self.scheduler.start()
         while self.running:
             next_run = datetime.datetime.utcnow() + self.run_every
