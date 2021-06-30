@@ -2566,9 +2566,9 @@ Optional:
 
 ``servicenow_proxy``: By default ElastAlert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
-``impact``: An integer 1, 2, or 3 representing high, medium, and low respectively. This measures the effect of an incident on business processes.
+``servicenow_impact``: An integer 1, 2, or 3 representing high, medium, and low respectively. This measures the effect of an incident on business processes.
 
-``urgency``: An integer 1, 2, or 3 representing high, medium, and low respecitvely. This measures how long this incident can be delayed until there is a significant business impact.
+``servicenow_urgency``: An integer 1, 2, or 3 representing high, medium, and low respecitvely. This measures how long this incident can be delayed until there is a significant business impact.
 
 Example usage::
 
@@ -2584,6 +2584,8 @@ Example usage::
     subcategory: "xxxxxx"
     cmdb_ci: "xxxxxx"
     caller_id: "xxxxxx"
+    servicenow_impact: 1
+    servicenow_urgenc: 3
 
 Slack
 ~~~~~

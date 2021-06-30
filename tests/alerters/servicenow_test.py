@@ -131,8 +131,8 @@ def test_service_now_impact_and_urgency():
         'subcategory': 'ServiceNow subcategory',
         'cmdb_ci': 'ServiceNow cmdb_ci',
         'caller_id': 'ServiceNow caller_id',
-        'impact': '3',
-        'urgency': '1',
+        'servicenow_impact': 3,
+        'servicenow_urgency': 1,
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -146,8 +146,8 @@ def test_service_now_impact_and_urgency():
         alert.alert([match])
 
     data = json.loads(mock_post_request.call_args_list[0][1]['data'])
-    assert data['impact'] == rule['impact']
-    assert data['urgency'] == rule['urgency']
+    assert data['impact'] == rule['servicenow_impact']
+    assert data['urgency'] == rule['servicenow_urgency']
 
 
 def test_service_now_ea_exception():

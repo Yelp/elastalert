@@ -506,8 +506,8 @@ properties:
   cmdb_ci: {type: string}
   caller_id: {type: string}
   servicenow_proxy: {type: string}
-  impact: {type: integer}
-  urgency: {type: integer}
+  servicenow_impact: {type: integer}
+  servicenow_urgency: {type: integer}
 
   ### Slack
   slack_webhook_url: *arrayOfString
