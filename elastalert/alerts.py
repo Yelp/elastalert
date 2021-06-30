@@ -35,9 +35,9 @@ class BasicMatchString(object):
             #  Top fields are accessible via `{{field_name}}` or `{{jinja_root_name['field_name']}}`
             #  `jinja_root_name` dict is useful when accessing *fields with dots in their keys*,
             #  as Jinja treat dot as a nested field.
-            alert_text = self.rule.get("jinja_template").render(**{**self.rule, **self.match},
-                                                                **{self.rule['jinja_root_name']: {**self.rule,
-                                                                                                  **self.match}})
+            template_values = self.rule | self.match
+            alert_text = self.rule.get("jinja_template").render(
+                template_values | {self.rule['jinja_root_name']: template_values})
         elif 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
             alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
