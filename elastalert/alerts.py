@@ -3,6 +3,7 @@ import copy
 import json
 import os
 
+from jinja2 import Template
 from texttable import Texttable
 
 from elastalert.util import EAException, lookup_es_key
@@ -210,7 +211,10 @@ class Alerter(object):
             missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
             alert_subject_values = [missing if val is None else val for val in alert_subject_values]
             alert_subject = alert_subject.format(*alert_subject_values)
-
+        elif self.rule.get('alert_text_type') == "alert_text_jinja":
+            title_template = Template(str(self.rule.get('alert_subject', '')))
+            template_values = self.rule | matches[0]
+            alert_subject = title_template.render(template_values | {self.rule['jinja_root_name']: template_values})
         if len(alert_subject) > alert_subject_max_len:
             alert_subject = alert_subject[:alert_subject_max_len]
 

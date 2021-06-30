@@ -1435,7 +1435,7 @@ Similarly to ``alert_subject``, ``alert_text`` can be further formatted using Ji
 
 1. Jinja Template
 
-By setting ``alert_text_type: alert_text_jinja`` you can use jinja2 templates in ``alert_text``. ::
+By setting ``alert_text_type: alert_text_jinja`` you can use jinja2 templates in ``alert_text`` and ``alert_subject``. ::
 
     alert_text_type: alert_text_jinja
 

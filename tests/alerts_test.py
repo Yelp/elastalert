@@ -274,3 +274,25 @@ def test_alert_subject_size_limit_with_args(ea):
     alert = Alerter(rule)
     alertSubject = alert.create_custom_title([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
     assert 6 == len(alertSubject)
+
+
+def test_alert_subject_with_jinja():
+    rule = {
+        'name': 'test_rule',
+        'type': mock_rule(),
+        'owner': 'the_owner',
+        'priority': 2,
+        'alert_subject': 'Test alert for {{owner}}; field {{field}}; Abc: {{_data["abc"]}}',
+        'alert_text_type': "alert_text_jinja",
+        'jinja_root_name': "_data"
+    }
+    match = {
+        '@timestamp': '2016-01-01',
+        'field': 'field_value',
+        'abc': 'abc from match',
+    }
+    alert = Alerter(rule)
+    alertsubject = alert.create_custom_title([match])
+    assert "Test alert for the_owner;" in alertsubject
+    assert "field field_value;" in alertsubject
+    assert "Abc: abc from match" in alertsubject
