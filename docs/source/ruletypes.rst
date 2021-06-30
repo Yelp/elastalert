@@ -2340,11 +2340,15 @@ Optional:
 
 ``opsgenie_subject_args``: A list of fields to use to format ``opsgenie_subject`` if it contains formaters.
 
-``opsgenie_priority``: Set the OpsGenie priority level. Possible values are P1, P2, P3, P4, P5.
+``opsgenie_priority``: Set the OpsGenie priority level. Possible values are P1, P2, P3, P4, P5. Can be formatted with fields from the first match e.g "P{level}"
 
 ``opsgenie_details``: Map of custom key/value pairs to include in the alert's details. The value can sourced from either fields in the first match, environment variables, or a constant value.
 
 ``opsgenie_proxy``: By default ElastAlert will not use a network proxy to send notifications to OpsGenie. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+
+``opsgenie_source``: Set the OpsGenie source, default is `ElastAlert`. Can be formatted with fields from the first match e.g "{source} {region}"
+
+``opsgenie_entity``: Set the OpsGenie entity. Can be formatted with fields from the first match e.g "{host_name}"
 
 Example usage::
 

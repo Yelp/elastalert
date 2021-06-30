@@ -4,7 +4,7 @@ import os.path
 import requests
 
 from elastalert.alerts import Alerter, BasicMatchString
-from elastalert.util import EAException, elastalert_logger, lookup_es_key
+from elastalert.util import EAException, elastalert_logger, lookup_es_key, resolve_string
 
 
 class OpsGenieAlerter(Alerter):
@@ -30,6 +30,8 @@ class OpsGenieAlerter(Alerter):
         self.opsgenie_proxy = self.rule.get('opsgenie_proxy', None)
         self.priority = self.rule.get('opsgenie_priority')
         self.opsgenie_details = self.rule.get('opsgenie_details', {})
+        self.entity = self.rule.get('opsgenie_entity', None)
+        self.source = self.rule.get('opsgenie_source', 'ElastAlert')
 
     def _parse_responders(self, responders, responder_args, matches, default_responders):
         if responder_args:
@@ -76,17 +78,23 @@ class OpsGenieAlerter(Alerter):
         if self.teams:
             post['teams'] = [{'name': r, 'type': 'team'} for r in self.teams]
         post['description'] = body
-        post['source'] = 'ElastAlert'
+        if self.entity:
+            post['entity'] = self.entity.format(**matches[0])
+        if self.source:
+            post['source'] = self.source.format(**matches[0])
 
         for i, tag in enumerate(self.tags):
             self.tags[i] = tag.format(**matches[0])
         post['tags'] = self.tags
 
-        if self.priority and self.priority not in ('P1', 'P2', 'P3', 'P4', 'P5'):
+        priority = self.priority
+        if priority:
+            priority = self.priority.format(**matches[0])
+        if priority and priority not in ('P1', 'P2', 'P3', 'P4', 'P5'):
             elastalert_logger.warning("Priority level does not appear to be specified correctly. \
-                         Please make sure to set it to a value between P1 and P5")
+                        Please make sure to set it to a value between P1 and P5")
         else:
-            post['priority'] = self.priority
+            post['priority'] = priority
 
         if self.alias is not None:
             post['alias'] = self.alias.format(**matches[0])

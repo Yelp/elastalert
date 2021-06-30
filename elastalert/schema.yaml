@@ -443,6 +443,8 @@ properties:
   opsgenie_subject: {type: string}
   opsgenie_priority: {type: string}
   opsgenie_proxy: {type: string}
+  opsgenie_source: {type: string}
+  opsgenie_entity: {type: string}
   opsgenie_details:
     type: object
     minProperties: 1
