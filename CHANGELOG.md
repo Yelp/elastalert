@@ -35,6 +35,7 @@
 - Improve structure and placement of test-related files in project tree - [#287](https://github.com/jertel/elastalert2/pull/287) - @ferozsalam
 - Only attempt to adjust timezone if timezone is set to a non-empty string - [#288](https://github.com/jertel/elastalert2/pull/288) - @ferozsalam
 - Deprecated `podSecurityPolicy` feature in Helm Chart as [it's deprecated in Kubernetes 1.21](https://kubernetes.io/blog/2021/04/06/podsecuritypolicy-deprecation-past-present-and-future/) - [#289](https://github.com/jertel/elastalert2/pull/289) - @lepouletsuisse
+- Add support for `impact` and `urgency` parameters for Servicenow alerter
 
 # 2.1.1
 
