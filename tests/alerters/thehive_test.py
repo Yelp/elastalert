@@ -29,7 +29,7 @@ def test_thehive_alerter(caplog):
             'hive_connection': {'hive_apikey': '',
                                 'hive_host': 'https://localhost',
                                 'hive_port': 9000},
-            'hive_observable_data_mapping': [{'ip': 'test.ip'}],
+            'hive_observable_data_mapping': [{'ip': 'test.ip', 'autonomous-system': 'test.as_number'}],
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
@@ -39,7 +39,8 @@ def test_thehive_alerter(caplog):
     match = {
         "test": {
           "ip": "127.0.0.1",
-          "port": 9876
+          "port": 9876,
+          "as_number": 1234
         },
         "@timestamp": "2021-05-09T14:43:30",
     }
@@ -51,6 +52,13 @@ def test_thehive_alerter(caplog):
             {
                 "data": "127.0.0.1",
                 "dataType": "ip",
+                "message": None,
+                "tags": [],
+                "tlp": 2
+            },
+            {
+                "data": "1234",
+                "dataType": "autonomous-system",
                 "message": None,
                 "tags": [],
                 "tlp": 2
