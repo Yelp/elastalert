@@ -34,7 +34,7 @@ class HiveAlerter(Alerter):
         artifacts = []
         for mapping in self.rule.get('hive_observable_data_mapping', []):
             for observable_type, mapping_key in mapping.items():
-                data = self.lookup_field(match, mapping_key, '')
+                data = str(self.lookup_field(match, mapping_key, ''))
                 if len(data) != 0:
                     artifact = {'tlp': 2,
                                 'tags': [],
