@@ -89,7 +89,7 @@ class OpsGenieAlerter(Alerter):
 
         priority = self.priority
         if priority:
-            priority = self.priority.format(**matches[0])
+            priority = priority.format(**matches[0])
         if priority and priority not in ('P1', 'P2', 'P3', 'P4', 'P5'):
             elastalert_logger.warning("Priority level does not appear to be specified correctly. \
                         Please make sure to set it to a value between P1 and P5")
