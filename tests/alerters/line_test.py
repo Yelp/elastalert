@@ -29,7 +29,7 @@ def test_line_notify(caplog):
         alert.alert([match])
 
     expected_data = {
-        'message': 'Test LineNotify Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n```'
+        'message': 'Test LineNotify Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
     }
 
     mock_post_request.assert_called_once_with(
@@ -135,7 +135,7 @@ def test_line_notify_maxlength():
 
     expected_data = {
         'message': 'Test LineNotify Rule' + ('a' * 880) +
-        '\n *message was cropped according to line notify embed description limits!* ```'
+        '\n *message was cropped according to line notify embed description limits!*'
     }
 
     mock_post_request.assert_called_once_with(

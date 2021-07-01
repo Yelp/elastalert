@@ -20,8 +20,7 @@ class LineNotifyAlerter(Alerter):
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
         if len(body) > 999:
-            body = body[0:900] + '\n *message was cropped according to line notify embed description limits!* '
-        body += '```'
+            body = body[0:900] + '\n *message was cropped according to line notify embed description limits!*'
         # post to Line Notify
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
