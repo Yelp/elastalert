@@ -28,9 +28,7 @@ class ChatworkAlerter(Alerter):
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
         if len(body) > 2047:
-            body = body[0:1950] + '\n *message was cropped according to chatwork embed description limits!* '
-        body += '```'
-
+            body = body[0:1950] + '\n *message was cropped according to chatwork embed description limits!*'
         headers = {'X-ChatWorkToken': self.chatwork_apikey}
         # set https proxy, if it was provided
         proxies = {'https': self.chatwork_proxy} if self.chatwork_proxy else None

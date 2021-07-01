@@ -30,7 +30,7 @@ def test_chatwork(caplog):
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
     expected_data = {
-        'body': 'Test Chatwork Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n```',
+        'body': 'Test Chatwork Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
     }
 
     mock_post_request.assert_called_once_with(
@@ -67,7 +67,7 @@ def test_chatwork_proxy():
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
     expected_data = {
-        'body': 'Test Chatwork Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n```',
+        'body': 'Test Chatwork Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
     }
 
     mock_post_request.assert_called_once_with(
@@ -180,7 +180,7 @@ def test_chatwork_maxlength():
         alert.alert([match])
     expected_data = {
         'body': 'Test Chatwork Rule' + ('a' * 1932) +
-        '\n *message was cropped according to chatwork embed description limits!* ```'
+        '\n *message was cropped according to chatwork embed description limits!*'
     }
 
     mock_post_request.assert_called_once_with(
