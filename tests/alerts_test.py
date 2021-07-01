@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
-
 from unittest import mock
+from jinja2 import Template
 
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
@@ -157,6 +157,32 @@ def test_alert_text_kw_global_substitution(ea):
     assert 'Abc: abc from match' in alert_text
 
 
+def test_alert_text_jinja(ea):
+    rule = ea.rules[0].copy()
+    rule['foo_rule'] = 'foo from rule'
+    rule['owner'] = 'the owner from rule'
+    rule['abc'] = 'abc from rule'
+    rule['alert_text'] = 'Owner: {{owner}}; Foo: {{_data["foo_rule"]}}; Abc: {{abc}}; Xyz: {{_data["xyz"]}}'
+    rule['alert_text_type'] = "alert_text_jinja"
+    rule['jinja_root_name'] = "_data"
+    rule['jinja_template'] = Template(str(rule['alert_text']))
+
+    match = {
+        '@timestamp': '2016-01-01',
+        'field': 'field_value',
+        'abc': 'abc from match',
+        'xyz': 'from match'
+    }
+
+    alert_text = str(BasicMatchString(rule, match))
+    assert 'Owner: the owner from rule' in alert_text
+    assert 'Foo: foo from rule' in alert_text
+    assert 'Xyz: from match' in alert_text
+
+    # When the key exists in both places, it will come from the match
+    assert 'Abc: abc from match' in alert_text
+
+
 def test_resolving_rule_references():
     rule = {
         'name': 'test_rule',
@@ -248,3 +274,25 @@ def test_alert_subject_size_limit_with_args(ea):
     alert = Alerter(rule)
     alertSubject = alert.create_custom_title([{'test_term': 'test_value', '@timestamp': '2014-10-31T00:00:00'}])
     assert 6 == len(alertSubject)
+
+
+def test_alert_subject_with_jinja():
+    rule = {
+        'name': 'test_rule',
+        'type': mock_rule(),
+        'owner': 'the_owner',
+        'priority': 2,
+        'alert_subject': 'Test alert for {{owner}}; field {{field}}; Abc: {{_data["abc"]}}',
+        'alert_text_type': "alert_text_jinja",
+        'jinja_root_name': "_data"
+    }
+    match = {
+        '@timestamp': '2016-01-01',
+        'field': 'field_value',
+        'abc': 'abc from match',
+    }
+    alert = Alerter(rule)
+    alertsubject = alert.create_custom_title([match])
+    assert "Test alert for the_owner;" in alertsubject
+    assert "field field_value;" in alertsubject
+    assert "Abc: abc from match" in alertsubject

@@ -1435,7 +1435,7 @@ Similarly to ``alert_subject``, ``alert_text`` can be further formatted using Ji
 
 1. Jinja Template
 
-By setting ``alert_text_type: alert_text_jinja`` you can use jinja2 templates in ``alert_text``. ::
+By setting ``alert_text_type: alert_text_jinja`` you can use jinja2 templates in ``alert_text`` and ``alert_subject``. ::
 
     alert_text_type: alert_text_jinja
 
@@ -2570,6 +2570,10 @@ Optional:
 
 ``servicenow_proxy``: By default ElastAlert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
+``servicenow_impact``: An integer 1, 2, or 3 representing high, medium, and low respectively. This measures the effect of an incident on business processes.
+
+``servicenow_urgency``: An integer 1, 2, or 3 representing high, medium, and low respecitvely. This measures how long this incident can be delayed until there is a significant business impact.
+
 Example usage::
 
     alert:
@@ -2584,6 +2588,8 @@ Example usage::
     subcategory: "xxxxxx"
     cmdb_ci: "xxxxxx"
     caller_id: "xxxxxx"
+    servicenow_impact: 1
+    servicenow_urgenc: 3
 
 Slack
 ~~~~~

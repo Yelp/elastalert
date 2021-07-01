@@ -3,6 +3,7 @@ import copy
 import json
 import os
 
+from jinja2 import Template
 from texttable import Texttable
 
 from elastalert.util import EAException, lookup_es_key
@@ -35,9 +36,9 @@ class BasicMatchString(object):
             #  Top fields are accessible via `{{field_name}}` or `{{jinja_root_name['field_name']}}`
             #  `jinja_root_name` dict is useful when accessing *fields with dots in their keys*,
             #  as Jinja treat dot as a nested field.
-            alert_text = self.rule.get("jinja_template").render(**self.match, **self.rule,
-                                                                **{self.rule['jinja_root_name']: {**self.match,
-                                                                                                  **self.rule}})
+            template_values = self.rule | self.match
+            alert_text = self.rule.get("jinja_template").render(
+                template_values | {self.rule['jinja_root_name']: template_values})
         elif 'alert_text_args' in self.rule:
             alert_text_args = self.rule.get('alert_text_args')
             alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
@@ -210,7 +211,10 @@ class Alerter(object):
             missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
             alert_subject_values = [missing if val is None else val for val in alert_subject_values]
             alert_subject = alert_subject.format(*alert_subject_values)
-
+        elif self.rule.get('alert_text_type') == "alert_text_jinja":
+            title_template = Template(str(self.rule.get('alert_subject', '')))
+            template_values = self.rule | matches[0]
+            alert_subject = title_template.render(template_values | {self.rule['jinja_root_name']: template_values})
         if len(alert_subject) > alert_subject_max_len:
             alert_subject = alert_subject[:alert_subject_max_len]
 

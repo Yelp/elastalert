@@ -16,7 +16,10 @@
 ## New features
 - Add support for generating Kibana Discover URLs to Rocket.Chat alerter - [#260](https://github.com/jertel/elastalert2/pull/260) - @nsanorururu
 - Provide rule key/values as possible Jinja data inputs - [#281](https://github.com/jertel/elastalert2/pull/281) - @mrfroggg
+- Add Jinja support to alert_subject - [#318](https://github.com/jertel/elastalert2/pull/318) - @mrfroggg
 - Add securityContext and podSecurityContext to Helm chart - [#289](https://github.com/jertel/elastalert2/pull/289) - @lepouletsuisse
+- Favor match keys over colliding rule keys when resolving Jinja vars; also add alert_text_jinja unit test - [#311](https://github.com/jertel/elastalert2/pull/311) - @mrfroggg
+- Add support for `servicenow_impact` and `servicenow_urgency` parameters for ServiceNow alerter - [#316](https://github.com/jertel/elastalert2/pull/316) - @randolph-esnet
 
 ## Other changes
 - Continue fix for prometheus wrapper writeback function signature - [#256](https://github.com/jertel/elastalert2/pull/256) - @greut
