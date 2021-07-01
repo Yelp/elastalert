@@ -4,7 +4,7 @@ import requests
 from requests import RequestException
 from requests.auth import HTTPProxyAuth
 
-from elastalert.alerts import Alerter
+from elastalert.alerts import Alerter, BasicMatchString
 from elastalert.util import EAException, elastalert_logger
 
 
@@ -22,7 +22,14 @@ class ChatworkAlerter(Alerter):
         self.chatwork_proxy_pass = self.rule.get('chatwork_proxy_pass', None)
 
     def alert(self, matches):
-        body = self.create_alert_body(matches)
+        body = ''
+        for match in matches:
+            body += str(BasicMatchString(self.rule, match))
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        if len(body) > 2047:
+            body = body[0:1950] + '\n *message was cropped according to chatwork embed description limits!* '
+        body += '```'
 
         headers = {'X-ChatWorkToken': self.chatwork_apikey}
         # set https proxy, if it was provided
@@ -32,7 +39,6 @@ class ChatworkAlerter(Alerter):
 
         try:
             response = requests.post(self.url, params=params, headers=headers, proxies=proxies, auth=auth)
-            warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Chattwork: %s. Details: %s" % (e, "" if e.response is None else e.response.text))
