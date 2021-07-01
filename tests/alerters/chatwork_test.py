@@ -159,3 +159,37 @@ def test_chatwork_required_error(chatwork_apikey, chatwork_room_id, expected_dat
         assert expected_data == actual_data
     except Exception as ea:
         assert expected_data in str(ea)
+
+
+def test_chatwork_maxlength():
+    rule = {
+        'name': 'Test Chatwork Rule' + ('a' * 2069),
+        'type': 'any',
+        'chatwork_apikey': 'xxxx1',
+        'chatwork_room_id': 'xxxx2',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = ChatworkAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'body': 'Test Chatwork Rule' + ('a' * 1932) +
+        '\n *message was cropped according to chatwork embed description limits!*'
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://api.chatwork.com/v2/rooms/xxxx2/messages',
+        params=mock.ANY,
+        headers={'X-ChatWorkToken': 'xxxx1'},
+        proxies=None,
+        auth=None
+    )
+
+    actual_data = mock_post_request.call_args_list[0][1]['params']
+    assert expected_data == actual_data
