@@ -4,7 +4,7 @@ import os.path
 import requests
 
 from elastalert.alerts import Alerter, BasicMatchString
-from elastalert.util import EAException, elastalert_logger, lookup_es_key, resolve_string
+from elastalert.util import EAException, elastalert_logger, lookup_es_key
 
 
 class OpsGenieAlerter(Alerter):
