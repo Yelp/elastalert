@@ -29,7 +29,7 @@ def test_line_notify(caplog):
         alert.alert([match])
 
     expected_data = {
-        'message': 'Test LineNotify Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
+        'message': 'Test LineNotify Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n```'
     }
 
     mock_post_request.assert_called_once_with(
@@ -114,3 +114,38 @@ def test_line_required_error(linenotify_access_token, expected_data):
         assert expected_data == actual_data
     except Exception as ea:
         assert expected_data in str(ea)
+
+
+def test_line_notify_maxlength():
+    rule = {
+        'name': 'Test LineNotify Rule' + ('a' * 1000),
+        'type': 'any',
+        'linenotify_access_token': 'xxxxx',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = LineNotifyAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'message': 'Test LineNotify Rule' + ('a' * 880) +
+        '\n *message was cropped according to line notify embed description limits!* ```'
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://notify-api.line.me/api/notify',
+        data=mock.ANY,
+        headers={
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Bearer {}'.format('xxxxx')
+        }
+    )
+
+    actual_data = mock_post_request.call_args_list[0][1]['data']
+    assert expected_data == actual_data
