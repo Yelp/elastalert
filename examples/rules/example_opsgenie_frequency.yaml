@@ -24,7 +24,7 @@ opsgenie_key: ogkey
 # (Optional)
 # OpsGenie recipients with args
 # opsgenie_recipients:
-#   - {recipient} 
+#   - {recipient}
 # opsgenie_recipients_args:
 #     team_prefix:'user.email'
 
@@ -36,7 +36,7 @@ opsgenie_key: ogkey
 # (Optional)
 # OpsGenie teams with args
 # opsgenie_teams:
-#   - {team_prefix}-Team 
+#   - {team_prefix}-Team
 # opsgenie_teams_args:
 #     team_prefix:'team'
 
@@ -44,6 +44,12 @@ opsgenie_key: ogkey
 # OpsGenie alert tags
 opsgenie_tags:
   - "Production"
+
+# (Optional) OpsGenie source
+# opsgenie_source: ElastAlert_EMEA
+
+# (Optional) OpsGenie entity
+# opsgenie_entity: '{hostname}'
 
 # (OptionaL) Connect with SSL to Elasticsearch
 #use_ssl: True

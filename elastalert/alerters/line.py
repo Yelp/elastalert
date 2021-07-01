@@ -1,7 +1,7 @@
 import requests
 from requests import RequestException
 
-from elastalert.alerts import Alerter
+from elastalert.alerts import Alerter, BasicMatchString
 from elastalert.util import EAException, elastalert_logger
 
 
@@ -14,7 +14,13 @@ class LineNotifyAlerter(Alerter):
         self.linenotify_access_token = self.rule.get("linenotify_access_token", None)
 
     def alert(self, matches):
-        body = self.create_alert_body(matches)
+        body = ''
+        for match in matches:
+            body += str(BasicMatchString(self.rule, match))
+            if len(matches) > 1:
+                body += '\n----------------------------------------\n'
+        if len(body) > 999:
+            body = body[0:900] + '\n *message was cropped according to line notify embed description limits!*'
         # post to Line Notify
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",

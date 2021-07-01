@@ -36,7 +36,7 @@ def test_opsgenie_basic(caplog):
         assert mock_post.called
 
         assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
-        assert mcal[0][1]['json']['source'] == 'ElastAlert'
+        # Should be default source 'ElastAlert', because 'opsgenie_source' param isn't set in rule
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
         user, level, message = caplog.record_tuples[0]
         assert "Error response from https://api.opsgenie.com/v2/alerts \n API Response: <MagicMock name='post()' id=" not in message
@@ -66,7 +66,6 @@ def test_opsgenie_basic_not_status_code_202(caplog):
         assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
         assert mcal[0][1]['json']['responders'] == [{'username': 'lytics', 'type': 'user'}]
-        assert mcal[0][1]['json']['source'] == 'ElastAlert'
         user, level, message = caplog.record_tuples[0]
         assert "Error response from https://api.opsgenie.com/v2/alerts \n API Response: <MagicMock name='post()' id=" in message
         assert ('elastalert', logging.INFO, 'Alert sent to OpsGenie') == caplog.record_tuples[1]
@@ -98,8 +97,6 @@ def test_opsgenie_frequency():
         assert mcal[0][1]['headers']['Authorization'] == 'GenieKey ogkey'
         assert mcal[0][1]['json']['source'] == 'ElastAlert'
         assert mcal[0][1]['json']['responders'] == [{'username': 'lytics', 'type': 'user'}]
-        assert mcal[0][1]['json']['source'] == 'ElastAlert'
-        assert mcal[0][1]['json']['source'] == 'ElastAlert'
 
 
 def test_opsgenie_alert_routing():
@@ -878,3 +875,36 @@ def test_opsgenie_required_error(opsgenie_key, expected_data):
         assert expected_data == actual_data
     except Exception as ea:
         assert expected_data in str(ea)
+
+
+@pytest.mark.parametrize('opsgenie_entity, expected_entity, opsgenie_priority, expected_priority', [
+    ('const host', 'const host', 'P1', 'P1'),
+    ('host {hostname}', 'host server_a', 'P{level}', 'P2'),
+    ('Elastalert {source}', 'Elastalert EMEA', '{priority}', 'P3'),
+])
+def test_opsgenie_substitution(opsgenie_entity, expected_entity, opsgenie_priority, expected_priority):
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_entity': opsgenie_entity,
+        'opsgenie_priority': opsgenie_priority,
+    }
+    matches = [{
+        'message': 'Testing',
+        'hostname': 'server_a',
+        'source': 'EMEA',
+        'level': '2',
+        'priority': 'P3',
+        '@timestamp': '2014-10-31T00:00:00'
+    }]
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post:
+        alert = OpsGenieAlerter(rule)
+        alert.alert(matches)
+
+        mcal = mock_post._mock_call_args_list
+        assert mock_post.called
+
+        assert mcal[0][1]['json']['entity'] == expected_entity
+        assert mcal[0][1]['json']['priority'] == expected_priority
