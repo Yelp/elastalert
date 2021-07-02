@@ -39,7 +39,7 @@ def test_discord(caplog):
         'content': ':warning: Test Discord :warning:',
         'embeds':
             [{
-                'description': 'Test Discord Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n```',
+                'description': 'Test Discord Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
                 'color': 0xffffff,
                 'footer': {
                     'text': 'footer',
@@ -85,7 +85,7 @@ def test_discord_not_footer():
         'content': ':warning: Test Discord :warning:',
         'embeds':
             [{
-                'description': 'Test Discord Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n```',
+                'description': 'Test Discord Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
                 'color': 0xffffff
             }]
     }
@@ -129,7 +129,7 @@ def test_discord_proxy():
         'content': ':warning: Test Discord :warning:',
         'embeds':
             [{
-                'description': 'Test Discord Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n```',
+                'description': 'Test Discord Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
                 'color': 0xffffff
             }]
     }
@@ -171,7 +171,7 @@ def test_discord_description_maxlength():
         'embeds':
             [{
                 'description': 'Test Discord Rule' + ('a' * 1933) +
-                               '\n *message was cropped according to discord embed description limits!* ```',
+                               '\n *message was cropped according to discord embed description limits!*',
                 'color': 0xffffff
             }]
     }
