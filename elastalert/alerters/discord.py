@@ -32,9 +32,7 @@ class DiscordAlerter(Alerter):
             if len(matches) > 1:
                 body += '\n----------------------------------------\n'
         if len(body) > 2047:
-            body = body[0:1950] + '\n *message was cropped according to discord embed description limits!* '
-
-        body += '```'
+            body = body[0:1950] + '\n *message was cropped according to discord embed description limits!*'
 
         proxies = {'https': self.discord_proxy} if self.discord_proxy else None
         auth = HTTPProxyAuth(self.discord_proxy_login, self.discord_proxy_password) if self.discord_proxy_login else None
