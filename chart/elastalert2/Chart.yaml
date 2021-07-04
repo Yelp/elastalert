@@ -1,8 +1,8 @@
 apiVersion: v1
 description: Automated rule-based alerting for Elasticsearch
 name: elastalert2
-version: 2.1.1
-appVersion: 2.1.1
+version: 2.1.2
+appVersion: 2.1.2
 home: https://github.com/jertel/elastalert2
 sources:
 - https://github.com/jertel/elastalert2
