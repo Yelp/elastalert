@@ -14,6 +14,7 @@ from elastalert import ElasticSearchClient
 from elastalert.auth import Auth
 
 logging.basicConfig()
+logging.captureWarnings(True)
 elastalert_logger = logging.getLogger('elastalert')
 
 
