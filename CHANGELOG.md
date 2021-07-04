@@ -9,35 +9,56 @@
 ## Other changes
 - None
 
-# 2.x.x
+# 2.1.2
 ## Breaking changes
 - None
 
 ## New features
-- Add support for generating Kibana Discover URLs to Rocket.Chat alerter - [#260](https://github.com/jertel/elastalert2/pull/260) - @nsanorururu
-- Provide rule key/values as possible Jinja data inputs - [#281](https://github.com/jertel/elastalert2/pull/281) - @mrfroggg
+- [Rocket.Chat] Add support for generating Kibana Discover URLs to Rocket.Chat alerter - [#260](https://github.com/jertel/elastalert2/pull/260) - @nsano-rururu
+- [Jinja] Provide rule key/values as possible Jinja data inputs - [#281](https://github.com/jertel/elastalert2/pull/281) - @mrfroggg
+- [Kubernetes] Add securityContext and podSecurityContext to Helm chart - [#289](https://github.com/jertel/elastalert2/pull/289) - @lepouletsuisse
+- [Rocket.Chat] Add options: rocket_chat_ca_certs, rocket_chat_ignore_ssl_errors, rocket_chat_timeout - [#302](https://github.com/jertel/elastalert2/pull/302) - @nsano-rururu
+- [Jinja] Favor match keys over colliding rule keys when resolving Jinja vars; also add alert_text_jinja unit test - [#311](https://github.com/jertel/elastalert2/pull/311) - @mrfroggg
+- [Opsgenie] Added possibility to specify source and entity attrs - [#315](https://github.com/jertel/elastalert2/pull/315) - @konstantin-komienko
+- [ServiceNow] Add support for `servicenow_impact` and `servicenow_urgency` parameters for ServiceNow alerter - [#316](https://github.com/jertel/elastalert2/pull/316) - @randolph-esnet
 - Add Jinja support to alert_subject - [#318](https://github.com/jertel/elastalert2/pull/318) - @mrfroggg
-- Add securityContext and podSecurityContext to Helm chart - [#289](https://github.com/jertel/elastalert2/pull/289) - @lepouletsuisse
-- Favor match keys over colliding rule keys when resolving Jinja vars; also add alert_text_jinja unit test - [#311](https://github.com/jertel/elastalert2/pull/311) - @mrfroggg
-- Add support for `servicenow_impact` and `servicenow_urgency` parameters for ServiceNow alerter - [#316](https://github.com/jertel/elastalert2/pull/316) - @randolph-esnet
+@lepouletsuisse
+- Metrics will now include time_taken, representing the execution duration of the rule - [#324](https://github.com/jertel/elastalert2/pull/324) - @JeffAshton
 
 ## Other changes
-- Continue fix for prometheus wrapper writeback function signature - [#256](https://github.com/jertel/elastalert2/pull/256) - @greut
-- Improve exception handling in Stomp alerter - [#261](https://github.com/jertel/elastalert2/pull/261) - @nsanorururu
-- Improve exception handling in Amazon SES and SNS alerters - [#264](https://github.com/jertel/elastalert2/pull/264) - @nsanorururu
-- Clarify documentation for starting ElastAlert 2 - [#265](https://github.com/jertel/elastalert2/pull/265) - @ferozsalam
-- Add exception handling for unsupported operand type - [#266](https://github.com/jertel/elastalert2/pull/266) - @nsanorururu
-- Improve documentation for Python build requirements - [#267](https://github.com/jertel/elastalert2/pull/267) - @nsanorururu
-- Correct DataDog alerter logging - [#268](https://github.com/jertel/elastalert2/pull/268) - @nsanorururu
-- Correct parameter code documentation for main ElastAlert runner - [#269](https://github.com/jertel/elastalert2/pull/269) - @ferozsalam
-- Command alerter will now fail during init instead of during alert if given invalid command setting - [#270](https://github.com/jertel/elastalert2/pull/270) - @nsanorururu
-- Consolidate all examples into a new examples/ sub folder - [#271](https://github.com/jertel/elastalert2/pull/271) - @ferozsalam
-- Add TheHive example rule with Kibana Discover URL and query values in alert text - [#276](https://github.com/jertel/elastalert2/pull/276) - @markus-nclose
-- Upgrade pytest-xdist from 2.2.1 to 2.3.0; clarify HTTPS support in docs; Add additional logging - [#283](https://github.com/jertel/elastalert2/pull/283) - @nsanorururu
-- Add more alerter test coverage - [#284](https://github.com/jertel/elastalert2/pull/284) - @nsanorururu
-- Improve structure and placement of test-related files in project tree - [#287](https://github.com/jertel/elastalert2/pull/287) - @ferozsalam
+- [Prometheus] Continue fix for prometheus wrapper writeback function signature - [#256](https://github.com/jertel/elastalert2/pull/256) - @greut
+- [Stomp] Improve exception handling in alerter - [#261](https://github.com/jertel/elastalert2/pull/261) - @nsano-rururu
+- [AWS] Improve exception handling in Amazon SES and SNS alerters - [#264](https://github.com/jertel/elastalert2/pull/264) - @nsano-rururu
+- [Docs] Clarify documentation for starting ElastAlert 2 - [#265](https://github.com/jertel/elastalert2/pull/265) - @ferozsalam
+- Add exception handling for unsupported operand type - [#266](https://github.com/jertel/elastalert2/pull/266) - @nsano-rururu
+- [Docs] Improve documentation for Python build requirements - [#267](https://github.com/jertel/elastalert2/pull/267) - @nsano-rururu
+- [DataDog] Correct alerter logging - [#268](https://github.com/jertel/elastalert2/pull/268) - @nsano-rururu
+- [Docs] Correct parameter code documentation for main ElastAlert runner - [#269](https://github.com/jertel/elastalert2/pull/269) - @ferozsalam
+- [Command] alerter will now fail during init instead of during alert if given invalid command setting - [#270](https://github.com/jertel/elastalert2/pull/270) - @nsano-rururu
+- [Docs] Consolidate all examples into a new examples/ sub folder - [#271](https://github.com/jertel/elastalert2/pull/271) - @ferozsalam
+- [TheHive] Add example rule with Kibana Discover URL and query values in alert text - [#276](https://github.com/jertel/elastalert2/pull/276) - @markus-nclose
+- Upgrade pytest-xdist from 2.2.1 to 2.3.0; clarify HTTPS support in docs; Add additional logging - [#283](https://github.com/jertel/elastalert2/pull/283) - @nsano-rururu
+- [Tests] Add more alerter test coverage - [#284](https://github.com/jertel/elastalert2/pull/284) - @nsano-rururu
+- [Tests] Improve structure and placement of test-related files in project tree - [#287](https://github.com/jertel/elastalert2/pull/287) - @ferozsalam
 - Only attempt to adjust timezone if timezone is set to a non-empty string - [#288](https://github.com/jertel/elastalert2/pull/288) - @ferozsalam
-- Deprecated `podSecurityPolicy` feature in Helm Chart as [it's deprecated in Kubernetes 1.21](https://kubernetes.io/blog/2021/04/06/podsecuritypolicy-deprecation-past-present-and-future/) - [#289](https://github.com/jertel/elastalert2/pull/289) - @lepouletsuisse
+- [Kubernetes] Deprecated `podSecurityPolicy` feature in Helm Chart as [it's deprecated in Kubernetes 1.21](https://kubernetes.io/blog/2021/04/06/podsecuritypolicy-deprecation-past-present-and-future/) - [#289](https://github.com/jertel/elastalert2/pull/289) - @lepouletsuisse
+- [Slack] Fix slack_channel_override schema - [#291](https://github.com/jertel/elastalert2/pull/291) - @JeffAshton
+- [Rocket.Chat] Fix rocket_chat_channel_override schema - [#293](https://github.com/jertel/elastalert2/pull/293) - @nsano-rururu
+- [Tests] Increase code coverage - [#294](https://github.com/jertel/elastalert2/pull/294) - @nsano-rururu
+- [Docs] Added Kibana Discover sample - [#295](https://github.com/jertel/elastalert2/pull/295) - @nsano-rururu
+- [AWS] Remove deprecated boto_profile setting - [#299](https://github.com/jertel/elastalert2/pull/299) - @nsano-rururu
+- [Slack] Correct slack_alert_fields schema definition - [#300](https://github.com/jertel/elastalert2/pull/300) - @nsano-rururu
+- [Tests] Correct code coverage to eliminate warnings - [#301](https://github.com/jertel/elastalert2/pull/301) - @nsano-rururu
+- Eliminate unnecessary calls to Elasticsearch - [#303](https://github.com/jertel/elastalert2/pull/303) - @JeffAshton
+- [Zabbix] Fix timezone parsing - [#304](https://github.com/jertel/elastalert2/pull/304) - @JeffAshton
+- Improve logging of scheduler - [#305](https://github.com/jertel/elastalert2/pull/305) - @JeffAshton
+- [Jinja] Update Jinja from 2.11.3 to 3.0.1; Improve handling of colliding variables - [#311](https://github.com/jertel/elastalert2/pull/311) - @mrfroggg
+- [TheHive] Force observable artifacts to be strings - [#313](https://github.com/jertel/elastalert2/pull/313) - @pandvan
+- Upgrade pylint from <2.9 to <2.10 - [#314](https://github.com/jertel/elastalert2/pull/314) - @nsano-rururu
+- [ChatWork] Enforce character limit - [#319](https://github.com/jertel/elastalert2/pull/319) - @nsano-rururu
+- [LineNotify] Enforce character limit - [#320](https://github.com/jertel/elastalert2/pull/320) - @nsano-rururu
+- [Discord] Remove trailing backticks from alert body - [#321](https://github.com/jertel/elastalert2/pull/321) - @nsano-rururu
+- Redirecting warnings to logging module - [#325](https://github.com/jertel/elastalert2/pull/325) - @JeffAshton
 
 # 2.1.1
 
