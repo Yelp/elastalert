@@ -296,3 +296,18 @@ def test_alert_subject_with_jinja():
     assert "Test alert for the_owner;" in alertsubject
     assert "field field_value;" in alertsubject
     assert "Abc: abc from match" in alertsubject
+
+
+def test_alert_getinfo():
+    rule = {
+        'name': 'test_rule',
+        'type': mock_rule(),
+        'owner': 'the_owner',
+        'priority': 2,
+        'alert_subject': 'A very long subject',
+        'alert_subject_max_len': 5
+    }
+    alert = Alerter(rule)
+    actual_data = alert.get_info()
+    expected_data = {'type': 'Unknown'}
+    assert expected_data == actual_data
