@@ -458,7 +458,7 @@ class ElastAlerter(object):
 
         es_client = self.thread_data.current_es
         try:
-            if es_client.is_atleastsixsix():
+            if es_client.is_atleastsixtwo():
                 res = es_client.count(
                     index=index,
                     body=query,
