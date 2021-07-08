@@ -908,3 +908,55 @@ def test_opsgenie_substitution(opsgenie_entity, expected_entity, opsgenie_priori
 
         assert mcal[0][1]['json']['entity'] == expected_entity
         assert mcal[0][1]['json']['priority'] == expected_priority
+
+
+def test_opsgenie_details_with_constant_value_matchs():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {'Foo': 'Bar'}
+    }
+    match = {
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match, match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': 'Opsgenie Details\n'
+                       '\n'
+                       "{'@timestamp': '2014-10-31T00:00:00'}\n"
+                       '\n'
+                       '@timestamp: 2014-10-31T00:00:00\n'
+                       '\n'
+                       '----------------------------------------\n'
+                       'Opsgenie Details\n'
+                       '\n'
+                       "{'@timestamp': '2014-10-31T00:00:00'}\n"
+                       '\n'
+                       '@timestamp: 2014-10-31T00:00:00\n'
+                       '\n'
+                       '----------------------------------------\n',
+        'details': {'Foo': 'Bar'},
+        'message': 'ElastAlert: Opsgenie Details',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json

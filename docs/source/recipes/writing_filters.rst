@@ -116,12 +116,31 @@ For Elasticsearch 2.X, any of the filters can be embedded in ``not``, ``and``, a
                 term:
                   _type: "something"
 
-For Elasticsearch 5.x, this will not work and to implement boolean logic use query strings::
+Below is a more complex example for Elasticsearch 7.x, provided by a `community user. <https://github.com/jertel/elastalert2/discussions/330>`_::
 
     filter:
-     - query:
-          query_string:
-            query: "somefield: somevalue OR foo: bar"
+    - term:
+        action: order
+    - terms:
+        dining:
+            - pickup
+            - delivery
+    - bool:
+        #exclude common/expected orders
+        must_not:
+            #Alice usually gets a pizza
+            - bool:
+                must: [ {term: {uid: alice}}, {term: {menu_item: pizza}} ]
+            #Bob loves his hoagies 
+            - bool:
+                must: [ {term: {uid: bob}}, {term: {menu_item: sandwich}} ]
+            #Charlie has a few favorites
+            - bool:
+                must:
+                   - term:
+                       uid: charlie
+                   - match:
+                       menu_item: "burrito pasta salad pizza"
             
 
 Loading Filters Directly From Kibana 3

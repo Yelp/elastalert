@@ -1,15 +1,24 @@
 # -*- coding: utf-8 -*-
+import logging
+import os
+import pytest
+
 from datetime import datetime
 from datetime import timedelta
 
-from unittest import mock
-import pytest
 from dateutil.parser import parse as dt
 
+from unittest import mock
+
 from elastalert.util import add_raw_postfix
+from elastalert.util import build_es_conn_config
+from elastalert.util import dt_to_ts
 from elastalert.util import dt_to_ts_with_format
+from elastalert.util import EAException
+from elastalert.util import elasticsearch_client
 from elastalert.util import flatten_dict
 from elastalert.util import format_index
+from elastalert.util import get_module
 from elastalert.util import lookup_es_key
 from elastalert.util import parse_deadline
 from elastalert.util import parse_duration
@@ -19,6 +28,7 @@ from elastalert.util import resolve_string
 from elastalert.util import set_es_key
 from elastalert.util import should_scrolling_continue
 from elastalert.util import ts_to_dt_with_format
+from elastalert.util import ts_utc_to_tz
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
@@ -234,20 +244,212 @@ def test_should_scrolling_continue():
     assert should_scrolling_continue(rule_over_max_scrolling) is False
 
 
-def test_ts_to_dt_with_format():
+def test_ts_to_dt_with_format1():
     assert ts_to_dt_with_format('2021/02/01 12:30:00', '%Y/%m/%d %H:%M:%S') == dt('2021-02-01 12:30:00+00:00')
+
+
+def test_ts_to_dt_with_format2():
     assert ts_to_dt_with_format('01/02/2021 12:30:00', '%d/%m/%Y %H:%M:%S') == dt('2021-02-01 12:30:00+00:00')
 
 
-def test_dt_to_ts_with_format():
+def test_ts_to_dt_with_format3():
+    date = datetime(2021, 7, 6, hour=0, minute=0, second=0)
+    assert ts_to_dt_with_format(date, '') == dt('2021-7-6 00:00')
+
+
+def test_ts_to_dt_with_format4():
+    assert ts_to_dt_with_format('01/02/2021 12:30:00 +0900', '%d/%m/%Y %H:%M:%S %z') == dt('2021-02-01 12:30:00+09:00')
+
+
+def test_dt_to_ts_with_format1():
     assert dt_to_ts_with_format(dt('2021-02-01 12:30:00+00:00'), '%Y/%m/%d %H:%M:%S') == '2021/02/01 12:30:00'
+
+
+def test_dt_to_ts_with_format2():
     assert dt_to_ts_with_format(dt('2021-02-01 12:30:00+00:00'), '%d/%m/%Y %H:%M:%S') == '01/02/2021 12:30:00'
+
+
+def test_dt_to_ts_with_format3():
+    assert dt_to_ts_with_format('2021-02-01 12:30:00+00:00', '%d/%m/%Y %H:%M:%S') == '2021-02-01 12:30:00+00:00'
 
 
 def test_flatten_dict():
     assert flatten_dict({'test': 'value1', 'test2': 'value2'}) == {'test': 'value1', 'test2': 'value2'}
 
 
-def test_pytzfy():
+def test_pytzfy1():
     assert pytzfy(dt('2021-02-01 12:30:00+00:00')) == dt('2021-02-01 12:30:00+00:00')
+
+
+def test_pytzfy2():
     assert pytzfy(datetime(2018, 12, 31, 5, 0, 30, 1000)) == dt('2018-12-31 05:00:30.001000')
+
+
+def test_get_module():
+    with pytest.raises(EAException) as ea:
+        get_module('test')
+    assert 'Could not import module' in str(ea)
+
+
+def test_dt_to_ts(caplog):
+    caplog.set_level(logging.WARNING)
+    dt_to_ts('a')
+    user, level, message = caplog.record_tuples[0]
+    assert 'elastalert' == user
+    assert logging.WARNING == level
+    assert 'Expected datetime, got' in message
+
+
+def test_ts_utc_to_tz():
+    date = datetime(2021, 7, 6, hour=0, minute=0, second=0)
+    actual_data = ts_utc_to_tz(date, 'Europe/Istanbul')
+    assert '2021-07-06 03:00:00+03:00' == str(actual_data)
+
+
+test_build_es_conn_config_param = 'es_host, es_port, es_conn_timeout, es_send_get_body_as, ssl_show_warn, es_username, '
+test_build_es_conn_config_param += 'es_password, es_api_key, es_bearer, aws_region, profile, use_ssl, verify_certs, '
+test_build_es_conn_config_param += 'ca_certs, client_cert,client_key,es_url_prefix, expected_data'
+
+
+@pytest.mark.parametrize(test_build_es_conn_config_param, [
+    ('',          '',   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', True),
+    ('localhost', '',   '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', True),
+    ('localhost', 9200, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+        {
+            'use_ssl': False,
+            'verify_certs': True,
+            'ca_certs': None,
+            'client_cert': None,
+            'client_key': None,
+            'http_auth': None,
+            'es_username': None,
+            'es_password': None,
+            'es_api_key': None,
+            'es_bearer': None,
+            'aws_region': None,
+            'profile': None,
+            'headers': None,
+            'es_host': 'localhost',
+            'es_port': 9200,
+            'es_url_prefix': '',
+            'es_conn_timeout': 20,
+            'send_get_body_as': 'GET',
+            'ssl_show_warn': True
+        }),
+    ('localhost', 9200, 30, 'POST', False, 'user', 'pass', 'key', 'bearer', 'us-east-1', 'default',
+     True, False, '/path/to/cacert.pem', '/path/to/client_cert.pem', '/path/to/client_key.key', 'elasticsearch',
+        {
+            'use_ssl': True,
+            'verify_certs': False,
+            'ca_certs': '/path/to/cacert.pem',
+            'client_cert': '/path/to/client_cert.pem',
+            'client_key': '/path/to/client_key.key',
+            'http_auth': None,
+            'es_username': 'user',
+            'es_password': 'pass',
+            'es_api_key': 'key',
+            'es_bearer': 'bearer',
+            'aws_region': 'us-east-1',
+            'profile': 'default',
+            'headers': None,
+            'es_host': 'localhost',
+            'es_port': 9200,
+            'es_url_prefix': 'elasticsearch',
+            'es_conn_timeout': 30,
+            'send_get_body_as': 'POST',
+            'ssl_show_warn': False
+        }),
+])
+def test_build_es_conn_config(es_host, es_port, es_conn_timeout, es_send_get_body_as, ssl_show_warn, es_username,
+                              es_password, es_api_key, es_bearer, aws_region, profile, use_ssl, verify_certs,
+                              ca_certs, client_cert, client_key, es_url_prefix, expected_data):
+    try:
+        conf = {}
+        if es_host:
+            conf['es_host'] = es_host
+        if es_port:
+            conf['es_port'] = es_port
+        if es_conn_timeout:
+            conf['es_conn_timeout'] = es_conn_timeout
+        if es_send_get_body_as:
+            conf['es_send_get_body_as'] = es_send_get_body_as
+        if ssl_show_warn != '':
+            conf['ssl_show_warn'] = ssl_show_warn
+        if es_username:
+            conf['es_username'] = es_username
+        if es_password:
+            conf['es_password'] = es_password
+        if es_api_key:
+            conf['es_api_key'] = es_api_key
+        if es_bearer:
+            conf['es_bearer'] = es_bearer
+        if aws_region:
+            conf['aws_region'] = aws_region
+        if profile:
+            conf['profile'] = profile
+        if use_ssl != '':
+            conf['use_ssl'] = use_ssl
+        if verify_certs != '':
+            conf['verify_certs'] = verify_certs
+        if ca_certs:
+            conf['ca_certs'] = ca_certs
+        if client_cert:
+            conf['client_cert'] = client_cert
+        if client_key:
+            conf['client_key'] = client_key
+        if es_url_prefix:
+            conf['es_url_prefix'] = es_url_prefix
+        actual = build_es_conn_config(conf)
+        assert expected_data == actual
+    except KeyError:
+        assert expected_data
+
+
+@mock.patch.dict(os.environ, {'ES_USERNAME': 'USER',
+                              'ES_PASSWORD': 'PASS',
+                              'ES_API_KEY': 'KEY',
+                              'ES_BEARER': 'BEARE'})
+def test_build_es_conn_config2():
+    conf = {}
+    conf['es_host'] = 'localhost'
+    conf['es_port'] = 9200
+    expected = {
+        'use_ssl': False,
+        'verify_certs': True,
+        'ca_certs': None,
+        'client_cert': None,
+        'client_key': None,
+        'http_auth': None,
+        'es_username': 'USER',
+        'es_password': 'PASS',
+        'es_api_key': 'KEY',
+        'es_bearer': 'BEARE',
+        'aws_region': None,
+        'profile': None,
+        'headers': None,
+        'es_host': 'localhost',
+        'es_port': 9200,
+        'es_url_prefix': '',
+        'es_conn_timeout': 20,
+        'send_get_body_as': 'GET',
+        'ssl_show_warn': True
+    }
+    actual = build_es_conn_config(conf)
+    assert expected == actual
+
+
+@pytest.mark.parametrize('es_host, es_port, es_bearer, es_api_key', [
+    ('localhost', 9200, '', ''),
+    ('localhost', 9200, 'bearer', 'bearer')
+])
+@mock.patch.dict(os.environ, {'AWS_DEFAULT_REGION': ''})
+def test_elasticsearch_client(es_host, es_port, es_bearer, es_api_key):
+    conf = {}
+    conf['es_host'] = es_host
+    conf['es_port'] = es_port
+    if es_bearer:
+        conf['es_bearer'] = es_bearer
+    if es_api_key:
+        conf['es_api_key'] = es_api_key
+    acutual = elasticsearch_client(conf)
+    assert None is not acutual
