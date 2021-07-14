@@ -10,12 +10,14 @@ from elastalert.ruletypes import BaseAggregationRule
 from elastalert.ruletypes import BlacklistRule
 from elastalert.ruletypes import CardinalityRule
 from elastalert.ruletypes import ChangeRule
+from elastalert.ruletypes import CompareRule
 from elastalert.ruletypes import EventWindow
 from elastalert.ruletypes import FlatlineRule
 from elastalert.ruletypes import FrequencyRule
 from elastalert.ruletypes import MetricAggregationRule
 from elastalert.ruletypes import NewTermsRule
 from elastalert.ruletypes import PercentageMatchRule
+from elastalert.ruletypes import RuleType
 from elastalert.ruletypes import SpikeRule
 from elastalert.ruletypes import WhitelistRule
 from elastalert.util import dt_to_ts
@@ -131,6 +133,13 @@ def test_freq_count():
     assert len(rule.matches) == 0
     rule.add_count_data({ts_to_dt('2014-10-10T01:00:00'): 75})
     assert len(rule.matches) == 1
+
+    # except EAException
+    try:
+        rule = FrequencyRule(rules)
+        rule.add_count_data('aaaa')
+    except EAException as ea:
+        assert 'add_count_data can only accept one count at a time' in str(ea)
 
 
 def test_freq_out_of_order():
@@ -1273,3 +1282,49 @@ def test_percentage_match():
     assert '76.1589403974' in rule.get_match_str(rule.matches[0])
     rules['percentage_format_string'] = '%.2f'
     assert '76.16' in rule.get_match_str(rule.matches[0])
+
+
+def test_ruletype_add_data():
+    try:
+        RuleType.garbage_collect('', '')
+        RuleType.add_data('', '')
+        assert False
+    except NotImplementedError:
+        assert True
+
+
+def test_ruletype_garbage_collect():
+    RuleType.garbage_collect('', '')
+    assert True
+
+
+def test_ruletype_add_count_data():
+    try:
+        RuleType.add_count_data('', '')
+        assert False
+    except NotImplementedError:
+        assert True
+
+
+def test_ruletype_add_terms_data():
+    try:
+        RuleType.add_terms_data('', '')
+        assert False
+    except NotImplementedError:
+        assert True
+
+
+def test_ruletype_add_aggregation_data():
+    try:
+        RuleType.add_aggregation_data('', '')
+        assert False
+    except NotImplementedError:
+        assert True
+
+
+def test_comparerule_compare():
+    try:
+        CompareRule.compare('', '')
+        assert False
+    except NotImplementedError:
+        assert True
