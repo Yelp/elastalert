@@ -10,11 +10,11 @@ Provide a description for your pull request. Note any breaking changes.
 The following checklist items must be completed before PRs can be merged. 
 -->
 
-- [ ] I have reviewed the [contributing guidelines](/jertel/elastalert2/blob/master/CONTRIBUTING.md).
+- [ ] I have reviewed the [contributing guidelines](https://github.com/jertel/elastalert2/blob/master/CONTRIBUTING.md).
 - [ ] I have included unit tests for my changes or additions.
 - [ ] I have successfully run `make test-docker` with my changes
 - [ ] I have updated the [documentation](https://elastalert2.readthedocs.io) (if applicable).
-- [ ] I have updated the [changelog](/jertel/elastalert2/blob/master/CHANGELOG.md) (if applicable).
+- [ ] I have updated the [changelog](https://github.com/jertel/elastalert2/blob/master/CHANGELOG.md) (if applicable).
 
 
 ## Questions or Comments
