@@ -10,11 +10,11 @@ Provide a description for your pull request. Note any breaking changes.
 The following checklist items must be completed before PRs can be merged. 
 -->
 
-- [ ] I have reviewed the [contributing guidelines](../blob/master/CONTRIBUTING.md).
+- [ ] I have reviewed the [contributing guidelines](CONTRIBUTING.md).
 - [ ] I have included unit tests for my changes or additions.
 - [ ] I have successfully run `make test-docker` with my changes
-- [ ] I have updated the [documentation](docs/docs) (if applicable).
-- [ ] I have updated the [changelog](../blob/master/CHANGELOG.md) (if applicable).
+- [ ] I have updated the [documentation](docs) (if applicable).
+- [ ] I have updated the [changelog](CHANGELOG.md) (if applicable).
 
 
 ## Questions or Comments
