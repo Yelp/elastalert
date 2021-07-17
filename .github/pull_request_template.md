@@ -26,5 +26,5 @@ items are not checked.
 
 If you have questions about completing this PR, or about the process, note them here.
 
-If you are not ready for this PR to be reviewed please mention that here..
+If you are not ready for this PR to be reviewed please mention that here.
 -->
