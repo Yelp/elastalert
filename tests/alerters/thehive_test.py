@@ -263,3 +263,42 @@ def test_thehive_alerter2():
     del actual_data['sourceRef']
 
     assert expected_data == actual_data
+
+
+@pytest.mark.parametrize('tags, expect', [
+    ({'tags': ['a', 'b']}, {'a', 'b'}),
+    (['a', 'b'],           {'a', 'b'}),
+    ([],                   set()),
+    ('a',                  {'a'})
+])
+def test_load_tags(tags, expect):
+    rule = {'alert': [],
+            'alert_text': '',
+            'alert_text_type': 'alert_text_only',
+            'description': 'test',
+            'hive_alert_config': {'customFields': [{'name': 'test',
+                                                    'type': 'string',
+                                                    'value': 2}],
+                                  'follow': True,
+                                  'severity': 2,
+                                  'source': 'elastalert',
+                                  'status': 'New',
+                                  'tags': ['test.port'],
+                                  'tlp': 3,
+                                  'type': 'external'},
+            'hive_connection': {'hive_apikey': '',
+                                'hive_host': 'https://localhost',
+                                'hive_port': 9000},
+            'hive_observable_data_mapping': [{'ip': 'test.ip', 'autonomous-system': 'test.as_number'}],
+            'name': 'test-thehive',
+            'tags': ['a', 'b'],
+            'type': 'any'}
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = HiveAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'a'
+    }
+    actual = alert.load_tags(tags, match)
+    assert expect == actual
