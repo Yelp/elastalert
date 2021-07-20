@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:21.10
 
 RUN apt update && apt upgrade -y
 RUN apt install software-properties-common -y
