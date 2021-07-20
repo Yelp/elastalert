@@ -1,0 +1,17 @@
+rules_folder: /opt/elastalert/rules
+
+run_every:
+  seconds: 10
+
+buffer_time:
+  minutes: 15
+
+es_host: elasticsearch
+
+es_username: elastic
+es_password: $ELASTIC_PASS
+
+writeback_index: elastalert_status
+
+alert_time_limit:
+  days: 2

@@ -256,13 +256,10 @@ def seconds(td):
 
 
 def total_seconds(dt):
-    # For python 2.6 compatability
     if dt is None:
         return 0
-    elif hasattr(dt, 'total_seconds'):
-        return dt.total_seconds()
     else:
-        return (dt.microseconds + (dt.seconds + dt.days * 24 * 3600) * 10**6) / 10**6
+        return dt.total_seconds()
 
 
 def dt_to_int(dt):

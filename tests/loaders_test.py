@@ -11,6 +11,7 @@ import elastalert.ruletypes
 from elastalert.alerters.email import EmailAlerter
 from elastalert.config import load_conf
 from elastalert.loaders import FileRulesLoader
+from elastalert.loaders import RulesLoader
 from elastalert.util import EAException
 
 test_config = {'rules_folder': 'test_folder',
@@ -445,3 +446,35 @@ def test_kibana_discover_to_timedelta():
     rules_loader.load_options(test_rule_copy, test_config, 'filename.yaml')
     assert isinstance(test_rule_copy['kibana_discover_to_timedelta'], datetime.timedelta)
     assert test_rule_copy['kibana_discover_to_timedelta'] == datetime.timedelta(minutes=2)
+
+
+def test_rulesloader_get_names():
+    try:
+        RulesLoader.get_names('', '')
+        assert False
+    except NotImplementedError:
+        assert True
+
+
+def test_rulesloader_get_hashes():
+    try:
+        RulesLoader.get_hashes('', '')
+        assert False
+    except NotImplementedError:
+        assert True
+
+
+def test_rulesloader_get_yaml():
+    try:
+        RulesLoader.get_yaml('', '')
+        assert False
+    except NotImplementedError:
+        assert True
+
+
+def test_get_import_rule():
+    rule = {
+        'import': 'a'
+    }
+    result = RulesLoader.get_import_rule('', rule)
+    assert 'a' == result
