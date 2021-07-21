@@ -13,7 +13,8 @@
 # 2.x.x
 
 ## Breaking changes
-- None
+- [VictorOps] Changed `state_message` and `entity_display_name` values to be taken from an alert rule. - [#329](https://github.com/jertel/elastalert2/pull/329) - @ChristophShyper
+  - Potentially a breaking change if the alert subject changes due to the new default behavior.
 
 ## New features
 - None
