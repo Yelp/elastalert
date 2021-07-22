@@ -22,7 +22,7 @@
 ## Other changes
 - [Tests] Add test code. Changed ubuntu version of Dockerfile-test from latest to 21.10. - [#354](https://github.com/jertel/elastalert2/pull/354) - @nsano-rururu
 - Remove Python 2.x compatibility code - [#354](https://github.com/jertel/elastalert2/pull/354) - @nsano-rururu
-
+- Add settings to schema.yaml(Chatwork proxy, Dingtalk proxy) - [#361](https://github.com/jertel/elastalert2/pull/361) - @nsano-rururu
 
 # 2.1.2
 ## Breaking changes
