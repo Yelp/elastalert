@@ -1709,9 +1709,15 @@ Chatwork will send notification to a Chatwork application. The body of the notif
 
 Required:
 
-``chatwork_apikey``:  ChatWork API KEY.
+``chatwork_apikey``:  Chatwork API KEY.
 
 ``chatwork_room_id``: The ID of the room you are talking to in Chatwork. How to find the room ID is the part of the number after "rid" at the end of the URL of the browser.
+
+``chatwork_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Chatwork. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+
+``chatwork_proxy_login``: The Chatwork proxy auth username.
+
+``chatwork_proxy_pass``: The Chatwork proxy auth password.
 
 Example usage::
 
