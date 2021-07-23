@@ -29,6 +29,7 @@ from elastalert.util import set_es_key
 from elastalert.util import should_scrolling_continue
 from elastalert.util import ts_to_dt_with_format
 from elastalert.util import ts_utc_to_tz
+from elastalert.util import expand_string_into_dict
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
@@ -453,3 +454,13 @@ def test_elasticsearch_client(es_host, es_port, es_bearer, es_api_key):
         conf['es_api_key'] = es_api_key
     acutual = elasticsearch_client(conf)
     assert None is not acutual
+
+
+
+def test_expand_string_into_dict():
+    dictionnary = {'@timestamp': '2021-07-06 01:00:00', 'metric_netfilter.ipv4_dst_cardinality': 401}
+    string = 'metadata.source.ip'
+    value = '0.0.0.0'
+
+    dictionnary_result = expand_string_into_dict(dictionnary, string, value)
+    assert dictionnary['metadata']['source']['ip'] == value
