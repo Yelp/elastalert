@@ -23,6 +23,7 @@
 - [Tests] Add test code. Changed ubuntu version of Dockerfile-test from latest to 21.10. - [#354](https://github.com/jertel/elastalert2/pull/354) - @nsano-rururu
 - Remove Python 2.x compatibility code - [#354](https://github.com/jertel/elastalert2/pull/354) - @nsano-rururu
 - [Docs] Added Chatwork proxy settings to documentation - [#360](https://github.com/jertel/elastalert2/pull/360) - @nsano-rururu
+- [Docs] Tidy Twilio alerter documentation - [#363](https://github.com/jertel/elastalert2/pull/363) - @ferozsalam
 - Add settings to schema.yaml(Chatwork proxy, Dingtalk proxy) - [#361](https://github.com/jertel/elastalert2/pull/361) - @nsano-rururu
 
 # 2.1.2
