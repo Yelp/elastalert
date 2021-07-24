@@ -2859,28 +2859,32 @@ Example usage::
 Twilio
 ~~~~~~
 
-Twilio alerter will trigger an incident to a mobile phone as an sms from your twilio phone number. The sms will contain the alert name. You may use either twilio SMS or twilio copilot
-to send the message, controlled by the ``twilio_use_copilot`` option.
+The Twilio alerter will send an alert to a mobile phone as an SMS from your Twilio
+phone number. The SMS will contain the alert name. You may use either Twilio SMS
+or Twilio Copilot to send the message, controlled by the ``twilio_use_copilot``
+option.
 
-Note that when twilio copilot *is* used the ``twilio_message_service_sid`` option is required. Likewise, when *not* using twilio copilot, the ``twilio_from_number`` option is required.
+Note that when Twilio Copilot *is* used the ``twilio_message_service_sid``
+option is required. Likewise, when *not* using Twilio Copilot, the
+``twilio_from_number`` option is required.
 
 The alerter requires the following options:
 
-``twilio_account_sid``: This is sid of your twilio account.
+``twilio_account_sid``: The SID of your Twilio account.
 
-``twilio_auth_token``: Auth token assosiated with your twilio account.
+``twilio_auth_token``: Auth token associated with your Twilio account.
 
-``twilio_to_number``: The phone number where you would like send the notification.
+``twilio_to_number``: The phone number where you would like to send the alert.
 
 Either one of
- * ``twilio_from_number``: Your twilio phone number from which message will be sent.
- * ``twilio_message_service_sid``: The SID of your twilio message service.
+ * ``twilio_from_number``: The Twilio phone number from which the alert will be sent.
+ * ``twilio_message_service_sid``: The SID of your Twilio message service.
 
 Optional:
 
-``twilio_use_copilot``: Whether or not to use twilio copilot, False by default.
+``twilio_use_copilot``: Whether or not to use Twilio Copilot, False by default.
 
-Example With Copilot usage::
+Example with Copilot usage::
 
     alert:
       - "twilio"
@@ -2890,7 +2894,7 @@ Example With Copilot usage::
     twilio_account_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
     twilio_message_service_sid: "ABCDEFGHIJKLMNOPQRSTUVWXYZ01234567"
 
-Example With SMS usage::
+Example with SMS usage::
 
     alert:
       - "twilio"
