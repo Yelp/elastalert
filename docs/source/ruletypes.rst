@@ -385,7 +385,7 @@ Then, assuming an aggregation window of 10 minutes, if you receive the following
 
 This should result in 2 alerts: One containing alice's two events, sent at ``2016-09-20T00:10:00`` and one containing bob's one event sent at ``2016-09-20T00:16:00``
 
-For aggregations, there can sometimes be a large number of documents present in the viewing medium (email, jira ticket, etc..). If you set the ``summary_table_fields`` field, ElastAlert 2 will provide a summary of the specified fields from all the results.
+For aggregations, there can sometimes be a large number of documents present in the viewing medium (email, Jira ticket, etc..). If you set the ``summary_table_fields`` field, ElastAlert 2 will provide a summary of the specified fields from all the results.
 
 For example, if you wish to summarize the usernames and event_types that appear in the documents so that you can see the most relevant fields at a quick glance, you can set::
 
@@ -1398,7 +1398,7 @@ for each alerter.
 Alert Subject
 ~~~~~~~~~~~~~
 
-E-mail subjects, JIRA issue summaries, PagerDuty alerts, or any alerter that has a "subject" can be customized by adding an ``alert_subject``
+E-mail subjects, Jira issue summaries, PagerDuty alerts, or any alerter that has a "subject" can be customized by adding an ``alert_subject``
 that contains a custom summary.
 It can be further formatted using standard Python formatting syntax::
 
@@ -2065,24 +2065,24 @@ Example usage::
     http_post_headers:
       authorization: Basic 123dr3234
 
-JIRA
+Jira
 ~~~~
 
-The JIRA alerter will open a ticket on jira whenever an alert is triggered. You must have a service account for ElastAlert to connect with.
+The Jira alerter will open a ticket on Jira whenever an alert is triggered. You must have a service account for ElastAlert to connect with.
 The credentials of the service account are loaded from a separate file. The ticket number will be written to the alert pipeline, and if it
 is followed by an email alerter, a link will be included in the email.
 
 This alert requires four additional options:
 
-``jira_server``: The hostname of the JIRA server.
+``jira_server``: The hostname of the Jira server.
 
 ``jira_project``: The project to open the ticket under.
 
 ``jira_issuetype``: The type of issue that the ticket will be filed as. Note that this is case sensitive.
 
-``jira_account_file``: The path to the file which contains JIRA account credentials.
+``jira_account_file``: The path to the file which contains Jira account credentials.
 
-For an example JIRA account file, see ``examples/rules/jira_acct.yaml``. The account file is also yaml formatted and must contain two fields:
+For an example Jira account file, see ``examples/rules/jira_acct.yaml``. The account file is also yaml formatted and must contain two fields:
 
 ``user``: The username.
 
@@ -2096,16 +2096,16 @@ Optional:
 
 ``jira_components``: The name of the component or components to set the ticket to. This can be a single string or a list of strings.
 
-``jira_description``: Similar to ``alert_text``, this text is prepended to the JIRA description.
+``jira_description``: Similar to ``alert_text``, this text is prepended to the Jira description.
 
-``jira_label``: The label or labels to add to the JIRA ticket.  This can be a single string or a list of strings. This is provided for backwards compatibility and will eventually be deprecated. It is preferable to use the plural ``jira_labels`` instead.
+``jira_label``: The label or labels to add to the Jira ticket.  This can be a single string or a list of strings. This is provided for backwards compatibility and will eventually be deprecated. It is preferable to use the plural ``jira_labels`` instead.
 
-``jira_labels``: The label or labels to add to the JIRA ticket.  This can be a single string or a list of strings.
+``jira_labels``: The label or labels to add to the Jira ticket.  This can be a single string or a list of strings.
 
-``jira_priority``: The index of the priority to set the issue to. In the JIRA dropdown for priorities, 0 would represent the first priority,
+``jira_priority``: The index of the priority to set the issue to. In the Jira dropdown for priorities, 0 would represent the first priority,
 1 the 2nd, etc.
 
-``jira_watchers``: A list of user names to add as watchers on a JIRA ticket. This can be a single string or a list of strings.
+``jira_watchers``: A list of user names to add as watchers on a Jira ticket. This can be a single string or a list of strings.
 
 ``jira_bump_tickets``: If true, ElastAlert search for existing tickets newer than ``jira_max_age`` and comment on the ticket with
 information about the alert instead of opening another ticket. ElastAlert finds the existing ticket by searching by summary. If the
@@ -2114,7 +2114,7 @@ the two summaries must be exact matches, except by setting ``jira_ignore_in_titl
 For example, if the custom subject is "foo occured at bar", and "foo" is the value field X in the match, you can set ``jira_ignore_in_title``
 to "X" and it will only bump tickets with "bar" in the subject. Defaults to false.
 
-``jira_ignore_in_title``: ElastAlert will attempt to remove the value for this field from the JIRA subject when searching for tickets to bump.
+``jira_ignore_in_title``: ElastAlert will attempt to remove the value for this field from the Jira subject when searching for tickets to bump.
 See ``jira_bump_tickets`` description above for an example.
 
 ``jira_max_age``: If ``jira_bump_tickets`` is true, the maximum age of a ticket, in days, such that ElastAlert will comment on the ticket
@@ -2145,7 +2145,7 @@ Example usage::
 
     jira_bump_only: true
 
-``jira_transition_to``: If ``jira_bump_tickets`` is true, Transition this ticket to the given Status when bumping. Must match the text of your JIRA implementation's Status field.
+``jira_transition_to``: If ``jira_bump_tickets`` is true, Transition this ticket to the given Status when bumping. Must match the text of your Jira implementation's Status field.
 
 Example usage::
 
@@ -2158,9 +2158,9 @@ It only applies if ``jira_bump_tickets`` is true. Default is 0 days.
 
 Arbitrary Jira fields:
 
-ElastAlert supports setting any arbitrary JIRA field that your jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your JIRA server, internally, the field is represented as ``customfield_1111``. In elastalert, you may refer to either the public facing name OR the internal representation.
+ElastAlert supports setting any arbitrary Jira field that your Jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your Jira server, internally, the field is represented as ``customfield_1111``. In elastalert, you may refer to either the public facing name OR the internal representation.
 
-In addition, if you would like to use a field in the alert as the value for a custom JIRA field, use the field name plus a # symbol in front. For example, if you wanted to set a custom JIRA field called "user" to the value of the field "username" from the match, you would use the following.
+In addition, if you would like to use a field in the alert as the value for a custom Jira field, use the field name plus a # symbol in front. For example, if you wanted to set a custom Jira field called "user" to the value of the field "username" from the match, you would use the following.
 
 Example::
 

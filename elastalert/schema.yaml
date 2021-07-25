@@ -385,7 +385,7 @@ properties:
   http_post_ignore_ssl_errors: {type: boolean}
   http_post_timeout: {type: integer}
 
-  ### JIRA
+  ### Jira
   jira_server: {type: string}
   jira_project: {type: string}
   jira_issuetype: {type: string}
