@@ -9,6 +9,25 @@
 ## Other changes
 - None
 
+
+# 2.x.x
+
+## Breaking changes
+- [VictorOps] Changed `state_message` and `entity_display_name` values to be taken from an alert rule. - [#329](https://github.com/jertel/elastalert2/pull/329) - @ChristophShyper
+  - Potentially a breaking change if the alert subject changes due to the new default behavior.
+
+## New features
+- None
+
+## Other changes
+- [Tests] Add test code. Changed ubuntu version of Dockerfile-test from latest to 21.10. - [#354](https://github.com/jertel/elastalert2/pull/354) - @nsano-rururu
+- [Tests] Improved test coverage for opsgenie.py 96% to 100% - [#364](https://github.com/jertel/elastalert2/pull/364) - @nsano-rururu
+- Remove Python 2.x compatibility code - [#354](https://github.com/jertel/elastalert2/pull/354) - @nsano-rururu
+- [Docs] Added Chatwork proxy settings to documentation - [#360](https://github.com/jertel/elastalert2/pull/360) - @nsano-rururu
+- [Docs] Tidy Twilio alerter documentation - [#363](https://github.com/jertel/elastalert2/pull/363) - @ferozsalam
+- [Docs] Update mentions of JIRA to Jira - [#365](https://github.com/jertel/elastalert2/pull/365) - @ferozsalam
+- Add settings to schema.yaml(Chatwork proxy, Dingtalk proxy) - [#361](https://github.com/jertel/elastalert2/pull/361) - @nsano-rururu
+
 # 2.1.2
 ## Breaking changes
 - None

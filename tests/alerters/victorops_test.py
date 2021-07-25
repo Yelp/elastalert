@@ -36,7 +36,50 @@ def test_victorops(caplog):
         'message_type': rule['victorops_message_type'],
         'entity_display_name': rule['victorops_entity_display_name'],
         'monitoring_tool': 'ElastAlert',
-        'state_message': 'Test VictorOps Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
+        'state_message': 'Test VictorOps Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+
+    mock_post_request.assert_called_once_with(
+        'https://alert.victorops.com/integrations/generic/20131114/alert/xxxx1/xxxx2',
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+    assert ('elastalert', logging.INFO, 'Trigger sent to VictorOps') == caplog.record_tuples[0]
+
+
+def test_victorops_no_title(caplog):
+    caplog.set_level(logging.INFO)
+    rule = {
+        'name': 'Test VictorOps Rule',
+        'type': 'any',
+        'victorops_api_key': 'xxxx1',
+        'victorops_routing_key': 'xxxx2',
+        'victorops_message_type': 'INFO',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = VictorOpsAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'message_type': rule['victorops_message_type'],
+        'entity_display_name': rule['name'],
+        'monitoring_tool': 'ElastAlert',
+        'state_message': 'Test VictorOps Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
     }
 
     mock_post_request.assert_called_once_with(
@@ -76,7 +119,9 @@ def test_victorops_proxy():
         'message_type': rule['victorops_message_type'],
         'entity_display_name': rule['victorops_entity_display_name'],
         'monitoring_tool': 'ElastAlert',
-        'state_message': 'Test VictorOps Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
+        'state_message': 'Test VictorOps Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
     }
 
     mock_post_request.assert_called_once_with(
@@ -141,7 +186,9 @@ def test_victorops_entity_id():
         'entity_display_name': rule['victorops_entity_display_name'],
         'monitoring_tool': 'ElastAlert',
         'state_message': 'Test VictorOps Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
-        'entity_id': '12345'
+        'entity_id': '12345',
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
     }
 
     mock_post_request.assert_called_once_with(
@@ -186,7 +233,9 @@ def test_victorops_message_type(message_type, except_message_type):
         'message_type': except_message_type,
         'entity_display_name': rule['victorops_entity_display_name'],
         'monitoring_tool': 'ElastAlert',
-        'state_message': 'Test VictorOps Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
+        'state_message': 'Test VictorOps Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n',
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
     }
 
     mock_post_request.assert_called_once_with(

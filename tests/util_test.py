@@ -7,11 +7,13 @@ from datetime import datetime
 from datetime import timedelta
 
 from dateutil.parser import parse as dt
+from dateutil.tz import tzutc
 
 from unittest import mock
 
 from elastalert.util import add_raw_postfix
 from elastalert.util import build_es_conn_config
+from elastalert.util import dt_to_int
 from elastalert.util import dt_to_ts
 from elastalert.util import dt_to_ts_with_format
 from elastalert.util import EAException
@@ -19,6 +21,7 @@ from elastalert.util import elasticsearch_client
 from elastalert.util import flatten_dict
 from elastalert.util import format_index
 from elastalert.util import get_module
+from elastalert.util import inc_ts
 from elastalert.util import lookup_es_key
 from elastalert.util import parse_deadline
 from elastalert.util import parse_duration
@@ -27,9 +30,11 @@ from elastalert.util import replace_dots_in_field_names
 from elastalert.util import resolve_string
 from elastalert.util import set_es_key
 from elastalert.util import should_scrolling_continue
+from elastalert.util import total_seconds
 from elastalert.util import ts_to_dt_with_format
 from elastalert.util import ts_utc_to_tz
 from elastalert.util import expand_string_into_dict
+from elastalert.util import unixms_to_dt
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
@@ -456,7 +461,6 @@ def test_elasticsearch_client(es_host, es_port, es_bearer, es_api_key):
     assert None is not acutual
 
 
-
 def test_expand_string_into_dict():
     dictionnary = {'@timestamp': '2021-07-06 01:00:00', 'metric_netfilter.ipv4_dst_cardinality': 401}
     string = 'metadata.source.ip'
@@ -464,3 +468,36 @@ def test_expand_string_into_dict():
 
     dictionnary_result = expand_string_into_dict(dictionnary, string, value)
     assert dictionnary['metadata']['source']['ip'] == value
+
+def test_inc_ts():
+    dt = datetime(2021, 7, 6, hour=0, minute=0, second=0)
+    actual = inc_ts(dt)
+    expected = '2021-07-06T00:00:00.001000Z'
+    assert expected == actual
+
+
+@pytest.mark.parametrize('dt, expected', [
+    (None, 0),
+    (
+        timedelta(
+            days=50, seconds=27, microseconds=10, milliseconds=29000, minutes=5, hours=8, weeks=2),
+        5558756.00001
+    )
+])
+def test_total_seconds(dt, expected):
+    actual = total_seconds(dt)
+    assert expected == actual
+
+
+def test_unixms_to_dt():
+    ts = 1626707067
+    actual = unixms_to_dt(ts)
+    expected = datetime(1970, 1, 19, 19, 51, 47, 67000, tzinfo=tzutc())
+    assert expected == actual
+
+
+def test_dt_to_int():
+    dt = datetime(2021, 7, 6, hour=0, minute=0, second=0)
+    actual = dt_to_int(dt)
+    expected = 1625529600000
+    assert expected == actual

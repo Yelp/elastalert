@@ -46,7 +46,7 @@ class JiraAlerter(Alerter):
         'jira_watchers',
     ]
 
-    # Some built-in jira types that can be used as custom fields require special handling
+    # Some built-in Jira types that can be used as custom fields require special handling
     # Here is a sample of one of them:
     # {"id":"customfield_12807","name":"My Custom Field","custom":true,"orderable":true,"navigable":true,"searchable":true,
     # "clauseNames":["cf[12807]","My Custom Field"],"schema":{"type":"array","items":"string",
@@ -109,7 +109,7 @@ class JiraAlerter(Alerter):
             self.get_arbitrary_fields()
         except JIRAError as e:
             # JIRAError may contain HTML, pass along only first 1024 chars
-            raise EAException("Error connecting to JIRA: %s" % (str(e)[:1024])).with_traceback(sys.exc_info()[2])
+            raise EAException("Error connecting to Jira: %s" % (str(e)[:1024])).with_traceback(sys.exc_info()[2])
 
         self.set_priority()
 
@@ -147,7 +147,7 @@ class JiraAlerter(Alerter):
     def set_jira_arg(self, jira_field, value, fields):
         # Remove the jira_ part.  Convert underscores to spaces
         normalized_jira_field = jira_field[5:].replace('_', ' ').lower()
-        # All jira fields should be found in the 'id' or the 'name' field. Therefore, try both just in case
+        # All Jira fields should be found in the 'id' or the 'name' field. Therefore, try both just in case
         for identifier in ['name', 'id']:
             field = next((f for f in fields if normalized_jira_field == f[identifier].replace('_', ' ').lower()), None)
             if field:
@@ -173,7 +173,7 @@ class JiraAlerter(Alerter):
             array_items = field['schema']['items']
             # Simple string types
             if array_items in ['string', 'date', 'datetime']:
-                # Special case for multi-select custom types (the JIRA metadata says that these are strings, but
+                # Special case for multi-select custom types (the Jira metadata says that these are strings, but
                 # in reality, they are required to be provided as an object.
                 if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
                     self.jira_args[arg_name] = [{'value': v} for v in value]
@@ -193,7 +193,7 @@ class JiraAlerter(Alerter):
         else:
             # Simple string types
             if arg_type in ['string', 'date', 'datetime']:
-                # Special case for custom types (the JIRA metadata says that these are strings, but
+                # Special case for custom types (the Jira metadata says that these are strings, but
                 # in reality, they are required to be provided as an object.
                 if 'custom' in field['schema'] and field['schema']['custom'] in self.custom_string_types_with_special_handling:
                     self.jira_args[arg_name] = {'value': value}
@@ -214,8 +214,8 @@ class JiraAlerter(Alerter):
 
         for jira_field, value in self.rule.items():
             # If we find a field that is not covered by the set that we are aware of, it means it is either:
-            # 1. A built-in supported field in JIRA that we don't have on our radar
-            # 2. A custom field that a JIRA admin has configured
+            # 1. A built-in supported field in Jira that we don't have on our radar
+            # 2. A custom field that a Jira admin has configured
             if jira_field.startswith('jira_') and jira_field not in self.known_field_list and str(value)[:1] != '#':
                 self.set_jira_arg(jira_field, value, self.jira_fields)
             if jira_field.startswith('jira_') and jira_field not in self.known_field_list and str(value)[:1] == '#':
@@ -261,7 +261,7 @@ class JiraAlerter(Alerter):
         try:
             issues = self.client.search_issues(jql)
         except JIRAError as e:
-            elastalert_logger.exception("Error while searching for JIRA ticket using jql '%s': %s" % (jql, e))
+            elastalert_logger.exception("Error while searching for Jira ticket using jql '%s': %s" % (jql, e))
             return None
 
         if len(issues):
@@ -346,7 +346,7 @@ class JiraAlerter(Alerter):
                             )).with_traceback(sys.exc_info()[2])
 
         except JIRAError as e:
-            raise EAException("Error creating JIRA ticket using jira_args (%s): %s" % (self.jira_args, e))
+            raise EAException("Error creating Jira ticket using jira_args (%s): %s" % (self.jira_args, e))
         elastalert_logger.info("Opened Jira ticket: %s" % (self.issue))
 
         if self.pipeline is not None:

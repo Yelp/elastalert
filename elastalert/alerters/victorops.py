@@ -17,7 +17,7 @@ class VictorOpsAlerter(Alerter):
         self.victorops_routing_key = self.rule.get('victorops_routing_key', None)
         self.victorops_message_type = self.rule.get('victorops_message_type', None)
         self.victorops_entity_id = self.rule.get('victorops_entity_id', None)
-        self.victorops_entity_display_name = self.rule.get('victorops_entity_display_name', 'no entity display name')
+        self.victorops_entity_display_name = self.rule.get('victorops_entity_display_name', None) # set entity_display_name from alert_subject by default
         self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (
             self.victorops_api_key, self.victorops_routing_key)
         self.victorops_proxy = self.rule.get('victorops_proxy', None)
@@ -29,12 +29,17 @@ class VictorOpsAlerter(Alerter):
         headers = {'content-type': 'application/json'}
         # set https proxy, if it was provided
         proxies = {'https': self.victorops_proxy} if self.victorops_proxy else None
+        # set title with alert_subject
+        self.victorops_entity_display_name = self.create_title(matches) if \
+            self.victorops_entity_display_name is None else self.victorops_entity_display_name
         payload = {
             "message_type": self.victorops_message_type,
             "entity_display_name": self.victorops_entity_display_name,
             "monitoring_tool": "ElastAlert",
             "state_message": body
         }
+        # add all data from event payload
+        payload.update(matches[0])
         if self.victorops_entity_id:
             payload["entity_id"] = self.victorops_entity_id
 

@@ -1,6 +1,6 @@
 # Contributing to ElastAlert 2
 
-## Introduction
+## Guidelines
 
 PRs are welcome, but must include tests, when possible. PRs will not be merged if they do not pass
 the automated CI workflows. To test your changes before creating a PR, run
