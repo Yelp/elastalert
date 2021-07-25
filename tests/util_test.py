@@ -466,8 +466,9 @@ def test_expand_string_into_dict():
     string = 'metadata.source.ip'
     value = '0.0.0.0'
 
-    dictionnary_result = expand_string_into_dict(dictionnary, string, value)
+    expand_string_into_dict(dictionnary, string, value)
     assert dictionnary['metadata']['source']['ip'] == value
+
 
 def test_inc_ts():
     dt = datetime(2021, 7, 6, hour=0, minute=0, second=0)

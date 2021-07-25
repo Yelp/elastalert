@@ -1168,7 +1168,6 @@ def test_metric_aggregation():
     rule.check_matches(datetime.datetime.now(), 'qk_val', {'metric_cpu_pct_avg': {'value': 0.95}})
     assert rule.matches[0]['subdict'] == 'qk_val'
 
-
     rules['query_key'] = 'subdict1.subdict2.subdict3'
     rule = MetricAggregationRule(rules)
     rule.check_matches(datetime.datetime.now(), 'qk_val', {'metric_cpu_pct_avg': {'value': 0.95}})
