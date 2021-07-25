@@ -120,7 +120,7 @@ class RulesLoader(object):
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
-    # For example, Jira goes before email so the ticket # will be added to the resulting email.
+    # For example, jira goes before email so the ticket # will be added to the resulting email.
     alerts_order = {
         'jira': 0,
         'email': 1
