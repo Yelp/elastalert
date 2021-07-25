@@ -182,7 +182,7 @@ class Alerter(object):
         return {'type': 'Unknown'}
 
     def create_title(self, matches):
-        """ Creates custom alert title to be used, e.g. as an e-mail subject or JIRA issue summary.
+        """ Creates custom alert title to be used, e.g. as an e-mail subject or Jira issue summary.
 
         :param matches: A list of dictionaries of relevant information to the alert.
         """

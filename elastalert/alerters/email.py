@@ -48,10 +48,10 @@ class EmailAlerter(Alerter):
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
-        # Add JIRA ticket if it exists
+        # Add Jira ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
             url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
-            body += '\nJIRA ticket: %s' % (url)
+            body += '\nJira ticket: %s' % (url)
 
         to_addr = self.rule['email']
         if 'email_from_field' in self.rule:
