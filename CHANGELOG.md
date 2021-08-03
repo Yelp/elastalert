@@ -18,7 +18,7 @@
 - Change metric/percentage rule types to store query_key as dict, instead of string, for consistency with other rule types. [#340](https://github.com/jertel/elastalert2/issues/340) - @AntoineBlaud
 
 ## New features
-- None
+- [Kubernetes] Adding Image Pull Secret to Helm Chart - [#370](https://github.com/jertel/elastalert2/pull/370) - @robrankin
 
 ## Other changes
 - [Tests] Improve test code coverage - [#331](https://github.com/jertel/elastalert2/pull/331) - @nsano-rururu
