@@ -1343,7 +1343,7 @@ evaluated separately against the threshold(s).
 
 ``sync_bucket_interval``: See ``sync_bucket_interval`` in  Metric Aggregation rule
 
-``percentage_format_string``: An optional format string to apply to the percentage value in the alert match text. This also adds 'percentage_formatted' value to the match_body so that you can use the formatted value for ``alert_subject_args`` and ``alert_text_args``. Must be a valid python format string.
+``percentage_format_string``: An optional format string to apply to the percentage value in the alert match text. This also adds 'percentage_formatted' value to the match_body in addition to raw, unformatted 'percentage' value so that you can use the formatted value for ``alert_subject_args`` and ``alert_text_args``. Must be a valid python format string.
 For example, "%.2f" will round it to 2 decimal places.
 See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
 
