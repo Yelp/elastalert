@@ -1288,6 +1288,9 @@ class PercentageMatchRule(BaseAggregationRule):
                     if query_key is not None:
                         match = expand_string_into_dict(match, self.rules['query_key'], query_key)
                     self.add_match(match)
+                    percentage_format_string = self.rules.get('percentage_format_string', None)
+                    if percentage_format_string is not None:
+                        match['percentage'] = percentage_format_string % (match_percentage)
 
     def percentage_violation(self, match_percentage):
         if 'max_percentage' in self.rules and match_percentage > self.rules['max_percentage']:
