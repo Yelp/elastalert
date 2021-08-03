@@ -23,17 +23,17 @@
 ## Other changes
 - [Tests] Improve test code coverage - [#331](https://github.com/jertel/elastalert2/pull/331) - @nsano-rururu
 - [Docs] Upgrade Sphinx from 4.0.2 to 4.1.2- [#332](https://github.com/jertel/elastalert2/pull/332) [#343](https://github.com/jertel/elastalert2/pull/343) [#344](https://github.com/jertel/elastalert2/pull/344) [#369](https://github.com/jertel/elastalert2/pull/369) - @nsano-rururu
+- Ensure hit count returns correct value for newer ES clusters - [#333](https://github.com/jertel/elastalert2/pull/333) - @jeffashton
 - [Tests] Upgrade Tox from 3.23.1 to 3.24.0 - [#345](https://github.com/jertel/elastalert2/pull/345)  - @nsano-rururu
 - Upgrade Jinja from 2.11.3 to 3.0.1 - [#350](https://github.com/jertel/elastalert2/pull/350) - @mrfroggg
 - [Tests] Add test code. Changed ubuntu version of Dockerfile-test from latest to 21.10. - [#354](https://github.com/jertel/elastalert2/pull/354) - @nsano-rururu
-- [Tests] Improved test coverage for opsgenie.py 96% to 100% - [#364](https://github.com/jertel/elastalert2/pull/364) - @nsano-rururu
 - Remove Python 2.x compatibility code - [#354](https://github.com/jertel/elastalert2/pull/354) - @nsano-rururu
 - [Docs] Added Chatwork proxy settings to documentation - [#360](https://github.com/jertel/elastalert2/pull/360) - @nsano-rururu
 - Add settings to schema.yaml(Chatwork proxy, Dingtalk proxy) - [#361](https://github.com/jertel/elastalert2/pull/361) - @nsano-rururu
 - [Docs] Tidy Twilio alerter documentation - [#363](https://github.com/jertel/elastalert2/pull/363) - @ferozsalam
-- [Docs] Tidy Datadog alerter documentation - [#380](https://github.com/jertel/elastalert2/pull/380) - @ferozsalam
-- [Tests] Improve opsgenie test code coverage - [#364](https://github.com/jertel/elastalert2/pull/364) - @nsano-rururu
+- [Tests] Improved test coverage for opsgenie.py 96% to 100% - [#364](https://github.com/jertel/elastalert2/pull/364) - @nsano-rururu
 - [Docs] Update mentions of JIRA to Jira - [#365](https://github.com/jertel/elastalert2/pull/365) - @ferozsalam
+- [Docs] Tidy Datadog alerter documentation - [#380](https://github.com/jertel/elastalert2/pull/380) - @ferozsalam
 
 # 2.1.2
 ## Breaking changes
