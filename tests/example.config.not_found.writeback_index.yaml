@@ -1,0 +1,13 @@
+rules_folder: /opt/elastalert/rules
+
+run_every:
+  seconds: 10
+
+es_host: elasticsearch
+es_port: 9200
+
+es_username: elastic
+es_password: $ELASTIC_PASS
+
+alert_time_limit:
+  days: 2

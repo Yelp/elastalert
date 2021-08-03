@@ -34,7 +34,7 @@ setup(
         'envparse>=0.2.0',
         'exotel>=0.1.3',
         'jira>=2.0.0',
-        'Jinja2==2.11.3',
+        'Jinja2==3.0.1',
         'jsonschema>=3.0.2',
         'prison>=0.1.2',
         'prometheus_client>=0.10.1',

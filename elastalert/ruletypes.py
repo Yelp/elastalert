@@ -7,7 +7,7 @@ from sortedcontainers import SortedKeyList as sortedlist
 
 from elastalert.util import (add_raw_postfix, dt_to_ts, EAException, elastalert_logger, elasticsearch_client,
                              format_index, hashable, lookup_es_key, new_get_event_ts, pretty_ts, total_seconds,
-                             ts_now, ts_to_dt)
+                             ts_now, ts_to_dt, expand_string_into_dict)
 
 
 class RuleType(object):
@@ -1096,7 +1096,7 @@ class MetricAggregationRule(BaseAggregationRule):
                 match = {self.rules['timestamp_field']: timestamp,
                          self.metric_key: metric_val}
                 if query_key is not None:
-                    match[self.rules['query_key']] = query_key
+                    match = expand_string_into_dict(match, self.rules['query_key'], query_key)
                 self.add_match(match)
 
     def check_matches_recursive(self, timestamp, query_key, aggregation_data, compound_keys, match_data):
@@ -1286,7 +1286,7 @@ class PercentageMatchRule(BaseAggregationRule):
                 if self.percentage_violation(match_percentage):
                     match = {self.rules['timestamp_field']: timestamp, 'percentage': match_percentage, 'denominator': total_count}
                     if query_key is not None:
-                        match[self.rules['query_key']] = query_key
+                        match = expand_string_into_dict(match, self.rules['query_key'], query_key)
                     self.add_match(match)
 
     def percentage_violation(self, match_percentage):

@@ -129,7 +129,7 @@ def test_jira(caplog):
     user, level, message = caplog.record_tuples[3]
     assert 'elastalert' in user
     assert logging.ERROR == level
-    assert 'Error while searching for JIRA ticket using jql' in message
+    assert 'Error while searching for Jira ticket using jql' in message
 
     # Only bump after 3d of inactivity
     rule['jira_bump_after_inactivity'] = 3
@@ -299,7 +299,7 @@ def test_jira_arbitrary_field_support():
     assert mock_jira.mock_calls[:6] == expected
     assert mock_jira.mock_calls[3][2]['description'].startswith(description_txt)
 
-    # Reference an arbitrary string field that is not defined on the JIRA server
+    # Reference an arbitrary string field that is not defined on the Jira server
     rule['jira_nonexistent_field'] = 'nonexistent field value'
 
     with mock.patch('elastalert.alerters.jira.JIRA') as mock_jira, \

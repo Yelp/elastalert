@@ -256,13 +256,10 @@ def seconds(td):
 
 
 def total_seconds(dt):
-    # For python 2.6 compatability
     if dt is None:
         return 0
-    elif hasattr(dt, 'total_seconds'):
-        return dt.total_seconds()
     else:
-        return (dt.microseconds + (dt.seconds + dt.days * 24 * 3600) * 10**6) / 10**6
+        return dt.total_seconds()
 
 
 def dt_to_int(dt):
@@ -484,3 +481,40 @@ def should_scrolling_continue(rule_conf):
     stop_the_scroll = 0 < max_scrolling <= rule_conf.get('scrolling_cycle')
 
     return not stop_the_scroll
+
+
+def _expand_string_into_dict(string, value,  sep='.'):
+    """
+    Converts a encapsulated string-dict to a sequence of dict. Use separator (default '.') to split the string.
+    Example: 
+        string1.string2.stringN : value  -> {string1: {string2: {string3: value}}
+ 
+    :param string: The encapsulated "string-dict"
+    :param value: Value associated to the last field of the "string-dict"
+    :param sep: Separator character. Default: '.'
+    :rtype: dict
+    """
+    if sep not in string:
+        return {string : value}
+    key, val = string.split(sep, 1)
+    return {key: _expand_string_into_dict(val, value)}
+ 
+ 
+def expand_string_into_dict(dictionary, string , value, sep='.'):
+    """
+    Useful function to "compile" a string-dict string used in metric and percentage rules into a dictionary sequence.
+ 
+    :param dictionary: The dictionary dict
+    :param string:  String Key 
+    :param value: String Value
+    :param sep: Separator character. Default: '.'
+    :rtype: dict
+    """
+ 
+    if sep not in string:
+        dictionary[string] = value
+        return dictionary
+    else:
+        field1, new_string = string.split(sep, 1)
+        dictionary[field1] = _expand_string_into_dict(new_string, value)
+    return dictionary

@@ -12,6 +12,7 @@ from elasticsearch.exceptions import ElasticsearchException
 
 from elastalert.enhancements import BaseEnhancement
 from elastalert.enhancements import DropMatchException
+from elastalert.enhancements import TimeEnhancement
 from elastalert.kibana import dashboard_temp
 from elastalert.util import dt_to_ts
 from elastalert.util import dt_to_unix
@@ -1443,3 +1444,24 @@ def test_get_elasticsearch_client_different_rule(ea):
     y = ea.get_elasticsearch_client(y_rule)
 
     assert x is not y, 'Should return unique client for each rule'
+
+
+def test_base_enhancement_process_error(ea):
+    try:
+        be = BaseEnhancement(ea.rules[0])
+        be.process('')
+        assert False
+    except NotImplementedError:
+        assert True
+
+
+def test_time_enhancement(ea):
+    be = BaseEnhancement(ea.rules[0])
+    te = TimeEnhancement(be)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    te.process(match)
+    excepted = '2021-01-01 00:00 +0000'
+    assert match['@timestamp'] == excepted
