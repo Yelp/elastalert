@@ -34,6 +34,7 @@
 - [Docs] Tidy Datadog alerter documentation - [#380](https://github.com/jertel/elastalert2/pull/380) - @ferozsalam
 - [Tests] Improve opsgenie test code coverage - [#364](https://github.com/jertel/elastalert2/pull/364) - @nsano-rururu
 - [Docs] Update mentions of JIRA to Jira - [#365](https://github.com/jertel/elastalert2/pull/365) - @ferozsalam
+- Apply percentage_format_string to match_body percentage value - [#387](https://github.com/jertel/elastalert2/pull/387) - @iamxeph
 
 # 2.1.2
 ## Breaking changes
