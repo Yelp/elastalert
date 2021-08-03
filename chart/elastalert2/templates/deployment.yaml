@@ -27,6 +27,10 @@ spec:
         app: {{ template "elastalert.name" . }}
         release: {{ .Release.Name }}
     spec:
+{{- if .Values.image.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.image.pullSecret }}
+{{- end }}
       serviceAccountName: {{ include "elastalert.serviceAccountName" . }}
 {{- if .Values.podSecurityContext }}
       securityContext:
