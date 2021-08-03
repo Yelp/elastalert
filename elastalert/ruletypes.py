@@ -1290,7 +1290,7 @@ class PercentageMatchRule(BaseAggregationRule):
                     self.add_match(match)
                     percentage_format_string = self.rules.get('percentage_format_string', None)
                     if percentage_format_string is not None:
-                        match['percentage'] = percentage_format_string % (match_percentage)
+                        match['percentage_formatted'] = percentage_format_string % (match_percentage)
 
     def percentage_violation(self, match_percentage):
         if 'max_percentage' in self.rules and match_percentage > self.rules['max_percentage']:
