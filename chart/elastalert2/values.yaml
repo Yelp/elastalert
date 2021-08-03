@@ -27,6 +27,7 @@ image:
   # docker image tag
   tag: 2.1.2
   pullPolicy: IfNotPresent
+  pullSecret: ""
 
 resources: {}
 
