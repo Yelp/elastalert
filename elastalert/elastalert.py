@@ -456,8 +456,21 @@ class ElastAlerter(object):
             five=rule['five']
         )
 
+        es_client = self.thread_data.current_es
         try:
-            res = self.thread_data.current_es.count(index=index, doc_type=rule['doc_type'], body=query, ignore_unavailable=True)
+            if es_client.is_atleastsixtwo():
+                res = es_client.count(
+                    index=index,
+                    body=query,
+                    ignore_unavailable=True
+                )
+            else:
+                res = es_client.count(
+                    index=index,
+                    doc_type=rule['doc_type'],
+                    body=query,
+                    ignore_unavailable=True
+                )
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
             # (so big that they will fill the entire terminal buffer)
