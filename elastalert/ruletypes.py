@@ -1068,10 +1068,16 @@ class MetricAggregationRule(BaseAggregationRule):
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
 
     def get_match_str(self, match):
+        metric_format_string = self.rules.get('metric_format_string', None)
+        if metric_format_string is not None:
+            if (metric_format_string.startswith('{')):
+                metric_formatted = metric_format_string.format(match[self.metric_key])
+            else:
+                metric_formatted = metric_format_string % (match[self.metric_key])
         message = 'Threshold violation, %s:%s %s (min: %s max : %s) \n\n' % (
             self.rules['metric_agg_type'],
             self.rules['metric_agg_key'],
-            match[self.metric_key],
+            metric_formatted if metric_format_string else match[self.metric_key],
             self.rules.get('min_threshold'),
             self.rules.get('max_threshold')
         )
@@ -1095,6 +1101,12 @@ class MetricAggregationRule(BaseAggregationRule):
             if self.crossed_thresholds(metric_val):
                 match = {self.rules['timestamp_field']: timestamp,
                          self.metric_key: metric_val}
+                metric_format_string = self.rules.get('metric_format_string', None)
+                if metric_format_string is not None:
+                    if (metric_format_string.startswith('{')):
+                        match[self.metric_key +'_formatted'] = metric_format_string.format(metric_val)
+                    else:
+                        match[self.metric_key +'_formatted'] = metric_format_string % (metric_val)
                 if query_key is not None:
                     match = expand_string_into_dict(match, self.rules['query_key'], query_key)
                 self.add_match(match)
