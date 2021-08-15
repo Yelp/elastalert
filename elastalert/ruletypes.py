@@ -1140,11 +1140,11 @@ class MetricAggregationRule(BaseAggregationRule):
             return True
         return False
 
-    def format_string(self, metric_format_string, target_string):
-        if (metric_format_string.startswith('{')):
-            return metric_format_string.format(target_string)
+    def format_string(self, format_config, target_value):
+        if (format_config.startswith('{')):
+            return format_config.format(target_value)
         else:
-            return metric_format_string % (target_string)
+            return format_config % (target_value)
 
 
 class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
