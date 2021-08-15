@@ -1068,10 +1068,11 @@ class MetricAggregationRule(BaseAggregationRule):
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
 
     def get_match_str(self, match):
+        metric_format_string = self.rules.get('metric_format_string', None)
         message = 'Threshold violation, %s:%s %s (min: %s max : %s) \n\n' % (
             self.rules['metric_agg_type'],
             self.rules['metric_agg_key'],
-            match[self.metric_key],
+            self.format_string(metric_format_string, match[self.metric_key]) if metric_format_string else match[self.metric_key],
             self.rules.get('min_threshold'),
             self.rules.get('max_threshold')
         )
@@ -1095,6 +1096,9 @@ class MetricAggregationRule(BaseAggregationRule):
             if self.crossed_thresholds(metric_val):
                 match = {self.rules['timestamp_field']: timestamp,
                          self.metric_key: metric_val}
+                metric_format_string = self.rules.get('metric_format_string', None)
+                if metric_format_string is not None:
+                    match[self.metric_key +'_formatted'] = self.format_string(metric_format_string, metric_val)
                 if query_key is not None:
                     match = expand_string_into_dict(match, self.rules['query_key'], query_key)
                 self.add_match(match)
@@ -1135,6 +1139,12 @@ class MetricAggregationRule(BaseAggregationRule):
         if 'min_threshold' in self.rules and metric_value < self.rules['min_threshold']:
             return True
         return False
+
+    def format_string(self, format_config, target_value):
+        if (format_config.startswith('{')):
+            return format_config.format(target_value)
+        else:
+            return format_config % (target_value)
 
 
 class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):

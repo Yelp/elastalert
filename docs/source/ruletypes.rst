@@ -1263,6 +1263,10 @@ allign with the time elastalert runs, (This both avoid calculations on partial d
 See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_offset for a
 more comprehensive explaination.
 
+``metric_format_string``: An optional format string applies to the aggregated metric value in the alert match text and match_body. This adds 'metric_{metric_agg_key}_formatted' value to the match_body in addition to raw, unformatted 'metric_{metric_agg_key}' value so that you can use the values for ``alert_subject_args`` and ``alert_text_args``. Must be a valid python format string. Both format() and %-formatted syntax works. For example, "{:.2%}" will format '0.966666667' to '96.67%', and "%.2f" will format '0.966666667' to '0.97'.
+See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
+
+
 Spike Aggregation
 ~~~~~~~~~~~~~~~~~~
 
