@@ -1258,7 +1258,7 @@ class PercentageMatchRule(BaseAggregationRule):
     def get_match_str(self, match):
         percentage_format_string = self.rules.get('percentage_format_string', None)
         message = 'Percentage violation, value: %s (min: %s max : %s) of %s items\n\n' % (
-            percentage_format_string % (match['percentage']) if percentage_format_string else match['percentage'],
+            self.format_string(percentage_format_string, match['percentage']) if percentage_format_string else match['percentage'],
             self.rules.get('min_percentage'),
             self.rules.get('max_percentage'),
             match['denominator']
@@ -1297,7 +1297,7 @@ class PercentageMatchRule(BaseAggregationRule):
                     match = {self.rules['timestamp_field']: timestamp, 'percentage': match_percentage, 'denominator': total_count}
                     percentage_format_string = self.rules.get('percentage_format_string', None)
                     if percentage_format_string is not None:
-                        match['percentage_formatted'] = percentage_format_string % (match_percentage)
+                        match['percentage_formatted'] = self.format_string(percentage_format_string, match_percentage)
                     if query_key is not None:
                         match = expand_string_into_dict(match, self.rules['query_key'], query_key)
                     self.add_match(match)
@@ -1308,3 +1308,9 @@ class PercentageMatchRule(BaseAggregationRule):
         if 'min_percentage' in self.rules and match_percentage < self.rules['min_percentage']:
             return True
         return False
+
+    def format_string(self, format_config, target_value):
+        if (format_config.startswith('{')):
+            return format_config.format(target_value)
+        else:
+            return format_config % (target_value)

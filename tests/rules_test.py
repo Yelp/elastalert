@@ -1303,6 +1303,12 @@ def test_percentage_match():
     assert '76.1589403974' in rule.get_match_str(rule.matches[0])
     assert rule.matches[0]['percentage'] == 76.15894039742994
     assert 'percentage_formatted' not in rule.matches[0]
+    rules['percentage_format_string'] = '{:.2f}'
+    rule = PercentageMatchRule(rules)
+    rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(76.666666667, 24))
+    assert '76.16' in rule.get_match_str(rule.matches[0])
+    assert rule.matches[0]['percentage'] == 76.15894039742994
+    assert rule.matches[0]['percentage_formatted'] == '76.16'
     rules['percentage_format_string'] = '%.2f'
     rule = PercentageMatchRule(rules)
     rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(76.666666667, 24))
