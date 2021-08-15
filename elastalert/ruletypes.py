@@ -1069,15 +1069,10 @@ class MetricAggregationRule(BaseAggregationRule):
 
     def get_match_str(self, match):
         metric_format_string = self.rules.get('metric_format_string', None)
-        if metric_format_string is not None:
-            if (metric_format_string.startswith('{')):
-                metric_formatted = metric_format_string.format(match[self.metric_key])
-            else:
-                metric_formatted = metric_format_string % (match[self.metric_key])
         message = 'Threshold violation, %s:%s %s (min: %s max : %s) \n\n' % (
             self.rules['metric_agg_type'],
             self.rules['metric_agg_key'],
-            metric_formatted if metric_format_string else match[self.metric_key],
+            self.format_string(metric_format_string, match[self.metric_key]) if metric_format_string else match[self.metric_key],
             self.rules.get('min_threshold'),
             self.rules.get('max_threshold')
         )
@@ -1103,10 +1098,7 @@ class MetricAggregationRule(BaseAggregationRule):
                          self.metric_key: metric_val}
                 metric_format_string = self.rules.get('metric_format_string', None)
                 if metric_format_string is not None:
-                    if (metric_format_string.startswith('{')):
-                        match[self.metric_key +'_formatted'] = metric_format_string.format(metric_val)
-                    else:
-                        match[self.metric_key +'_formatted'] = metric_format_string % (metric_val)
+                    match[self.metric_key +'_formatted'] = self.format_string(metric_format_string, metric_val)
                 if query_key is not None:
                     match = expand_string_into_dict(match, self.rules['query_key'], query_key)
                 self.add_match(match)
@@ -1147,6 +1139,12 @@ class MetricAggregationRule(BaseAggregationRule):
         if 'min_threshold' in self.rules and metric_value < self.rules['min_threshold']:
             return True
         return False
+
+    def format_string(self, metric_format_string, target_string):
+        if (metric_format_string.startswith('{')):
+            return metric_format_string.format(target_string)
+        else:
+            return metric_format_string % (target_string)
 
 
 class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
