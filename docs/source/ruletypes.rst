@@ -1347,7 +1347,7 @@ evaluated separately against the threshold(s).
 
 ``sync_bucket_interval``: See ``sync_bucket_interval`` in  Metric Aggregation rule
 
-``percentage_format_string``: An optional format string applies to the aggregated metric value in the alert match text and match_body. This adds 'percentage_formatted' value to the match_body in addition to raw, unformatted 'percentage' value so that you can use the values for ``alert_subject_args`` and ``alert_text_args``. Must be a valid python format string. Both format() and %-formatted syntax works. For example, both "{:.2f}" and "%.2f" will format '96.6666667' to '96.67'.
+``percentage_format_string``: An optional format string applies to the percentage value in the alert match text and match_body. This adds 'percentage_formatted' value to the match_body in addition to raw, unformatted 'percentage' value so that you can use the values for ``alert_subject_args`` and ``alert_text_args``. Must be a valid python format string. Both format() and %-formatted syntax works. For example, both "{:.2f}" and "%.2f" will format '96.6666667' to '96.67'.
 See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
 
 ``min_denominator``: Minimum number of documents on which percentage calculation will apply. Default is 0.
