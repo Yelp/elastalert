@@ -35,6 +35,7 @@ from elastalert.util import ts_to_dt_with_format
 from elastalert.util import ts_utc_to_tz
 from elastalert.util import expand_string_into_dict
 from elastalert.util import unixms_to_dt
+from elastalert.util import format_string
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
@@ -502,3 +503,11 @@ def test_dt_to_int():
     actual = dt_to_int(dt)
     expected = 1625529600000
     assert expected == actual
+
+
+def test_format_string():
+    target = 0.966666667
+    expected_percent_formatting = '0.97'
+    assert format_string('%.2f', target) == expected_percent_formatting
+    expected_str_formatting = '96.67%'
+    assert format_string('{:.2%}', target) == expected_str_formatting
