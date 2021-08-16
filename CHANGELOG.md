@@ -20,9 +20,9 @@
 ## New features
 - [Kubernetes] Adding Image Pull Secret to Helm Chart - [#370](https://github.com/jertel/elastalert2/pull/370) - @robrankin
 - Apply percentage_format_string to match_body percentage value; will appear in new percentage_formatted key - [#387](https://github.com/jertel/elastalert2/pull/387) - @iamxeph
-- Make percentage_format_string support format() syntax in addition to old %-formatted syntax - [#403](https://github.com/jertel/elastalert2/pull/403) - @iamxeph
-- Add metric_format_string optional configuration for Metric Aggregation to format aggregated value - [#](https://github.com/jertel/elastalert2/pull/) - @iamxeph
 - Add support for Kibana 7.14 for Kibana Discover - [#392](https://github.com/jertel/elastalert2/pull/392) - @nsano-rururu
+- Add metric_format_string optional configuration for Metric Aggregation to format aggregated value - [#399](https://github.com/jertel/elastalert2/pull/399) - @iamxeph
+- Make percentage_format_string support format() syntax in addition to old %-formatted syntax - [#403](https://github.com/jertel/elastalert2/pull/403) - @iamxeph
 
 ## Other changes
 - [Tests] Improve test code coverage - [#331](https://github.com/jertel/elastalert2/pull/331) - @nsano-rururu
