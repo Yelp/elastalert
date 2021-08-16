@@ -518,3 +518,18 @@ def expand_string_into_dict(dictionary, string , value, sep='.'):
         field1, new_string = string.split(sep, 1)
         dictionary[field1] = _expand_string_into_dict(new_string, value)
     return dictionary
+
+
+def format_string(format_config, target_value):
+    """
+    Formats number, supporting %-format and str.format() syntax.
+ 
+    :param format_config: string format syntax, for example '{:.2%}' or '%.2f'
+    :param target_value: number to format
+    :rtype: string
+    """
+    if (format_config.startswith('{')):
+        return format_config.format(target_value)
+    else:
+        return format_config % (target_value)
+

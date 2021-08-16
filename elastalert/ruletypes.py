@@ -7,7 +7,7 @@ from sortedcontainers import SortedKeyList as sortedlist
 
 from elastalert.util import (add_raw_postfix, dt_to_ts, EAException, elastalert_logger, elasticsearch_client,
                              format_index, hashable, lookup_es_key, new_get_event_ts, pretty_ts, total_seconds,
-                             ts_now, ts_to_dt, expand_string_into_dict)
+                             ts_now, ts_to_dt, expand_string_into_dict, format_string)
 
 
 class RuleType(object):
@@ -1072,7 +1072,7 @@ class MetricAggregationRule(BaseAggregationRule):
         message = 'Threshold violation, %s:%s %s (min: %s max : %s) \n\n' % (
             self.rules['metric_agg_type'],
             self.rules['metric_agg_key'],
-            self.format_string(metric_format_string, match[self.metric_key]) if metric_format_string else match[self.metric_key],
+            format_string(metric_format_string, match[self.metric_key]) if metric_format_string else match[self.metric_key],
             self.rules.get('min_threshold'),
             self.rules.get('max_threshold')
         )
@@ -1098,7 +1098,7 @@ class MetricAggregationRule(BaseAggregationRule):
                          self.metric_key: metric_val}
                 metric_format_string = self.rules.get('metric_format_string', None)
                 if metric_format_string is not None:
-                    match[self.metric_key +'_formatted'] = self.format_string(metric_format_string, metric_val)
+                    match[self.metric_key +'_formatted'] = format_string(metric_format_string, metric_val)
                 if query_key is not None:
                     match = expand_string_into_dict(match, self.rules['query_key'], query_key)
                 self.add_match(match)
@@ -1139,12 +1139,6 @@ class MetricAggregationRule(BaseAggregationRule):
         if 'min_threshold' in self.rules and metric_value < self.rules['min_threshold']:
             return True
         return False
-
-    def format_string(self, format_config, target_value):
-        if (format_config.startswith('{')):
-            return format_config.format(target_value)
-        else:
-            return format_config % (target_value)
 
 
 class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
@@ -1258,7 +1252,7 @@ class PercentageMatchRule(BaseAggregationRule):
     def get_match_str(self, match):
         percentage_format_string = self.rules.get('percentage_format_string', None)
         message = 'Percentage violation, value: %s (min: %s max : %s) of %s items\n\n' % (
-            percentage_format_string % (match['percentage']) if percentage_format_string else match['percentage'],
+            format_string(percentage_format_string, match['percentage']) if percentage_format_string else match['percentage'],
             self.rules.get('min_percentage'),
             self.rules.get('max_percentage'),
             match['denominator']
@@ -1297,7 +1291,7 @@ class PercentageMatchRule(BaseAggregationRule):
                     match = {self.rules['timestamp_field']: timestamp, 'percentage': match_percentage, 'denominator': total_count}
                     percentage_format_string = self.rules.get('percentage_format_string', None)
                     if percentage_format_string is not None:
-                        match['percentage_formatted'] = percentage_format_string % (match_percentage)
+                        match['percentage_formatted'] = format_string(percentage_format_string, match_percentage)
                     if query_key is not None:
                         match = expand_string_into_dict(match, self.rules['query_key'], query_key)
                     self.add_match(match)

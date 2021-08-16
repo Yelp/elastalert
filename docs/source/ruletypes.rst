@@ -1263,7 +1263,7 @@ allign with the time elastalert runs, (This both avoid calculations on partial d
 See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_offset for a
 more comprehensive explaination.
 
-``metric_format_string``: An optional format string applies to the aggregated metric value in the alert match text and match_body. This adds 'metric_{metric_agg_key}_formatted' value to the match_body in addition to raw, unformatted 'metric_{metric_agg_key}' value so that you can use the values for ``alert_subject_args`` and ``alert_text_args``. Must be a valid python format string. Both format() and %-formatted syntax works. For example, "{:.2%}" will format '0.966666667' to '96.67%', and "%.2f" will format '0.966666667' to '0.97'.
+``metric_format_string``: An optional format string applies to the aggregated metric value in the alert match text and match_body. This adds 'metric_{metric_agg_key}_formatted' value to the match_body in addition to raw, unformatted 'metric_{metric_agg_key}' value so that you can use the values for ``alert_subject_args`` and ``alert_text_args``. Must be a valid python format string. Both str.format() and %-format syntax works. For example, "{:.2%}" will format '0.966666667' to '96.67%', and "%.2f" will format '0.966666667' to '0.97'.
 See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
 
 
@@ -1347,8 +1347,7 @@ evaluated separately against the threshold(s).
 
 ``sync_bucket_interval``: See ``sync_bucket_interval`` in  Metric Aggregation rule
 
-``percentage_format_string``: An optional format string to apply to the percentage value in the alert match text. This also adds 'percentage_formatted' value to the match_body in addition to raw, unformatted 'percentage' value so that you can use the formatted value for ``alert_subject_args`` and ``alert_text_args``. Must be a valid python format string.
-For example, "%.2f" will round it to 2 decimal places.
+``percentage_format_string``: An optional format string applies to the percentage value in the alert match text and match_body. This adds 'percentage_formatted' value to the match_body in addition to raw, unformatted 'percentage' value so that you can use the values for ``alert_subject_args`` and ``alert_text_args``. Must be a valid python format string. Both str.format() and %-format syntax works. For example, both "{:.2f}" and "%.2f" will format '96.6666667' to '96.67'.
 See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
 
 ``min_denominator``: Minimum number of documents on which percentage calculation will apply. Default is 0.
