@@ -272,9 +272,10 @@ class FrequencyRule(RuleType):
 
     def get_match_str(self, match):
         lt = self.rules.get('use_local_time')
+        fmt = self.rules.get('custom_pretty_ts_format')
         match_ts = lookup_es_key(match, self.ts_field)
-        starttime = pretty_ts(dt_to_ts(ts_to_dt(match_ts) - self.rules['timeframe']), lt)
-        endtime = pretty_ts(match_ts, lt)
+        starttime = pretty_ts(dt_to_ts(ts_to_dt(match_ts) - self.rules['timeframe']), lt, fmt)
+        endtime = pretty_ts(match_ts, lt, fmt)
         message = 'At least %d events occurred between %s and %s\n\n' % (self.rules['num_events'],
                                                                          starttime,
                                                                          endtime)
@@ -543,7 +544,7 @@ class SpikeRule(RuleType):
         if self.field_value is None:
             message = 'An abnormal number (%d) of events occurred around %s.\n' % (
                 match['spike_count'],
-                pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time'))
+                pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time'), self.rules.get('custom_pretty_ts_format'))
             )
             message += 'Preceding that time, there were only %d events within %s\n\n' % (match['reference_count'], self.rules['timeframe'])
         else:
@@ -551,7 +552,8 @@ class SpikeRule(RuleType):
                 match['spike_count'],
                 self.field_value,
                 pretty_ts(match[self.rules['timestamp_field']],
-                          self.rules.get('use_local_time'))
+                          self.rules.get('use_local_time'),
+                          self.rules.get('custom_pretty_ts_format'))
             )
             message += 'Preceding that time, the field had an average value of (%.2f) within %s\n\n' % (
                 match['reference_count'], self.rules['timeframe'])
@@ -621,10 +623,11 @@ class FlatlineRule(FrequencyRule):
     def get_match_str(self, match):
         ts = match[self.rules['timestamp_field']]
         lt = self.rules.get('use_local_time')
-        message = 'An abnormally low number of events occurred around %s.\n' % (pretty_ts(ts, lt))
+        fmt = self.rules.get('custom_pretty_ts_format')
+        message = 'An abnormally low number of events occurred around %s.\n' % (pretty_ts(ts, lt, fmt))
         message += 'Between %s and %s, there were less than %s events.\n\n' % (
-            pretty_ts(dt_to_ts(ts_to_dt(ts) - self.rules['timeframe']), lt),
-            pretty_ts(ts, lt),
+            pretty_ts(dt_to_ts(ts_to_dt(ts) - self.rules['timeframe']), lt, fmt),
+            pretty_ts(ts, lt, fmt),
             self.rules['threshold']
         )
         return message
@@ -980,8 +983,9 @@ class CardinalityRule(RuleType):
 
     def get_match_str(self, match):
         lt = self.rules.get('use_local_time')
-        starttime = pretty_ts(dt_to_ts(ts_to_dt(lookup_es_key(match, self.ts_field)) - self.rules['timeframe']), lt)
-        endtime = pretty_ts(lookup_es_key(match, self.ts_field), lt)
+        fmt = self.rules.get('custom_pretty_ts_format')
+        starttime = pretty_ts(dt_to_ts(ts_to_dt(lookup_es_key(match, self.ts_field)) - self.rules['timeframe']), lt, fmt)
+        endtime = pretty_ts(lookup_es_key(match, self.ts_field), lt, fmt)
         if 'max_cardinality' in self.rules:
             message = ('A maximum of %d unique %s(s) occurred since last alert or between %s and %s\n\n' % (self.rules['max_cardinality'],
                                                                                                             self.rules['cardinality_field'],
@@ -1228,7 +1232,7 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
         """
         message = 'An abnormal {0} of {1} ({2}) occurred around {3}.\n'.format(
             self.rules['metric_agg_type'], self.rules['metric_agg_key'], round(match['spike_count'], 2),
-            pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time'))
+            pretty_ts(match[self.rules['timestamp_field']], self.rules.get('use_local_time'), self.rules.get('custom_pretty_ts_format'))
         )
         message += 'Preceding that time, there was a {0} of {1} of ({2}) within {3}\n\n'.format(
             self.rules['metric_agg_type'], self.rules['metric_agg_key'],
