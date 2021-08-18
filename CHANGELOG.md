@@ -23,6 +23,7 @@
 - Add support for Kibana 7.14 for Kibana Discover - [#392](https://github.com/jertel/elastalert2/pull/392) - @nsano-rururu
 - Add metric_format_string optional configuration for Metric Aggregation to format aggregated value - [#399](https://github.com/jertel/elastalert2/pull/399) - @iamxeph
 - Make percentage_format_string support format() syntax in addition to old %-formatted syntax - [#403](https://github.com/jertel/elastalert2/pull/403) - @iamxeph
+- Add custom_pretty_ts_format option to provides a way to define custom format of timestamps printed by pretty_ts() function - [#407](https://github.com/jertel/elastalert2/pull/407) - @perceptron01
 
 ## Other changes
 - [Tests] Improve test code coverage - [#331](https://github.com/jertel/elastalert2/pull/331) - @nsano-rururu
