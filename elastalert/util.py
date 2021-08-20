@@ -199,7 +199,7 @@ def inc_ts(timestamp, milliseconds=1):
     return dt_to_ts(dt)
 
 
-def pretty_ts(timestamp, tz=True):
+def pretty_ts(timestamp, tz=True, ts_format=None):
     """Pretty-format the given timestamp (to be printed or logged hereafter).
     If tz, the timestamp will be converted to local time.
     Format: YYYY-MM-DD HH:MM TZ"""
@@ -208,7 +208,10 @@ def pretty_ts(timestamp, tz=True):
         dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
-    return dt.strftime('%Y-%m-%d %H:%M %z')
+    if ts_format is None:
+        return dt.strftime('%Y-%m-%d %H:%M %Z')
+    else:
+        return dt.strftime(ts_format)
 
 
 def ts_add(ts, td):

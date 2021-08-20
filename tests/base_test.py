@@ -1463,5 +1463,5 @@ def test_time_enhancement(ea):
         'somefield': 'foobarbaz'
     }
     te.process(match)
-    excepted = '2021-01-01 00:00 +0000'
+    excepted = '2021-01-01 00:00 UTC'
     assert match['@timestamp'] == excepted

@@ -167,6 +167,7 @@ class ElastAlerter(object):
         self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
         self.prometheus_port = self.args.prometheus_port
         self.show_disabled_rules = self.conf.get('show_disabled_rules', True)
+        self.pretty_ts_format = self.conf['custom_pretty_ts_format']
 
         self.writeback_es = elasticsearch_client(self.conf)
 
@@ -419,8 +420,8 @@ class ElastAlerter(object):
         lt = rule.get('use_local_time')
         status_log = "Queried rule %s from %s to %s: %s / %s hits" % (
             rule['name'],
-            pretty_ts(starttime, lt),
-            pretty_ts(endtime, lt),
+            pretty_ts(starttime, lt, self.pretty_ts_format),
+            pretty_ts(endtime, lt, self.pretty_ts_format),
             self.thread_data.num_hits,
             len(hits)
         )
@@ -482,7 +483,8 @@ class ElastAlerter(object):
         self.thread_data.num_hits += res['count']
         lt = rule.get('use_local_time')
         elastalert_logger.info(
-            "Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), res['count'])
+            "Queried rule %s from %s to %s: %s hits" % (rule['name'], pretty_ts(starttime, lt, self.pretty_ts_format),
+                                                        pretty_ts(endtime, lt, self.pretty_ts_format), res['count'])
         )
         return {endtime: res['count']}
 
@@ -552,7 +554,9 @@ class ElastAlerter(object):
         self.thread_data.num_hits += len(buckets)
         lt = rule.get('use_local_time')
         elastalert_logger.info(
-            'Queried rule %s from %s to %s: %s buckets' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(buckets))
+            'Queried rule %s from %s to %s: %s buckets' % (
+            rule['name'], pretty_ts(starttime, lt, self.pretty_ts_format),
+            pretty_ts(endtime, lt, self.pretty_ts_format), len(buckets))
         )
         return {endtime: buckets}
 
@@ -1299,13 +1303,14 @@ class ElastAlerter(object):
     def handle_pending_alerts(self):
         self.thread_data.alerts_sent = 0
         self.send_pending_alerts()
-        elastalert_logger.info("Background alerts thread %s pending alerts sent at %s" % (self.thread_data.alerts_sent,
-                                                                                          pretty_ts(ts_now())))
+        elastalert_logger.info("Background alerts thread %s pending alerts sent at %s" % (
+            self.thread_data.alerts_sent, pretty_ts(ts_now(), ts_format=self.pretty_ts_format)))
 
     def handle_config_change(self):
         if not self.args.pin_rules:
             self.load_rule_changes()
-            elastalert_logger.info("Background configuration change check run at %s" % (pretty_ts(ts_now())))
+            elastalert_logger.info(
+                "Background configuration change check run at %s" % (pretty_ts(ts_now(), ts_format=self.pretty_ts_format)))
 
     def handle_rule_execution(self, rule):
         self.thread_data.alerts_sent = 0
@@ -1347,10 +1352,13 @@ class ElastAlerter(object):
         except Exception as e:
             self.handle_uncaught_exception(e, rule)
         else:
-            old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'))
+            old_starttime = pretty_ts(rule.get('original_starttime'), rule.get('use_local_time'), self.pretty_ts_format)
             elastalert_logger.info("Ran %s from %s to %s: %s query hits (%s already seen), %s matches,"
-                                   " %s alerts sent" % (rule['name'], old_starttime, pretty_ts(endtime, rule.get('use_local_time')),
-                                                        self.thread_data.num_hits, self.thread_data.num_dupes, num_matches,
+                                   " %s alerts sent" % (rule['name'], old_starttime,
+                                                        pretty_ts(endtime, rule.get('use_local_time'),
+                                                                  self.pretty_ts_format),
+                                                        self.thread_data.num_hits, self.thread_data.num_dupes,
+                                                        num_matches,
                                                         self.thread_data.alerts_sent))
             rule_duration = seconds(endtime - rule.get('original_starttime'))
             elastalert_logger.info("%s range %s" % (rule['name'], rule_duration))
@@ -1364,7 +1372,7 @@ class ElastAlerter(object):
                 elastalert_logger.warning(
                     "Querying from %s to %s took longer than %s!" % (
                         old_starttime,
-                        pretty_ts(endtime, rule.get('use_local_time')),
+                        pretty_ts(endtime, rule.get('use_local_time'), self.pretty_ts_format),
                         self.run_every
                     )
                 )
@@ -1383,7 +1391,8 @@ class ElastAlerter(object):
             if rule['next_min_starttime']:
                 rule['minimum_starttime'] = rule['next_min_starttime']
                 rule['previous_endtime'] = rule['next_min_starttime']
-            elastalert_logger.info('Pausing %s until next run at %s' % (rule['name'], pretty_ts(rule['next_starttime'])))
+            elastalert_logger.info('Pausing %s until next run at %s' % (
+            rule['name'], pretty_ts(rule['next_starttime'], ts_format=self.pretty_ts_format)))
 
     def stop(self):
         """ Stop an ElastAlert runner that's been started """
