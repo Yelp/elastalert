@@ -167,7 +167,7 @@ class ElastAlerter(object):
         self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
         self.prometheus_port = self.args.prometheus_port
         self.show_disabled_rules = self.conf.get('show_disabled_rules', True)
-        self.pretty_ts_format = self.conf['custom_pretty_ts_format']
+        self.pretty_ts_format = self.conf.get('custom_pretty_ts_format')
 
         self.writeback_es = elasticsearch_client(self.conf)
 

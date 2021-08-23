@@ -10,6 +10,17 @@
 - None
 
 
+# 2.2.1
+
+## Breaking changes
+- None
+
+## New features
+- None
+
+## Other changes
+- Fixed config lookup bug accidentally introduced in [#407](https://github.com/jertel/elastalert2/pull/407)
+
 # 2.2.0
 
 ## Breaking changes
