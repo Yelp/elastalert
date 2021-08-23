@@ -709,6 +709,21 @@ summary_table_fields
 
 ``summary_table_fields``: Specifying the summmary_table_fields in conjunction with an aggregation will make it so that each aggregated alert will contain a table summarizing the values for the specified fields in all the matches that were aggregated together.
 
+summary_table_type
+^^^^^^^^^^^^^^^^^^^^
+
+``summary_table_type``: Either ``ascii`` or ``markdown``. Select the table type to use for the aggregation summary. Defaults to ``ascii`` for the classical text based table.
+
+summary_prefix
+^^^^^^^^^^^^^^^^^^^^
+
+``summary_prefix``: Specify a prefix string, which will be added in front of the aggregation summary table. This string is currently not subject to any formating.
+
+summary_suffix
+^^^^^^^^^^^^^^^^^^^^
+
+``summary_suffix``: Specify a suffix string, which will be added after the aggregation summary table. This string is currently not subject to any formating.
+
 timestamp_type
 ^^^^^^^^^^^^^^
 

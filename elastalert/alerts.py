@@ -285,7 +285,7 @@ class Alerter(object):
                     for key in keys:
                         markdown_row += '| ' + str(key) + ' '
                     text += markdown_row + '| ' + str(count) + ' |\n'
-                text += '\n'
+                text += '\n\n'
 
             # Type independent suffix
             text += self.rule.get('summary_suffix', '')
