@@ -35,6 +35,8 @@ from elastalert.util import ts_to_dt_with_format
 from elastalert.util import ts_utc_to_tz
 from elastalert.util import expand_string_into_dict
 from elastalert.util import unixms_to_dt
+from elastalert.util import format_string
+from elastalert.util import pretty_ts
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
@@ -502,3 +504,18 @@ def test_dt_to_int():
     actual = dt_to_int(dt)
     expected = 1625529600000
     assert expected == actual
+
+
+def test_format_string():
+    target = 0.966666667
+    expected_percent_formatting = '0.97'
+    assert format_string('%.2f', target) == expected_percent_formatting
+    expected_str_formatting = '96.67%'
+    assert format_string('{:.2%}', target) == expected_str_formatting
+
+
+def test_pretty_ts():
+    ts = datetime(year=2021, month=8, day=16, hour=16, minute=35, second=5)
+    assert '2021-08-16 16:35 UTC' == pretty_ts(ts)
+    assert '2021-08-16 16:35 ' == pretty_ts(ts, False)
+    assert '2021-08-16 16:35 +0000' == pretty_ts(ts, ts_format='%Y-%m-%d %H:%M %z')

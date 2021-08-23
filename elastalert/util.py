@@ -199,7 +199,7 @@ def inc_ts(timestamp, milliseconds=1):
     return dt_to_ts(dt)
 
 
-def pretty_ts(timestamp, tz=True):
+def pretty_ts(timestamp, tz=True, ts_format=None):
     """Pretty-format the given timestamp (to be printed or logged hereafter).
     If tz, the timestamp will be converted to local time.
     Format: YYYY-MM-DD HH:MM TZ"""
@@ -208,7 +208,10 @@ def pretty_ts(timestamp, tz=True):
         dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
-    return dt.strftime('%Y-%m-%d %H:%M %z')
+    if ts_format is None:
+        return dt.strftime('%Y-%m-%d %H:%M %Z')
+    else:
+        return dt.strftime(ts_format)
 
 
 def ts_add(ts, td):
@@ -518,3 +521,18 @@ def expand_string_into_dict(dictionary, string , value, sep='.'):
         field1, new_string = string.split(sep, 1)
         dictionary[field1] = _expand_string_into_dict(new_string, value)
     return dictionary
+
+
+def format_string(format_config, target_value):
+    """
+    Formats number, supporting %-format and str.format() syntax.
+ 
+    :param format_config: string format syntax, for example '{:.2%}' or '%.2f'
+    :param target_value: number to format
+    :rtype: string
+    """
+    if (format_config.startswith('{')):
+        return format_config.format(target_value)
+    else:
+        return format_config % (target_value)
+

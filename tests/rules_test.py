@@ -1163,6 +1163,24 @@ def test_metric_aggregation():
     rule.check_matches(datetime.datetime.now(), None, {'metric_cpu_pct_avg': {'value': 0.95}})
     assert len(rule.matches) == 2
 
+    rule = MetricAggregationRule(rules)
+    rule.check_matches(datetime.datetime.now(), None, {'metric_cpu_pct_avg': {'value': 0.966666667}})
+    assert '0.966666667' in rule.get_match_str(rule.matches[0])
+    assert rule.matches[0]['metric_cpu_pct_avg'] == 0.966666667
+    assert 'metric_cpu_pct_avg_formatted' not in rule.matches[0]
+    rules['metric_format_string'] = '{:.2%}'
+    rule = MetricAggregationRule(rules)
+    rule.check_matches(datetime.datetime.now(), None, {'metric_cpu_pct_avg': {'value': 0.966666667}})
+    assert '96.67%' in rule.get_match_str(rule.matches[0])
+    assert rule.matches[0]['metric_cpu_pct_avg'] == 0.966666667
+    assert rule.matches[0]['metric_cpu_pct_avg_formatted'] == '96.67%'
+    rules['metric_format_string'] = '%.2f'
+    rule = MetricAggregationRule(rules)
+    rule.check_matches(datetime.datetime.now(), None, {'metric_cpu_pct_avg': {'value': 0.966666667}})
+    assert '0.97' in rule.get_match_str(rule.matches[0])
+    assert rule.matches[0]['metric_cpu_pct_avg'] == 0.966666667
+    assert rule.matches[0]['metric_cpu_pct_avg_formatted'] == '0.97'
+
     rules['query_key'] = 'subdict'
     rule = MetricAggregationRule(rules)
     rule.check_matches(datetime.datetime.now(), 'qk_val', {'metric_cpu_pct_avg': {'value': 0.95}})
@@ -1280,6 +1298,24 @@ def test_percentage_match():
     rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(76, 24))
     assert len(rule.matches) == 2
 
+    rule = PercentageMatchRule(rules)
+    rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(76.666666667, 24))
+    assert '76.1589403974' in rule.get_match_str(rule.matches[0])
+    assert rule.matches[0]['percentage'] == 76.15894039742994
+    assert 'percentage_formatted' not in rule.matches[0]
+    rules['percentage_format_string'] = '{:.2f}'
+    rule = PercentageMatchRule(rules)
+    rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(76.666666667, 24))
+    assert '76.16' in rule.get_match_str(rule.matches[0])
+    assert rule.matches[0]['percentage'] == 76.15894039742994
+    assert rule.matches[0]['percentage_formatted'] == '76.16'
+    rules['percentage_format_string'] = '%.2f'
+    rule = PercentageMatchRule(rules)
+    rule.check_matches(datetime.datetime.now(), None, create_percentage_match_agg(76.666666667, 24))
+    assert '76.16' in rule.get_match_str(rule.matches[0])
+    assert rule.matches[0]['percentage'] == 76.15894039742994
+    assert rule.matches[0]['percentage_formatted'] == '76.16'
+
     rules['query_key'] = 'qk'
     rule = PercentageMatchRule(rules)
     rule.check_matches(datetime.datetime.now(), 'qk_val', create_percentage_match_agg(76.666666667, 24))
@@ -1289,10 +1325,6 @@ def test_percentage_match():
     rule = PercentageMatchRule(rules)
     rule.check_matches(datetime.datetime.now(), 'qk_val', create_percentage_match_agg(76.666666667, 24))
     assert rule.matches[0]['subdict1']['subdict2'] == 'qk_val'
-
-    assert '76.1589403974' in rule.get_match_str(rule.matches[0])
-    rules['percentage_format_string'] = '%.2f'
-    assert '76.16' in rule.get_match_str(rule.matches[0])
 
 
 def test_ruletype_add_data():

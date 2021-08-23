@@ -230,6 +230,15 @@ The default value is ``.raw`` for Elasticsearch 2 and ``.keyword`` for Elasticse
 
 ``jinja_template_path``: When using a Jinja template, specify filesystem path to template, this overrides the default behaviour of using alert_text as the template.
 
+``custom_pretty_ts_format``: This option provides a way to define custom format of timestamps printed in log messages and in alert messages.
+If this option is not set, default timestamp format ('%Y-%m-%d %H:%M %Z') will be used. (Optional, string, default None)
+
+Example usage and resulting formatted timestamps::
+
+    (not set; default)                               -> '2021-08-16 21:38 JST'
+    custom_pretty_ts_format: '%Y-%m-%d %H:%M %z'     -> '2021-08-16 21:38 +0900'
+    custom_pretty_ts_format: '%Y-%m-%d %H:%M'        -> '2021-08-16 21:38'
+
 Logging
 -------
 

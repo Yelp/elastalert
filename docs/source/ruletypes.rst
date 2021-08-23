@@ -592,7 +592,7 @@ Example usage::
     generate_kibana_discover_url: True
     kibana_discover_app_url: "http://localhost:5601/app/discover#/"
     kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
-    kibana_discover_version: "7.13"
+    kibana_discover_version: "7.14"
     kibana_discover_from_timedelta:
       minutes: 10
     kibana_discover_to_timedelta:
@@ -618,9 +618,9 @@ The currently supported versions of Kibana Discover are:
 
 - `5.6`
 - `6.0`, `6.1`, `6.2`, `6.3`, `6.4`, `6.5`, `6.6`, `6.7`, `6.8`
-- `7.0`, `7.1`, `7.2`, `7.3`, `7.4`, `7.5`, `7.6`, `7.7`, `7.8`, `7.9`, `7.10`, `7.11`, `7.12`, `7.13`
+- `7.0`, `7.1`, `7.2`, `7.3`, `7.4`, `7.5`, `7.6`, `7.7`, `7.8`, `7.9`, `7.10`, `7.11`, `7.12`, `7.13`, `7.14`
 
-``kibana_discover_version: '7.13'``
+``kibana_discover_version: '7.14'``
 
 kibana_discover_index_pattern_id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1280,6 +1280,10 @@ allign with the time elastalert runs, (This both avoid calculations on partial d
 See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_offset for a
 more comprehensive explaination.
 
+``metric_format_string``: An optional format string applies to the aggregated metric value in the alert match text and match_body. This adds 'metric_{metric_agg_key}_formatted' value to the match_body in addition to raw, unformatted 'metric_{metric_agg_key}' value so that you can use the values for ``alert_subject_args`` and ``alert_text_args``. Must be a valid python format string. Both str.format() and %-format syntax works. For example, "{:.2%}" will format '0.966666667' to '96.67%', and "%.2f" will format '0.966666667' to '0.97'.
+See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
+
+
 Spike Aggregation
 ~~~~~~~~~~~~~~~~~~
 
@@ -1360,8 +1364,7 @@ evaluated separately against the threshold(s).
 
 ``sync_bucket_interval``: See ``sync_bucket_interval`` in  Metric Aggregation rule
 
-``percentage_format_string``: An optional format string to apply to the percentage value in the alert match text. Must be a valid python format string.
-For example, "%.2f" will round it to 2 decimal places.
+``percentage_format_string``: An optional format string applies to the percentage value in the alert match text and match_body. This adds 'percentage_formatted' value to the match_body in addition to raw, unformatted 'percentage' value so that you can use the values for ``alert_subject_args`` and ``alert_text_args``. Must be a valid python format string. Both str.format() and %-format syntax works. For example, both "{:.2f}" and "%.2f" will format '96.6666667' to '96.67'.
 See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
 
 ``min_denominator``: Minimum number of documents on which percentage calculation will apply. Default is 0.
@@ -1791,14 +1794,14 @@ Example usage using new-style format::
 Datadog
 ~~~~~~~
 
-This alert will create a [Datadog Event](https://docs.datadoghq.com/events/). Events are limited to 4000 characters. If an event is sent that contains
+This alert will create a `Datadog Event`_. Events are limited to 4000 characters. If an event is sent that contains
 a message that is longer than 4000 characters, only his first 4000 characters will be displayed.
 
 This alert requires two additional options:
 
-``datadog_api_key``: [Datadog API key](https://docs.datadoghq.com/account_management/api-app-keys/#api-keys)
+``datadog_api_key``: `Datadog API key`_
 
-``datadog_app_key``: [Datadog application key](https://docs.datadoghq."com/account_management/api-app-keys/#application-keys)
+``datadog_app_key``: `Datadog application key`_
 
 Example usage::
 
@@ -1806,6 +1809,10 @@ Example usage::
       - "datadog"
     datadog_api_key: "Datadog API Key"
     datadog_app_key: "Datadog APP Key"
+
+.. _`Datadog Event`: https://docs.datadoghq.com/events/
+.. _`Datadog API key`: https://docs.datadoghq.com/account_management/api-app-keys/#api-keys
+.. _`Datadog application key`: https://docs.datadoghq.com/account_management/api-app-keys/#application-keys
 
 Debug
 ~~~~~
@@ -2279,7 +2286,7 @@ Example mattermost_attach_kibana_discover_url, mattermost_kibana_discover_color,
     generate_kibana_discover_url: True
     kibana_discover_app_url: "http://localhost:5601/app/discover#/"
     kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
-    kibana_discover_version: "7.13"
+    kibana_discover_version: "7.14"
 
     # (Optional)
     kibana_discover_from_timedelta:
@@ -2386,7 +2393,7 @@ Example opsgenie_details with kibana_discover_url::
     generate_kibana_discover_url: True
     kibana_discover_app_url: "http://localhost:5601/app/discover#/"
     kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
-    kibana_discover_version: "7.13"
+    kibana_discover_version: "7.14"
 
     # (Optional)
     kibana_discover_from_timedelta:
@@ -2516,7 +2523,7 @@ Example rocket_chat_attach_kibana_discover_url, rocket_chat_kibana_discover_colo
     generate_kibana_discover_url: True
     kibana_discover_app_url: "http://localhost:5601/app/discover#/"
     kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
-    kibana_discover_version: "7.13"
+    kibana_discover_version: "7.14"
 
     # (Optional)
     kibana_discover_from_timedelta:
@@ -2680,7 +2687,7 @@ Example slack_attach_kibana_discover_url, slack_kibana_discover_color, slack_kib
     generate_kibana_discover_url: True
     kibana_discover_app_url: "http://localhost:5601/app/discover#/"
     kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
-    kibana_discover_version: "7.13"
+    kibana_discover_version: "7.14"
 
     # (Optional)
     kibana_discover_from_timedelta:

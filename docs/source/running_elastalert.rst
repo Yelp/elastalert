@@ -77,7 +77,7 @@ If you're interested in a pre-built Docker image check out the
 
 Be aware that the ``latest`` tag of the image represents the latest commit into
 the master branch. If you prefer to upgrade more slowly you will need utilize a
-versioned tag, such as ``2.1.2`` instead, or ``2`` if you are comfortable with
+versioned tag, such as ``2.2.1`` instead, or ``2`` if you are comfortable with
 always using the latest released version of ElastAlert 2.
 
 A properly configured config.yaml file must be mounted into the container during
@@ -138,13 +138,6 @@ Install the module::
 
     $ pip install "setuptools>=11.3"
     $ python setup.py install
-
-Depending on the version of Elasticsearch, you may need to manually install the
-correct version of elasticsearch-py.
-
-Elasticsearch 5.0+::
-
-    $ pip install "elasticsearch>=5.0.0"
 
 Next, open up ``examples/config.yaml.example``. In it, you will find several configuration
 options. ElastAlert may be run without changing any of these settings.
@@ -216,7 +209,9 @@ ElastAlert to restart and resume exactly where it left off. This is not required
 for ElastAlert to run, but highly recommended.
 
 First, we need to create an index for ElastAlert to write to by running
-``elastalert-create-index`` and following the instructions::
+``elastalert-create-index`` and following the instructions. Note that this manual 
+step is only needed by users that run ElastAlert 2 directly on the host, whereas 
+container users will automatically see these indexes created on startup.::
 
     $ elastalert-create-index
     New index name (Default elastalert_status)

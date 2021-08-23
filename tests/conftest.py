@@ -170,7 +170,8 @@ def ea():
             'max_query_size': 10000,
             'old_query_limit': datetime.timedelta(weeks=1),
             'disable_rules_on_error': False,
-            'scroll_keepalive': '30s'}
+            'scroll_keepalive': '30s',
+            'custom_pretty_ts_format': '%Y-%m-%d %H:%M'}
     elastalert.util.elasticsearch_client = mock_es_client
     conf['rules_loader'] = mock_rule_loader(conf)
     elastalert.elastalert.elasticsearch_client = mock_es_client
@@ -223,7 +224,8 @@ def ea_sixsix():
             'max_query_size': 10000,
             'old_query_limit': datetime.timedelta(weeks=1),
             'disable_rules_on_error': False,
-            'scroll_keepalive': '30s'}
+            'scroll_keepalive': '30s',
+            'custom_pretty_ts_format': '%Y-%m-%d %H:%M'}
     conf['rules_loader'] = mock_rule_loader(conf)
     elastalert.elastalert.elasticsearch_client = mock_es_sixsix_client
     elastalert.util.elasticsearch_client = mock_es_sixsix_client

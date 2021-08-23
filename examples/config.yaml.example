@@ -72,6 +72,10 @@ writeback_index: elastalert_status
 alert_time_limit:
   days: 2
 
+# Optional timestamp format.
+# ElastAlert will print timestamps in alert messages and in log messages using this format.
+#custom_pretty_ts_format: '%Y-%m-%d %H:%M'
+
 # Custom logging configuration
 # If you want to setup your own logging configuration to log into
 # files as well or to Logstash and/or modify log levels, use
