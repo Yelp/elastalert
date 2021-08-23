@@ -78,7 +78,7 @@ def load_conf(args, defaults=None, overwrites=None):
     conf.setdefault('disable_rules_on_error', True)
     conf.setdefault('scan_subdirectories', True)
     conf.setdefault('rules_loader', 'file')
-    conf.setdefault('custum_pretty_ts_format', None)
+    conf.setdefault('custom_pretty_ts_format', None)
 
     # Convert run_every, buffer_time into a timedelta object
     try:
