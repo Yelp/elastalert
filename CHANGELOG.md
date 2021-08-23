@@ -10,6 +10,17 @@
 - None
 
 
+# 2.x.x
+
+## Breaking changes
+- None
+
+## New features
+- None
+
+## Other changes
+- Fixed typo in default setting accidentally introduced in [#407](https://github.com/jertel/elastalert2/pull/407)  - [#413](https://github.com/jertel/elastalert2/pull/413) - @perceptron01
+
 # 2.2.1
 
 ## Breaking changes
