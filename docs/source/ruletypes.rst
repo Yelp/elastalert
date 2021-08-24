@@ -387,7 +387,7 @@ This should result in 2 alerts: One containing alice's two events, sent at ``201
 
 For aggregations, there can sometimes be a large number of documents present in the viewing medium (email, Jira ticket, etc..). If you set the ``summary_table_fields`` field, ElastAlert 2 will provide a summary of the specified fields from all the results.
 
-The formating style of the summary table can be switched between ``ascii`` (default) and ``markdown`` with parameter ``summary_table_type``. ``markdown`` might be the more suitable formating for alerters supporting it like TheHive.
+The formatting style of the summary table can be switched between ``ascii`` (default) and ``markdown`` with parameter ``summary_table_type``. ``markdown`` might be the more suitable formatting for alerters supporting it like TheHive.
 
 For example, if you wish to summarize the usernames and event_types that appear in the documents so that you can see the most relevant fields at a quick glance, you can set::
 
@@ -719,12 +719,12 @@ summary_table_type
 summary_prefix
 ^^^^^^^^^^^^^^^^^^^^
 
-``summary_prefix``: Specify a prefix string, which will be added in front of the aggregation summary table. This string is currently not subject to any formating.
+``summary_prefix``: Specify a prefix string, which will be added in front of the aggregation summary table. This string is currently not subject to any formatting.
 
 summary_suffix
 ^^^^^^^^^^^^^^^^^^^^
 
-``summary_suffix``: Specify a suffix string, which will be added after the aggregation summary table. This string is currently not subject to any formating.
+``summary_suffix``: Specify a suffix string, which will be added after the aggregation summary table. This string is currently not subject to any formatting.
 
 timestamp_type
 ^^^^^^^^^^^^^^
