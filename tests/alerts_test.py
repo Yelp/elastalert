@@ -261,6 +261,83 @@ def test_alert_get_aggregation_summary_text__maximum_width():
     assert 80 == alert.get_aggregation_summary_text__maximum_width()
 
 
+def test_alert_aggregation_summary_markdown_table():
+    rule = {
+        'name': 'test_rule',
+        'type': mock_rule(),
+        'owner': 'the_owner',
+        'priority': 2,
+        'alert_subject': 'A very long subject',
+        'aggregation': 1,
+        'summary_table_fields': ['field','abc'],
+        'summary_table_type': 'markdown'
+    }
+    matches = [
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+    ]
+    alert = Alerter(rule)
+    summary_table = str(alert.get_aggregation_summary_text(matches))
+    assert "| field | abc | count |" in summary_table
+    assert "|-----|-----|-----|" in summary_table
+    assert "| field_value | abc from match | 3 |" in summary_table
+    assert "| field_value | cde from match | 2 |" in summary_table
+
+
+def test_alert_aggregation_summary_default_table():
+    rule = {
+        'name': 'test_rule',
+        'type': mock_rule(),
+        'owner': 'the_owner',
+        'priority': 2,
+        'alert_subject': 'A very long subject',
+        'aggregation': 1,
+        'summary_table_fields': ['field','abc'],
+    }
+    matches = [
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+    ]
+    alert = Alerter(rule)
+    summary_table = str(alert.get_aggregation_summary_text(matches))
+    assert "+-------------+----------------+-------+" in summary_table
+    assert "|    field    |      abc       | count |" in summary_table
+    assert "+=============+================+=======+" in summary_table
+    assert "| field_value | abc from match | 3     |" in summary_table
+    assert "| field_value | cde from match | 2     |" in summary_table
+
+
+def test_alert_aggregation_summary_table_suffix_prefix():
+    rule = {
+        'name': 'test_rule',
+        'type': mock_rule(),
+        'owner': 'the_owner',
+        'priority': 2,
+        'alert_subject': 'A very long subject',
+        'aggregation': 1,
+        'summary_table_fields': ['field','abc'],
+        'summary_prefix': 'This is the prefix',
+        'summary_suffix': 'This is the suffix',
+    }
+    matches = [
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+    ]
+    alert = Alerter(rule)
+    summary_table = str(alert.get_aggregation_summary_text(matches))
+    assert "This is the prefix" in summary_table
+    assert "This is the suffix" in summary_table
+
+
 def test_alert_subject_size_limit_with_args(ea):
     rule = {
         'name': 'test_rule',
