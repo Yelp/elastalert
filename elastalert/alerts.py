@@ -241,6 +241,11 @@ class Alerter(object):
 
             #Type independent prefix
             text = self.rule.get('summary_prefix', '')
+            # If a prefix is set, ensure there is a newline between it and the hardcoded
+            # 'Aggregation resulted in...' header below
+            if text != '':
+                text += "\n"
+
             summary_table_fields = self.rule['summary_table_fields']
             if not isinstance(summary_table_fields, list):
                 summary_table_fields = [summary_table_fields]
@@ -285,7 +290,7 @@ class Alerter(object):
                     for key in keys:
                         markdown_row += '| ' + str(key) + ' '
                     text += markdown_row + '| ' + str(count) + ' |\n'
-                text += '\n\n'
+                text += '\n'
 
             # Type independent suffix
             text += self.rule.get('summary_suffix', '')
