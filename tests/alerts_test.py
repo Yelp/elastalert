@@ -269,15 +269,15 @@ def test_alert_aggregation_summary_markdown_table():
         'priority': 2,
         'alert_subject': 'A very long subject',
         'aggregation': 1,
-        'summary_table_fields': ['field','abc'],
+        'summary_table_fields': ['field', 'abc'],
         'summary_table_type': 'markdown'
     }
     matches = [
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
     ]
     alert = Alerter(rule)
     summary_table = str(alert.get_aggregation_summary_text(matches))
@@ -295,14 +295,14 @@ def test_alert_aggregation_summary_default_table():
         'priority': 2,
         'alert_subject': 'A very long subject',
         'aggregation': 1,
-        'summary_table_fields': ['field','abc'],
+        'summary_table_fields': ['field', 'abc'],
     }
     matches = [
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
     ]
     alert = Alerter(rule)
     summary_table = str(alert.get_aggregation_summary_text(matches))
@@ -321,16 +321,16 @@ def test_alert_aggregation_summary_table_suffix_prefix():
         'priority': 2,
         'alert_subject': 'A very long subject',
         'aggregation': 1,
-        'summary_table_fields': ['field','abc'],
+        'summary_table_fields': ['field', 'abc'],
         'summary_prefix': 'This is the prefix',
         'summary_suffix': 'This is the suffix',
     }
     matches = [
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
-        { '@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
     ]
     alert = Alerter(rule)
     summary_table = str(alert.get_aggregation_summary_text(matches))
