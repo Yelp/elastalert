@@ -16,7 +16,7 @@
 - None
 
 ## New features
-- Added support for markdown style formatting of aggregation tables - @Neuro-HSOC
+- Added support for markdown style formatting of aggregation tables - [#415](https://github.com/jertel/elastalert2/pull/415) - @Neuro-HSOC
 
 ## Other changes
 - Fixed typo in default setting accidentally introduced in [#407](https://github.com/jertel/elastalert2/pull/407)  - [#413](https://github.com/jertel/elastalert2/pull/413) - @perceptron01
