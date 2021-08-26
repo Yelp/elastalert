@@ -45,6 +45,7 @@ class MockElastAlerter(object):
     def __init__(self):
         self.data = []
         self.formatted_output = {}
+        self.ts_now = ts_now()
 
     def test_file(self, conf, args):
         """ Loads a rule config file, performs a query over the last day (args.days), lists available keys
@@ -68,8 +69,15 @@ class MockElastAlerter(object):
             if args.stop_error:
                 exit(1)
             return None
-        start_time = ts_now() - datetime.timedelta(days=args.days)
-        end_time = ts_now()
+        start_time = (
+            ts_to_dt(args.start)
+            if args.start
+            else (
+                self.ts_now
+                - datetime.timedelta(days=args.days if args.days != 0 else 1)
+            )
+        )
+        end_time = ts_to_dt(args.end) if args.end else self.ts_now
         ts = conf.get('timestamp_field', '@timestamp')
         query = ElastAlerter.get_query(
             conf['filter'],
@@ -263,7 +271,7 @@ class MockElastAlerter(object):
         else:
             if args.end:
                 if args.end == 'NOW':
-                    endtime = ts_now()
+                    endtime = self.ts_now
                 else:
                     try:
                         endtime = ts_to_dt(args.end)
@@ -271,7 +279,7 @@ class MockElastAlerter(object):
                         self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (args.end))
                         exit(4)
             else:
-                endtime = ts_now()
+                endtime = self.ts_now
             if args.start:
                 try:
                     starttime = ts_to_dt(args.start)
