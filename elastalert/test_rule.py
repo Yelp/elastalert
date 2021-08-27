@@ -138,20 +138,44 @@ class MockElastAlerter(object):
 
         return parsed_args
 
+    def str_to_ts(self, input: str) -> datetime:
+        if input == "NOW":
+            return self.ts_now
+
+        try:
+            return ts_to_dt(input)
+        except (TypeError, ValueError):
+            raise Exception(
+                f"Input is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00): {input}"
+            )
+
+    def parse_starttime(self, timeframe=None) -> datetime:
+        if self.args.start:
+            try:
+                return self.str_to_ts(self.args.start)
+            except Exception:
+                raise
+
+        if self.args.days > 0:
+            return self.endtime - datetime.timedelta(days=self.args.days)
+
+        # Special case executed later after initialisation
+        if timeframe is not None:
+            return self.endtime - datetime.timedelta(
+                seconds=timeframe.total_seconds() * 1.01
+            )
+
+        # Default is 1 days / 24 hours
+        return self.endtime - datetime.timedelta(days=1)
+
     def __init__(self, args):
         self.args = self._parse_args(args)
         self.data = []
         self.formatted_output = {}
         self.ts_now = ts_now()
-        self.starttime = (
-            ts_to_dt(self.args.start)
-            if self.args.start
-            else (
-                self.ts_now
-                - datetime.timedelta(days=self.args.days if self.args.days != 0 else 1)
-            )
-        )
-        self.endtime = ts_to_dt(self.args.end) if self.args.end else self.ts_now
+        # We need to store endtime before starttime, please see method `parse_starttime`
+        self.endtime = self.str_to_ts(self.args.end) if self.args.end else self.ts_now
+        self.starttime = self.parse_starttime()
 
     def test_file(self, conf):
         """Loads a rule config file, performs a query over the last day (self.args.days), lists available keys
@@ -347,9 +371,8 @@ class MockElastAlerter(object):
                 return None
             try:
                 self.data.sort(key=lambda x: x[timestamp_field])
-                starttime = ts_to_dt(self.data[0][timestamp_field])
-                endtime = self.data[-1][timestamp_field]
-                endtime = ts_to_dt(endtime) + datetime.timedelta(seconds=1)
+                starttime = self.str_to_ts(self.data[0][timestamp_field])
+                endtime = self.str_to_ts(self.data[-1][timestamp_field]) + datetime.timedelta(seconds=1)
             except KeyError as e:
                 print("All documents must have a timestamp and _id: %s" % (e), file=sys.stderr)
                 if self.args.stop_error:
@@ -369,34 +392,9 @@ class MockElastAlerter(object):
             for doc in self.data:
                 doc.update({'_id': doc.get('_id', get_id())})
         else:
-            if self.args.end:
-                if self.args.end == 'NOW':
-                    endtime = self.ts_now
-                else:
-                    try:
-                        endtime = ts_to_dt(self.args.end)
-                    except (TypeError, ValueError):
-                        self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.args.end))
-                        exit(4)
-            else:
-                endtime = self.ts_now
-            if self.args.start:
-                try:
-                    starttime = ts_to_dt(self.args.start)
-                except (TypeError, ValueError):
-                    self.handle_error("%s is not a valid ISO8601 timestamp (YYYY-MM-DDTHH:MM:SS+XX:00)" % (self.args.start))
-                    exit(4)
-            else:
-                # if days given as command line argument
-                if self.args.days > 0:
-                    starttime = endtime - datetime.timedelta(days=self.args.days)
-                else:
-                    # if timeframe is given in rule
-                    if 'timeframe' in rule:
-                        starttime = endtime - datetime.timedelta(seconds=rule['timeframe'].total_seconds() * 1.01)
-                    # default is 1 days / 24 hours
-                    else:
-                        starttime = endtime - datetime.timedelta(days=1)
+            # Updating starttime based on timeframe rule
+            if "timeframe" in rule:
+                self.starttime = self.parse_starttime(timeframe=rule["timeframe"])
 
         # Set run_every to cover the entire time range unless count query, terms query or agg query used
         # This is to prevent query segmenting which unnecessarily slows down tests
