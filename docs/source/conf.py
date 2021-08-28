@@ -2,7 +2,7 @@ import sphinx_rtd_theme
 
 # -*- coding: utf-8 -*-
 #
-# ElastAlert documentation build configuration file, created by
+# ElastAlert 2 documentation build configuration file, created by
 # sphinx-quickstart on Thu Jul 11 15:45:31 2013.
 #
 # This file is execfile()d with the current directory set to its containing dir.

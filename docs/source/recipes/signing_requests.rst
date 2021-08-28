@@ -18,7 +18,7 @@ credentials.
 Using an Instance Profile
 -------------------------
 
-Typically, you'll deploy ElastAlert on a running EC2 instance on AWS. You can
+Typically, you'll deploy ElastAlert 2 on a running EC2 instance on AWS. You can
 assign a role  to this instance that gives it permissions to read from and write
 to the Elasticsearch service. When using an Instance Profile, you will need to
 specify the ``aws_region`` in the configuration file or set the
@@ -28,8 +28,8 @@ Using AWS profiles
 ------------------
 
 You can also create a user with permissions on the Elasticsearch service and
-tell ElastAlert to authenticate itself using that user. First, create an AWS
-profile in the machine where you'd like to run ElastAlert for the user with
+tell ElastAlert 2 to authenticate itself using that user. First, create an AWS
+profile in the machine where you'd like to run ElastAlert 2 for the user with
 permissions.
 
 You can use the environment variables ``AWS_DEFAULT_PROFILE`` and

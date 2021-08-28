@@ -1,14 +1,14 @@
 ElastAlert 2 - Automated rule-based alerting for Elasticsearch
 **************************************************************
 
-ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
+ElastAlert 2 is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
 
-If you have data being written into Elasticsearch in near real time and want to be alerted when that data matches certain patterns, ElastAlert is the tool for you.
+If you have data being written into Elasticsearch in near real time and want to be alerted when that data matches certain patterns, ElastAlert 2 is the tool for you.
 
 Overview
 ========
 
-We designed ElastAlert to be :ref:`reliable <reliability>`, highly :ref:`modular <modularity>`, and easy to :ref:`set up <tutorial>` and :ref:`configure <configuration>`.
+We designed ElastAlert 2 to be :ref:`reliable <reliability>`, highly :ref:`modular <modularity>`, and easy to :ref:`set up <tutorial>` and :ref:`configure <configuration>`.
 
 It works by combining Elasticsearch with two types of components, rule types and alerts.
 Elasticsearch is periodically queried and the data is passed to the rule type, which determines when
@@ -16,7 +16,7 @@ a match is found. When a match occurs, it is given to one or more alerts, which 
 
 This is configured by a set of rules, each of which defines a query, a rule type, and a set of alerts.
 
-Several rule types with common monitoring paradigms are included with ElastAlert:
+Several rule types with common monitoring paradigms are included with ElastAlert 2:
 
 - "Match where there are X events in Y time" (``frequency`` type)
 - "Match when the rate of events increases or decreases" (``spike`` type)
@@ -69,17 +69,17 @@ In addition to this basic usage, there are many other features that make alerts 
 - Separate alerts by using a unique key field
 - Intercept and enhance match data
 
-To get started, check out :ref:`Running ElastAlert For The First Time <tutorial>`.
+To get started, check out :ref:`Running ElastAlert 2 For The First Time <tutorial>`.
 
 .. _reliability:
 
 Reliability
 ===========
 
-ElastAlert has several features to make it more reliable in the event of restarts or Elasticsearch unavailability:
+ElastAlert 2 has several features to make it more reliable in the event of restarts or Elasticsearch unavailability:
 
-- ElastAlert :ref:`saves its state to Elasticsearch <metadata>` and, when started, will resume where previously stopped
-- If Elasticsearch is unresponsive, ElastAlert will wait until it recovers before continuing
+- ElastAlert 2 :ref:`saves its state to Elasticsearch <metadata>` and, when started, will resume where previously stopped
+- If Elasticsearch is unresponsive, ElastAlert 2 will wait until it recovers before continuing
 - Alerts which throw errors may be automatically retried for a period of time
 
 .. _modularity:
@@ -87,7 +87,7 @@ ElastAlert has several features to make it more reliable in the event of restart
 Modularity
 ==========
 
-ElastAlert has three main components that may be imported as a module or customized:
+ElastAlert 2 has three main components that may be imported as a module or customized:
 
 Rule types
 ----------
@@ -113,16 +113,16 @@ to the alerter. See :ref:`Enhancements` for more information.
 Configuration
 =============
 
-ElastAlert has a global configuration file, ``config.yaml``, which defines several aspects of its operation:
+ElastAlert 2 has a global configuration file, ``config.yaml``, which defines several aspects of its operation:
 
-``buffer_time``: ElastAlert will continuously query against a window from the present to ``buffer_time`` ago.
-This way, logs can be back filled up to a certain extent and ElastAlert will still process the events. This
+``buffer_time``: ElastAlert 2 will continuously query against a window from the present to ``buffer_time`` ago.
+This way, logs can be back filled up to a certain extent and ElastAlert 2 will still process the events. This
 may be overridden by individual rules. This option is ignored for rules where ``use_count_query`` or ``use_terms_query``
 is set to true. Note that back filled data may not always trigger count based alerts as if it was queried in real time.
 
-``es_host``: The host name of the Elasticsearch cluster where ElastAlert records metadata about its searches.
-When ElastAlert is started, it will query for information about the time that it was last run. This way,
-even if ElastAlert is stopped and restarted, it will never miss data or look at the same events twice. It will also specify the default cluster for each rule to run on.
+``es_host``: The host name of the Elasticsearch cluster where ElastAlert 2 records metadata about its searches.
+When ElastAlert 2 is started, it will query for information about the time that it was last run. This way,
+even if ElastAlert 2 is stopped and restarted, it will never miss data or look at the same events twice. It will also specify the default cluster for each rule to run on.
 The environment variable ``ES_HOST`` will override this field.
 
 ``es_port``: The port corresponding to ``es_host``. The environment variable ``ES_PORT`` will override this field.
@@ -154,18 +154,18 @@ The environment variable ``ES_USE_SSL`` will override this field.
 
 ``es_conn_timeout``: Optional; sets timeout for connecting to and reading from ``es_host``; defaults to ``20``.
 
-``rules_loader``: Optional; sets the loader class to be used by ElastAlert to retrieve rules and hashes.
+``rules_loader``: Optional; sets the loader class to be used by ElastAlert 2 to retrieve rules and hashes.
 Defaults to ``FileRulesLoader`` if not set.
 
-``rules_folder``: The name of the folder or a list of folders which contains rule configuration files. ElastAlert will load all
-files in this folder, and all subdirectories, that end in .yaml. If the contents of this folder change, ElastAlert will load, reload
+``rules_folder``: The name of the folder or a list of folders which contains rule configuration files. ElastAlert 2 will load all
+files in this folder, and all subdirectories, that end in .yaml. If the contents of this folder change, ElastAlert 2 will load, reload
 or remove rules based on their respective config files. (only required when using ``FileRulesLoader``).
 
-``scan_subdirectories``: Optional; Sets whether or not ElastAlert should recursively descend the rules directory - ``true`` or ``false``. The default is ``true``
+``scan_subdirectories``: Optional; Sets whether or not ElastAlert 2 should recursively descend the rules directory - ``true`` or ``false``. The default is ``true``
 
-``run_every``: How often ElastAlert should query Elasticsearch. ElastAlert will remember the last time
+``run_every``: How often ElastAlert 2 should query Elasticsearch. ElastAlert 2 will remember the last time
 it ran the query for a given rule, and periodically query from that time until the present. The format of
-this field is a nested unit of time, such as ``minutes: 5``. This is how time is defined in every ElastAlert
+this field is a nested unit of time, such as ``minutes: 5``. This is how time is defined in every ElastAlert 2
 configuration.
 
 ``misfire_grace_time``: If the rule scheduler is running behind, due to large numbers of rules or long-running rules, this grace time settings allows a rule to still be executed, provided its next scheduled runt time is no more than this grace period, in seconds, overdue. The default is 5 seconds.
@@ -174,7 +174,7 @@ configuration.
 
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. The
 default is 10,000, and if you expect to get near this number, consider using ``use_count_query`` for the rule. If this
-limit is reached, ElastAlert will `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_
+limit is reached, ElastAlert 2 will `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_
 using the size of ``max_query_size`` through the set amount of pages, when ``max_scrolling_count`` is set or until processing all results.
 
 ``max_scrolling_count``: The maximum amount of pages to scroll through. The default is ``0``, which means the scrolling has no limit.
@@ -187,15 +187,15 @@ For example if this value is set to ``5`` and the ``max_query_size`` is set to `
 ``max_aggregation``: The maximum number of alerts to aggregate together. If a rule has ``aggregation`` set, all
 alerts occuring within a timeframe will be sent together. The default is 10,000.
 
-``old_query_limit``: The maximum time between queries for ElastAlert to start at the most recently run query.
-When ElastAlert starts, for each rule, it will search ``elastalert_metadata`` for the most recently run query and start
+``old_query_limit``: The maximum time between queries for ElastAlert 2 to start at the most recently run query.
+When ElastAlert 2 starts, for each rule, it will search ``elastalert_metadata`` for the most recently run query and start
 from that time, unless it is older than ``old_query_limit``, in which case it will start from the present time. The default is one week.
 
-``disable_rules_on_error``: If true, ElastAlert will disable rules which throw uncaught (not EAException) exceptions. It
+``disable_rules_on_error``: If true, ElastAlert 2 will disable rules which throw uncaught (not EAException) exceptions. It
 will upload a traceback message to ``elastalert_metadata`` and if ``notify_email`` is set, send an email notification. The
-rule will no longer be run until either ElastAlert restarts or the rule file has been modified. This defaults to True.
+rule will no longer be run until either ElastAlert 2 restarts or the rule file has been modified. This defaults to True.
 
-``show_disabled_rules``: If true, ElastAlert show the disable rules' list when finishes the execution. This defaults to True.
+``show_disabled_rules``: If true, ElastAlert 2 show the disable rules' list when finishes the execution. This defaults to True.
 
 ``notify_email``: An email address, or list of email addresses, to which notification emails will be sent. Currently,
 only an uncaught exception will send a notification email. The from address, SMTP host, and reply-to header can be set
@@ -210,13 +210,13 @@ unless overwritten in the rule config. The default is "localhost".
 
 ``email_reply_to``: This sets the Reply-To header in emails. The default is the recipient address.
 
-``aws_region``: This makes ElastAlert to sign HTTP requests when using Amazon Elasticsearch Service. It'll use instance role keys to sign the requests.
+``aws_region``: This makes ElastAlert 2 to sign HTTP requests when using Amazon Elasticsearch Service. It'll use instance role keys to sign the requests.
 The environment variable ``AWS_DEFAULT_REGION`` will override this field.
 
 ``profile``: AWS profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
 The environment variable ``AWS_DEFAULT_PROFILE`` will override this field.
 
-``replace_dots_in_field_names``: If ``True``, ElastAlert replaces any dots in field names with an underscore before writing documents to Elasticsearch.
+``replace_dots_in_field_names``: If ``True``, ElastAlert 2 replaces any dots in field names with an underscore before writing documents to Elasticsearch.
 The default value is ``False``. Elasticsearch 2.0 - 2.3 does not support dots in field names.
 
 ``string_multi_field_name``: If set, the suffix to use for the subfield for string multi-fields in Elasticsearch.
@@ -242,7 +242,7 @@ Example usage and resulting formatted timestamps::
 Logging
 -------
 
-By default, ElastAlert uses a simple basic logging configuration to print log messages to standard error.
+By default, ElastAlert 2 uses a simple basic logging configuration to print log messages to standard error.
 You can change the log level to ``INFO`` messages by using the ``--verbose`` or ``--debug`` command line options.
 
 If you need a more sophisticated logging configuration, you can provide a full logging configuration

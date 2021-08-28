@@ -1,12 +1,12 @@
 My rule is not getting any hits?
 ==========
 
-So you've managed to set up ElastAlert, write a rule, and run it, but nothing happens, or it says
+So you've managed to set up ElastAlert 2, write a rule, and run it, but nothing happens, or it says
 ``0 query hits``. First of all, we recommend using the command ``elastalert-test-rule rule.yaml`` to
 debug. It will show you how many documents match your filters for the last 24 hours (or more, see
 ``--help``), and then shows you if any alerts would have fired. If you have a filter in your rule,
 remove it and try again. This will show you if the index is correct and that you have at least some
-documents. If you have a filter in Kibana and want to recreate it in ElastAlert, you probably want
+documents. If you have a filter in Kibana and want to recreate it in ElastAlert 2, you probably want
 to use a query string. Your filter will look like
 
 ```
@@ -28,7 +28,7 @@ filter:
 
 will not match even if the original value for ``foo`` was exactly "Test Document". Instead, you want
 to use ``foo.raw``. If you are still having trouble troubleshooting why your documents do not match,
-try running ElastAlert with ``--es_debug_trace /path/to/file.log``. This will log the queries made
+try running ElastAlert 2 with ``--es_debug_trace /path/to/file.log``. This will log the queries made
 to Elasticsearch in full so that you can see exactly what is happening.
 
 I got hits, why didn't I get an alert?
@@ -192,7 +192,7 @@ index: logstash-%Y.%m
 use_strftime_index: true
 ```
 
-Another thing you could change is ``buffer_time``. By default, ElastAlert will query large
+Another thing you could change is ``buffer_time``. By default, ElastAlert 2 will query large
 overlapping windows in order to ensure that it does not miss any events, even if they are indexed in
 real time. In config.yaml, you can adjust ``buffer_time`` to a smaller number to only query the most
 recent few minutes.
@@ -202,15 +202,15 @@ buffer_time:
   minutes: 5
 ```
 
-By default, ElastAlert will download every document in full before processing them. Instead, you can
-have ElastAlert simply get a count of the number of documents that have occured in between each
+By default, ElastAlert 2 will download every document in full before processing them. Instead, you can
+have ElastAlert 2 simply get a count of the number of documents that have occured in between each
 query. To do this, set ``use_count_query: true``. This cannot be used if you use ``query_key``,
-because ElastAlert will not know the contents of each documents, just the total number of them. This
+because ElastAlert 2 will not know the contents of each documents, just the total number of them. This
 also reduces the precision of alerts, because all events that occur between each query will be
 rounded to a single timestamp.
 
 If you are using ``query_key`` (a single key, not multiple keys) you can use ``use_terms_query``.
-This will make ElastAlert perform a terms aggregation to get the counts for each value of a certain
+This will make ElastAlert 2 perform a terms aggregation to get the counts for each value of a certain
 field. Both ``use_terms_query`` and ``use_count_query`` also require ``doc_type`` to be set to the
 ``_type`` of the documents. They may not be compatible with all rule types.
 
@@ -222,21 +222,21 @@ The only aggregation supported currently is a terms aggregation, by setting ``us
 I'm not using @timestamp, what do I do?
 ==========
 
-You can use ``timestamp_field`` to change which field ElastAlert will use as the timestamp. You can
+You can use ``timestamp_field`` to change which field ElastAlert 2 will use as the timestamp. You can
 use ``timestamp_type`` to change it between ISO 8601 and unix timestamps. You must have some kind of
-timestamp for ElastAlert to work. If your events are not in real time, you can use ``query_delay``
-and ``buffer_time`` to adjust when ElastAlert will look for documents.
+timestamp for ElastAlert 2 to work. If your events are not in real time, you can use ``query_delay``
+and ``buffer_time`` to adjust when ElastAlert 2 will look for documents.
 
 I'm using flatline but I don't see any alerts
 ==========
 
-When using ``type: flatline``, ElastAlert must see at least one document before it will alert you
+When using ``type: flatline``, ElastAlert 2 must see at least one document before it will alert you
 that it has stopped seeing them.
 
 How can I get a "resolve" event?
 ==========
 
-ElastAlert does not currently support stateful alerts or resolve events. However, if you have a rule
+ElastAlert 2 does not currently support stateful alerts or resolve events. However, if you have a rule
 alerting you that a condition has occurred, such as a service being down, then you can create a
 second rule that will monitor the first rule, and alert you when the first rule ceases to trigger.
 

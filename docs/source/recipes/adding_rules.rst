@@ -31,19 +31,19 @@ and generates matches. Several important member properties are created in the ``
 ``self.rules``: This dictionary is loaded from the rule configuration file. If there is a ``timeframe`` configuration
 option, this will be automatically converted to a ``datetime.timedelta`` object when the rules are loaded.
 
-``self.matches``: This is where ElastAlert checks for matches from the rule. Whatever information is relevant to the match
+``self.matches``: This is where ElastAlert 2 checks for matches from the rule. Whatever information is relevant to the match
 (generally coming from the fields in Elasticsearch) should be put into a dictionary object and
-added to ``self.matches``. ElastAlert will pop items out periodically and send alerts based on these objects. It is
+added to ``self.matches``. ElastAlert 2 will pop items out periodically and send alerts based on these objects. It is
 recommended that you use ``self.add_match(match)`` to add matches. In addition to appending to ``self.matches``,
 ``self.add_match`` will convert the datetime ``@timestamp`` back into an ISO8601 timestamp.
 
-``self.required_options``: This is a set of options that must exist in the configuration file. ElastAlert will
+``self.required_options``: This is a set of options that must exist in the configuration file. ElastAlert 2 will
 ensure that all of these fields exist before trying to instantiate a ``RuleType`` instance.
 
 add_data(self, data):
 ---------------------
 
-When ElastAlert queries Elasticsearch, it will pass all of the hits to the rule type by calling ``add_data``.
+When ElastAlert 2 queries Elasticsearch, it will pass all of the hits to the rule type by calling ``add_data``.
 ``data`` is a list of dictionary objects which contain all of the fields in ``include``, ``query_key`` and ``compare_key``
 if they exist, and ``@timestamp`` as a datetime object. They will always come in chronological order sorted by '@timestamp'.
 
@@ -58,7 +58,7 @@ should return a string that gives some information about the match in the contex
 garbage_collect(self, timestamp):
 ---------------------------------
 
-This will be called after ElastAlert has run over a time period ending in ``timestamp`` and should be used
+This will be called after ElastAlert 2 has run over a time period ending in ``timestamp`` and should be used
 to clear any state that may be obsolete as of ``timestamp``. ``timestamp`` is a datetime object.
 
 
@@ -67,7 +67,7 @@ Tutorial
 
 As an example, we are going to create a rule type for detecting suspicious logins. Let's imagine the data we are querying is login
 events that contains IP address, username and a timestamp. Our configuration will take a list of usernames and a time range
-and alert if a login occurs in the time range. First, let's create a modules folder in the base ElastAlert folder:
+and alert if a login occurs in the time range. First, let's create a modules folder in the base ElastAlert 2 folder:
 
 .. code-block:: console
 
@@ -91,7 +91,7 @@ Now, in a file named ``my_rules.py``, add
 
         # By setting required_options to a set of strings
         # You can ensure that the rule config file specifies all
-        # of the options. Otherwise, ElastAlert will throw an exception
+        # of the options. Otherwise, ElastAlert 2 will throw an exception
         # when trying to load the rule.
         required_options = set(['time_start', 'time_end', 'usernames'])
 
@@ -123,7 +123,7 @@ Now, in a file named ``my_rules.py``, add
                                                        self.rules['time_start'],
                                                        self.rules['time_end'])
 
-        # garbage_collect is called indicating that ElastAlert has already been run up to timestamp
+        # garbage_collect is called indicating that ElastAlert 2 has already been run up to timestamp
         # It is useful for knowing that there were no query results from Elasticsearch because
         # add_data will not be called with an empty list
         def garbage_collect(self, timestamp):
@@ -151,7 +151,7 @@ In the rule configuration file, ``examples/rules/example_login_rule.yaml``, we a
     alert:
     - debug
 
-ElastAlert will attempt to import the rule with ``from elastalert_modules.my_rules import AwesomeRule``.
+ElastAlert 2 will attempt to import the rule with ``from elastalert_modules.my_rules import AwesomeRule``.
 This means that the folder must be in a location where it can be imported as a Python module.
 
 An alert from this rule will look something like::

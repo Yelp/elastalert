@@ -5,7 +5,7 @@ Running ElastAlert 2
 
 ElastAlert 2 can easily be run as :ref:`a Docker container<docker-instructions>`
 or directly on your machine as :ref:`a Python package<python-instructions>`.
-If you are not interested in modifying the internals of  ElastAlert, the Docker
+If you are not interested in modifying the internals of  ElastAlert 2, the Docker
 container is recommended for ease of use.
 
 .. _elastalert-arguments:
@@ -13,7 +13,7 @@ container is recommended for ease of use.
 Configuration flags
 ===================
 
-However you choose to run ElastAlert, the ElastAlert process is started by invoking
+However you choose to run ElastAlert 2, the ElastAlert 2 process is started by invoking
 ``python elastalert/elastalert.py``.
 
 This command accepts several configuration flags:
@@ -22,12 +22,12 @@ This command accepts several configuration flags:
 ``config.yaml``. See :ref:`here<configuration>` to understand what behaviour
 can be configured in this file.
 
-``--debug`` will run ElastAlert in debug mode. This will increase the logging
+``--debug`` will run ElastAlert 2 in debug mode. This will increase the logging
 verboseness, change all alerts to ``DebugAlerter``, which prints alerts and
 suppresses their normal action, and skips writing search and alert metadata back
 to Elasticsearch. Not compatible with `--verbose`.
 
-``--end <timestamp>`` will force ElastAlert to stop querying after the given
+``--end <timestamp>`` will force ElastAlert 2 to stop querying after the given
 time, instead of the default, querying to the present time. This really only
 makes sense when running standalone. The timestamp is formatted as
 ``YYYY-MM-DDTHH:MM:SS`` (UTC) or with timezone ``YYYY-MM-DDTHH:MM:SS-XX:00``
@@ -41,10 +41,10 @@ passed through to `elasticsearch.py
 <http://elasticsearch-py.readthedocs.io/en/master/index.html#logging>`_ which
 logs `localhost:9200` instead of the actual ``es_host``:``es_port``.
 
-``--pin_rules`` will stop ElastAlert from loading, reloading or removing rules
+``--pin_rules`` will stop ElastAlert 2 from loading, reloading or removing rules
 based on changes to their config files.
 
-``--prometheus_port`` exposes ElastAlert Prometheus metrics on the specified
+``--prometheus_port`` exposes ElastAlert 2 Prometheus metrics on the specified
 port. Prometheus metrics disabled by default.
 
 ``--rule <rule.yaml>`` will only run the given rule. The rule file may be a
@@ -56,7 +56,7 @@ days, weeks, hours, minutes or seconds. <number> is an integer. For example,
 ``--rule noisy_rule.yaml --silence hours=4`` will stop noisy_rule from
 generating any alerts for 4 hours.
 
-``--start <timestamp>`` will force ElastAlert to begin querying from the given
+``--start <timestamp>`` will force ElastAlert 2 to begin querying from the given
 time, instead of the default, querying from the present. The timestamp should be
 ISO8601, e.g.  ``YYYY-MM-DDTHH:MM:SS`` (UTC) or with timezone
 ``YYYY-MM-DDTHH:MM:SS-08:00`` (PST). Note that if querying over a large date
@@ -140,21 +140,21 @@ Install the module::
     $ python setup.py install
 
 Next, open up ``examples/config.yaml.example``. In it, you will find several configuration
-options. ElastAlert may be run without changing any of these settings.
+options. ElastAlert 2 may be run without changing any of these settings.
 
-``rules_folder`` is where ElastAlert will load rule configuration files from. It
+``rules_folder`` is where ElastAlert 2 will load rule configuration files from. It
 will attempt to load every .yaml file in the folder. Without any valid rules,
-ElastAlert will not start. ElastAlert will also load new rules, stop running
+ElastAlert 2 will not start. ElastAlert 2 will also load new rules, stop running
 missing rules, and restart modified rules as the files in this folder change.
 For this tutorial, we will use the ``examples/rules`` folder.
 
-``run_every`` is how often ElastAlert will query Elasticsearch.
+``run_every`` is how often ElastAlert 2 will query Elasticsearch.
 
 ``buffer_time`` is the size of the query window, stretching backwards from the
 time each query is run. This value is ignored for rules where
 ``use_count_query`` or ``use_terms_query`` is set to true.
 
-``es_host`` is the address of an Elasticsearch cluster where ElastAlert will
+``es_host`` is the address of an Elasticsearch cluster where ElastAlert 2 will
 store data about its state, queries run, alerts, and errors. Each rule may also
 use a different Elasticsearch host to query against.
 
@@ -193,7 +193,7 @@ connections
 ``es_send_get_body_as``: Optional; Method for querying Elasticsearch - ``GET``,
 ``POST`` or ``source``. The default is ``GET``
 
-``writeback_index`` is the name of the index in which ElastAlert will store
+``writeback_index`` is the name of the index in which ElastAlert 2 will store
 data. We will create this index later.
 
 ``alert_time_limit`` is the retry window for failed alerts.
@@ -203,12 +203,12 @@ Save the file as ``config.yaml``
 Setting Up Elasticsearch
 ------------------------
 
-ElastAlert saves information and metadata about its queries and its alerts back
+ElastAlert 2 saves information and metadata about its queries and its alerts back
 to Elasticsearch. This is useful for auditing, debugging, and it allows
-ElastAlert to restart and resume exactly where it left off. This is not required
-for ElastAlert to run, but highly recommended.
+ElastAlert 2 to restart and resume exactly where it left off. This is not required
+for ElastAlert 2 to run, but highly recommended.
 
-First, we need to create an index for ElastAlert to write to by running
+First, we need to create an index for ElastAlert 2 to write to by running
 ``elastalert-create-index`` and following the instructions. Note that this manual 
 step is only needed by users that run ElastAlert 2 directly on the host, whereas 
 container users will automatically see these indexes created on startup.::
@@ -219,7 +219,7 @@ container users will automatically see these indexes created on startup.::
     New index elastalert_status created
     Done!
 
-For information about what data will go here, see :ref:`ElastAlert Metadata
+For information about what data will go here, see :ref:`ElastAlert 2 Metadata
 Index <metadata>`.
 
 Creating a Rule
@@ -249,7 +249,7 @@ list of alerts to fire for each match. We are going to use
 ``es_host`` and ``es_port`` should point to the Elasticsearch cluster we want to
 query.
 
-``name`` is the unique name for this rule. ElastAlert will not start if two
+``name`` is the unique name for this rule. ElastAlert 2 will not start if two
 rules share the same name.
 
 ``type``: Each rule has a different type which may take different parameters.
@@ -280,9 +280,9 @@ changed with the ``smtp_host`` option.
 There are many other optional configuration options, see :ref:`Common
 configuration options <commonconfig>`.
 
-All documents must have a timestamp field. ElastAlert will try to use
+All documents must have a timestamp field. ElastAlert 2 will try to use
 ``@timestamp`` by default, but this can be changed with the ``timestamp_field``
-option. By default, ElastAlert uses ISO8601 timestamps, though unix timestamps
+option. By default, ElastAlert 2 uses ISO8601 timestamps, though unix timestamps
 are supported by setting ``timestamp_type``.
 
 As is, this rule means "Send an email to elastalert@example.com when there are
@@ -309,10 +309,10 @@ The configuration preferences will be loaded as follows:
 
 See :ref:`the testing section for more details <testing>`
 
-Running ElastAlert
-------------------
+Running ElastAlert 2
+--------------------
 
-There are two ways of invoking ElastAlert. As a daemon, through Supervisor
+There are two ways of invoking ElastAlert 2. As a daemon, through Supervisor
 (http://supervisord.org/), or directly with Python. For easier debugging
 purposes in this tutorial, we will invoke it directly::
 
@@ -323,30 +323,30 @@ purposes in this tutorial, we will invoke it directly::
     INFO:root:Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits (0 already seen), 0 matches, 0 alerts sent
     INFO:root:Sleeping for 297 seconds
 
-ElastAlert uses the python logging system and ``--verbose`` sets it to display
+ElastAlert 2 uses the python logging system and ``--verbose`` sets it to display
 INFO level messages. ``--rule example_frequency.yaml`` specifies the rule to
-run, otherwise ElastAlert will attempt to load the other rules in the
+run, otherwise ElastAlert 2 will attempt to load the other rules in the
 ``examples/rules`` folder.
 
 Let's break down the response to see what's happening.
 
 ``Queried rule Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 hits``
 
-ElastAlert periodically queries the most recent ``buffer_time`` (default 45
+ElastAlert 2 periodically queries the most recent ``buffer_time`` (default 45
 minutes) for data matching the filters. Here we see that it matched 5 hits:
 
 .. code-block::
 
     POST http://elasticsearch.example.com:14900/elastalert_status/elastalert_status?op_type=create [status:201 request:0.025s]
 
-This line showing that ElastAlert uploaded a document to the elastalert_status
+This line showing that ElastAlert 2 uploaded a document to the elastalert_status
 index with information about the query it just made:
 
 .. code-block::
 
     Ran Example rule from 1-15 14:22 PST to 1-15 15:07 PST: 5 query hits (0 already seen), 0 matches, 0 alerts sent
 
-The line means ElastAlert has finished processing the rule. For large time
+The line means ElastAlert 2 has finished processing the rule. For large time
 periods, sometimes multiple queries may be run, but their data will be processed
 together. ``query hits`` is the number of documents that are downloaded from
 Elasticsearch, ``already seen`` refers to documents that were already counted in
@@ -357,7 +357,7 @@ actually sent. This may differ from ``matches`` because of options like
 
 ``Sleeping for 297 seconds``
 
-The default ``run_every`` is 5 minutes, meaning ElastAlert will sleep until 5
+The default ``run_every`` is 5 minutes, meaning ElastAlert 2 will sleep until 5
 minutes have elapsed from the last cycle before running queries for each rule
 again with time ranges shifted forward 5 minutes.
 
@@ -386,9 +386,9 @@ If an error occurred, such as an unreachable SMTP server, you may see:
     ERROR:root:Error while running alert email: Error connecting to SMTP host: [Errno 61] Connection refused
 
 
-Note that if you stop ElastAlert and then run it again later, it will look up
+Note that if you stop ElastAlert 2 and then run it again later, it will look up
 ``elastalert_status`` and begin querying at the end time of the last query. This
-is to prevent duplication or skipping of alerts if ElastAlert is restarted.
+is to prevent duplication or skipping of alerts if ElastAlert 2 is restarted.
 
 By using the ``--debug`` flag instead of ``--verbose``, the body of email will
 instead be logged and the email will not be sent. In addition, the queries will
@@ -398,7 +398,7 @@ Disabling a Rule
 ----------------
 
 To stop a rule from executing, add or adjust the `is_enabled` option inside the
-rule's YAML file to `false`. When ElastAlert reloads the rules it will detect
+rule's YAML file to `false`. When ElastAlert 2 reloads the rules it will detect
 that the rule has been disabled and prevent it from executing. The rule reload
 interval defaults to 5 minutes but can be adjusted via the `run_every`
 configuration option.
