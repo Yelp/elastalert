@@ -13,6 +13,7 @@ The following checklist items must be completed before PRs can be merged.
 - [ ] I have reviewed the [contributing guidelines](https://github.com/jertel/elastalert2/blob/master/CONTRIBUTING.md).
 - [ ] I have included unit tests for my changes or additions.
 - [ ] I have successfully run `make test-docker` with my changes.
+- [ ] I have manually tested all relevant modes of the change in this PR.
 - [ ] I have updated the [documentation](https://elastalert2.readthedocs.io).
 - [ ] I have updated the [changelog](https://github.com/jertel/elastalert2/blob/master/CHANGELOG.md).
 
