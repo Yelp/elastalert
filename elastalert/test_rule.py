@@ -371,8 +371,8 @@ class MockElastAlerter(object):
                 return None
             try:
                 self.data.sort(key=lambda x: x[timestamp_field])
-                starttime = self.str_to_ts(self.data[0][timestamp_field])
-                endtime = self.str_to_ts(self.data[-1][timestamp_field]) + datetime.timedelta(seconds=1)
+                self.starttime = self.str_to_ts(self.data[0][timestamp_field])
+                self.endtime = self.str_to_ts(self.data[-1][timestamp_field]) + datetime.timedelta(seconds=1)
             except KeyError as e:
                 print("All documents must have a timestamp and _id: %s" % (e), file=sys.stderr)
                 if self.args.stop_error:
@@ -399,7 +399,7 @@ class MockElastAlerter(object):
         # Set run_every to cover the entire time range unless count query, terms query or agg query used
         # This is to prevent query segmenting which unnecessarily slows down tests
         if not rule.get('use_terms_query') and not rule.get('use_count_query') and not rule.get('aggregation_query_element'):
-            conf['run_every'] = endtime - starttime
+            conf['run_every'] = self.endtime - self.starttime
 
         # Instantiate ElastAlert to use mock config and special rule
         with mock.patch.object(conf['rules_loader'], 'get_hashes'):
@@ -421,7 +421,7 @@ class MockElastAlerter(object):
         client.writeback_es.search.return_value = {"hits": {"hits": []}}
 
         with mock.patch.object(client, 'writeback') as mock_writeback:
-            client.run_rule(rule, endtime, starttime)
+            client.run_rule(rule, self.endtime, self.starttime)
 
             if mock_writeback.call_count:
 
