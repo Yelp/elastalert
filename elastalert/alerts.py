@@ -208,6 +208,11 @@ class Alerter(object):
         """
         raise NotImplementedError()
 
+    def resolve(self):
+        """ Resolve a previous alert. Match is a dictionary of information about the alert.
+        """
+        raise NotImplementedError()
+
     def get_info(self):
         """ Returns a dictionary of data related to this alert. At minimum, this should contain
         a field type corresponding to the type of Alerter. """
@@ -410,6 +415,7 @@ class EmailAlerter(Alerter):
         self.smtp_ssl = self.rule.get('smtp_ssl', False)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
         self.smtp_port = self.rule.get('smtp_port')
+        self.email_resolve_alert = self.rule.get('resolve_alert', None)
         if self.rule.get('smtp_auth_file'):
             self.get_account(self.rule['smtp_auth_file'])
         self.smtp_key_file = self.rule.get('smtp_key_file')
@@ -488,6 +494,65 @@ class EmailAlerter(Alerter):
         self.smtp.quit()
 
         elastalert_logger.info("Sent email to %s" % (to_addr))
+
+    def resolve(self):
+        if self.email_resolve_alert == True:
+            body = 'Alert resolved'
+            # Add JIRA ticket if it exists
+            if self.pipeline is not None and 'jira_ticket' in self.pipeline:
+                url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
+                body += '\nJIRA ticket: %s' % (url)
+
+            to_addr = self.rule['email']
+            if 'email_from_field' in self.rule:
+                recipient = lookup_es_key(matches[0], self.rule['email_from_field'])
+                if isinstance(recipient, basestring):
+                    if '@' in recipient:
+                        to_addr = [recipient]
+                    elif 'email_add_domain' in self.rule:
+                        to_addr = [recipient + self.rule['email_add_domain']]
+                elif isinstance(recipient, list):
+                    to_addr = recipient
+                    if 'email_add_domain' in self.rule:
+                        to_addr = [name + self.rule['email_add_domain'] for name in to_addr]
+            email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
+            email_msg['Subject'] = 'Alert Resolved'
+            email_msg['To'] = ', '.join(to_addr)
+            email_msg['From'] = self.from_addr
+            email_msg['Reply-To'] = self.rule.get('email_reply_to', email_msg['To'])
+            email_msg['Date'] = formatdate()
+            if self.rule.get('cc'):
+                email_msg['CC'] = ','.join(self.rule['cc'])
+                to_addr = to_addr + self.rule['cc']
+            if self.rule.get('bcc'):
+                to_addr = to_addr + self.rule['bcc']
+
+            try:
+                if self.smtp_ssl:
+                    if self.smtp_port:
+                        self.smtp = SMTP_SSL(self.smtp_host, self.smtp_port, keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
+                    else:
+                        self.smtp = SMTP_SSL(self.smtp_host, keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
+                else:
+                    if self.smtp_port:
+                        self.smtp = SMTP(self.smtp_host, self.smtp_port)
+                    else:
+                        self.smtp = SMTP(self.smtp_host)
+                    self.smtp.ehlo()
+                    if self.smtp.has_extn('STARTTLS'):
+                        self.smtp.starttls(keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
+                if 'smtp_auth_file' in self.rule:
+                    self.smtp.login(self.user, self.password)
+            except (SMTPException, error) as e:
+                raise EAException("Error connecting to SMTP host: %s" % (e))
+            except SMTPAuthenticationError as e:
+                raise EAException("SMTP username/password rejected: %s" % (e))
+            self.smtp.sendmail(self.from_addr, to_addr, email_msg.as_string())
+            self.smtp.close()
+
+            elastalert_logger.info("Resolve email Sent to %s" % (to_addr))
+        else:
+            elastalert_logger.info("Alert not sent to Slack as resolve alert is False")
 
     def create_default_title(self, matches):
         subject = 'ElastAlert: %s' % (self.rule['name'])
@@ -1130,6 +1195,7 @@ class SlackAlerter(Alerter):
         self.slack_attach_kibana_discover_url = self.rule.get('slack_attach_kibana_discover_url', False)
         self.slack_kibana_discover_color = self.rule.get('slack_kibana_discover_color', '#ec4b98')
         self.slack_kibana_discover_title = self.rule.get('slack_kibana_discover_title', 'Discover in Kibana')
+        self.slack_resolve_alert = self.rule.get('resolve_alert', None)
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1329,6 +1395,37 @@ class MattermostAlerter(Alerter):
             except RequestException as e:
                 raise EAException("Error posting to Mattermost: %s" % e)
         elastalert_logger.info("Alert sent to Mattermost")
+
+    def resolve(self):
+        # post resolve message to slack if resolve_alert is true
+        if self.slack_resolve_alert == True:
+            headers = {'content-type': 'application/json'}
+            proxies = {'https': self.slack_proxy} if self.slack_proxy else None
+            payload = {
+                'username': self.slack_username_override,
+                'channel': self.slack_channel_override,
+                'parse': self.slack_parse_override,
+                'text': self.slack_text_string,
+                'icon_emoji': self.slack_emoji_override,
+                'attachments': [
+                    {
+                        'color': 'good',
+                        'title': self.rule['name'],
+                        'text': 'Alert is resolved, no error in the current run',
+                        'fields': []
+                    }
+                ]
+            }
+
+            for url in self.slack_webhook_url:
+                try:
+                    response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                    response.raise_for_status()
+                except RequestException as e:
+                    raise EAException("Error posting to slack: %s" % e)
+            elastalert_logger.info("Alert sent to Slack")
+        else:
+            elastalert_logger.info("Alert not sent to Slack as resolve alert is False")
 
     def get_info(self):
         return {'type': 'mattermost',

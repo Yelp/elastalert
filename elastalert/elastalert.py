@@ -911,6 +911,8 @@ class ElastAlerter(object):
 
         # Process any new matches
         num_matches = len(rule['type'].matches)
+        if num_matches == 0:
+            self.resolve_active_alerts(rule, endtime - self.run_every, endtime)
         while rule['type'].matches:
             match = rule['type'].matches.pop(0)
             match['num_hits'] = self.thread_data.cumulative_hits
@@ -965,6 +967,48 @@ class ElastAlerter(object):
         self.writeback('elastalert_status', body)
 
         return num_matches
+
+    def resolve_active_alerts(self, rule, start, end):
+        query = {
+                'query': {
+                    'bool': {
+                        'must': [
+                            {
+                                'match_phrase': {
+                                    'rule_name': '%s' % rule['name']
+                                }
+                            },
+                            {
+                                'match': {
+                                    'alert_sent': 'true'
+                                }
+                            },
+                            {
+                                'range': {
+                                    'alert_time': {'from': dt_to_ts_no_ms(start), 'to': dt_to_ts_no_ms(end)}
+                                }
+                            }
+                        ]
+                    }
+                }}
+        try:
+            if self.writeback_es:
+                res = self.writeback_es.count(index=self.writeback_index, doc_type='elastalert', body=query)
+                if res['count'] > 0:
+                    for alert in rule['alert']:
+                        try:
+                            alert.resolve()
+                        except EAException as e:
+                            self.handle_error('Error while resolving alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
+                            alert_exception = str(e)
+                        else:
+                            self.alerts_sent += 1
+                            alert_sent = True
+        except (ElasticsearchException, KeyError) as e:
+            self.handle_error('Error querying for last alerts: %s' % (e), {'rule': rule['name']})
+            self.writeback_es = None
+
+        return None
 
     def init_rule(self, new_rule, new=True):
         ''' Copies some necessary non-config state from an exiting rule to a new rule. '''
