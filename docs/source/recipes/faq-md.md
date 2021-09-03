@@ -275,13 +275,13 @@ Can I set a warning threshold?
 Currently, the only way to set a warning threshold is by creating a second rule with a lower
 threshold.
 
-Does it support Elastic Cloud Cloud ID?
+Does it support Elastic Cloud's "Cloud ID"?
 ==========
 
 Not supported.
 
 In addition, there is a reason why we cannot handle it at present.
-ElastAlert 2 uses elasticsearch-py 7.0.0, because Elastic Cloud cloud_id support is from elasticsearch-py 7.0.2.
+ElastAlert 2 uses elasticsearch-py 7.0.0, because Elastic Cloud cloud_id support is from elasticsearch-py 7.0.2. 
 
 I need to go through an http (s) proxy to connect to Elasticsearch. Does ElastAlert 2 support it?
 ==========
@@ -354,9 +354,7 @@ It is possible. However, you need to turn on (enable) the item "Access to insecu
 Is it possible to send a JPEG image encoded as base64 in elasticsearch as an image attachment with an Email Alerter?
 ==========
 
-I can do it.
-
-example
+Yes, this is possible if the base64 encoded bytes are available in the matched document, as shown in the example below:
 
 ```
 include: [base64field]
@@ -382,7 +380,7 @@ The es_host parameter seems to use only one host. Is it possible to specify mult
 ==========
 
 Only one can be set in es_host.
-Please use haproxy in front of elasticsearch.
+Please use haproxy in front of elasticsearch to support multiple hosts.
 
 Is there any plan to implement a REST API into this project?
 ==========
