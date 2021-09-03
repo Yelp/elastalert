@@ -97,6 +97,14 @@ to receieve an alert once for a specific error and hostname, you could use
 query_key: [error, hostname]
 ```
 
+You can also write in the following way.
+
+```
+query_key:
+  - error
+  - hostname
+```
+
 Internally, this works by creating a new field for each document called ``field1,field2`` with a
 value of ``value1,value2`` and using that as the ``query_key``.
 
@@ -267,3 +275,126 @@ Can I set a warning threshold?
 Currently, the only way to set a warning threshold is by creating a second rule with a lower
 threshold.
 
+Does it support Elastic Cloud Cloud ID?
+==========
+
+Not supported.
+
+In addition, there is a reason why we cannot handle it at present.
+ElastAlert 2 uses elasticsearch-py 7.0.0, because Elastic Cloud cloud_id support is from elasticsearch-py 7.0.2.
+
+I need to go through an http (s) proxy to connect to Elasticsearch. Does ElastAlert 2 support it?
+==========
+
+Not supported.
+
+About boolean value
+==========
+
+You can use all lowercase letters or only uppercase letters at the beginning.
+
+example
+
+```
+# OK
+use_ssl: true
+# OK
+use_ssl: True
+# OK
+use_ssl: false
+# OK
+use_ssl: False
+```
+
+Is it possible to send an SNMP Trap with an alert notification?
+==========
+
+* You need to additionally install snmp snmptrapd on the docker image. In other words, you need to modify the Dockerfile and recreate the Docker image with docker build.
+* It is possible with the command Alerter.
+
+example
+
+```
+name: "mariadb-error-log-warning"
+type: "frequency"
+index: "mariadb-*"
+num_events: 1
+timeframe:
+    minutes: 5
+realert:
+  minutes: 1
+filter:
+  - query:
+      query_string:
+        query: "@log_name:mysqld.error AND message:Warning"
+alert:
+  - command
+command: ["/usr/bin/snmptrap", "-IR", "-v", "2c", "-c", "public", "xxx.xxx.xxx.xxxxx:xxx", "", "netSnmp.99999", "netSnmp.99999.1", "s", "Hello, World"]
+is_enabled: true
+timestamp_field: "@timestamp"
+timestamp_type: "iso"
+use_strftime_index: false
+```
+
+Is Email Alerter compatible with Microsoft 365 (formerly Office 365)?
+==========
+
+Not supported.
+
+Does Email Alerter support the Google Gmail API?
+==========
+
+Not supported.
+
+Can Email Alerter send emails via the Gmail sending server?
+==========
+
+It is possible. However, you need to turn on (enable) the item "Access to insecure apps" in the "Security" settings of your Google account.
+
+Is it possible to send a JPEG image encoded as base64 in elasticsearch as an image attachment with an Email Alerter?
+==========
+
+I can do it.
+
+example
+
+```
+include: [base64field]
+alert_text_args: [base64field]
+email_format: "html"
+alert_text_type: alert_text_only
+alert_text: |
+  <html>
+  <body>
+  <div>
+    <img src="data:image/jpg;base64, {}" alt="Image" />
+  </div>
+  </body>
+  </html>
+```
+
+Does the alert notification destination support Alertmanager?
+==========
+
+Not supported.
+
+The es_host parameter seems to use only one host. Is it possible to specify multiple nodes?
+==========
+
+Only one can be set in es_host.
+Please use haproxy in front of elasticsearch.
+
+Is there any plan to implement a REST API into this project?
+==========
+
+No plan.
+
+An error occurred when trying to create a blacklist rule that parses a file with more than 1024 lines.
+==========
+
+This is the default limit for ElasticSearch. Specifying more than 1024 items in the blacklist will result in an error.
+This is a known issue. Perhaps White List can have similar issues.
+See the following issues on the original yelp/elastalert for more information.
+
+https://github.com/Yelp/elastalert/issues/1867<br>
+https://github.com/Yelp/elastalert/issues/2704
