@@ -151,9 +151,9 @@ There are two ways to load filters directly from a Kibana 3 dashboard. You can s
     filter:
       download_dashboard: "My Dashboard Name"
 
-and when ElastAlert starts, it will download the dashboard schema from Elasticsearch and use the filters from that.
-However, if the dashboard name changes or if there is connectivity problems when ElastAlert starts, the rule will not load and
-ElastAlert will exit with an error like "Could not download filters for .."
+and when ElastAlert 2 starts, it will download the dashboard schema from Elasticsearch and use the filters from that.
+However, if the dashboard name changes or if there is connectivity problems when ElastAlert 2 starts, the rule will not load and
+ElastAlert 2 will exit with an error like "Could not download filters for .."
 
 The second way is to generate a config file once using the Kibana dashboard. To do this, run ``elastalert-rule-from-kibana``.
 

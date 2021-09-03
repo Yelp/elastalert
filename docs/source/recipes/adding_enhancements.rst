@@ -26,7 +26,7 @@ Example
 -------
 
 As an example enhancement, let's add a link to a whois website. The match must contain a field named domain and it will 
-add an entry named domain_whois_link. First, create a modules folder for the enhancement in the ElastAlert directory.
+add an entry named domain_whois_link. First, create a modules folder for the enhancement in the ElastAlert 2 directory.
 
 .. code-block:: console
 
@@ -45,7 +45,7 @@ Now, in a file named ``my_enhancements.py``, add
 
         # The enhancement is run against every match
         # The match is passed to the process function where it can be modified in any way
-        # ElastAlert will do this for each enhancement linked to a rule
+        # ElastAlert 2 will do this for each enhancement linked to a rule
         def process(self, match):
             if 'domain' in match:
                 url = "http://who.is/whois/%s" % (match['domain'])

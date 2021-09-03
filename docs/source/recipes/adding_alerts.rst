@@ -22,12 +22,12 @@ and file is the name of the python file containing a ``Alerter`` subclass named 
 Basics
 ------
 
-The alerter class will be instantiated when ElastAlert starts, and be periodically passed
-matches through the ``alert`` method. ElastAlert also writes back info about the alert into
+The alerter class will be instantiated when ElastAlert 2 starts, and be periodically passed
+matches through the ``alert`` method. ElastAlert 2 also writes back info about the alert into
 Elasticsearch that it obtains through ``get_info``. Several important member properties:
 
 ``self.required_options``: This is a set containing names of configuration options that must be
-present. ElastAlert will not instantiate the alert if any are missing.
+present. ElastAlert 2 will not instantiate the alert if any are missing.
 
 ``self.rule``: The dictionary containing the rule configuration. All options specific to the alert
 should be in the rule configuration file and can be accessed here.
@@ -40,10 +40,10 @@ to the pipeline and the email alerter will add that link if it's present in the 
 alert(self, match):
 -------------------
 
-ElastAlert will call this function to send an alert. ``matches`` is a list of dictionary objects with
+ElastAlert 2 will call this function to send an alert. ``matches`` is a list of dictionary objects with
 information about the match. You can get a nice string representation of the match by calling
 ``self.rule['type'].get_match_str(match, self.rule)``. If this method raises an exception, it will
-be caught by ElastAlert and the alert will be marked as unsent and saved for later.
+be caught by ElastAlert 2 and the alert will be marked as unsent and saved for later.
 
 get_info(self):
 ---------------
@@ -56,7 +56,7 @@ Tutorial
 --------
 
 Let's create a new alert that will write alerts to a local output file. First,
-create a modules folder in the base ElastAlert folder:
+create a modules folder in the base ElastAlert 2 folder:
 
 .. code-block:: console
 
@@ -74,7 +74,7 @@ Now, in a file named ``my_alerts.py``, add
 
         # By setting required_options to a set of strings
         # You can ensure that the rule config file specifies all
-        # of the options. Otherwise, ElastAlert will throw an exception
+        # of the options. Otherwise, ElastAlert 2 will throw an exception
         # when trying to load the rule.
         required_options = set(['output_file_path'])
 
@@ -110,5 +110,5 @@ In the rule configuration file, we are going to specify the alert by writing
     alert: "elastalert_modules.my_alerts.AwesomeNewAlerter"
     output_file_path: "/tmp/alerts.log"
 
-ElastAlert will attempt to import the alert with ``from elastalert_modules.my_alerts import AwesomeNewAlerter``.
+ElastAlert  2 will attempt to import the alert with ``from elastalert_modules.my_alerts import AwesomeNewAlerter``.
 This means that the folder must be in a location where it can be imported as a python module.

@@ -24,7 +24,7 @@ Example
 -------
 
 As an example loader, let's retrieve rules from a database rather than from the local file system. First, create a
-modules folder for the loader in the ElastAlert directory.
+modules folder for the loader in the ElastAlert 2 directory.
 
 .. code-block:: console
 
@@ -78,7 +78,7 @@ Now, in a file named ``mongo_loader.py``, add
             self.cache[rule] = yaml.load(self.db.rules.find_one({'name': rule})['yaml'])
             return self.cache[rule]
 
-Finally, you need to specify in your ElastAlert configuration file that MongoRulesLoader should be used instead of the
+Finally, you need to specify in your ElastAlert 2 configuration file that MongoRulesLoader should be used instead of the
 default FileRulesLoader, so in your ``elastalert.conf`` file::
 
     rules_loader: "elastalert_modules.mongo_loader.MongoRulesLoader"

@@ -1,7 +1,7 @@
 Elasticsearch Security Privileges
 *********************************
 
-While ElastAlert will just work out-of-the-box for unsecured Elasticsearch, it will need a user with a certain set of permissions to work on secure Elasticseach that allow it to read the documents, check the cluster status etc.
+While ElastAlert 2 will just work out-of-the-box for unsecured Elasticsearch, it will need a user with a certain set of permissions to work on secure Elasticseach that allow it to read the documents, check the cluster status etc.
 
 SearchGuard Permissions
 =======================

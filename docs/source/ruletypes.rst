@@ -258,7 +258,7 @@ import
 ^^^^^^
 
 ``import``: If specified includes all the settings from this yaml file. This allows common config options to be shared. Note that imported files that aren't
-complete rules should not have a ``.yml`` or ``.yaml`` suffix so that ElastAlert doesn't treat them as rules. Filters in imported files are merged (ANDed)
+complete rules should not have a ``.yml`` or ``.yaml`` suffix so that ElastAlert 2 doesn't treat them as rules. Filters in imported files are merged (ANDed)
 with any filters in the rule. You can only have one import per rule, though the imported file can import another file or multiple files, recursively.
 The filename can be an absolute path or relative to the rules directory. (Optional, string or array of strings, no default)
 
@@ -332,7 +332,7 @@ es_send_get_body_as
 use_strftime_index
 ^^^^^^^^^^^^^^^^^^
 
-``use_strftime_index``: If this is true, ElastAlert will format the index using datetime.strftime for each query.
+``use_strftime_index``: If this is true, ElastAlert 2 will format the index using datetime.strftime for each query.
 See https://docs.python.org/2/library/datetime.html#strftime-strptime-behavior for more details.
 If a query spans multiple days, the formatted indexes will be concatenated with commas. This is useful
 as narrowing the number of indexes searched, compared to using a wildcard, may be significantly faster. For example, if ``index`` is
@@ -342,7 +342,7 @@ as narrowing the number of indexes searched, compared to using a wildcard, may b
 search_extra_index
 ^^^^^^^^^^^^^^^^^^
 
-``search_extra_index``: If this is true, ElastAlert will add an extra index on the early side onto each search. For example, if it's querying
+``search_extra_index``: If this is true, ElastAlert 2 will add an extra index on the early side onto each search. For example, if it's querying
 completely within 2018-06-28, it will actually use 2018-06-27,2018-06-28. This can be useful if your timestamp_field is not what's being used
 to generate the index names. If that's the case, sometimes a query would not have been using the right index.
 
@@ -350,7 +350,7 @@ aggregation
 ^^^^^^^^^^^
 
 ``aggregation``: This option allows you to aggregate multiple matches together into one alert. Every time a match is found,
-ElastAlert will wait for the ``aggregation`` period, and send all of the matches that have occurred in that time for a particular
+ElastAlert 2 will wait for the ``aggregation`` period, and send all of the matches that have occurred in that time for a particular
 rule together.
 
 For example::
@@ -407,8 +407,8 @@ Then, for the same sample data shown above listing alice and bob's events, Elast
 
 
 .. note::
-   By default, aggregation time is relative to the current system time, not the time of the match. This means that running elastalert over
-   past events will result in different alerts than if elastalert had been running while those events occured. This behavior can be changed
+   By default, aggregation time is relative to the current system time, not the time of the match. This means that running ElastAlert 2 over
+   past events will result in different alerts than if ElastAlert 2 had been running while those events occured. This behavior can be changed
    by setting ``aggregate_by_match_time``.
 
 limit_execution
@@ -433,7 +433,7 @@ realert
 will be applied on a per key basis. All matches for a given rule, or for matches with the same ``query_key``, will be ignored for
 the given time. All matches with a missing ``query_key`` will be grouped together using a value of ``_missing``.
 This is applied to the time the alert is sent, not to the time of the event. It defaults to one minute, which means
-that if ElastAlert is run over a large time period which triggers many matches, only the first alert will be sent by default. If you want
+that if ElastAlert 2 is run over a large time period which triggers many matches, only the first alert will be sent by default. If you want
 every alert, set realert to 0 minutes. (Optional, time, default 1 minute)
 
 exponential_realert
@@ -455,7 +455,7 @@ buffer_time
 query_delay
 ^^^^^^^^^^^
 
-``query_delay``: This option will cause ElastAlert to subtract a time delta from every query, causing the rule to run with a delay.
+``query_delay``: This option will cause ElastAlert 2 to subtract a time delta from every query, causing the rule to run with a delay.
 This is useful if the data is Elasticsearch doesn't get indexed immediately. (Optional, time)
 
 For example::
@@ -483,13 +483,13 @@ max_query_size
 
 ``max_query_size``: The maximum number of documents that will be downloaded from Elasticsearch in a single query. If you
 expect a large number of results, consider using ``use_count_query`` for the rule. If this
-limit is reached, a warning will be logged but ElastAlert will continue without downloading more results. This setting will
+limit is reached, a warning will be logged but ElastAlert 2 will continue without downloading more results. This setting will
 override a global ``max_query_size``. (Optional, int, default value of global ``max_query_size``)
 
 filter
 ^^^^^^
 
-``filter``: A list of Elasticsearch query DSL filters that is used to query Elasticsearch. ElastAlert will query Elasticsearch using the format
+``filter``: A list of Elasticsearch query DSL filters that is used to query Elasticsearch. ElastAlert 2 will query Elasticsearch using the format
 ``{'filter': {'bool': {'must': [config.filter]}}}`` with an additional timestamp range filter.
 All of the results of querying with these filters are passed to the ``RuleType`` for analysis.
 For more information writing filters, see :ref:`Writing Filters <writingfilters>`. (Required, Elasticsearch query DSL, no default)
@@ -504,11 +504,11 @@ fields, along with '@timestamp', ``query_key``, ``compare_key``, and ``top_count
 top_count_keys
 ^^^^^^^^^^^^^^
 
-``top_count_keys``: A list of fields. ElastAlert will perform a terms query for the top X most common values for each of the fields,
+``top_count_keys``: A list of fields. ElastAlert 2 will perform a terms query for the top X most common values for each of the fields,
 where X is 5 by default, or ``top_count_number`` if it exists.
 For example, if ``num_events`` is 100, and ``top_count_keys`` is ``- "username"``, the alert will say how many of the 100 events
 have each username, for the top 5 usernames. When this is computed, the time range used is from ``timeframe`` before the most recent event
-to 10 minutes past the most recent event. Because ElastAlert uses an aggregation query to compute this, it will attempt to use the
+to 10 minutes past the most recent event. Because ElastAlert 2 uses an aggregation query to compute this, it will attempt to use the
 field name plus ".raw" to count unanalyzed terms. To turn this off, set ``raw_count_keys`` to false.
 
 top_count_number
@@ -531,7 +531,7 @@ generate_kibana_link
 ^^^^^^^^^^^^^^^^^^^^
 
 ``generate_kibana_link``: This option is for Kibana 3 only.
-If true, ElastAlert will generate a temporary Kibana dashboard and include a link to it in alerts. The dashboard
+If true, ElastAlert 2 will generate a temporary Kibana dashboard and include a link to it in alerts. The dashboard
 consists of an events over time graph and a table with ``include`` fields selected in the table. If the rule uses ``query_key``, the
 dashboard will also contain a filter for the ``query_key`` of the alert. The dashboard schema will
 be uploaded to the kibana-int index as a temporary dashboard. (Optional, boolean, default False)
@@ -547,7 +547,7 @@ use_kibana_dashboard
 ^^^^^^^^^^^^^^^^^^^^
 
 ``use_kibana_dashboard``: The name of a Kibana 3 dashboard to link to. Instead of generating a dashboard from a template,
-ElastAlert can use an existing dashboard. It will set the time range on the dashboard to around the match time,
+ElastAlert 2 can use an existing dashboard. It will set the time range on the dashboard to around the match time,
 upload it as a temporary dashboard, add a filter to the ``query_key`` of the alert if applicable,
 and put the url to the dashboard in the alert. (Optional, string, no default)
 
@@ -672,7 +672,7 @@ use_local_time
 ^^^^^^^^^^^^^^
 
 ``use_local_time``: Whether to convert timestamps to the local time zone in alerts. If false, timestamps will
-be converted to UTC, which is what ElastAlert uses internally. (Optional, boolean, default true)
+be converted to UTC, which is what ElastAlert 2 uses internally. (Optional, boolean, default true)
 
 match_enhancements
 ^^^^^^^^^^^^^^^^^^
@@ -759,18 +759,18 @@ This option is only valid if ``timestamp_type`` set to ``custom``.
 _source_enabled
 ^^^^^^^^^^^^^^^
 
-``_source_enabled``: If true, ElastAlert will use _source to retrieve fields from documents in Elasticsearch. If false,
-ElastAlert will use ``fields`` to retrieve stored fields. Both of these are represented internally as if they came from ``_source``.
+``_source_enabled``: If true, ElastAlert 2 will use _source to retrieve fields from documents in Elasticsearch. If false,
+ElastAlert 2 will use ``fields`` to retrieve stored fields. Both of these are represented internally as if they came from ``_source``.
 See https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-fields.html for more details. The fields used come from ``include``,
 see above for more details. (Optional, boolean, default True)
 
 scan_entire_timeframe
 ^^^^^^^^^^^^^^^^^^^^^
 
-``scan_entire_timeframe``: If true, when ElastAlert starts, it will always start querying at the current time minus the timeframe.
+``scan_entire_timeframe``: If true, when ElastAlert 2 starts, it will always start querying at the current time minus the timeframe.
 ``timeframe`` must exist in the rule. This may be useful, for example, if you are using a flatline rule type with a large timeframe,
-and you want to be sure that if ElastAlert restarts, you can still get alerts. This may cause duplicate alerts for some rule types,
-for example, Frequency can alert multiple times in a single timeframe, and if ElastAlert were to restart with this setting, it may
+and you want to be sure that if ElastAlert 2 restarts, you can still get alerts. This may cause duplicate alerts for some rule types,
+for example, Frequency can alert multiple times in a single timeframe, and if ElastAlert 2 were to restart with this setting, it may
 scan the same range again, triggering duplicate alerts.
 
 Some rules and alerts require additional options, which also go in the top level of the rule configuration file.
@@ -788,7 +788,7 @@ Example value : query_timezone: "Europe/Istanbul"
 Testing Your Rule
 =================
 
-Once you've written a rule configuration, you will want to validate it. To do so, you can either run ElastAlert in debug mode,
+Once you've written a rule configuration, you will want to validate it. To do so, you can either run ElastAlert 2 in debug mode,
 or use ``elastalert-test-rule``, which is a script that makes various aspects of testing easier.
 
 It can:
@@ -803,7 +803,7 @@ It can:
 
 - Save documents returned to a JSON file.
 
-- Run ElastAlert using either a JSON file or actual results from Elasticsearch.
+- Run ElastAlert 2 using either a JSON file or actual results from Elasticsearch.
 
 - Print out debug alerts or trigger real alerts.
 
@@ -811,7 +811,7 @@ It can:
 
 - Show what metadata documents would be written to ``elastalert_status``.
 
-Without any optional arguments, it will run ElastAlert over the last 24 hours and print out any alerts that would have occurred.
+Without any optional arguments, it will run ElastAlert 2 over the last 24 hours and print out any alerts that would have occurred.
 Here is an example test run which triggered an alert:
 
 .. code-block:: console
@@ -860,9 +860,9 @@ Other options include:
 ``--schema-only``: Only perform schema validation on the file. It will not load modules or query Elasticsearch. This may catch invalid YAML
 and missing or misconfigured fields.
 
-``--count-only``: Only find the number of matching documents and list available fields. ElastAlert will not be run and documents will not be downloaded.
+``--count-only``: Only find the number of matching documents and list available fields. ElastAlert 2 will not be run and documents will not be downloaded.
 
-``--days N``: Instead of the default 1 day, query N days. For selecting more specific time ranges, you must run ElastAlert itself and use ``--start``
+``--days N``: Instead of the default 1 day, query N days. For selecting more specific time ranges, you must run ElastAlert 2 itself and use ``--start``
 and ``--end``.
 
 ``--save-json FILE``: Save all documents downloaded to a file as JSON. This is useful if you wish to modify data while testing or do offline
@@ -877,7 +877,7 @@ guaranteed to have the exact same results as with Elasticsearch. For example, an
 ``--formatted-output``: Output results in formatted JSON.
 
 .. note::
-   Results from running this script may not always be the same as if an actual ElastAlert instance was running. Some rule types, such as spike
+   Results from running this script may not always be the same as if an actual ElastAlert 2 instance was running. Some rule types, such as spike
    and flatline require a minimum elapsed time before they begin alerting, based on their timeframe. In addition, use_count_query and
    use_terms_query rely on run_every to determine their resolution. This script uses a fixed 5 minute window, which is the same as the default.
 
@@ -887,7 +887,7 @@ guaranteed to have the exact same results as with Elasticsearch. For example, an
 Rule Types
 ==========
 
-The various ``RuleType`` classes, defined in ``elastalert/ruletypes.py``, form the main logic behind ElastAlert. An instance
+The various ``RuleType`` classes, defined in ``elastalert/ruletypes.py``, form the main logic behind ElastAlert 2. An instance
 is held in memory for each rule, passed all of the data returned by querying Elasticsearch with a given filter, and generates
 matches based on that data.
 
@@ -961,7 +961,7 @@ the events that are checked.
 
 There is also an optional field:
 
-``timeframe``: The maximum time between changes. After this time period, ElastAlert will forget the old value
+``timeframe``: The maximum time between changes. After this time period, ElastAlert 2 will forget the old value
 of the ``compare_key`` field.
 
 Frequency
@@ -980,13 +980,13 @@ This rule requires two additional options:
 
 Optional:
 
-``use_count_query``: If true, ElastAlert will poll Elasticsearch using the count api, and not download all of the matching documents. This is
+``use_count_query``: If true, ElastAlert 2 will poll Elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
 of tens of thousands or more. ``doc_type`` must be set to use this.
 
 ``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
 
-``use_terms_query``: If true, ElastAlert will make an aggregation query against Elasticsearch to get counts of documents matching
+``use_terms_query``: If true, ElastAlert 2 will make an aggregation query against Elasticsearch to get counts of documents matching
 each unique value of ``query_key``. This must be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
 default 50, unique terms.
 
@@ -1115,13 +1115,13 @@ consider the following examples::
 trigger an immediate alert. When set to false, baseline must be established for each new ``query_key`` value, and then subsequent spikes may
 cause alerts. Baseline is established after ``timeframe`` has elapsed twice since first occurrence.
 
-``use_count_query``: If true, ElastAlert will poll Elasticsearch using the count api, and not download all of the matching documents. This is
+``use_count_query``: If true, ElastAlert 2 will poll Elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
 of tens of thousands or more. ``doc_type`` must be set to use this.
 
 ``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
 
-``use_terms_query``: If true, ElastAlert will make an aggregation query against Elasticsearch to get counts of documents matching
+``use_terms_query``: If true, ElastAlert 2 will make an aggregation query against Elasticsearch to get counts of documents matching
 each unique value of ``query_key``. This must be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
 default 50, unique terms.
 
@@ -1142,13 +1142,13 @@ This rule requires two additional options:
 
 Optional:
 
-``use_count_query``: If true, ElastAlert will poll Elasticsearch using the count api, and not download all of the matching documents. This is
+``use_count_query``: If true, ElastAlert 2 will poll Elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
 of tens of thousands or more. ``doc_type`` must be set to use this.
 
 ``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
 
-``use_terms_query``: If true, ElastAlert will make an aggregation query against Elasticsearch to get counts of documents matching
+``use_terms_query``: If true, ElastAlert 2 will make an aggregation query against Elasticsearch to get counts of documents matching
 each unique value of ``query_key``. This must be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
 default 50, unique terms.
 
@@ -1157,13 +1157,13 @@ default 50, unique terms.
 ``query_key``: With flatline rule, ``query_key`` means that an alert will be triggered if any value of ``query_key`` has been seen at least once
 and then falls below the threshold.
 
-``forget_keys``: Only valid when used with ``query_key``. If this is set to true, ElastAlert will "forget" about the ``query_key`` value that
+``forget_keys``: Only valid when used with ``query_key``. If this is set to true, ElastAlert 2 will "forget" about the ``query_key`` value that
 triggers an alert, therefore preventing any more alerts for it until it's seen again.
 
 New Term
 ~~~~~~~~
 
-``new_term``: This rule matches when a new value appears in a field that has never been seen before. When ElastAlert starts, it will
+``new_term``: This rule matches when a new value appears in a field that has never been seen before. When ElastAlert 2 starts, it will
 use an aggregation query to gather all known terms for a list of fields.
 
 This rule requires one additional option:
@@ -1175,7 +1175,7 @@ that compose a composite key used for the ElasticSearch query.
 .. note::
 
    The composite fields may only refer to primitive types, otherwise the initial ElasticSearch query will not properly return
-   the aggregation results, thus causing alerts to fire every time the ElastAlert service initially launches with the rule.
+   the aggregation results, thus causing alerts to fire every time the ElastAlert 2 service initially launches with the rule.
    A warning will be logged to the console if this scenario is encountered. However, future alerts will actually work as
    expected after the initial flurry.
 
@@ -1190,7 +1190,7 @@ expensive aggregation queries. The default is 1 day.
 
 ``alert_on_missing_field``: Whether or not to alert when a field is missing from a document. The default is false.
 
-``use_terms_query``: If true, ElastAlert will use aggregation queries to get terms instead of regular search queries. This is faster
+``use_terms_query``: If true, ElastAlert 2 will use aggregation queries to get terms instead of regular search queries. This is faster
 than regular searching if there is a large number of documents. If this is used, you may only specify a single field, and must also set
 ``query_key`` to that field. Also, note that ``terms_size`` (the number of buckets returned per query) defaults to 50. This means
 that if a new term appears but there are at least 50 terms which appear more frequently, it will not be found.
@@ -1198,11 +1198,11 @@ that if a new term appears but there are at least 50 terms which appear more fre
 .. note::
 
   When using use_terms_query, make sure that the field you are using is not analyzed. If it is, the results of each terms
-  query may return tokens rather than full values. ElastAlert will by default turn on use_keyword_postfix, which attempts
+  query may return tokens rather than full values. ElastAlert 2 will by default turn on use_keyword_postfix, which attempts
   to use the non-analyzed version (.keyword or .raw) to gather initial terms. These will not match the partial values and
   result in false positives.
 
-``use_keyword_postfix``: If true, ElastAlert will automatically try to add .keyword (ES5+) or .raw to the fields when making an
+``use_keyword_postfix``: If true, ElastAlert 2 will automatically try to add .keyword (ES5+) or .raw to the fields when making an
 initial query. These are non-analyzed fields added by Logstash. If the field used is analyzed, the initial query will return
 only the tokenized values, potentially causing false positives. Defaults to true.
 
@@ -1276,7 +1276,7 @@ multiple of ``bucket_interval``. (Or ``run_every`` if ``use_run_every_query_size
 ``sync_bucket_interval``: This only has an effect if ``bucket_interval`` is present. If true it will sync the start and end times of the metric
 calculation window to the keys (timestamps) of the underlying date_histogram buckets. Because of the way elasticsearch calculates date_histogram
 bucket keys these usually round evenly to nearest minute, hour, day etc (depending on the bucket size). By default the bucket keys are offset to
-allign with the time elastalert runs, (This both avoid calculations on partial data, and ensures the very latest documents are included).
+allign with the time ElastAlert 2 runs, (This both avoid calculations on partial data, and ensures the very latest documents are included).
 See: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-datehistogram-aggregation.html#_offset for a
 more comprehensive explaination.
 
@@ -1375,7 +1375,7 @@ Alerts
 ======
 
 Each rule may have any number of alerts attached to it. Alerts are subclasses of ``Alerter`` and are passed
-a dictionary, or list of dictionaries, from ElastAlert which contain relevant information. They are configured
+a dictionary, or list of dictionaries, from ElastAlert 2 which contain relevant information. They are configured
 in the rule configuration file similarly to rule types.
 
 To set the alerts for a rule, set the ``alert`` option to the name of the alert, or a list of the names of alerts:
@@ -1766,10 +1766,10 @@ In an aggregated alert, these fields come from the first match.
 
 Optional:
 
-``pipe_match_json``: If true, the match will be converted to JSON and passed to stdin of the command. Note that this will cause ElastAlert to block
+``pipe_match_json``: If true, the match will be converted to JSON and passed to stdin of the command. Note that this will cause ElastAlert 2 to block
 until the command exits or sends an EOF to stdout.
 
-``pipe_alert_text``: If true, the standard alert body text will be passed to stdin of the command. Note that this will cause ElastAlert to block
+``pipe_alert_text``: If true, the standard alert body text will be passed to stdin of the command. Note that this will cause ElastAlert 2 to block
 until the command exits or sends an EOF to stdout. It cannot be used at the same time as ``pipe_match_json``.
 
 ``fail_on_non_zero_exit``: By default this is ``False``. Allows monitoring of when commands fail to run. When a command returns a non-zero exit status, the alert raises an exception.
@@ -1890,9 +1890,9 @@ Required:
 
 Optional:
 
-``discord_emoji_title``: By default ElastAlert will use the ``:warning:`` emoji when posting to the channel. You can use a different emoji per ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
+``discord_emoji_title``: By default ElastAlert 2 will use the ``:warning:`` emoji when posting to the channel. You can use a different emoji per ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
 
-``discord_proxy``: By default ElastAlert will not use a network proxy to send notifications to Discord. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``discord_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Discord. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``discord_proxy_login``: The Discord proxy auth username.
 
@@ -1911,7 +1911,7 @@ Example usage::
     discord_webhook_url: "Your discord webhook url"
     discord_emoji_title: ":lock:"
     discord_embed_color: 0xE24D42
-    discord_embed_footer: "Message sent by ElastAlert from your computer"
+    discord_embed_footer: "Message sent by  from your computer"
     discord_embed_icon_url: "https://humancoders-formations.s3.amazonaws.com/uploads/course/logo/38/thumb_bigger_formation-elasticsearch.png"
 
 Email
@@ -1942,7 +1942,7 @@ an email would be sent to ``qlo@example.com``
 
 ``smtp_port``: The port to use. Defaults to port 25 when SSL is not used, or 465 when SSL is used.
 
-``smtp_ssl``: Connect the SMTP host using TLS, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
+``smtp_ssl``: Connect the SMTP host using TLS, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert 2 will still attempt
 STARTTLS.
 
 ``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. The path can be either absolute or relative
@@ -2022,7 +2022,7 @@ Optional:
 
 ``gitter_msg_level``: By default the alert will be posted with the 'error' level. You can use 'info' if you want the messages to be black instead of red.
 
-``gitter_proxy``: By default ElastAlert will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``gitter_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Gitter. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 Example usage::
 
@@ -2092,7 +2092,7 @@ Example usage::
 Jira
 ~~~~
 
-The Jira alerter will open a ticket on Jira whenever an alert is triggered. You must have a service account for ElastAlert to connect with.
+The Jira alerter will open a ticket on Jira whenever an alert is triggered. You must have a service account for ElastAlert 2 to connect with.
 The credentials of the service account are loaded from a separate file. The ticket number will be written to the alert pipeline, and if it
 is followed by an email alerter, a link will be included in the email.
 
@@ -2131,20 +2131,20 @@ Optional:
 
 ``jira_watchers``: A list of user names to add as watchers on a Jira ticket. This can be a single string or a list of strings.
 
-``jira_bump_tickets``: If true, ElastAlert search for existing tickets newer than ``jira_max_age`` and comment on the ticket with
-information about the alert instead of opening another ticket. ElastAlert finds the existing ticket by searching by summary. If the
+``jira_bump_tickets``: If true, ElastAlert 2 search for existing tickets newer than ``jira_max_age`` and comment on the ticket with
+information about the alert instead of opening another ticket. ElastAlert 2 finds the existing ticket by searching by summary. If the
 summary has changed or contains special characters, it may fail to find the ticket. If you are using a custom ``alert_subject``,
 the two summaries must be exact matches, except by setting ``jira_ignore_in_title``, you can ignore the value of a field when searching.
 For example, if the custom subject is "foo occured at bar", and "foo" is the value field X in the match, you can set ``jira_ignore_in_title``
 to "X" and it will only bump tickets with "bar" in the subject. Defaults to false.
 
-``jira_ignore_in_title``: ElastAlert will attempt to remove the value for this field from the Jira subject when searching for tickets to bump.
+``jira_ignore_in_title``: ElastAlert 2 will attempt to remove the value for this field from the Jira subject when searching for tickets to bump.
 See ``jira_bump_tickets`` description above for an example.
 
-``jira_max_age``: If ``jira_bump_tickets`` is true, the maximum age of a ticket, in days, such that ElastAlert will comment on the ticket
+``jira_max_age``: If ``jira_bump_tickets`` is true, the maximum age of a ticket, in days, such that ElastAlert 2 will comment on the ticket
 instead of opening a new one. Default is 30 days.
 
-``jira_bump_not_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket must **not** be in for ElastAlert to comment on
+``jira_bump_not_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket must **not** be in for ElastAlert 2 to comment on
 the ticket instead of opening a new one. For example, to prevent comments being added to resolved or closed tickets, set this to 'Resolved'
 and 'Closed'. This option should not be set if the ``jira_bump_in_statuses`` option is set.
 
@@ -2154,7 +2154,7 @@ Example usage::
       - Resolved
       - Closed
 
-``jira_bump_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket *must be in* for ElastAlert to comment on
+``jira_bump_in_statuses``: If ``jira_bump_tickets`` is true, a list of statuses the ticket *must be in* for ElastAlert 2 to comment on
 the ticket instead of opening a new one. For example, to only comment on 'Open' tickets  -- and thus not 'In Progress', 'Analyzing',
 'Resolved', etc. tickets -- set this to 'Open'. This option should not be set if the ``jira_bump_not_in_statuses`` option is set.
 
@@ -2177,12 +2177,12 @@ Example usage::
 
 
 
-``jira_bump_after_inactivity``: If this is set, ElastAlert will only comment on tickets that have been inactive for at least this many days.
+``jira_bump_after_inactivity``: If this is set, ElastAlert 2 will only comment on tickets that have been inactive for at least this many days.
 It only applies if ``jira_bump_tickets`` is true. Default is 0 days.
 
 Arbitrary Jira fields:
 
-ElastAlert supports setting any arbitrary Jira field that your Jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your Jira server, internally, the field is represented as ``customfield_1111``. In elastalert, you may refer to either the public facing name OR the internal representation.
+ElastAlert 2 supports setting any arbitrary Jira field that your Jira issue supports. For example, if you had a custom field, called "Affected User", you can set it by providing that field name in ``snake_case`` prefixed with ``jira_``.  These fields can contain primitive strings or arrays of strings. Note that when you create a custom field in your Jira server, internally, the field is represented as ``customfield_1111``. In ElastAlert 2, you may refer to either the public facing name OR the internal representation.
 
 In addition, if you would like to use a field in the alert as the value for a custom Jira field, use the field name plus a # symbol in front. For example, if you wanted to set a custom Jira field called "user" to the value of the field "username" from the match, you would use the following.
 
@@ -2227,22 +2227,22 @@ The alerter requires the following option:
 
 Optional:
 
-``mattermost_proxy``: By default ElastAlert will not use a network proxy to send notifications to Mattermost. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``mattermost_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Mattermost. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
-``mattermost_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+``mattermost_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
 
 ``mattermost_username_override``: By default Mattermost will use your username when posting to the channel. Use this option to change it (free text).
 
 ``mattermost_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
 
-``mattermost_icon_url_override``: By default ElastAlert will use the default webhook icon when posting to the channel. You can provide icon_url to use custom image.
+``mattermost_icon_url_override``: By default ElastAlert 2 will use the default webhook icon when posting to the channel. You can provide icon_url to use custom image.
 Provide absolute address of the picture or Base64 data url.
 
 ``mattermost_msg_pretext``: You can set the message attachment pretext using this option.
 
 ``mattermost_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good', 'warning', or hex color code.
 
-``mattermost_msg_fields``: You can add fields to your Mattermost alerts using this option. You can specify the title using `title` and the text value using `value`. Additionally you can specify whether this field should be a `short` field using `short: true`. If you set `args` and `value` is a formattable string, ElastAlert will format the incident key based on the provided array of fields from the rule or match.
+``mattermost_msg_fields``: You can add fields to your Mattermost alerts using this option. You can specify the title using `title` and the text value using `value`. Additionally you can specify whether this field should be a `short` field using `short: true`. If you set `args` and `value` is a formattable string, ElastAlert 2 will format the incident key based on the provided array of fields from the rule or match.
 See https://docs.mattermost.com/developer/message-attachments.html#fields for more information.
 
 Example mattermost_msg_fields::
@@ -2317,7 +2317,7 @@ Optional:
 
 ``ms_teams_theme_color``: By default the alert will be posted without any color line. To add color, set this attribute to a HTML color value e.g. ``#ff0000`` for red.
 
-``ms_teams_proxy``: By default ElastAlert will not use a network proxy to send notifications to MS Teams. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``ms_teams_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to MS Teams. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``ms_teams_alert_fixed_width``: By default this is ``False`` and the notification will be sent to MS Teams as-is. Teams supports a partial Markdown implementation, which means asterisk, underscore and other characters may be interpreted as Markdown. Currenlty, Teams does not fully implement code blocks. Setting this attribute to ``True`` will enable line by line code blocks. It is recommended to enable this to get clearer notifications in Teams.
 
@@ -2374,7 +2374,7 @@ Optional:
 
 ``opsgenie_details``: Map of custom key/value pairs to include in the alert's details. The value can sourced from either fields in the first match, environment variables, or a constant value.
 
-``opsgenie_proxy``: By default ElastAlert will not use a network proxy to send notifications to OpsGenie. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``opsgenie_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to OpsGenie. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``opsgenie_source``: Set the OpsGenie source, default is `ElastAlert`. Can be formatted with fields from the first match e.g "{source} {region}"
 
@@ -2422,16 +2422,16 @@ The alerter requires the following option:
 
 Optional:
 
-``alert_subject``: If set, this will be used as the Incident description within PagerDuty. If not set, ElastAlert will default to using the rule name of the alert for the incident.
+``alert_subject``: If set, this will be used as the Incident description within PagerDuty. If not set, ElastAlert 2 will default to using the rule name of the alert for the incident.
 
-``alert_subject_args``: If set, and  ``alert_subject`` is a formattable string, ElastAlert will format the incident key based on the provided array of fields from the rule or match.
+``alert_subject_args``: If set, and  ``alert_subject`` is a formattable string, ElastAlert 2 will format the incident key based on the provided array of fields from the rule or match.
 
 ``pagerduty_incident_key``: If not set PagerDuty will trigger a new incident for each alert sent. If set to a unique string per rule PagerDuty will identify the incident that this event should be applied.
 If there's no open (i.e. unresolved) incident with this key, a new one will be created. If there's already an open incident with a matching key, this event will be appended to that incident's log.
 
 ``pagerduty_incident_key_args``: If set, and ``pagerduty_incident_key`` is a formattable string, ElastAlert 2 will format the incident key based on the provided array of fields from the rule or match.
 
-``pagerduty_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerDuty. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``pagerduty_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to PagerDuty. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 V2 API Options (Optional):
 
@@ -2472,7 +2472,7 @@ The alerter requires the following options:
 
 ``pagertree_integration_url``: URL generated by PagerTree for the integration.
 
-``pagertree_proxy``: By default ElastAlert will not use a network proxy to send notifications to PagerTree. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``pagertree_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to PagerTree. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 Example usage::
 
@@ -2497,7 +2497,7 @@ Optional:
 ``rocket_chat_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified “#other-channel”, and a Direct Message with “@username”.
 
 ``rocket_chat_emoji_override``: By default ElastAlert 2 will use the :ghost: emoji when posting to the channel. You can use a different emoji per
-ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ .
+ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ .
 
 ``rocket_chat_msg_color``: By default the alert will be posted with the ‘danger’ color. You can also use ‘good’ or ‘warning’ colors.
 
@@ -2561,7 +2561,7 @@ Alerts can be sent to Squadcast using the `http post` method described above and
 Configuration variables in rules YAML file::
 
     alert: post
-    http_post_url: <ElastAlert Webhook URL copied from Squadcast dashboard>
+    http_post_url: <ElastAlert 2 Webhook URL copied from Squadcast dashboard>
     http_post_static_payload:
       Title: <Incident Title>
     http_post_all_values: true
@@ -2598,7 +2598,7 @@ The alerter requires the following options:
 
 Optional:
 
-``servicenow_proxy``: By default ElastAlert will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``servicenow_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to ServiceNow. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``servicenow_impact``: An integer 1, 2, or 3 representing high, medium, and low respectively. This measures the effect of an incident on business processes.
 
@@ -2638,10 +2638,10 @@ Optional:
 
 ``slack_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
 
-``slack_emoji_override``: By default ElastAlert will use the ``:ghost:`` emoji when posting to the channel. You can use a different emoji per
-ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
+``slack_emoji_override``: By default ElastAlert 2 will use the ``:ghost:`` emoji when posting to the channel. You can use a different emoji per
+ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
 
-``slack_icon_url_override``: By default ElastAlert will use the ``:ghost:`` emoji when posting to the channel. You can provide icon_url to use custom image.
+``slack_icon_url_override``: By default ElastAlert 2 will use the ``:ghost:`` emoji when posting to the channel. You can provide icon_url to use custom image.
 Provide absolute address of the pciture.
 
 ``slack_msg_color``: By default the alert will be posted with the 'danger' color. You can also use 'good' or 'warning' colors.
@@ -2650,7 +2650,7 @@ Provide absolute address of the pciture.
 
 ``slack_text_string``: Notification message you want to add.
 
-``slack_proxy``: By default ElastAlert will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``slack_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Slack. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``slack_alert_fields``: You can add additional fields to your slack alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
 
@@ -2667,13 +2667,13 @@ Example slack_alert_fields::
         value: beat.name
         short: true
 
-``slack_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+``slack_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
 
 ``slack_title``: Sets a title for the message, this shows up as a blue text at the start of the message
 
 ``slack_title_link``: You can add a link in your Slack notification by setting this to a valid URL. Requires slack_title to be set.
 
-``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slack. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
+``slack_timeout``: You can specify a timeout value, in seconds, for making communicating with Slack. The default is 10. If a timeout occurs, the alert will be retried next time ElastAlert 2 cycles.
 
 ``slack_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the slack notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
 
@@ -2739,7 +2739,7 @@ Optional:
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow. Will use ``alert_subject`` if not set.
 
-``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to Splunk On-Call (Formerly VictorOps). Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``victorops_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Splunk On-Call (Formerly VictorOps). Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 Example usage::
 
@@ -2797,7 +2797,7 @@ Optional:
 
 ``telegram_api_url``: Custom domain to call Telegram Bot API. Default to api.telegram.org
 
-``telegram_proxy``: By default ElastAlert will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``telegram_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Telegram. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``telegram_proxy_login``: The Telegram proxy auth username.
 
@@ -2824,7 +2824,7 @@ Only ``hive_apikey`` is required, ``hive_host`` and ``hive_port`` default to ``h
 
 ``hive_alert_config``: Configuration options for the alert, see example below for structure.
 
-If not supplied, the alert title and description will be populated from the ElastAlert default
+If not supplied, the alert title and description will be populated from the ElastAlert 2 default
 ``title`` and ``alert_text`` fields, including any defined ``alert_text_args``.
 
 Optional:
@@ -2930,7 +2930,7 @@ Example with SMS usage::
 Zabbix
 ~~~~~~
 
-Zabbix will send notification to a Zabbix server. The item in the host specified receive a 1 value for each hit. For example, if the elastic query produce 3 hits in the last execution of elastalert, three '1' (integer) values will be send from elastalert to Zabbix Server. If the query have 0 hits, any value will be sent.
+Zabbix will send notification to a Zabbix server. The item in the host specified receive a 1 value for each hit. For example, if the elastic query produce 3 hits in the last execution of ElastAlert 2, three '1' (integer) values will be send from elastalert to Zabbix Server. If the query have 0 hits, any value will be sent.
 
 Required:
 

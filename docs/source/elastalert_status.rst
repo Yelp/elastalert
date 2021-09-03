@@ -1,17 +1,17 @@
 .. _metadata:
 
-ElastAlert Metadata Index
-=========================
+ElastAlert 2 Metadata Index
+===========================
 
-ElastAlert uses Elasticsearch to store various information about its state. This not only allows for some
-level of auditing and debugging of ElastAlert's operation, but also to avoid loss of data or duplication of alerts
-when ElastAlert is shut down, restarted, or crashes. This cluster and index information is defined
-in the global config file with ``es_host``, ``es_port`` and ``writeback_index``. ElastAlert must be able
+ElastAlert 2 uses Elasticsearch to store various information about its state. This not only allows for some
+level of auditing and debugging of ElastAlert 2's operation, but also to avoid loss of data or duplication of alerts
+when ElastAlert 2 is shut down, restarted, or crashes. This cluster and index information is defined
+in the global config file with ``es_host``, ``es_port`` and ``writeback_index``. ElastAlert 2 must be able
 to write to this index. The script, ``elastalert-create-index`` will create the index with the correct mapping
-for you, and optionally copy the documents from an existing ElastAlert writeback index. Run it and it will
+for you, and optionally copy the documents from an existing ElastAlert 2 writeback index. Run it and it will
 prompt you for the cluster information.
 
-ElastAlert will create three different types of documents in the writeback index:
+ElastAlert 2 will create three different types of documents in the writeback index:
 
 elastalert_status
 ~~~~~~~~~~~~~~~~~
@@ -26,8 +26,8 @@ elastalert_status
 - ``matches``: The number of matches that the rule returned after processing the hits. Note that this does not necessarily mean that alerts were triggered.
 - ``time_taken``: The number of seconds it took for this query to run.
 
-``elastalert_status`` is what ElastAlert will use to determine what time range to query when it first starts to avoid duplicating queries.
-For each rule, it will start querying from the most recent endtime. If ElastAlert is running in debug mode, it will still attempt to base
+``elastalert_status`` is what ElastAlert 2 will use to determine what time range to query when it first starts to avoid duplicating queries.
+For each rule, it will start querying from the most recent endtime. If ElastAlert 2 is running in debug mode, it will still attempt to base
 its start time by looking for the most recent search performed, but it will not write the results of any query back to Elasticsearch.
 
 elastalert
@@ -47,7 +47,7 @@ elastalert
 elastalert_error
 ~~~~~~~~~~~~~~~~
 
-When an error occurs in ElastAlert, it is written to both Elasticsearch and to stderr. The ``elastalert_error`` type contains:
+When an error occurs in ElastAlert 2, it is written to both Elasticsearch and to stderr. The ``elastalert_error`` type contains:
 
 - ``@timestamp``: The time when the error occurred.
 - ``message``: The error or exception message.
@@ -66,5 +66,5 @@ an alert with ``realert`` is triggered, a ``silence`` record will be written wit
 - ``exponent``: The exponential factor which multiplies ``realert``. The length of this silence is equal to ``realert`` * 2**exponent. This will
   be 0 unless ``exponential_realert`` is set.
 
-Whenever an alert is triggered, ElastAlert will check for a matching ``silence`` document, and if the ``until`` timestamp is in the future, it will ignore
-the alert completely. See the :ref:`Running ElastAlert <elastalert-arguments>` section for information on how to silence an alert.
+Whenever an alert is triggered, ElastAlert 2 will check for a matching ``silence`` document, and if the ``until`` timestamp is in the future, it will ignore
+the alert completely. See the :ref:`Running ElastAlert 2 <elastalert-arguments>` section for information on how to silence an alert.
