@@ -21,7 +21,7 @@
 ## Other changes
 - Fixed typo in default setting accidentally introduced in [#407](https://github.com/jertel/elastalert2/pull/407)  - [#413](https://github.com/jertel/elastalert2/pull/413) - @perceptron01
 - Fix saving feature which was ignoring --start/--end, and storing no content with default --days value to 0
-
+- Changed the wording of ElastAlert to ElastAlert 2 and Update FAQ -[#446](https://github.com/jertel/elastalert2/pull/446) - @nsano-rururu
 # 2.2.1
 
 ## Breaking changes
