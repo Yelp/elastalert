@@ -1077,17 +1077,19 @@ def test_opsgenie_create_custom_title():
     excepted = 'abc Testing 2014-10-31T00:00:00'
     assert excepted == actual
 
+
 def test_opsgenie_create_custom_description():
     rule = {
         'name': 'Opsgenie Details',
         'type': mock_rule(),
         'opsgenie_account': 'genies',
         'opsgenie_key': 'ogkey',
-        'opsgenie_description': "Custom Description"
+        'opsgenie_description': 'Custom Description',
         'opsgenie_details': {
             'Message': {'field': 'message'},
             'Missing': {'field': 'missing'}
-        }
+        },
+        'opsgenie_subject': 'test1'
     }
     match = {
         'message': 'Testing',
@@ -1111,9 +1113,10 @@ def test_opsgenie_create_custom_description():
     expected_json = {
         'description': 'Custom Description',
         'details': {'Message': 'Testing'},
-        'message': 'ElastAlert: Opsgenie Details',
+        'message': 'test1',
         'priority': None,
         'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
         'user': 'genies'
     }
     actual_json = mock_post_request.call_args_list[0][1]['json']
