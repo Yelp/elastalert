@@ -1083,7 +1083,7 @@ def test_opsgenie_create_custom_description():
         'type': mock_rule(),
         'opsgenie_account': 'genies',
         'opsgenie_key': 'ogkey',
-        'opsgenie_description': "Custom description"
+        'opsgenie_description': "Custom Description"
         'opsgenie_details': {
             'Message': {'field': 'message'},
             'Missing': {'field': 'missing'}
