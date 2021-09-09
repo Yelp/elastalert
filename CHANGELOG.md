@@ -16,7 +16,7 @@
 - None
 
 ## New features
-- [OpsGenie] Add support for custom description - [#455](https://github.com/jertel/elastalert2/pull/455) - @nickbabkin
+- [OpsGenie] Add support for custom description - [#457](https://github.com/jertel/elastalert2/pull/457) - @nickbabkin
 - Added support for markdown style formatting of aggregation tables - [#415](https://github.com/jertel/elastalert2/pull/415) - @Neuro-HSOC
 
 ## Other changes
