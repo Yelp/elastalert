@@ -1,9 +1,6 @@
-FROM ubuntu:21.10
+FROM python:3-slim-buster
 
 RUN apt update && apt upgrade -y
-RUN apt install software-properties-common -y
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt -y install build-essential python3.9 python3.9-dev python3-pip libssl-dev git
 
 WORKDIR /home/elastalert
 
