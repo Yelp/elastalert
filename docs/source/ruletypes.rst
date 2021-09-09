@@ -2364,6 +2364,8 @@ Optional:
 
 ``opsgenie_message``: Set the OpsGenie message to something other than the rule name. The message can be formatted with fields from the first match e.g. "Error occurred for {app_name} at {timestamp}.".
 
+``opsgenie_description``: Set the OpsGenie description to something other than the rule body. The message can be formatted with fields from the first match e.g. "Error occurred for {app_name} at {timestamp}.".
+
 ``opsgenie_alias``: Set the OpsGenie alias. The alias can be formatted with fields from the first match e.g "{app_name} error".
 
 ``opsgenie_subject``: A string used to create the title of the OpsGenie alert. Can use Python string formatting.

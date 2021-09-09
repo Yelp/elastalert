@@ -23,6 +23,7 @@ class OpsGenieAlerter(Alerter):
         self.teams_args = self.rule.get('opsgenie_teams_args')
         self.tags = self.rule.get('opsgenie_tags', []) + ['ElastAlert', self.rule['name']]
         self.to_addr = self.rule.get('opsgenie_addr', 'https://api.opsgenie.com/v2/alerts')
+        self.description = self.rule.get('opsgenie_description', None)
         self.custom_message = self.rule.get('opsgenie_message')
         self.opsgenie_subject = self.rule.get('opsgenie_subject')
         self.opsgenie_subject_args = self.rule.get('opsgenie_subject_args')
@@ -77,7 +78,10 @@ class OpsGenieAlerter(Alerter):
             post['responders'] = [{'username': r, 'type': 'user'} for r in self.recipients]
         if self.teams:
             post['teams'] = [{'name': r, 'type': 'team'} for r in self.teams]
-        post['description'] = body
+        if self.description:
+            post['description'] = self.description.format(**matches[0])
+        else:
+            post['description'] = body
         if self.entity:
             post['entity'] = self.entity.format(**matches[0])
         if self.source:
