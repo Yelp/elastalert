@@ -1078,6 +1078,51 @@ def test_opsgenie_create_custom_title():
     assert excepted == actual
 
 
+def test_opsgenie_create_custom_description():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_description': 'Custom Description',
+        'opsgenie_details': {
+            'Message': {'field': 'message'},
+            'Missing': {'field': 'missing'}
+        },
+        'opsgenie_subject': 'test1'
+    }
+    match = {
+        'message': 'Testing',
+        '@timestamp': '2014-10-31T00:00:00'
+    }
+    alert = OpsGenieAlerter(rule)
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    mock_post_request.assert_called_once_with(
+        'https://api.opsgenie.com/v2/alerts',
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': 'GenieKey ogkey'
+        },
+        json=mock.ANY,
+        proxies=None
+    )
+
+    expected_json = {
+        'description': 'Custom Description',
+        'details': {'Message': 'Testing'},
+        'message': 'test1',
+        'priority': None,
+        'source': 'ElastAlert',
+        'tags': ['ElastAlert', 'Opsgenie Details'],
+        'user': 'genies'
+    }
+    actual_json = mock_post_request.call_args_list[0][1]['json']
+    assert expected_json == actual_json
+
+
 def test_opsgenie_get_details():
     rule = {
         'name': 'Opsgenie Details',
