@@ -445,6 +445,7 @@ properties:
   opsgenie_key: {type: string}
   opsgenie_account: {type: string}
   opsgenie_addr: {type: string}
+  opsgenie_description: {type:string}
   opsgenie_message: {type: string}
   opsgenie_alias: {type: string}
   opsgenie_subject: {type: string}
