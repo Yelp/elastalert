@@ -45,6 +45,7 @@ from elastalert.alerters.slack import SlackAlerter
 from elastalert.alerters.sns import SnsAlerter
 from elastalert.alerters.teams import MsTeamsAlerter
 from elastalert.alerters.zabbix import ZabbixAlerter
+from elastalert.alerters.tencentsms import TencentSMSAlerter
 from elastalert.util import dt_to_ts
 from elastalert.util import dt_to_ts_with_format
 from elastalert.util import dt_to_unix
@@ -87,6 +88,7 @@ class RulesLoader(object):
 
     # Used to map names of alerts to their classes
     alerts_mapping = {
+        'tencent_sms': TencentSMSAlerter,
         'email': EmailAlerter,
         'jira': JiraAlerter,
         'opsgenie': OpsGenieAlerter,
