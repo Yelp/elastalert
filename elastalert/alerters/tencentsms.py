@@ -39,7 +39,7 @@ class TencentSMSAlerter(Alerter):
     # Alert is called
     def alert(self, matches):
         try:
-            elastalert_logger.debug("matches:%s",json.dumps(matches))
+            elastalert_logger.debug("matches:%s", json.dumps(matches))
             # Required steps:
             # Instantiate an authentication object. The Tencent Cloud account key pair `secretId` and `secretKey` need to be passed in as the input parameters.
             # The example here uses the way to read from the environment variable, so you need to set these two values in the environment variable first.
@@ -109,20 +109,20 @@ class TencentSMSAlerter(Alerter):
             req.TemplateId = self.tencent_sms_template_id
 
             # Template parameters. If there are no template parameters, leave it empty
-            req.TemplateParamSet=[]
+            req.TemplateParamSet = []
             for item in matches:
-                for key,val in item.items():
+                for key, val in item.items():
                     if key.startswith('_'):
-                        continue 
+                        continue
                     req.TemplateParamSet.append(f'{key}:{val}')
 
-            elastalert_logger.debug("SendSms request :%s",json.dumps(req.__dict__))
+            elastalert_logger.debug("SendSms request :%s", json.dumps(req.__dict__))
 
             # Initialize the request by calling the `DescribeInstances` method on the client object. Note: the request method name corresponds to the request object
             # The returned `resp` is an instance of the `DescribeInstancesResponse` class which corresponds to the request object
             resp = client.SendSms(req)
             # A string return packet in JSON format is outputted
-            elastalert_logger.debug("SendSms response :%s",resp.to_json_string())
+            elastalert_logger.debug("SendSms response :%s", resp.to_json_string())
         except TencentCloudSDKException as e:
             raise EAException("Error posting to TencentSMS: %s" % e)
         elastalert_logger.info("Alert sent to TencentSMS")
@@ -131,4 +131,7 @@ class TencentSMSAlerter(Alerter):
     # to Elasticsearch in the field "alert_info"
     # It should return a dict of information relevant to what the alert does
     def get_info(self):
-        return {'type': 'tencent sms'}
+        return {
+            'type': 'tencent sms',
+            'to_number':self.tencent_sms_to_number
+        }
