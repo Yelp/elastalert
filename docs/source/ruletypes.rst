@@ -268,6 +268,11 @@ use_ssl
 ``use_ssl``: Whether or not to connect to ``es_host`` using TLS. (Optional, boolean, default False)
 The environment variable ``ES_USE_SSL`` will override this field.
 
+ssl_show_warn
+^^^^^^^
+
+``ssl_show_warn``: Whether or not to show SSL/TLS warnings when ``verify_certs`` is disabled. (Optional, boolean, default True)
+
 verify_certs
 ^^^^^^^^^^^^
 

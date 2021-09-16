@@ -56,6 +56,10 @@ days, weeks, hours, minutes or seconds. <number> is an integer. For example,
 ``--rule noisy_rule.yaml --silence hours=4`` will stop noisy_rule from
 generating any alerts for 4 hours.
 
+``--silence_qk_value <value`` will silence the rule only for the given 
+query key value. This parameter is intended to be used with the ``--rule`` 
+parameter.
+
 ``--start <timestamp>`` will force ElastAlert 2 to begin querying from the given
 time, instead of the default, querying from the present. The timestamp should be
 ISO8601, e.g.  ``YYYY-MM-DDTHH:MM:SS`` (UTC) or with timezone
