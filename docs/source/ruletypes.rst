@@ -269,7 +269,7 @@ use_ssl
 The environment variable ``ES_USE_SSL`` will override this field.
 
 ssl_show_warn
-^^^^^^^
+^^^^^^^^^^^^^
 
 ``ssl_show_warn``: Whether or not to show SSL/TLS warnings when ``verify_certs`` is disabled. (Optional, boolean, default True)
 
