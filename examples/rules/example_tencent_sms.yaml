@@ -61,4 +61,5 @@ tencent_sms_to_number:
 tencent_sms_region: "ap-guangzhou"
 tencent_sms_sign_name: "tencent"
 tencent_sms_template_id: "1123835"
-
+tencent_sms_template_parm:
+  - "/kubernetes/pod_name"

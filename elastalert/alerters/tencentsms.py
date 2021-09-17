@@ -6,6 +6,7 @@ from tencentcloud.common.profile.client_profile import ClientProfile
 from tencentcloud.common.profile.http_profile import HttpProfile
 from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
 from tencentcloud.sms.v20210111 import sms_client, models
+from jsonpointer import resolve_pointer
 
 
 class TencentSMSAlerter(Alerter):
@@ -34,7 +35,7 @@ class TencentSMSAlerter(Alerter):
         self.tencent_sms_region = self.rule.get('tencent_sms_region', 'ap-guangzhou')
         self.tencent_sms_sign_name = self.rule.get('tencent_sms_sign_name')  # this parameter is required for Mainland China SMS.
         self.tencent_sms_template_id = self.rule.get('tencent_sms_template_id')
-        # self.tencent_sms_template_parm = self.rule.get('tencent_sms_template_parm', [])
+        self.tencent_sms_template_parm = self.rule.get('tencent_sms_template_parm', [])
 
     # Alert is called
     def alert(self, matches):
@@ -110,11 +111,9 @@ class TencentSMSAlerter(Alerter):
 
             # Template parameters. If there are no template parameters, leave it empty
             req.TemplateParamSet = []
-            for item in matches:
-                for key, val in item.items():
-                    if key.startswith('_'):
-                        continue
-                    req.TemplateParamSet.append(f'{key}:{val}')
+            esData = matches[0]
+            for key in self.tencent_sms_template_parm:
+                req.TemplateParamSet.append(resolve_pointer(esData, key))
 
             elastalert_logger.debug("SendSms request :%s", json.dumps(req.__dict__))
 
@@ -123,6 +122,9 @@ class TencentSMSAlerter(Alerter):
             resp = client.SendSms(req)
             # A string return packet in JSON format is outputted
             elastalert_logger.debug("SendSms response :%s", resp.to_json_string())
+            for item in resp.SendStatusSet:
+                if item.Code != "Ok":
+                    raise EAException(json.dumps(item.__dict__))
         except TencentCloudSDKException as e:
             raise EAException("Error posting to TencentSMS: %s" % e)
         elastalert_logger.info("Alert sent to TencentSMS")
@@ -133,5 +135,5 @@ class TencentSMSAlerter(Alerter):
     def get_info(self):
         return {
             'type': 'tencent sms',
-            'to_number':self.tencent_sms_to_number
+            'to_number': self.tencent_sms_to_number
         }
