@@ -110,10 +110,7 @@ class TencentSMSAlerter(Alerter):
             req.TemplateId = self.tencent_sms_template_id
 
             # Template parameters. If there are no template parameters, leave it empty
-            req.TemplateParamSet = []
-            esData = matches[0]
-            for key in self.tencent_sms_template_parm:
-                req.TemplateParamSet.append(resolve_pointer(esData, key))
+            req.TemplateParamSet = self.create_template_parm(matches)
 
             elastalert_logger.debug("SendSms request :%s", json.dumps(req.__dict__))
 
@@ -128,6 +125,15 @@ class TencentSMSAlerter(Alerter):
         except TencentCloudSDKException as e:
             raise EAException("Error posting to TencentSMS: %s" % e)
         elastalert_logger.info("Alert sent to TencentSMS")
+
+    def create_template_parm(self, matches):
+        esData = matches[0]
+        templateParam = []
+        if len(self.tencent_sms_template_parm) == 0:
+            return []
+        for key in self.tencent_sms_template_parm:
+            templateParam.append(resolve_pointer(esData, key))
+        return templateParam
 
     # get_info is called after an alert is sent to get data that is written back
     # to Elasticsearch in the field "alert_info"
