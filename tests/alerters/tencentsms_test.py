@@ -1,12 +1,5 @@
-import json
 import logging
 import pytest
-
-from unittest import mock
-
-from requests import RequestException
-from requests.auth import HTTPProxyAuth
-
 from elastalert.alerters.tencentsms import TencentSMSAlerter
 from elastalert.loaders import FileRulesLoader
 from elastalert.util import EAException
@@ -42,7 +35,6 @@ def test_tencentsms_alert(caplog):
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
 
-    mock_run = mock.MagicMock(side_effect=RequestException)
     with pytest.raises(EAException) as ea:
         alert = TencentSMSAlerter(rule)
         alert.alert([match])
@@ -78,7 +70,7 @@ def test_tencentsms_get_info():
     ([], []),
     (['/kubernetes/pod_name'], ["ngin.nginx-6bd96d6f74-2ts4x"]),
 ])
-def test_tencentsms_template_parm(tencent_sms_template_parm,expected_data):
+def test_tencentsms_template_parm(tencent_sms_template_parm, expected_data):
     rule = {
         'name': 'Test tencentsms Template Parm',
         'type': 'any',
