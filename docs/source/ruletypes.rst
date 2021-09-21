@@ -2351,7 +2351,7 @@ Optional:
 
 ``opsgenie_account``: The OpsGenie account to integrate with.
 
-``opsgenie_addr``: The OpsGenie URL to to connect against, default is ``https://api.opsgenie.com/v2/alerts``
+``opsgenie_addr``: The OpsGenie URL to to connect against, default is ``https://api.opsgenie.com/v2/alerts``. If using the EU instance of Opsgenie, the URL needs to be ``https://api.eu.opsgenie.com/v2/alerts`` for requests to be successful.
 
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
 
