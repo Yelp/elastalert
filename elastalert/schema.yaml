@@ -571,6 +571,16 @@ properties:
   telegram_proxy_login: {type: string}
   telegram_proxy_pass: {type: string}
 
+  ### Tencent SMS
+  tencent_sms_secret_id: {type: string}
+  tencent_sms_secret_key: {type: string}
+  tencent_sms_sdk_appid: {type: string}
+  tencent_sms_to_number: {type: array, items: {type: string}}
+  tencent_sms_region: {type: string}
+  tencent_sms_sign_name: {type: string}
+  tencent_sms_template_id: {type: string}
+  tencent_sms_template_parm: {type: array, items: {type: string}}
+  
   ### Twilio
   twilio_account_sid: {type: string}
   twilio_auth_token: {type: string}

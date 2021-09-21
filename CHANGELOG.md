@@ -16,12 +16,12 @@
 - None
 
 ## New features
-- [OpsGenie] Add support for custom description - [#457](https://github.com/jertel/elastalert2/pull/457) - @nickbabkin
 - Added support for markdown style formatting of aggregation tables - [#415](https://github.com/jertel/elastalert2/pull/415) - @Neuro-HSOC
+- [OpsGenie] Add support for custom description - [#457](https://github.com/jertel/elastalert2/pull/457), [#460](https://github.com/jertel/elastalert2/pull/460) - @nickbabkin
+- [Tencent SMS] Added support for Tencent SMS - [#470](https://github.com/jertel/elastalert2/pull/470) - @liuxingjun
 
 ## Other changes
-- Fixed typo in default setting accidentally introduced in [#407](https://github.com/jertel/elastalert2/pull/407)  - [#413](https://github.com/jertel/elastalert2/pull/413) - @perceptron01
-- Fix saving feature which was ignoring --start/--end, and storing no content with default --days value to 0
+- [Rule Test] Fix issue related to --start/--end/--days params - [#424](https://github.com/jertel/elastalert2/pull/424), [#433](https://github.com/jertel/elastalert2/pull/433) - @thican
 - Changed the wording of ElastAlert to ElastAlert 2 and Update FAQ -[#446](https://github.com/jertel/elastalert2/pull/446) - @nsano-rururu
 - Add missing show_ssl_warn and silence_qk_value params to docs - [#469](https://github.com/jertel/elastalert2/pull/469) - @jertel
 
@@ -34,7 +34,7 @@
 - None
 
 ## Other changes
-- Fixed config lookup bug accidentally introduced in [#407](https://github.com/jertel/elastalert2/pull/407)
+- Fixed typo in default setting accidentally introduced in [#407](https://github.com/jertel/elastalert2/pull/407) - [#413](https://github.com/jertel/elastalert2/pull/413) - @perceptron01
 
 # 2.2.0
 

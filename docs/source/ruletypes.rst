@@ -2817,6 +2817,70 @@ Example usage::
     telegram_bot_token: "bot_token"
     telegram_room_id: "chat_id"
 
+
+Tencent SMS
+~~~~~~~~~~~
+
+Required:
+
+``tencent_sms_secret_id``: ``SecretID`` is used to identify the API caller.
+
+``tencent_sms_secret_key``: ``SecretKey`` is used to encrypt the string to sign that can be verified on the server. You should keep it private and avoid disclosure.
+
+``tencent_sms_sdk_appid``: SMS application ID, which is the `SdkAppId` generated after an application is added in the `SMS console <https://console.cloud.tencent.com/smsv2>`_, such as 1400006666
+
+``tencent_sms_to_number``: Target mobile number in the E.164 standard (+[country/region code][mobile number])
+
+Example: +8613711112222, which has a + sign followed by 86 (country/region code) and then by 13711112222 (mobile number). Up to 200 mobile numbers are supported
+
+``tencent_sms_template_id``: Template ID. You must enter the ID of an approved template, which can be viewed in the `SMS console <https://console.cloud.tencent.com/smsv2>`_. 
+
+If you need to send SMS messages to global mobile numbers, you can only use a Global SMS template.
+
+Optional:
+
+``tencent_sms_sign_name``: Content of the SMS signature, which should be encoded in UTF-8. You must enter an approved signature, such as Tencent Cloud. The signature information can be viewed in the SMS console.
+Note: this parameter is required for Mainland China SMS.
+
+``tencent_sms_region``: Region parameter, which is used to identify the region(`Mainland China <https://intl.cloud.tencent.com/document/api/382/40466#region-list>`_ or
+`Global <https://cloud.tencent.com/document/api/382/52071#.E5.9C.B0.E5.9F.9F.E5.88.97.E8.A1.A8>`_) to which the data you want to work with belongs.
+
+``tencent_sms_template_parm``: The number of template parameters needs to be consistent with the number of variables of the template corresponding to TemplateId.  
+this value format by `rfc6901 <https://datatracker.ietf.org/doc/html/rfc6901>`_
+
+.. code-block:: json
+
+    {
+      "_index" : "tmec"
+      "_type" : "fluentd",
+      "_id" : "PeXLrnsBvusb3d0w6dUl",
+      "_score" : 1.0,
+      "_source" : {
+        "kubernetes" : {
+          "host" : "9.134.191.187",
+          "pod_id" : "66ba4e5a-1ad2-4655-9a8e-cffb6b942559",
+          "labels" : {
+            "release" : "nginx",
+            "pod-template-hash" : "6bd96d6f74"
+          },
+          "namespace_name" : "app",
+          "pod_name" : "app.nginx-6bd96d6f74-2ts4x"
+        },
+        "time" : "2021-09-04T03:13:24.192875Z",
+        "message" : "2021-09-03T14:34:08+0000|INFO|vector eps : 192.168.0.2:10000,",
+      }
+    }
+
+
+.. code-block:: yaml
+
+    tencent_sms_template_id: "1123835"
+    tencent_sms_template_parm:
+      - "/kubernetes/pod_name"
+
+
+
+
 TheHive
 ~~~~~~~
 

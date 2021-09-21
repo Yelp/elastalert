@@ -1,0 +1,65 @@
+# Alert when the rate of events exceeds a threshold
+
+# (Optional)
+# Elasticsearch host
+# es_host: elasticsearch.example.com
+
+# (Optional)
+# Elasticsearch port
+#es_port: 9200
+
+# (OptionaL) Connect with SSL to Elasticsearch
+#use_ssl: True
+
+# (Optional) basic-auth username and password for Elasticsearch
+#es_username: someusername
+#es_password: somepassword
+
+# (Required)
+# Rule name, must be unique
+name: tencent_sms
+
+# (Required)
+# Type of alert.
+# the frequency rule type alerts when num_events events occur with timeframe time
+type: frequency
+
+# (Required)
+# Index to search, wildcard supported
+index: test
+
+# (Required, frequency specific)
+# Alert when this many documents matching the query occur within a timeframe
+num_events: 50
+
+# (Required, frequency specific)
+# num_events must occur within this amount of time to trigger an alert
+timeframe:
+  hours: 4
+
+# (Required)
+# A list of Elasticsearch filters used for find events
+# These filters are joined with AND and nested in a filtered query
+# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+filter:
+  - query:
+      query_string:
+        query: "message: err"
+
+timestamp_field: date
+
+# (Required)
+# The alert is use when a match is found
+alert:
+  - "tencent_sms"
+
+tencent_sms_secret_id: "secret_id"
+tencent_sms_secret_key: "secret_key"
+tencent_sms_sdk_appid: "1400006666"
+tencent_sms_to_number:
+  - "+8613711112222"
+tencent_sms_region: "ap-guangzhou"
+tencent_sms_sign_name: "tencent"
+tencent_sms_template_id: "1123835"
+tencent_sms_template_parm:
+  - "/kubernetes/pod_name"
