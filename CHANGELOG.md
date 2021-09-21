@@ -24,6 +24,7 @@
 - [Rule Test] Fix issue related to --start/--end/--days params - [#424](https://github.com/jertel/elastalert2/pull/424), [#433](https://github.com/jertel/elastalert2/pull/433) - @thican
 - Changed the wording of ElastAlert to ElastAlert 2 and Update FAQ -[#446](https://github.com/jertel/elastalert2/pull/446) - @nsano-rururu
 - Add missing show_ssl_warn and silence_qk_value params to docs - [#469](https://github.com/jertel/elastalert2/pull/469) - @jertel
+- [OpsGenie] Clarify documentation for URL endpoint to use in European region - [#475](https://github.com/jertel/elastalert2/pull/475) - @nsano-rururu
 
 # 2.2.1
 
