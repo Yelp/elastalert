@@ -211,10 +211,10 @@ unless overwritten in the rule config. The default is "localhost".
 
 ``email_reply_to``: This sets the Reply-To header in emails. The default is the recipient address.
 
-``aws_region``: This makes ElastAlert 2 to sign HTTP requests when using Amazon Elasticsearch Service. It'll use instance role keys to sign the requests.
+``aws_region``: This makes ElastAlert 2 to sign HTTP requests when using Amazon OpenSearch Service. It'll use instance role keys to sign the requests.
 The environment variable ``AWS_DEFAULT_REGION`` will override this field.
 
-``profile``: AWS profile to use when signing requests to Amazon Elasticsearch Service, if you don't want to use the instance role keys.
+``profile``: AWS profile to use when signing requests to Amazon OpenSearch Service, if you don't want to use the instance role keys.
 The environment variable ``AWS_DEFAULT_PROFILE`` will override this field.
 
 ``replace_dots_in_field_names``: If ``True``, ElastAlert 2 replaces any dots in field names with an underscore before writing documents to Elasticsearch.

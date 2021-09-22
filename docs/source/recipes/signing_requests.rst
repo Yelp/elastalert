@@ -1,9 +1,9 @@
 .. _signingrequests:
 
-Signing requests to Amazon Elasticsearch service
+Signing requests to Amazon OpenSearch Service
 ================================================
 
-When using Amazon Elasticsearch service, you need to secure your Elasticsearch
+When using Amazon OpenSearch Service, you need to secure your Elasticsearch
 from the outside. Currently, there is no way to secure your Elasticsearch using
 network firewall rules, so the only way is to signing the requests using the
 access key and secret key for a role or user with permissions on the
