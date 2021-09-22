@@ -5,7 +5,8 @@ from tencentcloud.common import credential
 from tencentcloud.common.profile.client_profile import ClientProfile
 from tencentcloud.common.profile.http_profile import HttpProfile
 from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
-from tencentcloud.sms.v20210111 import sms_client, models
+from tencentcloud.sms.v20210111 import models
+from tencentcloud.sms.v20210111.sms_client import SmsClient 
 from jsonpointer import resolve_pointer
 
 
@@ -41,33 +42,7 @@ class TencentSMSAlerter(Alerter):
     def alert(self, matches):
         try:
             elastalert_logger.debug("matches:%s", json.dumps(matches))
-            # Required steps:
-            # Instantiate an authentication object. The Tencent Cloud account key pair `secretId` and `secretKey` need to be passed in as the input parameters.
-            # The example here uses the way to read from the environment variable, so you need to set these two values in the environment variable first.
-            # You can also write the key pair directly into the code, but be careful not to copy, upload, or share the code to others;
-            # otherwise, the key pair may be leaked, causing damage to your properties.
-            # Query the CAM key: https://console.cloud.tencent.com/cam/capi
-            cred = credential.Credential(self.tencent_sms_secret_id, self.tencent_sms_secret_key)
-            # cred = credential.Credential(
-            #     os.environ.get(""),
-            #     os.environ.get("")
-            # )
-            # (Optional) Instantiate an HTTP option
-            httpProfile = HttpProfile()
-            # If you need to specify the proxy for API access, you can initialize HttpProfile as follows
-            # httpProfile = HttpProfile(proxy="http://username:password@proxy IP:proxy port")
-            httpProfile.reqMethod = "POST"  # POST request (POST request by default)
-            httpProfile.reqTimeout = 30    # Request timeout period in seconds (60 seconds by default)
-            httpProfile.endpoint = "sms.tencentcloudapi.com"  # Specify the access region domain name (nearby access by default)
-            # Optional steps:
-            # Instantiate a client configuration object. You can specify the timeout period and other configuration items
-            clientProfile = ClientProfile()
-            clientProfile.signMethod = "TC3-HMAC-SHA256"  # Specify the signature algorithm
-            clientProfile.language = "en-US"
-            clientProfile.httpProfile = httpProfile
-            # Instantiate the client object of the requested product (with SMS as an example)
-            # The second parameter is the region information. You can directly enter the string `ap-guangzhou` or import the preset constant
-            client = sms_client.SmsClient(cred, self.tencent_sms_region, clientProfile)
+            client = self.get_client()
             # Instantiate a request object. You can further set the request parameters according to the API called and actual conditions
             # You can directly check the SDK source code to determine which attributes of `SendSmsRequest` can be set
             # An attribute may be of a basic type or import another data structure
@@ -121,10 +96,40 @@ class TencentSMSAlerter(Alerter):
             elastalert_logger.debug("SendSms response :%s", resp.to_json_string())
             for item in resp.SendStatusSet:
                 if item.Code != "Ok":
-                    raise EAException(json.dumps(item.__dict__))
+                    raise TencentCloudSDKException(item.Code, item.Message, resp.RequestId)
         except TencentCloudSDKException as e:
             raise EAException("Error posting to TencentSMS: %s" % e)
         elastalert_logger.info("Alert sent to TencentSMS")
+
+    def get_client(self):
+        # Required steps:
+        # Instantiate an authentication object. The Tencent Cloud account key pair `secretId` and `secretKey` need to be passed in as the input parameters.
+        # The example here uses the way to read from the environment variable, so you need to set these two values in the environment variable first.
+        # You can also write the key pair directly into the code, but be careful not to copy, upload, or share the code to others;
+        # otherwise, the key pair may be leaked, causing damage to your properties.
+        # Query the CAM key: https://console.cloud.tencent.com/cam/capi
+        cred = credential.Credential(self.tencent_sms_secret_id, self.tencent_sms_secret_key)
+        # cred = credential.Credential(
+        #     os.environ.get(""),
+        #     os.environ.get("")
+        # )
+        # (Optional) Instantiate an HTTP option
+        httpProfile = HttpProfile()
+        # If you need to specify the proxy for API access, you can initialize HttpProfile as follows
+        # httpProfile = HttpProfile(proxy="http://username:password@proxy IP:proxy port")
+        httpProfile.reqMethod = "POST"  # POST request (POST request by default)
+        httpProfile.reqTimeout = 30    # Request timeout period in seconds (60 seconds by default)
+        httpProfile.endpoint = "sms.tencentcloudapi.com"  # Specify the access region domain name (nearby access by default)
+        # Optional steps:
+        # Instantiate a client configuration object. You can specify the timeout period and other configuration items
+        clientProfile = ClientProfile()
+        clientProfile.signMethod = "TC3-HMAC-SHA256"  # Specify the signature algorithm
+        clientProfile.language = "en-US"
+        clientProfile.httpProfile = httpProfile
+        # Instantiate the client object of the requested product (with SMS as an example)
+        # The second parameter is the region information. You can directly enter the string `ap-guangzhou` or import the preset constant
+        client = SmsClient(cred, self.tencent_sms_region, clientProfile)
+        return client
 
     def create_template_parm(self, matches):
         esData = matches[0]
