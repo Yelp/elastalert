@@ -1688,6 +1688,21 @@ Example usage::
     aws_access_key_id: 'XXXXXXXXXXXXXXXXXX''
     aws_secret_access_key: 'YYYYYYYYYYYYYYYYYYYY'
 
+Squadcast
+~~~~~~~~~
+
+Alerts can be sent to Squadcast using the `http post` method described above and Squadcast will process it and send Phone, SMS, Email and Push notifications to the relevant person(s) and let them take actions.
+
+Configuration variables in rules YAML file::
+
+    alert: post
+    http_post_url: <ElastAlert Webhook URL copied from Squadcast dashboard>
+    http_post_static_payload:
+      Title: <Incident Title>
+    http_post_all_values: true
+
+For more details, you can refer the `Squadcast documentation <https://support.squadcast.com/docs/elastalert>`_.
+
 HipChat
 ~~~~~~~
 
