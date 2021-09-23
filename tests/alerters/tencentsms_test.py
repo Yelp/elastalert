@@ -1,4 +1,3 @@
-import json
 import logging
 import pytest
 from unittest import mock
@@ -211,32 +210,6 @@ def test_tencentsms_alert_status(tencent_sms_to_number, send_status_code):
             alert.alert([match])
             assert mock_client.return_value == model
         assert 'Error posting to TencentSMS:' in str(ea)
-
-
-def test_tencentsms_alert_secret_id_error(caplog):
-    caplog.set_level(logging.DEBUG)
-    with pytest.raises(EAException) as ea:
-        rule = {
-            'name': 'Test tencentsms Template Parm',
-            'type': 'any',
-            'alert': ["tencent_sms"],
-            "tencent_sms_secret_id": "secret_id",
-            "tencent_sms_secret_key": "secret_key",
-            "tencent_sms_sdk_appid": "1400006666",
-            "tencent_sms_to_number": [
-                "+8613711112222"
-            ],
-            "tencent_sms_template_id": "1123835",
-        }
-        match = {
-            '@timestamp': '2014-01-01T00:00:00',
-            "message": "2021-09-03T14:34:08+0000|INFO|vector eps : 192.168.0.2:10000,",
-        }
-        rules_loader = FileRulesLoader({})
-        rules_loader.load_modules(rule)
-        alert = TencentSMSAlerter(rule)
-        alert.alert([match])
-    assert 'The SecretId is not found' in str(ea)
 
 
 def test_tencentsms_alert_secret_id_error(caplog):
