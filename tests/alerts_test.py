@@ -2534,7 +2534,6 @@ def test_alerta_new_style(ea):
         'alerta_severity': "debug",
         'alerta_text': "Probe {hostname} is UP at {logdate} GMT",
         'alerta_value': "UP",
-        'alerta_new_style_string_format': True,
         'type': 'any',
         'alerta_use_match_timestamp': True,
         'alert': 'alerta'
