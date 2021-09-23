@@ -1631,12 +1631,19 @@ Optional:
 ``opsgenie_account``: The OpsGenie account to integrate with.
 
 ``opsgenie_addr``: The OpsGenie URL to to connect against, default is ``https://api.opsgenie.com/v2/alerts``. If using the EU instance of Opsgenie, the URL needs to be ``https://api.eu.opsgenie.com/v2/alerts`` for requests to be successful.
+
 ``opsgenie_recipients``: A list OpsGenie recipients who will be notified by the alert.
+
 ``opsgenie_recipients_args``: Map of arguments used to format opsgenie_recipients.
+
 ``opsgenie_default_receipients``: List of default recipients to notify when the formatting of opsgenie_recipients is unsuccesful.
+
 ``opsgenie_teams``: A list of OpsGenie teams to notify (useful for schedules with escalation).
+
 ``opsgenie_teams_args``: Map of arguments used to format opsgenie_teams (useful for assigning the alerts to teams based on some data)
+
 ``opsgenie_default_teams``: List of default teams to notify when the formatting of opsgenie_teams is unsuccesful.
+
 ``opsgenie_tags``: A list of tags for this alert.
 
 ``opsgenie_message``: Set the OpsGenie message to something other than the rule name. The message can be formatted with fields from the first match e.g. "Error occurred for {app_name} at {timestamp}.".
@@ -2080,12 +2087,20 @@ Stomp
 This alert type will use the STOMP protocol in order to push a message to a broker like ActiveMQ or RabbitMQ. The message body is a JSON string containing the alert details.
 The default values will work with a pristine ActiveMQ installation.
 
-Optional:
+The alerter requires the following option:
 
 ``stomp_hostname``: The STOMP host to use, defaults to localhost.
+
 ``stomp_hostport``: The STOMP port to use, defaults to 61613.
+
 ``stomp_login``: The STOMP login to use, defaults to admin.
+
 ``stomp_password``: The STOMP password to use, defaults to admin.
+
+Optional:
+
+``stomp_ssl``: Connect the STOMP host using TLS, defaults to ``False``.
+
 ``stomp_destination``: The STOMP destination to use, defaults to /queue/ALERT
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
@@ -2277,6 +2292,9 @@ Zabbix will send notification to a Zabbix server. The item in the host specified
 Required:
 
 ``zbx_sender_host``: The address where zabbix server is running.
+
 ``zbx_sender_port``: The port where zabbix server is listenning.
+
 ``zbx_host``: This field setup the host in zabbix that receives the value sent by Elastalert.
+
 ``zbx_key``: This field setup the key in the host that receives the value sent by Elastalert.
