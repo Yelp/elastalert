@@ -1823,6 +1823,8 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
 
+``slack_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
+
 Mattermost
 ~~~~~~~~~~
 
