@@ -159,6 +159,7 @@ class ElastAlerter(object):
         self.starttime = self.args.start
         self.disabled_rules = []
         self.replace_dots_in_field_names = self.conf.get('replace_dots_in_field_names', False)
+        self.thread_data.alerts_sent = 0
         self.thread_data.num_hits = 0
         self.thread_data.num_dupes = 0
         self.scheduler = BackgroundScheduler()
