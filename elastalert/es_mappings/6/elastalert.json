@@ -29,6 +29,7 @@
       "format": "dateOptionalTime"
     },
     "match_body": {
+      "enabled": "false",
       "type": "object"
     },
     "aggregate_id": {
