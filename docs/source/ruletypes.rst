@@ -2251,4 +2251,4 @@ Required:
 ``zbx_sender_host``: The address where zabbix server is running.
 ``zbx_sender_port``: The port where zabbix server is listenning.
 ``zbx_host``: This field setup the host in zabbix that receives the value sent by Elastalert.
-``zbx_item``: This field setup the item in the host that receives the value sent by Elastalert.
+``zbx_key``: This field setup the key in the host that receives the value sent by Elastalert.
