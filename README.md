@@ -39,22 +39,29 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 
 Currently, we have built-in support for the following alert types:
 
-- Email
-- JIRA
+- E-mail
+- Jira
 - OpsGenie
-- Commands
+- Command
 - HipChat
-- MS Teams
+- Stride
+- Microsoft Teams
 - Slack
+- Mattermost
 - Telegram
-- GoogleChat
-- AWS SNS
-- VictorOps
+- Google Chat
+- Amazon Simple Notification Service (AWS SNS)
+- Splunk On-Call (Formerly VictorOps)
 - PagerDuty
 - PagerTree
 - Exotel
 - Twilio
 - Gitter
+- ServiceNow
+- Debug
+- Stomp
+- Alerta
+- HTTP POST
 - Line Notify
 - Zabbix
 
@@ -115,13 +122,13 @@ A [Dockerized version](https://github.com/bitsensor/elastalert) of ElastAlert in
 
 ```bash
 git clone https://github.com/bitsensor/elastalert.git; cd elastalert
-docker run -d -p 3030:3030 \
+docker run -d -p 3030:3030 -p 3333:3333 \
     -v `pwd`/config/elastalert.yaml:/opt/elastalert/config.yaml \
     -v `pwd`/config/config.json:/opt/elastalert-server/config/config.json \
     -v `pwd`/rules:/opt/elastalert/rules \
     -v `pwd`/rule_templates:/opt/elastalert/rule_templates \
     --net="host" \
-    --name elastalert bitsensor/elastalert:latest
+    --name elastalert bitsensor/elastalert:3.0.0-beta.1
 ```
 
 ## Documentation

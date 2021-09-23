@@ -140,7 +140,7 @@ Rule Configuration Cheat Sheet
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``ignore_null`` (boolean, no default)              |        |           |   Req     |  Req   |           |       |          |        |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
-| ``query_key`` (string, no default)                 |   Opt  |           |           |   Req  |    Opt    |  Opt  |   Opt    |  Req   |  Opt      |
+| ``query_key`` (string or list, no default)         |   Opt  |           |           |   Req  |    Opt    |  Opt  |   Opt    |  Req   |  Opt      |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
 | ``aggregation_key`` (string, no default)           |   Opt  |           |           |        |           |       |          |        |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
@@ -160,7 +160,7 @@ Rule Configuration Cheat Sheet
 |                                                    |        |           |           |        |           |       |          |        |           |
 |``doc_type`` (string, no default)                   |        |           |           |        |           |       |          |        |           |
 |                                                    |        |           |           |        |           |       |          |        |           |
-|``query_key`` (string, no default)                  |        |           |           |        |           |       |          |        |           |
+|``query_key`` (string or list, no default)          |        |           |           |        |           |       |          |        |           |
 |                                                    |        |           |           |        |           |       |          |        |           |
 |``terms_size`` (int, default 50)                    |        |           |           |        |           |       |          |        |           |
 +----------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+
@@ -1622,7 +1622,7 @@ OpsGenie alerter will create an alert which can be used to notify Operations peo
 integration must be created in order to acquire the necessary ``opsgenie_key`` rule variable. Currently the OpsGenieAlerter only creates
 an alert, however it could be extended to update or close existing alerts.
 
-It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://app.opsgenie.com/integration>`_ in order to create alerts.
+It is necessary for the user to create an OpsGenie Rest HTTPS API `integration page <https://docs.opsgenie.com/docs/alert-api>`_ in order to create alerts.
 
 The OpsGenie alert requires one option:
 
@@ -1669,8 +1669,8 @@ Example usage::
       Environment: '$VAR'          # environment variable
       Message: { field: message }  # field in the first match
 
-SNS
-~~~
+Amazon Simple Notification Service (AWS SNS)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The SNS alerter will send an SNS notification. The body of the notification is formatted the same as with other alerters.
 The SNS alerter uses boto3 and can use credentials in the rule yaml, in a standard AWS credential and config files, or
@@ -1771,10 +1771,10 @@ The alerter requires the following two options:
 ``stride_proxy``: By default ElastAlert will not use a network proxy to send notifications to Stride. Set this option using ``hostname:port`` if you need to use a proxy.
 
 
-MS Teams
-~~~~~~~~
+Microsoft Teams
+~~~~~~~~~~~~~~~
 
-MS Teams alerter will send a notification to a predefined Microsoft Teams channel.
+Microsoft Teams alerter will send a notification to a predefined Microsoft Teams channel.
 
 The alerter requires the following options:
 
@@ -1872,7 +1872,7 @@ Telegram alerter will send a notification to a predefined Telegram username or c
 
 The alerter requires the following two options:
 
-``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#botfather
+``telegram_bot_token``: The token is a string along the lines of ``110201543:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw`` that will be required to authorize the bot and send requests to the Bot API. You can learn about obtaining tokens and generating new ones in this document https://core.telegram.org/bots#6-botfather
 
 ``telegram_room_id``: Unique identifier for the target chat or username of the target channel using telegram chat_id (in the format "-xxxxxxxx")
 
@@ -1937,7 +1937,7 @@ V2 API Options (Optional):
 
 These options are specific to the PagerDuty V2 API
 
-See https://v2.developer.pagerduty.com/docs/send-an-event-events-api-v2
+See https://developer.pagerduty.com/docs/events-api-v2/trigger-events/
 
 ``pagerduty_api_version``: Defaults to `v1`.  Set to `v2` to enable the PagerDuty V2 Event API.
 
@@ -1981,7 +1981,7 @@ The alerter requires the following option:
 
 ``exotel_auth_token``: Auth token assosiated with your Exotel account.
 
-If you don't know how to find your accound sid and auth token, refer - http://support.exotel.in/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid-
+If you don't know how to find your accound sid and auth token, refer - https://support.exotel.com/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid
 
 ``exotel_to_number``: The phone number where you would like send the notification.
 
@@ -2008,26 +2008,26 @@ The alerter requires the following option:
 ``twilio_from_number``: Your twilio phone number from which message will be sent.
 
 
-VictorOps
-~~~~~~~~~
+Splunk On-Call (Formerly VictorOps)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-VictorOps alerter will trigger an incident to a predefined VictorOps routing key. The body of the notification is formatted the same as with other alerters.
+Splunk On-Call (Formerly VictorOps) alerter will trigger an incident to a predefined Splunk On-Call (Formerly VictorOps) routing key. The body of the notification is formatted the same as with other alerters.
 
 The alerter requires the following options:
 
 ``victorops_api_key``: API key generated under the 'REST Endpoint' in the Integrations settings.
 
-``victorops_routing_key``: VictorOps routing key to route the alert to.
+``victorops_routing_key``: Splunk On-Call (Formerly VictorOps) routing key to route the alert to.
 
-``victorops_message_type``: VictorOps field to specify severity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
+``victorops_message_type``: Splunk On-Call (Formerly VictorOps) field to specify severity level. Must be one of the following: INFO, WARNING, ACKNOWLEDGEMENT, CRITICAL, RECOVERY
 
 Optional:
 
-``victorops_entity_id``: The identity of the incident used by VictorOps to correlate incidents throughout the alert lifecycle. If not defined, VictorOps will assign a random string to each alert.
+``victorops_entity_id``: The identity of the incident used by Splunk On-Call (Formerly VictorOps) to correlate incidents throughout the alert lifecycle. If not defined, Splunk On-Call (Formerly VictorOps) will assign a random string to each alert.
 
 ``victorops_entity_display_name``: Human-readable name of alerting entity to summarize incidents without affecting the life-cycle workflow.
 
-``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to VictorOps. Set this option using ``hostname:port`` if you need to use a proxy.
+``victorops_proxy``: By default ElastAlert will not use a network proxy to send notifications to Splunk On-Call (Formerly VictorOps). Set this option using ``hostname:port`` if you need to use a proxy.
 
 Gitter
 ~~~~~~
@@ -2052,7 +2052,7 @@ The ServiceNow alerter will create a ne Incident in ServiceNow. The body of the 
 
 The alerter requires the following options:
 
-``servicenow_rest_url``: The ServiceNow RestApi url, this will look like https://instancename.service-now.com/api/now/v1/table/incident
+``servicenow_rest_url``: The ServiceNow RestApi url, this will look like https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/c_TableAPI#r_TableAPI-POST
 
 ``username``: The ServiceNow Username to access the api.
 
@@ -2111,7 +2111,7 @@ Alerta
 ~~~~~~
 
 Alerta alerter will post an alert in the Alerta server instance through the alert API endpoint.
-See http://alerta.readthedocs.io/en/latest/api/alert.html for more details on the Alerta JSON format.
+See https://docs.alerta.io/en/latest/api/alert.html for more details on the Alerta JSON format.
 
 For Alerta 5.0
 
