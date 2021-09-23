@@ -29,7 +29,7 @@ setup(
     install_requires=[
         'apscheduler>=3.3.0',
         'aws-requests-auth>=0.3.0',
-        'blist>=1.3.6',
+        'sortedcontainers>=2.2.2',
         'boto3>=1.4.4',
         'configparser>=3.5.0',
         'croniter>=0.3.16',

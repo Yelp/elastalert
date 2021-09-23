@@ -1,6 +1,6 @@
 apscheduler>=3.3.0
 aws-requests-auth>=0.3.0
-blist>=1.3.6
+sortedcontainers>=2.2.2
 boto3>=1.4.4
 cffi>=1.11.5
 configparser>=3.5.0
