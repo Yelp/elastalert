@@ -20,7 +20,8 @@
 - [OpsGenie] Add support for custom description - [#457](https://github.com/jertel/elastalert2/pull/457), [#460](https://github.com/jertel/elastalert2/pull/460) - @nickbabkin
 - [Tencent SMS] Added support for Tencent SMS - [#470](https://github.com/jertel/elastalert2/pull/470) - @liuxingjun
 
-## Other changes
+## Other 
+- [Tests] Improve test coverage of tencentsms.py - [#479](https://github.com/jertel/elastalert2/pull/479) - @liuxingjun
 - [Rule Test] Fix issue related to --start/--end/--days params - [#424](https://github.com/jertel/elastalert2/pull/424), [#433](https://github.com/jertel/elastalert2/pull/433) - @thican
 - Changed the wording of ElastAlert to ElastAlert 2 and Update FAQ -[#446](https://github.com/jertel/elastalert2/pull/446) - @nsano-rururu
 - Add missing show_ssl_warn and silence_qk_value params to docs - [#469](https://github.com/jertel/elastalert2/pull/469) - @jertel
