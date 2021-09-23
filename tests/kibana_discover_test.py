@@ -38,7 +38,24 @@ def test_generate_kibana_discover_url_with_kibana_5x_and_6x(kibana_version):
     assert url == expectedUrl
 
 
-@pytest.mark.parametrize("kibana_version", ['7.0', '7.1', '7.2', '7.3'])
+@pytest.mark.parametrize("kibana_version", [
+    '7.0',
+    '7.1',
+    '7.2',
+    '7.3',
+    '7.4',
+    '7.5',
+    '7.6',
+    '7.7',
+    '7.8',
+    '7.9',
+    '7.10',
+    '7.11',
+    '7.12',
+    '7.13',
+    '7.14',
+    '7.15'
+])
 def test_generate_kibana_discover_url_with_kibana_7x(kibana_version):
     url = generate_kibana_discover_url(
         rule={
