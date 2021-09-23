@@ -2255,6 +2255,8 @@ Optional:
 
 ``hive_proxies``: Proxy configuration.
 
+``hive_verify``: Whether or not to enable SSL certificate validation. Defaults to False.
+
 ``hive_observable_data_mapping``: If needed, matched data fields can be mapped to TheHive observable types using python string formatting.
 
 Example usage::
