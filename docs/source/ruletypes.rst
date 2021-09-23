@@ -1670,13 +1670,22 @@ SNS requires one option:
 
 Optional:
 
-``aws_access_key``: An access key to connect to SNS with.
+``aws_access_key_id``: An access key to connect to SNS with.
 
-``aws_secret_key``: The secret key associated with the access key.
+``aws_secret_access_key``: The secret key associated with the access key.
 
 ``aws_region``: The AWS region in which the SNS resource is located. Default is us-east-1
 
-``profile``: The AWS profile to use. If none specified, the default will be used.
+``aws_profile``: The AWS profile to use. If none specified, the default will be used.
+
+Example usage::
+
+    alert:
+      - sns:
+          aws_region: 'us-east-1' # You must nest aws_region within your alert configuration so it is not used to sign AWS requests.
+    sns_topic_arn: 'arn:aws:sns:us-east-1:123456789:somesnstopic'
+    aws_access_key_id: 'XXXXXXXXXXXXXXXXXX''
+    aws_secret_access_key: 'YYYYYYYYYYYYYYYYYYYY'
 
 HipChat
 ~~~~~~~
