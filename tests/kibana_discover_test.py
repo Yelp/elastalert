@@ -53,7 +53,8 @@ def test_generate_kibana_discover_url_with_kibana_5x_and_6x(kibana_version):
     '7.11',
     '7.12',
     '7.13',
-    '7.14'
+    '7.14',
+    '7.15'
 ])
 def test_generate_kibana_discover_url_with_kibana_7x(kibana_version):
     url = generate_kibana_discover_url(
@@ -187,7 +188,7 @@ def test_generate_kibana_discover_url_with_from_timedelta():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '7.14',
+            'kibana_discover_version': '7.15',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'kibana_discover_from_timedelta': timedelta(hours=1),
             'timestamp_field': 'timestamp'
@@ -220,7 +221,7 @@ def test_generate_kibana_discover_url_with_from_timedelta_and_timeframe():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '7.14',
+            'kibana_discover_version': '7.15',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'kibana_discover_from_timedelta': timedelta(hours=1),
             'timeframe': timedelta(minutes=20),
@@ -254,7 +255,7 @@ def test_generate_kibana_discover_url_with_to_timedelta():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '7.14',
+            'kibana_discover_version': '7.15',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'kibana_discover_to_timedelta': timedelta(hours=1),
             'timestamp_field': 'timestamp'
@@ -287,7 +288,7 @@ def test_generate_kibana_discover_url_with_to_timedelta_and_timeframe():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '7.14',
+            'kibana_discover_version': '7.15',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'kibana_discover_to_timedelta': timedelta(hours=1),
             'timeframe': timedelta(minutes=20),
@@ -321,7 +322,7 @@ def test_generate_kibana_discover_url_with_timeframe():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '7.14',
+            'kibana_discover_version': '7.15',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'timeframe': timedelta(minutes=20),
             'timestamp_field': 'timestamp'
