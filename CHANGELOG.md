@@ -19,6 +19,7 @@
 - Added support for markdown style formatting of aggregation tables - [#415](https://github.com/jertel/elastalert2/pull/415) - @Neuro-HSOC
 - [OpsGenie] Add support for custom description - [#457](https://github.com/jertel/elastalert2/pull/457), [#460](https://github.com/jertel/elastalert2/pull/460) - @nickbabkin
 - [Tencent SMS] Added support for Tencent SMS - [#470](https://github.com/jertel/elastalert2/pull/470) - @liuxingjun
+- Add support for Kibana 7.15 for Kibana Discover - [#481](https://github.com/jertel/elastalert2/pull/481) - @nsano-rururu
 
 ## Other changes
 - [Rule Test] Fix issue related to --start/--end/--days params - [#424](https://github.com/jertel/elastalert2/pull/424), [#433](https://github.com/jertel/elastalert2/pull/433) - @thican
