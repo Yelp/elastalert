@@ -1825,6 +1825,8 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
 
+``slack_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+
 Mattermost
 ~~~~~~~~~~
 
