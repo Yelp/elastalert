@@ -8,6 +8,7 @@ import prison
 import urllib.parse
 
 from .util import EAException
+from .util import elastalert_logger
 from .util import lookup_es_key
 from .util import ts_add
 
@@ -21,7 +22,7 @@ def generate_kibana_discover_url(rule, match):
 
     discover_app_url = rule.get('kibana_discover_app_url')
     if not discover_app_url:
-        logging.warning(
+        elastalert_logger.warning(
             'Missing kibana_discover_app_url for rule %s' % (
                 rule.get('name', '<MISSING NAME>')
             )
@@ -30,7 +31,7 @@ def generate_kibana_discover_url(rule, match):
 
     kibana_version = rule.get('kibana_discover_version')
     if not kibana_version:
-        logging.warning(
+        elastalert_logger.warning(
             'Missing kibana_discover_version for rule %s' % (
                 rule.get('name', '<MISSING NAME>')
             )
@@ -39,7 +40,7 @@ def generate_kibana_discover_url(rule, match):
 
     index = rule.get('kibana_discover_index_pattern_id')
     if not index:
-        logging.warning(
+        elastalert_logger.warning(
             'Missing kibana_discover_index_pattern_id for rule %s' % (
                 rule.get('name', '<MISSING NAME>')
             )
@@ -70,7 +71,7 @@ def generate_kibana_discover_url(rule, match):
         appState = kibana_discover_app_state(index, columns, filters, query_keys, match)
 
     else:
-        logging.warning(
+        elastalert_logger.warning(
             'Unknown kibana discover application version %s for rule %s' % (
                 kibana_version,
                 rule.get('name', '<MISSING NAME>')
