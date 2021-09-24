@@ -38,7 +38,6 @@ setup(
         'exotel>=0.1.3',
         'jira>=2.0.0',
         'jsonschema>=3.0.2',
-        'mock>=2.0.0',
         'prison>=0.1.2',
         'PyStaticConfiguration>=0.10.3',
         'python-dateutil>=2.6.0,<2.7.0',

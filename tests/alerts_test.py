@@ -4,7 +4,7 @@ import datetime
 import json
 import subprocess
 
-import mock
+from unittest import mock
 import pytest
 from jira.exceptions import JIRAError
 

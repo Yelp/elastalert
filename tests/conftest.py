@@ -3,7 +3,7 @@ import datetime
 import logging
 import os
 
-import mock
+from unittest import mock
 import pytest
 
 import elastalert.elastalert

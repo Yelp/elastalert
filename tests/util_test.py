@@ -2,7 +2,7 @@
 from datetime import datetime
 from datetime import timedelta
 
-import mock
+from unittest import mock
 import pytest
 from dateutil.parser import parse as dt
 
