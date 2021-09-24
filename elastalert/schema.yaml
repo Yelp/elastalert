@@ -261,12 +261,6 @@ properties:
   jira_max_age: {type: number}
   jira_watchers: *arrayOfString
 
-  ### Stride
-  stride_access_token: {type: string}
-  stride_cloud_id: {type: string}
-  stride_conversation_id: {type: string}
-  stride_ignore_ssl_errors: {type: boolean}
-
   ### Slack
   slack_webhook_url: *arrayOfString
   slack_username_override: {type: string}

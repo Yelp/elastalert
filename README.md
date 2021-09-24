@@ -43,7 +43,6 @@ Currently, we have built-in support for the following alert types:
 - Jira
 - OpsGenie
 - Command
-- Stride
 - Microsoft Teams
 - Slack
 - Mattermost

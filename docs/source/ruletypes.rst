@@ -1715,25 +1715,6 @@ Configuration variables in rules YAML file::
 For more details, you can refer the `Squadcast documentation <https://support.squadcast.com/docs/elastalert>`_.
 
 
-Stride
-~~~~~~~
-
-Stride alerter will send a notification to a predefined Stride room. The body of the notification is formatted the same as with other alerters.
-Simple HTML such as <a> and <b> tags will be parsed into a format that Stride can consume.
-
-The alerter requires the following two options:
-
-``stride_access_token``: The randomly generated notification token created by Stride.
-
-``stride_cloud_id``: The site_id associated with the Stride site you want to send the alert to.
-
-``stride_conversation_id``: The conversation_id associated with the Stride conversation you want to send the alert to.
-
-``stride_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
-
-``stride_proxy``: By default ElastAlert will not use a network proxy to send notifications to Stride. Set this option using ``hostname:port`` if you need to use a proxy.
-
-
 Microsoft Teams
 ~~~~~~~~~~~~~~~
 
