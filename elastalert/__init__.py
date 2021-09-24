@@ -48,7 +48,12 @@ class ElasticSearchClient(Elasticsearch):
         if self._es_version is None:
             for retry in range(3):
                 try:
-                    self._es_version = self.info()['version']['number']
+                    if self.info()['version']['distribution'] == "opensearch":
+                        # OpenSearch is based on Elasticsearch 7.10.2, currently only v1.0.0 exists
+                        # https://opensearch.org/
+                        self._es_version = "7.10.2"
+                    else:
+                        self._es_version = self.info()['version']['number']
                     break
                 except TransportError:
                     if retry == 2:
