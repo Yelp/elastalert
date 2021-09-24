@@ -1714,43 +1714,6 @@ Configuration variables in rules YAML file::
 
 For more details, you can refer the `Squadcast documentation <https://support.squadcast.com/docs/elastalert>`_.
 
-HipChat
-~~~~~~~
-
-HipChat alerter will send a notification to a predefined HipChat room. The body of the notification is formatted the same as with other alerters.
-
-The alerter requires the following two options:
-
-``hipchat_auth_token``: The randomly generated notification token created by HipChat. Go to https://XXXXX.hipchat.com/account/api and use
-'Create new token' section, choosing 'Send notification' in Scopes list.
-
-``hipchat_room_id``: The id associated with the HipChat room you want to send the alert to. Go to https://XXXXX.hipchat.com/rooms and choose
-the room you want to post to. The room ID will be the numeric part of the URL.
-
-``hipchat_msg_color``: The color of the message background that is sent to HipChat. May be set to green, yellow or red. Default is red.
-
-``hipchat_domain``: The custom domain in case you have HipChat own server deployment. Default is api.hipchat.com.
-
-``hipchat_ignore_ssl_errors``: Ignore TLS errors (self-signed certificates, etc.). Default is false.
-
-``hipchat_proxy``: By default ElastAlert will not use a network proxy to send notifications to HipChat. Set this option using ``hostname:port`` if you need to use a proxy.
-
-``hipchat_notify``: When set to true, triggers a hipchat bell as if it were a user. Default is true.
-
-``hipchat_from``: When humans report to hipchat, a timestamp appears next to their name. For bots, the name is the name of the token. The from, instead of a timestamp, defaults to empty unless set, which you can do here. This is optional.
-
-``hipchat_message_format``: Determines how the message is treated by HipChat and rendered inside HipChat applications
-html - Message is rendered as HTML and receives no special treatment. Must be valid HTML and entities must be escaped (e.g.: '&amp;' instead of '&'). May contain basic tags: a, b, i, strong, em, br, img, pre, code, lists, tables.
-text - Message is treated just like a message sent by a user. Can include @mentions, emoticons, pastes, and auto-detected URLs (Twitter, YouTube, images, etc).
-Valid values: html, text.
-Defaults to 'html'.
-
-``hipchat_mentions``: When using a ``html`` message format, it's not possible to mentions specific users using the ``@user`` syntax.
-In that case, you can set ``hipchat_mentions`` to a list of users which will be first mentioned using a single text message, then the normal ElastAlert message will be sent to Hipchat.
-If set, it will mention the users, no matter if the original message format is set to HTML or text.
-Valid values: list of strings.
-Defaults to ``[]``.
-
 
 Stride
 ~~~~~~~

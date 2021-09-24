@@ -261,15 +261,6 @@ properties:
   jira_max_age: {type: number}
   jira_watchers: *arrayOfString
 
-  ### HipChat
-  hipchat_auth_token: {type: string}
-  hipchat_room_id: {type: [string, integer]}
-  hipchat_domain: {type: string}
-  hipchat_ignore_ssl_errors: {type: boolean}
-  hipchat_notify: {type: boolean}
-  hipchat_from: {type: string}
-  hipchat_mentions: {type: array, items: {type: string}}
-
   ### Stride
   stride_access_token: {type: string}
   stride_cloud_id: {type: string}
