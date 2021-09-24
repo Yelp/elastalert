@@ -14,6 +14,7 @@ from . import alerts
 from . import enhancements
 from . import ruletypes
 from .opsgenie import OpsGenieAlerter
+from .zabbix import ZabbixAlerter
 from .util import dt_to_ts
 from .util import dt_to_ts_with_format
 from .util import dt_to_unix
@@ -77,7 +78,8 @@ class RulesLoader(object):
         'alerta': alerts.AlertaAlerter,
         'post': alerts.HTTPPostAlerter,
         'linenotify': alerts.LineNotifyAlerter,
-        'hivealerter': alerts.HiveAlerter
+        'hivealerter': alerts.HiveAlerter,
+        'zabbix': ZabbixAlerter
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
