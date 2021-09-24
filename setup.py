@@ -48,7 +48,6 @@ setup(
         'texttable>=0.8.8',
         'twilio>=6.0.0,<6.58',
         'cffi>=1.11.5',
-        'cryptography<3.4',
         'tzlocal<3.0'
     ]
 )
