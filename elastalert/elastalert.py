@@ -171,7 +171,10 @@ class ElastAlerter(object):
 
         remove = []
         for rule in self.rules:
-            if not self.init_rule(rule):
+            if 'is_enabled' in rule and not rule['is_enabled']:
+                self.disabled_rules.append(rule)
+                remove.append(rule)
+            elif not self.init_rule(rule):
                 remove.append(rule)
         list(map(self.rules.remove, remove))
 
@@ -969,7 +972,7 @@ class ElastAlerter(object):
 
     def init_rule(self, new_rule, new=True):
         ''' Copies some necessary non-config state from an exiting rule to a new rule. '''
-        if not new:
+        if not new and self.scheduler.get_job(job_id=new_rule['name']):
             self.scheduler.remove_job(job_id=new_rule['name'])
 
         try:
@@ -1089,6 +1092,15 @@ class ElastAlerter(object):
                         elastalert_logger.info('Rule file %s is now disabled.' % (rule_file))
                         # Remove this rule if it's been disabled
                         self.rules = [rule for rule in self.rules if rule['rule_file'] != rule_file]
+                        # Stop job if is running
+                        if self.scheduler.get_job(job_id=new_rule['name']):
+                            self.scheduler.remove_job(job_id=new_rule['name'])
+                        # Append to disabled_rule
+                        for disabled_rule in self.disabled_rules:
+                            if disabled_rule['name'] == new_rule['name']:
+                                break
+                        else:
+                            self.disabled_rules.append(new_rule)
                         continue
                 except EAException as e:
                     message = 'Could not load rule %s: %s' % (rule_file, e)
@@ -1107,7 +1119,6 @@ class ElastAlerter(object):
                 # Re-enable if rule had been disabled
                 for disabled_rule in self.disabled_rules:
                     if disabled_rule['name'] == new_rule['name']:
-                        self.rules.append(disabled_rule)
                         self.disabled_rules.remove(disabled_rule)
                         break
 
