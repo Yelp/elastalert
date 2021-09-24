@@ -340,7 +340,7 @@ def test_raises_on_missing_config():
                 mock_rule_open.return_value = test_rule_copy
                 with mock.patch('os.walk') as mock_walk:
                     mock_walk.return_value = [('', [], ['testrule.yaml'])]
-                    with pytest.raises(EAException, message='key %s should be required' % key):
+                    with pytest.raises(EAException):
                         rules = load_conf(test_args)
                         rules['rules'] = rules['rules_loader'].load(rules)
 
