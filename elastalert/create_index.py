@@ -26,7 +26,7 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
         # https://opensearch.org/
         esversion = "7.10.2"
     else:
-        esversion = esinfo['version']
+        esversion = esinfo['number']
 
     es_index_mappings = read_es_index_mappings() if is_atleastsix(esversion) else read_es_index_mappings(5)
 

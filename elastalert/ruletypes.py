@@ -924,7 +924,7 @@ class NewTermsRule(RuleType):
             # https://opensearch.org/
             return True
         else:
-            return int(esinfo['version'][0]) >= 5
+            return int(esinfo['number'][0]) >= 5
 
 
 class CardinalityRule(RuleType):
