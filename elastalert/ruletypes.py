@@ -918,8 +918,13 @@ class NewTermsRule(RuleType):
                         self.seen_values[field].append(bucket['key'])
 
     def is_five_or_above(self):
-        version = self.es.info()['version']['number']
-        return int(version[0]) >= 5
+        esinfo = self.es.info()['version']
+        if esinfo['distribution'] == "opensearch":
+            # OpenSearch is based on Elasticsearch 7.10.2, currently only v1.0.0 exists
+            # https://opensearch.org/
+            return True
+        else:
+            return int(esinfo['number'][0]) >= 5
 
 
 class CardinalityRule(RuleType):
