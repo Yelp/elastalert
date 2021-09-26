@@ -919,7 +919,7 @@ class NewTermsRule(RuleType):
 
     def is_five_or_above(self):
         esinfo = self.es.info()['version']
-        if esinfo['distribution'] == "opensearch":
+        if esinfo.get('distribution') == "opensearch":
             # OpenSearch is based on Elasticsearch 7.10.2, currently only v1.0.0 exists
             # https://opensearch.org/
             return True

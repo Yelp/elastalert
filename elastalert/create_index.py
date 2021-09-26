@@ -21,7 +21,7 @@ env = Env(ES_USE_SSL=bool)
 
 def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None):
     esinfo = es_client.info()['version']
-    if esinfo['distribution'] == "opensearch":
+    if esinfo.get('distribution') == "opensearch":
         # OpenSearch is based on Elasticsearch 7.10.2, currently only v1.0.0 exists
         # https://opensearch.org/
         esversion = "7.10.2"

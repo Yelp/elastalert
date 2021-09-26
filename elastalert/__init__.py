@@ -49,7 +49,7 @@ class ElasticSearchClient(Elasticsearch):
             for retry in range(3):
                 try:
                     esinfo = self.info()['version']
-                    if esinfo['distribution'] == "opensearch":
+                    if esinfo.get('distribution') == "opensearch":
                         # OpenSearch is based on Elasticsearch 7.10.2, currently only v1.0.0 exists
                         # https://opensearch.org/
                         self._es_version = "7.10.2"
