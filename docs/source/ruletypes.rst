@@ -1986,32 +1986,33 @@ Example assets_dir, email_image_keys, email_image_values::
 Exotel
 ~~~~~~
 
-Developers in India can use Exotel alerter, it will trigger an incident to a mobile phone as sms from your exophone. Alert name along with the message body will be sent as an sms.
+Developers in India can use the Exotel alerter, which can send an alert to a mobile phone as an SMS from your ExoPhone. The SMS will contain both the alert name and the specified message body.
 
 The alerter requires the following option:
 
-``exotel_account_sid``: This is sid of your Exotel account.
+``exotel_account_sid``: The SID of your Exotel account.
 
-``exotel_auth_token``: Auth token assosiated with your Exotel account.
+``exotel_auth_token``: The auth token associated with your Exotel account.
 
-If you don't know how to find your accound sid and auth token, refer - https://support.exotel.com/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid
+Instructions for finding the SID and auth token associated with your account can be found `on the Exotel website
+<https://support.exotel.com/support/solutions/articles/3000023019-how-to-find-my-exotel-token-and-exotel-sid>`_.
 
-``exotel_to_number``: The phone number where you would like send the notification.
+``exotel_to_number``: The phone number to which you would like to send the alert.
 
-``exotel_from_number``: Your exophone number from which message will be sent.
+``exotel_from_number``: The ExoPhone number from which the alert will be sent.
 
 The alerter has one optional argument:
 
-``exotel_message_body``: Message you want to send in the sms, is you don't specify this argument only the rule name is sent
+``exotel_message_body``: The contents of the SMS. If you don't specify this argument, only the rule name is sent.
 
 Example usage::
 
     alert:
       - "exotel"
-    exotel_account_sid: "Exotel Account sid"
+    exotel_account_sid: "Exotel Account SID"
     exotel_auth_token: "Exotel Auth token"
-    exotel_to_number: "Exotel to Number"
-    exotel_from_number: "Exotel from Numbeer"
+    exotel_to_number: "Exotel to number"
+    exotel_from_number: "Exotel from number"
 
 Gitter
 ~~~~~~
