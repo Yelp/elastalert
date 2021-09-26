@@ -9,8 +9,18 @@
 ## Other changes
 - None
 
-
 # 2.x.x
+
+## Breaking changes
+- None
+
+## New features
+- None
+
+## Other changes
+- None
+
+# 2.2.2
 
 ## Breaking changes
 - None
@@ -20,7 +30,7 @@
 - [OpsGenie] Add support for custom description - [#457](https://github.com/jertel/elastalert2/pull/457), [#460](https://github.com/jertel/elastalert2/pull/460) - @nickbabkin
 - [Tencent SMS] Added support for Tencent SMS - [#470](https://github.com/jertel/elastalert2/pull/470) - @liuxingjun
 - Add support for Kibana 7.15 for Kibana Discover - [#481](https://github.com/jertel/elastalert2/pull/481) - @nsano-rururu
-- Begin working toward support of OpenSearch (This is still a work in progress) [#483](https://github.com/jertel/elastalert2/pull/483) @nbrownus
+- Begin working toward support of OpenSearch (beta) [#483](https://github.com/jertel/elastalert2/pull/483) @nbrownus
 
 ## Other changes
 - [Rule Test] Fix issue related to --start/--end/--days params - [#424](https://github.com/jertel/elastalert2/pull/424), [#433](https://github.com/jertel/elastalert2/pull/433) - @thican
