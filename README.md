@@ -1,9 +1,8 @@
 # ElastAlert 2
 
-ElastAlert 2 is the supported fork of [ElastAlert][0], which had been maintained by the Yelp team
-but become mostly stale when the Yelp team ceased using ElastAlert.
+ElastAlert 2 is a standalone software tool for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch[10] and OpenSearch[9].
 
-ElastAlert 2 is backwards compatible with the original ElastAlert rules.
+ElastAlert 2 is backwards compatible with the original ElastAlert[0] rules.
 
 ![CI Workflow](https://github.com/jertel/elastalert/workflows/master_build_test/badge.svg)
 
@@ -38,3 +37,5 @@ ElastAlert 2 is licensed under the [Apache License, Version 2.0][5].
 [6]: https://github.com/jertel/elastalert2/blob/master/CONTRIBUTING.md
 [7]: https://github.com/jertel/elastalert2/tree/master/chart/elastalert2
 [8]: https://elastalert2.readthedocs.io/en/latest/running_elastalert.html
+[9]: https://opensearch.org/
+[10]: https://github.com/elastic/elasticsearch
