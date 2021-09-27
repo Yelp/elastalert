@@ -2,7 +2,7 @@
 
 ElastAlert 2 is a standalone software tool for alerting on anomalies, spikes, or other patterns of interest from data in [Elasticsearch][10] and [OpenSearch][9].
 
-ElastAlert 2 is backwards compatible with the original ElastAlert[0] rules.
+ElastAlert 2 is backwards compatible with the original [ElastAlert][0] rules.
 
 ![CI Workflow](https://github.com/jertel/elastalert/workflows/master_build_test/badge.svg)
 
