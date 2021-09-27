@@ -1,6 +1,6 @@
 # ElastAlert 2
 
-ElastAlert 2 is a standalone software tool for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch[10] and OpenSearch[9].
+ElastAlert 2 is a standalone software tool for alerting on anomalies, spikes, or other patterns of interest from data in [Elasticsearch][10] and [OpenSearch][9].
 
 ElastAlert 2 is backwards compatible with the original ElastAlert[0] rules.
 
