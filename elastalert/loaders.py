@@ -80,6 +80,7 @@ class RulesLoader(object):
         'post': alerts.HTTPPostAlerter,
         'linenotify': alerts.LineNotifyAlerter,
         'hivealerter': alerts.HiveAlerter,
+        'rocketchat': alerts.RocketChatAlerter,
         'zabbix': ZabbixAlerter
     }
 

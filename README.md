@@ -54,6 +54,7 @@ Currently, we have built-in support for the following alert types:
 - Mattermost
 - Microsoft Teams
 - OpsGenie
+- Rocket.Chat
 - PagerDuty
 - PagerTree
 - ServiceNow

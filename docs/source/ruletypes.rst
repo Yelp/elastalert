@@ -1461,9 +1461,9 @@ Required:
 
 Optional:
 
-``discord_emoji_title``: By default ElastAlert 2 will use the ``:warning:`` emoji when posting to the channel. You can use a different emoji per ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
+``discord_emoji_title``: By default ElastAlert will use the ``:warning:`` emoji when posting to the channel. You can use a different emoji per ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
 
-``discord_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Discord. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+``discord_proxy``: By default ElastAlert will not use a network proxy to send notifications to Discord. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 ``discord_proxy_login``: The Discord proxy auth username.
 
@@ -1732,6 +1732,79 @@ Example usage::
     sns_topic_arn: 'arn:aws:sns:us-east-1:123456789:somesnstopic'
     aws_access_key_id: 'XXXXXXXXXXXXXXXXXX''
     aws_secret_access_key: 'YYYYYYYYYYYYYYYYYYYY'
+
+Rocket.Chat
+~~~~~~~~~~~
+
+Rocket.Chat alerter will send a notification to a predefined channel. The body of the notification is formatted the same as with other alerters.
+https://developer.rocket.chat/api/rest-api/methods/chat/postmessage
+
+The alerter requires the following option:
+
+``rocket_chat_webhook_url``: The webhook URL that includes your auth data and the ID of the channel (room) you want to post to. You can use a list of URLs to send to multiple channels.
+
+Optional:
+
+``rocket_chat_username_override``: By default Rocket.Chat will use username defined in Integration when posting to the channel. Use this option to change it (free text).
+
+``rocket_chat_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified “#other-channel”, and a Direct Message with “@username”.
+
+``rocket_chat_emoji_override``: By default ElastAlert will use the :ghost: emoji when posting to the channel. You can use a different emoji per
+ElastAlert rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ .
+
+``rocket_chat_msg_color``: By default the alert will be posted with the ‘danger’ color. You can also use ‘good’ or ‘warning’ colors.
+
+``rocket_chat_text_string``: Notification message you want to add.
+
+``rocket_chat_proxy``: By default ElastAlert will not use a network proxy to send notifications to Rocket.Chat. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+
+``rocket_chat_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
+
+``rocket_chat_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+
+``rocket_chat_timeout``: You can specify a timeout value, in seconds, for making communicating with Rocket.Chat. The default is 10. If a timeout occurs, the alert will be retried next time ElastAlert cycles.
+
+``rocket_chat_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the Rocket.Chat notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
+
+``rocket_chat_kibana_discover_color``: The color of the Kibana Discover url attachment. Defaults to ``#ec4b98``.
+
+``rocket_chat_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
+
+Example rocket_chat_attach_kibana_discover_url, rocket_chat_kibana_discover_color, rocket_chat_kibana_discover_title::
+
+    # (Required)
+    generate_kibana_discover_url: True
+    kibana_discover_app_url: "http://localhost:5601/app/discover#/"
+    kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
+    kibana_discover_version: "7.15"
+
+    # (Optional)
+    kibana_discover_from_timedelta:
+      minutes: 10
+    kibana_discover_to_timedelta:
+      minutes: 10
+
+    # (Required)
+    rocket_chat_attach_kibana_discover_url: True
+
+    # (Optional)
+    rocket_chat_kibana_discover_color: "#ec4b98"
+    rocket_chat_kibana_discover_title: "Discover in Kibana"
+
+``rocket_chat_alert_fields``: You can add additional fields to your Rocket.Chat alerts using this field. Specify the title using `title` and a value for the field using `value`. Additionally you can specify whether or not this field should be a `short` field using `short: true`.
+
+Example rocket_chat_alert_fields::
+
+    rocket_chat_alert_fields:
+      - title: Host
+        value: monitor.host
+        short: true
+      - title: Status
+        value: monitor.status
+        short: true
+      - title: Zone
+        value: beat.name
+        short: true
 
 Squadcast
 ~~~~~~~~~
@@ -2229,7 +2302,7 @@ Optional:
 
 ``http_post_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
 
-``http_post_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+``http_post_ignore_ssl_errors``: By default ElastAlert will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
 
 Example usage::
 

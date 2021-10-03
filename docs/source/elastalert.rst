@@ -48,6 +48,7 @@ Currently, we have support built in for these alert types:
 - OpsGenie
 - PagerDuty
 - PagerTree
+- Rocket.Chat
 - ServiceNow
 - Slack
 - Splunk On-Call (Formerly VictorOps)
