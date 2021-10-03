@@ -1037,6 +1037,8 @@ class SlackAlerter(Alerter):
         self.slack_attach_kibana_discover_url = self.rule.get('slack_attach_kibana_discover_url', False)
         self.slack_kibana_discover_color = self.rule.get('slack_kibana_discover_color', '#ec4b98')
         self.slack_kibana_discover_title = self.rule.get('slack_kibana_discover_title', 'Discover in Kibana')
+        self.slack_footer = self.rule.get('slack_footer', '')
+        self.slack_footer_icon = self.rule.get('slack_footer_icon', '')
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -1098,6 +1100,12 @@ class SlackAlerter(Alerter):
 
         if self.slack_title_link != '':
             payload['attachments'][0]['title_link'] = self.slack_title_link
+
+        if self.slack_footer != '':
+            payload['attachments'][0]['footer'] = self.slack_footer
+
+        if self.slack_footer_icon != '':
+            payload['attachments'][0]['footer_icon'] = self.slack_footer_icon
 
         if self.slack_attach_kibana_discover_url:
             kibana_discover_url = lookup_es_key(matches[0], 'kibana_discover_url')
