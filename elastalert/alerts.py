@@ -1873,6 +1873,8 @@ class HTTPPostAlerter(Alerter):
         self.post_all_values = self.rule.get('http_post_all_values', not self.post_payload)
         self.post_http_headers = self.rule.get('http_post_headers', {})
         self.timeout = self.rule.get('http_post_timeout', 10)
+        self.post_ca_certs = self.rule.get('http_post_ca_certs')
+        self.post_ignore_ssl_errors = self.rule.get('http_post_ignore_ssl_errors', False)
 
     def alert(self, matches):
         """ Each match will trigger a POST to the specified endpoint(s). """
@@ -1885,12 +1887,20 @@ class HTTPPostAlerter(Alerter):
                 "Content-Type": "application/json",
                 "Accept": "application/json;charset=utf-8"
             }
+            if self.post_ca_certs:
+                verify = self.post_ca_certs
+            else:
+                verify = not self.post_ignore_ssl_errors
+            if self.post_ignore_ssl_errors:
+                requests.packages.urllib3.disable_warnings()
+
             headers.update(self.post_http_headers)
             proxies = {'https': self.post_proxy} if self.post_proxy else None
             for url in self.post_url:
                 try:
                     response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder),
-                                             headers=headers, proxies=proxies, timeout=self.timeout)
+                                             headers=headers, proxies=proxies, timeout=self.timeout,
+                                             verify=verify)
                     response.raise_for_status()
                 except RequestException as e:
                     raise EAException("Error posting HTTP Post alert: %s" % e)

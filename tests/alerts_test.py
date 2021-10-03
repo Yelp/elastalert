@@ -1715,7 +1715,8 @@ def test_http_alerter_with_payload():
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
-        timeout=10
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1750,7 +1751,8 @@ def test_http_alerter_with_payload_all_values():
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
-        timeout=10
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1782,7 +1784,8 @@ def test_http_alerter_without_payload():
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
-        timeout=10
+        timeout=10,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
