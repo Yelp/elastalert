@@ -239,6 +239,10 @@ properties:
   pipe_match_json: {type: boolean}
   fail_on_non_zero_exit: {type: boolean}
 
+  ### Datadog
+  datadog_api_key: {type: string}
+  datadog_app_key: {type: string}
+
   ## Discord
   discord_webhook_url: {type: string}
   discord_emoji_title: {type: string}

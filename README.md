@@ -42,6 +42,7 @@ Currently, we have built-in support for the following alert types:
 - Alerta
 - Amazon Simple Notification Service (AWS SNS)
 - Command
+- Datadog
 - Debug
 - Discord
 - Email
