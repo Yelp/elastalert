@@ -1450,6 +1450,40 @@ Example usage using new-style format::
       - command
     command: ["/bin/send_alert", "--username", "{match[username]}"]
 
+Discord
+~~~~~~~
+
+Discord will send notification to a Discord application. The body of the notification is formatted the same as with other alerters.
+
+Required:
+
+``discord_webhook_url``:  The webhook URL.
+
+Optional:
+
+``discord_emoji_title``: By default ElastAlert 2 will use the ``:warning:`` emoji when posting to the channel. You can use a different emoji per ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
+
+``discord_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Discord. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+
+``discord_proxy_login``: The Discord proxy auth username.
+
+``discord_proxy_password``: The Discord proxy auth username.
+
+``discord_embed_color``: embed color. By default ``0xffffff``.
+
+``discord_embed_footer``: embed footer.
+
+``discord_embed_icon_url``: You can provide icon_url to use custom image. Provide absolute address of the pciture.
+
+Example usage::
+
+    alert:
+    - "discord"
+    discord_webhook_url: "Your discord webhook url"
+    discord_emoji_title: ":lock:"
+    discord_embed_color: 0xE24D42
+    discord_embed_footer: "Message sent by  from your computer"
+    discord_embed_icon_url: "https://humancoders-formations.s3.amazonaws.com/uploads/course/logo/38/thumb_bigger_formation-elasticsearch.png"
 
 Email
 ~~~~~

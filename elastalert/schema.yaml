@@ -239,6 +239,16 @@ properties:
   pipe_match_json: {type: boolean}
   fail_on_non_zero_exit: {type: boolean}
 
+  ## Discord
+  discord_webhook_url: {type: string}
+  discord_emoji_title: {type: string}
+  discord_proxy: {type: string}
+  discord_proxy_login: {type: string}
+  discord_proxy_password: {type: string}
+  discord_embed_color: {type: integer}
+  discord_embed_footer: {type: string}
+  discord_embed_icon_url: {type: string}
+  
   ### Email
   email: *arrayOfString
   email_reply_to: {type: string}

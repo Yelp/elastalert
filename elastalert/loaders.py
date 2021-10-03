@@ -61,6 +61,7 @@ class RulesLoader(object):
         'opsgenie': OpsGenieAlerter,
         'stomp': alerts.StompAlerter,
         'debug': alerts.DebugAlerter,
+        'discord': alerts.DiscordAlerter,
         'command': alerts.CommandAlerter,
         'sns': alerts.SnsAlerter,
         'ms_teams': alerts.MsTeamsAlerter,
