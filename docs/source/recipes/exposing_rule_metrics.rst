@@ -16,7 +16,7 @@ To expose ElastAlert rule metrics on port ``9979`` run the following command:
 Rule Metrics
 ------------
 
-The exposed metrics are in the `Prometheus text-based format <https://prometheus.io/docs/instrumenting/exposition_formats/#text-based-format>`_. Metrics are of the metric type `counter <https://prometheus.io/docs/concepts/metric_types/#counter>`_ or `gauge <https://prometheus.io/docs/concepts/metric_types/#gauge>`_ and follow the `Prometheus metric naming <https://prometheus.io/docs/practices/naming/>`_. 
+The metrics being exposed are related to the `ElastAlert metadata indices <https://elastalert2.readthedocs.io/en/latest/elastalert_status.html>`_. The exposed metrics are in the `Prometheus text-based format <https://prometheus.io/docs/instrumenting/exposition_formats/#text-based-format>`_. Metrics are of the metric type `counter <https://prometheus.io/docs/concepts/metric_types/#counter>`_ or `gauge <https://prometheus.io/docs/concepts/metric_types/#gauge>`_ and follow the `Prometheus metric naming <https://prometheus.io/docs/practices/naming/>`_. 
 
 In the standard metric definition, the metric names are structured as follows:
 
@@ -42,7 +42,7 @@ Find below all available metrics:
 +---------------------------------------+-----------------+---------------------------+---------------+
 | ``elastalert_matches_{unit}``         | Counter, Gauge  | Number of matches         | ``rule_name`` |
 +---------------------------------------+-----------------+---------------------------+---------------+
-| ``elastalert_time_taken_{unit}``      | Counter, Gauge  | Amount of time taken      | ``rule_name`` |
+| ``elastalert_time_taken_{unit}``      | Counter, Gauge  | Time taken in seconds     | ``rule_name`` |
 +---------------------------------------+-----------------+---------------------------+---------------+
 | ``elastalert_alerts_sent_{unir}``     | Counter, Gauge  | Number of alerts sent     | ``rule_name`` |
 +---------------------------------------+-----------------+---------------------------+---------------+
