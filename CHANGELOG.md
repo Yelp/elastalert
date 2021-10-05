@@ -18,7 +18,7 @@
 - None
 
 ## Other changes
-- None
+- [Docs] Add exposed metrics documentation - [#498](https://github.com/jertel/elastalert2/pull/498) - @thisisxgp
 
 # 2.2.2
 
