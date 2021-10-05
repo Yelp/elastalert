@@ -38,11 +38,11 @@ Find below all available metrics:
 +=======================================+=================+===========================+===============+
 | ``elastalert_scrapes_{unit}``         | Counter, Gauge  | Number of scrapes         | ``rule_name`` |
 +---------------------------------------+-----------------+---------------------------+---------------+
-| ``elastalert_hits_{unit}``            | Counter, Gauge  | Number of hit             | ``rule_name`` |
+| ``elastalert_hits_{unit}``            | Counter, Gauge  | Number of hits            | ``rule_name`` |
 +---------------------------------------+-----------------+---------------------------+---------------+
 | ``elastalert_matches_{unit}``         | Counter, Gauge  | Number of matches         | ``rule_name`` |
 +---------------------------------------+-----------------+---------------------------+---------------+
-| ``elastalert_time_taken_{unit}``      | Counter, Gauge  | Number of time taken      | ``rule_name`` |
+| ``elastalert_time_taken_{unit}``      | Counter, Gauge  | Amount of time taken      | ``rule_name`` |
 +---------------------------------------+-----------------+---------------------------+---------------+
 | ``elastalert_alerts_sent_{unir}``     | Counter, Gauge  | Number of alerts sent     | ``rule_name`` |
 +---------------------------------------+-----------------+---------------------------+---------------+
