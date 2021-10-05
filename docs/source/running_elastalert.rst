@@ -44,7 +44,7 @@ logs `localhost:9200` instead of the actual ``es_host``:``es_port``.
 ``--pin_rules`` will stop ElastAlert 2 from loading, reloading or removing rules
 based on changes to their config files.
 
-``--prometheus_port`` exposes ElastAlert 2 Prometheus metrics on the specified
+``--prometheus_port`` exposes ElastAlert 2 `Prometheus metrics <https://elastalert2.readthedocs.io/en/latest/recipes/exposing_rule_metrics.html>`_ on the specified
 port. Prometheus metrics disabled by default.
 
 ``--rule <rule.yaml>`` will only run the given rule. The rule file may be a
