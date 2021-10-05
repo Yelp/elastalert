@@ -1,4 +1,4 @@
-.. _writingrules:
+.. _exposingrulemetrics:
 
 Exposing Rule Metrics
 =====================
