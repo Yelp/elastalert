@@ -30,7 +30,7 @@ RUN apt update && apt -y upgrade && \
     echo "set -e" >> /opt/elastalert/run.sh && \
     echo "elastalert-create-index --config /opt/elastalert/config.yaml" \
         >> /opt/elastalert/run.sh && \
-    echo "elastalert --config /opt/elastalert/config.yaml \"\$@\"" \
+    echo "elastalert --debug --config /opt/elastalert/config.yaml \"\$@\"" \
         >> /opt/elastalert/run.sh && \
     chmod +x /opt/elastalert/run.sh && \
     groupadd -g ${GID} ${USERNAME} && \

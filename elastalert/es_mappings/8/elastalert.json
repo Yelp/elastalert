@@ -1,0 +1,39 @@
+{
+  "numeric_detection": true,
+  "date_detection": false,
+  "dynamic_templates": [
+    {
+      "strings_as_keyword": {
+        "mapping": {
+          "ignore_above": 1024,
+          "type": "keyword"
+        },
+        "match_mapping_type": "string"
+      }
+    }
+  ],
+  "properties": {
+    "rule_name": {
+      "type": "keyword"
+    },
+    "@timestamp": {
+      "type": "date",
+      "format": "date_optional_time"
+    },
+    "alert_time": {
+      "type": "date",
+      "format": "date_optional_time"
+    },
+    "match_time": {
+      "type": "date",
+      "format": "date_optional_time"
+    },
+    "match_body": {
+      "enabled": "false",
+      "type": "object"
+    },
+    "aggregate_id": {
+      "type": "keyword"
+    }
+  }
+}
