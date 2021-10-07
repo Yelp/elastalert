@@ -53,7 +53,7 @@ index: filebeat-*
 filter:
 - query_string: 
     query: "event.module:o365 AND o365.audit.ClientInfoString:/Client=POP3.*/ AND NOT (whitelisted_for:legacy_mail OR tags:profile_country_match)"
-
+    
 #compare_key: client.ip
 
 #ignore_null: false
@@ -85,6 +85,7 @@ filter:
 #slack_msg_color: "danger"
 
 alert:
+  - post      
   - "ms_teams"
 # to prod channel
 ms_teams_webhook_url: "https://insanetechnologies.webhook.office.com/webhookb2/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/7286705abbaf4fd0a8c529230b638d8e/ae25c5f2-48db-4846-b5be-1031b406cafb"
@@ -110,9 +111,32 @@ alert_text_args:
         - filter.start_time
         - filter.end_time
             
-alert_subject: "Legacy Mail Client POP3/IMAP {1}"
+alert_subject: "Legacy Mail Client POP3/IMAP {1} (pre-siem manager)"
 # to prod siem
 alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**Client string**: {5}<br>**From ip**: {6}<br>**Tenant**: {7}<br><br>[View Event In Siem](http://10.80.111.101/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{8}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{9}%27,kind:absolute,to:%27{10}%27)),timeline:(linkTo:!(global),timerange:(from:%27{9}%27,kind:absolute,to:%27{10}%27))))<br>[View o365 location data In Siem-Manager](http://10.80.111.101:8081/o365_location_list?search={3})<br>"
 # to dev siem
 #alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**Client string**: {5}<br>**From ip**: {6}<br>**Tenant**: {7}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{8}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{9}%27,kind:absolute,to:%27{10}%27)),timeline:(linkTo:!(global),timerange:(from:%27{9}%27,kind:absolute,to:%27{10}%27))))<br>"
 alert_text_type: "alert_text_only"
+
+
+http_post_url: "http://10.80.111.101:1337/api/v1.0/create/alert"
+http_post_headers:
+  #Authorization: Bearer 29d590f1-d49b-4dba-824f-5c223f122567
+  Content-Type: application/json
+
+http_post_payload:
+  tenant: tenant
+  event_action: event.action
+  geo_country_name: source.geo.country_name
+  geo_city_name: source.geo.city_name
+  o365_user_id: o365.audit.UserId
+  timestamp: "@timestamp"
+  client_ip: client.ip
+  host_name: host.name
+  id: _id
+  filter_start: filter.start_time
+  filter_end: filter.end_time
+  ticket_for: accelo_company_id
+
+http_post_static_payload:
+  alert_type_id: "3"    

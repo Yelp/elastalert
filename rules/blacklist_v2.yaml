@@ -78,6 +78,7 @@ filter:
 #slack_msg_color: "danger"
 
 alert:
+  - post       
   - "ms_teams"
 # to prod channel
 ms_teams_webhook_url: "https://insanetechnologies.webhook.office.com/webhookb2/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/7286705abbaf4fd0a8c529230b638d8e/ae25c5f2-48db-4846-b5be-1031b406cafb"
@@ -105,9 +106,35 @@ alert_text_args:
         - filter.start_time
         - filter.end_time
 
-alert_subject: "Blacklist IP address detected activity: {1}"
+alert_subject: "Blacklist IP address detected activity: {1} (pre-siem-manager)"
 # to prod siem
 alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**User action**: {0}<br>**Blacklist ip**: {5}<br>**Tenant**: {6}<br>**Blacklist url**: {7}<br>**Threat type**: {8}<br>**Threat info**: {9}<br><br>[View Event In Siem](http://10.80.111.101/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{10}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{11}%27,kind:absolute,to:%27{12}%27)),timeline:(linkTo:!(global),timerange:(from:%27{11}%27,kind:absolute,to:%27{12}%27))))<br>"
 # to dev siem
 #alert_text: "**Username**: {3}<br>**From**: {1}, {2}<br>**At**: {4}<br>**User action**: {0}<br>**Blacklist ip**: {5}<br>**Tenant**: {6}<br>**Blacklist url**: {7}<br>**Threat type**: {8}<br>**Threat info**: {9}<br><br>**Dev test link**: [View Event In Siem](http://siem-manager:5601/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{10}%22%27)&sourcerer=(default:!(%27filebeat-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{11}%27,kind:absolute,to:%27{12}%27)),timeline:(linkTo:!(global),timerange:(from:%27{11}%27,kind:absolute,to:%27{12}%27))))<br>"
 alert_text_type: "alert_text_only"
+
+http_post_url: "http://10.80.111.101:1337/api/v1.0/create/alert"
+http_post_headers:
+  #Authorization: Bearer 29d590f1-d49b-4dba-824f-5c223f122567
+  Content-Type: application/json
+
+http_post_payload:
+  tenant: tenant
+  event_action: event.action
+  geo_country_name: source.geo.country_name
+  geo_city_name: source.geo.city_name
+  o365_user_id: o365.audit.UserId
+  timestamp: "@timestamp"
+  client_ip: client.ip
+  host_name: host.name
+  id: _id
+  filter_start: filter.start_time
+  filter_end: filter.end_time
+  ticket_for: accelo_company_id
+  blacklist_dns: blacklist.dns
+  blacklist_threat_type: blacklist.threat_type
+  blacklist_threat_info: blacklist.threat_info
+
+
+http_post_static_payload:
+  alert_type_id: "4"  

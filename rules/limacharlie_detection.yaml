@@ -22,11 +22,13 @@ filter:
 
 # Ms Teams Alert
 alert:
+  - post    
   - "ms_teams"
 # to prod channel
 #ms_teams_webhook_url: "https://insanetechnologies.webhook.office.com/webhookb2/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/7286705abbaf4fd0a8c529230b638d8e/ae25c5f2-48db-4846-b5be-1031b406cafb"
 # to testing channel
 ms_teams_webhook_url: "https://insanetechnologies.webhook.office.com/webhookb2/ff5294a1-7199-4ac1-a069-adec7527e89c@c000a8f2-2b78-4c1a-9209-758f121b6022/IncomingWebhook/e81440764014410cb747cac199938c67/ae25c5f2-48db-4846-b5be-1031b406cafb"
+
 ms_teams_alert_summary: "Elastic Siem Alert"
 ms_teams_theme_color: "ff0000"
 ms_teams_alert_fixed_width:
@@ -45,10 +47,40 @@ alert_text_args:
         - limacharlie.cat
         - tenant
 
-alert_subject: "LimaCharlie Detection, Event Action: {0}"
+alert_subject: "LimaCharlie Detection, Event Action: {0} (pre-siem-manager)"
 # to prod siem
 alert_text: "**Tenant**: {9} <br>**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Hostname**: {7}<br>**Message**: {3}<br>**Detection Category**: {8}<br><br>[View Event In Siem](http://10.80.111.101/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{4}%22%27)&sourcerer=(default:!(%27limacharlie-alerts-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{5}%27,kind:absolute,to:%27{6}%27)),timeline:(linkTo:!(global),timerange:(from:%27{5}%27,kind:absolute,to:%27{6}%27))))<br>"
 # to dev siem
 # alert_text: "**Tenant**: {9}<br>**Username**: {1}<br>**At**: {0}<br>**Source ip**: {2}<br>**Hostname**: {7}<br>**Message**: {3}<br>**Detection Category**: {8}<br><br>[View Event In Siem](http://10.80.120.138:90/app/security/hosts/events?query=(language:kuery,query:%27_id:%20%22{4}%22%27)&sourcerer=(default:!(%27limacharlie-alerts-*%27))&timerange=(global:(linkTo:!(timeline),timerange:(from:%27{5}%27,kind:absolute,to:%27{6}%27)),timeline:(linkTo:!(global),timerange:(from:%27{5}%27,kind:absolute,to:%27{6}%27))))<br>"
 alert_text_type: "alert_text_only"
 
+
+#http_post_url: "http://10.80.111.101:3001/api/v1/hooks/webhook_1665481b-b302-4ba5-8f60-39577c7bfeef"
+http_post_url: "http://10.80.111.101:1337/api/v1.0/create/alert"
+http_post_headers:
+  #Authorization: Bearer 29d590f1-d49b-4dba-824f-5c223f122567
+  Content-Type: application/json
+http_post_payload:
+  tenant: tenant
+  ticket_for: accelo_company_id
+  id: _id
+  timestamp: "@timestamp"
+  filepath: limacharlie.detect.event.FILE_PATH
+  username: user.name
+  filter_start: filter.start_time
+  filter_end: filter.end_time
+  source_ip: source.ip
+  hostname: host.name
+  limacharlie_cat: limacharlie.cat
+  oid: limacharlie.routing.oid
+  sid: limacharlie.routing.sid
+  this_atom: limacharlie.routing.this
+  event_time: limacharlie.routing.event_time
+  event_type: limacharlie.routing.event_type
+  parent_atom: limacharlie.detect.event.PARENT.PARENT_ATOM
+  parent_filepath: limacharlie.detect.event.PARENT.FILE_PATH
+  parent_username: limacharlie.detect.event.PARENT.USER_NAME
+
+http_post_static_payload:
+  alert_type_id: "2"
+  
