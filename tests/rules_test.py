@@ -556,7 +556,14 @@ def test_change():
     assert rule.matches == []
 
 
-def test_new_term():
+@pytest.mark.parametrize('version, expected_is_five_or_above', [
+    ({'version': {'number': '2.x.x'}}, False),
+    ({'version': {'number': '5.x.x'}}, True),
+    ({'version': {'number': '6.x.x'}}, True),
+    ({'version': {'number': '7.x.x'}}, True),
+    ({'version': {'number': '7.10.2', 'distribution': 'opensearch'}}, True),
+])
+def test_new_term(version, expected_is_five_or_above):
     rules = {'fields': ['a', 'b'],
              'timestamp_field': '@timestamp',
              'es_host': 'example.com', 'es_port': 10, 'index': 'logstash',
@@ -567,7 +574,7 @@ def test_new_term():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x', 'distribution': 'mock-es'}}
+        mock_es.return_value.info.return_value = version
         call_args = []
 
         # search is called with a mutable dict containing timestamps, this is required to test
@@ -577,6 +584,8 @@ def test_new_term():
 
         mock_es.return_value.search.side_effect = record_args
         rule = NewTermsRule(rules)
+
+    assert rule.is_five_or_above() == expected_is_five_or_above
 
     # 30 day default range, 1 day default step, times 2 fields
     assert rule.es.search.call_count == 60
@@ -619,11 +628,12 @@ def test_new_term():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x', 'distribution': 'mock-es'}}
+        mock_es.return_value.info.return_value = version
         rule = NewTermsRule(rules)
     rule.add_data([{'@timestamp': ts_now(), 'a': 'key2'}])
     assert len(rule.matches) == 1
     assert rule.matches[0]['missing_field'] == 'b'
+    assert rule.is_five_or_above() == expected_is_five_or_above
 
 
 def test_new_term_nested_field():
@@ -637,7 +647,7 @@ def test_new_term_nested_field():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x', 'distribution': 'mock-es'}}
+        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
         rule = NewTermsRule(rules)
 
         assert rule.es.search.call_count == 60
@@ -662,7 +672,7 @@ def test_new_term_with_terms():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x', 'distribution': 'mock-es'}}
+        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
         rule = NewTermsRule(rules)
 
         # Only 15 queries because of custom step size
@@ -732,7 +742,7 @@ def test_new_term_with_composite_fields():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x', 'distribution': 'mock-es'}}
+        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
         rule = NewTermsRule(rules)
 
         assert rule.es.search.call_count == 60
@@ -769,7 +779,7 @@ def test_new_term_with_composite_fields():
     with mock.patch('elastalert.ruletypes.elasticsearch_client') as mock_es:
         mock_es.return_value = mock.Mock()
         mock_es.return_value.search.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x', 'distribution': 'mock-es'}}
+        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
         rule = NewTermsRule(rules)
     rule.add_data([{'@timestamp': ts_now(), 'a': 'key2'}])
     assert len(rule.matches) == 2
