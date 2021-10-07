@@ -21,6 +21,7 @@ Contents:
    recipes/writing_filters
    recipes/adding_enhancements
    recipes/adding_loaders
+   recipes/exposing_rule_metrics
    recipes/signing_requests
    recipes/faq
 
