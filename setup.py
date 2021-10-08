@@ -21,7 +21,7 @@ setup(
         "Discussion Forum": "https://github.com/jertel/elastalert2/discussions",
     },
     classifiers=[
-        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ],
