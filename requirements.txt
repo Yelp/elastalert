@@ -20,6 +20,5 @@ stomp.py>=4.1.17
 texttable>=0.8.8
 statsd-tags==3.2.1.post1
 twilio>=6.0.0,<6.58
-tzlocal<3.0
 tencentcloud-sdk-python>=3.0.484
 jsonpointer>=2.1
