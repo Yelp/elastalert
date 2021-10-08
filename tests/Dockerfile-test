@@ -1,8 +1,10 @@
 FROM python:3-slim-buster
 
 RUN apt update && apt upgrade -y
+RUN apt install -y gcc libffi-dev
 
 WORKDIR /home/elastalert
 
 ADD requirements*.txt ./
+
 RUN pip3 install -r requirements-dev.txt

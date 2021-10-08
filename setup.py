@@ -21,7 +21,7 @@ setup(
         "Discussion Forum": "https://github.com/jertel/elastalert2/discussions",
     },
     classifiers=[
-        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ],
@@ -55,7 +55,6 @@ setup(
         'twilio>=6.0.0,<6.58',
         'cffi>=1.11.5',
         'statsd-tags==3.2.1.post1',
-        'tzlocal<3.0',
         'tencentcloud-sdk-python>=3.0.484',
         'jsonpointer>=2.1'
     ]
