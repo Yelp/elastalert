@@ -36,6 +36,7 @@ import elastalert.alerters.victorops
 from elastalert import alerts
 from elastalert import enhancements
 from elastalert import ruletypes
+from elastalert.alerters.alertmanager import AlertmanagerAlerter
 from elastalert.alerters.email import EmailAlerter
 from elastalert.alerters.jira import JiraAlerter
 from elastalert.alerters.mattermost import MattermostAlerter
@@ -88,6 +89,7 @@ class RulesLoader(object):
 
     # Used to map names of alerts to their classes
     alerts_mapping = {
+        'alertmanager': AlertmanagerAlerter,
         'tencent_sms': TencentSMSAlerter,
         'email': EmailAlerter,
         'jira': JiraAlerter,
