@@ -179,8 +179,7 @@ default is 10,000, and if you expect to get near this number, consider using ``u
 limit is reached, ElastAlert 2 will `scroll <https://www.elastic.co/guide/en/elasticsearch/reference/current/search-request-scroll.html>`_
 using the size of ``max_query_size`` through the set amount of pages, when ``max_scrolling_count`` is set or until processing all results.
 
-``max_scrolling_count``: The maximum amount of pages to scroll through. The default is ``0``, which means the scrolling has no limit.
-For example if this value is set to ``5`` and the ``max_query_size`` is set to ``10000`` then ``50000`` documents will be downloaded at most.
+``max_scrolling_count``: The maximum amount of pages to scroll through. The default is ``990``, to avoid a stack overflow error due to Python's stack limit of 1000. For example, if this value is set to ``5`` and the ``max_query_size`` is set to ``10000`` then ``50000`` documents will be downloaded at most.
 
 ``max_threads``: The maximum number of concurrent threads available to process scheduled rules. Large numbers of long-running rules may require this value be increased, though this could overload the Elasticsearch cluster if too many complex queries are running concurrently. Default is 10.
 
