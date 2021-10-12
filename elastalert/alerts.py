@@ -9,6 +9,7 @@ from texttable import Texttable
 from elastalert.util import EAException, lookup_es_key
 from elastalert.yaml import read_yaml
 
+from collections import Counter
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -267,6 +268,11 @@ class Alerter(object):
                 else:
                     match_aggregation[key_tuple] = match_aggregation[key_tuple] + 1
 
+            # Limit number of rows
+            if 'summary_table_max_rows' in self.rule:
+                max_rows = self.rule['summary_table_max_rows']
+                match_aggregation = {k:v for k, v in Counter(match_aggregation).most_common(max_rows)}
+
             # Type dependent table style
             if summary_table_type == 'ascii':
                 text_table = Texttable(max_width=self.get_aggregation_summary_text__maximum_width())
@@ -291,6 +297,11 @@ class Alerter(object):
                         markdown_row += '| ' + str(key) + ' '
                     text += markdown_row + '| ' + str(count) + ' |\n'
                 text += '\n'
+
+            # max_rows message
+            if 'summary_table_max_rows' in self.rule:
+                text += f"Showing top {self.rule['summary_table_max_rows']} rows"
+                text += "\n"
 
             # Type independent suffix
             text += self.rule.get('summary_suffix', '')
