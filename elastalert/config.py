@@ -74,7 +74,7 @@ def load_conf(args, defaults=None, overwrites=None):
 
     conf.setdefault('max_query_size', 10000)
     conf.setdefault('scroll_keepalive', '30s')
-    conf.setdefault('max_scrolling_count', 0)
+    conf.setdefault('max_scrolling_count', 990) # Avoid stack overflow in run_query, note that 1000 is Python's stack limit
     conf.setdefault('disable_rules_on_error', True)
     conf.setdefault('scan_subdirectories', True)
     conf.setdefault('rules_loader', 'file')
