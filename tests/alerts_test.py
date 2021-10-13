@@ -312,6 +312,7 @@ def test_alert_aggregation_summary_default_table():
     assert "| field_value | abc from match | 3     |" in summary_table
     assert "| field_value | cde from match | 2     |" in summary_table
 
+
 def test_alert_aggregation_summary_table_one_row():
     rule = {
         'name': 'test_rule',
@@ -338,6 +339,7 @@ def test_alert_aggregation_summary_table_one_row():
     assert "| field_value | abc from match | 3     |" in summary_table
     assert "| field_value | cde from match | 2     |" not in summary_table
     assert "Showing top 1 rows" in summary_table
+
 
 def test_alert_aggregation_summary_table_suffix_prefix():
     rule = {
