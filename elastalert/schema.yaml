@@ -244,7 +244,7 @@ properties:
   ### summary table
   summary_table_fields: {type: array, items: {type: string}}
   summary_table_type: {type: string, enum: ['ascii', 'markdown']}
-  summary_table_max_rows: {type: integer, 'minimum': 0}
+  summary_table_max_rows: {type: integer, minimum: 0}
   summary_prefix: {type: string}
   summary_suffix: {type: string}
 
