@@ -312,6 +312,32 @@ def test_alert_aggregation_summary_default_table():
     assert "| field_value | abc from match | 3     |" in summary_table
     assert "| field_value | cde from match | 2     |" in summary_table
 
+def test_alert_aggregation_summary_table_one_row():
+    rule = {
+        'name': 'test_rule',
+        'type': mock_rule(),
+        'owner': 'the_owner',
+        'priority': 2,
+        'alert_subject': 'A very long subject',
+        'aggregation': 1,
+        'summary_table_fields': ['field', 'abc'],
+        'summary_table_max_rows': 1,
+    }
+    matches = [
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'abc from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+        {'@timestamp': '2016-01-01', 'field': 'field_value', 'abc': 'cde from match', },
+    ]
+    alert = Alerter(rule)
+    summary_table = str(alert.get_aggregation_summary_text(matches))
+    assert "+-------------+----------------+-------+" in summary_table
+    assert "|    field    |      abc       | count |" in summary_table
+    assert "+=============+================+=======+" in summary_table
+    assert "| field_value | abc from match | 3     |" in summary_table
+    assert "| field_value | cde from match | 2     |" not in summary_table
+    assert "Showing top 1 rows" in summary_table
 
 def test_alert_aggregation_summary_table_suffix_prefix():
     rule = {
