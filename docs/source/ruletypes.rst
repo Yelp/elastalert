@@ -394,6 +394,8 @@ For aggregations, there can sometimes be a large number of documents present in 
 
 The formatting style of the summary table can be switched between ``ascii`` (default) and ``markdown`` with parameter ``summary_table_type``. ``markdown`` might be the more suitable formatting for alerters supporting it like TheHive.
 
+The maximum number of rows in the summary table can be limited with the parameter ``summary_table_max_rows``.
+
 For example, if you wish to summarize the usernames and event_types that appear in the documents so that you can see the most relevant fields at a quick glance, you can set::
 
     summary_table_fields:
@@ -720,6 +722,11 @@ summary_table_type
 ^^^^^^^^^^^^^^^^^^^^
 
 ``summary_table_type``: Either ``ascii`` or ``markdown``. Select the table type to use for the aggregation summary. Defaults to ``ascii`` for the classical text based table.
+
+summary_table_max_rows
+^^^^^^^^^^^^^^^^^^^^^^
+
+``summary_table_max_rows``: Limit the maximum number of rows that will be shown in the summary table.
 
 summary_prefix
 ^^^^^^^^^^^^^^^^^^^^
