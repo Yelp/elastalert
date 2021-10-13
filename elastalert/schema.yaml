@@ -241,6 +241,13 @@ properties:
   replace_dots_in_field_names: {type: boolean}
   scan_entire_timeframe: {type: boolean}
 
+  ### summary table
+  summary_table_fields: {type: array, items: {type: string}}
+  summary_table_type: {type: string, enum: ['ascii', 'markdown']}
+  summary_table_max_rows: {type: number}
+  summary_prefix: {type: string}
+  summary_suffix: {type: string}
+
   ### Kibana Discover App Link
   generate_kibana_discover_url: {type: boolean}
   kibana_discover_app_url: {type: string, format: uri}
