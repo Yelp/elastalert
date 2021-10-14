@@ -34,6 +34,7 @@ from elastalert.alerters.debug import DebugAlerter
 from elastalert.config import load_conf
 from elastalert.enhancements import DropMatchException
 from elastalert.kibana_discover import generate_kibana_discover_url
+from elastalert.kibana_external_url_formatter import create_kibana_external_url_formatter
 from elastalert.prometheus_wrapper import PrometheusWrapper
 from elastalert.ruletypes import FlatlineRule
 from elastalert.util import (add_raw_postfix, cronite_datetime_to_timestamp, dt_to_ts, dt_to_unix, EAException,
@@ -1593,7 +1594,8 @@ class ElastAlerter(object):
         if rule.get('generate_kibana_discover_url'):
             kb_link = generate_kibana_discover_url(rule, matches[0])
             if kb_link:
-                matches[0]['kibana_discover_url'] = kb_link
+                kb_link_formatter = self.get_kibana_discover_external_url_formatter(rule)
+                matches[0]['kibana_discover_url'] =  kb_link_formatter.format(kb_link)
 
         # Enhancements were already run at match time if
         # run_enhancements_first is set or
@@ -1675,6 +1677,17 @@ class ElastAlerter(object):
         if not alert_sent:
             body['alert_exception'] = alert_exception
         return body
+
+    def get_kibana_discover_external_url_formatter(self, rule):
+        """ Gets or create the external url formatter for kibana discover links """
+        key = '__kibana_discover_external_url_formatter__'
+        formatter = rule.get(key)
+        if formatter is None:
+            shorten = rule.get('shorten_kibana_discover_url')
+            security_tenant = rule.get('kibana_discover_security_tenant')
+            formatter = create_kibana_external_url_formatter(rule, shorten, security_tenant)
+            rule[key] = formatter
+        return formatter
 
     def writeback(self, doc_type, body, rule=None, match_body=None):
         # ES 2.0 - 2.3 does not support dots in field names.
