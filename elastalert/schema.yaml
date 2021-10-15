@@ -233,6 +233,9 @@ properties:
   raw_count_keys: {type: boolean}
   generate_kibana_link: {type: boolean}
   kibana_dashboard: {type: string}
+  kibana_url: {type: string, format: uri}
+  kibana_username: {type: string}
+  kibana_password: {type: string}
   use_kibana_dashboard: {type: string}
   use_local_time: {type: boolean}
   custom_pretty_ts_format: {type: string}
@@ -250,12 +253,14 @@ properties:
 
   ### Kibana Discover App Link
   generate_kibana_discover_url: {type: boolean}
-  kibana_discover_app_url: {type: string, format: uri}
+  shorten_kibana_discover_url: {type: boolean}
+  kibana_discover_app_url: {type: string}
   kibana_discover_version: {type: string, enum: ['7.15', '7.14', '7.13', '7.12', '7.11', '7.10', '7.9', '7.8', '7.7', '7.6', '7.5', '7.4', '7.3', '7.2', '7.1', '7.0', '6.8', '6.7', '6.6', '6.5', '6.4', '6.3', '6.2', '6.1', '6.0', '5.6']}
   kibana_discover_index_pattern_id: {type: string, minLength: 1}
   kibana_discover_columns: {type: array, items: {type: string, minLength: 1}, minItems: 1}
   kibana_discover_from_timedelta: *timedelta
   kibana_discover_to_timedelta: *timedelta
+  kibana_discover_security_tenant: {type:string}
 
   # Alert Content
   alert_text: {type: string} # Python format string

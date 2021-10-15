@@ -88,6 +88,38 @@ def test_generate_kibana_discover_url_with_kibana_7x(kibana_version):
     assert url == expectedUrl
 
 
+def test_generate_kibana_discover_url_with_relative_kinbana_discover_app_url():
+    url = generate_kibana_discover_url(
+        rule={
+            'kibana_discover_app_url': 'app/discover#/',
+            'kibana_discover_version': '7.15',
+            'kibana_discover_index_pattern_id': '620ad0e6-43df-4557-bda2-384960fa9086',
+            'timestamp_field': 'timestamp'
+        },
+        match={
+            'timestamp': '2021-10-08T00:30:00Z'
+        }
+    )
+    expectedUrl = (
+        'app/discover#/'
+        + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
+        + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
+        + 'time%3A%28'  # time start
+        + 'from%3A%272021-10-08T00%3A20%3A00Z%27%2C'
+        + 'to%3A%272021-10-08T00%3A40%3A00Z%27'
+        + '%29'  # time end
+        + '%29'  # global end
+        + '&_a=%28'  # app start
+        + 'columns%3A%21%28_source%29%2C'
+        + 'filters%3A%21%28%29%2C'
+        + 'index%3A%27620ad0e6-43df-4557-bda2-384960fa9086%27%2C'
+        + 'interval%3Aauto'
+        + '%29'  # app end
+    )
+    assert url == expectedUrl
+
+
 def test_generate_kibana_discover_url_with_missing_kibana_discover_version():
     url = generate_kibana_discover_url(
         rule={

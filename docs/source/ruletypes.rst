@@ -64,6 +64,10 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``kibana_url`` (string, default from es_host)                |           |
 +--------------------------------------------------------------+           |
+| ``kibana_username`` (string, no default)                     |           |
++--------------------------------------------------------------+           |
+| ``kibana_password`` (string, no default)                     |           |
++--------------------------------------------------------------+           |
 | ``use_kibana4_dashboard`` (string, no default)               |           |
 +--------------------------------------------------------------+           |
 | ``kibana4_start_timedelta`` (time, default: 10 min)          |           |
@@ -72,11 +76,15 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``generate_kibana_discover_url`` (boolean, default False)    |           |
 +--------------------------------------------------------------+           |
+| ``shorten_kibana_discover_url`` (boolean, default False)     |           |
++--------------------------------------------------------------+           |
 | ``kibana_discover_app_url`` (string, no default)             |           |
 +--------------------------------------------------------------+           |
 | ``kibana_discover_version`` (string, no default)             |           |
 +--------------------------------------------------------------+           |
 | ``kibana_discover_index_pattern_id`` (string, no default)    |           |
++--------------------------------------------------------------+           |
+| ``kibana_discover_security_tenant``  (string, no default)    |           |
 +--------------------------------------------------------------+           |
 | ``kibana_discover_columns`` (list of strs, default _source)  |           |
 +--------------------------------------------------------------+           |
@@ -546,9 +554,33 @@ be uploaded to the kibana-int index as a temporary dashboard. (Optional, boolean
 kibana_url
 ^^^^^^^^^^
 
-``kibana_url``: The url to access Kibana. This will be used if ``generate_kibana_link`` or
-``use_kibana_dashboard`` is true. If not specified, a URL will be constructed using ``es_host`` and ``es_port``.
+``kibana_url``: The base url of the Kibana application. If not specified, a URL will be constructed using ``es_host``
+and ``es_port``.
+
+This value will be used if one of the following conditions are met:
+
+- ``generate_kibana_link`` is true
+- ``use_kibana_dashboard`` is true
+- ``use_kibana4_dashboard`` is true
+- ``generate_kibana_discover_url`` is true and ``kibana_discover_app_url`` is a relative path
+
 (Optional, string, default ``http://<es_host>:<es_port>/_plugin/kibana/``)
+
+kibana_username
+^^^^^^^^^^^^^^^
+
+``kibana_username``: The username used to make basic authenticated API requests against Kibana.
+This value is only used if ``shorten_kibana_discover_url`` is true.
+
+(Optional, string, no default)
+
+kibana_password
+^^^^^^^^^^^^^^^
+
+``kibana_password``: The password used to make basic authenticated API requests against Kibana.
+This value is only used if ``shorten_kibana_discover_url`` is true.
+
+(Optional, string, no default)
 
 use_kibana_dashboard
 ^^^^^^^^^^^^^^^^^^^^
@@ -608,13 +640,39 @@ Example usage::
     alert_text_args: [ kibana_discover_url ]
     alert_text_type: alert_text_only
 
+shorten_kibana_discover_url
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``shorten_kibana_discover_url``: Enables the shortening of the generated Kibana Discover urls.
+In order to use the Kibana Shorten URL REST API, the ``kibana_discover_app_url`` must be provided
+as a relative url (e.g. app/discover?#/).
+
+ElastAlert may need to authenticate with Kibana to invoke the Kibana Shorten URL REST API. The
+supported authentication methods are:
+
+- Basic authentication by specifying ``kibana_username`` and ``kibana_password``
+- AWS authentication (if configured already for ElasticSearch)
+
+(Optional, bool, false)
+
 kibana_discover_app_url
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 ``kibana_discover_app_url``: The url of the Kibana Discover application used to generate the ``kibana_discover_url`` variable.
 This value can use `$VAR` and `${VAR}` references to expand environment variables.
+This value should be relative to the base kibana url defined by ``kibana_url`` and will vary depending on your installation.
 
-``kibana_discover_app_url: http://kibana:5601/#/discover``
+``kibana_discover_app_url: app/discover#/``
+
+(Optional, string, no default)
+
+kibana_discover_security_tenant
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``kibana_discover_security_tenant``: The Kibana security tenant to include in the generated
+``kibana_discover_url`` variable.
+
+(Optional, string, no default)
 
 kibana_discover_version
 ^^^^^^^^^^^^^^^^^^^^^^^
