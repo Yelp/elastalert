@@ -14,7 +14,7 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.loaders import RulesLoader
 from elastalert.util import EAException
 
-test_config = {'rules_folder': 'test_folder',
+test_config = {'rules_folder': './empty_folder_test',
                'run_every': {'minutes': 10},
                'buffer_time': {'minutes': 10},
                'es_host': 'elasticsearch.test',
@@ -168,7 +168,7 @@ def test_load_inline_alert_rule():
 
 
 def test_file_rules_loader_get_names_recursive():
-    conf = {'scan_subdirectories': True, 'rules_folder': 'root'}
+    conf = {'scan_subdirectories': True, 'rules_folder': './empty_folder_test'}
     rules_loader = FileRulesLoader(conf)
     walk_paths = (('root', ['folder_a', 'folder_b'], ('rule.yaml',)),
                   ('root/folder_a', [], ('a.yaml', 'ab.yaml')),
