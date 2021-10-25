@@ -1407,6 +1407,55 @@ come from an individual event, usually the one which triggers the alert.
 
 When using ``alert_text_args``, you can access nested fields and index into arrays. For example, if your match was ``{"data": {"ips": ["127.0.0.1", "12.34.56.78"]}}``, then by using ``"data.ips[1]"`` in ``alert_text_args``, it would replace value with ``"12.34.56.78"``. This can go arbitrarily deep into fields and will still work on keys that contain dots themselves.
 
+Alertmanager
+~~~~~~~~~~~~
+
+This alert type will send alerts to Alertmanager postAlerts. ``alert_subject`` and ``alert_text`` are passed as the annotations labeled ``summary`` and ``description`` accordingly. The labels can be changed.
+See https://prometheus.io/docs/alerting/clients/ for more details about the Alertmanager alert format.
+
+Required:
+
+``alertmanager_hosts``: The list of hosts pointing to the Alertmanager.
+
+Optional:
+
+``alertmanager_api_version``: Defaults to `v1`.  Set to `v2` to enable the Alertmanager V2 API postAlerts.
+
+``alertmanager_alertname``: ``alertname`` is the only required label. Defaults to using the rule name of the alert.
+
+``alertmanager_labels``: Key:value pairs of arbitrary labels to be attached to every alert. Keys should match the regular expression ``^[a-zA-Z_][a-zA-Z0-9_]*$``.
+
+``alertmanager_annotations``: Key:value pairs of arbitrary annotations to be attached to every alert. Keys should match the regular expression ``^[a-zA-Z_][a-zA-Z0-9_]*$``.
+
+``alertmanager_fields``: Key:value pairs of labels and corresponding match fields. When using ``alertmanager_fields`` you can access nested fields and index into arrays the same way as with ``alert_text_args``. Keys should match the regular expression ``^[a-zA-Z_][a-zA-Z0-9_]*$``. This dictionary will be merged with the ``alertmanager_labels``.
+
+``alertmanager_alert_subject_labelname``: Rename the annotations' label name for ``alert_subject``. Default is ``summary``.
+
+``alertmanager_alert_text_labelname``: Rename the annotations' label name for ``alert_text``. Default is ``description``.
+
+``alertmanager_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Alertmanager. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+
+``alertmanager_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
+
+``alertmanager_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+
+``alertmanager_timeout``: You can specify a timeout value, in seconds, for making communicating with Alertmanager. The default is 10. If a timeout occurs, the alert will be retried next time ElastAlert 2 cycles.
+
+Example usage::
+
+  alert:
+    - "alertmanager"
+  alertmanager_hosts:
+    - "http://alertmanager:9093"
+  alertmanager_alertname: "Title"
+  alertmanager_annotations:
+    severity: "error"
+  alertmanager_labels:
+    source: "elastalert"
+  alertmanager_fields:
+    msg: "message"
+    log: "@log_name"
+
 Command
 ~~~~~~~
 

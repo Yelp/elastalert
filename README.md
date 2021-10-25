@@ -40,6 +40,7 @@ Several rule types with common monitoring paradigms are included with ElastAlert
 Currently, we have built-in support for the following alert types:
 
 - Alerta
+- Alertmanager
 - Amazon Simple Notification Service (AWS SNS)
 - Command
 - Datadog

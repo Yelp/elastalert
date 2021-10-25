@@ -78,6 +78,7 @@ class RulesLoader(object):
         'gitter': alerts.GitterAlerter,
         'servicenow': alerts.ServiceNowAlerter,
         'alerta': alerts.AlertaAlerter,
+        'alertmanager': alerts.AlertmanagerAlerter,
         'post': alerts.HTTPPostAlerter,
         'linenotify': alerts.LineNotifyAlerter,
         'hivealerter': alerts.HiveAlerter,

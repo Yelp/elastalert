@@ -387,6 +387,51 @@ properties:
   alerta_attributes_keys: {type: array, items: {type: string}}
   alerta_attributes_values: {type: array, items: {type: string}}  # Python format string
 
+ ### Alertmanager
+  alertmanager_hosts: {type: array, items: {type: string}}
+  alertmanager_api_version: {type: string, enum: ['v1', 'v2']}
+  alertmanager_alert_subject_labelname: {type: string}
+  alertmanager_alert_text_labelname: {type: string}
+  alertmanager_proxy: {type: string}
+  alertmanager_ca_certs: {type: boolean}
+  alertmanager_ignore_ssl_errors: {type: boolean}
+  alertmanager_timeout: {type: integer}
+  alertmanager_labels:
+    type: object
+    minProperties: 1
+    patternProperties:
+      "^.+$":
+        oneOf:
+          - type: string
+          - type: object
+            additionalProperties: false
+            required: [field]
+            properties:
+              field: {type: string, minLength: 1}
+  alertmanager_annotations:
+    type: object
+    minProperties: 1
+    patternProperties:
+      "^.+$":
+        oneOf:
+          - type: string
+          - type: object
+            additionalProperties: false
+            required: [field]
+            properties:
+              field: {type: string, minLength: 1}
+  alertmanager_fields:
+    type: object
+    minProperties: 1
+    patternProperties:
+      "^.+$":
+        oneOf:
+          - type: string
+          - type: object
+            additionalProperties: false
+            required: [field]
+            properties:
+              field: {type: string, minLength: 1}
 
   ### Simple
   simple_webhook_url: *arrayOfString
