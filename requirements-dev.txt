@@ -1,10 +1,9 @@
 -r requirements.txt
-coverage==5.5
-docutils<0.17
+coverage==6.0.2
 flake8
 pre-commit
-pylint<2.10
-pytest==6.2.4
+pylint<2.12
+pytest==6.2.5
 setuptools
 sphinx_rtd_theme
-tox==3.24.1
+tox==3.24.4
