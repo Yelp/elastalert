@@ -160,7 +160,7 @@ Examples of different types of rules can be found in example_rules/.
 increases by a given factor. This example will send an email alert when there are 3 times more events matching a filter occurring within the
 last 2 hours than the number of events in the previous 2 hours.
 
-- ``example_frequency.yaml`` is an example of the "frequency" rule type, which will alert when there are a given number of events occuring
+- ``example_frequency.yaml`` is an example of the "frequency" rule type, which will alert when there are a given number of events occurring
 within a time period. This example will send an email when 50 documents matching a given filter occur within a 4 hour timeframe.
 
 - ``example_change.yaml`` is an example of the "change" rule type, which will alert when a certain field in two documents changes. In this example,
@@ -277,7 +277,7 @@ status:
 
 ### How can I make the alert come at a certain time?
 
-The ``aggregation`` feature will take every alert that has occured over a period of time and send them together in one alert. You can use cron style syntax to send all alerts that have occured since the last once by using
+The ``aggregation`` feature will take every alert that has occurred over a period of time and send them together in one alert. You can use cron style syntax to send all alerts that have occurred since the last once by using
 
 ```
 aggregation:
@@ -300,7 +300,7 @@ buffer_time:
   minutes: 5
 ```
 
-By default, ElastAlert will download every document in full before processing them. Instead, you can have ElastAlert simply get a count of the number of documents that have occured in between each query. To do this, set ``use_count_query: true``. This cannot be used if you use ``query_key``, because ElastAlert will not know the contents of each documents, just the total number of them. This also reduces the precision of alerts, because all events that occur between each query will be rounded to a single timestamp.
+By default, ElastAlert will download every document in full before processing them. Instead, you can have ElastAlert simply get a count of the number of documents that have occurred in between each query. To do this, set ``use_count_query: true``. This cannot be used if you use ``query_key``, because ElastAlert will not know the contents of each documents, just the total number of them. This also reduces the precision of alerts, because all events that occur between each query will be rounded to a single timestamp.
 
 If you are using ``query_key`` (a single key, not multiple keys) you can use ``use_terms_query``. This will make ElastAlert perform a terms aggregation to get the counts for each value of a certain field. Both ``use_terms_query`` and ``use_count_query`` also require ``doc_type`` to be set to the ``_type`` of the documents. They may not be compatible with all rule types.
 
