@@ -25,6 +25,7 @@
 - Upgrade to Python 3.10 and Sphinx 4.2.0 - [#501](https://github.com/jertel/elastalert2/pull/501) - @jertel
 - max_scrolling_count now has a default value of 990 to avoid stack overflow crashes - [#509](https://github.com/jertel/elastalert2/pull/509) - @jertel
 - Update pytest 6.2.5, pytest-cov 3.0.0, pytest-xdist 2.4.0, pylint<2.12, tox 3.24.4 - [#511](https://github.com/jertel/elastalert2/pull/511) - @nsano-rururu
+- Added a check on the value of the path "rules_folder" to make sure it exists - [#519](https://github.com/jertel/elastalert2/pull/519) - @AntoineBlaud
 
 # 2.2.2
 
@@ -47,8 +48,6 @@
 - [Docs] The documentation has been updated as the name of Amazon Elasticsearch Service has changed to Amazon OpenSearch Service. - [#478](https://github.com/jertel/elastalert2/pull/478) - @nsano-rururu
 - [Tests] Improve test coverage of tencentsms.py - [#479](https://github.com/jertel/elastalert2/pull/479) - @liuxingjun
 - [Docs] Tidy Exotel documentation - [#488](https://github.com/jertel/elastalert2/pull/488) - @ferozsalam
-- Added a check on the value of the path "rules_folder" to make sure it exists. - @AntoineBlaud
-- [Tests] Updated loaders_test by adding test_file_rules_loader_get_names_invalid_path. - @AntoineBlaud
 
 # 2.2.1
 
