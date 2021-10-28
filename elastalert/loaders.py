@@ -552,6 +552,8 @@ class FileRulesLoader(RulesLoader):
         rule_files = []
         if 'scan_subdirectories' in conf and conf['scan_subdirectories']:
             for ruledir in rule_folders:
+                if not os.path.exists(ruledir):
+                    raise EAException('Specified rule_folder does not exist: %s ' % ruledir)
                 for root, folders, files in os.walk(ruledir, followlinks=True):
                     # Openshift/k8s configmap fix for ..data and ..2021_05..date directories that loop with os.walk()
                     folders[:] = [d for d in folders if not d.startswith('..')]
