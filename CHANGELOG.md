@@ -46,6 +46,8 @@
 - [Docs] The documentation has been updated as the name of Amazon Elasticsearch Service has changed to Amazon OpenSearch Service. - [#478](https://github.com/jertel/elastalert2/pull/478) - @nsano-rururu
 - [Tests] Improve test coverage of tencentsms.py - [#479](https://github.com/jertel/elastalert2/pull/479) - @liuxingjun
 - [Docs] Tidy Exotel documentation - [#488](https://github.com/jertel/elastalert2/pull/488) - @ferozsalam
+- Added a check on the value of the path "rules_folder" to make sure it exists. - @AntoineBlaud
+- [Tests] Updated loaders_test by adding test_file_rules_loader_get_names_invalid_path. - @AntoineBlaud
 
 # 2.2.1
 
