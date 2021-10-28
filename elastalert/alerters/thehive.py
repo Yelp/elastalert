@@ -80,7 +80,7 @@ class HiveAlerter(Alerter):
             'customFields': {},
             'date': int(time.time()) * 1000,
             'description': self.create_alert_body(matches),
-            'sourceRef': str(uuid.uuid4())[0:6],
+            'sourceRef': str(uuid.uuid4()),
             'tags': [],
             'title': self.create_title(matches),
         }
