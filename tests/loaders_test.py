@@ -190,10 +190,11 @@ def test_file_rules_loader_get_names_invalid_path():
     conf = {'scan_subdirectories': True, 'rules_folder': './folder_missing#XYZ'}
     try:
         # folder missing so FileRulesLoader must throws an error
-        rules_loader = FileRulesLoader(conf)
-        assert False
-    except:
+        if FileRulesLoader(conf).get_names(conf):
+            assert False
+    except EAException:
         pass
+
 
 def test_file_rules_loader_get_names():
 
