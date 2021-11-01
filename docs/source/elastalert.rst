@@ -42,6 +42,7 @@ Currently, we have support built in for these alert types:
 - Gitter
 - GoogleChat
 - HTTP POST
+- HTTP POST 2
 - Jira
 - Line Notify
 - Mattermost

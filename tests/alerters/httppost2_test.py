@@ -458,6 +458,39 @@ def test_http_alerter_with_header_args_key_not_found(caplog):
     assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
 
 
+def test_http_alerter_with_payload_nested(caplog):
+    caplog.set_level(logging.INFO)
+    rule = {
+        'name': 'Test HTTP Post Alerter With Payload',
+        'type': 'any',
+        'http_post_url': 'http://test.webhook.url',
+        'http_post_payload': {'posted_name': '{{ toto.tata }}'},
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = HTTPPost2Alerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'toto': {'tata': 'titi'}
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'posted_name': 'titi',
+    }
+    mock_post_request.assert_called_once_with(
+        rule['http_post_url'],
+        data=mock.ANY,
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
+        proxies=None,
+        timeout=10,
+        verify=True
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+
+
 def test_http_alerter_with_payload_all_values():
     rule = {
         'name': 'Test HTTP Post Alerter With Payload',
