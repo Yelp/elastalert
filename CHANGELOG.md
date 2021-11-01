@@ -18,7 +18,7 @@
 - [Alertmanager] Added support for Alertmanager - [#503](https://github.com/jertel/elastalert2/pull/503) - @nsano-rururu
 - Add summary_table_max_rows optional configuration to limit rows in summary tables - [#508](https://github.com/jertel/elastalert2/pull/508) - @mdavyt92
 - Added support for shortening Kibana Discover URLs using Kibana Shorten URL API - [#512](https://github.com/jertel/elastalert2/pull/512) - @JeffAshton
-- Added new alerter `HTTP Post 2` which allow more flexibility to build the body/headers of the request.
+- Added new alerter `HTTP Post 2` which allow more flexibility to build the body/headers of the request. - [#512](https://github.com/jertel/elastalert2/pull/530) - @lepouletsuisse
 
 ## Other changes
 - [Docs] Add exposed metrics documentation - [#498](https://github.com/jertel/elastalert2/pull/498) - @thisisxgp

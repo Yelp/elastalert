@@ -10,22 +10,22 @@ from jinja2 import Template
 
 class HTTPPost2Alerter(Alerter):
     """ Requested elasticsearch indices are sent by HTTP POST. Encoded with JSON. """
-    required_options = frozenset(['http_post_url'])
+    required_options = frozenset(['http_post2_url'])
 
     def __init__(self, rule):
         super(HTTPPost2Alerter, self).__init__(rule)
-        post_url = self.rule.get('http_post_url', None)
+        post_url = self.rule.get('http_post2_url', None)
         if isinstance(post_url, str):
             post_url = [post_url]
         self.post_url = post_url
-        self.post_proxy = self.rule.get('http_post_proxy', None)
-        self.post_payload = self.rule.get('http_post_payload', {})
-        self.post_raw_fields = self.rule.get('http_post_raw_fields', {})
-        self.post_all_values = self.rule.get('http_post_all_values', not self.post_payload)
-        self.post_http_headers = self.rule.get('http_post_headers', {})
-        self.post_ca_certs = self.rule.get('http_post_ca_certs')
-        self.post_ignore_ssl_errors = self.rule.get('http_post_ignore_ssl_errors', False)
-        self.timeout = self.rule.get('http_post_timeout', 10)
+        self.post_proxy = self.rule.get('http_post2_proxy', None)
+        self.post_payload = self.rule.get('http_post2_payload', {})
+        self.post_raw_fields = self.rule.get('http_post2_raw_fields', {})
+        self.post_all_values = self.rule.get('http_post2_all_values', not self.post_payload)
+        self.post_http_headers = self.rule.get('http_post2_headers', {})
+        self.post_ca_certs = self.rule.get('http_post2_ca_certs')
+        self.post_ignore_ssl_errors = self.rule.get('http_post2_ignore_ssl_errors', False)
+        self.timeout = self.rule.get('http_post2_timeout', 10)
 
     def alert(self, matches):
         """ Each match will trigger a POST to the specified endpoint(s). """
@@ -71,5 +71,5 @@ class HTTPPost2Alerter(Alerter):
             elastalert_logger.info("HTTP Post alert sent.")
 
     def get_info(self):
-        return {'type': 'http_post',
-                'http_post_webhook_url': self.post_url}
+        return {'type': 'http_post2',
+                'http_post2_webhook_url': self.post_url}

@@ -16,8 +16,8 @@ def test_http_alerter_with_payload(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Payload',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_payload': {'posted_name': 'toto'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'posted_name': 'toto'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -33,7 +33,7 @@ def test_http_alerter_with_payload(caplog):
         'posted_name': 'toto',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -49,10 +49,10 @@ def test_http_alerter_with_payload_raw_fields(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Payload and raw fields',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_payload': {'posted_name': 'toto'},
-        'http_post_raw_fields': {'posted_raw_field': 'somefield'},
-        'http_post_static_payload': {'name': 'somestaticname'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'posted_name': 'toto'},
+        'http_post2_raw_fields': {'posted_raw_field': 'somefield'},
+        'http_post2_static_payload': {'name': 'somestaticname'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -69,7 +69,7 @@ def test_http_alerter_with_payload_raw_fields(caplog):
         'posted_raw_field': 'foobarbaz'
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -85,10 +85,10 @@ def test_http_alerter_with_payload_raw_fields_overwrite(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter raw fields overwrite payload',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_payload': {'posted_name': 'toto', 'overwrite_field': 'tata'},
-        'http_post_raw_fields': {'overwrite_field': 'somefield'},
-        'http_post_static_payload': {'name': 'somestaticname'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'posted_name': 'toto', 'overwrite_field': 'tata'},
+        'http_post2_raw_fields': {'overwrite_field': 'somefield'},
+        'http_post2_static_payload': {'name': 'somestaticname'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -105,7 +105,7 @@ def test_http_alerter_with_payload_raw_fields_overwrite(caplog):
         'overwrite_field': 'foobarbaz'
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -121,8 +121,8 @@ def test_http_alerter_with_payload_no_clash(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Payload has no clash with the match fields',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_payload': {'posted_name': 'toto'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'posted_name': 'toto'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -138,7 +138,7 @@ def test_http_alerter_with_payload_no_clash(caplog):
         'posted_name': 'toto',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -154,8 +154,8 @@ def test_http_alerter_with_payload_args_keys(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Payload args for the key',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_payload': {'args_{{some_field}}': 'tata'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'args_{{some_field}}': 'tata'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -171,7 +171,7 @@ def test_http_alerter_with_payload_args_keys(caplog):
         'args_toto': 'tata',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -187,8 +187,8 @@ def test_http_alerter_with_payload_args_key_not_found(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Payload args for the key if not found',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_payload': {'args_{{some_field1}}': 'tata'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'args_{{some_field1}}': 'tata'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -204,7 +204,7 @@ def test_http_alerter_with_payload_args_key_not_found(caplog):
         'args_': 'tata',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -220,8 +220,8 @@ def test_http_alerter_with_payload_args_value(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Payload args for the value',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_payload': {'posted_name': 'toto', 'args_name': '{{some_field}}'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'posted_name': 'toto', 'args_name': '{{some_field}}'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -238,7 +238,7 @@ def test_http_alerter_with_payload_args_value(caplog):
         'args_name': 'foobarbaz',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -254,8 +254,8 @@ def test_http_alerter_with_payload_args_value_not_found(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Payload args for the value if not found',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_payload': {'posted_name': 'toto', 'args_name': '{{some_field1}}'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'posted_name': 'toto', 'args_name': '{{some_field1}}'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -272,7 +272,7 @@ def test_http_alerter_with_payload_args_value_not_found(caplog):
         'args_name': '',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -288,9 +288,9 @@ def test_http_alerter_with_header_no_clash(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Headers has no clash with the match fields',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_headers': {'header_name': 'titi'},
-        'http_post_payload': {'posted_name': 'toto'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_headers': {'header_name': 'titi'},
+        'http_post2_payload': {'posted_name': 'toto'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -308,7 +308,7 @@ def test_http_alerter_with_header_no_clash(caplog):
         'header_name': 'titi'
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers=expected_headers,
         proxies=None,
@@ -323,9 +323,9 @@ def test_http_alerter_with_header_args_value(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Headers args value',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_headers': {'header_name': '{{titi}}'},
-        'http_post_payload': {'posted_name': 'toto'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_headers': {'header_name': '{{titi}}'},
+        'http_post2_payload': {'posted_name': 'toto'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -343,7 +343,7 @@ def test_http_alerter_with_header_args_value(caplog):
         'header_name': 'foobarbaz'
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers=expected_headers,
         proxies=None,
@@ -358,9 +358,9 @@ def test_http_alerter_with_header_args_value_not_found(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Headers args value if not found',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_headers': {'header_name': '{{titi1}}'},
-        'http_post_payload': {'posted_name': 'toto'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_headers': {'header_name': '{{titi1}}'},
+        'http_post2_payload': {'posted_name': 'toto'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -378,7 +378,7 @@ def test_http_alerter_with_header_args_value_not_found(caplog):
         'header_name': ''
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers=expected_headers,
         proxies=None,
@@ -393,9 +393,9 @@ def test_http_alerter_with_header_args_key(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Headers args key',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_headers': {'header_{{titi}}': 'tata'},
-        'http_post_payload': {'posted_name': 'toto'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_headers': {'header_{{titi}}': 'tata'},
+        'http_post2_payload': {'posted_name': 'toto'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -413,7 +413,7 @@ def test_http_alerter_with_header_args_key(caplog):
         'header_foobarbaz': 'tata'
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers=expected_headers,
         proxies=None,
@@ -428,9 +428,9 @@ def test_http_alerter_with_header_args_key_not_found(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Headers args key if not found',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_headers': {'header_{{titi1}}': 'tata'},
-        'http_post_payload': {'posted_name': 'toto'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_headers': {'header_{{titi1}}': 'tata'},
+        'http_post2_payload': {'posted_name': 'toto'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -448,7 +448,7 @@ def test_http_alerter_with_header_args_key_not_found(caplog):
         'header_': 'tata'
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers=expected_headers,
         proxies=None,
@@ -463,8 +463,8 @@ def test_http_alerter_with_payload_nested(caplog):
     rule = {
         'name': 'Test HTTP Post Alerter With Payload',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_payload': {'posted_name': '{{ toto.tata }}'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'posted_name': '{{ toto.tata }}'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -480,7 +480,7 @@ def test_http_alerter_with_payload_nested(caplog):
         'posted_name': 'titi',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -495,9 +495,9 @@ def test_http_alerter_with_payload_all_values():
     rule = {
         'name': 'Test HTTP Post Alerter With Payload',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_payload': {'posted_name': 'toto'},
-        'http_post_all_values': True,
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'posted_name': 'toto'},
+        'http_post2_all_values': True,
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -515,7 +515,7 @@ def test_http_alerter_with_payload_all_values():
         'somefield': 'foobarbaz'
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -529,7 +529,7 @@ def test_http_alerter_without_payload():
     rule = {
         'name': 'Test HTTP Post Alerter Without Payload',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
+        'http_post2_url': 'http://test.webhook.url',
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -546,7 +546,7 @@ def test_http_alerter_without_payload():
         'somefield': 'foobarbaz',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -560,8 +560,8 @@ def test_http_alerter_proxy():
     rule = {
         'name': 'Test HTTP Post Alerter Without Payload',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_proxy': 'http://proxy.url',
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_proxy': 'http://proxy.url',
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -578,7 +578,7 @@ def test_http_alerter_proxy():
         'somefield': 'foobarbaz',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies={'https': 'http://proxy.url'},
@@ -592,8 +592,8 @@ def test_http_alerter_timeout():
     rule = {
         'name': 'Test HTTP Post Alerter Without Payload',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_timeout': 20,
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_timeout': 20,
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -610,7 +610,7 @@ def test_http_alerter_timeout():
         'somefield': 'foobarbaz',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -624,8 +624,8 @@ def test_http_alerter_headers():
     rule = {
         'name': 'Test HTTP Post Alerter Without Payload',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
-        'http_post_headers': {'authorization': 'Basic 123dr3234'},
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_headers': {'authorization': 'Basic 123dr3234'},
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -642,7 +642,7 @@ def test_http_alerter_headers():
         'somefield': 'foobarbaz',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8', 'authorization': 'Basic 123dr3234'},
         proxies=None,
@@ -667,14 +667,14 @@ def test_http_alerter_post_ca_certs(ca_certs, ignore_ssl_errors, excpet_verify):
     rule = {
         'name': 'Test HTTP Post Alerter Without Payload',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
+        'http_post2_url': 'http://test.webhook.url',
         'alert': []
     }
     if ca_certs:
-        rule['http_post_ca_certs'] = ca_certs
+        rule['http_post2_ca_certs'] = ca_certs
 
     if ignore_ssl_errors:
-        rule['http_post_ignore_ssl_errors'] = ignore_ssl_errors
+        rule['http_post2_ignore_ssl_errors'] = ignore_ssl_errors
 
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
@@ -690,7 +690,7 @@ def test_http_alerter_post_ca_certs(ca_certs, ignore_ssl_errors, excpet_verify):
         'somefield': 'foobarbaz',
     }
     mock_post_request.assert_called_once_with(
-        rule['http_post_url'],
+        rule['http_post2_url'],
         data=mock.ANY,
         headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
         proxies=None,
@@ -705,8 +705,8 @@ def test_http_alerter_post_ea_exception():
         rule = {
             'name': 'Test HTTP Post Alerter Without Payload',
             'type': 'any',
-            'http_post_url': 'http://test.webhook.url',
-            'http_post_ca_certs': False,
+            'http_post2_url': 'http://test.webhook.url',
+            'http_post2_ca_certs': False,
             'alert': []
         }
         rules_loader = FileRulesLoader({})
@@ -726,7 +726,7 @@ def test_http_getinfo():
     rule = {
         'name': 'Test HTTP Post Alerter Without Payload',
         'type': 'any',
-        'http_post_url': 'http://test.webhook.url',
+        'http_post2_url': 'http://test.webhook.url',
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -734,22 +734,22 @@ def test_http_getinfo():
     alert = HTTPPost2Alerter(rule)
 
     expected_data = {
-        'type': 'http_post',
-        'http_post_webhook_url': ['http://test.webhook.url']
+        'type': 'http_post2',
+        'http_post2_webhook_url': ['http://test.webhook.url']
     }
     actual_data = alert.get_info()
     assert expected_data == actual_data
 
 
-@pytest.mark.parametrize('http_post_url, expected_data', [
-    ('',  'Missing required option(s): http_post_url'),
+@pytest.mark.parametrize('http_post2_url, expected_data', [
+    ('',  'Missing required option(s): http_post2_url'),
     ('http://test.webhook.url',
         {
-            'type': 'http_post',
-            'http_post_webhook_url': ['http://test.webhook.url']
+            'type': 'http_post2',
+            'http_post2_webhook_url': ['http://test.webhook.url']
         }),
 ])
-def test_http_required_error(http_post_url, expected_data):
+def test_http_required_error(http_post2_url, expected_data):
     try:
         rule = {
             'name': 'Test HTTP Post Alerter Without Payload',
@@ -757,8 +757,8 @@ def test_http_required_error(http_post_url, expected_data):
             'alert': []
         }
 
-        if http_post_url:
-            rule['http_post_url'] = http_post_url
+        if http_post2_url:
+            rule['http_post2_url'] = http_post2_url
 
         rules_loader = FileRulesLoader({})
         rules_loader.load_modules(rule)
