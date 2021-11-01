@@ -2210,7 +2210,7 @@ Example usage::
       authorization: Basic 123dr3234
 
 HTTP POST 2
-~~~~~~~~~
+~~~~~~~~~~~
 
 This alert type will send results to a JSON endpoint using HTTP POST. The key names are configurable so this is compatible with almost any endpoint. By default, the JSON will contain all the items from the match, unless you specify http_post_payload, in which case it will only contain those items.
 This alert is a more flexible version of the HTTP Post alerter.
@@ -2242,11 +2242,13 @@ Example usage::
     alert: post
     http_post_url: "http://example.com/api"
     http_post_payload:
+      description: "An event came from IP {{clientip}}"
+      username: "{{user.name}}"
+    http_post_raw_fields:
       ip: clientip
-    http_post_static_payload:
-      apikey: abc123
     http_post_headers:
       authorization: Basic 123dr3234
+      X-custom-type: {{type}}
 
 Jira
 ~~~~
