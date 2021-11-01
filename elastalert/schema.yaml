@@ -444,6 +444,13 @@ properties:
   http_post_ignore_ssl_errors: {type: boolean}
   http_post_timeout: {type: integer}
 
+  ### HTTP POST 2
+  http_post2_url: *arrayOfString
+  http_post2_proxy: { type: string }
+  http_post2_ca_certs: { type: boolean }
+  http_post2_ignore_ssl_errors: { type: boolean }
+  http_post2_timeout: { type: integer }
+
   ### Jira
   jira_server: {type: string}
   jira_project: {type: string}
