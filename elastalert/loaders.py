@@ -23,6 +23,7 @@ import elastalert.alerters.exotel
 import elastalert.alerters.gitter
 import elastalert.alerters.googlechat
 import elastalert.alerters.httppost
+import elastalert.alerters.httppost2
 import elastalert.alerters.line
 import elastalert.alerters.pagertree
 import elastalert.alerters.rocketchat
@@ -111,6 +112,7 @@ class RulesLoader(object):
         'servicenow': elastalert.alerters.servicenow.ServiceNowAlerter,
         'alerta': elastalert.alerters.alerta.AlertaAlerter,
         'post': elastalert.alerters.httppost.HTTPPostAlerter,
+        'post2': elastalert.alerters.httppost2.HTTPPost2Alerter,
         'pagertree': elastalert.alerters.pagertree.PagerTreeAlerter,
         'linenotify': elastalert.alerters.line.LineNotifyAlerter,
         'hivealerter': elastalert.alerters.thehive.HiveAlerter,
