@@ -67,8 +67,8 @@ class HTTPPost2Alerter(Alerter):
                                              verify=verify)
                     response.raise_for_status()
                 except RequestException as e:
-                    raise EAException("Error posting HTTP Post alert: %s" % e)
-            elastalert_logger.info("HTTP Post alert sent.")
+                    raise EAException("Error posting HTTP Post 2 alert: %s" % e)
+            elastalert_logger.info("HTTP Post 2 alert sent.")
 
     def get_info(self):
         return {'type': 'http_post2',

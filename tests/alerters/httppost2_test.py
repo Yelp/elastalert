@@ -41,7 +41,7 @@ def test_http_alerter_with_payload(caplog):
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_payload_raw_fields(caplog):
@@ -77,7 +77,7 @@ def test_http_alerter_with_payload_raw_fields(caplog):
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_payload_raw_fields_overwrite(caplog):
@@ -113,7 +113,7 @@ def test_http_alerter_with_payload_raw_fields_overwrite(caplog):
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_payload_no_clash(caplog):
@@ -146,7 +146,7 @@ def test_http_alerter_with_payload_no_clash(caplog):
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_payload_args_keys(caplog):
@@ -179,7 +179,7 @@ def test_http_alerter_with_payload_args_keys(caplog):
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_payload_args_key_not_found(caplog):
@@ -212,7 +212,7 @@ def test_http_alerter_with_payload_args_key_not_found(caplog):
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_payload_args_value(caplog):
@@ -246,7 +246,7 @@ def test_http_alerter_with_payload_args_value(caplog):
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_payload_args_value_not_found(caplog):
@@ -280,7 +280,7 @@ def test_http_alerter_with_payload_args_value_not_found(caplog):
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_header_no_clash(caplog):
@@ -315,7 +315,7 @@ def test_http_alerter_with_header_no_clash(caplog):
         timeout=10,
         verify=True
     )
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_header_args_value(caplog):
@@ -350,7 +350,7 @@ def test_http_alerter_with_header_args_value(caplog):
         timeout=10,
         verify=True
     )
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_header_args_value_not_found(caplog):
@@ -385,7 +385,7 @@ def test_http_alerter_with_header_args_value_not_found(caplog):
         timeout=10,
         verify=True
     )
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_header_args_key(caplog):
@@ -420,7 +420,7 @@ def test_http_alerter_with_header_args_key(caplog):
         timeout=10,
         verify=True
     )
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_header_args_key_not_found(caplog):
@@ -455,7 +455,7 @@ def test_http_alerter_with_header_args_key_not_found(caplog):
         timeout=10,
         verify=True
     )
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_payload_nested(caplog):
@@ -488,7 +488,7 @@ def test_http_alerter_with_payload_nested(caplog):
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-    assert ('elastalert', logging.INFO, 'HTTP Post alert sent.') == caplog.record_tuples[0]
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
 
 
 def test_http_alerter_with_payload_all_values():
@@ -719,7 +719,7 @@ def test_http_alerter_post_ea_exception():
         mock_run = mock.MagicMock(side_effect=RequestException)
         with mock.patch('requests.post', mock_run), pytest.raises(RequestException):
             alert.alert([match])
-    assert 'Error posting HTTP Post alert: ' in str(ea)
+    assert 'Error posting HTTP Post 2 alert: ' in str(ea)
 
 
 def test_http_getinfo():
