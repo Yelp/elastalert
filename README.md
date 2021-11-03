@@ -9,7 +9,7 @@ ElastAlert 2 is backwards compatible with the original [ElastAlert][0] rules.
 ## Docker and Kubernetes
 
 ElastAlert 2 is well-suited to being run as a microservice, and is available
-as a [Docker container][2]. For more instructions on how to
+as an image on [Docker Hub][2] and on [GitHub Container Registry][11]. For more instructions on how to
 configure and run ElastAlert 2 using Docker, see [here][8].
 
 A [Helm chart][7] is also included for easy configuration as a Kubernetes deployment. 
@@ -39,3 +39,4 @@ ElastAlert 2 is licensed under the [Apache License, Version 2.0][5].
 [8]: https://elastalert2.readthedocs.io/en/latest/running_elastalert.html
 [9]: https://opensearch.org/
 [10]: https://github.com/elastic/elasticsearch
+[11]: https://github.com/jertel/elastalert2/pkgs/container/elastalert2%2Felastalert2
