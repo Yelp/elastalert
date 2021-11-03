@@ -87,9 +87,9 @@ class OpsGenieAlerter(Alerter):
         if self.source:
             post['source'] = self.source.format(**matches[0])
 
+        post['tags'] = []
         for i, tag in enumerate(self.tags):
-            self.tags[i] = tag.format(**matches[0])
-        post['tags'] = self.tags
+            post['tags'].append(tag.format(**matches[0]))
 
         priority = self.priority
         if priority:

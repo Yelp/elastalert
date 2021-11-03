@@ -401,23 +401,12 @@ def test_opsgenie_details_with_environment_variable_replacement(environ):
     assert expected_json == actual_json
 
 
-def test_opsgenie_tags():
-    rule = {
-        'name': 'Opsgenie Details',
-        'type': mock_rule(),
-        'opsgenie_account': 'genies',
-        'opsgenie_key': 'ogkey',
-        'opsgenie_details': {
-            'Message': {'field': 'message'},
-            'Missing': {'field': 'missing'}
-        },
-        'opsgenie_tags': ['test1', 'test2']
-    }
+def validateAlertTag(alert, rule, tagvalue):
     match = {
         'message': 'Testing',
+        'somefield': tagvalue,
         '@timestamp': '2014-10-31T00:00:00'
     }
-    alert = OpsGenieAlerter(rule)
 
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
@@ -438,11 +427,29 @@ def test_opsgenie_tags():
         'message': 'ElastAlert: Opsgenie Details',
         'priority': None,
         'source': 'ElastAlert',
-        'tags': ['test1', 'test2', 'ElastAlert', 'Opsgenie Details'],
+        'tags': [tagvalue, 'test2', 'ElastAlert', 'Opsgenie Details'],
         'user': 'genies'
     }
     actual_json = mock_post_request.call_args_list[0][1]['json']
     assert expected_json == actual_json
+
+
+def test_opsgenie_tags():
+    rule = {
+        'name': 'Opsgenie Details',
+        'type': mock_rule(),
+        'opsgenie_account': 'genies',
+        'opsgenie_key': 'ogkey',
+        'opsgenie_details': {
+            'Message': {'field': 'message'},
+            'Missing': {'field': 'missing'}
+        },
+        'opsgenie_tags': ['{somefield}', 'test2']
+    }
+
+    alert = OpsGenieAlerter(rule)
+    validateAlertTag(alert, rule, 'somevalue')
+    validateAlertTag(alert, rule, 'anothervalue')
 
 
 def test_opsgenie_message():
