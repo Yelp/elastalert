@@ -76,7 +76,7 @@ As a Docker container
 =====================
 
 If you're interested in a pre-built Docker image check out the
-elastalert2 container image on `Docker Hub<https://hub.docker.com/r/jertel/elastalert2>`_ or `GitHub Container Registry<https://github.com/jertel/elastalert2/pkgs/container/elastalert2%2Felastalert2>`_. Both images are published for each release. Use GitHub Container Registry if you are running into Docker Hub usage limits.
+elastalert2 container image on `Docker Hub <https://hub.docker.com/r/jertel/elastalert2>`_ or `GitHub Container Registry <https://github.com/jertel/elastalert2/pkgs/container/elastalert2%2Felastalert2>`_. Both images are published for each release. Use GitHub Container Registry if you are running into Docker Hub usage limits.
 
 Be aware that the ``latest`` tag of the image represents the latest commit into
 the master branch. If you prefer to upgrade more slowly you will need utilize a
