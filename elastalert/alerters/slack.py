@@ -44,6 +44,7 @@ class SlackAlerter(Alerter):
         self.slack_author_link = self.rule.get('slack_author_link', '')
         self.slack_author_icon = self.rule.get('slack_author_icon', '')
         self.slack_msg_pretext = self.rule.get('slack_msg_pretext', '')
+        self.slack_jira_url = self.rule.get('slack_jira_url', False)
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -94,6 +95,18 @@ class SlackAlerter(Alerter):
         # if we have defined fields, populate noteable fields for the alert
         if self.slack_alert_fields != '':
             payload['attachments'][0]['fields'] = self.populate_fields(matches)
+
+        if self.slack_jira_url:
+            if self.pipeline is not None and 'jira_ticket' in self.pipeline:
+                url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
+            else:
+                url = 'jira_ticket not included in pipeline'
+
+            payload['attachments'][0]['fields'].append({
+                'title': 'Jira ticket',
+                'short': False,
+                'value': url
+            })
 
         if self.slack_icon_url_override != '':
             payload['icon_url'] = self.slack_icon_url_override

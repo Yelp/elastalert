@@ -2883,6 +2883,8 @@ Example slack_attach_kibana_discover_url, slack_kibana_discover_color, slack_kib
 
 ``slack_msg_pretext``: You can set the message attachment pretext using this option. Defaults to "".
 
+``slack_jira_url``: Enables the attachment of the a Jira url to the slack notification. You need to have the Jira alert rule working and it needs to run before the Slack rule. Set the field to ``True`` in order to generate the url. Defaults to ``False``.
+
 Splunk On-Call (Formerly VictorOps)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
