@@ -2009,7 +2009,7 @@ Required:
 
 Optional:
 
-``discord_emoji_title``: By default ElastAlert 2 will use the ``:warning:`` emoji when posting to the channel. You can use a different emoji per ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
+``discord_emoji_title``: By default ElastAlert 2 will use the ``:warning:`` emoji when posting to the channel. You can use a different emoji per ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If discord_embed_icon_url parameter is provided, emoji is ignored.
 
 ``discord_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Discord. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
@@ -2882,6 +2882,12 @@ Example slack_attach_kibana_discover_url, slack_kibana_discover_color, slack_kib
 ``slack_author_icon``: An optional URL used to display a 16x16 pixel icon beside the author_name. Defaults to "".
 
 ``slack_msg_pretext``: You can set the message attachment pretext using this option. Defaults to "".
+
+``slack_attach_jira_ticket_url``: Add url to the jira ticket created. Only works if the Jira alert runs before Slack alert. Set the field to ``True`` in order to generate the url. Defaults to ``False``.
+
+``slack_jira_ticket_color``: The color of the Jira Ticket url attachment. Defaults to ``#ec4b98``.
+
+``slack_jira_ticket_title``: The title of the Jira Ticket url attachment. Defaults to ``Jira Ticket``.
 
 Splunk On-Call (Formerly VictorOps)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

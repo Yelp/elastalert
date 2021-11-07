@@ -44,6 +44,9 @@ class SlackAlerter(Alerter):
         self.slack_author_link = self.rule.get('slack_author_link', '')
         self.slack_author_icon = self.rule.get('slack_author_icon', '')
         self.slack_msg_pretext = self.rule.get('slack_msg_pretext', '')
+        self.slack_attach_jira_ticket_url = self.rule.get('slack_attach_jira_ticket_url', False)
+        self.slack_jira_ticket_color = self.rule.get('slack_jira_ticket_color', '#ec4b98')
+        self.slack_jira_ticket_title = self.rule.get('slack_jira_ticket_title', 'Jira Ticket')
 
     def format_body(self, body):
         # https://api.slack.com/docs/formatting
@@ -138,6 +141,15 @@ class SlackAlerter(Alerter):
                     'title': self.slack_kibana_discover_title,
                     'title_link': kibana_discover_url
                 })
+
+        if self.slack_attach_jira_ticket_url and self.pipeline is not None and 'jira_ticket' in self.pipeline:
+            jira_url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
+
+            payload['attachments'].append({
+                'color': self.slack_jira_ticket_color,
+                'title': self.slack_jira_ticket_title,
+                'title_link': jira_url
+            })
 
         for url in self.slack_webhook_url:
             for channel_override in self.slack_channel_override:
