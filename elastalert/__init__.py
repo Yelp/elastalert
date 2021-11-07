@@ -16,7 +16,7 @@ class ElasticSearchClient(Elasticsearch):
         """
         :arg conf: es_conn_config dictionary. Ref. :func:`~util.build_es_conn_config`
         """
-        super(ElasticSearchClient, self).__init__(host=conf['es_host'],
+        super(ElasticSearchClient, self).__init__(hosts=conf['es_host'],
                                                   port=conf['es_port'],
                                                   url_prefix=conf['es_url_prefix'],
                                                   use_ssl=conf['use_ssl'],

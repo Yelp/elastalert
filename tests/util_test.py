@@ -37,6 +37,7 @@ from elastalert.util import expand_string_into_dict
 from elastalert.util import unixms_to_dt
 from elastalert.util import format_string
 from elastalert.util import pretty_ts
+from elastalert.util import parse_host
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
@@ -337,7 +338,7 @@ test_build_es_conn_config_param += 'ca_certs, client_cert,client_key,es_url_pref
             'aws_region': None,
             'profile': None,
             'headers': None,
-            'es_host': 'localhost',
+            'es_host': ['localhost:9200'],
             'es_port': 9200,
             'es_url_prefix': '',
             'es_conn_timeout': 20,
@@ -360,7 +361,7 @@ test_build_es_conn_config_param += 'ca_certs, client_cert,client_key,es_url_pref
             'aws_region': 'us-east-1',
             'profile': 'default',
             'headers': None,
-            'es_host': 'localhost',
+            'es_host': ['localhost:9200'],
             'es_port': 9200,
             'es_url_prefix': 'elasticsearch',
             'es_conn_timeout': 30,
@@ -435,7 +436,7 @@ def test_build_es_conn_config2():
         'aws_region': None,
         'profile': None,
         'headers': None,
-        'es_host': 'localhost',
+        'es_host': ['localhost:9200'],
         'es_port': 9200,
         'es_url_prefix': '',
         'es_conn_timeout': 20,
@@ -519,3 +520,32 @@ def test_pretty_ts():
     assert '2021-08-16 16:35 UTC' == pretty_ts(ts)
     assert '2021-08-16 16:35 ' == pretty_ts(ts, False)
     assert '2021-08-16 16:35 +0000' == pretty_ts(ts, ts_format='%Y-%m-%d %H:%M %z')
+
+
+def test_parse_host():
+    assert parse_host("localhost", port=9200) == ["localhost:9200"]
+    assert parse_host("host1:9200, host2:9200, host3:9300") == ["host1:9200",
+                                                                "host2:9200",
+                                                                "host3:9300"]
+
+
+def test_build_cofig_for_multi():
+    assert build_es_conn_config({
+        "es_host": "localhost",
+        "es_port": 9200
+    })['es_host'] == ['localhost:9200']
+
+    assert build_es_conn_config({
+        "es_host": "host1:9200, host2:9200, host3:9300",
+        "es_port": 9200
+    })['es_host'] == ["host1:9200", "host2:9200", "host3:9300"]
+
+    assert build_es_conn_config({
+        "es_host": "host1, host2, host3",
+        "es_port": 9200
+    })['es_host'] == ["host1:9200", "host2:9200", "host3:9200"]
+
+    assert build_es_conn_config({
+        "es_host": "host1, host2:9200, host3:9300",
+        "es_port": 9200
+    })['es_host'] == ["host1:9200", "host2:9200", "host3:9300"]

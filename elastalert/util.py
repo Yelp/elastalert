@@ -363,6 +363,11 @@ def build_es_conn_config(conf):
     parsed_conf['headers'] = None
     parsed_conf['es_host'] = os.environ.get('ES_HOST', conf['es_host'])
     parsed_conf['es_port'] = int(os.environ.get('ES_PORT', conf['es_port']))
+    es_host = os.environ.get('ES_HOST', conf['es_host'])
+    es_port = int(os.environ.get('ES_PORT', conf['es_port']))
+    parsed_conf['es_host'] = parse_host(es_host, es_port)
+    parsed_conf['es_port'] = es_port
+
     parsed_conf['es_url_prefix'] = ''
     parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
     parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
@@ -486,34 +491,34 @@ def should_scrolling_continue(rule_conf):
     return not stop_the_scroll
 
 
-def _expand_string_into_dict(string, value,  sep='.'):
+def _expand_string_into_dict(string, value, sep='.'):
     """
     Converts a encapsulated string-dict to a sequence of dict. Use separator (default '.') to split the string.
-    Example: 
+    Example:
         string1.string2.stringN : value  -> {string1: {string2: {string3: value}}
- 
+
     :param string: The encapsulated "string-dict"
     :param value: Value associated to the last field of the "string-dict"
     :param sep: Separator character. Default: '.'
     :rtype: dict
     """
     if sep not in string:
-        return {string : value}
+        return {string: value}
     key, val = string.split(sep, 1)
     return {key: _expand_string_into_dict(val, value)}
- 
- 
-def expand_string_into_dict(dictionary, string , value, sep='.'):
+
+
+def expand_string_into_dict(dictionary, string, value, sep='.'):
     """
     Useful function to "compile" a string-dict string used in metric and percentage rules into a dictionary sequence.
- 
+
     :param dictionary: The dictionary dict
-    :param string:  String Key 
+    :param string:  String Key
     :param value: String Value
     :param sep: Separator character. Default: '.'
     :rtype: dict
     """
- 
+
     if sep not in string:
         dictionary[string] = value
         return dictionary
@@ -526,7 +531,7 @@ def expand_string_into_dict(dictionary, string , value, sep='.'):
 def format_string(format_config, target_value):
     """
     Formats number, supporting %-format and str.format() syntax.
- 
+
     :param format_config: string format syntax, for example '{:.2%}' or '%.2f'
     :param target_value: number to format
     :rtype: string
@@ -536,3 +541,19 @@ def format_string(format_config, target_value):
     else:
         return format_config % (target_value)
 
+
+def parse_host(host, port=9200):
+    """
+    Convet host str like "host1:port1, host2:port2" to list
+    :param host str: hostnames (separated with comma ) or single host name
+    :param port: default to 9200
+    :return: list of hosts
+
+    """
+    if "," in host:
+        host_list = host.split(",")
+        host_list = [("{host}:{port}".format(host=x.strip(), port=port)
+                      if ":" not in x else x.strip()) for x in host_list]
+        return host_list
+    else:
+        return ["{host}:{port}".format(host=host, port=port)]
