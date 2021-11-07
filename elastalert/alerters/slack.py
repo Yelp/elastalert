@@ -96,11 +96,8 @@ class SlackAlerter(Alerter):
         if self.slack_alert_fields != '':
             payload['attachments'][0]['fields'] = self.populate_fields(matches)
 
-        if self.slack_jira_url:
-            if self.pipeline is not None and 'jira_ticket' in self.pipeline:
-                url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
-            else:
-                url = 'jira_ticket not included in pipeline'
+        if self.slack_jira_url and self.pipeline is not None and 'jira_ticket' in self.pipeline:
+            url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
 
             payload['attachments'][0]['fields'].append({
                 'title': 'Jira ticket',
