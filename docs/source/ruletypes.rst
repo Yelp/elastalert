@@ -227,10 +227,20 @@ es_host
 
 ``es_host``: The hostname (or comma separated list of hostnames) of the Elasticsearch cluster the rule will use to query. (Required, string, no default)
 The environment variable ``ES_HOST`` will override this field.
-Definition options:
-    * hostname
-    * hostname0, hostname1, hostname2
-    * hostname0:9200, hostname1, hostname2:9201     - Nodes with a specified port will be used as is, nodes without a port will be used with the port from es_port
+
+Example of working with one host::
+
+    es_host: hostname
+
+Example of working with multiple hosts::
+
+    hostname0, hostname1, hostname2
+
+Example of working with multiple hosts and specific ports::
+
+    hostname0:9200, hostname1, hostname2:9201
+
+Nodes with a specified port will be used as is, nodes without a port will be used with the port from es_port
 
 
 es_port
