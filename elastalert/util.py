@@ -361,8 +361,6 @@ def build_es_conn_config(conf):
     parsed_conf['aws_region'] = None
     parsed_conf['profile'] = None
     parsed_conf['headers'] = None
-    parsed_conf['es_host'] = os.environ.get('ES_HOST', conf['es_host'])
-    parsed_conf['es_port'] = int(os.environ.get('ES_PORT', conf['es_port']))
     es_host = os.environ.get('ES_HOST', conf['es_host'])
     es_port = int(os.environ.get('ES_PORT', conf['es_port']))
     parsed_conf['es_host'] = parse_host(es_host, es_port)
