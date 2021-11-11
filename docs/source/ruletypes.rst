@@ -26,6 +26,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``alert`` (string or list)                                   |           |
 +--------------------------------------------------------------+-----------+
+| ``hosts`` (list, no default)                                 |           |
++--------------------------------------------------------------+           |
 | ``name`` (string, defaults to the filename)                  |           |
 +--------------------------------------------------------------+           |
 | ``use_strftime_index`` (boolean, default False)              |  Optional |
@@ -225,23 +227,8 @@ Required Settings
 es_host
 ^^^^^^^
 
-``es_host``: The hostname (or comma separated list of hostnames) of the Elasticsearch cluster the rule will use to query. (Required, string, no default)
+``es_host``: The hostname of the Elasticsearch cluster the rule will use to query. (Required, string, no default)
 The environment variable ``ES_HOST`` will override this field.
-
-Example of working with one host::
-
-    es_host: hostname
-
-Example of working with multiple hosts::
-
-    hostname0, hostname1, hostname2
-
-Example of working with multiple hosts and specific ports::
-
-    hostname0:9200, hostname1, hostname2:9201
-
-Nodes with a specified port will be used as is, nodes without a port will be used with the port from es_port
-
 
 es_port
 ^^^^^^^
@@ -276,6 +263,11 @@ or loaded from a module. For loading from a module, the alert should be specifie
 
 Optional Settings
 ~~~~~~~~~~~~~~~~~
+es_hosts
+^^^^^^^^
+
+``es_host``: The list of nodes of the Elasticsearch cluster that the rule will use for the request. (Optional, list, default none)
+The environment variable ``ES_HOSTS`` will override this field.
 
 import
 ^^^^^^

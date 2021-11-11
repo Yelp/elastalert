@@ -130,6 +130,11 @@ The environment variable ``ES_HOST`` will override this field.
 
 ``es_port``: The port corresponding to ``es_host``. The environment variable ``ES_PORT`` will override this field.
 
+``es_hosts``: The list of addresses of the nodes of the Elasticsearch cluster where ElastAlert 2 records metadata about its searches.
+When ElastAlert 2 is started, it will query for information about the time that it was last run. This way,
+even if ElastAlert 2 is stopped and restarted, it will never miss data or look at the same events twice. It will also specify the default cluster for each rule to run on.
+The environment variable ``ES_HOST`` will override this field.
+
 ``use_ssl``: Optional; whether or not to connect to ``es_host`` using TLS; set to ``True`` or ``False``.
 The environment variable ``ES_USE_SSL`` will override this field.
 

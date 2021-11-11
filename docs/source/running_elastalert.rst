@@ -171,6 +171,11 @@ use a different Elasticsearch host to query against.
 
 ``es_port`` is the port corresponding to ``es_host``.
 
+``es_hosts`` is the list of addresses of the nodes of the Elasticsearch cluster where
+ElastAlert 2 will store data about its state, queries run, alerts, and errors.
+(If you want to half connect to a cluster without a load balancer)
+Each rule may also use a different Elasticsearch host to query against.
+
 ``use_ssl``: Optional; whether or not to connect to ``es_host`` using TLS; set
 to ``True`` or ``False``.
 
