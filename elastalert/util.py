@@ -362,7 +362,7 @@ def build_es_conn_config(conf):
     parsed_conf['profile'] = None
     parsed_conf['headers'] = None
     parsed_conf['es_host'] = os.environ.get('ES_HOST', conf['es_host'])
-    parsed_conf['es_hosts'] = os.environ.get('ES_HOSTS', conf['es_hosts'])
+    parsed_conf['es_hosts'] = os.environ.get('ES_HOSTS', conf.get('es_hosts'))
     parsed_conf['es_port'] = int(os.environ.get('ES_PORT', conf['es_port']))
     parsed_conf['es_url_prefix'] = ''
     parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
