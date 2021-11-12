@@ -266,7 +266,7 @@ Optional Settings
 es_hosts
 ^^^^^^^^
 
-``es_host``: The list of nodes of the Elasticsearch cluster that the rule will use for the request. (Optional, list, default none)
+``es_hosts``: The list of nodes of the Elasticsearch cluster that the rule will use for the request. (Optional, list, default none)
 The environment variable ``ES_HOSTS`` will override this field.
 
 import
