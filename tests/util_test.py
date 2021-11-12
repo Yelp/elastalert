@@ -37,6 +37,7 @@ from elastalert.util import expand_string_into_dict
 from elastalert.util import unixms_to_dt
 from elastalert.util import format_string
 from elastalert.util import pretty_ts
+from elastalert.util import parse_hosts
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
@@ -519,3 +520,10 @@ def test_pretty_ts():
     assert '2021-08-16 16:35 UTC' == pretty_ts(ts)
     assert '2021-08-16 16:35 ' == pretty_ts(ts, False)
     assert '2021-08-16 16:35 +0000' == pretty_ts(ts, ts_format='%Y-%m-%d %H:%M %z')
+
+
+def test_parse_host():
+    assert parse_hosts("localhost", port=9200) == ["localhost:9200"]
+    assert parse_hosts("host1:9200, host2:9200, host3:9300") == ["host1:9200",
+                                                                 "host2:9200",
+                                                                 "host3:9300"]
