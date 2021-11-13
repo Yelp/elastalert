@@ -229,6 +229,7 @@ es_host
 
 ``es_host``: The hostname of the Elasticsearch cluster the rule will use to query. (Required, string, no default)
 The environment variable ``ES_HOST`` will override this field.
+For multiple host Elasticsearch clusters see ``es_hosts`` parameter.
 
 es_port
 ^^^^^^^

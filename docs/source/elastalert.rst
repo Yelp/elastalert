@@ -127,6 +127,7 @@ is set to true. Note that back filled data may not always trigger count based al
 When ElastAlert 2 is started, it will query for information about the time that it was last run. This way,
 even if ElastAlert 2 is stopped and restarted, it will never miss data or look at the same events twice. It will also specify the default cluster for each rule to run on.
 The environment variable ``ES_HOST`` will override this field.
+For multiple host Elasticsearch clusters see ``es_hosts`` parameter.
 
 ``es_port``: The port corresponding to ``es_host``. The environment variable ``ES_PORT`` will override this field.
 
