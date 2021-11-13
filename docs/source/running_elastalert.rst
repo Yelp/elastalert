@@ -165,16 +165,18 @@ For this tutorial, we will use the ``examples/rules`` folder.
 time each query is run. This value is ignored for rules where
 ``use_count_query`` or ``use_terms_query`` is set to true.
 
-``es_host`` is the address of an Elasticsearch cluster where ElastAlert 2 will
+``es_host`` is the primary address of an Elasticsearch cluster where ElastAlert 2 will
 store data about its state, queries run, alerts, and errors. Each rule may also
-use a different Elasticsearch host to query against.
+use a different Elasticsearch host to query against. For multiple host Elasticsearch 
+clusters see ``es_hosts`` parameter.
 
 ``es_port`` is the port corresponding to ``es_host``.
 
-``es_hosts`` is the list of addresses of the nodes of the Elasticsearch cluster where
-ElastAlert 2 will store data about its state, queries run, alerts, and errors.
-(If you want to half connect to a cluster without a load balancer)
-Each rule may also use a different Elasticsearch host to query against.
+``es_hosts`` is the list of addresses of the nodes of the Elasticsearch cluster. This
+parameter can be used for high availability purposes, but the primary host must also
+be specified in the ``es_host`` parameter. The ``es_hosts`` parameter can be overridden 
+within each rule. This value can be specified as ``host:port`` if overriding the default 
+port.
 
 ``use_ssl``: Optional; whether or not to connect to ``es_host`` using TLS; set
 to ``True`` or ``False``.

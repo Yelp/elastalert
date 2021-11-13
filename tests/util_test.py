@@ -339,6 +339,7 @@ test_build_es_conn_config_param += 'ca_certs, client_cert,client_key,es_url_pref
             'profile': None,
             'headers': None,
             'es_host': 'localhost',
+            'es_hosts': None,
             'es_port': 9200,
             'es_url_prefix': '',
             'es_conn_timeout': 20,
@@ -362,6 +363,7 @@ test_build_es_conn_config_param += 'ca_certs, client_cert,client_key,es_url_pref
             'profile': 'default',
             'headers': None,
             'es_host': 'localhost',
+            'es_hosts': None,
             'es_port': 9200,
             'es_url_prefix': 'elasticsearch',
             'es_conn_timeout': 30,
@@ -437,6 +439,77 @@ def test_build_es_conn_config2():
         'profile': None,
         'headers': None,
         'es_host': 'localhost',
+        'es_hosts': None,
+        'es_port': 9200,
+        'es_url_prefix': '',
+        'es_conn_timeout': 20,
+        'send_get_body_as': 'GET',
+        'ssl_show_warn': True
+    }
+    actual = build_es_conn_config(conf)
+    assert expected == actual
+
+
+@mock.patch.dict(os.environ, {'ES_USERNAME': 'USER',
+                              'ES_PASSWORD': 'PASS',
+                              'ES_API_KEY': 'KEY',
+                              'ES_BEARER': 'BEARE'})
+def test_build_es_conn_config_es_hosts_list():
+    conf = {}
+    conf['es_host'] = 'localhost'
+    conf['es_port'] = 9200
+    conf['es_hosts'] = ['host1:123', 'host2']
+    expected = {
+        'use_ssl': False,
+        'verify_certs': True,
+        'ca_certs': None,
+        'client_cert': None,
+        'client_key': None,
+        'http_auth': None,
+        'es_username': 'USER',
+        'es_password': 'PASS',
+        'es_api_key': 'KEY',
+        'es_bearer': 'BEARE',
+        'aws_region': None,
+        'profile': None,
+        'headers': None,
+        'es_host': 'localhost',
+        'es_hosts': ['host1:123', 'host2'],
+        'es_port': 9200,
+        'es_url_prefix': '',
+        'es_conn_timeout': 20,
+        'send_get_body_as': 'GET',
+        'ssl_show_warn': True
+    }
+    actual = build_es_conn_config(conf)
+    assert expected == actual
+
+
+@mock.patch.dict(os.environ, {'ES_USERNAME': 'USER',
+                              'ES_PASSWORD': 'PASS',
+                              'ES_API_KEY': 'KEY',
+                              'ES_HOSTS': 'host1:123,host2',
+                              'ES_BEARER': 'BEARE'})
+def test_build_es_conn_config_es_hosts_csv():
+    conf = {}
+    conf['es_host'] = 'localhost'
+    conf['es_port'] = 9200
+    expected = {
+        'use_ssl': False,
+        'verify_certs': True,
+        'ca_certs': None,
+        'client_cert': None,
+        'client_key': None,
+        'http_auth': None,
+        'es_username': 'USER',
+        'es_password': 'PASS',
+        'es_api_key': 'KEY',
+        'es_bearer': 'BEARE',
+        'aws_region': None,
+        'profile': None,
+        'headers': None,
+        'es_host': 'localhost',
+        'es_hosts': ['host1:123', 'host2:9200'],
         'es_port': 9200,
         'es_url_prefix': '',
         'es_conn_timeout': 20,

@@ -266,8 +266,8 @@ Optional Settings
 es_hosts
 ^^^^^^^^
 
-``es_hosts``: The list of nodes of the Elasticsearch cluster that the rule will use for the request. (Optional, list, default none)
-The environment variable ``ES_HOSTS`` will override this field.
+``es_hosts``: The list of nodes of the Elasticsearch cluster that the rule will use for the request. (Optional, list, default none). Values can be specified as ``host:port`` if overriding the default port.
+The environment variable ``ES_HOSTS`` will override this field, and can be specified as a comma-separated value. Note that the ``es_host`` parameter must still be specified in order to identify a primary Elasticsearch host. 
 
 import
 ^^^^^^

@@ -544,7 +544,7 @@ def format_string(format_config, target_value):
 
 def parse_hosts(host, port=9200):
     """
-    Convet host str like "host1:port1, host2:port2" to list
+    Convert host str like "host1:port1, host2:port2" to list
     :param host str: hostnames (separated with comma ) or single host name
     :param port: default to 9200
     :return: list of hosts
@@ -556,3 +556,4 @@ def parse_hosts(host, port=9200):
         return host_list
     else:
         return ["{host}:{port}".format(host=host, port=port)]
+
