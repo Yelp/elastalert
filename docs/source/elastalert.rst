@@ -127,8 +127,15 @@ is set to true. Note that back filled data may not always trigger count based al
 When ElastAlert 2 is started, it will query for information about the time that it was last run. This way,
 even if ElastAlert 2 is stopped and restarted, it will never miss data or look at the same events twice. It will also specify the default cluster for each rule to run on.
 The environment variable ``ES_HOST`` will override this field.
+For multiple host Elasticsearch clusters see ``es_hosts`` parameter.
 
 ``es_port``: The port corresponding to ``es_host``. The environment variable ``ES_PORT`` will override this field.
+
+``es_hosts`` is the list of addresses of the nodes of the Elasticsearch cluster. This
+parameter can be used for high availability purposes, but the primary host must also
+be specified in the ``es_host`` parameter. The ``es_hosts`` parameter can be overridden 
+within each rule. This value can be specified as ``host:port`` if overriding the default port.
+The environment variable ``ES_HOSTS`` will override this field, and can be specified as a comma-separated value to denote multiple hosts.
 
 ``use_ssl``: Optional; whether or not to connect to ``es_host`` using TLS; set to ``True`` or ``False``.
 The environment variable ``ES_USE_SSL`` will override this field.

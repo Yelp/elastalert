@@ -20,6 +20,7 @@
 - Added support for shortening Kibana Discover URLs using Kibana Shorten URL API - [#512](https://github.com/jertel/elastalert2/pull/512) - @JeffAshton
 - Added new alerter `HTTP Post 2` which allow more flexibility to build the body/headers of the request. - [#530](https://github.com/jertel/elastalert2/pull/530) - @lepouletsuisse
 - [Slack] Added new option to include url to jira ticket if it is created in the same pipeline. - [#547](https://github.com/jertel/elastalert2/pull/547) - @hugefarsen
+- Added support for multi ElasticSearch instances. - [#548](https://github.com/jertel/elastalert2/pull/548) - @buratinopy
 
 ## Other changes
 - [Docs] Add exposed metrics documentation - [#498](https://github.com/jertel/elastalert2/pull/498) - @thisisxgp

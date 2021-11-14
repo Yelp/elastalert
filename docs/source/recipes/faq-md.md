@@ -374,13 +374,15 @@ alert_text: |
 Does the alert notification destination support Alertmanager?
 ==========
 
-Not supported.
+Now supported as of ElastAlert 2.2.3.
 
 The es_host parameter seems to use only one host. Is it possible to specify multiple nodes?
 ==========
 
-Only one can be set in es_host.
-Please use haproxy in front of elasticsearch to support multiple hosts.
+There are two options:
+
+1. Use haproxy in front of elasticsearch to support multiple hosts.
+2. Use the new ``es_hosts`` parameter introduced in ElastAlert 2.2.3. See :ref:`Configuration <configuration>`.
 
 Is there any plan to implement a REST API into this project?
 ==========

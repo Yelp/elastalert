@@ -200,6 +200,7 @@ properties:
   use_strftime_index: {type: boolean}
 
   # Optional Settings
+  es_hosts: {type: array, items: {type: string}}
   import:
     anyOf:
       - type: array
