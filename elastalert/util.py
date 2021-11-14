@@ -542,6 +542,13 @@ def format_string(format_config, target_value):
         return format_config % (target_value)
 
 
+def format_host_port(host, port):
+    host = host.strip()
+    if ":" not in host:
+        return "{host}:{port}".format(host=host, port=port)
+    return host
+
+
 def parse_hosts(host, port=9200):
     """
     Convert host str like "host1:port1, host2:port2" to list
@@ -549,11 +556,7 @@ def parse_hosts(host, port=9200):
     :param port: default to 9200
     :return: list of hosts
     """
-    if "," in host:
-        host_list = host.split(",")
-        host_list = [("{host}:{port}".format(host=x.strip(), port=port)
-                      if ":" not in x else x.strip()) for x in host_list]
-        return host_list
-    else:
-        return ["{host}:{port}".format(host=host, port=port)]
+    host_list = host.split(",")
+    host_list = [format_host_port(x, port) for x in host_list]
+    return host_list
 

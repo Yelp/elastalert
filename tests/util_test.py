@@ -597,6 +597,10 @@ def test_pretty_ts():
 
 def test_parse_host():
     assert parse_hosts("localhost", port=9200) == ["localhost:9200"]
-    assert parse_hosts("host1:9200, host2:9200, host3:9300") == ["host1:9200",
-                                                                 "host2:9200",
-                                                                 "host3:9300"]
+    assert parse_hosts("localhost:9201", port=9200) == ["localhost:9201"]
+    assert parse_hosts("host1, host2, host3.foo") == ["host1:9200",
+                                                      "host2:9200",
+                                                      "host3.foo:9200"]
+    assert parse_hosts("host1, host2:9200, host3:9300") == ["host1:9200",
+                                                            "host2:9200",
+                                                            "host3:9300"]
