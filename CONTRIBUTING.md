@@ -15,7 +15,7 @@ Before submitting the PR review that you have included the following changes, wh
 
 ## Releases
 
-This section is only applicable to _maintainers_. PR _contributors_ do not need to follow the below procedure.
+STOP - DO NOT PROCEED! This section is only applicable to project administrators. PR _contributors_ do not need to follow the below procedure.
 
 As ElastAlert 2 is a community-maintained project, releases will typically contain unrelated contributions without a common theme. It's up to the maintainers to determine when the project is ready for a release, however, if you are looking to use a newly merged feature that hasn't yet been released, feel free to open a [discussion][5] and let us know.
 
