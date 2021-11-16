@@ -8,6 +8,6 @@ pytest==6.2.5
 pytest-cov==3.0.0
 pytest-xdist==2.4.0
 setuptools
-sphinx==4.2.0
+sphinx==4.3.0
 sphinx_rtd_theme
 tox==3.24.4
