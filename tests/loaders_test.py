@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from base64 import b64encode
 import copy
 import datetime
 import os
@@ -488,3 +489,12 @@ def test_get_import_rule():
     }
     result = RulesLoader.get_import_rule('', rule)
     assert 'a' == result
+
+
+def test_get_rule_file_hash_when_file_not_found():
+    test_config_copy = copy.deepcopy(test_config)
+    rules_loader = FileRulesLoader(test_config_copy)
+    hash = rules_loader.get_rule_file_hash('empty_folder_test/file_not_found.yml')
+    assert isinstance(hash, bytes)
+    b64Hash = b64encode(hash).decode('ascii')
+    assert 'zR1Ml8y8S8Z/I5j7b48OH+DJqUw=' == b64Hash
