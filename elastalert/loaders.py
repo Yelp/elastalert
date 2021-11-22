@@ -62,6 +62,14 @@ from elastalert.util import unixms_to_dt
 from elastalert.yaml import read_yaml
 
 
+# load rules schema
+def load_rule_schema():
+    rule_schema_path = os.path.join(os.path.dirname(__file__), 'schema.yaml')
+    with open(rule_schema_path) as rule_schema_file:
+        rule_schema_yml = yaml.load(rule_schema_file, Loader=yaml.FullLoader)
+    return jsonschema.Draft7Validator(rule_schema_yml)
+
+
 class RulesLoader(object):
     # import rule dependency
     import_rules = {}
@@ -137,10 +145,7 @@ class RulesLoader(object):
     jinja_environment = Environment(loader=FileSystemLoader(""))
 
     def __init__(self, conf):
-        # schema for rule yaml
-        self.rule_schema = jsonschema.Draft7Validator(
-            yaml.load(open(os.path.join(os.path.dirname(__file__), 'schema.yaml')), Loader=yaml.FullLoader))
-
+        self.rule_schema = load_rule_schema()
         self.base_config = copy.deepcopy(conf)
 
     def load(self, conf, args=None):
