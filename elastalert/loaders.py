@@ -606,12 +606,14 @@ class FileRulesLoader(RulesLoader):
         return expanded_imports
 
     def get_rule_file_hash(self, rule_file):
-        rule_file_hash = ''
         if os.path.exists(rule_file):
             with open(rule_file, 'rb') as fh:
                 rule_file_hash = hashlib.sha1(fh.read()).digest()
             for import_rule_file in self.import_rules.get(rule_file, []):
                 rule_file_hash += self.get_rule_file_hash(import_rule_file)
+        else:
+            not_found = 'ENOENT ' + rule_file
+            rule_file_hash = hashlib.sha1(not_found.encode('utf-8')).digest()
         return rule_file_hash
 
     @staticmethod
