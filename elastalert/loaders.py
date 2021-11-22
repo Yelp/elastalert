@@ -64,10 +64,10 @@ from elastalert.yaml import read_yaml
 
 # load rules schema
 def load_rule_schema():
-    rule_schema_path = os.path.join(os.path.dirname(__file__), 'schema.yaml')
-    with open(rule_schema_path) as rule_schema_file:
-        rule_schema_yml = yaml.load(rule_schema_file, Loader=yaml.FullLoader)
-    return jsonschema.Draft7Validator(rule_schema_yml)
+    schema_path = os.path.join(os.path.dirname(__file__), 'schema.yaml')
+    with open(schema_path) as schema_file:
+        schema_yml = yaml.load(schema_file, Loader=yaml.FullLoader)
+    return jsonschema.Draft7Validator(schema_yml)
 
 
 class RulesLoader(object):
