@@ -3,6 +3,7 @@ import warnings
 
 import requests
 from requests import RequestException
+from requests.auth import HTTPBasicAuth
 
 from elastalert.alerts import Alerter, DateTimeEncoder
 from elastalert.util import EAException, elastalert_logger, lookup_es_key
@@ -27,6 +28,9 @@ class AlertmanagerAlerter(Alerter):
         self.ca_certs = self.rule.get('alertmanager_ca_certs')
         self.ignore_ssl_errors = self.rule.get('alertmanager_ignore_ssl_errors', False)
         self.timeout = self.rule.get('alertmanager_timeout', 10)
+        self.alertmanager_basic_auth_login = self.rule.get('alertmanager_basic_auth_login', None)
+        self.alertmanager_basic_auth_password = self.rule.get('alertmanager_basic_auth_password', None)
+
 
     @staticmethod
     def _json_or_string(obj):
@@ -38,6 +42,7 @@ class AlertmanagerAlerter(Alerter):
     def alert(self, matches):
         headers = {'content-type': 'application/json'}
         proxies = {'https': self.proxies} if self.proxies else None
+        auth = HTTPBasicAuth(self.alertmanager_basic_auth_login, self.alertmanager_basic_auth_password) if self.alertmanager_basic_auth_login else None
 
         self.labels.update({
             label: self._json_or_string(lookup_es_key(matches[0], term))
@@ -70,7 +75,8 @@ class AlertmanagerAlerter(Alerter):
                     headers=headers,
                     verify=verify,
                     proxies=proxies,
-                    timeout=self.timeout
+                    timeout=self.timeout,
+                    auth=auth
                 )
 
                 warnings.resetwarnings()
