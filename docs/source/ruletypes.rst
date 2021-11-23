@@ -1318,7 +1318,7 @@ default this is ``buffer_time``.
 This rule requires:
 
 ``metric_agg_key``: This is the name of the field over which the metric value will be calculated. The underlying type of this field must be
-supported by the specified aggregation type.
+supported by the specified aggregation type.  If using a scripted field via ``metric_agg_script``, this is the name for your scripted field
 
 ``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg',
 'sum', 'cardinality', 'value_count'.
@@ -1335,6 +1335,12 @@ Optional:
 
 ``query_key``: Group metric calculations by this field. For each unique value of the ``query_key`` field, the metric will be calculated and
 evaluated separately against the threshold(s).
+
+``metric_agg_script``: A `Painless` formatted script describing how to calculate your metric on-the-fly::
+
+    metric_agg_key: myScriptedMetric
+    metric_agg_script:
+        script: doc['field1'].value * doc['field2'].value
 
 ``min_doc_count``: The minimum number of events in the current window needed for an alert to trigger.  Used in conjunction with ``query_key``,
 this will only consider terms which in their last ``buffer_time`` had at least ``min_doc_count`` records.  Default 1.

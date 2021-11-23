@@ -1088,6 +1088,8 @@ class MetricAggregationRule(BaseAggregationRule):
         return message
 
     def generate_aggregation_query(self):
+        if self.rules.get('metric_agg_script'):
+            return {self.metric_key: {self.rules['metric_agg_type']: self.rules['metric_agg_script']}}
         query = {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
         if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
             query[self.metric_key][self.rules['metric_agg_type']]['percents'] = [self.rules['percentile_range']]
@@ -1175,7 +1177,7 @@ class SpikeMetricAggregationRule(BaseAggregationRule, SpikeRule):
         self.rules['aggregation_query_element'] = self.generate_aggregation_query()
 
     def generate_aggregation_query(self):
-        """Lifted from MetricAggregationRule, added support for scripted fields"""
+        """Lifted from MetricAggregationRule"""
         if self.rules.get('metric_agg_script'):
             return {self.metric_key: {self.rules['metric_agg_type']: self.rules['metric_agg_script']}}
         query = {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
