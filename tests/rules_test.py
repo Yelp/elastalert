@@ -1261,6 +1261,22 @@ def test_metric_aggregation_complex_query_key_bucket_interval():
     assert rule.matches[1]['sub_qk'] == 'sub_qk_val1'
 
 
+def test_metric_aggregation_scripted():
+    script_body = "doc['some_threshold'].value - doc['cpu_pct'].value"
+    rules = {'buffer_time': datetime.timedelta(minutes=5),
+             'timestamp_field': '@timestamp',
+             'metric_agg_type': 'avg',
+             'metric_agg_key': 'cpu_pct',
+             'metric_agg_script': {"script": script_body},
+             'min_threshold': 0.0}
+
+    rule = MetricAggregationRule(rules)
+    assert rule.rules['aggregation_query_element'] == {'metric_cpu_pct_avg': {'avg': {'script': script_body}}}
+
+    rule.check_matches(datetime.datetime.now(), None, {'metric_cpu_pct_avg': {'value': -0.5}})
+    assert rule.matches[0]['metric_cpu_pct_avg'] == -0.5
+
+
 def test_percentage_match():
     rules = {'match_bucket_filter': {'term': 'term_val'},
              'buffer_time': datetime.timedelta(minutes=5),
