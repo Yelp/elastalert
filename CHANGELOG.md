@@ -21,6 +21,7 @@
 - sphinx 4.2.0 to 4.3.0 and tzlocal==2.1 - [#561](https://github.com/jertel/elastalert2/pull/561) - @nsano-rururu
 - jinja2 3.0.1 to 3.0.3 - [#562](https://github.com/jertel/elastalert2/pull/562) - @nsano-rururu
 - Fix `get_rule_file_hash` TypeError - [#566](https://github.com/jertel/elastalert2/pull/566) - @JeffAshton
+- Ensure `schema.yaml` stream closed - [#567](https://github.com/jertel/elastalert2/pull/567) - @JeffAshton
 
 # 2.2.3
 
