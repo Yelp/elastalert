@@ -15,7 +15,7 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.loaders import RulesLoader
 from elastalert.util import EAException
 
-empty_folder_test_path = os.path.join(os.path.dirname(__file__), './empty_folder_test')
+empty_folder_test_path = os.path.join(os.path.dirname(__file__), 'empty_folder_test')
 
 test_config = {'rules_folder': empty_folder_test_path,
                'run_every': {'minutes': 10},
