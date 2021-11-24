@@ -1731,6 +1731,10 @@ Optional:
 
 ``alertmanager_timeout``: You can specify a timeout value, in seconds, for making communicating with Alertmanager. The default is 10. If a timeout occurs, the alert will be retried next time ElastAlert 2 cycles.
 
+``alertmanager_basic_auth_login``: Basic authentication username.
+
+``alertmanager_basic_auth_password``: Basic authentication password.
+
 Example usage::
 
   alert:
