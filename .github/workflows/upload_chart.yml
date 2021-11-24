@@ -20,4 +20,4 @@ jobs:
         wget https://get.helm.sh/helm-v3.2.1-linux-amd64.tar.gz
         tar xf helm-v3.2.1-linux-amd64.tar.gz
         linux-amd64/helm plugin install https://github.com/chartmuseum/helm-push
-        linux-amd64/helm push chart/elastalert2 https://charts.banzaicloud.io/gh/Codesim-LLC
+        linux-amd64/helm cm-push chart/elastalert2 https://charts.banzaicloud.io/gh/Codesim-LLC
