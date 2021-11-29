@@ -507,7 +507,6 @@ def test_get_rule_file_hash_when_file_not_found():
 def test_load_yaml_recursive_import():
     config = {}
     rules_loader = FileRulesLoader(config)
-    print(rules_loader.import_rules)
 
     root_path = os.path.join(loaders_test_cases_path, 'recursive_import/root.yaml')
     branch_path = os.path.join(loaders_test_cases_path, 'recursive_import/branch.yaml')
@@ -545,4 +544,29 @@ def test_load_yaml_recursive_import():
     ]
     assert rules_loader.import_rules[leaf_path] == [
         branch_path,
+    ]
+
+
+def test_load_yaml_multiple_imports():
+    config = {}
+    rules_loader = FileRulesLoader(config)
+
+    hydrogen_path = os.path.join(loaders_test_cases_path, 'multiple_imports/hydrogen.yaml')
+    oxygen_path = os.path.join(loaders_test_cases_path, 'multiple_imports/oxygen.yaml')
+    water_path = os.path.join(loaders_test_cases_path, 'multiple_imports/water.yaml')
+
+    water_yaml = rules_loader.load_yaml(water_path)
+    assert water_yaml == {
+        'name': 'water',
+        'rule_file': water_path,
+    }
+    assert sorted(rules_loader.import_rules.keys()) == [
+        oxygen_path,
+        water_path,
+    ]
+    assert rules_loader.import_rules[oxygen_path] == [
+        hydrogen_path,
+    ]
+    assert rules_loader.import_rules[water_path] == [
+        oxygen_path,
     ]
