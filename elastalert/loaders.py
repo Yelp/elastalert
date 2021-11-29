@@ -71,8 +71,6 @@ def load_rule_schema():
 
 
 class RulesLoader(object):
-    # import rule dependency
-    import_rules = {}
 
     # Required global (config.yaml) configuration options for the loader
     required_globals = frozenset([])
@@ -147,6 +145,7 @@ class RulesLoader(object):
     def __init__(self, conf):
         self.rule_schema = load_rule_schema()
         self.base_config = copy.deepcopy(conf)
+        self.import_rules = {} # import rule dependency
 
     def load(self, conf, args=None):
         """
