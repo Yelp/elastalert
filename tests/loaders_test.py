@@ -557,3 +557,73 @@ def test_load_yaml_multiple_imports():
             hydrogen_path,
             oxygen_path,
         ]
+
+
+def test_load_yaml_imports_modified():
+    config = {}
+    rules_loader = FileRulesLoader(config)
+
+    rule_path = os.path.join(empty_folder_test_path, 'rule.yaml')
+    first_import_path = os.path.join(empty_folder_test_path, 'first.yaml')
+    second_import_path = os.path.join(empty_folder_test_path, 'second.yaml')
+
+    with mock.patch.object(rules_loader, 'get_yaml') as get_yaml:
+        get_yaml.side_effect = [
+            {
+                'name': 'rule',
+                'import': first_import_path,
+            },
+            {
+                'imported': 'first',
+            }
+        ]
+        rule_yaml = rules_loader.load_yaml(rule_path)
+        assert rule_yaml == {
+            'name': 'rule',
+            'rule_file': rule_path,
+            'imported': 'first',
+        }
+        assert sorted(rules_loader.import_rules.keys()) == [
+            rule_path,
+        ]
+        assert rules_loader.import_rules[rule_path] == [
+            first_import_path
+        ]
+
+    # simulate the import changing
+    with mock.patch.object(rules_loader, 'get_yaml') as get_yaml:
+        get_yaml.side_effect = [
+            {
+                'name': 'rule',
+                'import': second_import_path,
+            },
+            {
+                'imported': 'second',
+            }
+        ]
+        rule_yaml = rules_loader.load_yaml(rule_path)
+        assert rule_yaml == {
+            'name': 'rule',
+            'rule_file': rule_path,
+            'imported': 'second',
+        }
+        assert sorted(rules_loader.import_rules.keys()) == [
+            rule_path,
+        ]
+        assert rules_loader.import_rules[rule_path] == [
+            second_import_path
+        ]
+
+    # simulate the import being removed
+    with mock.patch.object(rules_loader, 'get_yaml') as get_yaml:
+        get_yaml.side_effect = [
+            {
+                'name': 'rule',
+            },
+        ]
+        rule_yaml = rules_loader.load_yaml(rule_path)
+        assert rule_yaml == {
+            'name': 'rule',
+            'rule_file': rule_path,
+        }
+        assert len(rules_loader.import_rules) == 0
