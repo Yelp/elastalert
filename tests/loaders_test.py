@@ -587,7 +587,7 @@ def test_load_yaml_multiple_imports():
     ]
     assert rules_loader.import_rules[oxygen_path] == [
         hydrogen_path,
-        hydrogen_path,
+        hydrogen_path,  # memory leak
     ]
     assert rules_loader.import_rules[water_path] == [
         oxygen_path,
