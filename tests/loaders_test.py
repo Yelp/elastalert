@@ -508,7 +508,7 @@ def test_load_yaml_recursive_import():
     config = {}
     rules_loader = FileRulesLoader(config)
 
-    root_path = os.path.join(loaders_test_cases_path, 'recursive_import/root.yaml')
+    trunk_path = os.path.join(loaders_test_cases_path, 'recursive_import/trunk.yaml')
     branch_path = os.path.join(loaders_test_cases_path, 'recursive_import/branch.yaml')
     leaf_path = os.path.join(loaders_test_cases_path, 'recursive_import/leaf.yaml')
 
@@ -516,13 +516,14 @@ def test_load_yaml_recursive_import():
     assert leaf_yaml == {
         'name': 'leaf',
         'rule_file': leaf_path,
+        'diameter': '5cm',
     }
     assert sorted(rules_loader.import_rules.keys()) == [
         branch_path,
         leaf_path,
     ]
     assert rules_loader.import_rules[branch_path] == [
-        root_path,
+        trunk_path,
     ]
     assert rules_loader.import_rules[leaf_path] == [
         branch_path,
@@ -533,14 +534,15 @@ def test_load_yaml_recursive_import():
     assert leaf_yaml == {
         'name': 'leaf',
         'rule_file': leaf_path,
+        'diameter': '5cm',
     }
     assert sorted(rules_loader.import_rules.keys()) == [
         branch_path,
         leaf_path,
     ]
     assert rules_loader.import_rules[branch_path] == [
-        root_path,
-        root_path,  # memory leak
+        trunk_path,
+        trunk_path,  # memory leak
     ]
     assert rules_loader.import_rules[leaf_path] == [
         branch_path,
@@ -559,6 +561,7 @@ def test_load_yaml_multiple_imports():
     assert water_yaml == {
         'name': 'water',
         'rule_file': water_path,
+        'symbol': 'O',
     }
     assert sorted(rules_loader.import_rules.keys()) == [
         oxygen_path,
@@ -576,6 +579,7 @@ def test_load_yaml_multiple_imports():
     assert water_yaml == {
         'name': 'water',
         'rule_file': water_path,
+        'symbol': 'O',
     }
     assert sorted(rules_loader.import_rules.keys()) == [
         oxygen_path,

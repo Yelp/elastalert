@@ -1,2 +1,3 @@
 name: branch
-import: root.yaml
+import: trunk.yaml
+diameter: 5cm
