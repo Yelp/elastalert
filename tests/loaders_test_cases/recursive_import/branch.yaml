@@ -1,0 +1,3 @@
+name: branch
+import: trunk.yaml
+diameter: 5cm

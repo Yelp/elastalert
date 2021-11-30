@@ -15,7 +15,9 @@ from elastalert.loaders import FileRulesLoader
 from elastalert.loaders import RulesLoader
 from elastalert.util import EAException
 
-empty_folder_test_path = os.path.join(os.path.dirname(__file__), 'empty_folder_test')
+
+loaders_test_cases_path = os.path.join(os.path.dirname(__file__), 'loaders_test_cases')
+empty_folder_test_path = os.path.join(loaders_test_cases_path, 'empty')
 
 test_config = {'rules_folder': empty_folder_test_path,
                'run_every': {'minutes': 10},
@@ -500,3 +502,93 @@ def test_get_rule_file_hash_when_file_not_found():
     assert isinstance(hash, bytes)
     b64Hash = b64encode(hash).decode('ascii')
     assert 'zR1Ml8y8S8Z/I5j7b48OH+DJqUw=' == b64Hash
+
+
+def test_load_yaml_recursive_import():
+    config = {}
+    rules_loader = FileRulesLoader(config)
+
+    trunk_path = os.path.join(loaders_test_cases_path, 'recursive_import/trunk.yaml')
+    branch_path = os.path.join(loaders_test_cases_path, 'recursive_import/branch.yaml')
+    leaf_path = os.path.join(loaders_test_cases_path, 'recursive_import/leaf.yaml')
+
+    leaf_yaml = rules_loader.load_yaml(leaf_path)
+    assert leaf_yaml == {
+        'name': 'leaf',
+        'rule_file': leaf_path,
+        'diameter': '5cm',
+    }
+    assert sorted(rules_loader.import_rules.keys()) == [
+        branch_path,
+        leaf_path,
+    ]
+    assert rules_loader.import_rules[branch_path] == [
+        trunk_path,
+    ]
+    assert rules_loader.import_rules[leaf_path] == [
+        branch_path,
+    ]
+
+    # reload the rule
+    leaf_yaml = rules_loader.load_yaml(leaf_path)
+    assert leaf_yaml == {
+        'name': 'leaf',
+        'rule_file': leaf_path,
+        'diameter': '5cm',
+    }
+    assert sorted(rules_loader.import_rules.keys()) == [
+        branch_path,
+        leaf_path,
+    ]
+    assert rules_loader.import_rules[branch_path] == [
+        trunk_path,
+        trunk_path,  # memory leak
+    ]
+    assert rules_loader.import_rules[leaf_path] == [
+        branch_path,
+    ]
+
+
+def test_load_yaml_multiple_imports():
+    config = {}
+    rules_loader = FileRulesLoader(config)
+
+    hydrogen_path = os.path.join(loaders_test_cases_path, 'multiple_imports/hydrogen.yaml')
+    oxygen_path = os.path.join(loaders_test_cases_path, 'multiple_imports/oxygen.yaml')
+    water_path = os.path.join(loaders_test_cases_path, 'multiple_imports/water.yaml')
+
+    water_yaml = rules_loader.load_yaml(water_path)
+    assert water_yaml == {
+        'name': 'water',
+        'rule_file': water_path,
+        'symbol': 'O',
+    }
+    assert sorted(rules_loader.import_rules.keys()) == [
+        oxygen_path,
+        water_path,
+    ]
+    assert rules_loader.import_rules[oxygen_path] == [
+        hydrogen_path,
+    ]
+    assert rules_loader.import_rules[water_path] == [
+        oxygen_path,
+    ]
+
+    # reload the rule
+    water_yaml = rules_loader.load_yaml(water_path)
+    assert water_yaml == {
+        'name': 'water',
+        'rule_file': water_path,
+        'symbol': 'O',
+    }
+    assert sorted(rules_loader.import_rules.keys()) == [
+        oxygen_path,
+        water_path,
+    ]
+    assert rules_loader.import_rules[oxygen_path] == [
+        hydrogen_path,
+        hydrogen_path,  # memory leak
+    ]
+    assert rules_loader.import_rules[water_path] == [
+        oxygen_path,
+    ]
