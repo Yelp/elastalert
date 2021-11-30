@@ -212,7 +212,7 @@ class RulesLoader(object):
         Retrieve the name of the rule to import.
         :param dict rule: Rule dict
         :return: rule name that will all `get_yaml` to retrieve the yaml of the rule
-        :rtype: str
+        :rtype: str or List[str]
         """
         return rule['import']
 
@@ -240,10 +240,15 @@ class RulesLoader(object):
             'rule_file': filename,
         }
 
-        self.import_rules.pop(filename, None)  # clear `filename` dependency
-        files_to_import = []
+        current_path = filename
+
+        # Imports are applied using a Depth First Search (DFS) traversal.
+        # If a rule defines multiple imports, both of which define the same value,
+        # the value from the later import will take precedent.
+        import_paths_stack = []
+
         while True:
-            loaded = self.get_yaml(filename)
+            loaded = self.get_yaml(current_path)
 
             # Special case for merging filters - if both files specify a filter merge (AND) them
             if 'filter' in rule and 'filter' in loaded:
@@ -251,17 +256,30 @@ class RulesLoader(object):
 
             loaded.update(rule)
             rule = loaded
-            if 'import' in rule:
-                # add all of the files to load into the load queue
-                files_to_import += self.get_import_rule(rule)
-                del (rule['import'])  # or we could go on forever!
-            if len(files_to_import) > 0:
-                # set the next file to load
-                next_file_to_import = files_to_import.pop()
-                rules = self.import_rules.get(filename, [])
-                rules.append(next_file_to_import)
-                self.import_rules[filename] = rules
-                filename = next_file_to_import
+
+            if 'import' not in rule:
+                # clear import_rules cache for current path
+                self.import_rules.pop(current_path, None)
+
+            else:
+                # read the set of import paths from the rule
+                import_paths = self.get_import_rule(rule)
+                if type(import_paths) is str:
+                    import_paths = [import_paths]
+
+                # remove the processed import property to prevent infinite loop
+                del (rule['import'])
+
+                # update import_rules cache for current path
+                self.import_rules[current_path] = import_paths
+
+                # push the imports paths onto the top of the stack
+                for import_path in import_paths:
+                    import_paths_stack.append(import_path)
+
+            # pop the next import path from the top of the stack
+            if len(import_paths_stack) > 0:
+                current_path = import_paths_stack.pop()
             else:
                 break
 
@@ -596,7 +614,7 @@ class FileRulesLoader(RulesLoader):
         Allow for relative paths to the import rule.
         :param dict rule:
         :return: Path the import rule
-        :rtype: str
+        :rtype: List[str]
         """
         rule_imports = rule['import']
         if type(rule_imports) is str:
