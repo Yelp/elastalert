@@ -570,3 +570,21 @@ def test_load_yaml_multiple_imports():
     assert rules_loader.import_rules[water_path] == [
         oxygen_path,
     ]
+
+    # reload the rule
+    water_yaml = rules_loader.load_yaml(water_path)
+    assert water_yaml == {
+        'name': 'water',
+        'rule_file': water_path,
+    }
+    assert sorted(rules_loader.import_rules.keys()) == [
+        oxygen_path,
+        water_path,
+    ]
+    assert rules_loader.import_rules[oxygen_path] == [
+        hydrogen_path,
+        hydrogen_path,
+    ]
+    assert rules_loader.import_rules[water_path] == [
+        oxygen_path,
+    ]
