@@ -1,20 +1,20 @@
 
 # ElastAlert 2 Helm Chart for Kubernetes
 
-An ElastAlert 2 helm chart is available in the jertel Helm repository, and can be installed into an existing Kubernetes cluster by following the instructions below.
+An ElastAlert 2 helm chart is available, and can be installed into an existing Kubernetes cluster by following the instructions below.
 
 ## Installing the Chart
 
-Add the jertel repository to your Helm configuration:
+Add the elastalert2 repository to your Helm configuration:
 
 ```console
-helm repo add jertel https://helm.jertel.com
+helm repo add elastalert2 https://jertel.github.io/elastalert2/
 ```
 
 Next, install the chart with a release name, such as _elastalert2_:
 
 ```console
-helm install elastalert2 jertel/elastalert2
+helm install elastalert2 elastalert2/elastalert2
 ```
 
 The command deploys ElastAlert 2 on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.

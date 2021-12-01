@@ -6,18 +6,28 @@ on:
       - 2.*
 
 jobs:
-  build:
+  publish:
     environment: Main
-
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v2
-    - name: Helm push chart
-      env:
-        HELM_REPO_ACCESS_TOKEN: ${{ secrets.HELM_REPO_ACCESS_TOKEN }}
-      run: |
-        wget https://get.helm.sh/helm-v3.2.1-linux-amd64.tar.gz
-        tar xf helm-v3.2.1-linux-amd64.tar.gz
-        linux-amd64/helm plugin install https://github.com/chartmuseum/helm-push
-        linux-amd64/helm cm-push chart/elastalert2 https://charts.banzaicloud.io/gh/Codesim-LLC
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.4.0
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.2.1
+        with:
+          charts_dir: chart
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
