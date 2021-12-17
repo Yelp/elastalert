@@ -26,6 +26,7 @@
 - Ensure `schema.yaml` stream closed - [#567](https://github.com/jertel/elastalert2/pull/567) - @JeffAshton
 - Fixing `import` bugs & memory leak in `RulesLoader`/`FileRulesLoader` - [#580](https://github.com/jertel/elastalert2/pull/580) - @JeffAshton
 - sphinx 4.3.0 to 4.3.1 - [#588](https://github.com/jertel/elastalert2/pull/588) - @nsano-rururu
+- pytest-xdist 2.4.0 to 2.5.0 - [#615](https://github.com/jertel/elastalert2/pull/615) - @nsano-rururu
 
 # 2.2.3
 
