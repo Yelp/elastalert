@@ -28,7 +28,7 @@
 - sphinx 4.3.0 to 4.3.1 - [#588](https://github.com/jertel/elastalert2/pull/588) - @nsano-rururu
 - pytest-xdist 2.4.0 to 2.5.0 - [#615](https://github.com/jertel/elastalert2/pull/615) - @nsano-rururu
 - sphinx 4.3.1 to 4.3.2 - [#618](https://github.com/jertel/elastalert2/pull/618) - @nsano-rururu
-- Update document - [#623](https://github.com/jertel/elastalert2/pull/623) - @nsano-rururu
+- [Docs] Include Docker example; add additional FAQs - [#623](https://github.com/jertel/elastalert2/pull/623) - @nsano-rururu
 
 # 2.2.3
 
