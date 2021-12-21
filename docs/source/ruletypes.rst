@@ -2618,7 +2618,7 @@ V2 API Options (Optional):
 
 These options are specific to the PagerDuty V2 API
 
-See https://developer.pagerduty.com/docs/events-api-v2/trigger-events/
+See https://developer.pagerduty.com/api-reference/b3A6Mjc0ODI2Nw-send-an-event-to-pager-duty
 
 ``pagerduty_api_version``: Defaults to `v1`.  Set to `v2` to enable the PagerDuty V2 Event API.
 
