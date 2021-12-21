@@ -398,3 +398,14 @@ See the following issues on the original yelp/elastalert for more information.
 
 https://github.com/Yelp/elastalert/issues/1867<br>
 https://github.com/Yelp/elastalert/issues/2704
+
+ElastAlert 2 doesn't have a listening port?
+==========
+
+ElastAlert 2 does not have a network API. There is no listening port. You can monitor its activity by viewing the console output or Docker logs.
+
+I've set `ssl_show_warn` but it doesn't seem to work.
+==========
+
+Currently ElastAlert 2 uses elasticserarch-py 7.0.0, but the target parameters are the parameters that can be used from elasticserarch-py 7.5.0.
+In the future, we will end support for elasticsearch in the past and raise elasticserarch-py to 7.5.0 or later.
