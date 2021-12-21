@@ -171,11 +171,6 @@ def main():
     parser.add_argument('--send_get_body_as', default='GET',
                         help='Method for querying Elasticsearch - POST, GET or source')
     parser.add_argument(
-        '--boto-profile',
-        default=None,
-        dest='profile',
-        help='DEPRECATED: (use --profile) Boto profile to use for signing requests')
-    parser.add_argument(
         '--profile',
         default=None,
         help='AWS profile to use for signing requests. Optionally use the AWS_DEFAULT_PROFILE environment variable')
