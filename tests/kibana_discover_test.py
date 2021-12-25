@@ -54,7 +54,8 @@ def test_generate_kibana_discover_url_with_kibana_5x_and_6x(kibana_version):
     '7.12',
     '7.13',
     '7.14',
-    '7.15'
+    '7.15',
+    '7.16'
 ])
 def test_generate_kibana_discover_url_with_kibana_7x(kibana_version):
     url = generate_kibana_discover_url(
