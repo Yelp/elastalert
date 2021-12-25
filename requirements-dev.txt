@@ -1,5 +1,5 @@
 -r requirements.txt
-coverage==6.0.2
+coverage==6.2
 flake8
 pre-commit
 pylint<2.12
