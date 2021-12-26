@@ -508,6 +508,8 @@ properties:
   ms_teams_theme_color: {type: string}
   ms_teams_proxy: {type: string}
   ms_teams_alert_fixed_width: {type: boolean}
+  ms_teams_ca_certs: {type: boolean}
+  ms_teams_ignore_ssl_errors: {type: boolean}
 
   ### Opsgenie
   opsgenie_key: {type: string}
