@@ -18,6 +18,7 @@
 - Add metric_agg_script to MetricAggregationRule [#558](https://github.com/jertel/elastalert2/pull/558) - @dequis
 - [Alertmanager]Add support for basic authentication - [#575](https://github.com/jertel/elastalert2/pull/575) - @nsano-rururu
 - Add support for Kibana 7.16 for Kibana Discover - [#612](https://github.com/jertel/elastalert2/pull/612) - @nsano-rururu
+- [MS Teams]Add support for verify SSL certificate - [#628](https://github.com/jertel/elastalert2/pull/628) - @nsano-rururu
 
 ## Other changes
 - sphinx 4.2.0 to 4.3.0 and tzlocal==2.1 - [#561](https://github.com/jertel/elastalert2/pull/561) - @nsano-rururu

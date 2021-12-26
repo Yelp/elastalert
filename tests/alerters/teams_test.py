@@ -42,7 +42,8 @@ def test_ms_teams(caplog):
         rule['ms_teams_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
     assert ('elastalert', logging.INFO, 'Alert sent to MS Teams') == caplog.record_tuples[0]
@@ -83,7 +84,8 @@ def test_ms_teams_uses_color_and_fixed_width_text():
         rule['ms_teams_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -119,7 +121,8 @@ def test_ms_teams_proxy():
         rule['ms_teams_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies={'https': rule['ms_teams_proxy']}
+        proxies={'https': rule['ms_teams_proxy']},
+        verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -195,3 +198,55 @@ def test_ms_teams_required_error(ms_teams_webhook_url, expected_data):
         assert expected_data == actual_data
     except Exception as ea:
         assert expected_data in str(ea)
+
+
+@pytest.mark.parametrize('ca_certs, ignore_ssl_errors, excpet_verify', [
+    ('',    '',    True),
+    ('',    True,  False),
+    ('',    False, True),
+    (True,  '',    True),
+    (True,  True,  True),
+    (True,  False, True),
+    (False, '',    True),
+    (False, True,  False),
+    (False, False, True)
+])
+def test_ms_teams_ca_certs(ca_certs, ignore_ssl_errors, excpet_verify):
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'ms_teams_webhook_url': 'http://test.webhook.url',
+        'ms_teams_alert_summary': 'Alert from ElastAlert',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    if ca_certs:
+        rule['ms_teams_ca_certs'] = ca_certs
+
+    if ignore_ssl_errors:
+        rule['ms_teams_ignore_ssl_errors'] = ignore_ssl_errors
+
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MsTeamsAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        '@type': 'MessageCard',
+        '@context': 'http://schema.org/extensions',
+        'summary': rule['ms_teams_alert_summary'],
+        'title': rule['alert_subject'],
+        'text': BasicMatchString(rule, match).__str__()
+    }
+    mock_post_request.assert_called_once_with(
+        rule['ms_teams_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=excpet_verify
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
