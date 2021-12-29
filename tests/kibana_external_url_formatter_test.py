@@ -97,30 +97,6 @@ def mock_kibana_shorten_url_api(*args, **kwargs):
         return MockResponse(400)
 
 
-def mock_7_16_kibana_shorten_url_api(*args, **kwargs):
-    class MockResponse:
-        def __init__(self, status_code):
-            self.status_code = status_code
-
-        def json(self):
-            return {
-                'id': 'a1f77a80-6847-11ec-9b91-e5d43d1e9ca2'
-            }
-
-        def raise_for_status(self):
-            if self.status_code == 400:
-                raise requests.exceptions.HTTPError()
-
-    json = kwargs['json']
-    params = json['params']
-    url = params['url']
-
-    if url.startswith('/app/'):
-        return MockResponse(200)
-    else:
-        return MockResponse(400)
-
-
 class ShortenUrlTestCase:
     def __init__(
          self,
@@ -224,115 +200,6 @@ def test_short_kinbana_external_url_formatter(
         base_url=test_case.base_url,
         auth=test_case.authorization,
         security_tenant=test_case.security_tenant,
-        new_shortener=False,
-        id='unused',
-    )
-
-    actualUrl = formatter.format(test_case.relative_url)
-    assert actualUrl == test_case.expected_url
-
-    mock_post.assert_called_once_with(**test_case.expected_api_request)
-
-
-@mock.patch('requests.post', side_effect=mock_7_16_kibana_shorten_url_api)
-@pytest.mark.parametrize("test_case", [
-
-    # Relative to kibana plugin
-    ShortenUrlTestCase(
-        base_url='http://elasticsearch.test.org/_plugin/kibana/',
-        relative_url='app/dev_tools#/console',
-        expected_api_request={
-            'url': 'http://elasticsearch.test.org/_plugin/kibana/api/short_url',
-            'auth': None,
-            'headers': {
-                'kbn-xsrf': 'elastalert',
-                'osd-xsrf': 'elastalert'
-            },
-            'json': {
-                'locatorId': 'elastalert-some_unique_id',
-                'params': {
-                    'url': '/app/dev_tools#/console'
-                }
-            }
-        },
-        expected_url='http://elasticsearch.test.org/_plugin/kibana/goto/a1f77a80-6847-11ec-9b91-e5d43d1e9ca2'
-    ),
-
-    # Relative to root of dedicated Kibana domain
-    ShortenUrlTestCase(
-        base_url='http://kibana.test.org/',
-        relative_url='/app/dev_tools#/console',
-        expected_api_request={
-            'url': 'http://kibana.test.org/api/short_url',
-            'auth': None,
-            'headers': {
-                'kbn-xsrf': 'elastalert',
-                'osd-xsrf': 'elastalert'
-            },
-            'json': {
-                'locatorId': 'elastalert-some_unique_id',
-                'params': {
-                    'url': '/app/dev_tools#/console'
-                }
-            }
-        },
-        expected_url='http://kibana.test.org/goto/a1f77a80-6847-11ec-9b91-e5d43d1e9ca2'
-    ),
-
-    # With authentication
-    ShortenUrlTestCase(
-        base_url='http://kibana.test.org/',
-        auth=HTTPBasicAuth('john', 'doe'),
-        relative_url='/app/dev_tools#/console',
-        expected_api_request={
-            'url': 'http://kibana.test.org/api/short_url',
-            'auth': HTTPBasicAuth('john', 'doe'),
-            'headers': {
-                'kbn-xsrf': 'elastalert',
-                'osd-xsrf': 'elastalert'
-            },
-            'json': {
-                'locatorId': 'elastalert-some_unique_id',
-                'params': {
-                    'url': '/app/dev_tools#/console'
-                }
-            }
-        },
-        expected_url='http://kibana.test.org/goto/a1f77a80-6847-11ec-9b91-e5d43d1e9ca2'
-    ),
-
-    # With security tenant
-    ShortenUrlTestCase(
-        base_url='http://kibana.test.org/',
-        security_tenant='global',
-        relative_url='/app/dev_tools#/console',
-        expected_api_request={
-            'url': 'http://kibana.test.org/api/short_url?security_tenant=global',
-            'auth': None,
-            'headers': {
-                'kbn-xsrf': 'elastalert',
-                'osd-xsrf': 'elastalert'
-            },
-            'json': {
-                'locatorId': 'elastalert-some_unique_id',
-                'params': {
-                    'url': '/app/dev_tools?security_tenant=global#/console'
-                }
-            }
-        },
-        expected_url='http://kibana.test.org/goto/a1f77a80-6847-11ec-9b91-e5d43d1e9ca2?security_tenant=global'
-    )
-])
-def test_7_16_short_kibana_external_url_formatter(
-    mock_post: mock.MagicMock,
-    test_case: ShortenUrlTestCase
-):
-    formatter = ShortKibanaExternalUrlFormatter(
-        base_url=test_case.base_url,
-        auth=test_case.authorization,
-        security_tenant=test_case.security_tenant,
-        new_shortener=True,
-        id='some_unique_id',
     )
 
     actualUrl = formatter.format(test_case.relative_url)
@@ -347,8 +214,6 @@ def test_short_kinbana_external_url_formatter_request_exception(mock_post: mock.
         base_url='http://kibana.test.org',
         auth=None,
         security_tenant=None,
-        new_shortener=False,
-        id='unused',
     )
     with pytest.raises(EAException, match="Failed to invoke Kibana Shorten URL API"):
         formatter.format('http://wacky.org')

@@ -31,7 +31,6 @@
 - sphinx 4.3.1 to 4.3.2 - [#618](https://github.com/jertel/elastalert2/pull/618) - @nsano-rururu
 - Remove unused parameter boto-profile - [#622](https://github.com/jertel/elastalert2/pull/622) - @nsano-rururu
 - [Docs] Include Docker example; add additional FAQs - [#623](https://github.com/jertel/elastalert2/pull/623) - @nsano-rururu
-- Add support for URL shortening with Kibana 7.16+ - [#633](https://github.com/jertel/elastalert2/pull/633) - @jertel
 
 # 2.2.3
 
