@@ -1,5 +1,5 @@
 import boto3
-from datetime import datetime
+import uuid
 import os
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlsplit, urlunsplit
 
@@ -47,12 +47,11 @@ class AbsoluteKibanaExternalUrlFormatter(KibanaExternalUrlFormatter):
 class ShortKibanaExternalUrlFormatter(KibanaExternalUrlFormatter):
     '''Formats external urls using the Kibana Shorten URL API'''
 
-    def __init__(self, base_url: str, auth: AuthBase, security_tenant: str, new_shortener: bool, id: str) -> None:
+    def __init__(self, base_url: str, auth: AuthBase, security_tenant: str, new_shortener: bool) -> None:
         self.auth = auth
         self.security_tenant = security_tenant
         self.goto_url = urljoin(base_url, 'goto/')
         self.use_new_shortener = new_shortener
-        self.id = id
 
         if self.use_new_shortener:
             path = 'api/short_url'
@@ -71,7 +70,7 @@ class ShortKibanaExternalUrlFormatter(KibanaExternalUrlFormatter):
             long_url = append_security_tenant(long_url, self.security_tenant)
 
         if self.use_new_shortener:
-            json = { 'locatorId': "elastalert-" + self.id, 'params': { 'url': long_url } }
+            json = { 'locatorId': 'LEGACY_SHORT_URL_LOCATOR', 'params': { 'url': long_url } }
             response_param = 'id'
         else:
             json = { 'url': long_url }
@@ -153,10 +152,6 @@ def create_kibana_external_url_formatter(
 
     if shorten:
         auth = create_kibana_auth(base_url, rule)
-
-        # id must be unique, can be used to delete the shortened url, currently unused except for creation
-        id = datetime.now().isoformat()
-        
-        return ShortKibanaExternalUrlFormatter(base_url, auth, security_tenant, new_shortener, id)
+        return ShortKibanaExternalUrlFormatter(base_url, auth, security_tenant, new_shortener)
 
     return AbsoluteKibanaExternalUrlFormatter(base_url, security_tenant)

@@ -225,7 +225,6 @@ def test_short_kinbana_external_url_formatter(
         auth=test_case.authorization,
         security_tenant=test_case.security_tenant,
         new_shortener=False,
-        id='unused',
     )
 
     actualUrl = formatter.format(test_case.relative_url)
@@ -249,7 +248,7 @@ def test_short_kinbana_external_url_formatter(
                 'osd-xsrf': 'elastalert'
             },
             'json': {
-                'locatorId': 'elastalert-some_unique_id',
+                'locatorId': 'LEGACY_SHORT_URL_LOCATOR',
                 'params': {
                     'url': '/app/dev_tools#/console'
                 }
@@ -270,7 +269,7 @@ def test_short_kinbana_external_url_formatter(
                 'osd-xsrf': 'elastalert'
             },
             'json': {
-                'locatorId': 'elastalert-some_unique_id',
+                'locatorId': 'LEGACY_SHORT_URL_LOCATOR',
                 'params': {
                     'url': '/app/dev_tools#/console'
                 }
@@ -292,7 +291,7 @@ def test_short_kinbana_external_url_formatter(
                 'osd-xsrf': 'elastalert'
             },
             'json': {
-                'locatorId': 'elastalert-some_unique_id',
+                'locatorId': 'LEGACY_SHORT_URL_LOCATOR',
                 'params': {
                     'url': '/app/dev_tools#/console'
                 }
@@ -314,7 +313,7 @@ def test_short_kinbana_external_url_formatter(
                 'osd-xsrf': 'elastalert'
             },
             'json': {
-                'locatorId': 'elastalert-some_unique_id',
+                'locatorId': 'LEGACY_SHORT_URL_LOCATOR',
                 'params': {
                     'url': '/app/dev_tools?security_tenant=global#/console'
                 }
@@ -332,7 +331,6 @@ def test_7_16_short_kibana_external_url_formatter(
         auth=test_case.authorization,
         security_tenant=test_case.security_tenant,
         new_shortener=True,
-        id='some_unique_id',
     )
 
     actualUrl = formatter.format(test_case.relative_url)
@@ -348,7 +346,6 @@ def test_short_kinbana_external_url_formatter_request_exception(mock_post: mock.
         auth=None,
         security_tenant=None,
         new_shortener=False,
-        id='unused',
     )
     with pytest.raises(EAException, match="Failed to invoke Kibana Shorten URL API"):
         formatter.format('http://wacky.org')
