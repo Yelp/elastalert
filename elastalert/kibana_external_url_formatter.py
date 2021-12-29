@@ -1,4 +1,5 @@
 import boto3
+from datetime import datetime
 import os
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlsplit, urlunsplit
 
@@ -46,12 +47,19 @@ class AbsoluteKibanaExternalUrlFormatter(KibanaExternalUrlFormatter):
 class ShortKibanaExternalUrlFormatter(KibanaExternalUrlFormatter):
     '''Formats external urls using the Kibana Shorten URL API'''
 
-    def __init__(self, base_url: str, auth: AuthBase, security_tenant: str) -> None:
+    def __init__(self, base_url: str, auth: AuthBase, security_tenant: str, new_shortener: bool, id: str) -> None:
         self.auth = auth
         self.security_tenant = security_tenant
         self.goto_url = urljoin(base_url, 'goto/')
+        self.use_new_shortener = new_shortener
+        self.id = id
 
-        shorten_url = urljoin(base_url, 'api/shorten_url')
+        if self.use_new_shortener:
+            path = 'api/short_url'
+        else:
+            path = 'api/shorten_url'
+
+        shorten_url = urljoin(base_url, path)
         if security_tenant:
             shorten_url = append_security_tenant(shorten_url, security_tenant)
         self.shorten_url = shorten_url
@@ -62,6 +70,13 @@ class ShortKibanaExternalUrlFormatter(KibanaExternalUrlFormatter):
         if self.security_tenant:
             long_url = append_security_tenant(long_url, self.security_tenant)
 
+        if self.use_new_shortener:
+            json = { 'locatorId': "elastalert-" + self.id, 'params': { 'url': long_url } }
+            response_param = 'id'
+        else:
+            json = { 'url': long_url }
+            response_param = 'urlId'
+
         try:
             response = requests.post(
                 url=self.shorten_url,
@@ -70,16 +85,14 @@ class ShortKibanaExternalUrlFormatter(KibanaExternalUrlFormatter):
                     'kbn-xsrf': 'elastalert',
                     'osd-xsrf': 'elastalert'
                 },
-                json={
-                    'url': long_url
-                }
+                json=json
             )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Failed to invoke Kibana Shorten URL API: %s" % e)
 
         response_body = response.json()
-        url_id = response_body.get('urlId')
+        url_id = response_body.get(response_param)
 
         goto_url = urljoin(self.goto_url, url_id)
         if self.security_tenant:
@@ -121,18 +134,29 @@ def create_kibana_auth(kibana_url, rule) -> AuthBase:
     # Unauthenticated
     return None
 
+def is_kibana_atleastsevensixteen(version: str):
+    """
+    Returns True when the Kibana server version >= 7.16
+    """
+    major, minor = list(map(int, version.split(".")[:2]))
+    return major > 7 or (major == 7 and minor >= 16)
 
 def create_kibana_external_url_formatter(
     rule,
     shorten: bool,
-    security_tenant: str
+    security_tenant: str,
 ) -> KibanaExternalUrlFormatter:
     '''Creates a Kibana external url formatter'''
 
     base_url = rule.get('kibana_url')
+    new_shortener = is_kibana_atleastsevensixteen(rule.get('kibana_discover_version', '0.0'))
 
     if shorten:
         auth = create_kibana_auth(base_url, rule)
-        return ShortKibanaExternalUrlFormatter(base_url, auth, security_tenant)
+
+        # id must be unique, can be used to delete the shortened url, currently unused except for creation
+        id = datetime.now().isoformat()
+        
+        return ShortKibanaExternalUrlFormatter(base_url, auth, security_tenant, new_shortener, id)
 
     return AbsoluteKibanaExternalUrlFormatter(base_url, security_tenant)
