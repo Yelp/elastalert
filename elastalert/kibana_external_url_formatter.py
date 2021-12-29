@@ -1,5 +1,4 @@
 import boto3
-import uuid
 import os
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlsplit, urlunsplit
 
