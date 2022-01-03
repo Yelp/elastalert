@@ -409,3 +409,26 @@ I've set `ssl_show_warn` but it doesn't seem to work.
 
 Currently ElastAlert 2 uses elasticserarch-py 7.0.0, but the target parameters are the parameters that can be used from elasticserarch-py 7.5.0.
 In the future, we will end support for elasticsearch in the past and raise elasticserarch-py to 7.5.0 or later.
+
+How to write a query filter for phrases containing spaces?
+==========
+
+To search for values containing spaces, or other special characters you will need to use escape characters. This is briefly mentioned at the bottom of the [Lucene Query Parser Syntax documentation](https://lucene.apache.org/core/2_9_4/queryparsersyntax.html) but does not go into extensive detail. Below are some examples to use in ElastAlert 2 rule filters.
+
+Example 1 - Escaping double quotes within double quotes. Useful for embedded single quotes and double quotes in your search phrase:
+
+```
+filter:
+ - query:
+     query_string:
+       query: "\"Women's Clothing\""
+```
+
+Example 2 - Avoiding escaping altogether by enclosing double quotes within single quotes:
+
+```
+filter:
+ - query:
+     query_string:
+       query: '"Rabbia Al"'
+```
