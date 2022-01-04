@@ -43,7 +43,7 @@ terms_window_size:
 # (Required)
 # A list of Elasticsearch filters used for find events
 # These filters are joined with AND and nested in a filtered query
-# For more info: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/query-dsl.html
+# For more info: https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
 # We are filtering for only "login_event" type documents with username "admin"
 filter:
 - term:

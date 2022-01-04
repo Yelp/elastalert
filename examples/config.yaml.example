@@ -48,7 +48,7 @@ es_port: 9200
 
 # GET request with body is the default option for Elasticsearch.
 # If it fails for some reason, you can pass 'GET', 'POST' or 'source'.
-# See http://elasticsearch-py.readthedocs.io/en/master/connection.html?highlight=send_get_body_as#transport
+# See https://elasticsearch-py.readthedocs.io/en/master/connection.html?highlight=send_get_body_as#transport
 # for details
 #es_send_get_body_as: GET
 
