@@ -24,4 +24,5 @@ jobs:
         uses: J12934/helm-gh-pages-action@master
         with:
           charts-folder: chart
-          access-token: "${{ secrets.GITHUB_TOKEN }}"
+          access-token: "${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}"
+          deploy-branch: gh-pages
