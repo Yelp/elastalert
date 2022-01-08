@@ -33,6 +33,7 @@
 - [Docs] Include Docker example; add additional FAQs - [#623](https://github.com/jertel/elastalert2/pull/623) - @nsano-rururu
 - Add support for URL shortening with Kibana 7.16+ - [#633](https://github.com/jertel/elastalert2/pull/633) - @jertel
 - [example] URL correction of information about Elasticsearch - [#642](https://github.com/jertel/elastalert2/pull/642) - @nsano-rururu
+- pylint 2.11.1 to 2.12.2 - [#651](https://github.com/jertel/elastalert2/pull/651) - @nsano-rururu
 
 # 2.2.3
 
