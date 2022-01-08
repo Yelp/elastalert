@@ -12,13 +12,24 @@
 # 2.x.x
 
 ## Breaking changes
+- None
+
+## New features
+- TBD - [#000](https://github.com/jertel/elastalert2/pull/000) - @some_elastic_contributor_tbd
+
+## Other changes
+- TBD - [#000](https://github.com/jertel/elastalert2/pull/000) - @some_elastic_contributor_tbd
+
+# 2.3.0
+
+## Breaking changes
 - [Kubernetes] The helm chart repository has changed. The new repository is located at https://jertel.github.io/elastalert2/. This was necessary due to the previous chart museum hosting service, Bonzai Cloud, terminating it's chart hosting service on January 21, 2022. - @jertel
 
 ## New features
 - Add metric_agg_script to MetricAggregationRule [#558](https://github.com/jertel/elastalert2/pull/558) - @dequis
-- [Alertmanager]Add support for basic authentication - [#575](https://github.com/jertel/elastalert2/pull/575) - @nsano-rururu
+- [Alertmanager] Add support for basic authentication - [#575](https://github.com/jertel/elastalert2/pull/575) - @nsano-rururu
 - Add support for Kibana 7.16 for Kibana Discover - [#612](https://github.com/jertel/elastalert2/pull/612) - @nsano-rururu
-- [MS Teams]Add support for verify SSL certificate - [#628](https://github.com/jertel/elastalert2/pull/628) - @nsano-rururu
+- [MS Teams] Add support for disabling verification of SSL certificate - [#628](https://github.com/jertel/elastalert2/pull/628) - @nsano-rururu
 
 ## Other changes
 - sphinx 4.2.0 to 4.3.0 and tzlocal==2.1 - [#561](https://github.com/jertel/elastalert2/pull/561) - @nsano-rururu
