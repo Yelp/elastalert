@@ -465,7 +465,9 @@ class RulesLoader(object):
         if rule.get('scan_entire_timeframe') and not rule.get('timeframe'):
             raise EAException('scan_entire_timeframe can only be used if there is a timeframe specified')
 
-        # Compile Jinja Template
+        self.load_jinja_template(rule)
+
+    def load_jinja_template(self, rule):
         if rule.get('alert_text_type') == 'alert_text_jinja':
             jinja_template_path = rule.get('jinja_template_path')
             if jinja_template_path:
@@ -520,6 +522,7 @@ class RulesLoader(object):
                 name, config = next(iter(list(alert.items())))
                 config_copy = copy.copy(rule)
                 config_copy.update(config)  # warning, this (intentionally) mutates the rule dict
+                self.load_jinja_template(config_copy)
                 return name, config_copy
             else:
                 raise EAException()
