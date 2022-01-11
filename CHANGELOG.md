@@ -18,7 +18,7 @@
 - TBD - [#000](https://github.com/jertel/elastalert2/pull/000) - @some_elastic_contributor_tbd
 
 ## Other changes
-- TBD - [#000](https://github.com/jertel/elastalert2/pull/000) - @some_elastic_contributor_tbd
+- Load Jinja template when loading an alert - [#654](https://github.com/jertel/elastalert2/pull/654) - @thib12
 
 # 2.3.0
 
