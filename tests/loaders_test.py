@@ -172,6 +172,32 @@ def test_load_inline_alert_rule():
         assert 'baz@foo.bar' in test_rule_copy['alert'][1].rule['email']
 
 
+def test_load_inline_alert_rule_with_jinja():
+    rules_loader = FileRulesLoader(test_config)
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy['alert'] = [
+        {
+            'email': {
+                'alert_text_type': 'alert_text_jinja',
+                'alert_text': '{{ myjinjavar }}'
+            }
+        },
+        {
+            'email': {
+                'alert_text': 'hello'
+            }
+        }
+    ]
+    test_config_copy = copy.deepcopy(test_config)
+    with mock.patch.object(rules_loader, 'get_yaml') as mock_open:
+        mock_open.side_effect = [test_config_copy, test_rule_copy]
+        rules_loader.load_modules(test_rule_copy)
+        assert isinstance(test_rule_copy['alert'][0], EmailAlerter)
+        assert isinstance(test_rule_copy['alert'][1], EmailAlerter)
+        assert 'jinja_template' in test_rule_copy['alert'][0].rule
+        assert 'jinja_template' not in test_rule_copy['alert'][1].rule
+
+
 def test_file_rules_loader_get_names_recursive():
     conf = {'scan_subdirectories': True, 'rules_folder': empty_folder_test_path}
     rules_loader = FileRulesLoader(conf)
