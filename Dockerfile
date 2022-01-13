@@ -34,7 +34,7 @@ RUN apt update && apt -y upgrade && \
         >> /opt/elastalert/run.sh && \
     chmod +x /opt/elastalert/run.sh && \
     groupadd -g ${GID} ${USERNAME} && \
-    useradd -u ${UID} -g ${GID} -M -b /opt/elastalert -s /sbin/nologin \
+    useradd -u ${UID} -g ${GID} -M -b /opt -s /sbin/nologin \
         -c "ElastAlert 2 User" ${USERNAME}
 
 USER ${USERNAME}
