@@ -12,7 +12,7 @@
 # 2.x.x
 
 ## Breaking changes
-- None
+- Dockerfile refactor for app home and user home to be the same directory (/opt/elastalert/). Before app home is /opt/elastalert/ and user home is /opt/elastalert/elastalert. After app home and user home are the same /opt/elastalert/ - [#656](https://github.com/jertel/elastalert2/pull/656)
 
 ## New features
 - TBD - [#000](https://github.com/jertel/elastalert2/pull/000) - @some_elastic_contributor_tbd
@@ -239,7 +239,7 @@
 ## New features
 - Support for multiple rules directories and fix `..data` Kubernetes/Openshift recursive directories in FileRulesLoader [#157](https://github.com/jertel/elastalert2/pull/157) - @mrfroggg
 - Support environment variable substition in yaml files - [#149](https://github.com/jertel/elastalert2/pull/149) - @archfz
-- Update schema.yaml and enhance documentation for Email alerter - [#144](https://github.com/jertel/elastalert2/pull/144) - @nsano-rururu 
+- Update schema.yaml and enhance documentation for Email alerter - [#144](https://github.com/jertel/elastalert2/pull/144) - @nsano-rururu
 - Default Email alerter to use port 25, and require http_post_url for HTTP Post alerter - [#143](https://github.com/jertel/elastalert2/pull/143) - @nsano-rururu
 - Support extra message features for Slack and Mattermost - [#140](https://github.com/jertel/elastalert2/pull/140) - @nsano-rururu
 - Support a footer in alert text - [#133](https://github.com/jertel/elastalert2/pull/133) - @nsano-rururu
