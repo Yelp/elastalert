@@ -2500,6 +2500,42 @@ Optional:
 
 ``ms_teams_alert_fixed_width``: By default this is ``False`` and the notification will be sent to MS Teams as-is. Teams supports a partial Markdown implementation, which means asterisk, underscore and other characters may be interpreted as Markdown. Currenlty, Teams does not fully implement code blocks. Setting this attribute to ``True`` will enable line by line code blocks. It is recommended to enable this to get clearer notifications in Teams.
 
+``ms_teams_alert_facts``: You can add additional facts to your MS Teams alerts using this field. Specify the title using `name` and a value for the field using `value`.
+
+Example ms_teams_alert_facts::
+
+    ms_teams_alert_facts:
+      - name: Host
+        value: monitor.host
+      - name: Status
+        value: monitor.status
+      - name: Zone
+        value: beat.name
+
+``ms_teams_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the MS Teams notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
+
+``ms_teams_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
+
+Example ms_teams_attach_kibana_discover_url, ms_teams_kibana_discover_title::
+
+    # (Required)
+    generate_kibana_discover_url: True
+    kibana_discover_app_url: "http://localhost:5601/app/discover#/"
+    kibana_discover_index_pattern_id: "4babf380-c3b1-11eb-b616-1b59c2feec54"
+    kibana_discover_version: "7.15"
+
+    # (Optional)
+    kibana_discover_from_timedelta:
+      minutes: 10
+    kibana_discover_to_timedelta:
+      minutes: 10
+
+    # (Required)
+    ms_teams_attach_kibana_discover_url: True
+
+    # (Optional)
+    ms_teams_kibana_discover_title: "Discover in Kibana"
+
 ``ms_teams_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
 
 ``ms_teams_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
