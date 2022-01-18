@@ -1,8 +1,9 @@
+import copy
 import json
 import requests
 
 from elastalert.alerts import Alerter, DateTimeEncoder
-from elastalert.util import EAException, elastalert_logger
+from elastalert.util import EAException, elastalert_logger, lookup_es_key
 from requests.exceptions import RequestException
 
 
@@ -21,6 +22,9 @@ class MsTeamsAlerter(Alerter):
         self.ms_teams_theme_color = self.rule.get('ms_teams_theme_color', '')
         self.ms_teams_ca_certs = self.rule.get('ms_teams_ca_certs')
         self.ms_teams_ignore_ssl_errors = self.rule.get('ms_teams_ignore_ssl_errors', False)
+        self.ms_teams_alert_facts = self.rule.get('ms_teams_alert_facts', '')
+        self.ms_teams_attach_kibana_discover_url = self.rule.get('ms_teams_attach_kibana_discover_url', False)
+        self.ms_teams_kibana_discover_title = self.rule.get('ms_teams_kibana_discover_title', 'Discover in Kibana')
 
     def format_body(self, body):
         if self.ms_teams_alert_fixed_width:
@@ -28,13 +32,21 @@ class MsTeamsAlerter(Alerter):
             body = "```{0}```".format('```\n\n```'.join(x for x in body.split('\n'))).replace('\n``````', '')
         return body
 
+    def populate_facts(self, matches):
+        alert_facts = []
+        for arg in self.ms_teams_alert_facts:
+            arg = copy.copy(arg)
+            arg['value'] = lookup_es_key(matches[0], arg['value'])
+            alert_facts.append(arg)
+        return alert_facts
+
     def alert(self, matches):
         body = self.create_alert_body(matches)
 
         body = self.format_body(body)
         # post to Teams
         headers = {'content-type': 'application/json'}
-    
+
         if self.ms_teams_ca_certs:
             verify = self.ms_teams_ca_certs
         else:
@@ -49,10 +61,30 @@ class MsTeamsAlerter(Alerter):
             '@context': 'http://schema.org/extensions',
             'summary': self.ms_teams_alert_summary,
             'title': self.create_title(matches),
-            'text': body
+            'sections': [{'text': body}],
         }
+
+        if self.ms_teams_alert_facts != '':
+            payload['sections'][0]['facts'] = self.populate_facts(matches)
+
         if self.ms_teams_theme_color != '':
             payload['themeColor'] = self.ms_teams_theme_color
+
+        if self.ms_teams_attach_kibana_discover_url:
+            kibana_discover_url = lookup_es_key(matches[0], 'kibana_discover_url')
+            if kibana_discover_url:
+                payload['potentialAction'] = [
+                    {
+                        '@type': 'OpenUri',
+                        'name': self.ms_teams_kibana_discover_title,
+                        'targets': [
+                            {
+                                'os': 'default',
+                                'uri': kibana_discover_url,
+                            }
+                        ],
+                    }
+                ]
 
         for url in self.ms_teams_webhook_url:
             try:
@@ -60,7 +92,7 @@ class MsTeamsAlerter(Alerter):
                                          headers=headers, proxies=proxies, verify=verify)
                 response.raise_for_status()
             except RequestException as e:
-                raise EAException("Error posting to ms teams: %s" % e)
+                raise EAException("Error posting to MS Teams: %s" % e)
         elastalert_logger.info("Alert sent to MS Teams")
 
     def get_info(self):
