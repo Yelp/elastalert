@@ -86,37 +86,12 @@ always using the latest released version of ElastAlert 2.
 A properly configured config.yaml file must be mounted into the container during
 startup of the container. Use the `example file
 <https://github.com/jertel/elastalert2/blob/master/examples/config.yaml.example>`_
-provided as a template, and once saved locally to a file such as
-``/tmp/elastalert.yaml``, run the container as follows:
+as a template.
 
-via Docker Hub (hub.docker.com)
+The following example assumes Elasticsearch container has already been started with Docker. 
+This example also assumes both the Elasticsearch and ElastAlert2 containers are using the default Docker network: ``es_default``
 
-.. code-block::
-
-    docker run -d -v /tmp/elastalert.yaml:/opt/elastalert/config.yaml jertel/elastalert2
-
-via GitHub Container Registry (ghcr.io)
-
-.. code-block::
-
-    docker run -d -v /tmp/elastalert.yaml:/opt/elastalert/config.yaml ghcr.io/jertel/elastalert2/elastalert2
-
-To build the image locally run the following command:
-
-.. code-block::
-
-    docker build . -t elastalert2
-
-.. _kubernetes-instructions:
-
-Docker example
-
-elasticsearch has already been started with docker. 
-The docker network name is `es_default`. 
-I will explain on the assumption that elastalert will participate there.
-
-Create a rule directory and rules file in addition to elastalert.yaml
-Mount when docker container starts
+Create a rule directory and rules file in addition to elastalert.yaml, and then mount both into the ElastAlert 2 container:
 
 .. code-block::
 
@@ -181,14 +156,36 @@ a.yaml
     slack_parse_override: "none"
     slack_username_override: "elastalert"
 
+Starting the container via Docker Hub (hub.docker.com)
+
 .. code-block::
 
     docker run --net=es_default -d --name elastalert --restart=always \
     -v $(pwd)/elastalert.yaml:/opt/elastalert/config.yaml \
     -v $(pwd)/rules:/opt/elastalert/rules \
-    jertel/elastalert2:2.3.0 --verbose
+    jertel/elastalert2 --verbose
 
     docker logs -f elastalert
+
+Starting the container via GitHub Container Registry (ghcr.io)
+
+.. code-block::
+
+    docker run --net=es_default -d --name elastalert --restart=always \
+    -v $(pwd)/elastalert.yaml:/opt/elastalert/config.yaml \
+    -v $(pwd)/rules:/opt/elastalert/rules \
+    ghcr.io/jertel/elastalert2/elastalert2 --verbose
+
+    docker logs -f elastalert
+
+For developers, the below command can be used to build the image locally:
+
+.. code-block::
+
+    docker build . -t elastalert2
+
+
+.. _kubernetes-instructions:
 
 As a Kubernetes deployment
 ==========================
