@@ -89,18 +89,6 @@ startup of the container. Use the `example file
 provided as a template, and once saved locally to a file such as
 ``/tmp/elastalert.yaml``, run the container as follows:
 
-via Docker Hub (hub.docker.com)
-
-.. code-block::
-
-    docker run -d -v /tmp/elastalert.yaml:/opt/elastalert/config.yaml jertel/elastalert2
-
-via GitHub Container Registry (ghcr.io)
-
-.. code-block::
-
-    docker run -d -v /tmp/elastalert.yaml:/opt/elastalert/config.yaml ghcr.io/jertel/elastalert2/elastalert2
-
 To build the image locally run the following command:
 
 .. code-block::
@@ -181,12 +169,25 @@ a.yaml
     slack_parse_override: "none"
     slack_username_override: "elastalert"
 
+via Docker Hub (hub.docker.com)
+
 .. code-block::
 
     docker run --net=es_default -d --name elastalert --restart=always \
     -v $(pwd)/elastalert.yaml:/opt/elastalert/config.yaml \
     -v $(pwd)/rules:/opt/elastalert/rules \
-    jertel/elastalert2:2.3.0 --verbose
+    jertel/elastalert2 --verbose
+
+    docker logs -f elastalert
+
+via GitHub Container Registry (ghcr.io)
+
+.. code-block::
+
+    docker run --net=es_default -d --name elastalert --restart=always \
+    -v $(pwd)/elastalert.yaml:/opt/elastalert/config.yaml \
+    -v $(pwd)/rules:/opt/elastalert/rules \
+    ghcr.io/jertel/elastalert2/elastalert2 --verbose
 
     docker logs -f elastalert
 
