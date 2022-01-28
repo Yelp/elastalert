@@ -21,8 +21,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Build image
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME
 
       - name: Log into GitHub Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
@@ -36,20 +34,33 @@ jobs:
         with:
           version: latest
 
-      - name: Build and Push multi-arch to Docker Hub only
+      - name: Build and Push multi-arch to Docker Hub
         run: |
-            # Strip git ref prefix from version
-            VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
 
-            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-            docker buildx build \
-            --platform=linux/amd64,linux/arm64,linux/arm/v7 \
-            --output "type=image,push=true" \
-            --file ./Dockerfile . \
-            --tag $DOCKER_REPO:$VERSION-ma
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "master" ] && VERSION=latest
 
-      - name: Push image
+          TAG2=""
+          if [[ "$VERSION" == "2."* ]]; then
+            TAG2="--tag $DOCKER_REPO:2"
+          fi
+
+          echo VERSION=$VERSION
+          echo TAG2=$TAG2
+
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker buildx build \
+          --platform=linux/amd64,linux/arm64,linux/arm/v7 \
+          --output "type=image,push=true" \
+          --file ./Dockerfile . \
+          --tag $DOCKER_REPO:$VERSION $TAG2
+
+      - name: Build and push image to GitHub
         run: |
+          docker build . --file Dockerfile --tag $IMAGE_NAME
+
           IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
 
           # Change all uppercase to lowercase
@@ -68,16 +79,8 @@ jobs:
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
 
-          # Push to Docker Hub
-          docker tag $IMAGE_NAME $DOCKER_REPO:$VERSION
-          docker push $DOCKER_REPO:$VERSION
-
           if [[ "$VERSION" == "2."* ]]; then
             # Push to GitHub Package
             docker tag $IMAGE_NAME $IMAGE_ID:2
             docker push $IMAGE_ID:2
-
-            # Push to Docker Hub
-            docker tag $IMAGE_NAME $DOCKER_REPO:2
-            docker push $DOCKER_REPO:2
           fi
