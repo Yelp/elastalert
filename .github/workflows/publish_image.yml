@@ -30,6 +30,24 @@ jobs:
       - name: Log into Docker Registry
         run: echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
 
+      - name: Install buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          version: latest
+
+      - name: Build and Push multi-arch to Docker Hub only
+        run: |
+            # Strip git ref prefix from version
+            VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+            docker buildx build \
+            --platform=linux/amd64,linux/arm64,linux/arm/v7 \
+            --output "type=image,push=true" \
+            --file ./Dockerfile . \
+            --tag $DOCKER_REPO:$VERSION-ma
+
       - name: Push image
         run: |
           IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
