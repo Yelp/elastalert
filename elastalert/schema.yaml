@@ -344,6 +344,7 @@ properties:
   exotel_auth_token: {type: string}
   exotel_to_number: {type: string}
   exotel_from_number: {type: string}
+  exotel_message_body: {type: string}
 
   ### Twilio
   twilio_account_sid: {type: string}
