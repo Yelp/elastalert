@@ -16,6 +16,7 @@
 
 ## New features
 - [MS Teams] Kibana Discover URL and Facts - [#660](https://github.com/jertel/elastalert2/pull/660) - @thib12
+- Add support for Kibana 7.17 for Kibana Discover - [#695](https://github.com/jertel/elastalert2/pull/695) - @nsano-rururu
 
 ## Other changes
 - Load Jinja template when loading an alert - [#654](https://github.com/jertel/elastalert2/pull/654) - @thib12
