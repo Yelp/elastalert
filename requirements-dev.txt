@@ -3,7 +3,7 @@ coverage==6.2
 flake8
 pre-commit
 pylint==2.12.2
-pytest==6.2.5
+pytest==7.0.0
 setuptools
 sphinx_rtd_theme
 tox==3.24.5
