@@ -1323,6 +1323,8 @@ supported by the specified aggregation type.  If using a scripted field via ``me
 ``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg',
 'sum', 'cardinality', 'value_count'.
 
+.. note:: When Metric Aggregation has a match, match_body includes an aggregated value that triggered the match so that you can use that on an alert. The value is named based on ``metric_agg_key`` and ``metric_agg_type``. For example, if you set ``metric_agg_key`` to 'system.cpu.total.norm.pct' and ``metric_agg_type`` to 'avg', the name of the value is 'metric_system.cpu.total.norm.pct_avg'. Because of this naming rule, you might face conflicts with jinja2 template, and when that happens, you also can use 'metric_agg_value' from match_body instead.
+
 ``doc_type``: Specify the ``_type`` of document to search for.
 
 This rule also requires at least one of the two following options:

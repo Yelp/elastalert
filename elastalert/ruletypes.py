@@ -1106,10 +1106,13 @@ class MetricAggregationRule(BaseAggregationRule):
                 metric_val = aggregation_data[self.metric_key]['value']
             if self.crossed_thresholds(metric_val):
                 match = {self.rules['timestamp_field']: timestamp,
-                         self.metric_key: metric_val}
+                         self.metric_key: metric_val,
+                         'metric_agg_value': metric_val
+                         }
                 metric_format_string = self.rules.get('metric_format_string', None)
                 if metric_format_string is not None:
                     match[self.metric_key +'_formatted'] = format_string(metric_format_string, metric_val)
+                    match['metric_agg_value_formatted'] = format_string(metric_format_string, metric_val)
                 if query_key is not None:
                     match = expand_string_into_dict(match, self.rules['query_key'], query_key)
                 self.add_match(match)
