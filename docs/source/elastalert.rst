@@ -210,6 +210,18 @@ rule will no longer be run until either ElastAlert 2 restarts or the rule file h
 only an uncaught exception will send a notification email. The from address, SMTP host, and reply-to header can be set
 using ``from_addr``, ``smtp_host``, and ``email_reply_to`` options, respectively. By default, no emails will be sent.
 
+single address example::
+
+    notify_email: "one@domain"
+
+or
+
+multiple address example::
+
+    notify_email:
+        - "one@domain"
+        - "two@domain"
+
 ``from_addr``: The address to use as the from header in email notifications.
 This value will be used for email alerts as well, unless overwritten in the rule config. The default value
 is "ElastAlert".

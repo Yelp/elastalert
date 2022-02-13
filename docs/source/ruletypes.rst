@@ -1473,8 +1473,39 @@ or
 .. code-block:: yaml
 
     alert:
-    - email
-    - jira
+      - alerta
+      - alertmanager
+      - chatwork
+      - command
+      - datadog
+      - debug
+      - dingtalk
+      - discord
+      - email
+      - exotel
+      - gitter
+      - googlechat
+      - hivealerter
+      - jira
+      - linenotify
+      - mattermost
+      - ms_teams
+      - opsgenie
+      - pagerduty
+      - pagertree
+      - post
+      - post2
+      - rocketchat
+      - servicenow
+      - ses
+      - slack
+      - sns
+      - stomp
+      - telegram
+      - tencent_sms
+      - twilio
+      - victorops
+      - zabbix
 
 Options for each alerter can either defined at the top level of the YAML file, or nested within the alert name, allowing for different settings
 for multiple of the same alerter. For example, consider sending multiple emails, but with different 'To' and 'From' fields:
@@ -1762,6 +1793,18 @@ AWS SES requires one option:
 
 ``ses_email``: An address or list of addresses to sent the alert to.
 
+single address example::
+
+  ses_email: "one@domain"
+
+or
+
+multiple address example::
+
+  ses_email:
+    - "one@domain"
+    - "two@domain"
+
 ``ses_from_addr``: This sets the From header in the email.
 
 Optional:
@@ -1778,7 +1821,31 @@ Optional:
 
 ``ses_cc``: This adds the CC emails to the list of recipients. By default, this is left empty.
 
+single address example::
+
+  ses_cc: "one@domain"
+
+or
+
+multiple address example::
+
+  ses_cc:
+    - "one@domain"
+    - "two@domain"
+
 ``ses_bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
+
+single address example::
+
+  ses_bcc: "one@domain"
+
+or
+
+multiple address example::
+
+  ses_bcc:
+    - "one@domain"
+    - "two@domain"
 
 Example When not using aws_profile usage::
 
@@ -2063,6 +2130,18 @@ This alert requires one additional option:
 
 ``email``: An address or list of addresses to sent the alert to.
 
+single address example::
+
+  email: "one@domain"
+
+or
+
+multiple address example::
+
+  email:
+    - "one@domain"
+    - "two@domain"
+
 Optional:
 
 ``email_from_field``: Use a field from the document that triggered the alert as the recipient. If the field cannot be found,
@@ -2100,7 +2179,31 @@ by the smtp server.
 
 ``cc``: This adds the CC emails to the list of recipients. By default, this is left empty.
 
+single address example::
+
+  cc: "one@domain"
+
+or
+
+multiple address example::
+
+  cc:
+    - "one@domain"
+    - "two@domain"
+
 ``bcc``: This adds the BCC emails to the list of recipients but does not show up in the email message. By default, this is left empty.
+
+single address example::
+
+  bcc: "one@domain"
+
+or
+
+multiple address example::
+
+  bcc:
+    - "one@domain"
+    - "two@domain"
 
 ``email_format``: If set to 'html', the email's MIME type will be set to HTML, and HTML content should correctly render. If you use this,
 you need to put your own HTML into ``alert_text`` and use ``alert_text_type: alert_text_jinja`` Or ``alert_text_type: alert_text_only``.
@@ -2798,7 +2901,7 @@ The ServiceNow alerter will create a ne Incident in ServiceNow. The body of the 
 
 The alerter requires the following options:
 
-``servicenow_rest_url``: The ServiceNow RestApi url, this will look like https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/c_TableAPI#r_TableAPI-POST
+``servicenow_rest_url``: The ServiceNow RestApi url, this will look like `TableAPI <https://developer.servicenow.com/dev.do#!/reference/api/orlando/rest/c_TableAPI#r_TableAPI-POST>`_.
 
 ``username``: The ServiceNow Username to access the api.
 
