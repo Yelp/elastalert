@@ -485,7 +485,7 @@ properties:
   jira_bump_not_in_statuses: *arrayOfString
   jira_bump_in_statuses: *arrayOfString
   jira_bump_only: {type: boolean}
-  jira_transition_to: {type: boolean}
+  jira_transition_to: {type: string}
   jira_bump_after_inactivity: {type: number}
 
   ### Line Notify
