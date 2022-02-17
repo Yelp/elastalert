@@ -19,7 +19,6 @@
 - Add support for Kibana 7.17 for Kibana Discover - [#695](https://github.com/jertel/elastalert2/pull/695) - @nsano-rururu
 - Added a fixed name metric_agg_value to MetricAggregationRule match_body - [#697](https://github.com/jertel/elastalert2/pull/697) - @iamxeph
 ## Other changes
-- Fixing jira_transition_to schema bug. Change property type from boolean to string [#721](https://github.com/jertel/elastalert2/pull/721) - @toxisch
 - Load Jinja template when loading an alert - [#654](https://github.com/jertel/elastalert2/pull/654) - @thib12
 - tox 3.24.4 to 3.24.5 - [#655](https://github.com/jertel/elastalert2/pull/655) - @nsano-rururu
 - sphinx 4.3.2 to 4.4.0 - [#661](https://github.com/jertel/elastalert2/pull/661) - @nsano-rururu
@@ -31,6 +30,7 @@
 - [Docs] Document updates for Alerts and email addresses etc - [#706](https://github.com/jertel/elastalert2/pull/706) - @nsano-rururu
 - [Docs] Update of RuleType Configuration Cheat Sheet - [#707](https://github.com/jertel/elastalert2/pull/707) - @nsano-rururu
 - Pytest 7.0.0 to 7.0.1 - [#710](https://github.com/jertel/elastalert2/pull/710) - @nsano-rururu
+- Fixing jira_transition_to schema bug. Change property type from boolean to string [#721](https://github.com/jertel/elastalert2/pull/721) - @toxisch
 
 # 2.3.0
 
