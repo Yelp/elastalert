@@ -95,6 +95,13 @@ class ElasticSearchClient(Elasticsearch):
         """
         return int(self.es_version.split(".")[0]) >= 7
 
+    def is_atleasteight(self):
+        """
+        Returns True when the Elasticsearch server version >= 8
+        """
+        return int(self.es_version.split(".")[0]) >= 8
+
+
     def resolve_writeback_index(self, writeback_index, doc_type):
         """ In ES6, you cannot have multiple _types per index,
         therefore we use self.writeback_index as the prefix for the actual
