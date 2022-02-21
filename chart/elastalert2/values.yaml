@@ -150,9 +150,9 @@ extraConfigOptions: {}
 # command: ["YOUR_CUSTOM_COMMAND"]
 # args: ["YOUR", "CUSTOM", "ARGS"]
 
-
 # specifies the rules volume to be used
 rulesVolumeName: "rules"
+
 # additional rule configurations e.g. (http://elastalert2.readthedocs.io/en/latest/)
 rules: {}
   # deadman_slack: |-
