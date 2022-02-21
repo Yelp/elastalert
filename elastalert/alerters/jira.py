@@ -86,7 +86,7 @@ class JiraAlerter(Alerter):
         self.bump_in_statuses = self.rule.get('jira_bump_in_statuses')
         self.bump_after_inactivity = self.rule.get('jira_bump_after_inactivity', 0)
         self.bump_only = self.rule.get('jira_bump_only', False)
-        self.transition = self.rule.get('jira_transition_to', False)
+        self.transition = self.rule.get('jira_transition_to', None)
         self.watchers = self.rule.get('jira_watchers')
         self.client = None
 

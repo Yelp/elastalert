@@ -30,7 +30,10 @@
 - [Docs] Document updates for Alerts and email addresses etc - [#706](https://github.com/jertel/elastalert2/pull/706) - @nsano-rururu
 - [Docs] Update of RuleType Configuration Cheat Sheet - [#707](https://github.com/jertel/elastalert2/pull/707) - @nsano-rururu
 - Pytest 7.0.0 to 7.0.1 - [#710](https://github.com/jertel/elastalert2/pull/710) - @nsano-rururu
+- Fixing jira_transition_to schema bug. Change property type from boolean to string [#721](https://github.com/jertel/elastalert2/pull/721) - @toxisch
+- Begin Elasticsearch 8 support - ElastAlert 2 now supports setup with fresh ES 8 instances, and works with some alert types [#731](https://github.com/jertel/elastalert2/pull/731) - @ferozsalam
 - Enable dynamic setting of rules volume in helm chart [#732] - @ChrisFraun
+
 
 # 2.3.0
 

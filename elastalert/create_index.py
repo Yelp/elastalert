@@ -28,7 +28,13 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
     else:
         esversion = esinfo['number']
 
-    es_index_mappings = read_es_index_mappings() if is_atleastsix(esversion) else read_es_index_mappings(5)
+    es_index_mappings = {}
+    if is_atleasteight(esversion):
+        es_index_mappings = read_es_index_mappings()
+    elif is_atleastsix(esversion):
+        es_index_mappings = read_es_index_mappings(6)
+    else:
+        es_index_mappings = read_es_index_mappings(5)
 
     es_index = IndicesClient(es_client)
     if not recreate:
@@ -61,8 +67,18 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
 
     # To avoid a race condition. TODO: replace this with a real check
     time.sleep(2)
-
-    if is_atleastseven(esversion):
+    if is_atleasteight(esversion):
+        es_client.indices.put_mapping(index=ea_index,
+                                      body=es_index_mappings['elastalert'])
+        es_client.indices.put_mapping(index=ea_index + '_status',
+                                      body=es_index_mappings['elastalert_status'])
+        es_client.indices.put_mapping(index=ea_index + '_silence',
+                                      body=es_index_mappings['silence'])
+        es_client.indices.put_mapping(index=ea_index + '_error',
+                                      body=es_index_mappings['elastalert_error'])
+        es_client.indices.put_mapping(index=ea_index + '_past',
+                                      body=es_index_mappings['past_elastalert'])
+    elif is_atleastseven(esversion):
         # TODO remove doc_type completely when elasicsearch client allows doc_type=None
         # doc_type is a deprecated feature and will be completely removed in Elasicsearch 8
         es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
@@ -118,7 +134,7 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
     print('Done!')
 
 
-def read_es_index_mappings(es_version=6):
+def read_es_index_mappings(es_version=8):
     print('Reading Elastic {0} index mappings:'.format(es_version))
     return {
         'silence': read_es_index_mapping('silence', es_version),
@@ -150,6 +166,8 @@ def is_atleastsixtwo(es_version):
 def is_atleastseven(es_version):
     return int(es_version.split(".")[0]) >= 7
 
+def is_atleasteight(es_version):
+    return int(es_version.split(".")[0]) >= 8
 
 def main():
     parser = argparse.ArgumentParser()
