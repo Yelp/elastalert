@@ -153,8 +153,6 @@ extraConfigOptions: {}
 
 # specifies the rules volume to be used
 rulesVolumeName: "rules"
-# specifies the rules mount path to be used
-rulesMountPath: "/opt/elastalert/rules"
 # additional rule configurations e.g. (http://elastalert2.readthedocs.io/en/latest/)
 rules: {}
   # deadman_slack: |-
