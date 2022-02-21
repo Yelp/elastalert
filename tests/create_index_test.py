@@ -53,6 +53,12 @@ def test_read_es_6_index_mappings():
     print((json.dumps(mappings, indent=2)))
 
 
+def test_read_es_8_index_mappings():
+    mappings = elastalert.create_index.read_es_index_mappings(8)
+    assert len(mappings) == len(es_mappings)
+    print((json.dumps(mappings, indent=2)))
+
+
 @pytest.mark.parametrize('es_version, expected', [
     ('5.6.0', False),
     ('6.0.0', True),
@@ -143,4 +149,18 @@ def test_is_atleastsixtwo(es_version, expected):
 ])
 def test_is_atleastseven(es_version, expected):
     result = elastalert.create_index.is_atleastseven(es_version)
+    assert result == expected
+
+
+@pytest.mark.parametrize('es_version, expected', [
+    ('5.6.0', False),
+    ('6.0.0', False),
+    ('6.1.0', False),
+    ('7.0.0', False),
+    ('7.1.0', False),
+    ('7.17.0', False),
+    ('8.0.0', True)
+])
+def test_is_atleasteight(es_version, expected):
+    result = elastalert.create_index.is_atleasteight(es_version)
     assert result == expected
