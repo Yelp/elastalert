@@ -311,7 +311,7 @@ class Alerter(object):
         return self.rule['name']
 
     def get_account(self, account_file):
-        """ Gets the username and password from an account file.
+        """ Gets the username and password, or the apikey from an account file.
 
         :param account_file: Path to the file which contains user and password information.
         It can be either an absolute file path or one that is relative to the given rule.
@@ -321,7 +321,10 @@ class Alerter(object):
         else:
             account_file_path = os.path.join(os.path.dirname(self.rule['rule_file']), account_file)
         account_conf = read_yaml(account_file_path)
-        if 'user' not in account_conf or 'password' not in account_conf:
-            raise EAException('Account file must have user and password fields')
-        self.user = account_conf['user']
-        self.password = account_conf['password']
+        if 'user' not in account_conf and 'password' not in account_conf or 'apikey' not in account_conf:
+            raise EAException('Account file must have user and password fields, or apikey field')
+        if 'apikey' in account_conf:
+            self.apikey = account_conf['apikey']
+        else:
+            self.user = account_conf['user']
+            self.password = account_conf['password']

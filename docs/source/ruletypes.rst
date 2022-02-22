@@ -2425,8 +2425,8 @@ Jira
 ~~~~
 
 The Jira alerter will open a ticket on Jira whenever an alert is triggered. You must have a service account for ElastAlert 2 to connect with.
-The credentials of the service account are loaded from a separate file. The ticket number will be written to the alert pipeline, and if it
-is followed by an email alerter, a link will be included in the email.
+The credentials of the service account are loaded from a separate file. Credentials can either be username and password or the Personal Access Token.
+The ticket number will be written to the alert pipeline, and if it is followed by an email alerter, a link will be included in the email.
 
 This alert requires four additional options:
 
@@ -2443,6 +2443,10 @@ For an example Jira account file, see ``examples/rules/jira_acct.yaml``. The acc
 ``user``: The username.
 
 ``password``: The password.
+
+when using username and password authentictation, or when using a Personal Access Token, this single field:
+
+``apikey``: The Personal Access Token.
 
 Optional:
 

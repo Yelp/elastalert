@@ -103,7 +103,10 @@ class JiraAlerter(Alerter):
         self.reset_jira_args()
 
         try:
-            self.client = JIRA(self.server, basic_auth=(self.user, self.password))
+            if self.apikey:
+                self.client = JIRA(self.server, token_auth=(self.apikey))
+            else:
+                self.client = JIRA(self.server, basic_auth=(self.user, self.password))
             self.get_priorities()
             self.jira_fields = self.client.fields()
             self.get_arbitrary_fields()
