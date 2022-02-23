@@ -34,6 +34,7 @@
 - Begin Elasticsearch 8 support - ElastAlert 2 now supports setup with fresh ES 8 instances, and works with some alert types [#731](https://github.com/jertel/elastalert2/pull/731) - @ferozsalam
 - Enable dynamic setting of rules volume in helm chart [#732](https://github.com/jertel/elastalert2/pull/732) - @ChrisFraun
 - Do not install tests via pip install [#733](https://github.com/jertel/elastalert2/pull/733) - @buzzdeee
+- Add Elasticsearch 8 support documentation [#735](https://github.com/jertel/elastalert2/pull/735) - @ferozsalam
 
 
 # 2.3.0

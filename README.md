@@ -18,6 +18,8 @@ A [Helm chart][7] is also included for easy configuration as a Kubernetes deploy
 
 Documentation, including an FAQ, for ElastAlert 2 can be found on [readthedocs.com][3]. This is the place to start if you're not familiar with ElastAlert 2 at all.
 
+Elasticsearch 8 support is documented in the [FAQ][12].
+
 The full list of platforms that ElastAlert 2 can fire alerts into can be found [in the documentation][4].
 
 ## Contributing
@@ -40,3 +42,4 @@ ElastAlert 2 is licensed under the [Apache License, Version 2.0][5].
 [9]: https://opensearch.org/
 [10]: https://github.com/elastic/elasticsearch
 [11]: https://github.com/jertel/elastalert2/pkgs/container/elastalert2%2Felastalert2
+[12]: https://elastalert2.readthedocs.io/en/latest/recipes/faq.html#does-elastalert-2-support-elasticsearch-8
