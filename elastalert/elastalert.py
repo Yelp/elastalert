@@ -700,9 +700,6 @@ class ElastAlerter(object):
             index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
             res = self.writeback_es.search(index=index, size=1, body=query,
                                            _source_includes=['endtime', 'rule_name'])
-            else:
-                res = self.writeback_es.deprecated_search(index=index, doc_type=doc_type,
-                                                          size=1, body=query, _source_include=['endtime', 'rule_name'])
             if res['hits']['hits']:
                 endtime = ts_to_dt(res['hits']['hits'][0]['_source']['endtime'])
 
