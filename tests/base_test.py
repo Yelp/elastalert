@@ -99,20 +99,9 @@ def test_query(ea):
     ea.thread_data.current_es.search.assert_called_with(body={
         'query': {'filtered': {
             'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}},
-        'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'],
+        'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_includes=['@timestamp'],
         ignore_unavailable=True,
         size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
-
-
-def test_query_sixsix(ea_sixsix):
-    ea_sixsix.thread_data.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
-    ea_sixsix.run_query(ea_sixsix.rules[0], START, END)
-    ea_sixsix.thread_data.current_es.search.assert_called_with(body={
-        'query': {'bool': {
-            'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}},
-        'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'],
-        ignore_unavailable=True,
-        size=ea_sixsix.rules[0]['max_query_size'], scroll=ea_sixsix.conf['scroll_keepalive'])
 
 
 def test_query_with_fields(ea):
@@ -126,18 +115,6 @@ def test_query_with_fields(ea):
         size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
 
 
-def test_query_sixsix_with_fields(ea_sixsix):
-    ea_sixsix.rules[0]['_source_enabled'] = False
-    ea_sixsix.thread_data.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
-    ea_sixsix.run_query(ea_sixsix.rules[0], START, END)
-    ea_sixsix.thread_data.current_es.search.assert_called_with(body={
-        'query': {'bool': {
-            'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}},
-        'sort': [{'@timestamp': {'order': 'asc'}}], 'stored_fields': ['@timestamp']}, index='idx',
-        ignore_unavailable=True,
-        size=ea_sixsix.rules[0]['max_query_size'], scroll=ea_sixsix.conf['scroll_keepalive'])
-
-
 def test_query_with_unix(ea):
     ea.rules[0]['timestamp_type'] = 'unix'
     ea.rules[0]['dt_to_ts'] = dt_to_unix
@@ -148,24 +125,9 @@ def test_query_with_unix(ea):
     ea.thread_data.current_es.search.assert_called_with(
         body={'query': {'filtered': {
             'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}},
-            'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'],
+            'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_includes=['@timestamp'],
         ignore_unavailable=True,
         size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
-
-
-def test_query_sixsix_with_unix(ea_sixsix):
-    ea_sixsix.rules[0]['timestamp_type'] = 'unix'
-    ea_sixsix.rules[0]['dt_to_ts'] = dt_to_unix
-    ea_sixsix.thread_data.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
-    ea_sixsix.run_query(ea_sixsix.rules[0], START, END)
-    start_unix = dt_to_unix(START)
-    end_unix = dt_to_unix(END)
-    ea_sixsix.thread_data.current_es.search.assert_called_with(
-        body={'query': {'bool': {
-            'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}},
-            'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'],
-        ignore_unavailable=True,
-        size=ea_sixsix.rules[0]['max_query_size'], scroll=ea_sixsix.conf['scroll_keepalive'])
 
 
 def test_query_with_unixms(ea):
@@ -178,24 +140,9 @@ def test_query_with_unixms(ea):
     ea.thread_data.current_es.search.assert_called_with(
         body={'query': {'filtered': {
             'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}},
-            'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'],
+            'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_includes=['@timestamp'],
         ignore_unavailable=True,
         size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
-
-
-def test_query_sixsix_with_unixms(ea_sixsix):
-    ea_sixsix.rules[0]['timestamp_type'] = 'unixms'
-    ea_sixsix.rules[0]['dt_to_ts'] = dt_to_unixms
-    ea_sixsix.thread_data.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
-    ea_sixsix.run_query(ea_sixsix.rules[0], START, END)
-    start_unix = dt_to_unixms(START)
-    end_unix = dt_to_unixms(END)
-    ea_sixsix.thread_data.current_es.search.assert_called_with(
-        body={'query': {'bool': {
-            'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}},
-            'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_include=['@timestamp'],
-        ignore_unavailable=True,
-        size=ea_sixsix.rules[0]['max_query_size'], scroll=ea_sixsix.conf['scroll_keepalive'])
 
 
 def test_no_hits(ea):
@@ -325,16 +272,16 @@ def test_match_with_module_from_pending(ea):
     pending_alert = {'match_body': {'foo': 'bar'}, 'rule_name': ea.rules[0]['name'],
                      'alert_time': START_TIMESTAMP, '@timestamp': START_TIMESTAMP}
     # First call, return the pending alert, second, no associated aggregated alerts
-    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': pending_alert}]}},
-                                                     {'hits': {'hits': []}}]
+    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': pending_alert}]}},
+                                          {'hits': {'hits': []}}]
     ea.send_pending_alerts()
     assert mod.process.call_count == 0
 
     # If aggregation is set, enhancement IS called
     pending_alert = {'match_body': {'foo': 'bar'}, 'rule_name': ea.rules[0]['name'],
                      'alert_time': START_TIMESTAMP, '@timestamp': START_TIMESTAMP}
-    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': pending_alert}]}},
-                                                     {'hits': {'hits': []}}]
+    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': pending_alert}]}},
+                                          {'hits': {'hits': []}}]
     ea.rules[0]['aggregation'] = datetime.timedelta(minutes=10)
     ea.send_pending_alerts()
     assert mod.process.call_count == 1
@@ -412,10 +359,10 @@ def test_agg_matchtime(ea):
     # First call - Find all pending alerts (only entries without agg_id)
     # Second call - Find matches with agg_id == 'ABCD'
     # Third call - Find matches with agg_id == 'CDEF'
-    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': call1},
-                                                                        {'_id': 'CDEF', '_index': 'wb', '_source': call3}]}},
-                                                     {'hits': {'hits': [{'_id': 'BCDE', '_index': 'wb', '_source': call2}]}},
-                                                     {'hits': {'total': 0, 'hits': []}}]
+    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': call1},
+                                                             {'_id': 'CDEF', '_index': 'wb', '_source': call3}]}},
+                                          {'hits': {'hits': [{'_id': 'BCDE', '_index': 'wb', '_source': call2}]}},
+                                          {'hits': {'total': 0, 'hits': []}}]
 
     with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es:
         ea.send_pending_alerts()
@@ -424,15 +371,15 @@ def test_agg_matchtime(ea):
         assert mock_es.call_count == 2
     assert_alerts(ea, [hits_timestamps[:2], hits_timestamps[2:]])
 
-    call1 = ea.writeback_es.deprecated_search.call_args_list[7][1]['body']
-    call2 = ea.writeback_es.deprecated_search.call_args_list[8][1]['body']
-    call3 = ea.writeback_es.deprecated_search.call_args_list[9][1]['body']
-    call4 = ea.writeback_es.deprecated_search.call_args_list[10][1]['body']
+    call1 = ea.writeback_es.search.call_args_list[7][1]['body']
+    call2 = ea.writeback_es.search.call_args_list[8][1]['body']
+    call3 = ea.writeback_es.search.call_args_list[9][1]['body']
+    call4 = ea.writeback_es.search.call_args_list[10][1]['body']
 
     assert 'alert_time' in call2['filter']['range']
     assert call3['query']['query_string']['query'] == 'aggregate_id:"ABCD"'
     assert call4['query']['query_string']['query'] == 'aggregate_id:"CDEF"'
-    assert ea.writeback_es.deprecated_search.call_args_list[9][1]['size'] == 1337
+    assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
 
 
 def test_agg_not_matchtime(ea):
@@ -580,10 +527,10 @@ def test_agg_with_aggregation_key(ea):
     # First call - Find all pending alerts (only entries without agg_id)
     # Second call - Find matches with agg_id == 'ABCD'
     # Third call - Find matches with agg_id == 'CDEF'
-    ea.writeback_es.deprecated_search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': call1},
-                                                                        {'_id': 'CDEF', '_index': 'wb', '_source': call2}]}},
-                                                     {'hits': {'hits': [{'_id': 'BCDE', '_index': 'wb', '_source': call3}]}},
-                                                     {'hits': {'total': 0, 'hits': []}}]
+    ea.writeback_es.search.side_effect = [{'hits': {'hits': [{'_id': 'ABCD', '_index': 'wb', '_source': call1},
+                                                             {'_id': 'CDEF', '_index': 'wb', '_source': call2}]}},
+                                          {'hits': {'hits': [{'_id': 'BCDE', '_index': 'wb', '_source': call3}]}},
+                                          {'hits': {'total': 0, 'hits': []}}]
 
     with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es:
         mock_es.return_value = ea.thread_data.current_es
@@ -593,15 +540,15 @@ def test_agg_with_aggregation_key(ea):
         assert mock_es.call_count == 2
     assert_alerts(ea, [[hits_timestamps[0], hits_timestamps[2]], [hits_timestamps[1]]])
 
-    call1 = ea.writeback_es.deprecated_search.call_args_list[7][1]['body']
-    call2 = ea.writeback_es.deprecated_search.call_args_list[8][1]['body']
-    call3 = ea.writeback_es.deprecated_search.call_args_list[9][1]['body']
-    call4 = ea.writeback_es.deprecated_search.call_args_list[10][1]['body']
+    call1 = ea.writeback_es.search.call_args_list[7][1]['body']
+    call2 = ea.writeback_es.search.call_args_list[8][1]['body']
+    call3 = ea.writeback_es.search.call_args_list[9][1]['body']
+    call4 = ea.writeback_es.search.call_args_list[10][1]['body']
 
     assert 'alert_time' in call2['filter']['range']
     assert call3['query']['query_string']['query'] == 'aggregate_id:"ABCD"'
     assert call4['query']['query_string']['query'] == 'aggregate_id:"CDEF"'
-    assert ea.writeback_es.deprecated_search.call_args_list[9][1]['size'] == 1337
+    assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
 
 
 def test_silence(ea):

@@ -5,39 +5,6 @@ import pytest
 from elastalert.kibana_discover import generate_kibana_discover_url
 
 
-@pytest.mark.parametrize("kibana_version", ['5.6', '6.0', '6.1', '6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8'])
-def test_generate_kibana_discover_url_with_kibana_5x_and_6x(kibana_version):
-    url = generate_kibana_discover_url(
-        rule={
-            'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': kibana_version,
-            'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
-            'timestamp_field': 'timestamp'
-        },
-        match={
-            'timestamp': '2019-09-01T00:30:00Z'
-        }
-    )
-    expectedUrl = (
-        'http://kibana:5601/#/discover'
-        + '?_g=%28'  # global start
-        + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
-        + 'time%3A%28'  # time start
-        + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
-        + 'mode%3Aabsolute%2C'
-        + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
-        + '%29'  # time end
-        + '%29'  # global end
-        + '&_a=%28'  # app start
-        + 'columns%3A%21%28_source%29%2C'
-        + 'filters%3A%21%28%29%2C'
-        + 'index%3Ad6cabfb6-aaef-44ea-89c5-600e9a76991a%2C'
-        + 'interval%3Aauto'
-        + '%29'  # app end
-    )
-    assert url == expectedUrl
-
-
 @pytest.mark.parametrize("kibana_version", [
     '7.0',
     '7.1',
@@ -140,7 +107,7 @@ def test_generate_kibana_discover_url_with_missing_kibana_discover_version():
 def test_generate_kibana_discover_url_with_missing_kibana_discover_app_url():
     url = generate_kibana_discover_url(
         rule={
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'kibana_discover_index_pattern_id': 'logs',
             'timestamp_field': 'timestamp',
             'name': 'test'
@@ -156,7 +123,7 @@ def test_generate_kibana_discover_url_with_missing_kibana_discover_index_pattern
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'timestamp_field': 'timestamp',
             'name': 'test'
         },
@@ -190,7 +157,7 @@ def test_generate_kibana_discover_url_with_kibana_discover_app_url_env_substitut
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://$KIBANA_HOST:$KIBANA_PORT/#/discover',
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'kibana_discover_index_pattern_id': 'd6cabfb6-aaef-44ea-89c5-600e9a76991a',
             'timestamp_field': 'timestamp'
         },
@@ -201,10 +168,10 @@ def test_generate_kibana_discover_url_with_kibana_discover_app_url_env_substitut
     expectedUrl = (
         'http://kibana:5601/#/discover'
         + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
         + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
         + 'time%3A%28'  # time start
         + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
-        + 'mode%3Aabsolute%2C'
         + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
         + '%29'  # time end
         + '%29'  # global end
@@ -389,7 +356,7 @@ def test_generate_kibana_discover_url_with_custom_columns():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'kibana_discover_index_pattern_id': 'logs-*',
             'kibana_discover_columns': ['level', 'message'],
             'timestamp_field': 'timestamp'
@@ -401,10 +368,10 @@ def test_generate_kibana_discover_url_with_custom_columns():
     expectedUrl = (
         'http://kibana:5601/#/discover'
         + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
         + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
         + 'time%3A%28'  # time start
         + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
-        + 'mode%3Aabsolute%2C'
         + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
         + '%29'  # time end
         + '%29'  # global end
@@ -422,7 +389,7 @@ def test_generate_kibana_discover_url_with_single_filter():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
             'filter': [
@@ -436,10 +403,10 @@ def test_generate_kibana_discover_url_with_single_filter():
     expectedUrl = (
         'http://kibana:5601/#/discover'
         + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
         + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
         + 'time%3A%28'  # time start
         + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
-        + 'mode%3Aabsolute%2C'
         + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
         + '%29'  # time end
         + '%29'  # global end
@@ -473,7 +440,7 @@ def test_generate_kibana_discover_url_with_multiple_filters():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'kibana_discover_index_pattern_id': '90943e30-9a47-11e8-b64d-95841ca0b247',
             'timestamp_field': 'timestamp',
             'filter': [
@@ -488,10 +455,10 @@ def test_generate_kibana_discover_url_with_multiple_filters():
     expectedUrl = (
         'http://kibana:5601/#/discover'
         + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
         + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
         + 'time%3A%28'  # time start
         + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
-        + 'mode%3Aabsolute%2C'
         + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
         + '%29'  # time end
         + '%29'  # global end
@@ -527,7 +494,7 @@ def test_generate_kibana_discover_url_with_int_query_key():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
             'query_key': 'geo.dest'
@@ -540,10 +507,10 @@ def test_generate_kibana_discover_url_with_int_query_key():
     expectedUrl = (
         'http://kibana:5601/#/discover'
         + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
         + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
         + 'time%3A%28'  # time start
         + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
-        + 'mode%3Aabsolute%2C'
         + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
         + '%29'  # time end
         + '%29'  # global end
@@ -587,7 +554,7 @@ def test_generate_kibana_discover_url_with_str_query_key():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
             'query_key': 'geo.dest'
@@ -602,10 +569,10 @@ def test_generate_kibana_discover_url_with_str_query_key():
     expectedUrl = (
         'http://kibana:5601/#/discover'
         + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
         + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
         + 'time%3A%28'  # time start
         + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
-        + 'mode%3Aabsolute%2C'
         + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
         + '%29'  # time end
         + '%29'  # global end
@@ -649,7 +616,7 @@ def test_generate_kibana_discover_url_with_null_query_key_value():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
             'query_key': 'status'
@@ -662,10 +629,10 @@ def test_generate_kibana_discover_url_with_null_query_key_value():
     expectedUrl = (
         'http://kibana:5601/#/discover'
         + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
         + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
         + 'time%3A%28'  # time start
         + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
-        + 'mode%3Aabsolute%2C'
         + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
         + '%29'  # time end
         + '%29'  # global end
@@ -699,7 +666,7 @@ def test_generate_kibana_discover_url_with_missing_query_key_value():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
             'query_key': 'status'
@@ -711,10 +678,10 @@ def test_generate_kibana_discover_url_with_missing_query_key_value():
     expectedUrl = (
         'http://kibana:5601/#/discover'
         + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
         + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
         + 'time%3A%28'  # time start
         + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
-        + 'mode%3Aabsolute%2C'
         + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
         + '%29'  # time end
         + '%29'  # global end
@@ -748,7 +715,7 @@ def test_generate_kibana_discover_url_with_compound_query_key():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
             'compound_query_key': ['geo.src', 'geo.dest'],
@@ -765,10 +732,10 @@ def test_generate_kibana_discover_url_with_compound_query_key():
     expectedUrl = (
         'http://kibana:5601/#/discover'
         + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
         + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
         + 'time%3A%28'  # time start
         + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
-        + 'mode%3Aabsolute%2C'
         + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
         + '%29'  # time end
         + '%29'  # global end
@@ -836,7 +803,7 @@ def test_generate_kibana_discover_url_with_filter_and_query_key():
     url = generate_kibana_discover_url(
         rule={
             'kibana_discover_app_url': 'http://kibana:5601/#/discover',
-            'kibana_discover_version': '6.8',
+            'kibana_discover_version': '7.17',
             'kibana_discover_index_pattern_id': 'logs-*',
             'timestamp_field': 'timestamp',
             'filter': [
@@ -852,10 +819,10 @@ def test_generate_kibana_discover_url_with_filter_and_query_key():
     expectedUrl = (
         'http://kibana:5601/#/discover'
         + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
         + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
         + 'time%3A%28'  # time start
         + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
-        + 'mode%3Aabsolute%2C'
         + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
         + '%29'  # time end
         + '%29'  # global end
