@@ -1056,14 +1056,6 @@ class ElastAlerter(object):
                 if not key.endswith(string_multi_field_name):
                     new_rule['top_count_keys'][i] += string_multi_field_name
 
-        if 'download_dashboard' in new_rule['filter']:
-            # Download filters from Kibana and set the rules filters to them
-            db_filters = self.filters_from_kibana(new_rule, new_rule['filter']['download_dashboard'])
-            if db_filters is not None:
-                new_rule['filter'] = db_filters
-            else:
-                raise EAException("Could not download filters from %s" % (new_rule['filter']['download_dashboard']))
-
         blank_rule = {'agg_matches': [],
                       'aggregate_alert_time': {},
                       'current_aggregate_id': {},
@@ -1520,17 +1512,6 @@ class ElastAlerter(object):
             return None
         dashboard = copy.deepcopy(dashboard)
         return self.upload_dashboard(dashboard, rule, match)
-
-    def filters_from_kibana(self, rule, db_name):
-        """ Downloads a dashboard from Kibana and returns corresponding filters, None on error. """
-        try:
-            db = rule.get('dashboard_schema')
-            if not db:
-                db = self.get_dashboard(rule, db_name)
-            filters = kibana.filters_from_dashboard(db)
-        except EAException:
-            return None
-        return filters
 
     def alert(self, matches, rule, alert_time=None, retried=False):
         """ Wraps alerting, Kibana linking and enhancements in an exception handler """

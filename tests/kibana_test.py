@@ -3,7 +3,6 @@ import json
 
 from elastalert.kibana import add_filter
 from elastalert.kibana import dashboard_temp
-from elastalert.kibana import filters_from_dashboard
 from elastalert.kibana import kibana4_dashboard_link
 from elastalert.util import EAException
 
@@ -116,20 +115,6 @@ test_dashboard2 = '''{
   }
 }'''
 test_dashboard2 = json.loads(test_dashboard2)
-
-
-def test_filters_from_dashboard():
-    filters = filters_from_dashboard(test_dashboard)
-    assert {'term': {'_log_type': '"active_directory"'}} in filters
-    assert {'query': {'query_string': {'query': 'ad.security_auditing_code:4740'}}} in filters
-    assert {'range': {'@timestamp': {'from': '2014-09-27T12:34:45Z', 'to': '2014-09-26T12:34:45Z'}}} in filters
-    assert {'not': {'term': {'@timestamp': 'that'}}} in filters
-    assert {'or': [{'term': {'@timestamp': 'that'}}]} in filters
-
-
-def test_filters_from_dashboard2():
-    filters = filters_from_dashboard(test_dashboard2)
-    assert {'term': {'_log_type': '"active_directory"'}} in filters
 
 
 def test_add_filter():
