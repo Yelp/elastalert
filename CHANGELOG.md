@@ -35,7 +35,7 @@
 - Enable dynamic setting of rules volume in helm chart [#732](https://github.com/jertel/elastalert2/pull/732) - @ChrisFraun
 - Do not install tests via pip install [#733](https://github.com/jertel/elastalert2/pull/733) - @buzzdeee
 - Add Elasticsearch 8 support documentation [#735](https://github.com/jertel/elastalert2/pull/735) - @ferozsalam
-
+- Remove download_dashboard [#740](https://github.com/jertel/elastalert2/pull/740) - @nsano-rururu
 
 # 2.3.0
 
