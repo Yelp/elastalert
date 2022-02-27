@@ -63,32 +63,6 @@ class ElasticSearchClient(Elasticsearch):
                     time.sleep(3)
         return self._es_version
 
-    def is_atleastfive(self):
-        """
-        Returns True when the Elasticsearch server version >= 5
-        """
-        return int(self.es_version.split(".")[0]) >= 5
-
-    def is_atleastsix(self):
-        """
-        Returns True when the Elasticsearch server version >= 6
-        """
-        return int(self.es_version.split(".")[0]) >= 6
-
-    def is_atleastsixtwo(self):
-        """
-        Returns True when the Elasticsearch server version >= 6.2
-        """
-        major, minor = list(map(int, self.es_version.split(".")[:2]))
-        return major > 6 or (major == 6 and minor >= 2)
-
-    def is_atleastsixsix(self):
-        """
-        Returns True when the Elasticsearch server version >= 6.6
-        """
-        major, minor = list(map(int, self.es_version.split(".")[:2]))
-        return major > 6 or (major == 6 and minor >= 6)
-
     def is_atleastseven(self):
         """
         Returns True when the Elasticsearch server version >= 7
