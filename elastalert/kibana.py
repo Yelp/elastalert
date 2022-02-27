@@ -249,38 +249,6 @@ def set_included_fields(dashboard, fields):
     dashboard['rows'][1]['panels'][0]['fields'] = list(set(fields))
 
 
-def filters_from_dashboard(db):
-    filters = db['services']['filter']['list']
-    config_filters = []
-    or_filters = []
-    for filter in list(filters.values()):
-        filter_type = filter['type']
-        if filter_type == 'time':
-            continue
-
-        if filter_type == 'querystring':
-            config_filter = {'query': {'query_string': {'query': filter['query']}}}
-
-        if filter_type == 'field':
-            config_filter = {'term': {filter['field']: filter['query']}}
-
-        if filter_type == 'range':
-            config_filter = {'range': {filter['field']: {'from': filter['from'], 'to': filter['to']}}}
-
-        if filter['mandate'] == 'mustNot':
-            config_filter = {'not': config_filter}
-
-        if filter['mandate'] == 'either':
-            or_filters.append(config_filter)
-        else:
-            config_filters.append(config_filter)
-
-    if or_filters:
-        config_filters.append({'or': or_filters})
-
-    return config_filters
-
-
 def kibana4_dashboard_link(dashboard, starttime, endtime):
     dashboard = os.path.expandvars(dashboard)
     time_settings = kibana4_time_temp % (starttime, endtime)

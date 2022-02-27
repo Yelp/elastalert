@@ -233,11 +233,8 @@ properties:
   priority: {type: integer}
 
   filter :
-    type: [array, object]
+    type: array
     items: *filter
-    additionalProperties: false
-    properties:
-        download_dashboard: {type: string}
 
   include: {type: array, items: {type: string}}
   top_count_keys: {type: array, items: {type: string}}
