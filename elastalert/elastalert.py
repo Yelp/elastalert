@@ -690,9 +690,7 @@ class ElastAlerter(object):
         :return: A timestamp or None.
         """
         sort = {'sort': {'@timestamp': {'order': 'desc'}}}
-        query = {'filter': {'term': {'rule_name': '%s' % (rule['name'])}}}
-        if self.writeback_es.is_atleastfive():
-            query = {'query': {'bool': query}}
+        query = {'query': {'bool': {'filter': {'term': {'rule_name': '%s' % (rule['name'])}}}}}
         query.update(sort)
 
         try:
@@ -848,10 +846,7 @@ class ElastAlerter(object):
         else:
             query = " OR ".join(additional_terms)
         query_str_filter = {'query_string': {'query': query}}
-        if self.writeback_es.is_atleastfive():
-            filters.append(query_str_filter)
-        else:
-            filters.append({'query': query_str_filter})
+        filters.append(query_str_filter)
         elastalert_logger.debug("Enhanced filter with {} terms: {}".format(listname, str(query_str_filter)))
 
     def get_elasticsearch_client(self, rule):
@@ -1024,10 +1019,8 @@ class ElastAlerter(object):
         if 'top_count_keys' in new_rule and new_rule.get('raw_count_keys', True):
             if self.string_multi_field_name:
                 string_multi_field_name = self.string_multi_field_name
-            elif self.writeback_es.is_atleastfive():
-                string_multi_field_name = '.keyword'
             else:
-                string_multi_field_name = '.raw'
+                string_multi_field_name = '.keyword'
 
             for i, key in enumerate(new_rule['top_count_keys']):
                 if not key.endswith(string_multi_field_name):
@@ -1084,11 +1077,7 @@ class ElastAlerter(object):
     def modify_rule_for_ES5(new_rule):
         # Get ES version per rule
         rule_es = elasticsearch_client(new_rule)
-        if rule_es.is_atleastfive():
-            new_rule['five'] = True
-        else:
-            new_rule['five'] = False
-            return
+        new_rule['five'] = True
 
         # In ES5, filters starting with 'query' should have the top wrapper removed
         new_filters = []
@@ -1704,10 +1693,7 @@ class ElastAlerter(object):
         time_filter = {'range': {'alert_time': {'from': dt_to_ts(ts_now() - time_limit),
                                                 'to': dt_to_ts(ts_now())}}}
         sort = {'sort': {'alert_time': {'order': 'asc'}}}
-        if self.writeback_es.is_atleastfive():
-            query = {'query': {'bool': {'must': inner_query, 'filter': time_filter}}}
-        else:
-            query = {'query': inner_query, 'filter': time_filter}
+        query = {'query': {'bool': {'must': inner_query, 'filter': time_filter}}}
         query.update(sort)
         try:
             res = self.writeback_es.search(index=self.writeback_index, body=query, size=1000)
@@ -1808,8 +1794,7 @@ class ElastAlerter(object):
                                      'must_not': [{'exists': {'field': 'aggregate_id'}}]}}}
         if aggregation_key_value:
             query['filter']['bool']['must'].append({'term': {'aggregation_key': aggregation_key_value}})
-        if self.writeback_es.is_atleastfive():
-            query = {'query': {'bool': query}}
+        query = {'query': {'bool': query}}
         query['sort'] = {'alert_time': {'order': 'desc'}}
         try:
             res = self.writeback_es.search(index=self.writeback_index, body=query, size=1)
@@ -1950,10 +1935,7 @@ class ElastAlerter(object):
             return False
         query = {'term': {'rule_name': rule_name}}
         sort = {'sort': {'until': {'order': 'desc'}}}
-        if self.writeback_es.is_atleastfive():
-            query = {'query': query}
-        else:
-            query = {'filter': query}
+        query = {'query': query}
         query.update(sort)
 
         try:
