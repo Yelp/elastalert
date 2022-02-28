@@ -48,7 +48,7 @@ def generate_hits(timestamps, **kwargs):
         for field in ['_id', '_type', '_index']:
             data['_source'][field] = data[field]
         hits.append(data)
-    return {'hits': {'total': len(hits), 'hits': hits}}
+    return {'hits': {'total': {'value': len(hits)}, 'hits': hits}}
 
 
 def assert_alerts(ea_inst, calls):
@@ -94,10 +94,10 @@ def test_init_rule(ea):
 
 
 def test_query(ea):
-    ea.thread_data.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
+    ea.thread_data.current_es.search.return_value = {'hits': {'total': {'value':  0}, 'hits': []}}
     ea.run_query(ea.rules[0], START, END)
     ea.thread_data.current_es.search.assert_called_with(body={
-        'query': {'filtered': {
+        'query': {'bool': {
             'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}},
         'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_includes=['@timestamp'],
         ignore_unavailable=True,
@@ -106,24 +106,24 @@ def test_query(ea):
 
 def test_query_with_fields(ea):
     ea.rules[0]['_source_enabled'] = False
-    ea.thread_data.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
+    ea.thread_data.current_es.search.return_value = {'hits': {'total': {'value': 0}, 'hits': []}}
     ea.run_query(ea.rules[0], START, END)
     ea.thread_data.current_es.search.assert_called_with(body={
-        'query': {'filtered': {
+        'query': {'bool': {
             'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': END_TIMESTAMP, 'gt': START_TIMESTAMP}}}]}}}},
-        'sort': [{'@timestamp': {'order': 'asc'}}], 'fields': ['@timestamp']}, index='idx', ignore_unavailable=True,
+        'sort': [{'@timestamp': {'order': 'asc'}}], 'stored_fields': ['@timestamp']}, index='idx', ignore_unavailable=True,
         size=ea.rules[0]['max_query_size'], scroll=ea.conf['scroll_keepalive'])
 
 
 def test_query_with_unix(ea):
     ea.rules[0]['timestamp_type'] = 'unix'
     ea.rules[0]['dt_to_ts'] = dt_to_unix
-    ea.thread_data.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
+    ea.thread_data.current_es.search.return_value = {'hits': {'total': {'value': 0}, 'hits': []}}
     ea.run_query(ea.rules[0], START, END)
     start_unix = dt_to_unix(START)
     end_unix = dt_to_unix(END)
     ea.thread_data.current_es.search.assert_called_with(
-        body={'query': {'filtered': {
+        body={'query': {'bool': {
             'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}},
             'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_includes=['@timestamp'],
         ignore_unavailable=True,
@@ -133,12 +133,12 @@ def test_query_with_unix(ea):
 def test_query_with_unixms(ea):
     ea.rules[0]['timestamp_type'] = 'unixms'
     ea.rules[0]['dt_to_ts'] = dt_to_unixms
-    ea.thread_data.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
+    ea.thread_data.current_es.search.return_value = {'hits': {'total': {'value': 0}, 'hits': []}}
     ea.run_query(ea.rules[0], START, END)
     start_unix = dt_to_unixms(START)
     end_unix = dt_to_unixms(END)
     ea.thread_data.current_es.search.assert_called_with(
-        body={'query': {'filtered': {
+        body={'query': {'bool': {
             'filter': {'bool': {'must': [{'range': {'@timestamp': {'lte': end_unix, 'gt': start_unix}}}]}}}},
             'sort': [{'@timestamp': {'order': 'asc'}}]}, index='idx', _source_includes=['@timestamp'],
         ignore_unavailable=True,
@@ -146,7 +146,7 @@ def test_query_with_unixms(ea):
 
 
 def test_no_hits(ea):
-    ea.thread_data.current_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
+    ea.thread_data.current_es.search.return_value = {'hits': {'total': {'value': 0}, 'hits': []}}
     ea.run_query(ea.rules[0], START, END)
     assert ea.rules[0]['type'].add_data.call_count == 0
 
@@ -155,7 +155,7 @@ def test_no_terms_hits(ea):
     ea.rules[0]['use_terms_query'] = True
     ea.rules[0]['query_key'] = 'QWERTY'
     ea.rules[0]['doc_type'] = 'uiop'
-    ea.thread_data.current_es.deprecated_search.return_value = {'hits': {'total': 0, 'hits': []}}
+    ea.thread_data.current_es.deprecated_search.return_value = {'hits': {'total': {'value': 0}, 'hits': []}}
     ea.run_query(ea.rules[0], START, END)
     assert ea.rules[0]['type'].add_terms_data.call_count == 0
 
@@ -376,7 +376,7 @@ def test_agg_matchtime(ea):
     call3 = ea.writeback_es.search.call_args_list[9][1]['body']
     call4 = ea.writeback_es.search.call_args_list[10][1]['body']
 
-    assert 'alert_time' in call2['filter']['range']
+    assert 'alert_time' in call2['query']['bool']['filter']['range']
     assert call3['query']['query_string']['query'] == 'aggregate_id:"ABCD"'
     assert call4['query']['query_string']['query'] == 'aggregate_id:"CDEF"'
     assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
@@ -545,7 +545,7 @@ def test_agg_with_aggregation_key(ea):
     call3 = ea.writeback_es.search.call_args_list[9][1]['body']
     call4 = ea.writeback_es.search.call_args_list[10][1]['body']
 
-    assert 'alert_time' in call2['filter']['range']
+    assert 'alert_time' in call2['query']['bool']['filter']['range']
     assert call3['query']['query_string']['query'] == 'aggregate_id:"ABCD"'
     assert call4['query']['query_string']['query'] == 'aggregate_id:"CDEF"'
     assert ea.writeback_es.search.call_args_list[9][1]['size'] == 1337
@@ -1045,16 +1045,15 @@ def test_count_keys(ea):
     ea.rules[0]['top_count_keys'] = ['this', 'that']
     ea.rules[0]['type'].matches = {'@timestamp': END}
     ea.rules[0]['doc_type'] = 'blah'
-    buckets = [{'aggregations': {
-        'filtered': {'counts': {'buckets': [{'key': 'a', 'doc_count': 10}, {'key': 'b', 'doc_count': 5}]}}}},
-        {'aggregations': {'filtered': {
-            'counts': {'buckets': [{'key': 'd', 'doc_count': 10}, {'key': 'c', 'doc_count': 12}]}}}}]
+    buckets = [{'aggregations':
+               {'counts': {'buckets': [{'key': 'a', 'doc_count': 10}, {'key': 'b', 'doc_count': 5}]}}},
+               {'aggregations':
+                   {'counts': {'buckets': [{'key': 'd', 'doc_count': 10}, {'key': 'c', 'doc_count': 12}]}}}]
     ea.thread_data.current_es.deprecated_search.side_effect = buckets
     counts = ea.get_top_counts(ea.rules[0], START, END, ['this', 'that'])
     calls = ea.thread_data.current_es.deprecated_search.call_args_list
-    assert calls[0][1]['search_type'] == 'count'
-    assert calls[0][1]['body']['aggs']['filtered']['aggs']['counts']['terms'] == {'field': 'this', 'size': 5,
-                                                                                  'min_doc_count': 1}
+    assert calls[0][1]['body']['aggs']['counts']['terms'] == {'field': 'this', 'size': 5,
+                                                              'min_doc_count': 1}
     assert counts['top_events_this'] == {'a': 10, 'b': 5}
     assert counts['top_events_that'] == {'d': 10, 'c': 12}
 
@@ -1293,7 +1292,7 @@ def test_query_with_whitelist_filter_es(ea):
     new_rule = copy.copy(ea.rules[0])
     ea.init_rule(new_rule, True)
     assert 'NOT username:"xudan1" AND NOT username:"xudan12" AND NOT username:"aa1"' \
-           in new_rule['filter'][-1]['query']['query_string']['query']
+           in new_rule['filter'][-1]['query_string']['query']
 
 
 def test_query_with_blacklist_filter_es(ea):
@@ -1304,7 +1303,7 @@ def test_query_with_blacklist_filter_es(ea):
     new_rule = copy.copy(ea.rules[0])
     ea.init_rule(new_rule, True)
     assert 'username:"xudan1" OR username:"xudan12" OR username:"aa1"' in \
-           new_rule['filter'][-1]['query']['query_string']['query']
+           new_rule['filter'][-1]['query_string']['query']
 
 
 def test_handle_rule_execution_error(ea, caplog):
