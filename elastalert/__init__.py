@@ -77,12 +77,7 @@ class ElasticSearchClient(Elasticsearch):
 
 
     def resolve_writeback_index(self, writeback_index, doc_type):
-        """ In ES6, you cannot have multiple _types per index,
-        therefore we use self.writeback_index as the prefix for the actual
-        index name, based on doc_type. """
-        if not self.is_atleastsix():
-            return writeback_index
-        elif doc_type == 'silence':
+        if doc_type == 'silence':
             return writeback_index + '_silence'
         elif doc_type == 'past_elastalert':
             return writeback_index + '_past'
