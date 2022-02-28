@@ -1379,6 +1379,7 @@ This rule also requires at least one of the two following options:
 ``min_threshold``: If the calculated metric value is less than this number, an alert will be triggered. This threshold is exclusive.
 
 ``percentile_range``: An integer specifying the percentage value to aggregate against. Must be specified if ``metric_agg_type`` is set to ``percentiles``. See https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-percentile-aggregation.html for more information.
+
 Optional:
 
 ``query_key``: Group metric calculations by this field. For each unique value of the ``query_key`` field, the metric will be calculated and
