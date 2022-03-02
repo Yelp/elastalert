@@ -88,7 +88,8 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
         es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
                                       body=es_index_mappings['past_elastalert'], include_type_name=True)
     else:                                      
-        print('Unsupported Elasticsearch version!')
+        print('FATAL - Unsupported Elasticsearch version: ' + esversion + '. Aborting.')
+        exit(1)
 
     print('New index %s created' % ea_index)
     if old_ea_index:

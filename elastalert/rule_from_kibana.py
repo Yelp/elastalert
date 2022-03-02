@@ -20,7 +20,12 @@ def main():
 
     query = {'query': {'term': {'_id': db_name}}}
 
-    res = es.deprecated_search(index='kibana-int', doc_type='dashboard', body=query, _source_includes=['dashboard'])
+    if es.is_atleastsixsix():
+        # TODO check support for kibana 7
+        # TODO use doc_type='_doc' instead
+        res = es.deprecated_search(index='kibana-int', doc_type='dashboard', body=query, _source_includes=['dashboard'])
+    else:
+        res = es.deprecated_search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
 
     if not res['hits']['hits']:
         print("No dashboard %s found" % (db_name))
