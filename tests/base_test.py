@@ -154,8 +154,7 @@ def test_no_hits(ea):
 def test_no_terms_hits(ea):
     ea.rules[0]['use_terms_query'] = True
     ea.rules[0]['query_key'] = 'QWERTY'
-    ea.rules[0]['doc_type'] = 'uiop'
-    ea.thread_data.current_es.deprecated_search.return_value = {'hits': {'total': {'value': 0}, 'hits': []}}
+    ea.thread_data.current_es.search.return_value = {'hits': {'total': {'value': 0}, 'hits': []}}
     ea.run_query(ea.rules[0], START, END)
     assert ea.rules[0]['type'].add_terms_data.call_count == 0
 
@@ -250,7 +249,6 @@ def test_query_exception(ea):
 
 def test_query_exception_count_query(ea):
     ea.rules[0]['use_count_query'] = True
-    ea.rules[0]['doc_type'] = 'blahblahblahblah'
     mock_es = mock.Mock()
     mock_es.count.side_effect = ElasticsearchException
     run_rule_query_exception(ea, mock_es)
@@ -707,7 +705,6 @@ def test_realert_with_nested_query_key(ea):
 
 def test_count(ea):
     ea.rules[0]['use_count_query'] = True
-    ea.rules[0]['doc_type'] = 'doctype'
     with mock.patch('elastalert.elastalert.elasticsearch_client'), \
             mock.patch.object(ea, 'get_hits_count') as mock_hits:
         ea.run_rule(ea.rules[0], END, START)
@@ -857,7 +854,6 @@ def test_set_starttime(ea):
 
     # Count query, starttime, no previous endtime
     ea.rules[0]['use_count_query'] = True
-    ea.rules[0]['doc_type'] = 'blah'
     with mock.patch.object(ea, 'get_starttime') as mock_gs:
         mock_gs.return_value = None
         ea.set_starttime(ea.rules[0], end)
@@ -902,15 +898,15 @@ def test_kibana_dashboard(ea):
         mock_es_init.return_value = mock_es
 
         # No dashboard found
-        mock_es.deprecated_search.return_value = {'hits': {'total': 0, 'hits': []}}
+        mock_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
         with pytest.raises(EAException):
             ea.use_kibana_link(ea.rules[0], match)
-        mock_call = mock_es.deprecated_search.call_args_list[0][1]
+        mock_call = mock_es.search.call_args_list[0][1]
         assert mock_call['body'] == {'query': {'term': {'_id': 'my dashboard'}}}
 
         # Dashboard found
         mock_es.index.return_value = {'_id': 'ABCDEFG'}
-        mock_es.deprecated_search.return_value = {'hits': {'hits': [{'_source': {'dashboard': json.dumps(dashboard_temp)}}]}}
+        mock_es.search.return_value = {'hits': {'hits': [{'_source': {'dashboard': json.dumps(dashboard_temp)}}]}}
         url = ea.use_kibana_link(ea.rules[0], match)
         assert 'ABCDEFG' in url
         db = json.loads(mock_es.index.call_args_list[0][1]['body']['dashboard'])
@@ -1044,14 +1040,13 @@ def test_count_keys(ea):
     ea.rules[0]['timeframe'] = datetime.timedelta(minutes=60)
     ea.rules[0]['top_count_keys'] = ['this', 'that']
     ea.rules[0]['type'].matches = {'@timestamp': END}
-    ea.rules[0]['doc_type'] = 'blah'
     buckets = [{'aggregations':
                {'counts': {'buckets': [{'key': 'a', 'doc_count': 10}, {'key': 'b', 'doc_count': 5}]}}},
                {'aggregations':
                    {'counts': {'buckets': [{'key': 'd', 'doc_count': 10}, {'key': 'c', 'doc_count': 12}]}}}]
-    ea.thread_data.current_es.deprecated_search.side_effect = buckets
+    ea.thread_data.current_es.search.side_effect = buckets
     counts = ea.get_top_counts(ea.rules[0], START, END, ['this', 'that'])
-    calls = ea.thread_data.current_es.deprecated_search.call_args_list
+    calls = ea.thread_data.current_es.search.call_args_list
     assert calls[0][1]['body']['aggs']['counts']['terms'] == {'field': 'this', 'size': 5,
                                                               'min_doc_count': 1}
     assert counts['top_events_this'] == {'a': 10, 'b': 5}

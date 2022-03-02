@@ -39,7 +39,6 @@ test_rule = {'es_host': 'test_host',
              'filter': [{'term': {'key': 'value'}}],
              'alert': 'email',
              'use_count_query': True,
-             'doc_type': 'blsh',
              'email': 'test@test.test',
              'aggregation': {'hours': 2},
              'include': ['comparekey', '@timestamp']}

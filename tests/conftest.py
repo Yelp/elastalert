@@ -63,7 +63,6 @@ class mock_es_client(object):
         self.port = port
         self.return_hits = []
         self.search = mock.Mock()
-        self.deprecated_search = mock.Mock()
         self.create = mock.Mock()
         self.index = mock.Mock()
         self.delete = mock.Mock()
@@ -147,7 +146,6 @@ def ea():
     ea.rules[0]['alert'] = [mock_alert()]
     ea.writeback_es = mock_es_client()
     ea.writeback_es.search.return_value = {'hits': {'hits': []}, 'total': 0}
-    ea.writeback_es.deprecated_search.return_value = {'hits': {'hits': []}}
     ea.writeback_es.index.return_value = {'_id': 'ABCD', 'created': True}
     ea.current_es = mock_es_client('', '')
     ea.thread_data.current_es = ea.current_es
