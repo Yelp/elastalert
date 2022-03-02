@@ -219,8 +219,7 @@ rounded to a single timestamp.
 
 If you are using ``query_key`` (a single key, not multiple keys) you can use ``use_terms_query``.
 This will make ElastAlert 2 perform a terms aggregation to get the counts for each value of a certain
-field. Both ``use_terms_query`` and ``use_count_query`` also require ``doc_type`` to be set to the
-``_type`` of the documents. They may not be compatible with all rule types.
+field. May not be compatible with all rule types.
 
 Can I perform aggregations?
 ==========

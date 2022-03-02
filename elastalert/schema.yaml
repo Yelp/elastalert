@@ -111,7 +111,6 @@ oneOf:
       num_events: {type: integer}
       timeframe: *timeframe
       use_count_query: {type: boolean}
-      doc_type: {type: string}
       use_terms_query: {type: boolean}
       terms_size: {type: integer}
       attach_related: {type: boolean}
@@ -124,7 +123,6 @@ oneOf:
       spike_type: {enum: ["up", "down", "both"]}
       timeframe: *timeframe
       use_count_query: {type: boolean}
-      doc_type: {type: string}
       use_terms_query: {type: boolean}
       terms_size: {type: integer}
       alert_on_new_data: {type: boolean}
@@ -140,7 +138,6 @@ oneOf:
       metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count", "percentiles"]}
       timeframe: *timeframe
       use_count_query: {type: boolean}
-      doc_type: {type: string}
       use_terms_query: {type: boolean}
       terms_size: {type: integer}
       alert_on_new_data: {type: boolean}
@@ -156,7 +153,6 @@ oneOf:
       timeframe: *timeframe
       threshold: {type: integer}
       use_count_query: {type: boolean}
-      doc_type: {type: string}
 
   - title: New Term
     required: []

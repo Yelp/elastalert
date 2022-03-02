@@ -260,7 +260,7 @@ class ElastAlerter(object):
                 'interval_aggs': {
                     'date_histogram': {
                         'field': timestamp_field,
-                        'interval': bucket_interval_period},
+                        'fixed_interval': bucket_interval_period},
                     'aggs': metric_agg_element
                 }
             }
@@ -415,9 +415,6 @@ class ElastAlerter(object):
 
         hits = self.process_hits(rule, hits)
 
-        # Record doc_type for use in get_top_counts
-        if 'doc_type' not in rule and len(hits):
-            rule['doc_type'] = hits[0]['_type']
         return hits
 
     def get_hits_count(self, rule, starttime, endtime, index):
@@ -495,8 +492,7 @@ class ElastAlerter(object):
         query = self.get_terms_query(base_query, rule, size, key)
 
         try:
-            res = self.thread_data.current_es.deprecated_search(index=index, doc_type=rule['doc_type'],
-                                                                body=query, size=0, ignore_unavailable=True)
+            res = self.thread_data.current_es.search(index=index, body=query, size=0, ignore_unavailable=True)
         except ElasticsearchException as e:
             # Elasticsearch sometimes gives us GIGANTIC error messages
             # (so big that they will fill the entire terminal buffer)
@@ -531,8 +527,7 @@ class ElastAlerter(object):
             term_size = rule.get('terms_size', 50)
         query = self.get_aggregation_query(base_query, rule, query_key, term_size, rule['timestamp_field'])
         try:
-            res = self.thread_data.current_es.deprecated_search(index=index, doc_type=rule.get('doc_type'),
-                                                                body=query, size=0, ignore_unavailable=True)
+            res = self.thread_data.current_es.search(index=index, body=query, size=0, ignore_unavailable=True)
         except ElasticsearchException as e:
             if len(str(e)) > 1024:
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
@@ -1367,9 +1362,7 @@ class ElastAlerter(object):
 
         # Upload
         es = elasticsearch_client(rule)
-        # TODO: doc_type = _doc for elastic >= 6
         res = es.index(index='kibana-int',
-                       doc_type='temp',
                        body=db_body)
 
         # Return dashboard URL
@@ -1386,8 +1379,7 @@ class ElastAlerter(object):
             raise EAException("use_kibana_dashboard undefined")
         query = {'query': {'term': {'_id': db_name}}}
         try:
-            # TODO use doc_type = _doc
-            res = es.deprecated_search(index='kibana-int', doc_type='dashboard', body=query, _source_include=['dashboard'])
+            res = es.search(index='kibana-int', body=query, _source_include=['dashboard'])
         except ElasticsearchException as e:
             raise EAException("Error querying for dashboard: %s" % (e)).with_traceback(sys.exc_info()[2])
 

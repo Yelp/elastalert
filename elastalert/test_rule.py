@@ -225,7 +225,6 @@ class MockElastAlerter(object):
             return []
 
         terms = res['hits']['hits'][0]['_source']
-        doc_type = res['hits']['hits'][0]['_type']
 
         # Get a count of all docs
         count_query = ElastAlerter.get_query(
@@ -238,7 +237,7 @@ class MockElastAlerter(object):
             five=conf['five']
         )
         try:
-            res = es_client.count(index=index, doc_type=doc_type, body=count_query, ignore_unavailable=True)
+            res = es_client.count(index=index, body=count_query, ignore_unavailable=True)
         except Exception as e:
             print("Error querying Elasticsearch:", file=sys.stderr)
             print(repr(e)[:2048], file=sys.stderr)

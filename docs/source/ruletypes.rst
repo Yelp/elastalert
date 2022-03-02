@@ -177,12 +177,8 @@ Rule Configuration Cheat Sheet
 | ``attach_related`` (boolean, default False)           |        |           |           |        |    Opt    |       |          |        |           |                  |                 |                |
 +-------------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+------------------+-----------------+----------------+
 |``use_count_query`` (boolean, default False)           |        |           |           |        |     Opt   | Opt   | Opt      |        |           |                  |                 |                |
-|                                                       |        |           |           |        |           |       |          |        |           |                  |                 |                |
-|``doc_type`` (string, no default)                      |        |           |           |        |           |       |          |        |           |                  |                 |                |
 +-------------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+------------------+-----------------+----------------+
 |``use_terms_query`` (boolean, default False)           |        |           |           |        |     Opt   | Opt   |          | Opt    |           |                  |                 |                |
-|                                                       |        |           |           |        |           |       |          |        |           |                  |                 |                |
-|``doc_type`` (string, no default)                      |        |           |           |        |           |       |          |        |           |                  |                 |                |
 |                                                       |        |           |           |        |           |       |          |        |           |                  |                 |                |
 |``query_key`` (string or list, no default)             |        |           |           |        |           |       |          |        |           |                  |                 |                |
 |                                                       |        |           |           |        |           |       |          |        |           |                  |                 |                |
@@ -223,8 +219,6 @@ Rule Configuration Cheat Sheet
 |``metric_agg_type`` (no default,                       |        |           |           |        |           |       |          |        |           |  Req             |  Req            |                |
 |                                                       |        |           |           |        |           |       |          |        |           |                  |                 |                |
 |([min|max|avg|sum|cardinality|value_count|percentiles])|        |           |           |        |           |       |          |        |           |                  |                 |                |
-+-------------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+------------------+-----------------+----------------+
-|``doc_type`` (string, no default)                      |        |           |           |        |           |       |          |        |           |  Req             |  Req            |  Req           |
 +-------------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+------------------+-----------------+----------------+
 |``metric_agg_script`` (no default)                     |        |           |           |        |           |       |          |        |           |  Opt             |  Opt            |                |
 +-------------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+------------------+-----------------+----------------+
@@ -1106,12 +1100,10 @@ Optional:
 
 ``use_count_query``: If true, ElastAlert 2 will poll Elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
-of tens of thousands or more. ``doc_type`` must be set to use this.
-
-``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
+of tens of thousands or more.
 
 ``use_terms_query``: If true, ElastAlert 2 will make an aggregation query against Elasticsearch to get counts of documents matching
-each unique value of ``query_key``. This must be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
+each unique value of ``query_key``. This must be used with ``query_key``. This will only return a maximum of ``terms_size``,
 default 50, unique terms.
 
 ``terms_size``: When used with ``use_terms_query``, this is the maximum number of terms returned per query. Default is 50.
@@ -1241,12 +1233,10 @@ cause alerts. Baseline is established after ``timeframe`` has elapsed twice sinc
 
 ``use_count_query``: If true, ElastAlert 2 will poll Elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
-of tens of thousands or more. ``doc_type`` must be set to use this.
-
-``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
+of tens of thousands or more. 
 
 ``use_terms_query``: If true, ElastAlert 2 will make an aggregation query against Elasticsearch to get counts of documents matching
-each unique value of ``query_key``. This must be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
+each unique value of ``query_key``. This must be used with ``query_key``. This will only return a maximum of ``terms_size``,
 default 50, unique terms.
 
 ``terms_size``: When used with ``use_terms_query``, this is the maximum number of terms returned per query. Default is 50.
@@ -1268,12 +1258,10 @@ Optional:
 
 ``use_count_query``: If true, ElastAlert 2 will poll Elasticsearch using the count api, and not download all of the matching documents. This is
 useful is you care only about numbers and not the actual data. It should also be used if you expect a large number of query hits, in the order
-of tens of thousands or more. ``doc_type`` must be set to use this.
-
-``doc_type``: Specify the ``_type`` of document to search for. This must be present if ``use_count_query`` or ``use_terms_query`` is set.
+of tens of thousands or more.
 
 ``use_terms_query``: If true, ElastAlert 2 will make an aggregation query against Elasticsearch to get counts of documents matching
-each unique value of ``query_key``. This must be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
+each unique value of ``query_key``. This must be used with ``query_key``. This will only return a maximum of ``terms_size``,
 default 50, unique terms.
 
 ``terms_size``: When used with ``use_terms_query``, this is the maximum number of terms returned per query. Default is 50.
@@ -1369,8 +1357,6 @@ supported by the specified aggregation type.  If using a scripted field via ``me
 ``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg', 'sum', 'cardinality', 'value_count', 'percentiles'. Note, if `percentiles` is used, then ``percentile_range`` must also be specified.
 
 .. note:: When Metric Aggregation has a match, match_body includes an aggregated value that triggered the match so that you can use that on an alert. The value is named based on ``metric_agg_key`` and ``metric_agg_type``. For example, if you set ``metric_agg_key`` to 'system.cpu.total.norm.pct' and ``metric_agg_type`` to 'avg', the name of the value is 'metric_system.cpu.total.norm.pct_avg'. Because of this naming rule, you might face conflicts with jinja2 template, and when that happens, you also can use 'metric_agg_value' from match_body instead.
-
-``doc_type``: Specify the ``_type`` of document to search for.
 
 This rule also requires at least one of the two following options:
 
@@ -1477,9 +1463,7 @@ This rule requires:
 ``match_bucket_filter``: ES filter DSL. This defines a filter for the match bucket, which should match a subset of the documents returned by the
 main query filter.
 
-``doc_type``: Specify the ``_type`` of document to search for.
-
-This rule also requires at least one of the two following options:
+ssThis rule also requires at least one of the two following options:
 
 ``min_percentage``: If the percentage of matching documents is less than this number, an alert will be triggered.
 
