@@ -31,8 +31,11 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
     es_index_mappings = {}
     if is_atleasteight(esversion):
         es_index_mappings = read_es_index_mappings()
-    else:
+    elif is_atleastseven(esversion):
         es_index_mappings = read_es_index_mappings(7)
+    else:                                      
+        print('FATAL - Unsupported Elasticsearch version: ' + esversion + '. Aborting.')
+        exit(1)
 
     es_index = IndicesClient(es_client)
     if not recreate:
@@ -87,9 +90,6 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
                                       body=es_index_mappings['elastalert_error'], include_type_name=True)
         es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
                                       body=es_index_mappings['past_elastalert'], include_type_name=True)
-    else:                                      
-        print('FATAL - Unsupported Elasticsearch version: ' + esversion + '. Aborting.')
-        exit(1)
 
     print('New index %s created' % ea_index)
     if old_ea_index:
