@@ -186,27 +186,13 @@ class MockElastAlerter(object):
         # Set up Elasticsearch client and query
         es_client = elasticsearch_client(conf)
 
-        try:
-            ElastAlerter.modify_rule_for_ES5(conf)
-        except EAException as ea:
-            print('Invalid filter provided:', str(ea), file=sys.stderr)
-            if self.args.stop_error:
-                exit(3)
-            return None
-        except Exception as e:
-            print("Error connecting to ElasticSearch:", file=sys.stderr)
-            print(repr(e)[:2048], file=sys.stderr)
-            if self.args.stop_error:
-                exit(1)
-            return None
         ts = conf.get('timestamp_field', '@timestamp')
         query = ElastAlerter.get_query(
             conf['filter'],
             starttime=self.starttime,
             endtime=self.endtime,
             timestamp_field=ts,
-            to_ts_func=conf['dt_to_ts'],
-            five=conf['five']
+            to_ts_func=conf['dt_to_ts']
         )
         index = ElastAlerter.get_index(conf, self.starttime, self.endtime)
 
@@ -233,8 +219,7 @@ class MockElastAlerter(object):
             endtime=self.endtime,
             timestamp_field=ts,
             to_ts_func=conf['dt_to_ts'],
-            sort=False,
-            five=conf['five']
+            sort=False
         )
         try:
             res = es_client.count(index=index, body=count_query, ignore_unavailable=True)
