@@ -220,13 +220,15 @@ Rule Configuration Cheat Sheet
 +-------------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+------------------+-----------------+----------------+
 |``metric_agg_key`` (string, no default)                |        |           |           |        |           |       |          |        |           |  Req             |                 |                |
 +-------------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+------------------+-----------------+----------------+
-|``metric_agg_type`` (no default,                       |        |           |           |        |           |       |          |        |           |  Req             |                 |                |
+|``metric_agg_type`` (no default,                       |        |           |           |        |           |       |          |        |           |  Req             |  Req            |                |
 |                                                       |        |           |           |        |           |       |          |        |           |                  |                 |                |
-|([min|max|avg|sum|cardinality|value_count])            |        |           |           |        |           |       |          |        |           |                  |                 |                |
+|([min|max|avg|sum|cardinality|value_count|percentiles])|        |           |           |        |           |       |          |        |           |                  |                 |                |
 +-------------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+------------------+-----------------+----------------+
 |``doc_type`` (string, no default)                      |        |           |           |        |           |       |          |        |           |  Req             |  Req            |  Req           |
 +-------------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+------------------+-----------------+----------------+
 |``metric_agg_script`` (no default)                     |        |           |           |        |           |       |          |        |           |  Opt             |  Opt            |                |
++-------------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+------------------+-----------------+----------------+
+|``percentile_range`` ++required if percentiles is used |        |           |           |        |           |       |          |        |           |  Req++           |  Req++          |                |
 +-------------------------------------------------------+--------+-----------+-----------+--------+-----------+-------+----------+--------+-----------+------------------+-----------------+----------------+
 |``max_threshold`` (number, no default)                 |        |           |           |        |           |       |          |        |           |  Opt             |                 |                |
 |                                                       |        |           |           |        |           |       |          |        |           |                  |                 |                |
@@ -1364,8 +1366,7 @@ This rule requires:
 ``metric_agg_key``: This is the name of the field over which the metric value will be calculated. The underlying type of this field must be
 supported by the specified aggregation type.  If using a scripted field via ``metric_agg_script``, this is the name for your scripted field
 
-``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg',
-'sum', 'cardinality', 'value_count'.
+``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg', 'sum', 'cardinality', 'value_count', 'percentiles'. Note, if `percentiles` is used, then ``percentile_range`` must also be specified.
 
 .. note:: When Metric Aggregation has a match, match_body includes an aggregated value that triggered the match so that you can use that on an alert. The value is named based on ``metric_agg_key`` and ``metric_agg_type``. For example, if you set ``metric_agg_key`` to 'system.cpu.total.norm.pct' and ``metric_agg_type`` to 'avg', the name of the value is 'metric_system.cpu.total.norm.pct_avg'. Because of this naming rule, you might face conflicts with jinja2 template, and when that happens, you also can use 'metric_agg_value' from match_body instead.
 
@@ -1376,6 +1377,8 @@ This rule also requires at least one of the two following options:
 ``max_threshold``: If the calculated metric value is greater than this number, an alert will be triggered. This threshold is exclusive.
 
 ``min_threshold``: If the calculated metric value is less than this number, an alert will be triggered. This threshold is exclusive.
+
+``percentile_range``: An integer specifying the percentage value to aggregate against. Must be specified if ``metric_agg_type`` is set to ``percentiles``. See https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-percentile-aggregation.html for more information.
 
 Optional:
 
@@ -1426,8 +1429,7 @@ This rule requires:
 ``metric_agg_key``: This is the name of the field over which the metric value will be calculated. The underlying type of this field must be
 supported by the specified aggregation type.  If using a scripted field via ``metric_agg_script``, this is the name for your scripted field
 
-``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg',
-'sum', 'cardinality', 'value_count'.
+``metric_agg_type``: The type of metric aggregation to perform on the ``metric_agg_key`` field. This must be one of 'min', 'max', 'avg', 'sum', 'cardinality', 'value_count', 'percentiles'. Note, if `percentiles` is used, then ``percentile_range`` must also be specified.
 
 ``spike_height``: The ratio of the metric value in the last ``timeframe`` to the previous ``timeframe`` that when hit
 will trigger an alert.
@@ -1439,6 +1441,8 @@ higher. 'Down' meaning the reference metric value is ``spike_height`` higher tha
 window will span from present to one hour ago, and the 'reference' window will span from one hour ago to two hours ago. The rule
 will not be active until the time elapsed from the first event is at least two timeframes. This is to prevent an alert being triggered
 before a baseline rate has been established. This can be overridden using ``alert_on_new_data``.
+
+``percentile_range``: An integer specifying the percentage value to aggregate against. Must be specified if ``metric_agg_type`` is set to ``percentiles``. See https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-metrics-percentile-aggregation.html for more information.
 
 Optional:
 

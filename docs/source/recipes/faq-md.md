@@ -432,3 +432,25 @@ filter:
      query_string:
        query: '"Rabbia Al"'
 ```
+
+Does ElastAlert 2 support Elasticsearch 8?
+===========
+
+Support for Elasticsearch 8 is a work in progress. It is currently possible to
+load ElastAlert 2 against a _fresh_ installation of Elasticsearch (i.e. one where
+no previous ElastAlert instance has been running) without any extra steps.
+
+To upgrade an existing ElastAlert 2 installation to Elasticsearch 8 the
+following manual steps are required:
+
+* Shutdown ElastAlert 2.
+* Delete or rename the old `elastalert*` indices. See Elasticsearch
+  documentation for instructions on how to delete via the API.
+* If NOT running ElastAlert 2 via Docker or Kubernetes, run
+  elastalert-create-index to create the new indices. This is not needed when
+  running via a container since the container always attempts to creates the
+  indices at startup, if they're not yet created.
+* Restart ElastAlert 2.
+
+However, *at this point it is not guaranteed that features which used to work
+on Elasticsearch 7 will still work*.

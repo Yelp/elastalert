@@ -28,9 +28,8 @@ setup(
     entry_points={
         'console_scripts': ['elastalert-create-index=elastalert.create_index:main',
                             'elastalert-test-rule=elastalert.test_rule:main',
-                            'elastalert-rule-from-kibana=elastalert.rule_from_kibana:main',
                             'elastalert=elastalert.elastalert:main']},
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests"]),
     package_data={'elastalert': ['schema.yaml', 'es_mappings/**/*.json']},
     install_requires=[
         'apscheduler>=3.8.1,<4.0',
