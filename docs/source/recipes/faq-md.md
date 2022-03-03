@@ -435,9 +435,7 @@ filter:
 Does ElastAlert 2 support Elasticsearch 8?
 ===========
 
-Support for Elasticsearch 8 is a work in progress. It is currently possible to
-load ElastAlert 2 against a _fresh_ installation of Elasticsearch (i.e. one where
-no previous ElastAlert instance has been running) without any extra steps.
+ElastAlert 2 supports Elasticsearch 8.
 
 To upgrade an existing ElastAlert 2 installation to Elasticsearch 8 the
 following manual steps are required:
@@ -450,6 +448,3 @@ following manual steps are required:
   running via a container since the container always attempts to creates the
   indices at startup, if they're not yet created.
 * Restart ElastAlert 2.
-
-However, *at this point it is not guaranteed that features which used to work
-on Elasticsearch 7 will still work*.
