@@ -37,6 +37,7 @@
 - [Docs] Add Elasticsearch 8 support documentation - [#735](https://github.com/jertel/elastalert2/pull/735) - @ferozsalam
 - Remove download_dashboard - [#740](https://github.com/jertel/elastalert2/pull/740) - @nsano-rururu
 - [Docs] Added documentation for metric|spike aggregation rule types for percentiles - [e682ea8](https://github.com/jertel/elastalert2/commit/e682ea8113bf9f413b6339e6803b5262881f2b30)- @jertel
+- Add support for Jira authentication via Personal Access Token [#750](https://github.com/jertel/elastalert2/pull/750) - @buzzdeee
 
 # 2.3.0
 
