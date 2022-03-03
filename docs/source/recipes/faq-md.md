@@ -438,13 +438,17 @@ Does ElastAlert 2 support Elasticsearch 8?
 ElastAlert 2 supports Elasticsearch 8.
 
 To upgrade an existing ElastAlert 2 installation to Elasticsearch 8 the
-following manual steps are required:
+following manual steps are required (note the important WARNING below):
 
 * Shutdown ElastAlert 2.
-* Delete or rename the old `elastalert*` indices. See Elasticsearch
-  documentation for instructions on how to delete via the API.
+* Delete the old `elastalert*` indices. See [Elasticsearch
+  documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-delete-index.html)
+  for instructions on how to delete via the API, or use the Kibana Index Management interface.
+* Upgrade the Elastic cluster to Elasticsearch 8.
 * If NOT running ElastAlert 2 via Docker or Kubernetes, run
   elastalert-create-index to create the new indices. This is not needed when
   running via a container since the container always attempts to creates the
   indices at startup, if they're not yet created.
 * Restart ElastAlert 2.
+
+WARNING: Failure to remove the old ElastAlert indices can result in a non-worker Elasticsearch cluster. This is because the ElastAlert indices contain deprecated features and the Elasticsearch 8 upgrade logic is currently flawed and does not correctly handle this situation. The Elasticsearch GitHub repository contains [more information](https://github.com/elastic/elasticsearch/issues/84199) on this problem.
