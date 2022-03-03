@@ -740,6 +740,8 @@ kibana_discover_index_pattern_id
 ``kibana_discover_index_pattern_id``: The id of the index pattern to link to in the Kibana Discover application.
 These ids are usually generated and can be found in url of the index pattern management page, or by exporting its saved object.
 
+In this documentation all references of "index pattern" refer to the similarly named concept in Kibana 8 called "data view".
+
 Example export of an index pattern's saved object:
 
 .. code-block:: text
