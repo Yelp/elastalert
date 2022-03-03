@@ -14,7 +14,10 @@ from .util import ts_add
 
 kibana_default_timedelta = datetime.timedelta(minutes=10)
 
-kibana7_versions = frozenset(['7.0', '7.1', '7.2', '7.3', '7.4', '7.5', '7.6', '7.7', '7.8', '7.9', '7.10', '7.11', '7.12', '7.13', '7.14', '7.15', '7.16', '7.17'])
+kibana_versions = frozenset([
+        '7.0', '7.1', '7.2', '7.3', '7.4', '7.5', '7.6', '7.7', '7.8', '7.9', '7.10', '7.11', '7.12', '7.13', '7.14', '7.15', '7.16', '7.17', 
+        '8.0'
+        ])
 
 def generate_kibana_discover_url(rule, match):
     ''' Creates a link for a kibana discover app. '''
@@ -61,7 +64,7 @@ def generate_kibana_discover_url(rule, match):
     to_timedelta = rule.get('kibana_discover_to_timedelta', timeframe)
     to_time = ts_add(timestamp, to_timedelta)
 
-    if kibana_version in kibana7_versions:
+    if kibana_version in kibana_versions:
         globalState = kibana7_disover_global_state(from_time, to_time)
         appState = kibana_discover_app_state(index, columns, filters, query_keys, match)
 
