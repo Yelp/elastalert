@@ -32,10 +32,9 @@ include:
   - match_body.user.name
   - match_body.source.ip
 
-alert_subject: "SSH abuse (repeat offender) on <{}> | <{}|Show Dashboard>"
+alert_subject: "SSH abuse (repeat offender) on <{}>"
 alert_subject_args:
   - match_body.host.hostname
-  - kibana_link
 
 alert_text: |-
   An reapeat offender has been active on {}.
@@ -56,6 +55,3 @@ slack_username_override: "ElastAlert"
 
 # Alert body only cointains a title and text
 alert_text_type: alert_text_only
-
-# Link to BitSensor Kibana Dashboard
-use_kibana4_dashboard: "https://dev.securely.ai/app/kibana#/dashboard/37739d80-a95c-11e9-b5ba-33a34ca252fb"

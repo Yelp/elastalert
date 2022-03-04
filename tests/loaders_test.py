@@ -438,36 +438,6 @@ def test_name_inference():
     assert test_rule_copy['name'] == 'msmerc woz ere'
 
 
-def test_raises_on_bad_generate_kibana_filters():
-    test_rule['generate_kibana_link'] = True
-    bad_filters = [[{'not': {'terms': {'blah': 'blah'}}}],
-                   [{'terms': {'blah': 'blah'}}],
-                   [{'query': {'not_querystring': 'this:that'}}],
-                   [{'query': {'wildcard': 'this*that'}}],
-                   [{'blah': 'blah'}]]
-    good_filters = [[{'term': {'field': 'value'}}],
-                    [{'not': {'term': {'this': 'that'}}}],
-                    [{'not': {'query': {'query_string': {'query': 'this:that'}}}}],
-                    [{'query': {'query_string': {'query': 'this:that'}}}],
-                    [{'range': {'blah': {'from': 'a', 'to': 'b'}}}],
-                    [{'not': {'range': {'blah': {'from': 'a', 'to': 'b'}}}}]]
-
-    # Test that all the good filters work, but fail with a bad filter added
-    for good in good_filters:
-        test_config_copy = copy.deepcopy(test_config)
-        rules_loader = FileRulesLoader(test_config_copy)
-
-        test_rule_copy = copy.deepcopy(test_rule)
-        test_rule_copy['filter'] = good
-        with mock.patch.object(rules_loader, 'get_yaml') as mock_open:
-            mock_open.return_value = test_rule_copy
-            rules_loader.load_configuration('blah', test_config)
-            for bad in bad_filters:
-                test_rule_copy['filter'] = good + bad
-                with pytest.raises(EAException):
-                    rules_loader.load_configuration('blah', test_config)
-
-
 def test_kibana_discover_from_timedelta():
     test_config_copy = copy.deepcopy(test_config)
     rules_loader = FileRulesLoader(test_config_copy)

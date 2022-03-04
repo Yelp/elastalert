@@ -29,7 +29,6 @@ from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch.exceptions import TransportError
 
-from elastalert import kibana
 from elastalert.alerters.debug import DebugAlerter
 from elastalert.config import load_conf
 from elastalert.enhancements import DropMatchException
@@ -1293,116 +1292,6 @@ class ElastAlerter(object):
         elastalert_logger.info("Sleeping for %s seconds" % (duration))
         time.sleep(duration)
 
-    def generate_kibana4_db(self, rule, match):
-        ''' Creates a link for a kibana4 dashboard which has time set to the match. '''
-        db_name = rule.get('use_kibana4_dashboard')
-        start = ts_add(
-            lookup_es_key(match, rule['timestamp_field']),
-            -rule.get('kibana4_start_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10)))
-        )
-        end = ts_add(
-            lookup_es_key(match, rule['timestamp_field']),
-            rule.get('kibana4_end_timedelta', rule.get('timeframe', datetime.timedelta(minutes=10)))
-        )
-        return kibana.kibana4_dashboard_link(db_name, start, end)
-
-    def generate_kibana_db(self, rule, match):
-        ''' Uses a template dashboard to upload a temp dashboard showing the match.
-        Returns the url to the dashboard. '''
-        db = copy.deepcopy(kibana.dashboard_temp)
-
-        # Set timestamp fields to match our rule especially if
-        # we have configured something other than @timestamp
-        kibana.set_timestamp_field(db, rule['timestamp_field'])
-
-        # Set filters
-        for filter in rule['filter']:
-            if filter:
-                kibana.add_filter(db, filter)
-        kibana.set_included_fields(db, rule['include'])
-
-        # Set index
-        index = self.get_index(rule)
-        kibana.set_index_name(db, index)
-
-        return self.upload_dashboard(db, rule, match)
-
-    def upload_dashboard(self, db, rule, match):
-        ''' Uploads a dashboard schema to the kibana-int Elasticsearch index associated with rule.
-        Returns the url to the dashboard. '''
-        # Set time range
-        start = ts_add(lookup_es_key(match, rule['timestamp_field']), -rule.get('timeframe', datetime.timedelta(minutes=10)))
-        end = ts_add(lookup_es_key(match, rule['timestamp_field']), datetime.timedelta(minutes=10))
-        kibana.set_time(db, start, end)
-
-        # Set dashboard name
-        db_name = 'ElastAlert - %s - %s' % (rule['name'], end)
-        kibana.set_name(db, db_name)
-
-        # Add filter for query_key value
-        if 'query_key' in rule:
-            for qk in rule.get('compound_query_key', [rule['query_key']]):
-                if qk in match:
-                    term = {'term': {qk: match[qk]}}
-                    kibana.add_filter(db, term)
-
-        # Add filter for aggregation_key value
-        if 'aggregation_key' in rule:
-            for qk in rule.get('compound_aggregation_key', [rule['aggregation_key']]):
-                if qk in match:
-                    term = {'term': {qk: match[qk]}}
-                    kibana.add_filter(db, term)
-
-        # Convert to json
-        db_js = json.dumps(db)
-        db_body = {'user': 'guest',
-                   'group': 'guest',
-                   'title': db_name,
-                   'dashboard': db_js}
-
-        # Upload
-        es = elasticsearch_client(rule)
-        res = es.index(index='kibana-int',
-                       body=db_body)
-
-        # Return dashboard URL
-        kibana_url = rule.get('kibana_url')
-        if not kibana_url:
-            kibana_url = 'http://%s:%s/_plugin/kibana/' % (rule['es_host'],
-                                                           rule['es_port'])
-        return kibana_url + '#/dashboard/temp/%s' % (res['_id'])
-
-    def get_dashboard(self, rule, db_name):
-        """ Download dashboard which matches use_kibana_dashboard from Elasticsearch. """
-        es = elasticsearch_client(rule)
-        if not db_name:
-            raise EAException("use_kibana_dashboard undefined")
-        query = {'query': {'term': {'_id': db_name}}}
-        try:
-            res = es.search(index='kibana-int', body=query, _source_include=['dashboard'])
-        except ElasticsearchException as e:
-            raise EAException("Error querying for dashboard: %s" % (e)).with_traceback(sys.exc_info()[2])
-
-        if res['hits']['hits']:
-            return json.loads(res['hits']['hits'][0]['_source']['dashboard'])
-        else:
-            raise EAException("Could not find dashboard named %s" % (db_name))
-
-    def use_kibana_link(self, rule, match):
-        """ Uploads an existing dashboard as a temp dashboard modified for match time.
-        Returns the url to the dashboard. """
-        # Download or get cached dashboard
-        dashboard = rule.get('dashboard_schema')
-        if not dashboard:
-            db_name = rule.get('use_kibana_dashboard')
-            dashboard = self.get_dashboard(rule, db_name)
-        if dashboard:
-            rule['dashboard_schema'] = dashboard
-        else:
-            return None
-        dashboard = copy.deepcopy(dashboard)
-        return self.upload_dashboard(dashboard, rule, match)
-
     def alert(self, matches, rule, alert_time=None, retried=False):
         """ Wraps alerting, Kibana linking and enhancements in an exception handler """
         try:
@@ -1443,24 +1332,6 @@ class ElastAlerter(object):
                 keys = rule.get('top_count_keys')
                 counts = self.get_top_counts(rule, start, end, keys, qk=qk)
                 match.update(counts)
-
-        # Generate a kibana3 dashboard for the first match
-        if rule.get('generate_kibana_link') or rule.get('use_kibana_dashboard'):
-            try:
-                if rule.get('generate_kibana_link'):
-                    kb_link = self.generate_kibana_db(rule, matches[0])
-                else:
-                    kb_link = self.use_kibana_link(rule, matches[0])
-            except EAException as e:
-                self.handle_error("Could not generate Kibana dash for %s match: %s" % (rule['name'], e))
-            else:
-                if kb_link:
-                    matches[0]['kibana_link'] = kb_link
-
-        if rule.get('use_kibana4_dashboard'):
-            kb_link = self.generate_kibana4_db(rule, matches[0])
-            if kb_link:
-                matches[0]['kibana_link'] = kb_link
 
         if rule.get('generate_kibana_discover_url'):
             kb_link = generate_kibana_discover_url(rule, matches[0])

@@ -236,12 +236,9 @@ properties:
   top_count_keys: {type: array, items: {type: string}}
   top_count_number: {type: integer}
   raw_count_keys: {type: boolean}
-  generate_kibana_link: {type: boolean}
-  kibana_dashboard: {type: string}
   kibana_url: {type: string, format: uri}
   kibana_username: {type: string}
   kibana_password: {type: string}
-  use_kibana_dashboard: {type: string}
   use_local_time: {type: boolean}
   custom_pretty_ts_format: {type: string}
   match_enhancements: {type: array, items: {type: string}}

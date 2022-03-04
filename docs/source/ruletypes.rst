@@ -60,21 +60,11 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``description`` (string, default empty string)               |           |
 +--------------------------------------------------------------+           |
-| ``generate_kibana_link`` (boolean, default False)            |           |
-+--------------------------------------------------------------+           |
-| ``use_kibana_dashboard`` (string, no default)                |           |
-+--------------------------------------------------------------+           |
 | ``kibana_url`` (string, default from es_host)                |           |
 +--------------------------------------------------------------+           |
 | ``kibana_username`` (string, no default)                     |           |
 +--------------------------------------------------------------+           |
 | ``kibana_password`` (string, no default)                     |           |
-+--------------------------------------------------------------+           |
-| ``use_kibana4_dashboard`` (string, no default)               |           |
-+--------------------------------------------------------------+           |
-| ``kibana4_start_timedelta`` (time, default: 10 min)          |           |
-+--------------------------------------------------------------+           |
-| ``kibana4_end_timedelta`` (time, default: 10 min)            |           |
 +--------------------------------------------------------------+           |
 | ``generate_kibana_discover_url`` (boolean, default False)    |           |
 +--------------------------------------------------------------+           |
@@ -590,27 +580,13 @@ description
 ``description``: text describing the purpose of rule. (Optional, string, default empty string)
 Can be referenced in custom alerters to provide context as to why a rule might trigger.
 
-generate_kibana_link
-^^^^^^^^^^^^^^^^^^^^
-
-``generate_kibana_link``: This option is for Kibana 3 only.
-If true, ElastAlert 2 will generate a temporary Kibana dashboard and include a link to it in alerts. The dashboard
-consists of an events over time graph and a table with ``include`` fields selected in the table. If the rule uses ``query_key``, the
-dashboard will also contain a filter for the ``query_key`` of the alert. The dashboard schema will
-be uploaded to the kibana-int index as a temporary dashboard. (Optional, boolean, default False)
-
 kibana_url
 ^^^^^^^^^^
 
 ``kibana_url``: The base url of the Kibana application. If not specified, a URL will be constructed using ``es_host``
 and ``es_port``.
 
-This value will be used if one of the following conditions are met:
-
-- ``generate_kibana_link`` is true
-- ``use_kibana_dashboard`` is true
-- ``use_kibana4_dashboard`` is true
-- ``generate_kibana_discover_url`` is true and ``kibana_discover_app_url`` is a relative path
+This value will be used if ``generate_kibana_discover_url`` is true and ``kibana_discover_app_url`` is a relative path
 
 (Optional, string, default ``http://<es_host>:<es_port>/_plugin/kibana/``)
 
@@ -629,38 +605,6 @@ kibana_password
 This value is only used if ``shorten_kibana_discover_url`` is true.
 
 (Optional, string, no default)
-
-use_kibana_dashboard
-^^^^^^^^^^^^^^^^^^^^
-
-``use_kibana_dashboard``: The name of a Kibana 3 dashboard to link to. Instead of generating a dashboard from a template,
-ElastAlert 2 can use an existing dashboard. It will set the time range on the dashboard to around the match time,
-upload it as a temporary dashboard, add a filter to the ``query_key`` of the alert if applicable,
-and put the url to the dashboard in the alert. (Optional, string, no default)
-
-use_kibana4_dashboard
-^^^^^^^^^^^^^^^^^^^^^
-
-``use_kibana4_dashboard``: A link to a Kibana 4 dashboard. For example, "https://kibana.example.com/#/dashboard/My-Dashboard".
-This will set the time setting on the dashboard from the match time minus the timeframe, to 10 minutes after the match time.
-Note that this does not support filtering by ``query_key`` like Kibana 3.  This value can use `$VAR` and `${VAR}` references
-to expand environment variables.
-
-kibana4_start_timedelta
-^^^^^^^^^^^^^^^^^^^^^^^
-
-``kibana4_start_timedelta``: Defaults to 10 minutes. This option allows you to specify the start time for the generated kibana4 dashboard.
-This value is added in front of the event. For example,
-
-``kibana4_start_timedelta: minutes: 2``
-
-kibana4_end_timedelta
-^^^^^^^^^^^^^^^^^^^^^
-
-``kibana4_end_timedelta``: Defaults to 10 minutes. This option allows you to specify the end time for the generated kibana4 dashboard.
-This value is added in back of the event. For example,
-
-``kibana4_end_timedelta: minutes: 2``
 
 generate_kibana_discover_url
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

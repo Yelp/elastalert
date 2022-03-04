@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import copy
 import datetime
-import json
 import threading
 
 import elasticsearch
@@ -13,13 +12,11 @@ from elasticsearch.exceptions import ElasticsearchException
 from elastalert.enhancements import BaseEnhancement
 from elastalert.enhancements import DropMatchException
 from elastalert.enhancements import TimeEnhancement
-from elastalert.kibana import dashboard_temp
 from elastalert.kibana_external_url_formatter import AbsoluteKibanaExternalUrlFormatter
 from elastalert.kibana_external_url_formatter import ShortKibanaExternalUrlFormatter
 from elastalert.util import dt_to_ts
 from elastalert.util import dt_to_unix
 from elastalert.util import dt_to_unixms
-from elastalert.util import EAException
 from elastalert.util import ts_now
 from elastalert.util import ts_to_dt
 from elastalert.util import unix_to_dt
@@ -888,53 +885,6 @@ def test_set_starttime(ea):
         mock_gs.return_value = None
         ea.set_starttime(ea.rules[0], end)
     assert ea.rules[0]['starttime'] == end - datetime.timedelta(days=3)
-
-
-def test_kibana_dashboard(ea):
-    match = {'@timestamp': '2014-10-11T00:00:00'}
-    mock_es = mock.Mock()
-    ea.rules[0]['use_kibana_dashboard'] = 'my dashboard'
-    with mock.patch('elastalert.elastalert.elasticsearch_client') as mock_es_init:
-        mock_es_init.return_value = mock_es
-
-        # No dashboard found
-        mock_es.search.return_value = {'hits': {'total': 0, 'hits': []}}
-        with pytest.raises(EAException):
-            ea.use_kibana_link(ea.rules[0], match)
-        mock_call = mock_es.search.call_args_list[0][1]
-        assert mock_call['body'] == {'query': {'term': {'_id': 'my dashboard'}}}
-
-        # Dashboard found
-        mock_es.index.return_value = {'_id': 'ABCDEFG'}
-        mock_es.search.return_value = {'hits': {'hits': [{'_source': {'dashboard': json.dumps(dashboard_temp)}}]}}
-        url = ea.use_kibana_link(ea.rules[0], match)
-        assert 'ABCDEFG' in url
-        db = json.loads(mock_es.index.call_args_list[0][1]['body']['dashboard'])
-        assert 'anytest' in db['title']
-
-        # Query key filtering added
-        ea.rules[0]['query_key'] = 'foobar'
-        match['foobar'] = 'baz'
-        url = ea.use_kibana_link(ea.rules[0], match)
-        db = json.loads(mock_es.index.call_args_list[-1][1]['body']['dashboard'])
-        assert db['services']['filter']['list']['1']['field'] == 'foobar'
-        assert db['services']['filter']['list']['1']['query'] == '"baz"'
-
-        # Compound query key
-        ea.rules[0]['query_key'] = 'foo,bar'
-        ea.rules[0]['compound_query_key'] = ['foo', 'bar']
-        match['foo'] = 'cat'
-        match['bar'] = 'dog'
-        match['foo,bar'] = 'cat, dog'
-        url = ea.use_kibana_link(ea.rules[0], match)
-        db = json.loads(mock_es.index.call_args_list[-1][1]['body']['dashboard'])
-        found_filters = 0
-        for filter_id, filter_dict in list(db['services']['filter']['list'].items()):
-            if (filter_dict['field'] == 'foo' and filter_dict['query'] == '"cat"') or \
-                    (filter_dict['field'] == 'bar' and filter_dict['query'] == '"dog"'):
-                found_filters += 1
-                continue
-        assert found_filters == 2
 
 
 def test_rule_changes(ea):
