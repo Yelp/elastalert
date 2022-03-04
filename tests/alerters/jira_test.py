@@ -396,3 +396,32 @@ def test_jira_set_priority(caplog):
             'Priority 0 not found. Valid priorities are []') == caplog.record_tuples[0]
     assert ('elastalert', logging.ERROR,
             'Priority 0 not found. Valid priorities are []') == caplog.record_tuples[1]
+
+
+def test_jira_auth_token(caplog):
+    description_txt = "Test authentication via apitoken"
+    rule = {
+        'name': 'test alert',
+        'jira_account_file': 'jirafile',
+        'type': mock_rule(),
+        'jira_project': 'testproject',
+        'jira_priority': 0,
+        'jira_issuetype': 'testtype',
+        'jira_server': 'jiraserver',
+        'jira_description': description_txt,
+        'jira_assignee': 'testuser',
+        'timestamp_field': '@timestamp',
+        'alert_subject': 'Issue {0} occurred at {1}',
+        'alert_subject_args': ['test_term', '@timestamp'],
+        'rule_file': '/tmp/foo.yaml'
+    }
+    with mock.patch('elastalert.alerters.jira.JIRA') as mock_jira, \
+            mock.patch('elastalert.alerters.jira.read_yaml') as mock_open:
+        mock_open.return_value = {'apikey': 'theapikey'}
+        alert = JiraAlerter(rule)
+        alert.set_priority
+    expected = [
+        mock.call('jiraserver', token_auth=('theapikey')),
+    ]
+    # we only want to test authentication via apikey, the rest we don't care of
+    assert mock_jira.mock_calls[:1] == expected
