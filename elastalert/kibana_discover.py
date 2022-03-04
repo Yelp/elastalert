@@ -102,6 +102,15 @@ def kibana_discover_app_state(index, columns, filters, query_keys, match):
     app_filters = []
 
     if filters:
+
+        # Remove nested query since the outer most query key will break Kibana 8.
+        new_filters = []
+        for filter in filters:
+            if 'query' in filter:
+                filter = filter['query']
+            new_filters.append(filter)
+        filters = new_filters
+
         bool_filter = { 'must': filters }
         app_filters.append( {
             '$state': {

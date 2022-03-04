@@ -875,3 +875,80 @@ def test_generate_kibana_discover_url_with_filter_and_query_key():
         + '%29'  # app end
     )
     assert url == expectedUrl
+
+
+def test_generate_kibana_discover_url_with_querystring_filter_and_query_key():
+    url = generate_kibana_discover_url(
+        rule={
+            'kibana_discover_app_url': 'http://kibana:5601/#/discover',
+            'kibana_discover_version': '8.0',
+            'kibana_discover_index_pattern_id': 'logs-*',
+            'timestamp_field': 'timestamp',
+            'filter': [
+                {'query': {'query_string': {'query': 'hello world'}}}
+            ],
+            'query_key': 'status'
+        },
+        match={
+            'timestamp': '2019-09-01T00:30:00Z',
+            'status': 'ok'
+        }
+    )
+    expectedUrl = (
+        'http://kibana:5601/#/discover'
+        + '?_g=%28'  # global start
+        + 'filters%3A%21%28%29%2C'
+        + 'refreshInterval%3A%28pause%3A%21t%2Cvalue%3A0%29%2C'
+        + 'time%3A%28'  # time start
+        + 'from%3A%272019-09-01T00%3A20%3A00Z%27%2C'
+        + 'to%3A%272019-09-01T00%3A40%3A00Z%27'
+        + '%29'  # time end
+        + '%29'  # global end
+        + '&_a=%28'  # app start
+        + 'columns%3A%21%28_source%29%2C'
+        + 'filters%3A%21%28'  # filters start
+
+        + '%28'  # filter start
+        + '%27%24state%27%3A%28store%3AappState%29%2C'
+        + 'bool%3A%28must%3A%21%28%28query_string%3A%28query%3A%27hello%20world%27%29%29%29%29%2C'
+        + 'meta%3A%28'  # meta start
+        + 'alias%3Afilter%2C'
+        + 'disabled%3A%21f%2C'
+        + 'index%3A%27logs-%2A%27%2C'
+        + 'key%3Abool%2C'
+        + 'negate%3A%21f%2C'
+        + 'type%3Acustom%2C'
+        + 'value%3A%27%7B%22must%22%3A%5B%7B%22query_string%22%3A%7B%22query%22%3A%22hello%20world%22%7D%7D%5D%7D%27'
+        + '%29'  # meta end
+        + '%29%2C'  # filter end
+
+        + '%28'  # filter start
+        + '%27%24state%27%3A%28store%3AappState%29%2C'
+        + 'meta%3A%28'  # meta start
+        + 'alias%3A%21n%2C'
+        + 'disabled%3A%21f%2C'
+        + 'index%3A%27logs-%2A%27%2C'
+        + 'key%3Astatus%2C'
+        + 'negate%3A%21f%2C'
+        + 'params%3A%28query%3Aok%2C'  # params start
+        + 'type%3Aphrase'
+        + '%29%2C'  # params end
+        + 'type%3Aphrase%2C'
+        + 'value%3Aok'
+        + '%29%2C'  # meta end
+        + 'query%3A%28'  # query start
+        + 'match%3A%28'  # match start
+        + 'status%3A%28'  # status start
+        + 'query%3Aok%2C'
+        + 'type%3Aphrase'
+        + '%29'  # status end
+        + '%29'  # match end
+        + '%29'  # query end
+        + '%29'  # filter end
+
+        + '%29%2C'  # filters end
+        + 'index%3A%27logs-%2A%27%2C'
+        + 'interval%3Aauto'
+        + '%29'  # app end
+    )
+    assert url == expectedUrl
