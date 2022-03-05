@@ -1,10 +1,12 @@
 import datetime
 import sys
+import os
 
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
 from elastalert.util import (elastalert_logger, lookup_es_key, pretty_ts, ts_now,
                              ts_to_dt, EAException)
+from elastalert.yaml import read_yaml
 from jira.client import JIRA
 from jira.exceptions import JIRAError
 
@@ -103,7 +105,10 @@ class JiraAlerter(Alerter):
         self.reset_jira_args()
 
         try:
-            self.client = JIRA(self.server, basic_auth=(self.user, self.password))
+            if hasattr(self, 'apikey'):
+                self.client = JIRA(self.server, token_auth=(self.apikey))
+            else:
+                self.client = JIRA(self.server, basic_auth=(self.user, self.password))
             self.get_priorities()
             self.jira_fields = self.client.fields()
             self.get_arbitrary_fields()
@@ -393,3 +398,22 @@ class JiraAlerter(Alerter):
 
     def get_info(self):
         return {'type': 'jira'}
+
+    def get_account(self, account_file):
+        """ Gets the username and password, or the apikey, from an account file.
+
+        :param account_file: Path to the file which contains the credentials.
+        It can be either an absolute file path or one that is relative to the given rule.
+        """
+        if os.path.isabs(account_file):
+            account_file_path = account_file
+        else:
+            account_file_path = os.path.join(os.path.dirname(self.rule['rule_file']), account_file)
+        account_conf = read_yaml(account_file_path)
+        if not (('user' in account_conf and 'password' in account_conf) or 'apikey' in account_conf):
+            raise EAException('Account file must have user and password fields, or apikey field')
+        if 'apikey' in account_conf:
+            self.apikey = account_conf['apikey']
+        else:
+            self.user = account_conf['user']
+            self.password = account_conf['password']

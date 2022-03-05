@@ -24,16 +24,16 @@
 
 ## Other changes
 - Load Jinja template when loading an alert - [#654](https://github.com/jertel/elastalert2/pull/654) - @thib12
-- tox 3.24.4 to 3.24.5 - [#655](https://github.com/jertel/elastalert2/pull/655) - @nsano-rururu
-- sphinx 4.3.2 to 4.4.0 - [#661](https://github.com/jertel/elastalert2/pull/661) - @nsano-rururu
+- Upgrade tox 3.24.4 to 3.24.5 - [#655](https://github.com/jertel/elastalert2/pull/655) - @nsano-rururu
+- Upgrade sphinx 4.3.2 to 4.4.0 - [#661](https://github.com/jertel/elastalert2/pull/661) - @nsano-rururu
 - [Docs] Fix Running Docker container - [#674](https://github.com/jertel/elastalert2/pull/674) - @nsano-rururu 
 - [Exotel] Added exotel_message_body to schema.yaml - [#685](https://github.com/jertel/elastalert2/pull/685) - @nsano-rururu
-- Pytest 6.2.5 to 7.0.0 - [#696](https://github.com/jertel/elastalert2/pull/696) - @nsano-rururu
+- Upgrade Pytest 6.2.5 to 7.0.0 - [#696](https://github.com/jertel/elastalert2/pull/696) - @nsano-rururu
 - python-dateutil version specification change - [#704](https://github.com/jertel/elastalert2/pull/704) - @nsano-rururu
 - Update minimum versions for third-party dependencies in requirements.txt and setup.py - [#705](https://github.com/jertel/elastalert2/pull/705) - @nsano-rururu
 - [Docs] Document updates for Alerts and email addresses etc - [#706](https://github.com/jertel/elastalert2/pull/706) - @nsano-rururu
 - [Docs] Update of RuleType Configuration Cheat Sheet - [#707](https://github.com/jertel/elastalert2/pull/707) - @nsano-rururu
-- Pytest 7.0.0 to 7.0.1 - [#710](https://github.com/jertel/elastalert2/pull/710) - @nsano-rururu
+- Upgrade Pytest 7.0.0 to 7.0.1 - [#710](https://github.com/jertel/elastalert2/pull/710) - @nsano-rururu
 - Fixing jira_transition_to schema bug. Change property type from boolean to string - [#721](https://github.com/jertel/elastalert2/pull/721) - @toxisch
 - Begin Elasticsearch 8 support - ElastAlert 2 now supports setup with fresh ES 8 instances, and works with some alert types - [#731](https://github.com/jertel/elastalert2/pull/731) - @ferozsalam
 - Enable dynamic setting of rules volume in helm chart - [#732](https://github.com/jertel/elastalert2/pull/732) - @ChrisFraun
@@ -41,6 +41,7 @@
 - [Docs] Add Elasticsearch 8 support documentation - [#735](https://github.com/jertel/elastalert2/pull/735) - @ferozsalam
 - Remove download_dashboard - [#740](https://github.com/jertel/elastalert2/pull/740) - @nsano-rururu
 - [Docs] Added documentation for metric|spike aggregation rule types for percentiles - [e682ea8](https://github.com/jertel/elastalert2/commit/e682ea8113bf9f413b6339e6803b5262881f2b30)- @jertel
+- [Jira] Add support for Jira authentication via Personal Access Token - [#750](https://github.com/jertel/elastalert2/pull/750) - @buzzdeee
 
 # 2.3.0
 
