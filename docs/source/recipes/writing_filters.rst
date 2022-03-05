@@ -100,22 +100,6 @@ For ranges on fields::
 Negation, and, or
 *****************
 
-Any of the filters can be embedded in ``not``, ``and``, and ``or``::
-
-    filter:
-    - or:
-        - term:
-            field: "value"
-        - wildcard:
-            field: "foo*bar"
-        - and:
-            - not:
-                term:
-                  field: "value"
-            - not:
-                term:
-                  _type: "something"
-
 Below is a more complex example for Elasticsearch 7.x, provided by a `community user. <https://github.com/jertel/elastalert2/discussions/330>`_::
 
     filter:
