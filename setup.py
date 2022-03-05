@@ -37,7 +37,7 @@ setup(
         'sortedcontainers>=2.4.0',
         'boto3>=1.20.53',
         'croniter>=1.2.0',
-        'elasticsearch==7.0.0',
+        'elasticsearch==7.10.1',
         'envparse>=0.2.0',
         'exotel>=0.1.5',
         'jira>=3.1.1',

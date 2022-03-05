@@ -14,8 +14,10 @@ from .util import ts_add
 
 kibana_default_timedelta = datetime.timedelta(minutes=10)
 
-kibana5_kibana6_versions = frozenset(['5.6', '6.0', '6.1', '6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8'])
-kibana7_versions = frozenset(['7.0', '7.1', '7.2', '7.3', '7.4', '7.5', '7.6', '7.7', '7.8', '7.9', '7.10', '7.11', '7.12', '7.13', '7.14', '7.15', '7.16', '7.17'])
+kibana_versions = frozenset([
+        '7.0', '7.1', '7.2', '7.3', '7.4', '7.5', '7.6', '7.7', '7.8', '7.9', '7.10', '7.11', '7.12', '7.13', '7.14', '7.15', '7.16', '7.17', 
+        '8.0'
+        ])
 
 def generate_kibana_discover_url(rule, match):
     ''' Creates a link for a kibana discover app. '''
@@ -62,11 +64,7 @@ def generate_kibana_discover_url(rule, match):
     to_timedelta = rule.get('kibana_discover_to_timedelta', timeframe)
     to_time = ts_add(timestamp, to_timedelta)
 
-    if kibana_version in kibana5_kibana6_versions:
-        globalState = kibana6_disover_global_state(from_time, to_time)
-        appState = kibana_discover_app_state(index, columns, filters, query_keys, match)
-
-    elif kibana_version in kibana7_versions:
+    if kibana_version in kibana_versions:
         globalState = kibana7_disover_global_state(from_time, to_time)
         appState = kibana_discover_app_state(index, columns, filters, query_keys, match)
 
@@ -84,20 +82,6 @@ def generate_kibana_discover_url(rule, match):
         urllib.parse.quote(globalState),
         urllib.parse.quote(appState)
     )
-
-
-def kibana6_disover_global_state(from_time, to_time):
-    return prison.dumps( {
-        'refreshInterval': {
-            'pause': True,
-            'value': 0
-        },
-        'time': {
-            'from': from_time,
-            'mode': 'absolute',
-            'to': to_time
-        }
-    } )
 
 
 def kibana7_disover_global_state(from_time, to_time):
@@ -118,6 +102,15 @@ def kibana_discover_app_state(index, columns, filters, query_keys, match):
     app_filters = []
 
     if filters:
+
+        # Remove nested query since the outer most query key will break Kibana 8.
+        new_filters = []
+        for filter in filters:
+            if 'query' in filter:
+                filter = filter['query']
+            new_filters.append(filter)
+        filters = new_filters
+
         bool_filter = { 'must': filters }
         app_filters.append( {
             '$state': {

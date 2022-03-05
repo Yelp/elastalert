@@ -47,6 +47,8 @@ terms_window_size:
 # We are filtering for only "login_event" type documents with username "admin"
 filter:
 - term:
+   # The _type field is deprecated in Elasticsearch 7.0 and removed in Elasticsearch 8.0
+   # For more information, see https://www.elastic.co/guide/en/elasticsearch/reference/7.17/removal-of-types.html
     _type: "login_event"
 - term:
     username: admin

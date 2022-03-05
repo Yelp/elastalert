@@ -219,8 +219,7 @@ rounded to a single timestamp.
 
 If you are using ``query_key`` (a single key, not multiple keys) you can use ``use_terms_query``.
 This will make ElastAlert 2 perform a terms aggregation to get the counts for each value of a certain
-field. Both ``use_terms_query`` and ``use_count_query`` also require ``doc_type`` to be set to the
-``_type`` of the documents. They may not be compatible with all rule types.
+field. May not be compatible with all rule types.
 
 Can I perform aggregations?
 ==========
@@ -436,21 +435,20 @@ filter:
 Does ElastAlert 2 support Elasticsearch 8?
 ===========
 
-Support for Elasticsearch 8 is a work in progress. It is currently possible to
-load ElastAlert 2 against a _fresh_ installation of Elasticsearch (i.e. one where
-no previous ElastAlert instance has been running) without any extra steps.
+ElastAlert 2 supports Elasticsearch 8.
 
 To upgrade an existing ElastAlert 2 installation to Elasticsearch 8 the
-following manual steps are required:
+following manual steps are required (note the important WARNING below):
 
 * Shutdown ElastAlert 2.
-* Delete or rename the old `elastalert*` indices. See Elasticsearch
-  documentation for instructions on how to delete via the API.
+* Delete the old `elastalert*` indices. See [Elasticsearch
+  documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-delete-index.html)
+  for instructions on how to delete via the API, or use the Kibana Index Management interface.
+* Upgrade the Elastic cluster to Elasticsearch 8.
 * If NOT running ElastAlert 2 via Docker or Kubernetes, run
   elastalert-create-index to create the new indices. This is not needed when
   running via a container since the container always attempts to creates the
   indices at startup, if they're not yet created.
 * Restart ElastAlert 2.
 
-However, *at this point it is not guaranteed that features which used to work
-on Elasticsearch 7 will still work*.
+WARNING: Failure to remove the old ElastAlert indices can result in a non-working Elasticsearch cluster. This is because the ElastAlert indices contain deprecated features and the Elasticsearch 8 upgrade logic is currently flawed and does not correctly handle this situation. The Elasticsearch GitHub repository contains [more information](https://github.com/elastic/elasticsearch/issues/84199) on this problem.

@@ -12,8 +12,7 @@ buffer_time:
 metric_agg_key: system.cpu.user.pct
 metric_agg_type: avg
 query_key: beat.hostname
-doc_type: metricsets
-  
+
 bucket_interval:
   minutes: 5
   
