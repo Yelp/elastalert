@@ -2367,15 +2367,17 @@ This alert requires four additional options:
 
 ``jira_account_file``: The path to the file which contains Jira account credentials.
 
-For an example Jira account file, see ``examples/rules/jira_acct.yaml``. The account file is also yaml formatted and must contain two fields:
+  For an example Jira account file, see ``examples/rules/jira_acct.yaml``. The account file is a YAML formatted file. 
 
-``user``: The username.
+  When using user/password authentication, the Jira account file must contain two fields:
 
-``password``: The password.
+  ``user``: The username to authenticate with Jira.
 
-when using username and password authentictation, or when using a Personal Access Token, this single field:
+  ``password``: The password to authenticate with Jira.
 
-``apikey``: The Personal Access Token.
+  When using a Personal Access Token, the Jira account file must contain a single field:
+
+  ``apikey``: The Personal Access Token for authenticating with Jira.
 
 Optional:
 
