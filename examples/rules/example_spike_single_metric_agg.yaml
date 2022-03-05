@@ -15,7 +15,6 @@ buffer_time:
 metric_agg_key: system.cpu.user.pct
 metric_agg_type: avg
 query_key: beat.hostname
-doc_type: metricsets
 
 #allow_buffer_time_overlap: true
 #use_run_every_query_size: true

@@ -9,13 +9,14 @@ description: "95% of all http requests should be successful"
 
 filter:
 - term:
+   # The _type field is deprecated in Elasticsearch 7.0 and removed in Elasticsearch 8.0
+   # For more information, see https://www.elastic.co/guide/en/elasticsearch/reference/7.17/removal-of-types.html
    _type: http_request
 
 buffer_time:
   minutes: 5
 
 query_key: Hostname.keyword
-doc_type: http_request
 
 match_bucket_filter:
 - terms:

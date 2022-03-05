@@ -37,18 +37,11 @@ class TestElasticsearch(object):
         print(('-' * 50))
         print((json.dumps(indices_mappings, indent=2)))
         print(('-' * 50))
-        if es_client.is_atleastsix():
-            assert test_index in indices_mappings
-            assert test_index + '_error' in indices_mappings
-            assert test_index + '_status' in indices_mappings
-            assert test_index + '_silence' in indices_mappings
-            assert test_index + '_past' in indices_mappings
-        else:
-            assert 'elastalert' in indices_mappings[test_index]['mappings']
-            assert 'elastalert_error' in indices_mappings[test_index]['mappings']
-            assert 'elastalert_status' in indices_mappings[test_index]['mappings']
-            assert 'silence' in indices_mappings[test_index]['mappings']
-            assert 'past_elastalert' in indices_mappings[test_index]['mappings']
+        assert test_index in indices_mappings
+        assert test_index + '_error' in indices_mappings
+        assert test_index + '_status' in indices_mappings
+        assert test_index + '_silence' in indices_mappings
+        assert test_index + '_past' in indices_mappings
 
     @pytest.mark.usefixtures("ea")
     def test_aggregated_alert(self, ea, es_client):  # noqa: F811
@@ -61,10 +54,7 @@ class TestElasticsearch(object):
                  }
         ea.writeback_es = es_client
         res = ea.add_aggregated_alert(match, ea.rules[0])
-        if ea.writeback_es.is_atleastsix():
-            assert res['result'] == 'created'
-        else:
-            assert res['created'] is True
+        assert res['result'] == 'created'
         # Make sure added data is available for querying
         time.sleep(2)
         # Now lets find the pending aggregated alert
@@ -76,10 +66,7 @@ class TestElasticsearch(object):
             days=1)
         ea.writeback_es = es_client
         res = ea.set_realert(ea.rules[0]['name'], until_timestamp, 0)
-        if ea.writeback_es.is_atleastsix():
-            assert res['result'] == 'created'
-        else:
-            assert res['created'] is True
+        assert res['result'] == 'created'
         # Make sure added data is available for querying
         time.sleep(2)
         # Force lookup in elasticsearch

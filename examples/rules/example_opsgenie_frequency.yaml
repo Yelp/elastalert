@@ -71,8 +71,6 @@ type: frequency
 # Index to search, wildcard supported
 index: logstash-*
 
-#doc_type: "golog"
-
 # (Required, frequency specific)
 # Alert when this many documents matching the query occur within a timeframe
 num_events: 50

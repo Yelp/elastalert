@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
-import datetime
-import json
-from unittest import mock
 from jinja2 import Template
 
 from elastalert.alerts import Alerter
 from elastalert.alerts import BasicMatchString
-from elastalert.util import ts_add
 
 
 class mock_rule:
@@ -56,44 +52,6 @@ def test_basic_match_string(ea):
     assert 'some stuff happened' in alert_text
     assert 'username' in alert_text
     assert 'field: value' not in alert_text
-
-
-def test_kibana(ea):
-    rule = {'filter': [{'query': {'query_string': {'query': 'xy:z'}}}],
-            'name': 'Test rule!',
-            'es_host': 'test.testing',
-            'es_port': 12345,
-            'timeframe': datetime.timedelta(hours=1),
-            'index': 'logstash-test',
-            'include': ['@timestamp'],
-            'timestamp_field': '@timestamp'}
-    match = {'@timestamp': '2014-10-10T00:00:00'}
-    with mock.patch("elastalert.elastalert.elasticsearch_client") as mock_es:
-        mock_create = mock.Mock(return_value={'_id': 'ABCDEFGH'})
-        mock_es_inst = mock.Mock()
-        mock_es_inst.index = mock_create
-        mock_es_inst.host = 'test.testing'
-        mock_es_inst.port = 12345
-        mock_es.return_value = mock_es_inst
-        link = ea.generate_kibana_db(rule, match)
-
-    assert 'http://test.testing:12345/_plugin/kibana/#/dashboard/temp/ABCDEFGH' == link
-
-    # Name and index
-    dashboard = json.loads(mock_create.call_args_list[0][1]['body']['dashboard'])
-    assert dashboard['index']['default'] == 'logstash-test'
-    assert 'Test rule!' in dashboard['title']
-
-    # Filters and time range
-    filters = dashboard['services']['filter']['list']
-    assert 'xy:z' in filters['1']['query']
-    assert filters['1']['type'] == 'querystring'
-    time_range = filters['0']
-    assert time_range['from'] == ts_add(match['@timestamp'], -rule['timeframe'])
-    assert time_range['to'] == ts_add(match['@timestamp'], datetime.timedelta(minutes=10))
-
-    # Included fields active in table
-    assert dashboard['rows'][1]['panels'][0]['fields'] == ['@timestamp']
 
 
 def test_alert_text_kw(ea):

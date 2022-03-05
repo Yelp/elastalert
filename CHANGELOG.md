@@ -12,12 +12,16 @@
 # 2.x.x
 
 ## Breaking changes
+- Add support for Elasticsearch 8, remove support for Elasticsearch 6 and below - [#744](https://github.com/jertel/elastalert2/pull/744) - @ferozsalam, @jertel, and @nsano-rururu
+  WARNING! Read the [ES 8 upgrade notes](https://elastalert2.readthedocs.io/en/latest/recipes/faq.html#does-elastalert-2-support-elasticsearch-8) BEFORE upgrading your cluster to Elasticsearch 8. Failure to do so can result in your cluster no longer starting and unable to rollback to 7.x.
+- Kibana dashboard integration has been removed, as it only was supported with older versions of Elasticsearch and Kibana. Per the above breaking change those older versions are no longer supported by ElastAlert 2.
 - Dockerfile refactor for app home and user home to be the same directory (/opt/elastalert/). Before app home is /opt/elastalert/ and user home is /opt/elastalert/elastalert. After app home and user home are the same /opt/elastalert/ - [#656](https://github.com/jertel/elastalert2/pull/656)
 
 ## New features
 - [MS Teams] Kibana Discover URL and Facts - [#660](https://github.com/jertel/elastalert2/pull/660) - @thib12
 - Add support for Kibana 7.17 for Kibana Discover - [#695](https://github.com/jertel/elastalert2/pull/695) - @nsano-rururu
 - Added a fixed name metric_agg_value to MetricAggregationRule match_body - [#697](https://github.com/jertel/elastalert2/pull/697) - @iamxeph
+
 ## Other changes
 - Load Jinja template when loading an alert - [#654](https://github.com/jertel/elastalert2/pull/654) - @thib12
 - tox 3.24.4 to 3.24.5 - [#655](https://github.com/jertel/elastalert2/pull/655) - @nsano-rururu
