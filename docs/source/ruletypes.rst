@@ -2062,6 +2062,14 @@ Example msgtype : action_card::
     dingtalk_btn_orientation: "0"
     dingtalk_btns: [{"title": "a", "actionURL": "https://xxxx1.xxx"}, {"title": "b", "actionURL": "https://xxxx2.xxx"}]
 
+Optional:
+
+``dingtalk_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Dingtalk. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+
+``dingtalk_proxy_login``: The Dingtalk proxy auth username.
+
+``dingtalk_proxy_pass``: The Dingtalk proxy auth username.
+
 Discord
 ~~~~~~~
 
