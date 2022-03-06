@@ -126,7 +126,7 @@ class ElastAlerter(object):
         self.rules_loader = self.conf['rules_loader']
         self.rules = self.rules_loader.load(self.conf, self.args)
 
-        print(len(self.rules), 'rules loaded')
+        elastalert_logger.info(f'{len(self.rules)} rules loaded')
 
         self.max_query_size = self.conf['max_query_size']
         self.scroll_keepalive = self.conf['scroll_keepalive']
