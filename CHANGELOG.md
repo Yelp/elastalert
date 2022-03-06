@@ -44,6 +44,7 @@
 - [Jira] Add support for Jira authentication via Personal Access Token - [#750](https://github.com/jertel/elastalert2/pull/750) - @buzzdeee
 - [Docs] Update docs Negation, and, or - [#754](https://github.com/jertel/elastalert2/pull/754) - @nsano-rururu
 - Remove call to `print` from elastalert.py - [#755](https://github.com/jertel/elastalert2/pull/755) - @ferozsalam
+- [Docs] Added dingtalk_proxy, dingtalk_proxy_login, dingtalk_proxy_pass to docs - [#756](https://github.com/jertel/elastalert2/pull/756) - @nsano-rururu
 
 # 2.3.0
 
