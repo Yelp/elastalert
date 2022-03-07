@@ -444,7 +444,7 @@ following manual steps are required (note the important WARNING below):
 * Delete the old `elastalert*` indices. See [Elasticsearch
   documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-delete-index.html)
   for instructions on how to delete via the API, or use the Kibana Index Management interface.
-* Upgrade the Elastic cluster to Elasticsearch 8 following the [Elastic 8 upgrade instructions](https://elastic.co/guide/en/elastic-stack/8.0/upgrading-elastic-stack.html) 
+* Upgrade the Elastic cluster to Elasticsearch 8 following the [Elastic 8 upgrade instructions](https://elastic.co/guide/en/elastic-stack/8.0/upgrading-elastic-stack.html).
 * If NOT running ElastAlert 2 via Docker or Kubernetes, run
   elastalert-create-index to create the new indices. This is not needed when
   running via a container since the container always attempts to creates the
