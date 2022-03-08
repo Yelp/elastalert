@@ -12,6 +12,14 @@
 # 2.x.x
 
 ## Breaking changes
+
+## New features
+
+## Other changes
+
+# 2.4.0
+
+## Breaking changes
 - Add support for Elasticsearch 8, remove support for Elasticsearch 6 and below - [#744](https://github.com/jertel/elastalert2/pull/744) - @ferozsalam, @jertel, and @nsano-rururu
   WARNING! Read the [ES 8 upgrade notes](https://elastalert2.readthedocs.io/en/latest/recipes/faq.html#does-elastalert-2-support-elasticsearch-8) BEFORE upgrading your cluster to Elasticsearch 8. Failure to do so can result in your cluster no longer starting and unable to rollback to 7.x.
 - Kibana dashboard integration has been removed, as it only was supported with older versions of Elasticsearch and Kibana. Per the above breaking change those older versions are no longer supported by ElastAlert 2.
