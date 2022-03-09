@@ -14,8 +14,10 @@
 ## Breaking changes
 
 ## New features
+- Add support for Kibana 8.1 for Kibana Discover - [#763](https://github.com/jertel/elastalert2/pull/763) - @nsano-rururu
 
 ## Other changes
+- [Docs] Update FAQ ssl_show_warn - [#764](https://github.com/jertel/elastalert2/pull/764) - @nsano-rururu
 - [Docs] Update FAQ telegram and Amazon SNS - [#765](https://github.com/jertel/elastalert2/pull/765) - @nsano-rururu
 
 # 2.4.0
