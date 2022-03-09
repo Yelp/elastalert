@@ -14,6 +14,7 @@
 ## Breaking changes
 
 ## New features
+- Add support for Kibana 8.1 for Kibana Discover - [#763](https://github.com/jertel/elastalert2/pull/763) - @nsano-rururu
 
 ## Other changes
 
