@@ -16,6 +16,7 @@
 ## New features
 
 ## Other changes
+- [Docs]Update FAQ ssl_show_warn - [#764](https://github.com/jertel/elastalert2/pull/764) - @nsano-rururu
 
 # 2.4.0
 
