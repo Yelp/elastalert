@@ -16,6 +16,7 @@
 ## New features
 
 ## Other changes
+- [Docs] Update FAQ telegram and Amazon SNS - [#765](https://github.com/jertel/elastalert2/pull/765) - @nsano-rururu
 
 # 2.4.0
 
