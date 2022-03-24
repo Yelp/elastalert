@@ -404,7 +404,7 @@ properties:
 
   ### Email
   email: *arrayOfString
-  email_from_field: *arrayOfString
+  email_from_field: {type: string}
   email_add_domain: {type: string}
   smtp_host: {type: string}
   smtp_port: {type: integer}
