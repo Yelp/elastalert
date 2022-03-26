@@ -21,7 +21,7 @@
 - [Docs] Update FAQ telegram and Amazon SNS - [#765](https://github.com/jertel/elastalert2/pull/765) - @nsano-rururu
 - Upgrade Pytest 7.0.1 to 7.1.1 - [#776](https://github.com/jertel/elastalert2/pull/776) - @nsano-rururu
 - [Email] Fixed schema.yaml setting in email_from_field - [#778](https://github.com/jertel/elastalert2/pull/778) - @nsano-rururu
-- [helm] helm add email and password config - [#780](https://github.com/jertel/elastalert2/pull/780) - @lusson-luo
+- [Kubernetes] Add support for automatic SMTP mail server credential management - [#780](https://github.com/jertel/elastalert2/pull/780) - @lusson-luo
 
 # 2.4.0
 
