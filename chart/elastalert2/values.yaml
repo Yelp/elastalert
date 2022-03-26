@@ -225,10 +225,10 @@ affinity: {}
 #     effect: "NoSchedule"
 tolerations: []
 
-# email send config
-# stmp_auth:
-  # from_email: "" # send email 
-  # password: ""    # password
+# Optional automatic SMTP mail server credential management.
+# smtp_auth:
+#   username: ""
+#   password: ""
 
 extraVolumes: []
   # - name: smtp-auth
