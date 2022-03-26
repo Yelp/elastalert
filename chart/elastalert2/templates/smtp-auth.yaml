@@ -1,0 +1,13 @@
+{{- if .Values.smtp_auth }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: elastalert-smtp-auth
+  labels:
+    app: elastalert2
+type: kubernetes.io/Opaque
+stringData:
+  smtp_auth.yaml: |-
+    user: {{ .Values.smtp_auth.username }}
+    password: {{ .Values.smtp_auth.password }}
+{{- end}}

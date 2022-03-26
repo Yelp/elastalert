@@ -225,6 +225,11 @@ affinity: {}
 #     effect: "NoSchedule"
 tolerations: []
 
+# Optional automatic SMTP mail server credential management.
+# smtp_auth:
+#   username: ""
+#   password: ""
+
 extraVolumes: []
   # - name: smtp-auth
   #   secret:
