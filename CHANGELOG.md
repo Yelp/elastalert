@@ -21,6 +21,7 @@
 - [Docs] Update FAQ telegram and Amazon SNS - [#765](https://github.com/jertel/elastalert2/pull/765) - @nsano-rururu
 - Upgrade Pytest 7.0.1 to 7.1.1 - [#776](https://github.com/jertel/elastalert2/pull/776) - @nsano-rururu
 - [Kubernetes] Add support for automatic SMTP mail server credential management - [#780](https://github.com/jertel/elastalert2/pull/780) - @lusson-luo
+- pylint 2.12.2 to 2.13.2 - [#783](https://github.com/jertel/elastalert2/pull/783) - @nsano-rururu
 
 # 2.4.0
 
