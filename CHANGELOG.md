@@ -23,6 +23,7 @@
 - [Kubernetes] Add support for automatic SMTP mail server credential management - [#780](https://github.com/jertel/elastalert2/pull/780) - @lusson-luo
 - Upgrade sphinx 4.4.0 to 4.5.0 - [#782](https://github.com/jertel/elastalert2/pull/782) - @nsano-rururu
 - Upgrade pylint 2.12.2 to 2.13.2 - [#783](https://github.com/jertel/elastalert2/pull/783) - @nsano-rururu
+- Upgrade jinja2 3.0.3 to 3.1.1 - [#784](https://github.com/jertel/elastalert2/pull/784) - @nsano-rururu
 
 # 2.4.0
 
