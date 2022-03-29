@@ -128,6 +128,7 @@ oneOf:
       alert_on_new_data: {type: boolean}
       threshold_ref: {type: integer}
       threshold_cur: {type: integer}
+      field_value: {type: string}
 
   - title: Spike Aggregation
     required: [spike_height, spike_type, timeframe]
@@ -153,6 +154,9 @@ oneOf:
       timeframe: *timeframe
       threshold: {type: integer}
       use_count_query: {type: boolean}
+      use_terms_query: {type: boolean}
+      terms_size: {type: integer}
+      forget_keys: {type: boolean}
 
   - title: New Term
     required: []
@@ -163,6 +167,8 @@ oneOf:
       alert_on_missing_field: {type: boolean}
       use_terms_query: {type: boolean}
       terms_size: {type: integer}
+      window_step_size: *timeframe
+      use_keyword_postfix: {type: boolean}
 
   - title: Cardinality
     required: [cardinality_field, timeframe]
@@ -178,13 +184,28 @@ oneOf:
     properties:
       type: {enum: [metric_aggregation]}
       metric_agg_type: {enum: ["min", "max", "avg", "sum", "cardinality", "value_count", "percentiles"]}
-      #timeframe: *timeframe
       percentile_range: {type: integer}
+      max_threshold: {type: number}
+      min_threshold: {type: number}
+      min_doc_count: {type: integer}
+      use_run_every_query_size: {type: boolean}
+      allow_buffer_time_overlap: {type: boolean}
+      bucket_interval: *timeframe
+      sync_bucket_interval: {type: boolean}
+      metric_format_string: {type: string}
 
   - title: Percentage Match
     required: [match_bucket_filter]
     properties:
       type: {enum: [percentage_match]}
+      min_percentage: {type: number}
+      max_percentage: {type: number}
+      use_run_every_query_size: {type: boolean}
+      allow_buffer_time_overlap: {type: boolean}
+      bucket_interval: *timeframe
+      sync_bucket_interval: {type: boolean}
+      percentage_format_string: {type: string}
+      min_denominator: {type: integer}
 
   - title: Custom Rule from Module
     properties:
@@ -300,6 +321,7 @@ properties:
   alerta_attributes_values: {type: array, items: {type: string}}  # Python format string
 
   ### Alertmanager
+  alertmanager_alertname: {type: string}
   alertmanager_hosts: {type: array, items: {type: string}}
   alertmanager_api_version: {type: string, enum: ['v1', 'v2']}
   alertmanager_alert_subject_labelname: {type: string}
