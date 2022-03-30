@@ -25,6 +25,7 @@
 - Upgrade pylint 2.12.2 to 2.13.2 - [#783](https://github.com/jertel/elastalert2/pull/783) - @nsano-rururu
 - Upgrade jinja2 3.0.3 to 3.1.1 - [#784](https://github.com/jertel/elastalert2/pull/784) - @nsano-rururu
 - Update schema.yaml(Alertmanager, Spike, Flatline, New Term, Metric Aggregation, Percentage Match) - [#789](https://github.com/jertel/elastalert2/pull/789) - @nsano-rururu
+- Upgrade pylint 2.13.2 to 2.13.3 - [#792](https://github.com/jertel/elastalert2/pull/792) - @nsano-rururu
 
 # 2.4.0
 
