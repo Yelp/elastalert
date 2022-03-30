@@ -12,6 +12,7 @@
 # 2.x.x
 
 ## Breaking changes
+- Remove Simple Alerter - [#793](https://github.com/jertel/elastalert2/pull/793) - @nsano-rururu
 
 ## New features
 - Add support for Kibana 8.1 for Kibana Discover - [#763](https://github.com/jertel/elastalert2/pull/763) - @nsano-rururu
