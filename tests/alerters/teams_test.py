@@ -404,6 +404,10 @@ def test_ms_teams_alert_facts():
             {
                 'name': 'Sensors',
                 'value': '@timestamp',
+            },
+            {
+                'name': 'You Cannot Find Me',
+                'value': 'I Told You'
             }
         ],
         'alert_subject': 'Cool subject',
@@ -430,6 +434,7 @@ def test_ms_teams_alert_facts():
                 'facts': [
                     {'name': 'Host', 'value': 'foobarbaz'},
                     {'name': 'Sensors', 'value': '2016-01-01T00:00:00'},
+                    {'name': 'You Cannot Find Me', 'value': 'I Told You'}
                 ],
             }
         ],

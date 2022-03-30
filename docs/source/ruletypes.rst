@@ -2596,7 +2596,7 @@ Optional:
 
 ``ms_teams_alert_fixed_width``: By default this is ``False`` and the notification will be sent to MS Teams as-is. Teams supports a partial Markdown implementation, which means asterisk, underscore and other characters may be interpreted as Markdown. Currenlty, Teams does not fully implement code blocks. Setting this attribute to ``True`` will enable line by line code blocks. It is recommended to enable this to get clearer notifications in Teams.
 
-``ms_teams_alert_facts``: You can add additional facts to your MS Teams alerts using this field. Specify the title using `name` and a value for the field using `value`.
+``ms_teams_alert_facts``: You can add additional facts to your MS Teams alerts using this field. Specify the title using `name` and a value for the field or arbitrary text using `value`. 
 
 Example ms_teams_alert_facts::
 
@@ -2605,8 +2605,8 @@ Example ms_teams_alert_facts::
         value: monitor.host
       - name: Status
         value: monitor.status
-      - name: Zone
-        value: beat.name
+      - name: What to do
+        value: Page your boss
 
 ``ms_teams_attach_kibana_discover_url``: Enables the attachment of the ``kibana_discover_url`` to the MS Teams notification. The config ``generate_kibana_discover_url`` must also be ``True`` in order to generate the url. Defaults to ``False``.
 
