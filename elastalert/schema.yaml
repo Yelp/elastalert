@@ -294,10 +294,6 @@ properties:
   timestamp_field: {type: string}
   field: {}
 
-  ### Simple
-  simple_webhook_url: *arrayOfString
-  simple_proxy: {type: string}
-
   ### Alerta
   alerta_api_url: {type: string}
   alerta_api_key: {type: string}

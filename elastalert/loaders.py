@@ -293,8 +293,6 @@ class RulesLoader(object):
         :param filename: Name of the rule
         :param args: Arguments
         """
-        self.adjust_deprecated_values(rule)
-
         try:
             self.rule_schema.validate(rule)
         except jsonschema.ValidationError as e:
@@ -528,18 +526,6 @@ class RulesLoader(object):
             raise EAException('Error initiating alert %s: %s' % (rule['alert'], e)).with_traceback(sys.exc_info()[2])
 
         return alert_field
-
-    @staticmethod
-    def adjust_deprecated_values(rule):
-        # From rename of simple HTTP alerter
-        if rule.get('type') == 'simple':
-            rule['type'] = 'post'
-            if 'simple_proxy' in rule:
-                rule['http_post_proxy'] = rule['simple_proxy']
-            if 'simple_webhook_url' in rule:
-                rule['http_post_url'] = rule['simple_webhook_url']
-            elastalert_logger.warning(
-                '"simple" alerter has been renamed "post" and comptability may be removed in a future release.')
 
 
 class FileRulesLoader(RulesLoader):
