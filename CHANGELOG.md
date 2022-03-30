@@ -4,7 +4,7 @@
 - None
 
 ## New features
-- TBD - [#000](https://github.com/jertel/elastalert2/pull/000) - @some_elastic_contributor_tbd
+- [MS Teams] Add arbitrary text value support for Facts - [#000](https://github.com/jertel/elastalert2/pull/000) - @iamxeph
 
 ## Other changes
 - None
