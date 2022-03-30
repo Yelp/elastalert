@@ -16,6 +16,7 @@
 
 ## New features
 - Add support for Kibana 8.1 for Kibana Discover - [#763](https://github.com/jertel/elastalert2/pull/763) - @nsano-rururu
+- [MS Teams] Add arbitrary text value support for Facts - [#790](https://github.com/jertel/elastalert2/pull/790) - @iamxeph
 
 ## Other changes
 - [Docs] Update FAQ ssl_show_warn - [#764](https://github.com/jertel/elastalert2/pull/764) - @nsano-rururu
@@ -26,6 +27,7 @@
 - Upgrade pylint 2.12.2 to 2.13.2 - [#783](https://github.com/jertel/elastalert2/pull/783) - @nsano-rururu
 - Upgrade jinja2 3.0.3 to 3.1.1 - [#784](https://github.com/jertel/elastalert2/pull/784) - @nsano-rururu
 - Update schema.yaml(Alertmanager, Spike, Flatline, New Term, Metric Aggregation, Percentage Match) - [#789](https://github.com/jertel/elastalert2/pull/789) - @nsano-rururu
+- Upgrade pylint 2.13.2 to 2.13.3 - [#792](https://github.com/jertel/elastalert2/pull/792) - @nsano-rururu
 
 # 2.4.0
 
