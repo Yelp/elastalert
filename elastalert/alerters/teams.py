@@ -37,7 +37,7 @@ class MsTeamsAlerter(Alerter):
         for arg in self.ms_teams_alert_facts:
             arg = copy.copy(arg)
             matched_value = lookup_es_key(matches[0], arg['value'])
-            arg['value'] = matched_value if matched_value else arg['value']
+            arg['value'] = matched_value if matched_value is not None else arg['value']
             alert_facts.append(arg)
         return alert_facts
 

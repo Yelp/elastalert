@@ -399,11 +399,23 @@ def test_ms_teams_alert_facts():
         'ms_teams_alert_facts': [
             {
                 'name': 'Host',
-                'value': 'somefield',
+                'value': 'somefield'
             },
             {
                 'name': 'Sensors',
-                'value': '@timestamp',
+                'value': '@timestamp'
+            },
+            {
+                'name': 'Speed',
+                'value': 'vehicle.speed'
+            },
+            {
+                'name': 'Boolean',
+                'value': 'boolean'
+            },
+            {
+                'name': 'Blank',
+                'value': 'blank'
             },
             {
                 'name': 'Arbitrary Text Name',
@@ -418,8 +430,14 @@ def test_ms_teams_alert_facts():
     alert = MsTeamsAlerter(rule)
     match = {
         '@timestamp': '2016-01-01T00:00:00',
-        'somefield': 'foobarbaz'
+        'somefield': 'foobarbaz',
+        'vehicle': {
+            'speed': 0,
+        },
+        'boolean': False,
+        'blank': ''
     }
+
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
 
@@ -434,6 +452,9 @@ def test_ms_teams_alert_facts():
                 'facts': [
                     {'name': 'Host', 'value': 'foobarbaz'},
                     {'name': 'Sensors', 'value': '2016-01-01T00:00:00'},
+                    {'name': 'Speed', 'value': 0},
+                    {'name': 'Boolean', 'value': False},
+                    {'name': 'Blank', 'value': ''},
                     {'name': 'Arbitrary Text Name', 'value': 'Arbitrary Text Value'}
                 ],
             }
