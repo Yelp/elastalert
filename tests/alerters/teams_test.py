@@ -469,3 +469,45 @@ def test_ms_teams_alert_facts():
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+
+
+def test_ms_teams_alert_summary_none():
+    rule = {
+        'name': 'Test Rule',
+        'type': 'any',
+        'ms_teams_webhook_url': 'http://test.webhook.url',
+        'alert_subject': 'Cool subject',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = MsTeamsAlerter(rule)
+    match = {
+        '@timestamp': '2016-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        '@type': 'MessageCard',
+        '@context': 'http://schema.org/extensions',
+        'summary': rule['alert_subject'],
+        'title': rule['alert_subject'],
+        'sections': [
+            {
+                'text': BasicMatchString(rule, match).__str__()
+            }
+        ],
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['ms_teams_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        verify=True
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+    
