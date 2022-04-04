@@ -510,4 +510,3 @@ def test_ms_teams_alert_summary_none():
         verify=True
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
-    
