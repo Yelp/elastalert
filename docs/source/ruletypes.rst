@@ -2588,7 +2588,7 @@ menu in your channel and configure an Incoming Webhook, then copy the resulting 
 
 Optional:
 
-``ms_teams_alert_summary``: Summary should be configured according to `MS documentation <https://docs.microsoft.com/en-us/outlook/actionable-messages/card-reference>`_, although it seems not displayed by Teams currently, defaults to ``ElastAlert Message``.
+``ms_teams_alert_summary``: MS Teams use this value for notification title, defaults to `Alert Subject <https://elastalert2.readthedocs.io/en/latest/ruletypes.html#alert-subject>`_. You can set this value with arbitrary text if you don't want to use the default.
 
 ``ms_teams_theme_color``: By default the alert will be posted without any color line. To add color, set this attribute to a HTML color value e.g. ``#ff0000`` for red.
 
@@ -2640,7 +2640,6 @@ Example usage::
 
     alert:
       - "ms_teams"
-    ms_teams_alert_summary: "Alert"
     ms_teams_theme_color: "#6600ff"
     ms_teams_webhook_url: "MS Teams Webhook URL"
 
