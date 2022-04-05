@@ -12,7 +12,9 @@ data:
   elastalert_config: |-
     ---
     rules_folder: /opt/elastalert/rules
-    scan_subdirectories: false
+{{- if .Values.scanSubdirectories }}    
+    scan_subdirectories: {{ .Values.scanSubdirectories }}
+{{- end }}
     run_every:
       minutes: {{ .Values.runIntervalMins }}
 {{- if .Values.realertIntervalMins }}
