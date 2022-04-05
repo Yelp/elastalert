@@ -31,6 +31,10 @@
 - Upgrade pylint 2.13.2 to 2.13.3 - [#792](https://github.com/jertel/elastalert2/pull/792) - @nsano-rururu
 - Upgrade pylint 2.13.3 to 2.13.4 - [#801](https://github.com/jertel/elastalert2/pull/801) - @nsano-rururu
 
+# 2.4.1
+## Other changes
+- Add "scanSubdirectories" (true/false) as an option in Helm Chart
+
 # 2.4.0
 
 ## Breaking changes
