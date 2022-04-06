@@ -448,7 +448,7 @@ class SpikeRule(RuleType):
         extending ref/cur value retrieval logic for spike aggregations
         """
         spike_check_type = self.rules.get('metric_agg_type')
-        if spike_check_type in [None, 'sum', 'value_count']:
+        if spike_check_type in [None, 'sum', 'value_count', 'cardinality', 'percentile']:
             # default count logic is appropriate in all these cases
             return self.ref_windows[qk].count(), self.cur_windows[qk].count()
         elif spike_check_type == 'avg':
