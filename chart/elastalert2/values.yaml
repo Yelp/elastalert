@@ -8,7 +8,7 @@ revisionHistoryLimit: 5
 runIntervalMins: 1
 
 # Enable/disabe subdirectory scanning for rules
-scanSubdirectories: false
+scanSubdirectories: true
 
 # Default rule buffer duration, in minutes
 bufferTimeMins: 15
