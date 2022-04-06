@@ -30,8 +30,8 @@
 - Update schema.yaml(Alertmanager, Spike, Flatline, New Term, Metric Aggregation, Percentage Match) - [#789](https://github.com/jertel/elastalert2/pull/789) - @nsano-rururu
 - Upgrade pylint 2.13.2 to 2.13.3 - [#792](https://github.com/jertel/elastalert2/pull/792) - @nsano-rururu
 - Upgrade pylint 2.13.3 to 2.13.4 - [#801](https://github.com/jertel/elastalert2/pull/801) - @nsano-rururu
-- Add "scanSubdirectories" (true/false) as an option in Helm Chart
 - Fix SpikeRule - [#804](https://github.com/jertel/elastalert2/pull/804) - @nsano-rururu
+- [Kubernetes] Add scanSubdirectories (defaults to true) as an option in Helm Chart - [#805](https://github.com/jertel/elastalert2/pull/805) - @louzadod
 
 # 2.4.0
 
