@@ -7,6 +7,9 @@ revisionHistoryLimit: 5
 # Default internal between alert checks against the elasticsearch datasource, in minutes
 runIntervalMins: 1
 
+# Enable/disabe subdirectory scanning for rules
+scanSubdirectories: true
+
 # Default rule buffer duration, in minutes
 bufferTimeMins: 15
 
