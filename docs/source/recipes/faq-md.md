@@ -277,10 +277,7 @@ threshold.
 Does it support Elastic Cloud's "Cloud ID"?
 ==========
 
-Not supported.
-
-In addition, there is a reason why we cannot handle it at present.
-ElastAlert 2 uses elasticsearch-py 7.0.0, because Elastic Cloud cloud_id support is from elasticsearch-py 7.0.2. 
+Cloud ID is not currently supported.
 
 I need to go through an http (s) proxy to connect to Elasticsearch. Does ElastAlert 2 support it?
 ==========
