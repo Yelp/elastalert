@@ -504,7 +504,7 @@ properties:
   mattermost_proxy: {type: string}
   mattermost_ignore_ssl_errors: {type: boolean}
   mattermost_username_override: {type: string}
-  mattermost_channel_override: {type: string}
+  mattermost_channel_override: *arrayOfString
   mattermost_icon_url_override: {type: string}
   mattermost_msg_pretext: {type: string}
   mattermost_msg_color: {enum: [good, warning, danger]}
