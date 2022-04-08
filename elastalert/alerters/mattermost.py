@@ -25,6 +25,8 @@ class MattermostAlerter(Alerter):
         # Override webhook config
         self.mattermost_username_override = self.rule.get('mattermost_username_override', 'elastalert')
         self.mattermost_channel_override = self.rule.get('mattermost_channel_override', '')
+        if isinstance(self.mattermost_channel_override, str):
+            self.mattermost_channel_override = [self.mattermost_channel_override]
         self.mattermost_icon_url_override = self.rule.get('mattermost_icon_url_override', '')
 
         # Message properties
@@ -103,9 +105,6 @@ class MattermostAlerter(Alerter):
         if self.mattermost_icon_url_override != '':
             payload['icon_url'] = self.mattermost_icon_url_override
 
-        if self.mattermost_channel_override != '':
-            payload['channel'] = self.mattermost_channel_override
-
         if self.mattermost_title != '':
             payload['attachments'][0]['title'] = self.mattermost_title
 
@@ -143,19 +142,21 @@ class MattermostAlerter(Alerter):
                 })
 
         for url in self.mattermost_webhook_url:
-            try:
-                if self.mattermost_ignore_ssl_errors:
-                    requests.urllib3.disable_warnings()
+            for channel_override in self.mattermost_channel_override:
+                try:
+                    if self.mattermost_ignore_ssl_errors:
+                        requests.urllib3.disable_warnings()
+                    payload['channel'] = channel_override
 
-                response = requests.post(
-                    url, data=json.dumps(payload, cls=DateTimeEncoder),
-                    headers=headers, verify=not self.mattermost_ignore_ssl_errors,
-                    proxies=proxies)
+                    response = requests.post(
+                        url, data=json.dumps(payload, cls=DateTimeEncoder),
+                        headers=headers, verify=not self.mattermost_ignore_ssl_errors,
+                        proxies=proxies)
 
-                warnings.resetwarnings()
-                response.raise_for_status()
-            except RequestException as e:
-                raise EAException("Error posting to Mattermost: %s" % e)
+                    warnings.resetwarnings()
+                    response.raise_for_status()
+                except RequestException as e:
+                    raise EAException("Error posting to Mattermost: %s" % e)
         elastalert_logger.info("Alert sent to Mattermost")
 
     def get_info(self):
