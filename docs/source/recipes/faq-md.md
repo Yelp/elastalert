@@ -277,7 +277,8 @@ threshold.
 Does it support Elastic Cloud's "Cloud ID"?
 ==========
 
-Cloud ID is not currently supported.
+While Elastic Cloud is supported via the traditional URL connection method,
+connecting via Cloud ID is not currently supported.
 
 I need to go through an http (s) proxy to connect to Elasticsearch. Does ElastAlert 2 support it?
 ==========
