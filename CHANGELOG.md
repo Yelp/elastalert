@@ -34,6 +34,8 @@
 - Fix SpikeRule - [#804](https://github.com/jertel/elastalert2/pull/804) - @nsano-rururu
 - [Kubernetes] Add scanSubdirectories (defaults to true) as an option in Helm Chart - [#805](https://github.com/jertel/elastalert2/pull/805) - @louzadod
 - Upgrade pylint 2.13.4 to 2.13.5 - [#808](https://github.com/jertel/elastalert2/pull/808) - @nsano-rururu
+- Update documentation on Cloud ID support - [#810](https://github.com/jertel/elastalert2/pull/810) - @ferozsalam
+- Upgrade tox 3.24.5 to 3.25.0 - [#813](https://github.com/jertel/elastalert2/pull/813) - @nsano-rururu
 
 # 2.4.0
 
