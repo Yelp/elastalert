@@ -7,6 +7,9 @@ revisionHistoryLimit: 5
 # Default internal between alert checks against the elasticsearch datasource, in minutes
 runIntervalMins: 1
 
+# Location of directory where rules reside
+rulesFolder: "/opt/elastalert/rules"
+
 # Enable/disabe subdirectory scanning for rules
 scanSubdirectories: true
 
