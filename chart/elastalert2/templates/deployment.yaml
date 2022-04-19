@@ -57,7 +57,7 @@ spec:
             mountPath: '/opt/elastalert/config.yaml'
             subPath: config.yaml
           - name: {{ .Values.rulesVolumeName }}
-            mountPath: "/opt/elastalert/rules"
+            mountPath: {{ .Values.rulesFolder }}
 {{- if .Values.elasticsearch.certsVolumeMounts }}
 {{ toYaml .Values.elasticsearch.certsVolumeMounts | indent 10 }}
 {{- end }}
