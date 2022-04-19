@@ -8,7 +8,7 @@ revisionHistoryLimit: 5
 runIntervalMins: 1
 
 # Location of directory where rules reside
-rulesFolder: ""
+rulesFolder: "/opt/elastalert/rules"
 
 # Enable/disabe subdirectory scanning for rules
 scanSubdirectories: true
