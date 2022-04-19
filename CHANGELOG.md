@@ -7,7 +7,7 @@
 - TBD - [#000](https://github.com/jertel/elastalert2/pull/000) - @some_elastic_contributor_tbd
 
 ## Other changes
-- None
+- [Kubernetes] Add support to specify rules directory - [#816](https://github.com/jertel/elastalert2/pull/816) @SBe
 
 # 2.x.x
 
