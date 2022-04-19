@@ -11,7 +11,7 @@ metadata:
 data:
   elastalert_config: |-
     ---
-    rules_folder: /opt/elastalert/rules
+    rules_folder: {{ default .Values.rulesFolder | default "/opt/elastalert/rules" }}
 {{- if .Values.scanSubdirectories }}    
     scan_subdirectories: {{ .Values.scanSubdirectories }}
 {{- end }}
