@@ -3324,6 +3324,8 @@ Required:
 
 ``zbx_sender_port``: The port where zabbix server is listenning, defaults to ``10051``.
 
+``zbx_host_from_field``: This field allows to specify ``zbx_host`` value from the available terms. Defaults to ``False``.
+
 ``zbx_host``: This field setup the host in zabbix that receives the value sent by ElastAlert 2.
 
 ``zbx_key``: This field setup the key in the host that receives the value sent by ElastAlert 2.
@@ -3336,3 +3338,17 @@ Example usage::
     zbx_sender_port: 10051
     zbx_host: "test001"
     zbx_key: "sender_load1"
+
+To specify ``zbx_host`` depending on the available elasticsearch field, zabbix alerter has ``zbx_host_from_field`` option.
+
+Example usage::
+
+    alert:
+      - "zabbix"
+    zbx_sender_host: "zabbix-server"
+    zbx_sender_port: 10051
+    zbx_host_from_field: True 
+    zbx_host: "hostname"
+    zbx_key: "sender_load1"
+
+where ``hostname`` is the available elasticsearch field.
