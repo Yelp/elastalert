@@ -19,6 +19,7 @@
 - [MS Teams] Add arbitrary text value support for Facts - [#790](https://github.com/jertel/elastalert2/pull/790) - @iamxeph
 - [MS Teams] Use alert_subject as ms_teams_alert_summary if ms_teams_alert_summary is not set - [#802](https://github.com/jertel/elastalert2/pull/802) - @iamxeph
 - [Mattermost] List support for mattermost_channel_override - [#809](https://github.com/jertel/elastalert2/pull/809) - @nsano-rururu
+- [Zabbix] Add the ability to specify `zbx_host` from available elasticsearch field - [#820](https://github.com/jertel/elastalert2/pull/820) - @timeforplanb123
 
 ## Other changes
 - [Docs] Update FAQ ssl_show_warn - [#764](https://github.com/jertel/elastalert2/pull/764) - @nsano-rururu
@@ -37,6 +38,8 @@
 - Update documentation on Cloud ID support - [#810](https://github.com/jertel/elastalert2/pull/810) - @ferozsalam
 - Upgrade tox 3.24.5 to 3.25.0 - [#813](https://github.com/jertel/elastalert2/pull/813) - @nsano-rururu
 - [Kubernetes] Add support to specify rules directory - [#816](https://github.com/jertel/elastalert2/pull/816) @SBe
+- [Docs] Update Zabbix section - [#820](https://github.com/jertel/elastalert2/pull/820) - @timeforplanb123
+- [Tests] Add new tests to zabbix_test.py for new `zbx_host_from_field` option - [#820](https://github.com/jertel/elastalert2/pull/820) - @timeforplanb123
 
 # 2.4.0
 
