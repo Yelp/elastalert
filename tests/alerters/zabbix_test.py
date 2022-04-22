@@ -41,6 +41,57 @@ def test_zabbix_basic(caplog):
         assert ('elastalert', logging.WARNING, log_messeage) == caplog.record_tuples[0]
 
 
+@pytest.mark.parametrize('zbx_host_from_field, zbx_host, zbx_key, log_messeage', [
+        (True, 'hostname', 'example-key',
+         "Missing zabbix host 'example.com' or host's item 'example-key', alert will be discarded"),
+        (True, 'unavailable_field', 'example-key',
+         "Missing term 'unavailable_field' or host's item 'example-key', alert will be discarded"),
+        (False, 'hostname', 'example-key',
+         "Missing zabbix host 'hostname' or host's item 'example-key', alert will be discarded"),
+        (False, 'unavailable_field', 'example-key',
+         "Missing zabbix host 'unavailable_field' or host's item 'example-key', alert will be discarded")
+])
+def test_zabbix_enhanced(caplog, zbx_host_from_field, zbx_host, zbx_key, log_messeage):
+    caplog.set_level(logging.WARNING)
+    rule = {
+        'name': 'Enhanced Zabbix test',
+        'type': 'any',
+        'alert_text_type': 'alert_text_only',
+        'alert': [],
+        'alert_subject': 'Test Zabbix',
+        'zbx_host_from_field': zbx_host_from_field,
+        'zbx_host': zbx_host,
+        'zbx_key': zbx_key
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = ZabbixAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00Z',
+        'somefield': 'foobarbaz',
+        'hostname': 'example.com'
+    }
+    with mock.patch('pyzabbix.ZabbixSender.send') as mock_zbx_send:
+        alert.alert([match])
+
+        hosts = {
+            (True, 'hostname'): 'example.com',
+            (True, 'unavailable_field'): 'None',
+            (False, 'hostname'): 'hostname',
+            (False, 'unavailable_field'): 'unavailable_field'
+        }
+
+        zabbix_metrics = {
+            'host': hosts[(zbx_host_from_field, zbx_host)],
+            'key': 'example-key',
+            'value': '1',
+            'clock': 1609459200
+        }
+        alerter_args = mock_zbx_send.call_args.args
+        assert vars(alerter_args[0][0]) == zabbix_metrics
+        assert ('elastalert', logging.WARNING, log_messeage) == caplog.record_tuples[0]
+
+
 def test_zabbix_getinfo():
     rule = {
         'name': 'Basic Zabbix test',

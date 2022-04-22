@@ -3,7 +3,7 @@ from datetime import datetime
 from pyzabbix import ZabbixSender, ZabbixMetric, ZabbixAPI
 
 from elastalert.alerts import Alerter
-from elastalert.util import elastalert_logger, EAException
+from elastalert.util import elastalert_logger, lookup_es_key, EAException
 
 
 class ZabbixClient(ZabbixAPI):
@@ -53,6 +53,7 @@ class ZabbixAlerter(Alerter):
 
         self.zbx_sender_host = self.rule.get('zbx_sender_host', 'localhost')
         self.zbx_sender_port = self.rule.get('zbx_sender_port', 10051)
+        self.zbx_host_from_field = self.rule.get('zbx_host_from_field', False)
         self.zbx_host = self.rule.get('zbx_host', None)
         self.zbx_key = self.rule.get('zbx_key', None)
         self.timestamp_field = self.rule.get('timestamp_field', '@timestamp')
@@ -76,15 +77,24 @@ class ZabbixAlerter(Alerter):
                 except ValueError:
                     ts_epoch = int(datetime.strptime(match[self.timestamp_field], '%Y-%m-%dT%H:%M:%S%z')
                                    .timestamp())
-            zm.append(ZabbixMetric(host=self.zbx_host, key=self.zbx_key, value='1', clock=ts_epoch))
+            if self.zbx_host_from_field:
+                zbx_host = lookup_es_key(match, self.rule["zbx_host"])
+            else:
+                zbx_host = self.zbx_host
+            zm.append(ZabbixMetric(host=zbx_host, key=self.zbx_key, value='1', clock=ts_epoch))
 
         try:
             response = ZabbixSender(zabbix_server=self.zbx_sender_host, zabbix_port=self.zbx_sender_port).send(zm)
             if response.failed:
-                elastalert_logger.warning("Missing zabbix host '%s' or host's item '%s', alert will be discarded"
-                                          % (self.zbx_host, self.zbx_key))
+                if self.zbx_host_from_field and not zbx_host:
+                    elastalert_logger.warning("Missing term '%s' or host's item '%s', alert will be discarded"
+                                              % (self.zbx_host, self.zbx_key))
+                else:
+                    elastalert_logger.warning("Missing zabbix host '%s' or host's item '%s', alert will be discarded"
+                                              % (zbx_host, self.zbx_key))
             else:
-                elastalert_logger.info("Alert sent to Zabbix")
+                elastalert_logger.info("Alert sent to '%s:%s' zabbix server, '%s' zabbix host, '%s' zabbix host key"
+                                       % (self.zbx_sender_host, self.zbx_sender_port, zbx_host, self.zbx_key))
         except Exception as e:
             raise EAException("Error sending alert to Zabbix: %s" % e)
 

@@ -688,5 +688,6 @@ properties:
   ### Zabbix
   zbx_sender_host: {type: string}
   zbx_sender_port: {type: integer}
+  zbx_host_from_field: {type: boolean}
   zbx_host: {type: string}
   zbx_key: {type: string}

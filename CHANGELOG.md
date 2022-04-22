@@ -19,6 +19,7 @@
 - [MS Teams] Add arbitrary text value support for Facts - [#790](https://github.com/jertel/elastalert2/pull/790) - @iamxeph
 - [MS Teams] Use alert_subject as ms_teams_alert_summary if ms_teams_alert_summary is not set - [#802](https://github.com/jertel/elastalert2/pull/802) - @iamxeph
 - [Mattermost] List support for mattermost_channel_override - [#809](https://github.com/jertel/elastalert2/pull/809) - @nsano-rururu
+- [Zabbix] Add the ability to specify `zbx_host` from available elasticsearch field - [#820](https://github.com/jertel/elastalert2/pull/820) - @timeforplanb123
 
 ## Other changes
 - [Docs] Update FAQ ssl_show_warn - [#764](https://github.com/jertel/elastalert2/pull/764) - @nsano-rururu
