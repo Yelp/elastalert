@@ -7,6 +7,8 @@ the automated CI workflows. To test your changes before creating a PR, run
 `sudo make clean; sudo make test-docker` from the root of the repository (requires Docker to be
 running on your machine).
 
+Make sure you follow the existing coding style from the existing codebase. Do not reformatting the existing code to fit your own personal style.
+
 Before submitting the PR review that you have included the following changes, where applicable:
 - Documentation: If you're adding new functionality, any new configuration options should be documented appropriately in the docs/ folder.
 - Helm Chart: If your new feature introduces settings consider adding those to the Helm chart [README.md](chart/elastalert2/README.md) and [values.yaml](chart/elastalert2/values.yaml)
