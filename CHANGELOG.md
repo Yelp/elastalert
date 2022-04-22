@@ -38,8 +38,6 @@
 - Update documentation on Cloud ID support - [#810](https://github.com/jertel/elastalert2/pull/810) - @ferozsalam
 - Upgrade tox 3.24.5 to 3.25.0 - [#813](https://github.com/jertel/elastalert2/pull/813) - @nsano-rururu
 - [Kubernetes] Add support to specify rules directory - [#816](https://github.com/jertel/elastalert2/pull/816) @SBe
-- [Docs] Update Zabbix section - [#820](https://github.com/jertel/elastalert2/pull/820) - @timeforplanb123
-- [Tests] Add new tests to zabbix_test.py for new `zbx_host_from_field` option - [#820](https://github.com/jertel/elastalert2/pull/820) - @timeforplanb123
 
 # 2.4.0
 
