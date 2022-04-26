@@ -1,11 +1,11 @@
 import json
 
 import requests
+from jinja2 import Template
 from requests import RequestException
 
 from elastalert.alerts import Alerter, DateTimeEncoder
 from elastalert.util import lookup_es_key, EAException, elastalert_logger
-from jinja2 import Template
 
 
 class HTTPPost2Alerter(Alerter):
@@ -31,20 +31,13 @@ class HTTPPost2Alerter(Alerter):
         """ Each match will trigger a POST to the specified endpoint(s). """
         for match in matches:
             payload = match if self.post_all_values else {}
-            for post_key, post_value in list(self.post_payload.items()):
-                post_key_template = Template(post_key)
-                post_key_res = post_key_template.render(**match)
-                post_value_template = Template(post_value)
-                post_value_res = post_value_template.render(**match)
-                payload[post_key_res] = post_value_res
+            payload_template = Template(json.dumps(self.post_payload))
+            payload_res = json.loads(payload_template.render(**match))
+            payload = {**payload, **payload_res}
 
             for post_key, es_key in list(self.post_raw_fields.items()):
                 payload[post_key] = lookup_es_key(match, es_key)
 
-            headers = {
-                "Content-Type": "application/json",
-                "Accept": "application/json;charset=utf-8"
-            }
             if self.post_ca_certs:
                 verify = self.post_ca_certs
             else:
@@ -52,12 +45,18 @@ class HTTPPost2Alerter(Alerter):
             if self.post_ignore_ssl_errors:
                 requests.packages.urllib3.disable_warnings()
 
-            for header_key, header_value in list(self.post_http_headers.items()):
-                header_key_template = Template(header_key)
-                header_key_res = header_key_template.render(**match)
-                header_value_template = Template(header_value)
-                header_value_res = header_value_template.render(**match)
-                headers[header_key_res] = header_value_res
+            header_template = Template(json.dumps(self.post_http_headers))
+            header_res = json.loads(header_template.render(**match))
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json;charset=utf-8",
+                **header_res
+            }
+
+            for key, value in headers.items():
+                if type(value) in [type(None), list, dict]:
+                    raise ValueError(f"HTTP Post 2: Can't send a header value which is not a string! "
+                                     f"Forbidden header {key}: {value}")
 
             proxies = {'https': self.post_proxy} if self.post_proxy else None
             for url in self.post_url:
