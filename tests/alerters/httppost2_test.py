@@ -1,9 +1,8 @@
 import json
 import logging
-import pytest
-
 from unittest import mock
 
+import pytest
 from requests import RequestException
 
 from elastalert.alerters.httppost2 import HTTPPost2Alerter
@@ -169,6 +168,72 @@ def test_http_alerter_with_payload_args_keys(caplog):
         alert.alert([match])
     expected_data = {
         'args_toto': 'tata',
+    }
+    mock_post_request.assert_called_once_with(
+        rule['http_post2_url'],
+        data=mock.ANY,
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
+        proxies=None,
+        timeout=10,
+        verify=True
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
+
+
+def test_http_alerter_with_payload_nested_keys(caplog):
+    caplog.set_level(logging.INFO)
+    rule = {
+        'name': 'Test HTTP Post Alerter With Payload args for the key',
+        'type': 'any',
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'key': {'nested_key': 'some_value_{{some_field}}'}},
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = HTTPPost2Alerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'some_field': 'toto'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'key': {'nested_key': 'some_value_toto'},
+    }
+    mock_post_request.assert_called_once_with(
+        rule['http_post2_url'],
+        data=mock.ANY,
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8'},
+        proxies=None,
+        timeout=10,
+        verify=True
+    )
+    assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
+
+
+def test_http_alerter_with_payload_none_value(caplog):
+    caplog.set_level(logging.INFO)
+    rule = {
+        'name': 'Test HTTP Post Alerter With Payload args for the key',
+        'type': 'any',
+        'http_post2_url': 'http://test.webhook.url',
+        'http_post2_payload': {'key': None},
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = HTTPPost2Alerter(rule)
+    match = {
+        '@timestamp': '2017-01-01T00:00:00',
+        'some_field': 'toto'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+    expected_data = {
+        'key': None,
     }
     mock_post_request.assert_called_once_with(
         rule['http_post2_url'],
@@ -351,6 +416,78 @@ def test_http_alerter_with_header_args_value(caplog):
         verify=True
     )
     assert ('elastalert', logging.INFO, 'HTTP Post 2 alert sent.') == caplog.record_tuples[0]
+
+
+def test_http_alerter_with_header_args_value_list(caplog):
+    with pytest.raises(ValueError) as error:
+        rule = {
+            'name': 'Test HTTP Post Alerter With Headers args value',
+            'type': 'any',
+            'http_post2_url': 'http://test.webhook.url',
+            'http_post2_headers': {'header_name': ["test1", "test2"]},
+            'http_post2_payload': {'posted_name': 'toto'},
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = HTTPPost2Alerter(rule)
+        match = {
+            '@timestamp': '2017-01-01T00:00:00',
+            'titi': 'foobarbaz'
+        }
+        with mock.patch('requests.post'):
+            alert.alert([match])
+
+    assert "HTTP Post 2: Can't send a header value which is not a string! " \
+           "Forbidden header header_name: ['test1', 'test2']" in str(error)
+
+
+def test_http_alerter_with_header_args_value_dict(caplog):
+    with pytest.raises(ValueError) as error:
+        rule = {
+            'name': 'Test HTTP Post Alerter With Headers args value',
+            'type': 'any',
+            'http_post2_url': 'http://test.webhook.url',
+            'http_post2_headers': {'header_name': {'test': 'val'}},
+            'http_post2_payload': {'posted_name': 'toto'},
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = HTTPPost2Alerter(rule)
+        match = {
+            '@timestamp': '2017-01-01T00:00:00',
+            'titi': 'foobarbaz'
+        }
+        with mock.patch('requests.post'):
+            alert.alert([match])
+
+    assert "HTTP Post 2: Can't send a header value which is not a string! " \
+           "Forbidden header header_name: {'test': 'val'}" in str(error)
+
+
+def test_http_alerter_with_header_args_value_none(caplog):
+    with pytest.raises(ValueError) as error:
+        rule = {
+            'name': 'Test HTTP Post Alerter With Headers args value',
+            'type': 'any',
+            'http_post2_url': 'http://test.webhook.url',
+            'http_post2_headers': {'header_name': None},
+            'http_post2_payload': {'posted_name': 'toto'},
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = HTTPPost2Alerter(rule)
+        match = {
+            '@timestamp': '2017-01-01T00:00:00',
+            'titi': 'foobarbaz'
+        }
+        with mock.patch('requests.post'):
+            alert.alert([match])
+
+    assert "HTTP Post 2: Can't send a header value which is not a string! " \
+           "Forbidden header header_name: None" in str(error)
 
 
 def test_http_alerter_with_header_args_value_not_found(caplog):
@@ -644,7 +781,8 @@ def test_http_alerter_headers():
     mock_post_request.assert_called_once_with(
         rule['http_post2_url'],
         data=mock.ANY,
-        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8', 'authorization': 'Basic 123dr3234'},
+        headers={'Content-Type': 'application/json', 'Accept': 'application/json;charset=utf-8',
+                 'authorization': 'Basic 123dr3234'},
         proxies=None,
         timeout=10,
         verify=True
@@ -653,14 +791,14 @@ def test_http_alerter_headers():
 
 
 @pytest.mark.parametrize('ca_certs, ignore_ssl_errors, excpet_verify', [
-    ('',    '',    True),
-    ('',    True,  False),
-    ('',    False, True),
-    (True,  '',    True),
-    (True,  True,  True),
-    (True,  False, True),
-    (False, '',    True),
-    (False, True,  False),
+    ('', '', True),
+    ('', True, False),
+    ('', False, True),
+    (True, '', True),
+    (True, True, True),
+    (True, False, True),
+    (False, '', True),
+    (False, True, False),
     (False, False, True)
 ])
 def test_http_alerter_post_ca_certs(ca_certs, ignore_ssl_errors, excpet_verify):
@@ -742,12 +880,12 @@ def test_http_getinfo():
 
 
 @pytest.mark.parametrize('http_post2_url, expected_data', [
-    ('',  'Missing required option(s): http_post2_url'),
+    ('', 'Missing required option(s): http_post2_url'),
     ('http://test.webhook.url',
-        {
-            'type': 'http_post2',
-            'http_post2_webhook_url': ['http://test.webhook.url']
-        }),
+     {
+         'type': 'http_post2',
+         'http_post2_webhook_url': ['http://test.webhook.url']
+     }),
 ])
 def test_http_required_error(http_post2_url, expected_data):
     try:

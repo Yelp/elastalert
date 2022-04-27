@@ -2329,7 +2329,7 @@ Required:
 
 Optional:
 
-``http_post2_payload``: List of keys:values to use for the payload of the HTTP Post. You can use {{ field }} (Jinja2 template) in the key and the value to reference any field in the matched events (works for nested fields). If not defined, all the Elasticsearch keys will be sent.  Ex: `"description_{{ my_field }}": "Type: {{ type }}\\nSubject: {{ title }}"`
+``http_post2_payload``: List of keys:values to use for the payload of the HTTP Post. You can use {{ field }} (Jinja2 template) in the key and the value to reference any field in the matched events (works for nested ES fields and nested payload keys). If not defined, all the Elasticsearch keys will be sent. Ex: `"description_{{ my_field }}": "Type: {{ type }}\\nSubject: {{ title }}"`.
 
 ``http_post2_raw_fields``: List of keys:values to use as the content of the POST. Example - ip:clientip will map the value from the clientip field of Elasticsearch to JSON key named ip. This field overwrite the keys with the same name in `http_post2_payload`.
 
