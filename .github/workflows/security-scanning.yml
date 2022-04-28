@@ -1,4 +1,4 @@
-name: "Code security scanner/check code quality, etc"
+name: "Code security scanner/check code quality, build the package, etc"
 
 on:
   push:
