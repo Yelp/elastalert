@@ -250,3 +250,9 @@ extraVolumeMounts: []
   #   mountPath: /opt/elastalert/config-smtp/smtp_auth.yaml
   #   subPath: smtp_auth.yaml
   #   readOnly: true
+
+# Prometheus Exporter defined by port:
+prometheusScrapeAnnotations:
+  prometheus.io/scrape: "false"
+  prometheus.io/path: "/"
+  prometheus.io/port: "8080"

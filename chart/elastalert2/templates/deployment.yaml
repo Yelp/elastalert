@@ -19,6 +19,7 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/rules: {{ include (print $.Template.BasePath "/rules.yaml") . | sha256sum }}
+{{ toYaml .Values.prometheusScrapeAnnotations | indent 8 }}        
 {{- if .Values.podAnnotations }}
 {{ toYaml .Values.podAnnotations | indent 8 }}
 {{- end }}
@@ -40,6 +41,11 @@ spec:
       - name: elastalert
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.prometheusPort }}        
+        ports:
+        - containerPort: {{ .Values.prometheusPort }}
+          protocol: TCP
+{{- end }}
 {{- if .Values.securityContext }}
         securityContext:
 {{ toYaml .Values.securityContext | indent 10 }}
@@ -48,10 +54,21 @@ spec:
         command:
 {{ toYaml .Values.command | indent 10 }}
 {{- end }}
-{{- if .Values.args }}
+
+{{- if .Values.prometheusPort }}
+        args:
+  {{- $enableportlist := list "--prometheus_port" (.Values.prometheusPort | toString) }}
+{{ toYaml $enableportlist | indent 10 }}
+  {{- if .Values.args }}
+{{ toYaml .Values.args | indent 10 }}
+  {{- end }}
+{{- else }}
+  {{- if .Values.args }}
         args:
 {{ toYaml .Values.args | indent 10 }}
+  {{- end }}
 {{- end }}
+
         volumeMounts:
           - name: config
             mountPath: '/opt/elastalert/config.yaml'
