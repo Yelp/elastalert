@@ -5,6 +5,7 @@
 
 ## New features
 - TBD - [#000](https://github.com/jertel/elastalert2/pull/000) - @some_elastic_contributor_tbd
+- HELM CHART - exposes prometheus metrics to kubernetes pod service discovery mechanism @PedroMSantosD
 
 ## Other changes
 - None
