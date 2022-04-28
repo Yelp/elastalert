@@ -16,13 +16,13 @@ something like this:
         def get_info(self):
             ...
 
-You can import alert types by specifying the type as ``module.file.AlertName``, where module is the name of a python module,
-and file is the name of the python file containing a ``Alerter`` subclass named ``AlertName``.
+You can import Alert types by specifying the type as ``module.file.AlertName``, where module is the name of a Python module,
+and file is the name of the Python file containing a ``Alerter`` subclass named ``AlertName``.
 
 Basics
 ------
 
-The alerter class will be instantiated when ElastAlert starts, and be periodically passed
+The Alerter class will be instantiated when ElastAlert starts, and be periodically passed
 matches through the ``alert`` method. ElastAlert also writes back info about the alert into
 Elasticsearch that it obtains through ``get_info``. Several important member properties:
 
@@ -72,8 +72,8 @@ Now, in a file named ``my_alerts.py``, add
 
     class AwesomeNewAlerter(Alerter):
 
-        # By setting required_options to a set of strings
-        # You can ensure that the rule config file specifies all
+        # By setting required_options to a set of strings,
+        # you can ensure that the rule config file specifies all
         # of the options. Otherwise, ElastAlert will throw an exception
         # when trying to load the rule.
         required_options = set(['output_file_path'])
@@ -83,26 +83,29 @@ Now, in a file named ``my_alerts.py``, add
 
             # Matches is a list of match dictionaries.
             # It contains more than one match when the alert has
-            # the aggregation option set
+            # the aggregation option set.
             for match in matches:
 
                 # Config options can be accessed with self.rule
                 with open(self.rule['output_file_path'], "a") as output_file:
 
-                    # basic_match_string will transform the match into the default
-                    # human readable string format
+                    # basic_match_string will transform the match, into the default
+                    # human readable string format.
                     match_string = str(BasicMatchString(self.rule, match))
 
                     output_file.write(match_string)
 
-        # get_info is called after an alert is sent to get data that is written back
-        # to Elasticsearch in the field "alert_info"
-        # It should return a dict of information relevant to what the alert does
+        # get_info is called, after an alert is sent to get data that is written back
+        # to ElasticSearch in the field "alert_info"
+        # It should return a dict of information relevant to what the alert does.
         def get_info(self):
             return {'type': 'Awesome Alerter',
                     'output_file': self.rule['output_file_path']}
 
+Then, run the script that you just made. You may tinker with this script as much as you want.
+.. code-block:: console
 
+    $ python3 my_alerts.py
 In the rule configuration file, we are going to specify the alert by writing
 
 .. code-block:: yaml
@@ -110,5 +113,5 @@ In the rule configuration file, we are going to specify the alert by writing
     alert: "elastalert_modules.my_alerts.AwesomeNewAlerter"
     output_file_path: "/tmp/alerts.log"
 
-ElastAlert will attempt to import the alert with ``from elastalert_modules.my_alerts import AwesomeNewAlerter``.
-This means that the folder must be in a location where it can be imported as a python module.
+ElastAlert will attempt to import the Alert class/function with ``from elastalert_modules.my_alerts import AwesomeNewAlerter``.
+This means that the folder must be in a location where it can be imported as a Python module.

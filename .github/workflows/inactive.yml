@@ -1,0 +1,28 @@
+name: inactive issue/pull request bot
+
+on:
+  schedule:
+  - cron: '00 00 * * *' 
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+
+jobs:
+  stale:
+
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+    - uses: actions/stale@v5
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        stale-issue-message: 'This issue has been inactive for 30 days. If you want to continue the discussion, re-open this issue and remove the label that it added.'
+        stale-pr-message: 'This pull request has been inactive, or not reviewed for 30 days. If you want to continue the discussion, re-open this pull request and remove the label that it added.'
+        stale-issue-label: 'inactive'
+        stale-pr-label: 'inactive'
+        days-before-stale: 30
