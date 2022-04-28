@@ -29,4 +29,4 @@ jobs:
         pip install pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Build 
-      run: pip install .
+      run: pip install . && python setup.py install
