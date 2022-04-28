@@ -12,7 +12,7 @@ They can be added to rules using the ``match_enhancements`` option::
 where module is the name of a Python module, or folder containing ``__init__.py``,
 and file is the name of the Python file containing a ``BaseEnhancement`` subclass named ``MyEnhancement``.
 
-A special exception class ```DropMatchException``` can be used in enhancements to drop matches if custom conditions are met. For example:
+A special exception class, ```DropMatchException```, can be used in enhancements to drop matches if custom conditions are met. For example:
 
 .. code-block:: python
 
@@ -43,17 +43,25 @@ Now, in a file named ``my_enhancements.py``, add
 
     class MyEnhancement(BaseEnhancement):
 
-        # The enhancement is run against every match
-        # The match is passed to the process function where it can be modified in any way
-        # ElastAlert will do this for each enhancement linked to a rule
+        # The Enhancement is run against every match.
+        # The match is passed to the process function where it can be modified in any way, and 
+        # ElastAlert will only do this for each enhancement linked to a rule.
         def process(self, match):
             if 'domain' in match:
                 url = "http://who.is/whois/%s" % (match['domain'])
                 match['domain_whois_link'] = url
+
+Now, run the script you just made.
+
+
+.. code-block:: console
+
+    $ python3 __init__.py
 
 Enhancements will not automatically be run. Inside the rule configuration file, you need to point it to the enhancement(s) that it should run
 by setting the ``match_enhancements`` option::
 
     match_enhancements:
     - "elastalert_modules.my_enhancements.MyEnhancement"
+    
 
