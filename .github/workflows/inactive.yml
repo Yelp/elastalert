@@ -2,7 +2,12 @@ name: inactive issue/pull request bot
 
 on:
   schedule:
-  - cron: '00 00 * * *'
+  - cron: '00 00 * * *' 
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
 
 jobs:
   stale:
