@@ -102,7 +102,10 @@ Now, in a file named ``my_alerts.py``, add
             return {'type': 'Awesome Alerter',
                     'output_file': self.rule['output_file_path']}
 
+Then, run the script that you just made. You may tinker with this script as much as you want.
+.. code-block:: console
 
+    $ python3 my_alerts.py
 In the rule configuration file, we are going to specify the alert by writing
 
 .. code-block:: yaml
