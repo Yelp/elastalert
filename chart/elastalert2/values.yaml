@@ -253,7 +253,5 @@ extraVolumeMounts: []
 
 # Prometheus Exporter defined by port:
 prometheusScrapeAnnotations:
-  prometheus.io/scrape: "false"
+  prometheus.io/scrape: "true"
   prometheus.io/path: "/"
-  prometheus.io/port: "8080"
-

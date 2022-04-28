@@ -19,7 +19,10 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/rules: {{ include (print $.Template.BasePath "/rules.yaml") . | sha256sum }}
-{{ toYaml .Values.prometheusScrapeAnnotations | indent 8 }}        
+{{- if .Values.prometheusPort }}
+{{ toYaml .Values.prometheusScrapeAnnotations | indent 8 }}
+        prometheus.io/port: {{ .Values.prometheusPort | quote}}
+{{- end }}
 {{- if .Values.podAnnotations }}
 {{ toYaml .Values.podAnnotations | indent 8 }}
 {{- end }}
@@ -41,7 +44,7 @@ spec:
       - name: elastalert
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-{{- if .Values.prometheusPort }}        
+{{- if .Values.prometheusPort }}
         ports:
         - containerPort: {{ .Values.prometheusPort }}
           protocol: TCP
