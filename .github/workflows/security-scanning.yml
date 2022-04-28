@@ -1,4 +1,4 @@
-name: "Code security scanner/check code"
+name: "Code security scanner/check code quality, etc"
 
 on:
   push:
@@ -6,8 +6,6 @@ on:
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master ]
-  schedule:
-    - cron: '00 00 * * *'
 
 jobs:
   analyze:
