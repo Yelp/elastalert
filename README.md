@@ -2,23 +2,23 @@ Recent changes: As of Elastalert 0.2.0, you must use Python 3.6. Python 2 will n
 [![Join the chat at https://gitter.im/Yelp/elastalert](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Yelp/elastalert?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## ElastAlert - [Read the Docs](http://elastalert.readthedocs.org).
-### Easy & Flexible Alerting With Elasticsearch
+### Easy & Flexible Alerting With ElasticSearch
 
-ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in Elasticsearch.
+ElastAlert is a simple framework for alerting on anomalies, spikes, or other patterns of interest from data in ElasticSearch.
 
-ElastAlert works with all versions of Elasticsearch.
+ElastAlert works with all versions of ElasticSearch.
 
-At Yelp, we use Elasticsearch, Logstash and Kibana for managing our ever increasing amount of data and logs.
+At Yelp, we use ElasticSearch, Logstash and Kibana for managing our ever increasing amount of data and logs.
 Kibana is great for visualizing and querying data, but we quickly realized that it needed a companion tool for alerting
 on inconsistencies in our data. Out of this need, ElastAlert was created.
 
-If you have data being written into Elasticsearch in near real time and want to be alerted when that data matches certain patterns, ElastAlert is the tool for you. If you can see it in Kibana, ElastAlert can alert on it.
+If you have data being written into ElasticSearch in near real time and want to be alerted when that data matches certain patterns, ElastAlert is the tool for you. If you can see it in Kibana, ElastAlert can alert on it.
 
 ## Overview
 
 We designed ElastAlert to be reliable, highly modular, and easy to set up and configure.
 
-It works by combining Elasticsearch with two types of components, rule types and alerts.
+It works by combining ElasticSearch with two types of components, rule types and alerts.
 Elasticsearch is periodically queried and the data is passed to the rule type, which determines when
 a match is found. When a match occurs, it is given to one or more alerts, which take action based on the match.
 
@@ -265,7 +265,7 @@ status:
 
 ### How can I make the alert come at a certain time?
 
-The ``aggregation`` feature will take every alert that has occured over a period of time and send them together in one alert. You can use cron style syntax to send all alerts that have occured since the last once by using
+The ``aggregation`` feature will take every alert that has occured over a period of time and send them together in one alert. You can use cron style syntax to send all alerts that have occured since the last once by using the following code:
 
 ```
 aggregation:
@@ -274,7 +274,7 @@ aggregation:
 
 ### I have lots of documents and it's really slow, how can I speed it up?
 
-There are several ways to potentially speed up queries. If you are using ``index: logstash-*``, Elasticsearch will query all shards, even if they do not possibly contain data with the correct timestamp. Instead, you can use Python time format strings and set ``use_strftime_index``
+There are several ways to potentially speed up queries. If you are using ``index: logstash-*``, Elasticsearch will query all shards, even if they do not possibly contain data with the correct timestamp. Instead, you can use Python time format strings and set ``use_strftime_index``.
 
 ```
 index: logstash-%Y.%m
