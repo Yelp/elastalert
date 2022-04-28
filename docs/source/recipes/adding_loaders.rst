@@ -17,8 +17,8 @@ will look something like this:
         def get_yaml(self, rule):
             ...
 
-You can import loaders by specifying the type as ``module.file.RulesLoaderName``, where module is the name of a
-python module, and file is the name of the python file containing a ``RulesLoader`` subclass named ``RulesLoaderName``.
+You can import Loaders by specifying the type as ``module.file.RulesLoaderName``, where module is the name of a
+Python module, and file is the name of the Python file containing a ``RulesLoader`` subclass named ``RulesLoaderName``.
 
 Example
 -------
@@ -78,8 +78,13 @@ Now, in a file named ``mongo_loader.py``, add
             self.cache[rule] = yaml.load(self.db.rules.find_one({'name': rule})['yaml'])
             return self.cache[rule]
 
+Then, run the script that you just made. You may tinker with this script as much as you want.
+.. code-block:: console
+
+    $ python3 mongo_loader.py
+
 Finally, you need to specify in your ElastAlert configuration file that MongoRulesLoader should be used instead of the
-default FileRulesLoader, so in your ``elastalert.conf`` file::
+default FileRulesLoader, so in your ``elastalert.conf`` file, add the following::
 
     rules_loader: "elastalert_modules.mongo_loader.MongoRulesLoader"
 
