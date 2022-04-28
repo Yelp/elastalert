@@ -56,7 +56,7 @@ Now, run the script you just made.
 
 .. code-block:: console
 
-    $ python3 __init__.py
+    $ python3 my_enhancements.py
 
 Enhancements will not automatically be run. Inside the rule configuration file, you need to point it to the enhancement(s) that it should run
 by setting the ``match_enhancements`` option::
