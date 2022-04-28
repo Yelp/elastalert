@@ -256,3 +256,4 @@ prometheusScrapeAnnotations:
   prometheus.io/scrape: "false"
   prometheus.io/path: "/"
   prometheus.io/port: "8080"
+
