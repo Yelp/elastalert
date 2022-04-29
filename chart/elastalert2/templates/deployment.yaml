@@ -58,17 +58,14 @@ spec:
 {{ toYaml .Values.command | indent 10 }}
 {{- end }}
 
-{{- if .Values.prometheusPort }}
+{{- if or .Values.args .Values.prometheusPort }}
         args:
-  {{- $enableportlist := list "--prometheus_port" (.Values.prometheusPort | toString) }}
-{{ toYaml $enableportlist | indent 10 }}
   {{- if .Values.args }}
 {{ toYaml .Values.args | indent 10 }}
   {{- end }}
-{{- else }}
-  {{- if .Values.args }}
-        args:
-{{ toYaml .Values.args | indent 10 }}
+  {{- if .Values.prometheusPort }}
+  {{- $enableportlist := list "--prometheus_port" (.Values.prometheusPort | toString) }}
+{{ toYaml $enableportlist | indent 10 }}
   {{- end }}
 {{- end }}
 

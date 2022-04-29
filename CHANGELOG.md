@@ -5,7 +5,6 @@
 
 ## New features
 - TBD - [#000](https://github.com/jertel/elastalert2/pull/000) - @some_elastic_contributor_tbd
-- HELM CHART - [#827] - exposes prometheus metrics to kubernetes pod service discovery mechanism @PedroMSantosD
 
 ## Other changes
 - None
@@ -40,6 +39,7 @@
 - Upgrade tox 3.24.5 to 3.25.0 - [#813](https://github.com/jertel/elastalert2/pull/813) - @nsano-rururu
 - [Kubernetes] Add support to specify rules directory - [#816](https://github.com/jertel/elastalert2/pull/816) @SBe
 - Fix HTTP POST 2 alerter for nested payload keys - [#823](https://github.com/jertel/elastalert2/pull/823) - @lepouletsuisse
+- [Kubernetes] - [#827] - exposes prometheus metrics to kubernetes pod service discovery mechanism @PedroMSantosD
 
 # 2.4.0
 
