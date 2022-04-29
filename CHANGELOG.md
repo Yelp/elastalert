@@ -39,6 +39,7 @@
 - Upgrade tox 3.24.5 to 3.25.0 - [#813](https://github.com/jertel/elastalert2/pull/813) - @nsano-rururu
 - [Kubernetes] Add support to specify rules directory - [#816](https://github.com/jertel/elastalert2/pull/816) @SBe
 - Fix HTTP POST 2 alerter for nested payload keys - [#823](https://github.com/jertel/elastalert2/pull/823) - @lepouletsuisse
+- [Kubernetes] Expose prometheus metrics to kubernetes pod service discovery mechanism - [#827](https://github.com/jertel/elastalert2/pull/827) - @PedroMSantosD
 
 # 2.4.0
 
