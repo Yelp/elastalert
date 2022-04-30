@@ -49,6 +49,7 @@ setup(
         'python-dateutil>=2.8.2',
         'PyYAML>=6.0',
         'requests>=2.27.1',
+        'stomp.py>=8.0.0',
         'texttable>=1.6.4',
         'twilio==6.57.0',
         'cffi>=1.15.0',
