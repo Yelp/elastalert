@@ -31,7 +31,7 @@ image:
   # docker image
   repository: jertel/elastalert2
   # docker image tag
-  tag: 2.4.1
+  tag: 2.5.0
   pullPolicy: IfNotPresent
   pullSecret: ""
 

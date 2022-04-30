@@ -9,7 +9,7 @@
 ## Other changes
 - None
 
-# 2.x.x
+# 2.5.0
 
 ## Breaking changes
 - Remove Simple Alerter - [#793](https://github.com/jertel/elastalert2/pull/793) - @nsano-rururu
