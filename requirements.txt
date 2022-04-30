@@ -16,7 +16,6 @@ py-zabbix>=1.1.7
 python-dateutil>=2.8.2
 PyYAML>=6.0
 requests>=2.27.1
-stomp.py>=8.0.0
 texttable>=1.6.4
 statsd-tags==3.2.1.post1
 twilio==6.57.0
