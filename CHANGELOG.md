@@ -7,7 +7,7 @@
 - None
 
 ## Other changes
-- None
+- Upgrade stomp 8.0.0 to 8.0.1 - [#832](https://github.com/jertel/elastalert2/pull/832) - @jertel
 
 # 2.5.0
 
