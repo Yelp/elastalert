@@ -656,7 +656,6 @@ properties:
   stomp_hostport: {type: string}
   stomp_login: {type: string}
   stomp_password: {type: string}
-  stomp_ssl: {type: boolean}
   stomp_destination: {type: string}
 
   ### Telegram

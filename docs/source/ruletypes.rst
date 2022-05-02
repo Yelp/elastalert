@@ -3089,8 +3089,6 @@ The alerter requires the following options:
 
 Optional:
 
-``stomp_ssl``: Connect the STOMP host using TLS, defaults to ``False``.
-
 ``stomp_destination``: The STOMP destination to use, defaults to ``/queue/ALERT``
 
 The stomp_destination field depends on the broker, the /queue/ALERT example is the nomenclature used by ActiveMQ. Each broker has its own logic.
