@@ -72,6 +72,23 @@ class HiveAlerter(Alerter):
 
         return tag_values
 
+    def load_description(self, description_raw, match: dict):
+        missing = self.rule.get('description_missing_value', '<MISSING VALUE>')
+        if 'description_args' in self.rule.get('hive_alert_config'):
+            description_args = self.rule['hive_alert_config'].get('description_args')
+            description_values=[]
+            for arg in description_args:
+                description_values.append(self.lookup_field(match, arg, arg))
+            for i, text_value in enumerate(description_values):
+                if text_value is None:
+                    description_value = self.rule.get(description_args[i])
+                    if description_value:
+                        description_values[i] = description_value
+            description_values = [missing if val is None else val for val in description_values]
+            description_raw = description_raw.format(*description_values)
+            return description_raw
+        else:
+            return description_raw
     def alert(self, matches):
         # Build TheHive alert object, starting with some defaults, updating with any
         # user-specified config
