@@ -102,7 +102,7 @@ class HiveAlerter(Alerter):
             'title': self.create_title(matches),
         }
         alert_config.update(self.rule.get('hive_alert_config', {}))
-
+        alert_config['description']=self.load_description(alert_config['description'], matches[0])
         # Iterate through each match found, populating the alert tags and observables as required
         tags = set()
         artifacts = []
