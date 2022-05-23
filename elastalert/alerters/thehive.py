@@ -102,20 +102,21 @@ class HiveAlerter(Alerter):
             'title': self.create_title(matches),
         }
         alert_config.update(self.rule.get('hive_alert_config', {}))
-        if not matches:
-            #Populate description field
-            alert_config['description']=self.load_description(alert_config['description'], matches[0])
-            # Iterate through each match found, populating the alert tags and observables as required
-            tags = set()
-            artifacts = []
-            for match in matches:
-                artifacts = artifacts + self.load_observable_artifacts(match)
-                tags.update(self.load_tags(alert_config['tags'], match))
+        
+        # Iterate through each match found, populating the alert tags and observables as required
+        tags = set()
+        artifacts = []
+        for match in matches:
+            artifacts = artifacts + self.load_observable_artifacts(match)
+            tags.update(self.load_tags(alert_config['tags'], match))
 
-            alert_config['artifacts'] = artifacts
-            alert_config['tags'] = list(tags)
+        alert_config['artifacts'] = artifacts
+        alert_config['tags'] = list(tags)
 
             # Populate the customFields
+        if len(matches) > 0:
+            #Populate description field
+            alert_config['description']=self.load_description(alert_config['description'], matches[0])
             alert_config['customFields'] = self.load_custom_fields(alert_config['customFields'],
                                                                matches[0])
 
