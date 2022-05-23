@@ -562,7 +562,7 @@ where X is 5 by default, or ``top_count_number`` if it exists.
 For example, if ``num_events`` is 100, and ``top_count_keys`` is ``- "username"``, the alert will say how many of the 100 events
 have each username, for the top 5 usernames. When this is computed, the time range used is from ``timeframe`` before the most recent event
 to 10 minutes past the most recent event. Because ElastAlert 2 uses an aggregation query to compute this, it will attempt to use the
-field name plus ".raw" to count unanalyzed terms. To turn this off, set ``raw_count_keys`` to false.
+field name plus ".keyword" to count unanalyzed terms. To turn this off, set ``raw_count_keys`` to false.
 
 top_count_number
 ^^^^^^^^^^^^^^^^
@@ -572,7 +572,7 @@ top_count_number
 raw_count_keys
 ^^^^^^^^^^^^^^
 
-``raw_count_keys``: If true, all fields in ``top_count_keys`` will have ``.raw`` appended to them. (Optional, boolean, default true)
+``raw_count_keys``: If true, all fields in ``top_count_keys`` will have ``.keyword`` appended to them.  This used to be ".raw" in older Elasticsearch versions, but the setting name `raw_count_keys` was left as-is to avoid breaking existing installations. (Optional, boolean, default true)
 
 description
 ^^^^^^^^^^^
@@ -1256,10 +1256,10 @@ that if a new term appears but there are at least 50 terms which appear more fre
 
   When using use_terms_query, make sure that the field you are using is not analyzed. If it is, the results of each terms
   query may return tokens rather than full values. ElastAlert 2 will by default turn on use_keyword_postfix, which attempts
-  to use the non-analyzed version (.keyword or .raw) to gather initial terms. These will not match the partial values and
+  to use the non-analyzed version (.keyword) to gather initial terms. These will not match the partial values and
   result in false positives.
 
-``use_keyword_postfix``: If true, ElastAlert 2 will automatically try to add .keyword (ES5+) or .raw to the fields when making an
+``use_keyword_postfix``: If true, ElastAlert 2 will automatically try to add .keyword to the fields when making an
 initial query. These are non-analyzed fields added by Logstash. If the field used is analyzed, the initial query will return
 only the tokenized values, potentially causing false positives. Defaults to true.
 
