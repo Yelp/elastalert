@@ -305,7 +305,7 @@ def test_load_tags(tags, expect):
     actual = alert.load_tags(tags, match)
     assert expect == actual
 
-def test_load_description_1():
+def test_load_description_default():
     rule = {'alert': [],
             'alert_text': '',
             'alert_text_type': 'alert_text_only',
@@ -345,7 +345,7 @@ def test_load_description_1():
     assert actual == expected
 
 #### Test when description is submitted under hive_alert_config but description_args is not
-def test_load_description_2():
+def test_load_description_no_args():
     rule = {'alert': [],
             'alert_text': '',
             'alert_text_type': 'alert_text_only',
@@ -387,7 +387,7 @@ def test_load_description_2():
 
 ### Test with description_missing_value
 
-def test_load_description_3():
+def test_load_description_args():
     rule = {'alert': [],
             'alert_text': '',
             'alert_text_type': 'alert_text_only',
@@ -431,7 +431,7 @@ def test_load_description_3():
 
 
 ### Test without description_missing_value, missing values a replaced by a default value <MISSING VALUE>
-def test_load_description_4():
+def test_load_description_missing_value_default():
     rule = {'alert': [],
             'alert_text': '',
             'alert_text_type': 'alert_text_only',
