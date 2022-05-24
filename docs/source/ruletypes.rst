@@ -3232,6 +3232,9 @@ the observable value is also the same, including the behaviour for aggregated al
 
 ``hive_verify``: Whether or not to enable SSL certificate validation. Defaults to False.
 
+``description_args``: can be used to call rule and match fileds in the description of the alert in TheHive
+``description_missing_value``: Text to replace any match field not found when formating the ``description``. Defaults to ``<MISSING VALUE>``.
+
 Example usage::
 
     alert: hivealerter
@@ -3253,7 +3256,8 @@ Example usage::
       severity: 2
       status: 'New'
       source: 'elastalert'
-      description: 'Sample description'
+      description_args: [ name, description]
+      description: '{0} : {1}'
       tags: ['tag1', 'tag2']
       title: 'Title'
       tlp: 3
