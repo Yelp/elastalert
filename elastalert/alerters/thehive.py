@@ -78,7 +78,7 @@ class HiveAlerter(Alerter):
             description_args = self.rule['hive_alert_config'].get('description_args')
             description_values=[]
             for arg in description_args:
-                description_values.append(self.lookup_field(match, arg, arg))
+                description_values.append(self.lookup_field(match, arg, missing))
             for i, text_value in enumerate(description_values):
                 if text_value is None:
                     description_value = self.rule.get(description_args[i])
