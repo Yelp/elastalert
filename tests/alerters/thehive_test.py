@@ -305,6 +305,7 @@ def test_load_tags(tags, expect):
     actual = alert.load_tags(tags, match)
     assert expect == actual
 
+
 def test_load_description_default():
     rule = {'alert': [],
             'alert_text': '',
@@ -327,7 +328,7 @@ def test_load_description_default():
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
-    
+
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
     alert = HiveAlerter(rule)
@@ -341,10 +342,11 @@ def test_load_description_default():
     }
 
     actual = alert.load_description(alert.create_alert_body(match), match)
-    expected=alert.create_alert_body(match)
+    expected = alert.create_alert_body(match)
     assert actual == expected
 
-#### Test when description is submitted under hive_alert_config but description_args is not
+
+# Test when description is submitted under hive_alert_config but description_args is not
 def test_load_description_no_args():
     rule = {'alert': [],
             'alert_text': '',
@@ -368,7 +370,7 @@ def test_load_description_no_args():
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
-    
+
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
     alert = HiveAlerter(rule)
@@ -385,7 +387,7 @@ def test_load_description_no_args():
     assert actual == expected
 
 
-### Test with description_missing_value
+# Test with description_missing_value
 
 def test_load_description_args():
     rule = {'alert': [],
@@ -400,7 +402,7 @@ def test_load_description_args():
                                   'severity': 2,
                                   'source': 'elastalert',
                                   'description_missing_value': '<Value not found in logs>',
-                                  'description_args': [ 'title', 'test.ip', 'host' ],
+                                  'description_args': ['title', 'test.ip', 'host'],
                                   'description': '{0} from host:{2} to {1}',
                                   'status': 'New',
                                   'tags': ['test.port'],
@@ -413,7 +415,7 @@ def test_load_description_args():
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
-    
+
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
     alert = HiveAlerter(rule)
@@ -430,7 +432,7 @@ def test_load_description_args():
     assert actual == expected
 
 
-### Test without description_missing_value, missing values a replaced by a default value <MISSING VALUE>
+# Test without description_missing_value, missing values a replaced by a default value <MISSING VALUE>
 def test_load_description_missing_value_default():
     rule = {'alert': [],
             'alert_text': '',
@@ -443,7 +445,7 @@ def test_load_description_missing_value_default():
                                   'follow': True,
                                   'severity': 2,
                                   'source': 'elastalert',
-                                  'description_args': [ 'title', 'test.ip', 'host' ],
+                                  'description_args': ['title', 'test.ip', 'host'],
                                   'description': '{0} from host:{2} to {1}',
                                   'status': 'New',
                                   'tags': ['test.port'],
@@ -456,7 +458,7 @@ def test_load_description_missing_value_default():
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
-    
+
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
     alert = HiveAlerter(rule)
