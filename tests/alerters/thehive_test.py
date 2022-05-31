@@ -517,5 +517,5 @@ def test_load_observable_artifacts():
         "@timestamp": "2021-05-09T14:43:30",
     }
     actual = alert.load_observable_artifacts(match)
-    expected = [{'tlp': 1, 'tags': ['ip', 'test'], 'message': 'test tags', 'dataType': 'ip', 'data': '127.0.0.1'}, {'tlp': 2, 'tags': ['autonomous'], 'message': None,'dataType': 'autonomous-system', 'data': 1234}, {'tlp': 1, 'tags': [], 'message': None, 'dataType': 'username', 'data': 'toto'}, {'tlp': 1, 'tags': [], 'message': None, 'dataType': 'filename', 'data': 'mstc.exe'}]
+    expected = [{'tlp': 1, 'tags': ['ip', 'test'], 'message': 'test tags', 'dataType': 'ip', 'data': '127.0.0.1'}, {'tlp': 2, 'tags': ['autonomous'], 'message': None,'dataType': 'autonomous-system', 'data': '1234'}, {'tlp': 1, 'tags': [], 'message': None, 'dataType': 'username', 'data': 'toto'}, {'tlp': 1, 'tags': [], 'message': None, 'dataType': 'filename', 'data': 'mstc.exe'}]
     assert actual == expected
