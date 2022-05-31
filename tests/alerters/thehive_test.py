@@ -473,3 +473,49 @@ def test_load_description_missing_value_default():
     actual = alert.load_description(rule['hive_alert_config']['description'], match)
     expected = "Unit test from host:<MISSING VALUE> to 127.0.0.1"
     assert actual == expected
+
+def test_load_observable_artifacts():
+    rule = {'alert': [],
+            'alert_text': '',
+            'alert_text_type': 'alert_text_only',
+            'title': 'Unit test',
+            'description': 'test',
+            'hive_alert_config': {'customFields': [{'name': 'test',
+                                                    'type': 'string',
+                                                    'value': 2}],
+                                  'follow': True,
+                                  'severity': 2,
+                                  'source': 'elastalert',
+                                  'description_args': ['title', 'test.ip', 'host'],
+                                  'description': '{0} from host:{2} to {1}',
+                                  'status': 'New',
+                                  'tags': ['test.port'],
+                                  'tlp': 3,
+                                  'type': 'external'},
+            'hive_connection': {'hive_apikey': '',
+                                'hive_host': 'https://localhost',
+                                'hive_port': 9000},
+            'hive_observable_data_mapping': [{'ip': 'test.ip', 'tlp': 1, 'tags': ['ip', 'test'], 'message': 'test tags'}, {'autonomous-system': 'test.as_number', 'tlp': 2, 'tags': ['autonomous']}, {'username': 'user.name', 'tlp': 1}, {'filename': 'process.name'}, {'ip': 'destination.ip'}],
+            'name': 'test-thehive',
+            'tags': ['a', 'b'],
+            'type': 'any'}
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = HiveAlerter(rule)
+    match = {
+        "test": {
+          "ip": "127.0.0.1",
+          "port": 9876,
+          "as_number": 1234
+        },
+        "user": {
+            "name": "toto"
+        },
+        "process": {
+            "name": "mstc.exe"
+        },
+        "@timestamp": "2021-05-09T14:43:30",
+    }
+    actual = alert.load_description(match)
+    expected = [{'tlp': 1, 'tags': ['ip', 'test'], 'message': 'test tags', 'dataType': 'ip', 'data': '127.0.0.1'}, {'tlp': 2, 'tags': ['autonomous'], 'message': None,'dataType': 'autonomous-system', 'data': 1234}, {'tlp': 1, 'tags': [], 'message': None, 'dataType': 'username', 'data': 'toto'}, {'tlp': 1, 'tags': [], 'message': None, 'dataType': 'filename', 'data': 'mstc.exe'}]
+    assert actual == expected
