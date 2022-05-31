@@ -1737,7 +1737,7 @@ Optional:
 
 ``alertmanager_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
 
-``alertmanager_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+``alertmanager_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
 ``alertmanager_timeout``: You can specify a timeout value, in seconds, for making communicating with Alertmanager. The default is 10. If a timeout occurs, the alert will be retried next time ElastAlert 2 cycles.
 
