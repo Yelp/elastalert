@@ -3225,8 +3225,9 @@ using the first matched record, before checking the rule. If neither matches, th
 will be used directly.
 
 ``hive_observable_data_mapping``: If needed, matched data fields can be mapped to TheHive
-observable types using the same syntax as ``tags``, described above. The algorithm used to populate
-the observable value is also the same, including the behaviour for aggregated alerts.
+observable types using the same syntax as ``customFields``, described above. The algorithm used to populate
+the observable value is similar to the one used to populate the ``tags``, including the behaviour for aggregated alerts.
+The tlp, message and tags fields are optionnal for each observable and will be field with a default value if not used.
 
 ``hive_proxies``: Proxy configuration.
 
@@ -3265,7 +3266,12 @@ Example usage::
 
     hive_observable_data_mapping:
       - domain: agent.hostname
+        tlp: 1
+        tags: ['hostname', agent']
+        message: 'agent hostname'
       - domain: response.domain
+        tlp: 2
+        tags: ['domain']
       - ip: client.ip
 
 Twilio
