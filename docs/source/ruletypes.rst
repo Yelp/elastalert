@@ -2304,7 +2304,7 @@ Optional:
 
 ``http_post_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
 
-``http_post_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+``http_post_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
 Example usage::
 
@@ -2343,7 +2343,7 @@ Optional:
 
 ``http_post2_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
 
-``http_post2_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+``http_post2_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
 Example usage::
 
@@ -2504,7 +2504,7 @@ Optional:
 
 ``mattermost_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Mattermost. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
-``mattermost_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+``mattermost_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
 ``mattermost_username_override``: By default Mattermost will use your username when posting to the channel. Use this option to change it (free text).
 
@@ -2634,7 +2634,7 @@ Example ms_teams_attach_kibana_discover_url, ms_teams_kibana_discover_title::
 
 ``ms_teams_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
 
-``ms_teams_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+``ms_teams_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
 Example usage::
 
@@ -2823,7 +2823,7 @@ ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
 
 ``rocket_chat_ca_certs``: Set this option to ``True`` if you want to validate the SSL certificate.
 
-``rocket_chat_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+``rocket_chat_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
 ``rocket_chat_timeout``: You can specify a timeout value, in seconds, for making communicating with Rocket.Chat. The default is 10. If a timeout occurs, the alert will be retried next time ElastAlert 2 cycles.
 
@@ -2983,7 +2983,7 @@ Example slack_alert_fields::
         value: beat.name
         short: true
 
-``slack_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``False`` if you want to ignore SSL errors.
+``slack_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
 ``slack_title``: Sets a title for the message, this shows up as a blue text at the start of the message
 
