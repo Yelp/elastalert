@@ -29,7 +29,7 @@ def test_thehive_alerter(caplog):
             'hive_connection': {'hive_apikey': '',
                                 'hive_host': 'https://localhost',
                                 'hive_port': 9000},
-            'hive_observable_data_mapping': [{'ip': 'test.ip', 'autonomous-system': 'test.as_number'}],
+            'hive_observable_data_mapping': [{'ip': 'test.ip'}, {'autonomous-system': 'test.as_number'}],
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
@@ -194,7 +194,7 @@ def test_thehive_alerter2():
             'hive_connection': {'hive_apikey': '',
                                 'hive_host': 'https://localhost',
                                 'hive_port': 9000},
-            'hive_observable_data_mapping': [{'ip': 'test.ip', 'autonomous-system': 'test.as_number'}],
+            'hive_observable_data_mapping': [{'ip': 'test.ip'}, {'autonomous-system': 'test.as_number'}],
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
@@ -291,7 +291,7 @@ def test_load_tags(tags, expect):
             'hive_connection': {'hive_apikey': '',
                                 'hive_host': 'https://localhost',
                                 'hive_port': 9000},
-            'hive_observable_data_mapping': [{'ip': 'test.ip', 'autonomous-system': 'test.as_number'}],
+            'hive_observable_data_mapping': [{'ip': 'test.ip'}, {'autonomous-system': 'test.as_number'}],
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
@@ -324,7 +324,7 @@ def test_load_description_default():
             'hive_connection': {'hive_apikey': '',
                                 'hive_host': 'https://localhost',
                                 'hive_port': 9000},
-            'hive_observable_data_mapping': [{'ip': 'test.ip', 'autonomous-system': 'test.as_number'}],
+            'hive_observable_data_mapping': [{'ip': 'test.ip'}, {'autonomous-system': 'test.as_number'}],
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
@@ -366,7 +366,7 @@ def test_load_description_no_args():
             'hive_connection': {'hive_apikey': '',
                                 'hive_host': 'https://localhost',
                                 'hive_port': 9000},
-            'hive_observable_data_mapping': [{'ip': 'test.ip', 'autonomous-system': 'test.as_number'}],
+            'hive_observable_data_mapping': [{'ip': 'test.ip'}, {'autonomous-system': 'test.as_number'}],
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
@@ -411,7 +411,7 @@ def test_load_description_args():
             'hive_connection': {'hive_apikey': '',
                                 'hive_host': 'https://localhost',
                                 'hive_port': 9000},
-            'hive_observable_data_mapping': [{'ip': 'test.ip', 'autonomous-system': 'test.as_number'}],
+            'hive_observable_data_mapping': [{'ip': 'test.ip'}, {'autonomous-system': 'test.as_number'}],
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
@@ -454,7 +454,7 @@ def test_load_description_missing_value_default():
             'hive_connection': {'hive_apikey': '',
                                 'hive_host': 'https://localhost',
                                 'hive_port': 9000},
-            'hive_observable_data_mapping': [{'ip': 'test.ip', 'autonomous-system': 'test.as_number'}],
+            'hive_observable_data_mapping': [{'ip': 'test.ip'}, {'autonomous-system': 'test.as_number'}],
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
@@ -516,6 +516,6 @@ def test_load_observable_artifacts():
         },
         "@timestamp": "2021-05-09T14:43:30",
     }
-    actual = alert.load_description(match)
+    actual = alert.load_observable_artifacts(match)
     expected = [{'tlp': 1, 'tags': ['ip', 'test'], 'message': 'test tags', 'dataType': 'ip', 'data': '127.0.0.1'}, {'tlp': 2, 'tags': ['autonomous'], 'message': None,'dataType': 'autonomous-system', 'data': 1234}, {'tlp': 1, 'tags': [], 'message': None, 'dataType': 'username', 'data': 'toto'}, {'tlp': 1, 'tags': [], 'message': None, 'dataType': 'filename', 'data': 'mstc.exe'}]
     assert actual == expected
