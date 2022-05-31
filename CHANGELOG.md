@@ -11,7 +11,7 @@
 - Add support for Kibana 8.2 for Kibana Discover, Upgrade Pytest 7.1.1 to 7.1.2, Upgrade pylint 2.13.5 to 2.13.8, Upgrade Jinja2 3.1.1 to 3.1.2 - [#840](https://github.com/jertel/elastalert2/pull/840) - @nsano-rururu
 - Add the possibility to use rule and match fields in the description of TheHive alerts - [#855](https://github.com/jertel/elastalert2/pull/855) - @luffynextgen
 - Fix missing colon on schema.yml and add unit test on it - [#866](https://github.com/jertel/elastalert2/pull/866) - @Isekai-Seikatsu
-- Add the possibility to use tags, message and tlp level in TheHive observables [#873][https://github.com/jertel/elastalert2/pull/873]
+- Add the possibility to use tags, message and tlp level in TheHive observables [#873][https://github.com/jertel/elastalert2/pull/873] - @luffynextgen
 
 # 2.5.0
 
