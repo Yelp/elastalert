@@ -3267,11 +3267,11 @@ Example usage::
     hive_observable_data_mapping:
       - domain: agent.hostname
         tlp: 1
-        tags: ['hostname', agent']
+        tags: ['tag1', 'tag2']
         message: 'agent hostname'
       - domain: response.domain
         tlp: 2
-        tags: ['domain']
+        tags: ['tag3']
       - ip: client.ip
 
 Twilio
