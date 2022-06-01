@@ -3227,7 +3227,7 @@ will be used directly.
 ``hive_observable_data_mapping``: If needed, matched data fields can be mapped to TheHive
 observable types using the same syntax as ``customFields``, described above. The algorithm used to populate
 the observable value is similar to the one used to populate the ``tags``, including the behaviour for aggregated alerts.
-The tlp, message and tags fields are optionnal for each observable and will be field with a default value if not used.
+The tlp, message, and tags fields are optional for each observable. If not specified, the tlp field is given a default value of 2.
 
 ``hive_proxies``: Proxy configuration.
 
