@@ -163,7 +163,7 @@ def test_thehive_getinfo(hive_host, expect):
             'hive_connection': {'hive_apikey': '',
                                 'hive_host': hive_host,
                                 'hive_port': 9000},
-            'hive_observable_data_mapping': [{'ip': 'test.ip'}],
+            'hive_observable_data_mapping': [{'ip': 'test.ip'}], 
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
@@ -474,6 +474,7 @@ def test_load_description_missing_value_default():
     expected = "Unit test from host:<MISSING VALUE> to 127.0.0.1"
     assert actual == expected
 
+
 def test_load_observable_artifacts():
     rule = {'alert': [],
             'alert_text': '',
@@ -495,7 +496,11 @@ def test_load_observable_artifacts():
             'hive_connection': {'hive_apikey': '',
                                 'hive_host': 'https://localhost',
                                 'hive_port': 9000},
-            'hive_observable_data_mapping': [{'ip': 'test.ip', 'tlp': 1, 'tags': ['ip', 'test'], 'message': 'test tags'}, {'autonomous-system': 'test.as_number', 'tlp': 2, 'tags': ['autonomous']}, {'username': 'user.name', 'tlp': 1}, {'filename': 'process.name'}, {'ip': 'destination.ip'}],
+            'hive_observable_data_mapping': [
+                {'ip': 'test.ip', 'tlp': 1, 'tags': ['ip', 'test'], 'message': 'test tags'},
+                {'autonomous-system': 'test.as_number', 'tlp': 2, 'tags': ['autonomous']}, 
+                {'username': 'user.name', 'tlp': 1}, {'filename': 'process.name'}, {'ip': 'destination.ip'}
+                ],
             'name': 'test-thehive',
             'tags': ['a', 'b'],
             'type': 'any'}
@@ -517,5 +522,10 @@ def test_load_observable_artifacts():
         "@timestamp": "2021-05-09T14:43:30",
     }
     actual = alert.load_observable_artifacts(match)
-    expected = [{'tlp': 1, 'tags': ['ip', 'test'], 'message': 'test tags', 'dataType': 'ip', 'data': '127.0.0.1'}, {'tlp': 2, 'tags': ['autonomous'], 'message': None,'dataType': 'autonomous-system', 'data': '1234'}, {'tlp': 1, 'tags': [], 'message': None, 'dataType': 'username', 'data': 'toto'}, {'tlp': 2, 'tags': [], 'message': None, 'dataType': 'filename', 'data': 'mstc.exe'}]
+    expected = [
+        {'tlp': 1, 'tags': ['ip', 'test'], 'message': 'test tags', 'dataType': 'ip', 'data': '127.0.0.1'},
+        {'tlp': 2, 'tags': ['autonomous'], 'message': None,'dataType': 'autonomous-system', 'data': '1234'},
+        {'tlp': 1, 'tags': [], 'message': None, 'dataType': 'username', 'data': 'toto'},
+        {'tlp': 2, 'tags': [], 'message': None, 'dataType': 'filename', 'data': 'mstc.exe'}
+    ]
     assert actual == expected
