@@ -204,7 +204,7 @@ As a Python package
 Requirements
 ------------
 
-- Elasticsearch 7.x or 8.x
+- Elasticsearch 7.x or 8.x, or OpenSearch 1.x or 2.x
 - ISO8601 or Unix timestamped data
 - Python 3.10. Require OpenSSL 1.1.1 or newer.
 - pip
