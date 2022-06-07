@@ -6,6 +6,9 @@ import time
 import dateutil
 import pytest
 
+from unittest import mock
+from unittest.mock import MagicMock
+
 import elastalert.create_index
 import elastalert.elastalert
 from elastalert import ElasticSearchClient
@@ -23,6 +26,17 @@ es_timeout = 10
 def es_client():
     es_conn_config = build_es_conn_config({'es_host': es_host, 'es_port': es_port, 'es_conn_timeout': es_timeout})
     return ElasticSearchClient(es_conn_config)
+
+
+def test_es_version(es_client):
+    mockInfo = {}
+    versionData = {}
+    versionData['number'] = "1.2.3"
+    mockInfo['version'] = versionData
+
+    with mock.patch('elasticsearch.client.Elasticsearch.info', new=MagicMock(return_value=mockInfo)):
+        version = es_client.es_version
+        assert version == "1.2.3"
 
 
 @pytest.mark.elasticsearch

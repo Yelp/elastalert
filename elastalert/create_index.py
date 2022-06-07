@@ -15,18 +15,13 @@ from elasticsearch.exceptions import NotFoundError
 from envparse import Env
 
 from elastalert.auth import Auth
+from elastalert.util import get_version_from_cluster_info
 
 env = Env(ES_USE_SSL=bool)
 
 
 def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None):
-    esinfo = es_client.info()['version']
-    if esinfo.get('distribution') == "opensearch":
-        # OpenSearch is based on Elasticsearch 7.10.2, currently only v1.0.0 exists
-        # https://opensearch.org/
-        esversion = "7.10.2"
-    else:
-        esversion = esinfo['number']
+    esversion = get_version_from_cluster_info(es_client)
 
     es_index_mappings = {}
     if is_atleasteight(esversion):

@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import sys
+import time
 
 import dateutil.parser
 import pytz
@@ -12,6 +13,7 @@ from six import string_types
 
 from elastalert import ElasticSearchClient
 from elastalert.auth import Auth
+from elasticsearch.exceptions import TransportError
 
 logging.basicConfig()
 logging.captureWarnings(True)
@@ -560,3 +562,26 @@ def parse_hosts(host, port=9200):
     host_list = [format_host_port(x, port) for x in host_list]
     return host_list
 
+
+def get_version_from_cluster_info(client):
+    esversion = None
+    for retry in range(3):
+        try:
+            esinfo = client.info()['version']
+            esversion = esinfo['number']
+            if esinfo.get('distribution') == "opensearch":
+                # https://opensearch.org/
+                if esversion[0] == "1":
+                    # OpenSearch 1.x is based on Elasticsearch 7.10.2
+                    esversion = "7.10.2"
+                else:
+                    # OpenSearch 2.x has qualities similar to 8.2.0
+                    esversion = "8.2.0"
+            break
+        except TransportError:
+            if retry == 2:
+                raise
+            elastalert_logger.warning('Failed to retrieve cluster version information, retrying in 3 seconds')
+            time.sleep(3)
+
+    return esversion

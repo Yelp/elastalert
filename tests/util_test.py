@@ -10,6 +10,7 @@ from dateutil.parser import parse as dt
 from dateutil.tz import tzutc
 
 from unittest import mock
+from unittest.mock import MagicMock
 
 from elastalert.util import add_raw_postfix
 from elastalert.util import build_es_conn_config
@@ -38,6 +39,9 @@ from elastalert.util import unixms_to_dt
 from elastalert.util import format_string
 from elastalert.util import pretty_ts
 from elastalert.util import parse_hosts
+from elastalert.util import get_version_from_cluster_info
+
+from elasticsearch.client import Elasticsearch
 
 
 @pytest.mark.parametrize('spec, expected_delta', [
@@ -604,3 +608,25 @@ def test_parse_host():
     assert parse_hosts("host1, host2:9200, host3:9300") == ["host1:9200",
                                                             "host2:9200",
                                                             "host3:9300"]
+
+
+@pytest.mark.parametrize('version, distro, expectedversion', [
+    ('7.10.0', None, '7.10.0'),
+    ('8.2.0', None, '8.2.0'),
+    ('1.2.0', 'opensearch', '7.10.2'),
+    ('2.0.0', 'opensearch', '8.2.0')
+])
+@mock.patch.dict(os.environ, {'AWS_DEFAULT_REGION': ''})
+def test_get_version(version, distro, expectedversion):
+    mockInfo = {}
+    versionData = {}
+    versionData['number'] = version
+    if distro is not None:
+        versionData['distribution'] = distro
+
+    mockInfo['version'] = versionData
+
+    with mock.patch('elasticsearch.client.Elasticsearch.info', new=MagicMock(return_value=mockInfo)):
+        client = Elasticsearch()
+        actualversion = get_version_from_cluster_info(client)
+    assert expectedversion == actualversion

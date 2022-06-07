@@ -47,20 +47,8 @@ class ElasticSearchClient(Elasticsearch):
         Returns the reported version from the Elasticsearch server.
         """
         if self._es_version is None:
-            for retry in range(3):
-                try:
-                    esinfo = self.info()['version']
-                    if esinfo.get('distribution') == "opensearch":
-                        # OpenSearch is based on Elasticsearch 7.10.2, currently only v1.0.0 exists
-                        # https://opensearch.org/
-                        self._es_version = "7.10.2"
-                    else:
-                        self._es_version = esinfo['number']
-                    break
-                except TransportError:
-                    if retry == 2:
-                        raise
-                    time.sleep(3)
+            self._es_version = util.get_version_from_cluster_info(self)
+
         return self._es_version
 
     def is_atleastseven(self):
