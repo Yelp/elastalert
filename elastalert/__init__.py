@@ -8,6 +8,8 @@ from elasticsearch.client import _make_path
 from elasticsearch.client import query_params
 from elasticsearch.exceptions import TransportError
 
+from elastalert.util import get_version_from_cluster_info
+
 
 class ElasticSearchClient(Elasticsearch):
     """ Extension of low level :class:`Elasticsearch` client with additional version resolving features """
