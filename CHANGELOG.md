@@ -12,6 +12,7 @@
 - Add the possibility to use rule and match fields in the description of TheHive alerts - [#855](https://github.com/jertel/elastalert2/pull/855) - @luffynextgen
 - Fix missing colon on schema.yml and add unit test on it - [#866](https://github.com/jertel/elastalert2/pull/866) - @Isekai-Seikatsu
 - Add the possibility to use tags, message and tlp level in TheHive observables [#873](https://github.com/jertel/elastalert2/pull/873) - @luffynextgen
+- Support OpenSearch 2.x - [#880](https://github.com/jertel/elastalert2/pull/880) - @jertel
 
 # 2.5.0
 

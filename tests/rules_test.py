@@ -556,14 +556,12 @@ def test_change():
     assert rule.matches == []
 
 
-@pytest.mark.parametrize('version, expected_is_five_or_above', [
-    ({'version': {'number': '2.x.x'}}, False),
-    ({'version': {'number': '5.x.x'}}, True),
-    ({'version': {'number': '6.x.x'}}, True),
+@pytest.mark.parametrize('version', [
     ({'version': {'number': '7.x.x'}}, True),
-    ({'version': {'number': '7.10.2', 'distribution': 'opensearch'}}, True),
+    ({'version': {'number': '1.2.0', 'distribution': 'opensearch'}}, True),
+    ({'version': {'number': '2.0.0', 'distribution': 'opensearch'}}, True),
 ])
-def test_new_term(version, expected_is_five_or_above):
+def test_new_term(version):
     rules = {'fields': ['a', 'b'],
              'timestamp_field': '@timestamp',
              'es_host': 'example.com', 'es_port': 10, 'index': 'logstash',
@@ -584,8 +582,6 @@ def test_new_term(version, expected_is_five_or_above):
 
         mock_es.return_value.search.side_effect = record_args
         rule = NewTermsRule(rules)
-
-    assert rule.is_five_or_above() == expected_is_five_or_above
 
     # 30 day default range, 1 day default step, times 2 fields
     assert rule.es.search.call_count == 60
@@ -633,7 +629,6 @@ def test_new_term(version, expected_is_five_or_above):
     rule.add_data([{'@timestamp': ts_now(), 'a': 'key2'}])
     assert len(rule.matches) == 1
     assert rule.matches[0]['missing_field'] == 'b'
-    assert rule.is_five_or_above() == expected_is_five_or_above
 
 
 def test_new_term_nested_field():

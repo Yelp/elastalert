@@ -714,7 +714,7 @@ class NewTermsRule(RuleType):
                 # Iterate on each part of the composite key and add a sub aggs clause to the elastic search query
                 for i, sub_field in enumerate(field):
                     if self.rules.get('use_keyword_postfix', True):
-                        level['values']['terms']['field'] = add_raw_postfix(sub_field, self.is_five_or_above())
+                        level['values']['terms']['field'] = add_raw_postfix(sub_field, True)
                     else:
                         level['values']['terms']['field'] = sub_field
                     if i < len(field) - 1:
@@ -725,7 +725,7 @@ class NewTermsRule(RuleType):
                 self.seen_values.setdefault(field, [])
                 # For non-composite keys, only a single agg is needed
                 if self.rules.get('use_keyword_postfix', True):
-                    field_name['field'] = add_raw_postfix(field, self.is_five_or_above())
+                    field_name['field'] = add_raw_postfix(field, True)
                 else:
                     field_name['field'] = field
 
@@ -916,15 +916,6 @@ class NewTermsRule(RuleType):
                                  'new_field': field}
                         self.add_match(match)
                         self.seen_values[field].append(bucket['key'])
-
-    def is_five_or_above(self):
-        esinfo = self.es.info()['version']
-        if esinfo.get('distribution') == "opensearch":
-            # OpenSearch is based on Elasticsearch 7.10.2, currently only v1.0.0 exists
-            # https://opensearch.org/
-            return True
-        else:
-            return int(esinfo['number'][0]) >= 5
 
 
 class CardinalityRule(RuleType):
