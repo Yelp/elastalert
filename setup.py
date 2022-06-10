@@ -8,7 +8,7 @@ from setuptools import setup
 base_dir = os.path.dirname(__file__)
 setup(
     name='elastalert2',
-    version='2.5.0',
+    version='2.5.1',
     description='Automated rule-based alerting for Elasticsearch',
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
