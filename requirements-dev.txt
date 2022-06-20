@@ -3,11 +3,11 @@ flake8
 flake8-absolute-import
 m2r2
 pre-commit
-pylint==2.13.8
+pylint==2.14.3
 pytest==7.1.2
 pytest-cov==3.0.0
 pytest-xdist==2.5.0
 setuptools
-sphinx==4.5.0
+sphinx==5.0.2
 sphinx_rtd_theme
 tox==3.25.0

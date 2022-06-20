@@ -7,6 +7,7 @@
 - None
 
 ## Other changes
+- Upgrade pylint 2.13.8 to 2.14.3, Upgrade sphinx 4.5.0 to 5.0.2 - [#891](https://github.com/jertel/elastalert2/pull/891) - @nsano-rururu
 
 # 2.5.1
 
