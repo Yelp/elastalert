@@ -1,7 +1,7 @@
 # 2.TBD.TBD
 
 ## Breaking changes
-- When using HTTP POST 2, it is no longer necessary to pre-escaped strings from events in elastic search which are replaced by the jinja2 template.
+- When using HTTP POST 2, it is no longer necessary to pre-escape strings (should they contain control chars) from events in elastic search which are replaced by the jinja2 template.
 
 ## New features
 - None
