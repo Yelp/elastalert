@@ -43,10 +43,10 @@ class HTTPPost2Alerter(Alerter):
     def alert(self, matches):
         """ Each match will trigger a POST to the specified endpoint(s). """
         for match in matches:
-            match = _escape_all_values(match)
+            match_js_esc = _escape_all_values(match)
             payload = match if self.post_all_values else {}
             payload_template = Template(json.dumps(self.post_payload))
-            payload_res = json.loads(payload_template.render(**match))
+            payload_res = json.loads(payload_template.render(**match_js_esc))
             payload = {**payload, **payload_res}
 
             for post_key, es_key in list(self.post_raw_fields.items()):
@@ -60,7 +60,7 @@ class HTTPPost2Alerter(Alerter):
                 requests.packages.urllib3.disable_warnings()
 
             header_template = Template(json.dumps(self.post_http_headers))
-            header_res = json.loads(header_template.render(**match))
+            header_res = json.loads(header_template.render(**match_js_esc))
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json;charset=utf-8",
