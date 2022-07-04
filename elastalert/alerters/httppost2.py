@@ -7,6 +7,19 @@ from requests import RequestException
 from elastalert.alerts import Alerter, DateTimeEncoder
 from elastalert.util import lookup_es_key, EAException, elastalert_logger
 
+def _json_escape(s):
+    return json.encoder.encode_basestring(s)[1:-1]
+
+def _escape_all_values(x):
+    """recursively rebuilds, and escapes all strings for json, the given dict/list"""
+    if isinstance(x, dict):
+        x = { k:_escape_all_values(v) for k, v in x.items() }
+    elif isinstance(x, list):
+        x = [ _escape_all_values(v) for v in x ]
+    elif isinstance(x, str):
+        x = _json_escape(x)
+    return x
+
 
 class HTTPPost2Alerter(Alerter):
     """ Requested elasticsearch indices are sent by HTTP POST. Encoded with JSON. """
@@ -30,9 +43,10 @@ class HTTPPost2Alerter(Alerter):
     def alert(self, matches):
         """ Each match will trigger a POST to the specified endpoint(s). """
         for match in matches:
+            match_js_esc = _escape_all_values(match)
             payload = match if self.post_all_values else {}
             payload_template = Template(json.dumps(self.post_payload))
-            payload_res = json.loads(payload_template.render(**match))
+            payload_res = json.loads(payload_template.render(**match_js_esc))
             payload = {**payload, **payload_res}
 
             for post_key, es_key in list(self.post_raw_fields.items()):
@@ -46,7 +60,7 @@ class HTTPPost2Alerter(Alerter):
                 requests.packages.urllib3.disable_warnings()
 
             header_template = Template(json.dumps(self.post_http_headers))
-            header_res = json.loads(header_template.render(**match))
+            header_res = json.loads(header_template.render(**match_js_esc))
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json;charset=utf-8",

@@ -1,7 +1,7 @@
 # 2.TBD.TBD
 
 ## Breaking changes
-- None
+- When using HTTP POST 2, it is no longer necessary to pre-escape strings (should they contain control chars) from events in elastic search which are replaced by the jinja2 template.
 
 ## New features
 - None
@@ -9,6 +9,7 @@
 ## Other changes
 - Upgrade pylint 2.13.8 to 2.14.3, Upgrade sphinx 4.5.0 to 5.0.2 - [#891](https://github.com/jertel/elastalert2/pull/891) - @nsano-rururu
 - Add support for Kibana 8.3 for Kibana Discover - [#897](https://github.com/jertel/elastalert2/pull/897) - @nsano-rururu
+- Fix internal json decode error in HTTP POST 2 if values from ES event contain control chars (e.g. newline) and are used in the jinja2 template - [#898](https://github.com/jertel/elastalert2/pull/898) - @ddurham2
 
 # 2.5.1
 
