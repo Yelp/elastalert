@@ -162,12 +162,12 @@ def test_http_alerter_with_payload_args_keys(caplog):
     alert = HTTPPost2Alerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
-        'some_field': 'toto'
+        'some_field': 'to\tto'  # include some specially handled control char
     }
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
     expected_data = {
-        'args_toto': 'tata',
+        'args_to\tto': 'tata',
     }
     mock_post_request.assert_called_once_with(
         rule['http_post2_url'],
@@ -294,13 +294,13 @@ def test_http_alerter_with_payload_args_value(caplog):
     alert = HTTPPost2Alerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
-        'some_field': 'foobarbaz'
+        'some_field': 'foo\tbar\nbaz'  # include some specially handled control chars
     }
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
     expected_data = {
         'posted_name': 'toto',
-        'args_name': 'foobarbaz',
+        'args_name': 'foo\tbar\nbaz',
     }
     mock_post_request.assert_called_once_with(
         rule['http_post2_url'],
@@ -398,14 +398,14 @@ def test_http_alerter_with_header_args_value(caplog):
     alert = HTTPPost2Alerter(rule)
     match = {
         '@timestamp': '2017-01-01T00:00:00',
-        'titi': 'foobarbaz'
+        'titi': 'foo\tbarbaz'  # include some specially handled control chars
     }
     with mock.patch('requests.post') as mock_post_request:
         alert.alert([match])
     expected_headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json;charset=utf-8',
-        'header_name': 'foobarbaz'
+        'header_name': 'foo\tbarbaz'
     }
     mock_post_request.assert_called_once_with(
         rule['http_post2_url'],
