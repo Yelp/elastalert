@@ -3,6 +3,9 @@ kind: Deployment
 metadata:
   name: {{ template "elastalert.fullname" . }}
   labels:
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }} 
     app: {{ template "elastalert.name" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: {{ .Release.Name }}
@@ -10,8 +13,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: {{ template "elastalert.name" . }}
-      release: {{ .Release.Name }}
+      {{- include "common.labels.matchLabels" . | nindent 6 }}
   replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   template:
@@ -19,17 +21,18 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
         checksum/rules: {{ include (print $.Template.BasePath "/rules.yaml") . | sha256sum }}
-{{- if .Values.prometheusPort }}
-{{ toYaml .Values.prometheusScrapeAnnotations | indent 8 }}
-        prometheus.io/port: {{ .Values.prometheusPort | quote}}
+{{- if .Values.metrics.enabled  }}
+{{ toYaml .Values.metrics.prometheusScrapeAnnotations | indent 8 }}
+        prometheus.io/port: {{ .Values.metrics.prometheusPort | quote}}
 {{- end }}
 {{- if .Values.podAnnotations }}
 {{ toYaml .Values.podAnnotations | indent 8 }}
 {{- end }}
-      labels:
-        name: {{ template "elastalert.fullname" . }}-elastalert
-        app: {{ template "elastalert.name" . }}
-        release: {{ .Release.Name }}
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+        app.kubernetes.io/component: {{ .Values.appKubernetesIoComponent }}
+        {{- if .Values.commonLabels }}
+        {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+        {{- end }}
     spec:
 {{- if .Values.image.pullSecret }}
       imagePullSecrets:
@@ -44,10 +47,11 @@ spec:
       - name: elastalert
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-{{- if .Values.prometheusPort }}
+{{- if .Values.metrics.enabled }}
         ports:
-        - containerPort: {{ .Values.prometheusPort }}
+        - containerPort: {{ .Values.metrics.prometheusPort }}
           protocol: TCP
+          name: {{ .Values.metrics.prometheusPortName }}
 {{- end }}
 {{- if .Values.securityContext }}
         securityContext:
@@ -58,13 +62,13 @@ spec:
 {{ toYaml .Values.command | indent 10 }}
 {{- end }}
 
-{{- if or .Values.args .Values.prometheusPort }}
+{{- if or .Values.args .Values.metrics.enabled }}
         args:
   {{- if .Values.args }}
 {{ toYaml .Values.args | indent 10 }}
   {{- end }}
-  {{- if .Values.prometheusPort }}
-  {{- $enableportlist := list "--prometheus_port" (.Values.prometheusPort | toString) }}
+  {{- if .Values.metrics.enabled }}
+  {{- $enableportlist := list "--prometheus_port" (.Values.metrics.prometheusPort | toString) }}
 {{ toYaml $enableportlist | indent 10 }}
   {{- end }}
 {{- end }}
