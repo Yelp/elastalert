@@ -3,6 +3,8 @@
 
 An ElastAlert 2 helm chart is available, and can be installed into an existing Kubernetes cluster by following the instructions below.
 
+Inspiration for optional serviceMonitor and prometheusRules objects, along with source code for calculating and implementing labels on the chart, ported from  https://github.com/bitnami/charts/tree/master/bitnami/thanos/templates
+
 ## Installing the Chart
 
 Add the elastalert2 repository to your Helm configuration:
@@ -83,7 +85,7 @@ The command removes all the Kubernetes components associated with the chart and 
 | `serviceAccount.annotations`                 | ServiceAccount annotations                                                                                                    |                                                          |
 | `podSecurityPolicy.create`                   | [DEPRECATED] Create pod security policy resources                                                                             | `false`                                                  |
 | `resources`                                  | Container resource requests and limits                                                                                        | {}                                                       |
-| `rulesVolumeName`                            | Specifies the rules volume to be mounted. Can be changed for mounting a custom rules folder via the extraVolumes parameter, instead of using the default rules configMap or secret rule mounting method.                                                                                 | "rules"                                                  |
+| `rulesVolumeName`                            | Specifies the rules volume to be mounted. Can be changed for mounting a custom rules folder via the extraVolumes parameter, instead of using the default rules configMap or secret rule mounting metrics.                                                                                 | "rules"                                                  |
 | `rules`                                      | Rule and alert configuration for ElastAlert 2                                                                                 | {} example shown in values.yaml                          |
 | `runIntervalMins`                            | Default interval between alert checks, in minutes                                                                             | 1                                                        |
 | `realertIntervalMins`                        | Time between alarms for same rule, in minutes                                                                                 | `NULL`                                                   |
@@ -96,13 +98,13 @@ The command removes all the Kubernetes components associated with the chart and 
 | `tolerations`                                | Tolerations for deployment                                                                                                    | []                                                       |
 | `smtp_auth.username`                         | Optional SMTP mail server username. If the value is not empty, the smtp_auth secret will be created automatically.       | `NULL`                                                   |
 | `smtp_auth.password`                         | Optional SMTP mail server passwpord. This must be specified if the above field, `smtp_auth.username` is also specified.      | `NULL`                                                   |
-| `metrics`                         | enable elastalert prometheus endpoint, add prometheus.io annotations to pod and create a service pointing to the port for prometheus to scrape the metrics      | `false`                                                   |
-| `metrics.prometheusPort`                         | if "metrics" is set to true,  prometheus metrics will be exposed by the pod on this port.       | `8080`                                                   |
-| `metrics.prometheusPortName`                         | name of the port where metrics are exposed    | `http-alt`                                                   |
-| `metrics.prometheusScrapeAnnotations`                         | if metrics are enabled, annotations to add to the pod for prometheus configuration. prometheus.io/port is also added uring the prometheusPort and prometheusPortName values |  `{prometheus.io/scrape: "true" prometheus.io/path: "/"}`                                   |
-| `metrics.serviceMonitor.enabled`                         | If metrics are enabled, create a servicemonitor custom resource for prometheus-operator to detect and configure the merics endpoint on prometheus.  |  `false` |
-| `metrics.serviceMonitor.labels`                         | labels to add to the serviceMonitor object for prometheus-operator to detect, when deployed on a namespace different from the one where prometheus-operator is running. |  `{}` |
-| `metrics.serviceMonitor.metricRelabelings`                         | list of prometheus metric relabeling configs to aply to scrape. Example: drop python_gc metrics or alter pod name |  `[]` |
+| `metrics`                         | Enable elastalert prometheus endpoint, add prometheus.io annotations to pod and create a service pointing to the port for prometheus to scrape the metrics      | `false`                                                   |
+| `metrics.prometheusPort`                         | If "metrics" is set to true, prometheus metrics will be exposed by the pod on this port.       | `8080`                                                   |
+| `metrics.prometheusPortName`                         | Name of the port where metrics are exposed    | `http-alt`                                                   |
+| `metrics.prometheusScrapeAnnotations`                         | If metrics are enabled, annotations to add to the pod for prometheus configuration. prometheus.io/port is also added during the prometheusPort and prometheusPortName values |  `{prometheus.io/scrape: "true" prometheus.io/path: "/"}`                                   |
+| `metrics.serviceMonitor.enabled`                         | If metrics are enabled, create a serviceMonitor custom resource for prometheus-operator to detect and configure the metrics endpoint on prometheus.  |  `false` |
+| `metrics.serviceMonitor.labels`                         | Labels to add to the prometheusRule object for prometheus-operator to detect it, when deployed on a namespace different from the one where prometheus-operator is running. |  `{}` |
+| `metrics.serviceMonitor.metricRelabelings`                         | List of prometheus metric relabeling configs to apply to scrape. Example: drop python_gc metrics or alter pod name |  `[]` |
 | `metrics.prometheusRule.enabled`                         | If metrics are enabled, create a prometheusRule custom resource for prometheus-operator |  `false` |
-| `metrics.prometheusRule.additionalLabels`                         | labels to add to the prometheusRule object for prometheus-operator to detect it, when deployed  when deployed on a namespace different from the one where prometheus-operator is running. |  `{}` |
-| `metrics.prometheusRule.rules`                         | group of alerting and/or recording rules to add to the prometheus configuration, example Alerting rules for pod down, or for file descriptors. Should be added as multiline Yaml string |  `` |
+| `metrics.prometheusRule.additionalLabels`                         | Labels to add to the prometheusRule object for prometheus-operator to detect it, when deployed  when deployed on a namespace different from the one where prometheus-operator is running. |  `{}` |
+| `metrics.prometheusRule.rules`                         | Group of alerting and/or recording rules to add to the prometheus configuration, example Alerting rules for pod down, or for file descriptors. Should be added as multiline Yaml string |  `` |
