@@ -1,3 +1,11 @@
+## Chart information
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+commonLabels: {}
+commonAnnotations: {}
+appKubernetesIoComponent: elastalert2
+
 # number of replicas to run
 replicaCount: 1
 
@@ -251,7 +259,138 @@ extraVolumeMounts: []
   #   subPath: smtp_auth.yaml
   #   readOnly: true
 
-# Prometheus Exporter defined by port:
-prometheusScrapeAnnotations:
-  prometheus.io/scrape: "true"
-  prometheus.io/path: "/"
+
+## @section Metrics parameters
+
+## Prometheus metrics
+##
+metrics:
+  ## @param metrics.enabled Enable the export of Prometheus metrics
+  ##
+  enabled: false
+  prometheusPort: 8080
+  prometheusPortName: http-alt
+  # Prometheus Exporter defined by port:
+  prometheusScrapeAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/"
+
+  service:
+    type: ClusterIP
+    # clusterIP: ""
+    # externalTrafficPolicy: Cluster
+    # loadBalancerIP: ""
+    # loadBalancerSourceRanges: {}
+    # nodePorts: ""
+
+  ## Prometheus Operator ServiceMonitor configuration
+  ##
+  serviceMonitor:
+    ## @param metrics.serviceMonitor.enabled Specify if a ServiceMonitor will be deployed for Prometheus Operator
+    ##
+    enabled: false
+
+    ## @param metrics.serviceMonitor.namespace Namespace in which Prometheus is running
+    ##
+    namespace: ""
+
+    ## @param metrics.serviceMonitor.labels Extra labels for the ServiceMonitor
+    ## Normally used for prometheus operator to detect the servicemonitor if deployed to different namespace
+    ## labels:
+    ##   release: prometheus-operator
+    labels: {}
+
+    ## @param metrics.serviceMonitor.jobLabel The name of the label on the target service to use as the job name in Prometheus
+    ##
+    jobLabel: ""
+
+    ## @param metrics.serviceMonitor.interval How frequently to scrape metrics
+    ## e.g:
+    ## interval: 10s
+    ##
+    interval: ""
+    ## @param metrics.serviceMonitor.scrapeTimeout Timeout after which the scrape is ended
+    ## e.g:
+    ## scrapeTimeout: 10s
+    ##
+    scrapeTimeout: ""
+    ## @param metrics.serviceMonitor.metricRelabelings [array] Specify additional relabeling of metrics
+    ## metricRelabelings:
+    ##   # Drop GO metrics
+    ##   - sourceLabels: [__name__]
+    ##     regex: go_.*
+    ##     action: drop
+    ##   # Drop python_gc metrics
+    ##   - sourceLabels: [__name__]
+    ##     regex: python_gc.*
+    ##     action: drop
+    ##   # Normalise POD names
+    ##   - sourceLabels: [pod]
+    ##     regex: (.+elastalert2)\-([\w\d]+)\-([\w\d]+)
+    ##     replacement: $1
+    ##     targetLabel: pod
+    metricRelabelings: []
+
+    ## @param metrics.serviceMonitor.relabelings [array] Specify general relabeling
+    ##
+    relabelings: []
+    ## @param metrics.serviceMonitor.selector Prometheus instance selector labels
+    ## ref: https://github.com/bitnami/charts/tree/master/bitnami/prometheus-operator#prometheus-configuration
+    ##
+    selector: {}
+
+  ## PrometheusRule CRD configuration
+  ##
+  prometheusRule:
+    ## @param metrics.prometheusRule.enabled If `true`, creates a Prometheus Operator PrometheusRule (also requires `metrics.enabled` to be `true`)
+    ##
+    enabled: false
+    ## @param metrics.prometheusRule.namespace Namespace in which the PrometheusRule CRD is created
+    ##
+    namespace: ""
+
+    ## @param metrics.prometheusRule.additionalLabels Additional labels for the prometheusRule
+    ## to be detected by prometheus-operator
+    ## additionalLabels:
+    ##   release: prometheus-operator
+    additionalLabels: {}
+
+    ## @param metrics.prometheusRule.rules Prometheus Rules for Thanos components
+    ## These are just examples rules, please adapt them to your needs.
+    ##    rules: |-
+    ##        groups:
+    ##          - name: elastalert
+    ##            rules:
+    ##              - alert: elastalert Pod down
+    ##                annotations:
+    ##                  description: Prometheus is unable to scrape metrics service. Check pod logs for details
+    ##                  summary: elastalert POD is down
+    ##                expr: up{service="{{ template "common.names.servicename" . }}",container="elastalert"} == 0
+    ##                for: 5m
+    ##                labels:
+    ##                  severity: critical
+    ##                  production: 'True'
+    ##              - alert: elastalert file descriptors use
+    ##                annotations:
+    ##                  description: Elastalert pod nearly exhausting file descriptors
+    ##                  summary: too many file descriptors used
+    ##                expr: |-
+    ##                    process_open_fds{service="{{ template "common.names.servicename" . }}",container="elastalert"}
+    ##                    /
+    ##                    process_max_fds{service="{{ template "common.names.servicename" . }}",container="elastalert"}
+    ##                    > 0.9
+    ##                for: 3m
+    ##                labels:
+    ##                  severity: critical
+    ##                  production: 'True'
+    ##              - alert: elastalert scrapes failing
+    ##                annotations:
+    ##                  description: Elastalert is not scraping for a rule {{ "{{" }} $labels.rule_name  {{ "}}" }}
+    ##                  summary: scrapes for rule stalled {{ "{{" }} $labels.rule_name {{ "}}" }}
+    ##                expr: |-
+    ##                    rate(elastalert_scrapes_total{service="{{ template "common.names.servicename" . }}",container="elastalert"}[1m]) == 0
+    ##                for: 5m
+    ##                labels:
+    ##                  severity: critical
+    ##                  production: 'True'
+    rules: []
