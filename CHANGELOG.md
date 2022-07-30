@@ -1,6 +1,17 @@
 # 2.TBD.TBD
 
 ## Breaking changes
+- None
+
+## New features
+- None
+
+## Other changes
+- None
+
+# 2.6.0
+
+## Breaking changes
 - When using HTTP POST 2, it is no longer necessary to pre-escape strings (should they contain control chars) from events in elastic search which are replaced by the jinja2 template.
 
 - [Kubernetes] [Breaking] Reconfigure metrics to follow prometheus operator nomenclature. `metrics` value, now control the addition of metrics endpoint (command argument), the creation of a service to expose the metrics endpoint and the (optional) creation of prometheus-operator objects: serviceMonitor and prometheurRules to match implementations of other charts. The labels of the chart have been modified, so you'll need to uninstall and reinstall the chart for the upgrade to work. - [#902](https://github.com/jertel/elastalert2/pull/902) - @PedroMSantosD
