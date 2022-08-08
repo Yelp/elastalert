@@ -4,7 +4,7 @@
 - None
 
 ## New features
-- None
+- [Telegram] Added new telegram_parse_mode setting to switch between markdown and html body formats. - [#924](https://github.com/jertel/elastalert2/pull/924) - @polshe-v
 
 ## Other changes
 - None

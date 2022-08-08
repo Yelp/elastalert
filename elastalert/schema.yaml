@@ -665,6 +665,7 @@ properties:
   telegram_proxy: {type: string}
   telegram_proxy_login: {type: string}
   telegram_proxy_pass: {type: string}
+  telegram_parse_mode: {type: string, enum: ['markdown', 'markdownV2', 'html']}
 
   ### Tencent SMS
   tencent_sms_secret_id: {type: string}

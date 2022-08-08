@@ -82,8 +82,8 @@ def test_import_rules():
 def test_import_import():
     rules_loader = FileRulesLoader(test_config)
     import_rule = copy.deepcopy(test_rule)
-    del(import_rule['es_host'])
-    del(import_rule['es_port'])
+    del import_rule['es_host']
+    del import_rule['es_port']
     import_rule['import'] = 'importme.ymlt'
     import_me = {
         'es_host': 'imported_host',
@@ -109,8 +109,8 @@ def test_import_import():
 def test_import_absolute_import():
     rules_loader = FileRulesLoader(test_config)
     import_rule = copy.deepcopy(test_rule)
-    del(import_rule['es_host'])
-    del(import_rule['es_port'])
+    del import_rule['es_host']
+    del import_rule['es_port']
     import_rule['import'] = '/importme.ymlt'
     import_me = {
         'es_host': 'imported_host',
@@ -135,8 +135,8 @@ def test_import_filter():
 
     rules_loader = FileRulesLoader(test_config)
     import_rule = copy.deepcopy(test_rule)
-    del(import_rule['es_host'])
-    del(import_rule['es_port'])
+    del import_rule['es_host']
+    del import_rule['es_port']
     import_rule['import'] = 'importme.ymlt'
     import_me = {
         'es_host': 'imported_host',
