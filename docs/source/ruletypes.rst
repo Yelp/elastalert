@@ -3123,6 +3123,8 @@ Optional:
 
 ``telegram_proxy_pass``: The Telegram proxy auth password.
 
+``telegram_parse_mode``: The Telegram parsing mode for style formatting text. Possible values are ``markdown``, ``markdownV2``, ``html``.
+
 Example usage::
 
     alert:
