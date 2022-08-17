@@ -2186,7 +2186,7 @@ class HiveAlerter(Alerter):
 
 
 class DingTalkAlerter(Alerter):
-    required_options = frozenset(['dingtalk_webhook', 'dingtalk_msgtype', "dingtalk_isAtAll", "dingtalk_token", "dingtalk_title"])
+    required_options = frozenset(['dingtalk_webhook', 'dingtalk_message', "dingtalk_isAtAll", "dingtalk_token", "dingtalk_title"])
 
     def __init__(self, rule):
         super(DingTalkAlerter, self).__init__(rule)

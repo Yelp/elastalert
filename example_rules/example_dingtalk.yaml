@@ -69,4 +69,4 @@ dingtalk_isAtAll: True
 # dingtalk robot token such as: SEC8423d34b07446fbcc4cf3abe6b71f3d36b5152cdf54cf5dd29482180ce2b2513
 dingtalk_token: ""
 # dingtalk title such as: <project-name>
-dingtalk_title: "<project-name>"
+dingtalk_title: "castle-pre-usw"
