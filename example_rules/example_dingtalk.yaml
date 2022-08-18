@@ -1,0 +1,72 @@
+# This is the folder that contains the rule yaml files
+# Any .yaml file will be loaded as a rule
+rules_folder: rules
+
+# How often ElastAlert will query Elasticsearch
+# The unit can be anything from weeks to seconds
+run_every:
+  minutes: 1
+
+# ElastAlert will buffer results from the most recent
+# period of time, in case some log sources are not in real time
+buffer_time:
+  minutes: 15
+
+# The Elasticsearch hostname for metadata writeback
+# Note that every rule can have its own Elasticsearch host
+es_host: localhost
+
+# The Elasticsearch port
+es_port: 9200
+
+# The AWS region to use. Set this when using AWS-managed elasticsearch
+#aws_region: us-east-1
+
+# The AWS profile to use. Use this if you are using an aws-cli profile.
+# See http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
+# for details
+#profile: test
+
+# Optional URL prefix for Elasticsearch
+#es_url_prefix: elasticsearch
+
+# Connect with TLS to Elasticsearch
+#use_ssl: True
+
+# Verify TLS certificates
+#verify_certs: True
+
+# GET request with body is the default option for Elasticsearch.
+# If it fails for some reason, you can pass 'GET', 'POST' or 'source'.
+# See http://elasticsearch-py.readthedocs.io/en/master/connection.html?highlight=send_get_body_as#transport
+# for details
+#es_send_get_body_as: GET
+
+# Option basic-auth username and password for Elasticsearch
+#es_username: elasticusername
+#es_password: elasticpassword
+
+# The index on es_host which is used for metadata storage
+# This can be a unmapped index, but it is recommended that you run
+# elastalert-create-index to set a mapping
+writeback_index: elastalert_status
+
+# If an alert fails for some reason, ElastAlert will retry
+# sending the alert until this time period has elapsed
+alert_time_limit:
+  days: 2
+
+
+# Use the token method when creating the pinning robot
+alert:
+- dingtalk
+
+dingtalk_webhook: your-dingtalk-robot-webhook-url
+# dingtalk msgType such as text
+dingtalk_msgtype: text
+# dingtalk at allUser
+dingtalk_isAtAll: True
+# dingtalk robot token such as: SEC8423d34b07446fbcc4cf3abe6b71f3d36b5152cdf54cf5dd29482180ce2b2513
+dingtalk_token: ""
+# dingtalk title such as: <project-name>
+dingtalk_title: "<project-name>"
