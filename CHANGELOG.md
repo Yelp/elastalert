@@ -6,6 +6,10 @@
 ## New features
 - [Telegram] Added new telegram_parse_mode setting to switch between markdown and html body formats. - [#924](https://github.com/jertel/elastalert2/pull/924) - @polshe-v
 
+## Security
+
+- Pin package version of `exotel` to `0.1.5` - [#931](https://github.com/jertel/elastalert2/pull/931)
+
 ## Other changes
 - None
 
