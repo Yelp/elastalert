@@ -39,7 +39,7 @@ setup(
         'croniter>=1.2.0',
         'elasticsearch==7.10.1',
         'envparse>=0.2.0',
-        'exotel>=0.1.5',
+        'exotel==0.1.5',
         'jira>=3.1.1',
         'Jinja2==3.1.2',
         'jsonschema>=4.4.0',
