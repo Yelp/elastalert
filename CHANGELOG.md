@@ -11,7 +11,7 @@
 - Pin package version of `exotel` to `0.1.5` - [#931](https://github.com/jertel/elastalert2/pull/931)
 
 ## Other changes
-- None
+- Add support for Kibana 8.4 for Kibana Discover - [#935](https://github.com/jertel/elastalert2/pull/935) - @nsano-rururu
 
 # 2.6.0
 
