@@ -4,7 +4,7 @@ flake8-absolute-import
 m2r2
 pre-commit
 pylint==2.15.2
-pytest==7.1.2
+pytest==7.1.3
 pytest-cov==3.0.0
 pytest-xdist==2.5.0
 setuptools
