@@ -13,6 +13,7 @@
 ## Other changes
 - Add support for Kibana 8.4 for Kibana Discover - [#935](https://github.com/jertel/elastalert2/pull/935) - @nsano-rururu
 - Upgrade pylint 2.14.5 to 2.15.2 and tox 3.25.1 to 3.26.0 and sphinx 5.0.2 to 5.1.1 - [#937](https://github.com/jertel/elastalert2/pull/937) - @nsano-rururu
+- Upgrade pytest 7.1.2 to 7.1.3 - [#941](https://github.com/jertel/elastalert2/pull/941) - @nsano-rururu
 
 # 2.6.0
 
