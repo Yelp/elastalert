@@ -399,7 +399,7 @@ https://github.com/Yelp/elastalert/issues/2704
 ElastAlert 2 doesn't have a listening port?
 ==========
 
-ElastAlert 2 does not have a network API. There is no listening port. You can monitor its activity by viewing the console output or Docker logs.
+ElastAlert 2 does not have a network API. There is no listening port, unless activating optional modules like Prometheus. You can monitor its activity by viewing the console output or Docker logs.
 
 I've set `ssl_show_warn` but it doesn't seem to work.
 ==========
