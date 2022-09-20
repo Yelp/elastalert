@@ -4,13 +4,21 @@
 - None
 
 ## New features
-- [Telegram] Added new telegram_parse_mode setting to switch between markdown and html body formats. - [#924](https://github.com/jertel/elastalert2/pull/924) - @polshe-v
-
-## Security
-
-- Pin package version of `exotel` to `0.1.5` - [#931](https://github.com/jertel/elastalert2/pull/931)
+- None
 
 ## Other changes
+- None
+
+# 2.7.0
+
+## Breaking changes
+- None
+
+## New features
+- [Telegram] Added new telegram_parse_mode setting to switch between markdown and html body formats. - [#924](https://github.com/jertel/elastalert2/pull/924) - @polshe-v
+
+## Other changes
+- Pin package version of `exotel` to `0.1.5` - [#931](https://github.com/jertel/elastalert2/pull/931)
 - Add support for Kibana 8.4 for Kibana Discover - [#935](https://github.com/jertel/elastalert2/pull/935) - @nsano-rururu
 - Upgrade pylint 2.14.5 to 2.15.2 and tox 3.25.1 to 3.26.0 and sphinx 5.0.2 to 5.1.1 - [#937](https://github.com/jertel/elastalert2/pull/937) - @nsano-rururu
 - Upgrade pytest 7.1.2 to 7.1.3 - [#941](https://github.com/jertel/elastalert2/pull/941) - @nsano-rururu
