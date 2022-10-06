@@ -89,6 +89,9 @@ elasticsearch:
 # Optional env variables for the pod
 optEnv: []
 
+## Enable an Specify container in extraContainers. This can be used to define a sidecar for updating rules
+extraContainers: []
+
 extraConfigOptions: {}
   # # Options to propagate to all rules, e.g. a common slack_webhook_url or kibana_url
   # # Please note at the time of implementing this value, it will not work for required_locals
