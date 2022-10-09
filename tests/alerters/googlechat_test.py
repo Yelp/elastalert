@@ -36,6 +36,7 @@ def test_google_chat_basic(caplog):
     mock_post_request.assert_called_once_with(
         rule['googlechat_webhook_url'],
         data=mock.ANY,
+        proxies=None,
         headers={'content-type': 'application/json'}
     )
 
@@ -102,6 +103,7 @@ def test_google_chat_card():
     mock_post_request.assert_called_once_with(
         rule['googlechat_webhook_url'],
         data=mock.ANY,
+        proxies=None,
         headers={'content-type': 'application/json'}
     )
 
@@ -230,6 +232,7 @@ def test_ggooglechat_header_title_none():
     mock_post_request.assert_called_once_with(
         rule['googlechat_webhook_url'],
         data=mock.ANY,
+        proxies=None,
         headers={'content-type': 'application/json'}
     )
 
@@ -280,6 +283,7 @@ def test_googlechat_footer_kibanalink_none():
     mock_post_request.assert_called_once_with(
         rule['googlechat_webhook_url'],
         data=mock.ANY,
+        proxies=None,
         headers={'content-type': 'application/json'}
     )
 
@@ -292,6 +296,7 @@ def test_googlechat_proxy():
         'name': 'Test GoogleChat Rule',
         'type': 'any',
         'googlechat_webhook_url': 'http://xxxxxxx',
+        'googlechat_proxy': 'http://proxy.url',
         'alert': []
     }
     rules_loader = FileRulesLoader({})
@@ -312,7 +317,7 @@ def test_googlechat_proxy():
         rule['googlechat_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies={'https': rule['google_proxy']},
+        proxies={'https': 'http://proxy.url'},
     )
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])

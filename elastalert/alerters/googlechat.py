@@ -83,7 +83,7 @@ class GoogleChatAlerter(Alerter):
             message = self.create_basic(matches)
 
         # proxy
-        proxies = {'https': self.googlechat_proxy} if self.mattgooglechat_proxyermost_proxy else None
+        proxies = {'https': self.googlechat_proxy} if self.googlechat_proxy else None
 
         # Post to webhook
         headers = {'content-type': 'application/json'}
