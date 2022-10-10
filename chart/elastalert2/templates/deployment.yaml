@@ -109,7 +109,8 @@ spec:
 {{- end }}
 
 {{- if .Values.extraContainers }}
-{{ .Values.extraContainers | toYaml | indent 8}}
+      containers:
+{{ toYaml .Values.extraContainers | indent 8 }}
 {{- end }}
 
       restartPolicy: Always
