@@ -36,6 +36,7 @@ def test_google_chat_basic(caplog):
     mock_post_request.assert_called_once_with(
         rule['googlechat_webhook_url'],
         data=mock.ANY,
+        proxies=None,
         headers={'content-type': 'application/json'}
     )
 
@@ -102,6 +103,7 @@ def test_google_chat_card():
     mock_post_request.assert_called_once_with(
         rule['googlechat_webhook_url'],
         data=mock.ANY,
+        proxies=None,
         headers={'content-type': 'application/json'}
     )
 
@@ -230,6 +232,7 @@ def test_ggooglechat_header_title_none():
     mock_post_request.assert_called_once_with(
         rule['googlechat_webhook_url'],
         data=mock.ANY,
+        proxies=None,
         headers={'content-type': 'application/json'}
     )
 
@@ -280,7 +283,41 @@ def test_googlechat_footer_kibanalink_none():
     mock_post_request.assert_called_once_with(
         rule['googlechat_webhook_url'],
         data=mock.ANY,
+        proxies=None,
         headers={'content-type': 'application/json'}
+    )
+
+    actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
+    assert expected_data == actual_data
+
+
+def test_googlechat_proxy():
+    rule = {
+        'name': 'Test GoogleChat Rule',
+        'type': 'any',
+        'googlechat_webhook_url': 'http://xxxxxxx',
+        'googlechat_proxy': 'http://proxy.url',
+        'alert': []
+    }
+    rules_loader = FileRulesLoader({})
+    rules_loader.load_modules(rule)
+    alert = GoogleChatAlerter(rule)
+    match = {
+        '@timestamp': '2021-01-01T00:00:00',
+        'somefield': 'foobarbaz'
+    }
+    with mock.patch('requests.post') as mock_post_request:
+        alert.alert([match])
+
+    expected_data = {
+        'text': 'Test GoogleChat Rule\n\n@timestamp: 2021-01-01T00:00:00\nsomefield: foobarbaz\n'
+    }
+
+    mock_post_request.assert_called_once_with(
+        rule['googlechat_webhook_url'],
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies={'https': 'http://proxy.url'},
     )
 
     actual_data = json.loads(mock_post_request.call_args_list[0][1]['data'])
