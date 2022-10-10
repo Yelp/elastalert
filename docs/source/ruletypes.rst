@@ -2279,6 +2279,8 @@ Optional:
 
 ``googlechat_footer_kibanalink``: URL to Kibana to include in the card footer. (Only used if format=card)
 
+``googlechat_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to GoogleChat. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+
 HTTP POST
 ~~~~~~~~~
 

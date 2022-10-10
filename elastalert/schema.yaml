@@ -459,6 +459,7 @@ properties:
   googlechat_header_subtitle: {type: string}
   googlechat_header_image: {type: string}
   googlechat_footer_kibanalink: {type: string}
+  googlechat_proxy: {type: string}
 
   ### HTTP POST
   http_post_url: *arrayOfString
