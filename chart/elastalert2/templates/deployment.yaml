@@ -45,7 +45,7 @@ spec:
 {{- end }}
       containers:
 {{- if .Values.extraContainers }}
-{{ .Values.extraContainers | toYaml | indent 8}}
+{{ .Values.extraContainers | toYaml | indent 6}}
 {{- end }}
 
       - name: elastalert
