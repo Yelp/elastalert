@@ -9,7 +9,8 @@
 ## Other changes
 - Upgrade pylint 2.15.2 to 2.15.3 and pytest-cov 3.0.0 to 4.0.0 and sphinx 5.1.1 to 5.2.3; Add Google Chat proxy support - [#972](https://github.com/jertel/elastalert2/pull/972) - @nsano-rururu
 - Fix Jira assign issue - [#974](https://github.com/jertel/elastalert2/pull/974) - @jorge-gyant
-- Add extraContainers value to helm chart
+- [Kubernetes] Add extraContainers value to helm chart - [#975](https://github.com/jertel/elastalert2/pull/975) - @Kasape
+
 
 # 2.7.0
 

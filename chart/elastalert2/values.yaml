@@ -89,7 +89,7 @@ elasticsearch:
 # Optional env variables for the pod
 optEnv: []
 
-## Enable an Specify container in extraContainers. This can be used to define a sidecar for updating rules
+## Specify optional additional containers to run alongside the Elastalert2 container.
 extraContainers: []
 
 extraConfigOptions: {}
