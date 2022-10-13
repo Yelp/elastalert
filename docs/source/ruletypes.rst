@@ -128,6 +128,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``timestamp_format_expr`` (string, no default )              |           |
 +--------------------------------------------------------------+           |
+| ``timestamp_to_datetime_format_expr`` (string, no default )  |           |
++--------------------------------------------------------------+           |
 | ``_source_enabled`` (boolean, default True)                  |           |
 +--------------------------------------------------------------+           |
 | ``alert_text_args`` (array of strs)                          |           |
@@ -809,7 +811,7 @@ timestamp_format_expr
 ^^^^^^^^^^^^^^^^^^^^^
 
 ``timestamp_format_expr``: In case Elasticsearch used custom date format for date type field, this option provides a way to adapt the
-value obtained converting a datetime through ``timestamp_format``, when the format cannot match perfectly what defined in Elastisearch.
+value obtained converting a datetime through ``timestamp_format``, when the format cannot match perfectly what defined in Elasticsearch.
 When set, this option is evaluated as a Python expression along with a *globals* dictionary containing the original datetime instance
 named ``dt`` and the timestamp to be refined, named ``ts``. The returned value becomes the timestamp obtained from the datetime.
 For example, when the date type field in Elasticsearch uses milliseconds (``yyyy-MM-dd'T'HH:mm:ss.SSS'Z'``) and ``timestamp_format``
@@ -817,6 +819,17 @@ option is ``'%Y-%m-%dT%H:%M:%S.%fZ'``, Elasticsearch would fail to parse query t
 it gets 6 digits instead of 3 - since the ``%f`` placeholder stands for microseconds for Python *strftime* method calls.
 Setting ``timestamp_format_expr: 'ts[:23] + ts[26:]'`` will truncate the value to milliseconds granting Elasticsearch compatibility.
 This option is only valid if ``timestamp_type`` set to ``custom``.
+(Optional, string, no default).
+
+timestamp_to_datetime_format_expr
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``timestamp_to_datetime_format_expr``: In the same spirit as timestamp_format_expr, in case Elasticsearch used custom date format for date type field,
+this option provides a way to adapt the value (as a string) returned by an Elasticsearch query before converting it into a datetime used by elastalert.
+The changes are applied before converting the timestamp string to a datetime using ``timestamp_format``. This is useful when the format cannot match perfectly what is returned by Elasticsearch. When set, this option is evaluated as a Python expression along with a *globals* dictionary containing the original timestamp to be refined (as a string) named ``ts``. The returned value will be parse into a python datetime using the previously defined format (or using the default '%Y-%m-%dT%H:%M:%SZ').
+
+For example, when the date type field returned by Elasticsearch uses nanoseconds (``yyyy-MM-dd'T'HH:mm:ss.SSS.XXXXXX``) and ``timestamp_format``
+option is ``'%Y-%m-%dT%H:%M:%S.%f'`` (ns are not supported in python datetime.datetime.strptime), Elasticsearch would fail to parse the timestamp terms as they contain nanoseconds values - that is it gets 3 additional digits that can't be parsed, throwing the exception``ValueError: unconverted data remains: XXX``. Setting ``timestamp_to_datetime_format_expr: 'ts[:23]'`` will truncate the value to milliseconds, allowing a good conversion in a datetime object. This option is only valid if ``timestamp_type`` set to ``custom``. 
 (Optional, string, no default).
 
 _source_enabled

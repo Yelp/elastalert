@@ -358,6 +358,9 @@ class RulesLoader(object):
             rule['dt_to_ts'] = dt_to_unixms
         elif rule['timestamp_type'] == 'custom':
             def _ts_to_dt_with_format(ts):
+                if 'timestamp_to_datetime_format_expr' in rule:
+                    # eval expression passing 'ts' before trying to parse it into datetime.
+                    ts = eval(rule['timestamp_to_datetime_format_expr'], {'ts': ts})
                 return ts_to_dt_with_format(ts, ts_format=rule['timestamp_format'])
 
             def _dt_to_ts_with_format(dt):
