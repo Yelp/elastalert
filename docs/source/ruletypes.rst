@@ -276,6 +276,10 @@ index
 ``index: my-index-*`` which will match ``my-index-2014-10-05``. You can also use a format string containing
 ``%Y`` for year, ``%m`` for month, and ``%d`` for day. To use this, you must also set ``use_strftime_index`` to true. (Required, string, no default)
 
+For example, Separate multiple indices with commas.::
+
+    index: topbeat-*,packetbeat-*
+
 name
 ^^^^
 
