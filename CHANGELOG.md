@@ -11,6 +11,7 @@
 - Fix Jira assign issue - [#974](https://github.com/jertel/elastalert2/pull/974) - @jorge-gyant
 - [Kubernetes] Add extraContainers value to helm chart - [#975](https://github.com/jertel/elastalert2/pull/975) - @Kasape
 - [docs] Updated index configuration documentation - [#979](https://github.com/jertel/elastalert2/pull/979) - @nsano-rururu
+- [Kubernetes] Change 'metrics' to 'metrics.enabled' in helm chart documentation - [#980](https://github.com/jertel/elastalert2/pull/980) - @Kasape
 
 # 2.7.0
 
