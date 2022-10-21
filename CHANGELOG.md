@@ -4,6 +4,17 @@
 - None
 
 ## New features
+- None
+
+## Other changes
+- None
+
+# 2.8.0
+
+## Breaking changes
+- None
+
+## New features
 - Adding the optional timestamp_to_datetime_format_expr rule parameter, allowing custom modification of the Elasticsearch timestamp string before parsing it into datetime. - [#978](https://github.com/jertel/elastalert2/pull/978) - @thpiron
 
 ## Other changes
