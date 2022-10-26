@@ -7,7 +7,7 @@
 - None
 
 ## Other changes
-- None
+- Upgrade to Python 3.11 - [#989](https://github.com/jertel/elastalert2/pull/989) - @jertel
 
 # 2.8.0
 
