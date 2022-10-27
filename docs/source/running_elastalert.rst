@@ -206,11 +206,11 @@ Requirements
 
 - Elasticsearch 7.x or 8.x, or OpenSearch 1.x or 2.x
 - ISO8601 or Unix timestamped data
-- Python 3.10. Require OpenSSL 1.1.1 or newer.
+- Python 3.11. Require OpenSSL 1.1.1 or newer.
 - pip
-- Packages on Ubuntu 21.x: build-essential python3-pip python3.10 python3.10-dev libffi-dev libssl-dev
+- Packages on Ubuntu 21.x: build-essential python3-pip python3.11 python3.11-dev libffi-dev libssl-dev
 
-If you want to install python 3.10 on CentOS, please install python 3.10 from the source code after installing 'Development Tools'.
+If you want to install python 3.11 on CentOS, please install python 3.11 from the source code after installing 'Development Tools'.
 
 Downloading and Configuring
 ---------------------------
