@@ -14,7 +14,7 @@ Configuration flags
 ===================
 
 However you choose to run ElastAlert 2, the ElastAlert 2 process is started by invoking
-``python elastalert/elastalert.py``.
+``python -m elastalert.elastalert``.
 
 This command accepts several configuration flags:
 
