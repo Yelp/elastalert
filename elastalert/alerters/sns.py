@@ -27,7 +27,7 @@ class SnsAlerter(Alerter):
             if self.profile is None:
                 session = boto3.Session(
                     aws_access_key_id=self.sns_aws_access_key_id,
-                    aws_secret_access_key=self.sns_aws_access_key_id,
+                    aws_secret_access_key=self.sns_aws_secret_access_key,
                     region_name=self.sns_aws_region
                 )
             else:
