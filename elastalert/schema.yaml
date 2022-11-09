@@ -237,6 +237,7 @@ properties:
       - type: string
   aggregation: *timeframe
   realert: *timeframe
+  realert_key: {type: string}
   exponential_realert: *timeframe
 
   buffer_time: *timeframe

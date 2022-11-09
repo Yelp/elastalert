@@ -333,6 +333,7 @@ class RulesLoader(object):
             rule.setdefault(key, val)
         rule.setdefault('name', os.path.splitext(filename)[0])
         rule.setdefault('realert', datetime.timedelta(seconds=0))
+        rule.setdefault('realert_key', rule['name'])
         rule.setdefault('aggregation', datetime.timedelta(seconds=0))
         rule.setdefault('query_delay', datetime.timedelta(seconds=0))
         rule.setdefault('timestamp_field', '@timestamp')
