@@ -10,6 +10,7 @@
 - Upgrade pylint 2.15.3 to 2.15.5, pytest 7.1.3 to 7.2.0, pytest-xdist 2.5.0 to 3.0.2, sphinx 5.2.3 to 5.3.0, tox 3.26.0 to 3.27.0 - [#988](https://github.com/jertel/elastalert2/pull/988) - @nsano-rururu
 - Upgrade to Python 3.11 - [#989](https://github.com/jertel/elastalert2/pull/989) - @jertel
 - Add support for Kibana 8.5 for Kibana Discover - [#993](https://github.com/jertel/elastalert2/pull/993) - @nsano-rururu
+- [Amazon SNS] Fix Amazon SNS Alerter - [#1003](https://github.com/jertel/elastalert2/pull/1003) - @nsano-rururu
 
 # 2.8.0
 
@@ -25,7 +26,6 @@
 - [Kubernetes] Add extraContainers value to helm chart - [#975](https://github.com/jertel/elastalert2/pull/975) - @Kasape
 - [docs] Updated index configuration documentation - [#979](https://github.com/jertel/elastalert2/pull/979) - @nsano-rururu
 - [Kubernetes] Change 'metrics' to 'metrics.enabled' in helm chart documentation - [#981](https://github.com/jertel/elastalert2/pull/981) - @Kasape
-- [Amazon SNS] Fix Amazon SNS Alerter - [#1003](https://github.com/jertel/elastalert2/pull/1003) - @nsano-rururu
 
 # 2.7.0
 
