@@ -1675,7 +1675,7 @@ class ElastAlerter(object):
         # With --rule, self.rules will only contain that specific rule
         if not silence_cache_key:
             if self.args.silence_qk_value:
-                silence_cache_key = self.rules[0]['name'] + "." + self.args.silence_qk_value
+                silence_cache_key = self.rules[0]['realert_key'] + "." + self.args.silence_qk_value
             else:
                 silence_cache_key = self.rules[0]['name'] + "._silence"
 
