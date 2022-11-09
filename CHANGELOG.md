@@ -25,6 +25,7 @@
 - [Kubernetes] Add extraContainers value to helm chart - [#975](https://github.com/jertel/elastalert2/pull/975) - @Kasape
 - [docs] Updated index configuration documentation - [#979](https://github.com/jertel/elastalert2/pull/979) - @nsano-rururu
 - [Kubernetes] Change 'metrics' to 'metrics.enabled' in helm chart documentation - [#981](https://github.com/jertel/elastalert2/pull/981) - @Kasape
+- [Amazon SNS] Fix Amazon SNS Alerter - [#1003](https://github.com/jertel/elastalert2/pull/1003) - @nsano-rururu
 
 # 2.7.0
 
