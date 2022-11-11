@@ -880,7 +880,7 @@ class ElastAlerter(object):
             # If realert is set, silence the rule for that duration
             # Silence is cached by query_key, if it exists
             # Default realert time is 0 seconds
-            silence_cache_key = rule['name']
+            silence_cache_key = rule['realert_key']
             query_key_value = self.get_query_key_value(rule, match)
             if query_key_value is not None:
                 silence_cache_key += '.' + query_key_value
@@ -1675,7 +1675,7 @@ class ElastAlerter(object):
         # With --rule, self.rules will only contain that specific rule
         if not silence_cache_key:
             if self.args.silence_qk_value:
-                silence_cache_key = self.rules[0]['name'] + "." + self.args.silence_qk_value
+                silence_cache_key = self.rules[0]['realert_key'] + "." + self.args.silence_qk_value
             else:
                 silence_cache_key = self.rules[0]['name'] + "._silence"
 

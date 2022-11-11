@@ -88,6 +88,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``realert`` (time, default: 1 min)                           |           |
 +--------------------------------------------------------------+           |
+| ``realert_key`` (string, defaults to the rule name)          |           |
++--------------------------------------------------------------+           |
 | ``exponential_realert`` (time, no default)                   |           |
 +--------------------------------------------------------------+           |
 | ``match_enhancements`` (list of strs, no default)            |           |
@@ -494,6 +496,12 @@ the given time. All matches with a missing ``query_key`` will be grouped togethe
 This is applied to the time the alert is sent, not to the time of the event. It defaults to one minute, which means
 that if ElastAlert 2 is run over a large time period which triggers many matches, only the first alert will be sent by default. If you want
 every alert, set realert to 0 minutes. (Optional, time, default 1 minute)
+
+realert_key
+^^^^^^^^^^^
+
+``realert_key``: This option allows you to customize the key for ``realert``.  The default is the rule name, but if you have multiple rules that
+you would like to use the same key for you can set the ``realert_key`` to be the same in those rules. (Optional, string, default is the rule name)
 
 exponential_realert
 ^^^^^^^^^^^^^^^^^^^

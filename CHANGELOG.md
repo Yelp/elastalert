@@ -4,7 +4,7 @@
 - None
 
 ## New features
-- None
+- Add `realert_key` option to silence groups of alerts - [#1004](https://github.com/jertel/elastalert2/pull/1004) - @goggin
 
 ## Other changes
 - Upgrade pylint 2.15.3 to 2.15.5, pytest 7.1.3 to 7.2.0, pytest-xdist 2.5.0 to 3.0.2, sphinx 5.2.3 to 5.3.0, tox 3.26.0 to 3.27.0 - [#988](https://github.com/jertel/elastalert2/pull/988) - @nsano-rururu

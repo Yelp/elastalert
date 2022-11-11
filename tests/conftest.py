@@ -111,6 +111,7 @@ def ea():
               'include': ['@timestamp'],
               'aggregation': datetime.timedelta(0),
               'realert': datetime.timedelta(0),
+              'realert_key': 'anytest',
               'processed_hits': {},
               'timestamp_field': '@timestamp',
               'match_enhancements': [],
