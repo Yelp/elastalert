@@ -47,6 +47,7 @@ def test_mattermost_proxy(caplog):
         ],
         'username': 'elastalert',
         'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -96,6 +97,7 @@ def test_mattermost_alert_text_only():
         ],
         'username': 'elastalert',
         'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -143,7 +145,8 @@ def test_mattermost_not_alert_text_only():
         ],
         'text': 'Test Mattermost Rule\n\n',
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -207,7 +210,8 @@ def test_mattermost_msg_fields():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -306,7 +310,8 @@ def test_mattermost_channel_override():
             }
         ],
         'username': 'elastalert',
-        'channel': 'test channel'
+        'channel': 'test channel',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -355,7 +360,8 @@ def test_mattermost_ignore_ssl_errors():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -406,7 +412,8 @@ def test_mattermost_title_link():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -456,7 +463,8 @@ def test_mattermost_footer():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -506,7 +514,8 @@ def test_mattermost_footer_icon():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -556,7 +565,8 @@ def test_mattermost_image_url():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -606,7 +616,8 @@ def test_mattermost_thumb_url():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -656,7 +667,8 @@ def test_mattermost_author_name():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -706,7 +718,8 @@ def test_mattermost_author_link():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -756,7 +769,8 @@ def test_mattermost_author_icon():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -859,7 +873,8 @@ def test_mattermost_msg_color(msg_color, except_msg_color):
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -964,7 +979,8 @@ def test_mattermost_attach_kibana_discover_url_when_generated():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
     mock_post_request.assert_called_once_with(
         rule['mattermost_webhook_url'],
@@ -1008,7 +1024,8 @@ def test_mattermost_attach_kibana_discover_url_when_not_generated():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
     mock_post_request.assert_called_once_with(
         rule['mattermost_webhook_url'],
@@ -1059,7 +1076,8 @@ def test_mattermost_kibana_discover_title():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
     mock_post_request.assert_called_once_with(
         rule['mattermost_webhook_url'],
@@ -1110,7 +1128,8 @@ def test_mattermost_kibana_discover_color():
             }
         ],
         'username': 'elastalert',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
     mock_post_request.assert_called_once_with(
         rule['mattermost_webhook_url'],
@@ -1158,7 +1177,8 @@ def test_mattermost_username_override():
             }
         ],
         'username': 'test user',
-        'channel': ''
+        'channel': '',
+        'icon_emoji': ':ghost:'
     }
 
     mock_post_request.assert_called_once_with(
@@ -1207,7 +1227,8 @@ def test_mattermost_uses_list_of_custom_mattermost_channel():
             }
         ],
         'username': 'elastalert',
-        'channel': '#test-alert'
+        'channel': '#test-alert',
+        'icon_emoji': ':ghost:'
     }
     expected_data2 = {
         'attachments': [
@@ -1221,7 +1242,8 @@ def test_mattermost_uses_list_of_custom_mattermost_channel():
             }
         ],
         'username': 'elastalert',
-        'channel': '#test-alert2'
+        'channel': '#test-alert2',
+        'icon_emoji': ':ghost:'
     }
     mock_post_request.assert_called_with(
         rule['mattermost_webhook_url'],
