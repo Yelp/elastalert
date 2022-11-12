@@ -11,6 +11,7 @@
 - Upgrade to Python 3.11 - [#989](https://github.com/jertel/elastalert2/pull/989) - @jertel
 - Add support for Kibana 8.5 for Kibana Discover - [#993](https://github.com/jertel/elastalert2/pull/993) - @nsano-rururu
 - [Amazon SNS] Fix Amazon SNS Alerter - [#1003](https://github.com/jertel/elastalert2/pull/1003) - @nsano-rururu
+- [Mattermost] Add mattermost_emoji_override - [#1011](https://github.com/jertel/elastalert2/pull/1011) - @nsano-rururu
 
 # 2.8.0
 
