@@ -2538,7 +2538,7 @@ Optional:
 ``mattermost_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
 
 ``mattermost_emoji_override``: By default ElastAlert 2 will use the ``:ghost:`` emoji when posting to the channel. You can use a different emoji per
-ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If slack_icon_url_override parameter is provided, emoji is ignored.
+ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If mattermost_icon_url_override parameter is provided, emoji is ignored.
 
 ``mattermost_icon_url_override``: By default ElastAlert 2 will use the ``:ghost:`` emoji when posting to the channel. You can provide icon_url to use custom image.
 Provide absolute address of the pciture.
