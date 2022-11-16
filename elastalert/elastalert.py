@@ -25,6 +25,7 @@ from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch.exceptions import TransportError
+from .prometheus_wrapper import PrometheusWrapper
 
 from . import kibana
 from .alerts import DebugAlerter
@@ -105,6 +106,7 @@ class ElastAlerter(object):
             dest='es_debug_trace',
             help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file. Note that '
                  'this will incorrectly display localhost:9200 as the host/port')
+        parser.add_argument('--prometheus_port', type=int, dest='prometheus_port', help='Enables Prometheus metrics on specified port.')
         self.args = parser.parse_args(args)
 
     def __init__(self, args):
@@ -164,6 +166,7 @@ class ElastAlerter(object):
         self.scheduler = BackgroundScheduler()
         self.string_multi_field_name = self.conf.get('string_multi_field_name', False)
         self.add_metadata_alert = self.conf.get('add_metadata_alert', False)
+        self.prometheus_port = self.args.prometheus_port
         self.show_disabled_rules = self.conf.get('show_disabled_rules', True)
 
         self.writeback_es = elasticsearch_client(self.conf)
@@ -2046,9 +2049,15 @@ def handle_signal(signal, frame):
 
 def main(args=None):
     signal.signal(signal.SIGINT, handle_signal)
+
     if not args:
         args = sys.argv[1:]
     client = ElastAlerter(args)
+
+    if client.prometheus_port and not client.debug:
+        p = PrometheusWrapper(client)
+        p.start()
+
     if not client.args.silence:
         client.start()
 
