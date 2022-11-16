@@ -25,6 +25,7 @@ import stomp
 from exotel import Exotel
 from jira.client import JIRA
 from jira.exceptions import JIRAError
+from pymisp import PyMISP
 from requests.auth import HTTPProxyAuth
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
@@ -2183,4 +2184,53 @@ class HiveAlerter(Alerter):
         return {
             'type': 'hivealerter',
             'hive_host': self.rule.get('hive_connection', {}).get('hive_host', '')
+        }
+
+
+class MISPAlerter(Alerter):
+    """
+    Create alerts from matched data to MISP - based on Nclose-ZA HiveAlerter
+    """
+
+    required_options = set(['misp_connection', 'misp_alert_config'])
+
+    def alert(self, matches):
+
+        connection_details = self.rule['misp_connection']
+
+        misp = PyMISP(
+            connection_details.get('misp_url', ''),
+            connection_details.get('misp_key', ''),
+            connection_details.get('cert_verify', False))
+
+        for match in matches:
+            context = {'rule': self.rule, 'match': match}
+
+            alert_config = {}
+            alert_config.update(self.rule.get('misp_alert_config', {}))
+
+            for alert_config_field, alert_config_value in alert_config.iteritems():
+                if isinstance(alert_config_value, str):
+                    alert_config[alert_config_field] = alert_config_value.format(**context)
+                elif isinstance(alert_config_value, (list, tuple)):
+                    formatted_list = []
+                    for element in alert_config_value:
+                        try:
+                            formatted_list.append(element.format(**context))
+                        except (AttributeError, KeyError):
+                            formatted_list.append(element)
+                    alert_config[alert_config_field] = formatted_list
+
+            try:
+                response = misp.new_event(**alert_config)
+                warnings.resetwarnings()
+                response.raise_for_status()
+            except RequestException as e:
+                raise EAException("Error creating event in MISP: %s. Details: %s" % (e, "" if e.response is None else e.response.text))
+
+    def get_info(self):
+
+        return {
+            'type': 'mispalerter',
+            'misp_host': self.rule.get('misp_connection', {}).get('misp_url', '')
         }
