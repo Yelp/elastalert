@@ -155,7 +155,8 @@ class ShortenUrlTestCase:
             },
             'json': {
                 'url': '/app/dev_tools#/console'
-            }
+            },
+            'verify': True
         },
         expected_url='http://elasticsearch.test.org/_plugin/kibana/goto/62af3ebe6652370f85de91ccb3a3825f'
     ),
@@ -173,7 +174,8 @@ class ShortenUrlTestCase:
             },
             'json': {
                 'url': '/app/dev_tools#/console'
-            }
+            },
+            'verify': True
         },
         expected_url='http://kibana.test.org/goto/62af3ebe6652370f85de91ccb3a3825f'
     ),
@@ -192,7 +194,8 @@ class ShortenUrlTestCase:
             },
             'json': {
                 'url': '/app/dev_tools#/console'
-            }
+            },
+            'verify': True
         },
         expected_url='http://kibana.test.org/goto/62af3ebe6652370f85de91ccb3a3825f'
     ),
@@ -211,7 +214,8 @@ class ShortenUrlTestCase:
             },
             'json': {
                 'url': '/app/dev_tools?security_tenant=global#/console'
-            }
+            },
+            'verify': True
         },
         expected_url='http://kibana.test.org/goto/62af3ebe6652370f85de91ccb3a3825f?security_tenant=global'
     )
@@ -225,6 +229,7 @@ def test_short_kinbana_external_url_formatter(
         auth=test_case.authorization,
         security_tenant=test_case.security_tenant,
         new_shortener=False,
+        verify=True,
     )
 
     actualUrl = formatter.format(test_case.relative_url)
@@ -252,7 +257,8 @@ def test_short_kinbana_external_url_formatter(
                 'params': {
                     'url': '/app/dev_tools#/console'
                 }
-            }
+            },
+            'verify': True
         },
         expected_url='http://elasticsearch.test.org/_plugin/kibana/goto/a1f77a80-6847-11ec-9b91-e5d43d1e9ca2'
     ),
@@ -273,7 +279,8 @@ def test_short_kinbana_external_url_formatter(
                 'params': {
                     'url': '/app/dev_tools#/console'
                 }
-            }
+            },
+            'verify': True
         },
         expected_url='http://kibana.test.org/goto/a1f77a80-6847-11ec-9b91-e5d43d1e9ca2'
     ),
@@ -295,7 +302,8 @@ def test_short_kinbana_external_url_formatter(
                 'params': {
                     'url': '/app/dev_tools#/console'
                 }
-            }
+            },
+            'verify': True
         },
         expected_url='http://kibana.test.org/goto/a1f77a80-6847-11ec-9b91-e5d43d1e9ca2'
     ),
@@ -317,7 +325,8 @@ def test_short_kinbana_external_url_formatter(
                 'params': {
                     'url': '/app/dev_tools?security_tenant=global#/console'
                 }
-            }
+            },
+            'verify': True
         },
         expected_url='http://kibana.test.org/goto/a1f77a80-6847-11ec-9b91-e5d43d1e9ca2?security_tenant=global'
     )
@@ -331,6 +340,7 @@ def test_7_16_short_kibana_external_url_formatter(
         auth=test_case.authorization,
         security_tenant=test_case.security_tenant,
         new_shortener=True,
+        verify=True,
     )
 
     actualUrl = formatter.format(test_case.relative_url)
@@ -346,6 +356,7 @@ def test_short_kinbana_external_url_formatter_request_exception(mock_post: mock.
         auth=None,
         security_tenant=None,
         new_shortener=False,
+        verify=True,
     )
     with pytest.raises(EAException, match="Failed to invoke Kibana Shorten URL API"):
         formatter.format('http://wacky.org')

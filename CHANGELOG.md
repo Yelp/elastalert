@@ -12,6 +12,7 @@
 - Add support for Kibana 8.5 for Kibana Discover - [#993](https://github.com/jertel/elastalert2/pull/993) - @nsano-rururu
 - [Amazon SNS] Fix Amazon SNS Alerter - [#1003](https://github.com/jertel/elastalert2/pull/1003) - @nsano-rururu
 - [Mattermost] Add mattermost_emoji_override - [#1011](https://github.com/jertel/elastalert2/pull/1011) - @nsano-rururu
+- Add support for disabling verification of SSL certificate for the Kibana Shorten URL API - [#1013](https://github.com/jertel/elastalert2/pull/1013) - @BenJeau
 
 # 2.8.0
 
