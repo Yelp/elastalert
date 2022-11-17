@@ -152,7 +152,7 @@ def create_kibana_external_url_formatter(
     new_shortener = is_kibana_atleastsevensixteen(rule.get('kibana_discover_version', '0.0'))
 
     if shorten:
-        verify = rule.get('kibana_verify', True)
+        verify = rule.get('kibana_verify_certs', True)
         auth = create_kibana_auth(base_url, rule)
         return ShortKibanaExternalUrlFormatter(base_url, auth, security_tenant, new_shortener, verify)
 
