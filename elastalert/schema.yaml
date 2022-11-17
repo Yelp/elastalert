@@ -261,6 +261,7 @@ properties:
   kibana_url: {type: string, format: uri}
   kibana_username: {type: string}
   kibana_password: {type: string}
+  kibana_verify: {type: boolean}
   use_local_time: {type: boolean}
   custom_pretty_ts_format: {type: string}
   match_enhancements: {type: array, items: {type: string}}

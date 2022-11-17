@@ -66,6 +66,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``kibana_password`` (string, no default)                     |           |
 +--------------------------------------------------------------+           |
+| ``kibana_verify`` (boolean, default True)                    |           |
++--------------------------------------------------------------+           |
 | ``generate_kibana_discover_url`` (boolean, default False)    |           |
 +--------------------------------------------------------------+           |
 | ``shorten_kibana_discover_url`` (boolean, default False)     |           |
@@ -619,6 +621,11 @@ kibana_password
 This value is only used if ``shorten_kibana_discover_url`` is true.
 
 (Optional, string, no default)
+
+kibana_verify
+^^^^^^^^^^^^^^^
+
+``kibana_verify``: Whether or not to verify TLS certificates when querying Kibana. (Optional, boolean, default True)
 
 generate_kibana_discover_url
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
