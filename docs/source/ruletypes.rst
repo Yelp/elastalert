@@ -66,7 +66,7 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``kibana_password`` (string, no default)                     |           |
 +--------------------------------------------------------------+           |
-| ``kibana_verify_certs`` (boolean, default True)                    |           |
+| ``kibana_verify_certs`` (boolean, default True)              |           |
 +--------------------------------------------------------------+           |
 | ``generate_kibana_discover_url`` (boolean, default False)    |           |
 +--------------------------------------------------------------+           |
