@@ -15,6 +15,7 @@ Contents:
    running_elastalert
    ruletypes
    elastalert_status
+   elasticsearch_security_privileges
    recipes/adding_rules
    recipes/adding_alerts
    recipes/writing_filters
