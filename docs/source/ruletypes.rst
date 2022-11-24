@@ -1794,9 +1794,7 @@ Example usage::
 
 Additional explanation:
 
-ElastAlert 2 can send two categories of data to Alertmanager:
-- labels
-- annotations
+ElastAlert 2 can send two categories of data to Alertmanager: labels and annotations
 
 Labels are sent as either static values or a single field value lookup. So if you specify the following::
 
