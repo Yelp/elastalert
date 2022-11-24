@@ -1792,6 +1792,46 @@ Example usage::
     msg: "message"
     log: "@log_name"
 
+Additional explanation:
+
+ElastAlert 2 can send two categories of data to Alertmanager:
+- labels
+- annotations
+
+Labels are sent as either static values or a single field value lookup. So if you specify the following::
+
+    alertmanager_labels:
+      someStaticLabel: "Verify this issue"
+      anotherStaticLabel: "someone@somewhere.invalid"
+
+    alertmanager_fields:
+      myLabelName: someElasticFieldName
+      anotherLabel: anotherElasticFieldName
+
+The first labels will be static, but the two field will be replaced with the corresponding field values from the Elastic record that triggered the alert, and then merged back into the list of labels sent to Alertmanager.
+
+Annotations are slightly different. You can have many static (hardcoded) annotations and only two annotations that will be formatted according to the `alert_text` and `alert_subject` [documentation](https://elastalert2.readthedocs.io/en/latest/ruletypes.html#alert-subject). 
+
+For example::
+
+    alertmanager_annotations:
+      someStaticAnnotation: "This is a static annotation value, it never changes"
+      severity: P3
+
+    alertmanager_alert_subject_labelname: myCustomAnnotationName1
+    alertmanager_alert_text_labelname: myCustomAnnotationName2
+
+    alert_subject: "Host {0} has status {1}"
+    alert_subject_args:
+    - http_host
+    - status
+
+    alert_text: "URL {0} has {1} matches"
+    alert_text_type: alert_text_only
+    alert_text_args:
+    - uri
+    - num_matches
+
 AWS SES (Amazon Simple Email Service)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
