@@ -1277,6 +1277,10 @@ evaluated separately against the threshold(s).
 For example, "%.2f" will round it to 2 decimal places.
 See: https://docs.python.org/3.4/library/string.html#format-specification-mini-language
 
+.. note:: If you want to change the percentage format inside your alert, you must specify the format there cause ``percentage_format_string`` wont't be applied.
+    Exemple: ``alerta_value: "%(percentage).2f%%"``
+
+
 ``min_denominator``: Minimum number of documents on which percentage calculation will apply. Default is 0.
 
 .. _alerts:
@@ -2079,7 +2083,7 @@ The following options dictate the values of the API JSON payload:
 
 ``alerta_severity``: Defaults to "warning".
 
-``alerta_timeout``: Defaults 84600 (1 Day).
+``alerta_timeout``: Defaults 84600 (1 Day). This must be an integer, not a string or the usual elastalert time format.
 
 ``alerta_type``: Defaults to "elastalert".
 
