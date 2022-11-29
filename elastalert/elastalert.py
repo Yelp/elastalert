@@ -743,7 +743,7 @@ class ElastAlerter(object):
                 # Query from the end of the last run, if it exists, otherwise a run_every sized window
                 rule['starttime'] = rule.get('previous_endtime', endtime - self.run_every)
             else:
-                rule['starttime'] = rule.get('previous_endtime', endtime - rule['timeframe'])
+                rule['starttime'] = endtime - rule['timeframe']
 
     def adjust_start_time_for_overlapping_agg_query(self, rule):
         if rule.get('aggregation_query_element'):
