@@ -4,6 +4,17 @@
 - None
 
 ## New features
+- None
+
+## Other changes
+- None
+
+# 2.9.0
+
+## Breaking changes
+- None
+
+## New features
 - Add `realert_key` option to silence groups of alerts - [#1004](https://github.com/jertel/elastalert2/pull/1004) - @goggin
 
 ## Other changes
