@@ -1416,7 +1416,7 @@ class PagerDutyAlerter(Alerter):
         try:
             response = requests.post(
                 self.url,
-                data=json.dumps(payload, cls=DateTimeEncoder, ensure_ascii=False),
+                data=json.dumps(payload, cls=DateTimeEncoder, ensure_ascii=False).encode("utf-8"),
                 headers=headers,
                 proxies=proxies
             )
