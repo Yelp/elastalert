@@ -2449,13 +2449,13 @@ This alert requires four additional options:
 
   For an example Jira account file, see ``examples/rules/jira_acct.yaml``. The account file is a YAML formatted file. 
 
-  When using user/password authentication, the Jira account file must contain two fields:
+  When using user/password authentication, or when using Jira Cloud the Jira account file must contain two fields:
 
   ``user``: The username to authenticate with Jira.
 
-  ``password``: The password to authenticate with Jira.
+  ``password``: The password to authenticate with Jira. Jira cloud users must specify the Jira Cloud API token for this value.
 
-  When using a Personal Access Token, the Jira account file must contain a single field:
+  When using a Personal Access Token, such as when using a locally hosted Jira installation, the Jira account file must contain a single field:
 
   ``apikey``: The Personal Access Token for authenticating with Jira.
 
