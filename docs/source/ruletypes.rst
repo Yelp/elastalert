@@ -1462,7 +1462,7 @@ or
       - exotel
       - gitter
       - googlechat
-      - graylog gelf
+      - gelf
       - hivealerter
       - jira
       - linenotify
