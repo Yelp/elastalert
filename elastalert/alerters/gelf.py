@@ -33,7 +33,7 @@ class Gelf(Alerter):
         self.additional_headers = self.rule.get('gelf_http_headers')
         self.ca_cert = self.rule.get('gelf_ca_cert')
         self.http_ignore_ssl_errors = self.rule.get('http_ignore_ssl_errors', False)
-        self.timeout = self.rule.get('http_post_timeout', 30)
+        self.timeout = self.rule.get('timeout', 30)
 
     def send_http(self, gelf_msg):
 

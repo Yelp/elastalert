@@ -1462,6 +1462,7 @@ or
       - exotel
       - gitter
       - googlechat
+      - graylog gelf
       - hivealerter
       - jira
       - linenotify
@@ -2278,6 +2279,48 @@ Optional:
 ``googlechat_header_image``: URL for the card header icon. (Only used if format=card)
 
 ``googlechat_footer_kibanalink``: URL to Kibana to include in the card footer. (Only used if format=card)
+
+Graylog GELF
+~~~~~~~~~~
+GELF alerter will send a custom message to a Graylog GELF input (HTTP/TCP). Alert payload content you form with key-value pairs.
+
+The alerter requires the following options:
+
+``gelf_type``: Type of your Graylog GELF Input. How available 'http' or 'tcp'.
+
+And in case of HTTP:
+
+``gelf_endpoint``: Link to GELF HTTP Input as an example: 'http://example.com/gelf' (Only used if gelf_type=http)
+
+Or next if selected TCP:
+
+``gelf_host``: Graylog server address where Input launched. (Only used if gelf_type=tcp)
+
+``gelf_port``: Port, specified for Input. (Only used if gelf_type=tcp)
+
+``gelf_payload``: Main message body. Working as key-value, where the key is your custom name and value - data from elasticsearch message. Name of alert will write to beginning of the message.
+
+Example usage::
+
+    alert:
+      - gelf
+    gelf_type: http
+    gelf_endpoint: http://example.com:12201/gelf
+    gelf_payload:
+      username: user
+      src_ip: source_ip
+
+Optional:
+
+``gelf_log_level``: Standard syslog severity levels. By default set 5 (Notice)
+
+``gelf_http_headers``: Additional headers. (Only used if gelf_type=http)
+
+``gelf_ca_cert``: Path to custom CA certificate.
+
+``http_ignore_ssl_errors``: Ignore ssl error. (Only used if gelf_type=http)
+
+``timeout``: Custom timeout.
 
 HTTP POST
 ~~~~~~~~~
