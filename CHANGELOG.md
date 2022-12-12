@@ -4,7 +4,7 @@
 - None
 
 ## New features
-- None
+- [Graylog GELF] Alerter added. [#1050](https://github.com/jertel/elastalert2/pull/1050) - @malinkinsa
 
 ## Other changes
 - None
