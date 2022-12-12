@@ -5,8 +5,8 @@ import ssl
 import requests
 from requests import RequestException
 
-from elastalert.alerts import Alerter, DateTimeEncoder
-from elastalert.util import lookup_es_key, EAException, elastalert_logger
+from elastalert.alerts import Alerter
+from elastalert.util import EAException, elastalert_logger
 
 
 class Gelf(Alerter):
