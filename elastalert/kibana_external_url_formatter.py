@@ -46,11 +46,12 @@ class AbsoluteKibanaExternalUrlFormatter(KibanaExternalUrlFormatter):
 class ShortKibanaExternalUrlFormatter(KibanaExternalUrlFormatter):
     '''Formats external urls using the Kibana Shorten URL API'''
 
-    def __init__(self, base_url: str, auth: AuthBase, security_tenant: str, new_shortener: bool) -> None:
+    def __init__(self, base_url: str, auth: AuthBase, security_tenant: str, new_shortener: bool, verify: bool) -> None:
         self.auth = auth
         self.security_tenant = security_tenant
         self.goto_url = urljoin(base_url, 'goto/')
         self.use_new_shortener = new_shortener
+        self.verify = verify
 
         if self.use_new_shortener:
             path = 'api/short_url'
@@ -83,7 +84,8 @@ class ShortKibanaExternalUrlFormatter(KibanaExternalUrlFormatter):
                     'kbn-xsrf': 'elastalert',
                     'osd-xsrf': 'elastalert'
                 },
-                json=json
+                json=json,
+                verify=self.verify
             )
             response.raise_for_status()
         except RequestException as e:
@@ -150,7 +152,8 @@ def create_kibana_external_url_formatter(
     new_shortener = is_kibana_atleastsevensixteen(rule.get('kibana_discover_version', '0.0'))
 
     if shorten:
+        verify = rule.get('kibana_verify_certs', True)
         auth = create_kibana_auth(base_url, rule)
-        return ShortKibanaExternalUrlFormatter(base_url, auth, security_tenant, new_shortener)
+        return ShortKibanaExternalUrlFormatter(base_url, auth, security_tenant, new_shortener, verify)
 
     return AbsoluteKibanaExternalUrlFormatter(base_url, security_tenant)

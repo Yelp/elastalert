@@ -27,6 +27,7 @@ class MattermostAlerter(Alerter):
         self.mattermost_channel_override = self.rule.get('mattermost_channel_override', '')
         if isinstance(self.mattermost_channel_override, str):
             self.mattermost_channel_override = [self.mattermost_channel_override]
+        self.mattermost_emoji_override = self.rule.get('mattermost_emoji_override', ':ghost:')
         self.mattermost_icon_url_override = self.rule.get('mattermost_icon_url_override', '')
 
         # Message properties
@@ -104,6 +105,8 @@ class MattermostAlerter(Alerter):
 
         if self.mattermost_icon_url_override != '':
             payload['icon_url'] = self.mattermost_icon_url_override
+        else:
+            payload['icon_emoji'] = self.mattermost_emoji_override
 
         if self.mattermost_title != '':
             payload['attachments'][0]['title'] = self.mattermost_title

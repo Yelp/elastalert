@@ -7,7 +7,38 @@
 - [Graylog GELF] Alerter added. [#1050](https://github.com/jertel/elastalert2/pull/1050) - @malinkinsa
 
 ## Other changes
+- [Docs] Clarify Jira Cloud authentication configuration - [94f7e8c](https://github.com/jertel/elastalert2/commit/94f7e8cc98d59a00349e3b23acd8a8549c80dbc8) - @jertel
+
+# 2.9.0
+
+## Breaking changes
 - None
+
+## New features
+- Add `realert_key` option to silence groups of alerts - [#1004](https://github.com/jertel/elastalert2/pull/1004) - @goggin
+
+## Other changes
+- Upgrade pylint 2.15.3 to 2.15.5, pytest 7.1.3 to 7.2.0, pytest-xdist 2.5.0 to 3.0.2, sphinx 5.2.3 to 5.3.0, tox 3.26.0 to 3.27.0 - [#988](https://github.com/jertel/elastalert2/pull/988) - @nsano-rururu
+- Upgrade to Python 3.11 - [#989](https://github.com/jertel/elastalert2/pull/989) - @jertel
+- Add support for Kibana 8.5 for Kibana Discover - [#993](https://github.com/jertel/elastalert2/pull/993) - @nsano-rururu
+- [Amazon SNS] Fix Amazon SNS Alerter - [#1003](https://github.com/jertel/elastalert2/pull/1003) - @nsano-rururu
+- [Mattermost] Add mattermost_emoji_override - [#1011](https://github.com/jertel/elastalert2/pull/1011) - @nsano-rururu
+- Add support for disabling verification of SSL certificate for the Kibana Shorten URL API - [#1013](https://github.com/jertel/elastalert2/pull/1013) - @BenJeau
+
+# 2.8.0
+
+## Breaking changes
+- None
+
+## New features
+- Adding the optional timestamp_to_datetime_format_expr rule parameter, allowing custom modification of the Elasticsearch timestamp string before parsing it into datetime. - [#978](https://github.com/jertel/elastalert2/pull/978) - @thpiron
+
+## Other changes
+- Upgrade pylint 2.15.2 to 2.15.3 and pytest-cov 3.0.0 to 4.0.0 and sphinx 5.1.1 to 5.2.3; Add Google Chat proxy support - [#972](https://github.com/jertel/elastalert2/pull/972) - @nsano-rururu
+- Fix Jira assign issue - [#974](https://github.com/jertel/elastalert2/pull/974) - @jorge-gyant
+- [Kubernetes] Add extraContainers value to helm chart - [#975](https://github.com/jertel/elastalert2/pull/975) - @Kasape
+- [docs] Updated index configuration documentation - [#979](https://github.com/jertel/elastalert2/pull/979) - @nsano-rururu
+- [Kubernetes] Change 'metrics' to 'metrics.enabled' in helm chart documentation - [#981](https://github.com/jertel/elastalert2/pull/981) - @Kasape
 
 # 2.7.0
 

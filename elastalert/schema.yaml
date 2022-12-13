@@ -237,6 +237,7 @@ properties:
       - type: string
   aggregation: *timeframe
   realert: *timeframe
+  realert_key: {type: string}
   exponential_realert: *timeframe
 
   buffer_time: *timeframe
@@ -260,6 +261,7 @@ properties:
   kibana_url: {type: string, format: uri}
   kibana_username: {type: string}
   kibana_password: {type: string}
+  kibana_verify_certs: {type: boolean}
   use_local_time: {type: boolean}
   custom_pretty_ts_format: {type: string}
   match_enhancements: {type: array, items: {type: string}}
@@ -278,7 +280,7 @@ properties:
   generate_kibana_discover_url: {type: boolean}
   shorten_kibana_discover_url: {type: boolean}
   kibana_discover_app_url: {type: string}
-  kibana_discover_version: {type: string, enum: ['8.4', '8.3', '8.2', '8.1', '8.0', '7.17', '7.16', '7.15', '7.14', '7.13', '7.12', '7.11', '7.10', '7.9', '7.8', '7.7', '7.6', '7.5', '7.4', '7.3', '7.2', '7.1', '7.0']}
+  kibana_discover_version: {type: string, enum: ['8.5', '8.4', '8.3', '8.2', '8.1', '8.0', '7.17', '7.16', '7.15', '7.14', '7.13', '7.12', '7.11', '7.10', '7.9', '7.8', '7.7', '7.6', '7.5', '7.4', '7.3', '7.2', '7.1', '7.0']}
   kibana_discover_index_pattern_id: {type: string, minLength: 1}
   kibana_discover_columns: {type: array, items: {type: string, minLength: 1}, minItems: 1}
   kibana_discover_from_timedelta: *timedelta
@@ -459,6 +461,7 @@ properties:
   googlechat_header_subtitle: {type: string}
   googlechat_header_image: {type: string}
   googlechat_footer_kibanalink: {type: string}
+  googlechat_proxy: {type: string}
 
   ### HTTP POST
   http_post_url: *arrayOfString
@@ -505,6 +508,7 @@ properties:
   mattermost_ignore_ssl_errors: {type: boolean}
   mattermost_username_override: {type: string}
   mattermost_channel_override: *arrayOfString
+  mattermost_emoji_override: {type: string}
   mattermost_icon_url_override: {type: string}
   mattermost_msg_pretext: {type: string}
   mattermost_msg_color: {enum: [good, warning, danger]}

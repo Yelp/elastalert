@@ -66,6 +66,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``kibana_password`` (string, no default)                     |           |
 +--------------------------------------------------------------+           |
+| ``kibana_verify_certs`` (boolean, default True)              |           |
++--------------------------------------------------------------+           |
 | ``generate_kibana_discover_url`` (boolean, default False)    |           |
 +--------------------------------------------------------------+           |
 | ``shorten_kibana_discover_url`` (boolean, default False)     |           |
@@ -87,6 +89,8 @@ Rule Configuration Cheat Sheet
 | ``use_local_time`` (boolean, default True)                   |           |
 +--------------------------------------------------------------+           |
 | ``realert`` (time, default: 1 min)                           |           |
++--------------------------------------------------------------+           |
+| ``realert_key`` (string, defaults to the rule name)          |           |
 +--------------------------------------------------------------+           |
 | ``exponential_realert`` (time, no default)                   |           |
 +--------------------------------------------------------------+           |
@@ -127,6 +131,8 @@ Rule Configuration Cheat Sheet
 | ``timestamp_format`` (string, default "%Y-%m-%dT%H:%M:%SZ")  |           |
 +--------------------------------------------------------------+           |
 | ``timestamp_format_expr`` (string, no default )              |           |
++--------------------------------------------------------------+           |
+| ``timestamp_to_datetime_format_expr`` (string, no default )  |           |
 +--------------------------------------------------------------+           |
 | ``_source_enabled`` (boolean, default True)                  |           |
 +--------------------------------------------------------------+           |
@@ -273,6 +279,10 @@ index
 ``index``: The name of the index that will be searched. Wildcards can be used here, such as:
 ``index: my-index-*`` which will match ``my-index-2014-10-05``. You can also use a format string containing
 ``%Y`` for year, ``%m`` for month, and ``%d`` for day. To use this, you must also set ``use_strftime_index`` to true. (Required, string, no default)
+
+For example, Separate multiple indices with commas.::
+
+    index: topbeat-*,packetbeat-*
 
 name
 ^^^^
@@ -489,6 +499,12 @@ This is applied to the time the alert is sent, not to the time of the event. It 
 that if ElastAlert 2 is run over a large time period which triggers many matches, only the first alert will be sent by default. If you want
 every alert, set realert to 0 minutes. (Optional, time, default 1 minute)
 
+realert_key
+^^^^^^^^^^^
+
+``realert_key``: This option allows you to customize the key for ``realert``.  The default is the rule name, but if you have multiple rules that
+you would like to use the same key for you can set the ``realert_key`` to be the same in those rules. (Optional, string, default is the rule name)
+
 exponential_realert
 ^^^^^^^^^^^^^^^^^^^
 
@@ -606,6 +622,11 @@ This value is only used if ``shorten_kibana_discover_url`` is true.
 
 (Optional, string, no default)
 
+kibana_verify_certs
+^^^^^^^^^^^^^^^^^^^
+
+``kibana_verify_certs``: Whether or not to verify TLS certificates when querying Kibana. (Optional, boolean, default True)
+
 generate_kibana_discover_url
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -674,7 +695,7 @@ kibana_discover_version
 The currently supported versions of Kibana Discover are:
 
 - `7.0`, `7.1`, `7.2`, `7.3`, `7.4`, `7.5`, `7.6`, `7.7`, `7.8`, `7.9`, `7.10`, `7.11`, `7.12`, `7.13`, `7.14`, `7.15`, `7.16`, `7.17`
-- `8.0`, `8.1`, `8.2`, `8.3`, `8.4`
+- `8.0`, `8.1`, `8.2`, `8.3`, `8.4`, `8.5`
 
 ``kibana_discover_version: '7.15'``
 
@@ -809,7 +830,7 @@ timestamp_format_expr
 ^^^^^^^^^^^^^^^^^^^^^
 
 ``timestamp_format_expr``: In case Elasticsearch used custom date format for date type field, this option provides a way to adapt the
-value obtained converting a datetime through ``timestamp_format``, when the format cannot match perfectly what defined in Elastisearch.
+value obtained converting a datetime through ``timestamp_format``, when the format cannot match perfectly what defined in Elasticsearch.
 When set, this option is evaluated as a Python expression along with a *globals* dictionary containing the original datetime instance
 named ``dt`` and the timestamp to be refined, named ``ts``. The returned value becomes the timestamp obtained from the datetime.
 For example, when the date type field in Elasticsearch uses milliseconds (``yyyy-MM-dd'T'HH:mm:ss.SSS'Z'``) and ``timestamp_format``
@@ -817,6 +838,17 @@ option is ``'%Y-%m-%dT%H:%M:%S.%fZ'``, Elasticsearch would fail to parse query t
 it gets 6 digits instead of 3 - since the ``%f`` placeholder stands for microseconds for Python *strftime* method calls.
 Setting ``timestamp_format_expr: 'ts[:23] + ts[26:]'`` will truncate the value to milliseconds granting Elasticsearch compatibility.
 This option is only valid if ``timestamp_type`` set to ``custom``.
+(Optional, string, no default).
+
+timestamp_to_datetime_format_expr
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``timestamp_to_datetime_format_expr``: In the same spirit as timestamp_format_expr, in case Elasticsearch used custom date format for date type field,
+this option provides a way to adapt the value (as a string) returned by an Elasticsearch query before converting it into a datetime used by elastalert.
+The changes are applied before converting the timestamp string to a datetime using ``timestamp_format``. This is useful when the format cannot match perfectly what is returned by Elasticsearch. When set, this option is evaluated as a Python expression along with a *globals* dictionary containing the original timestamp to be refined (as a string) named ``ts``. The returned value will be parse into a python datetime using the previously defined format (or using the default '%Y-%m-%dT%H:%M:%SZ').
+
+For example, when the date type field returned by Elasticsearch uses nanoseconds (``yyyy-MM-dd'T'HH:mm:ss.SSS.XXXXXX``) and ``timestamp_format``
+option is ``'%Y-%m-%dT%H:%M:%S.%f'`` (ns are not supported in python datetime.datetime.strptime), Elasticsearch would fail to parse the timestamp terms as they contain nanoseconds values - that is it gets 3 additional digits that can't be parsed, throwing the exception``ValueError: unconverted data remains: XXX``. Setting ``timestamp_to_datetime_format_expr: 'ts[:23]'`` will truncate the value to milliseconds, allowing a good conversion in a datetime object. This option is only valid if ``timestamp_type`` set to ``custom``. 
 (Optional, string, no default).
 
 _source_enabled
@@ -1761,6 +1793,44 @@ Example usage::
     msg: "message"
     log: "@log_name"
 
+Additional explanation:
+
+ElastAlert 2 can send two categories of data to Alertmanager: labels and annotations
+
+Labels are sent as either static values or a single field value lookup. So if you specify the following::
+
+    alertmanager_labels:
+      someStaticLabel: "Verify this issue"
+      anotherStaticLabel: "someone@somewhere.invalid"
+
+    alertmanager_fields:
+      myLabelName: someElasticFieldName
+      anotherLabel: anotherElasticFieldName
+
+The first labels will be static, but the two field will be replaced with the corresponding field values from the Elastic record that triggered the alert, and then merged back into the list of labels sent to Alertmanager.
+
+Annotations are slightly different. You can have many static (hardcoded) annotations and only two annotations that will be formatted according to the `alert_text` and `alert_subject` [documentation](https://elastalert2.readthedocs.io/en/latest/ruletypes.html#alert-subject). 
+
+For example::
+
+    alertmanager_annotations:
+      someStaticAnnotation: "This is a static annotation value, it never changes"
+      severity: P3
+
+    alertmanager_alert_subject_labelname: myCustomAnnotationName1
+    alertmanager_alert_text_labelname: myCustomAnnotationName2
+
+    alert_subject: "Host {0} has status {1}"
+    alert_subject_args:
+    - http_host
+    - status
+
+    alert_text: "URL {0} has {1} matches"
+    alert_text_type: alert_text_only
+    alert_text_args:
+    - uri
+    - num_matches
+
 AWS SES (Amazon Simple Email Service)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2280,6 +2350,8 @@ Optional:
 
 ``googlechat_footer_kibanalink``: URL to Kibana to include in the card footer. (Only used if format=card)
 
+``googlechat_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to GoogleChat. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
+
 Graylog GELF
 ~~~~~~~~~~
 GELF alerter will send a custom message to a Graylog GELF input (HTTP/TCP). Alert payload content you form with key-value pairs.
@@ -2420,13 +2492,13 @@ This alert requires four additional options:
 
   For an example Jira account file, see ``examples/rules/jira_acct.yaml``. The account file is a YAML formatted file. 
 
-  When using user/password authentication, the Jira account file must contain two fields:
+  When using user/password authentication, or when using Jira Cloud the Jira account file must contain two fields:
 
   ``user``: The username to authenticate with Jira.
 
-  ``password``: The password to authenticate with Jira.
+  ``password``: The password to authenticate with Jira. Jira cloud users must specify the Jira Cloud API token for this value.
 
-  When using a Personal Access Token, the Jira account file must contain a single field:
+  When using a Personal Access Token, such as when using a locally hosted Jira installation, the Jira account file must contain a single field:
 
   ``apikey``: The Personal Access Token for authenticating with Jira.
 
@@ -2553,8 +2625,11 @@ Optional:
 
 ``mattermost_channel_override``: Incoming webhooks have a default channel, but it can be overridden. A public channel can be specified "#other-channel", and a Direct Message with "@username".
 
-``mattermost_icon_url_override``: By default ElastAlert 2 will use the default webhook icon when posting to the channel. You can provide icon_url to use custom image.
-Provide absolute address of the picture or Base64 data url.
+``mattermost_emoji_override``: By default ElastAlert 2 will use the ``:ghost:`` emoji when posting to the channel. You can use a different emoji per
+ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/ . If mattermost_icon_url_override parameter is provided, emoji is ignored.
+
+``mattermost_icon_url_override``: By default ElastAlert 2 will use the ``:ghost:`` emoji when posting to the channel. You can provide icon_url to use custom image.
+Provide absolute address of the pciture.
 
 ``mattermost_msg_pretext``: You can set the message attachment pretext using this option.
 

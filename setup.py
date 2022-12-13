@@ -8,7 +8,7 @@ from setuptools import setup
 base_dir = os.path.dirname(__file__)
 setup(
     name='elastalert2',
-    version='2.7.0',
+    version='2.9.0',
     description='Automated rule-based alerting for Elasticsearch',
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
@@ -21,7 +21,7 @@ setup(
         "Discussion Forum": "https://github.com/jertel/elastalert2/discussions",
     },
     classifiers=[
-        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ],

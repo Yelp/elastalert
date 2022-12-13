@@ -14,7 +14,7 @@ Configuration flags
 ===================
 
 However you choose to run ElastAlert 2, the ElastAlert 2 process is started by invoking
-``python elastalert/elastalert.py``.
+``python -m elastalert.elastalert``.
 
 This command accepts several configuration flags:
 
@@ -80,7 +80,7 @@ elastalert2 container image on `Docker Hub <https://hub.docker.com/r/jertel/elas
 
 Be aware that the ``latest`` tag of the image represents the latest commit into
 the master branch. If you prefer to upgrade more slowly you will need utilize a
-versioned tag, such as ``2.7.0`` instead, or ``2`` if you are comfortable with
+versioned tag, such as ``2.9.0`` instead, or ``2`` if you are comfortable with
 always using the latest released version of ElastAlert 2.
 
 A properly configured config.yaml file must be mounted into the container during
@@ -206,11 +206,11 @@ Requirements
 
 - Elasticsearch 7.x or 8.x, or OpenSearch 1.x or 2.x
 - ISO8601 or Unix timestamped data
-- Python 3.10. Require OpenSSL 1.1.1 or newer.
+- Python 3.11. Require OpenSSL 1.1.1 or newer.
 - pip
-- Packages on Ubuntu 21.x: build-essential python3-pip python3.10 python3.10-dev libffi-dev libssl-dev
+- Packages on Ubuntu 21.x: build-essential python3-pip python3.11 python3.11-dev libffi-dev libssl-dev
 
-If you want to install python 3.10 on CentOS, please install python 3.10 from the source code after installing 'Development Tools'.
+If you want to install python 3.11 on CentOS, please install python 3.11 from the source code after installing 'Development Tools'.
 
 Downloading and Configuring
 ---------------------------

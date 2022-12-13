@@ -39,7 +39,7 @@ image:
   # docker image
   repository: jertel/elastalert2
   # docker image tag
-  tag: 2.7.0
+  tag: 2.9.0
   pullPolicy: IfNotPresent
   pullSecret: ""
 
@@ -88,6 +88,9 @@ elasticsearch:
 
 # Optional env variables for the pod
 optEnv: []
+
+## Specify optional additional containers to run alongside the Elastalert2 container.
+extraContainers: []
 
 extraConfigOptions: {}
   # # Options to propagate to all rules, e.g. a common slack_webhook_url or kibana_url

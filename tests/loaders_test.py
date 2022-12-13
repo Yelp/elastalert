@@ -53,6 +53,9 @@ test_args.rule = None
 test_args.debug = False
 test_args.es_debug_trace = None
 
+testrule_args = mock.Mock()
+testrule_args.rule = 'testrule.yaml'
+
 
 def test_import_rules():
     rules_loader = FileRulesLoader(test_config)
@@ -309,14 +312,10 @@ def test_load_ssl_env_false():
         mock_conf_open.return_value = test_config_copy
         with mock.patch('elastalert.loaders.read_yaml') as mock_rule_open:
             mock_rule_open.return_value = test_rule_copy
-
-            with mock.patch('os.listdir') as mock_ls:
-                with mock.patch.dict(os.environ, {'ES_USE_SSL': 'false'}):
-                    mock_ls.return_value = ['testrule.yaml']
-                    rules = load_conf(test_args)
-                    rules['rules'] = rules['rules_loader'].load(rules)
-
-                    assert rules['use_ssl'] is False
+            with mock.patch.dict(os.environ, {'ES_USE_SSL': 'false'}):
+                rules = load_conf(test_args)
+                rules['rules'] = rules['rules_loader'].load(rules, testrule_args)
+                assert rules['use_ssl'] is False
 
 
 def test_load_ssl_env_true():
@@ -328,14 +327,10 @@ def test_load_ssl_env_true():
         mock_conf_open.return_value = test_config_copy
         with mock.patch('elastalert.loaders.read_yaml') as mock_rule_open:
             mock_rule_open.return_value = test_rule_copy
-
-            with mock.patch('os.listdir') as mock_ls:
-                with mock.patch.dict(os.environ, {'ES_USE_SSL': 'true'}):
-                    mock_ls.return_value = ['testrule.yaml']
-                    rules = load_conf(test_args)
-                    rules['rules'] = rules['rules_loader'].load(rules)
-
-                    assert rules['use_ssl'] is True
+            with mock.patch.dict(os.environ, {'ES_USE_SSL': 'true'}):
+                rules = load_conf(test_args)
+                rules['rules'] = rules['rules_loader'].load(rules, testrule_args)
+                assert rules['use_ssl'] is True
 
 
 def test_load_url_prefix_env():
@@ -347,14 +342,10 @@ def test_load_url_prefix_env():
         mock_conf_open.return_value = test_config_copy
         with mock.patch('elastalert.loaders.read_yaml') as mock_rule_open:
             mock_rule_open.return_value = test_rule_copy
-
-            with mock.patch('os.listdir') as mock_ls:
-                with mock.patch.dict(os.environ, {'ES_URL_PREFIX': 'es/'}):
-                    mock_ls.return_value = ['testrule.yaml']
-                    rules = load_conf(test_args)
-                    rules['rules'] = rules['rules_loader'].load(rules)
-
-                    assert rules['es_url_prefix'] == 'es/'
+            with mock.patch.dict(os.environ, {'ES_URL_PREFIX': 'es/'}):
+                rules = load_conf(test_args)
+                rules['rules'] = rules['rules_loader'].load(rules, testrule_args)
+                assert rules['es_url_prefix'] == 'es/'
 
 
 def test_load_disabled_rules():
@@ -365,13 +356,10 @@ def test_load_disabled_rules():
         mock_conf_open.return_value = test_config_copy
         with mock.patch('elastalert.loaders.read_yaml') as mock_rule_open:
             mock_rule_open.return_value = test_rule_copy
-
-            with mock.patch('os.listdir') as mock_ls:
-                mock_ls.return_value = ['testrule.yaml']
-                rules = load_conf(test_args)
-                rules['rules'] = rules['rules_loader'].load(rules)
-                # The rule is not loaded for it has "is_enabled=False"
-                assert len(rules['rules']) == 0
+            rules = load_conf(test_args)
+            rules['rules'] = rules['rules_loader'].load(rules, testrule_args)
+            # The rule is not loaded for it has "is_enabled=False"
+            assert len(rules['rules']) == 0
 
 
 def test_raises_on_missing_config():
@@ -460,6 +448,53 @@ def test_kibana_discover_to_timedelta():
     rules_loader.load_options(test_rule_copy, test_config, 'filename.yaml')
     assert isinstance(test_rule_copy['kibana_discover_to_timedelta'], datetime.timedelta)
     assert test_rule_copy['kibana_discover_to_timedelta'] == datetime.timedelta(minutes=2)
+
+
+def test_custom_timestamp_type_timestamp_format():
+    test_config_copy = copy.deepcopy(test_config)
+    rules_loader = FileRulesLoader(test_config_copy)
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy['timestamp_type'] = 'custom'
+    test_rule_copy['timestamp_format'] = '%Y-%m-%d %H:%M:%S.%f'
+    rules_loader.load_options(test_rule_copy, test_config, 'filename.yaml')
+    test_date = datetime.datetime(2022, 11, 12, 13, 14, 15, 123456, tzinfo=datetime.timezone.utc)
+    assert isinstance(test_rule_copy['ts_to_dt']('2022-11-12 13:14:15.123456'), datetime.datetime)
+    assert test_rule_copy['ts_to_dt']('2022-11-12 13:14:15.123456') == test_date
+    assert test_rule_copy['dt_to_ts'](test_date) == '2022-11-12 13:14:15.123456'
+
+
+def test_custom_timestamp_type_timestamp_to_datetime_format_expr():
+    test_config_copy = copy.deepcopy(test_config)
+    rules_loader = FileRulesLoader(test_config_copy)
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy['timestamp_type'] = 'custom'
+    test_rule_copy['timestamp_to_datetime_format_expr'] = 'ts[:19] + ts[29:]'
+    rules_loader.load_options(test_rule_copy, test_config, 'filename.yaml')
+    test_date = datetime.datetime(2022, 11, 12, 13, 14, 15, tzinfo=datetime.timezone.utc)
+    assert isinstance(test_rule_copy['ts_to_dt']("2022-11-12T13:14:15.123456789Z"), datetime.datetime)
+    assert test_rule_copy['ts_to_dt']("2022-11-12T13:14:15.123456789Z") == test_date
+
+
+def test_custom_timestamp_type_timestamp_format_expr_using_ts():
+    test_config_copy = copy.deepcopy(test_config)
+    rules_loader = FileRulesLoader(test_config_copy)
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy['timestamp_type'] = 'custom'
+    test_rule_copy['timestamp_format_expr'] = 'ts.replace("T", " ")'
+    rules_loader.load_options(test_rule_copy, test_config, 'filename.yaml')
+    test_date = datetime.datetime(2022, 11, 12, 13, 14, 15, tzinfo=datetime.timezone.utc)
+    assert test_rule_copy['dt_to_ts'](test_date) == '2022-11-12 13:14:15Z'
+
+
+def test_custom_timestamp_type_timestamp_format_expr_using_dt():
+    test_config_copy = copy.deepcopy(test_config)
+    rules_loader = FileRulesLoader(test_config_copy)
+    test_rule_copy = copy.deepcopy(test_rule)
+    test_rule_copy['timestamp_type'] = 'custom'
+    test_rule_copy['timestamp_format_expr'] = 'dt.replace(year=2020).strftime("%Y-%m-%dT%H:%M:%SZ")'
+    rules_loader.load_options(test_rule_copy, test_config, 'filename.yaml')
+    test_date = datetime.datetime(2020, 11, 12, 13, 14, 15, tzinfo=datetime.timezone.utc)
+    assert test_rule_copy['dt_to_ts'](test_date) == '2020-11-12T13:14:15Z'
 
 
 def test_rulesloader_get_names():

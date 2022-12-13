@@ -144,8 +144,6 @@ class JiraAlerter(Alerter):
             # Support single watcher or list
             if type(self.watchers) != list:
                 self.watchers = [self.watchers]
-        if self.assignee:
-            self.jira_args['assignee'] = {'name': self.assignee}
 
         self.set_priority()
 
@@ -232,13 +230,6 @@ class JiraAlerter(Alerter):
         self.priority_ids = {}
         for x in range(len(priorities)):
             self.priority_ids[x] = priorities[x].id
-
-    def set_assignee(self, assignee):
-        self.assignee = assignee
-        if assignee:
-            self.jira_args['assignee'] = {'name': assignee}
-        elif 'assignee' in self.jira_args:
-            self.jira_args.pop('assignee')
 
     def find_existing_ticket(self, matches):
         # Default title, get stripped search version
@@ -335,6 +326,10 @@ class JiraAlerter(Alerter):
 
         try:
             self.issue = self.client.create_issue(**self.jira_args)
+
+            # Set JIRA assignee
+            if self.assignee:
+                self.client.assign_issue(self.issue, self.assignee)
 
             # You can not add watchers on initial creation. Only as a follow-up action
             if self.watchers:

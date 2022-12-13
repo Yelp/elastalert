@@ -21,6 +21,7 @@ class GoogleChatAlerter(Alerter):
         self.googlechat_header_subtitle = self.rule.get('googlechat_header_subtitle', None)
         self.googlechat_header_image = self.rule.get('googlechat_header_image', None)
         self.googlechat_footer_kibanalink = self.rule.get('googlechat_footer_kibanalink', None)
+        self.googlechat_proxy = self.rule.get('googlechat_proxy', None)
 
     def create_header(self):
         header = None
@@ -81,11 +82,14 @@ class GoogleChatAlerter(Alerter):
         else:
             message = self.create_basic(matches)
 
+        # proxy
+        proxies = {'https': self.googlechat_proxy} if self.googlechat_proxy else None
+
         # Post to webhook
         headers = {'content-type': 'application/json'}
         for url in self.googlechat_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(message), headers=headers)
+                response = requests.post(url, data=json.dumps(message), headers=headers, proxies=proxies)
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting to google chat: {}".format(e))
