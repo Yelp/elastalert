@@ -2353,7 +2353,7 @@ Optional:
 ``googlechat_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to GoogleChat. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
 Graylog GELF
-~~~~~~~~~~
+~~~~~~~~~~~~
 GELF alerter will send a custom message to a Graylog GELF input (HTTP/TCP). Alert payload content you form with key-value pairs.
 
 The alerter requires the following options:
