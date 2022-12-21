@@ -135,6 +135,7 @@ class BlacklistRule(CompareRule):
 
     def compare(self, event):
         term = lookup_es_key(event, self.rules['compare_key'])
+
         if term in self.rules['blacklist']:
             return True
         return False
