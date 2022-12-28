@@ -89,6 +89,8 @@ class RulesLoader(object):
 
     base_config = {}
 
+    disabled_rules = []
+
     def __init__(self, conf):
         # schema for rule yaml
         self.rule_schema = jsonschema.Draft7Validator(
@@ -119,6 +121,7 @@ class RulesLoader(object):
                     continue
                 # By setting "is_enabled: False" in rule file, a rule is easily disabled
                 if 'is_enabled' in rule and not rule['is_enabled']:
+                    self.disabled_rules.append(rule)
                     continue
                 if rule['name'] in names:
                     raise EAException('Duplicate rule named %s' % (rule['name']))
@@ -475,6 +478,9 @@ class RulesLoader(object):
             raise EAException('Error initiating alert %s: %s' % (rule['alert'], e)).with_traceback(sys.exc_info()[2])
 
         return alert_field
+
+    def get_disabled_rules(self):
+        return self.disabled_rules
 
     @staticmethod
     def adjust_deprecated_values(rule):
