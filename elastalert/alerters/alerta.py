@@ -48,7 +48,7 @@ class AlertaAlerter(Alerter):
         headers = {'content-type': 'application/json'}
         if self.api_key is not None:
             headers['Authorization'] = 'Key %s' % (self.rule['alerta_api_key'])
-        alerta_payload = self.get_json_payload(matches[0])
+        alerta_payload = self.get_json_payload(matches)
 
         try:
             response = requests.post(self.url, data=alerta_payload, headers=headers, verify=self.verify_ssl)
@@ -70,7 +70,7 @@ class AlertaAlerter(Alerter):
         return {'type': 'alerta',
                 'alerta_url': self.url}
 
-    def get_json_payload(self, match):
+    def get_json_payload(self, matches):
         """
             Builds the API Create Alert body, as in
             http://alerta.readthedocs.io/en/latest/api/reference.html#create-an-alert
@@ -79,6 +79,8 @@ class AlertaAlerter(Alerter):
 
         """
 
+        # use the first match in the list for setting attributes
+        match = matches[0]
         # Using default text and event title if not defined in rule
         alerta_text = self.rule['type'].get_match_str([match]) if self.text == '' else resolve_string(self.text, match, self.missing_text)
         alerta_event = self.create_default_title([match]) if self.event == '' else resolve_string(self.event, match, self.missing_text)
@@ -108,7 +110,7 @@ class AlertaAlerter(Alerter):
             'correlate': [resolve_string(an_event, match, self.missing_text) for an_event in self.correlate],
             'attributes': dict(list(zip(self.attributes_keys,
                                         [resolve_string(a_value, match, self.missing_text) for a_value in self.attributes_values]))),
-            'rawData': self.create_alert_body([match]),
+            'rawData': self.create_alert_body(matches),
         }
 
         try:
