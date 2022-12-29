@@ -883,11 +883,11 @@ def test_get_json_payload_error():
         'alert': 'alerta',
         'query_key': 'hostname'
     }
-    match = {
+    match = [{
         '@timestamp': '2014-10-10T00:00:00',
         'sender_ip': '1.1.1.1',
         'hostname': 'aProbe'
-    }
+    }]
     rules_loader = FileRulesLoader({})
     rules_loader.load_modules(rule)
     alert = AlertaAlerter(rule)
