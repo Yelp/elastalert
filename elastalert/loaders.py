@@ -130,7 +130,7 @@ class RulesLoader(object):
         'datadog': elastalert.alerters.datadog.DatadogAlerter,
         'ses': elastalert.alerters.ses.SesAlerter,
         'rocketchat': elastalert.alerters.rocketchat.RocketChatAlerter,
-        'gelf': elastalert.alerters.gelf.Gelf
+        'gelf': elastalert.alerters.gelf.GelfAlerter
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list

@@ -9,11 +9,11 @@ from elastalert.alerts import Alerter
 from elastalert.util import EAException, elastalert_logger
 
 
-class Gelf(Alerter):
+class GelfAlerter(Alerter):
     required_options = set(['gelf_type'])
 
     def __init__(self, rule):
-        super(Gelf, self).__init__(rule)
+        super(GelfAlerter, self).__init__(rule)
         self.gelf_type = self.rule.get('gelf_type')
         self.gelf_endpoint = self.rule.get('gelf_endpoint')
         self.gelf_host = self.rule.get('gelf_host')
@@ -31,7 +31,7 @@ class Gelf(Alerter):
         self.gelf_version = self.rule.get('gelf_version', '1.1')
         self.gelf_log_level = self.rule.get('gelf_log_level', 5)
         self.additional_headers = self.rule.get('gelf_http_headers')
-        self.ca_cert = self.rule.get('gelf_ca_cert')
+        self.ca_cert = self.rule.get('gelf_ca_cert', False)
         self.http_ignore_ssl_errors = self.rule.get('http_ignore_ssl_errors', False)
         self.timeout = self.rule.get('timeout', 30)
 
@@ -72,7 +72,7 @@ class Gelf(Alerter):
 
         except socket.error as e:
             raise EAException("Error posting GELF message via TCP: %s" % e)
-        elastalert_logger.info("GELF message sent via HTTP.")
+        elastalert_logger.info("GELF message sent via TCP.")
 
     def alert(self, matches):
         """
