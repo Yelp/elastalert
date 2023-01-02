@@ -259,7 +259,7 @@ def test_gelf_sent_tcp_with_optional_fields(caplog):
 
     mock_socket.assert_called_once_with(socket.AF_INET, socket.SOCK_STREAM)
     mock_socket.return_value.connect.assert_called_once_with(mock.ANY)
-    mock_socket.return_value.settimeout.assert_called_once_with(rule['timeout'])
+    mock_socket.return_value.settimeout.assert_called_once_with(rule['gelf_timeout'])
 
     assert expected_data == mock_socket.return_value.sendall.call_args[0][0]
     assert ('elastalert', logging.INFO, 'GELF message sent via TCP.') == caplog.record_tuples[0]
