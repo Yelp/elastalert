@@ -471,7 +471,7 @@ properties:
             required: [field]
             properties:
               field: {type: string, minLength: 1}
-  gelf_log_level: {type: integer}
+  gelf_log_level: {type: integer, enum: ['0', 1', '2', '3', '4', '5', '6', '7']}
   gelf_http_headers:
     type: object
     minProperties: 1
