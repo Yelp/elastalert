@@ -57,7 +57,7 @@ def test_gelf_sent_http_with_custom_ca(caplog):
         'gelf_type': 'http',
         'gelf_endpoint': 'https://example.graylog.site',
         'gelf_ca_cert': './ca.crt',
-        'http_ignore_ssl_errors': False,
+        'gelf_http_ignore_ssl_errors': False,
         'gelf_payload': {'username': 'username', 'account_status': 'account_status'},
         'alert': [],
     }
@@ -102,8 +102,8 @@ def test_gelf_sent_http_with_optional_fields(caplog):
         'gelf_endpoint': 'http://example.graylog.site',
         'gelf_http_headers': {'Accept': 'application/json;charset=utf-8'},
         'gelf_log_level': 1,
-        'http_ignore_ssl_errors': True,
-        'timeout': 10,
+        'gelf_http_ignore_ssl_errors': True,
+        'gelf_timeout': 10,
         'gelf_payload': {'username': 'username', 'account_status': 'account_status'},
         'alert': [],
     }
@@ -231,7 +231,7 @@ def test_gelf_sent_tcp_with_optional_fields(caplog):
         'gelf_host': '127.0.0.1',
         'gelf_port': 12201,
         'gelf_payload': {'username': 'username', 'account_status': 'account_status'},
-        'timeout': 10,
+        'gelf_timeout': 10,
         'gelf_log_level': 1,
         'alert': [],
     }
