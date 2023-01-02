@@ -140,7 +140,10 @@ def test_looking_up_arrays(ea):
             {'foo': 'bar'},
             {'foo': [{'bar': 'baz'}]},
             {'foo': {'bar': 'baz'}}
-        ]
+        ],
+        'nested': {
+            'foo': ['bar', 'baz']
+        }
     }
     assert lookup_es_key(record, 'flags[0]') == 1
     assert lookup_es_key(record, 'flags[1]') == 2
@@ -149,6 +152,8 @@ def test_looking_up_arrays(ea):
     assert lookup_es_key(record, 'objects[2]foo.bar') == 'baz'
     assert lookup_es_key(record, 'objects[1]foo[1]bar') is None
     assert lookup_es_key(record, 'objects[1]foo[0]baz') is None
+    assert lookup_es_key(record, 'nested.foo[0]') == 'bar'
+    assert lookup_es_key(record, 'nested.foo[1]') == 'baz'
 
 
 def test_add_raw_postfix(ea):
