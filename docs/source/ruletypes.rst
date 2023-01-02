@@ -2390,9 +2390,9 @@ Optional:
 
 ``gelf_ca_cert``: Path to custom CA certificate.
 
-``http_ignore_ssl_errors``: Ignore ssl error. (Only used if gelf_type=http)
+``gelf_http_ignore_ssl_errors``: Ignore ssl error. (Only used if gelf_type=http)
 
-``timeout``: Custom timeout.
+``gelf_timeout``: Custom timeout.
 
 HTTP POST
 ~~~~~~~~~
