@@ -454,6 +454,40 @@ properties:
   gitter_msg_level: {enum: [info, error]}
   gitter_proxy: {type: string}
 
+  ### Gelf
+  gelf_type: {type: string, enum: ['http', 'tcp']}
+  gelf_endpoint: {type: string}
+  gelf_host: {type: string}
+  gelf_port: {type: integer}
+  gelf_payload:
+    type: object
+    minProperties: 1
+    patternProperties:
+      "^.+$":
+        oneOf:
+          - type: string
+          - type: object
+            additionalProperties: false
+            required: [field]
+            properties:
+              field: {type: string, minLength: 1}
+  gelf_log_level: {type: integer, enum: ['0', 1', '2', '3', '4', '5', '6', '7']}
+  gelf_http_headers:
+    type: object
+    minProperties: 1
+    patternProperties:
+      "^.+$":
+        oneOf:
+          - type: string
+          - type: object
+            additionalProperties: false
+            required: [ field ]
+            properties:
+              field: { type: string, minLength: 1 }
+  gelf_ca_cert: {type: string}
+  gelf_http_ignore_ssl_errors: {type: boolean}
+  gelf_timeout: {type: integer}
+
   ### GoogleChat
   googlechat_webhook_url: *arrayOfString
   googlechat_format: {type: string, enum: ['basic', 'card']}

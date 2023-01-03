@@ -41,6 +41,7 @@ Currently, we have support built in for these alert types:
 - Exotel
 - Gitter
 - GoogleChat
+- Graylog GELF
 - HTTP POST
 - HTTP POST 2
 - Jira
