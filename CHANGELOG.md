@@ -1,7 +1,7 @@
 # 2.TBD.TBD
 
 ## Breaking changes
-- None
+- [Alerta] All matches will now be sent with the alert - [#1068](https://github.com/jertel/elastalert2/pull/1068) - @dakotacody
 
 ## New features
 - [Graylog GELF] Alerter added. [#1050](https://github.com/jertel/elastalert2/pull/1050) - @malinkinsa
