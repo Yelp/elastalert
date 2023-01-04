@@ -21,6 +21,7 @@ import elastalert.alerters.dingtalk
 import elastalert.alerters.discord
 import elastalert.alerters.exotel
 import elastalert.alerters.gitter
+import elastalert.alerters.gelf
 import elastalert.alerters.googlechat
 import elastalert.alerters.httppost
 import elastalert.alerters.httppost2
@@ -128,7 +129,8 @@ class RulesLoader(object):
         'chatwork': elastalert.alerters.chatwork.ChatworkAlerter,
         'datadog': elastalert.alerters.datadog.DatadogAlerter,
         'ses': elastalert.alerters.ses.SesAlerter,
-        'rocketchat': elastalert.alerters.rocketchat.RocketChatAlerter
+        'rocketchat': elastalert.alerters.rocketchat.RocketChatAlerter,
+        'gelf': elastalert.alerters.gelf.GelfAlerter
     }
 
     # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
