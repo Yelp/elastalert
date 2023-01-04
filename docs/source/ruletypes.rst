@@ -1796,6 +1796,8 @@ Provide absolute address of the pciture, for example: http://some.address.com/im
 
 ``slack_kibana_discover_title``: The title of the Kibana Discover url attachment. Defaults to ``Discover in Kibana``.
 
+``slack_aggregation_table_width``: Maximum width of aggregation table in symbols. Defaults to ``75``.
+
 Mattermost
 ~~~~~~~~~~
 
