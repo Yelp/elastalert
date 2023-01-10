@@ -531,7 +531,8 @@ class ElastAlerter(object):
             buckets = res['aggregations']['filtered']['counts']['buckets']
         else:
             buckets = res['aggregations']['counts']['buckets']
-        self.thread_data.num_hits += len(buckets)
+        if getattr(self.thread_data, "num_hits", None):
+            self.thread_data.num_hits += len(buckets)
         lt = rule.get('use_local_time')
         elastalert_logger.info(
             'Queried rule %s from %s to %s: %s buckets' % (rule['name'], pretty_ts(starttime, lt), pretty_ts(endtime, lt), len(buckets))
@@ -1465,6 +1466,19 @@ class ElastAlerter(object):
         if alert_time is None:
             alert_time = ts_now()
 
+        if rule.get('aggregation'):
+            # Calculate Total Hits (useful in-case of aggregation)
+            total_agg_hits = 0
+            total_agg_matches = len(matches)
+            for match in matches:
+                total_agg_hits += match['num_hits']
+
+            num_matches = rule.get('aggregation_max_alerts', len(matches))
+            matches = matches[:num_matches]
+            for match in matches:
+                match['total_agg_hits'] = total_agg_hits
+                match['total_agg_matches'] = total_agg_matches
+
         # Compute top count keys
         if rule.get('top_count_keys'):
             for match in matches:
@@ -1481,8 +1495,13 @@ class ElastAlerter(object):
                 else:
                     timeframe = rule.get('timeframe', datetime.timedelta(minutes=10))
 
-                start = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) - timeframe
-                end = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) + datetime.timedelta(minutes=10)
+                if rule.get('top_count_absolute_timeframe'):
+                    start = ts_to_dt(alert_time) - timeframe
+                    end = ts_to_dt(alert_time)
+                else:
+                    start = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) - timeframe
+                    end = ts_to_dt(lookup_es_key(match, rule['timestamp_field'])) + datetime.timedelta(minutes=10)
+
                 keys = rule.get('top_count_keys')
                 counts = self.get_top_counts(rule, start, end, keys, qk=qk)
                 match.update(counts)
@@ -1999,7 +2018,8 @@ class ElastAlerter(object):
                 buckets = list(hits_terms.values())[0]
 
                 # get_hits_terms adds to num_hits, but we don't want to count these
-                self.thread_data.num_hits -= len(buckets)
+                if getattr(self.thread_data, "num_hits", None):
+                    self.thread_data.num_hits -= len(buckets)
                 terms = {}
                 for bucket in buckets:
                     terms[bucket['key']] = bucket['doc_count']

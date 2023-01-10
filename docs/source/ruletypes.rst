@@ -44,6 +44,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``aggregation`` (time, no default)                           |           |
 +--------------------------------------------------------------+           |
+| ``aggregation_max_alerts`` (int, no default)                 |           |
++--------------------------------------------------------------+           |
 | ``description`` (string, default empty string)               |           |
 +--------------------------------------------------------------+           |
 | ``generate_kibana_link`` (boolean, default False)            |           |
@@ -83,6 +85,8 @@ Rule Configuration Cheat Sheet
 | ``top_count_number`` (int, default 5)                        |           |
 +--------------------------------------------------------------+           |
 | ``top_count_keys`` (list of strs)                            |           |
++--------------------------------------------------------------+           |
+| ``top_count_absolute_timeframe`` (boolean,  default False)   |           |
 +--------------------------------------------------------------+           |
 | ``raw_count_keys`` (boolean, default True)                   |           |
 +--------------------------------------------------------------+           |
@@ -374,11 +378,19 @@ Then, for the same sample data shown above listing alice and bob's events, Elast
    past events will result in different alerts than if elastalert had been running while those events occured. This behavior can be changed
    by setting ``aggregate_by_match_time``.
 
+.. note:: If aggregation is enabled, alert contains field ``total_agg_hits`` and ``total_agg_matches`` contains the summation of all alerts hits & matches.
+
 aggregate_by_match_time
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 Setting this to true will cause aggregations to be created relative to the timestamp of the first event, rather than the current time. This
 is useful for querying over historic data or if using a very large buffer_time and you want multiple aggregations to occur from a single query.
+
+aggregation_max_alerts
+^^^^^^^^^^^^^^^^^^^^^^^
+
+When doing an aggregation, this option limit the maximum alerts aggregated in on alert (And discard the rest), this can be useful when the alerter
+has a maximum message size.
 
 realert
 ^^^^^^^
@@ -464,6 +476,11 @@ top_count_number
 ^^^^^^^^^^^^^^^^
 
 ``top_count_number``: The number of terms to list if ``top_count_keys`` is set. (Optional, integer, default 5)
+
+top_count_absolute_timeframe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``top_count_absolute_timeframe``: When True, the top count query is done using (alert_time - timeframe)
 
 raw_count_keys
 ^^^^^^^^^^^^^^
