@@ -113,3 +113,7 @@ alert_time_limit:
 #            - console
 #            - file
 #        propagate: false
+
+# If set, this URL will be pinged after each run. Configure your preferred cron
+# monitor service to be alerted if ElastAlert itself stopped running.
+#ping_url: https://your-cron-monitor-service.io/your-service-ping-key
