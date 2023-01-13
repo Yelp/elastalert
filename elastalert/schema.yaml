@@ -325,7 +325,7 @@ properties:
   alertmanager_alert_subject_labelname: {type: string}
   alertmanager_alert_text_labelname: {type: string}
   alertmanager_proxy: {type: string}
-  alertmanager_ca_certs: {type: boolean}
+  alertmanager_ca_certs: {type: [boolean, string]}
   alertmanager_ignore_ssl_errors: {type: boolean}
   alertmanager_timeout: {type: integer}
   alertmanager_basic_auth_login: {type: string}
@@ -500,16 +500,16 @@ properties:
   ### HTTP POST
   http_post_url: *arrayOfString
   http_post_proxy: {type: string}
-  http_post_ca_certs: {type: boolean}
+  http_post_ca_certs: {type: [boolean, string]}
   http_post_ignore_ssl_errors: {type: boolean}
   http_post_timeout: {type: integer}
 
   ### HTTP POST 2
   http_post2_url: *arrayOfString
-  http_post2_proxy: { type: string }
-  http_post2_ca_certs: { type: boolean }
-  http_post2_ignore_ssl_errors: { type: boolean }
-  http_post2_timeout: { type: integer }
+  http_post2_proxy: {type: string}
+  http_post2_ca_certs: {type: [boolean, string]}
+  http_post2_ignore_ssl_errors: {type: boolean}
+  http_post2_timeout: {type: integer}
 
   ### Jira
   jira_server: {type: string}
@@ -569,7 +569,7 @@ properties:
   ms_teams_alert_facts: *arrayOfMsTeamsFacts
   ms_teams_attach_kibana_discover_url: {type: boolean}
   ms_teams_kibana_discover_title: {type: string}
-  ms_teams_ca_certs: {type: boolean}
+  ms_teams_ca_certs: {type: [boolean, string]}
   ms_teams_ignore_ssl_errors: {type: boolean}
 
   ### Opsgenie
@@ -631,7 +631,7 @@ properties:
   rocket_chat_attach_kibana_discover_url: {type: boolean}
   rocket_chat_kibana_discover_color: {type: string}
   rocket_chat_kibana_discover_title: {type: string}
-  rocket_chat_ca_certs: {type: boolean}
+  rocket_chat_ca_certs: {type: [boolean, string]}
   rocket_chat_ignore_ssl_errors: {type: boolean}
   rocket_chat_timeout: {type: integer}
 
@@ -671,7 +671,7 @@ properties:
   slack_attach_jira_ticket_url: {type: boolean}
   slack_jira_ticket_color: {type: string}
   slack_jira_ticket_title: {type: string}
-  slack_ca_certs: {type: boolean}
+  slack_ca_certs: {type: [boolean, string]}
   slack_footer: {type: string}
   slack_footer_icon: {type: string}
   slack_image_url: {type: string}
