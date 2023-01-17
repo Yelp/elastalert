@@ -1769,7 +1769,7 @@ Optional:
 
 ``alertmanager_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Alertmanager. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
-``alertmanager_ca_certs``: Set this options to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
+``alertmanager_ca_certs``: Set this option to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
 
 ``alertmanager_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
@@ -2418,7 +2418,7 @@ Optional:
 
 ``http_post_timeout``: The timeout value, in seconds, for making the post. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
 
-``http_post_ca_certs``: Set this options to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
+``http_post_ca_certs``: Set this option to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
 
 ``http_post_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
@@ -2457,7 +2457,7 @@ Optional:
 
 ``http_post2_timeout``: The timeout value, in seconds, for making the post. The default is 10. If a timeout occurs, the alert will be retried next time elastalert cycles.
 
-``http_post2_ca_certs``: Set this options to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
+``http_post2_ca_certs``: Set this option to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
 
 ``http_post2_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
@@ -2751,7 +2751,7 @@ Example ms_teams_attach_kibana_discover_url, ms_teams_kibana_discover_title::
     # (Optional)
     ms_teams_kibana_discover_title: "Discover in Kibana"
 
-``ms_teams_ca_certs``: Set this options to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
+``ms_teams_ca_certs``: Set this option to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
 
 ``ms_teams_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
@@ -2940,7 +2940,7 @@ ElastAlert 2 rule. Any Apple emoji can be used, see http://emojipedia.org/apple/
 
 ``rocket_chat_proxy``: By default ElastAlert 2 will not use a network proxy to send notifications to Rocket.Chat. Set this option using ``hostname:port`` if you need to use a proxy. only supports https.
 
-``rocket_chat_ca_certs``: Set this options to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
+``rocket_chat_ca_certs``: Set this option to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
 
 ``rocket_chat_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
 
@@ -3137,7 +3137,7 @@ Example slack_attach_kibana_discover_url, slack_kibana_discover_color, slack_kib
     slack_kibana_discover_color: "#ec4b98"
     slack_kibana_discover_title: "Discover in Kibana"
 
-``slack_ca_certs``: Set this options to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
+``slack_ca_certs``: Set this option to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
 
 ``slack_footer``: Add a static footer text for alert. Defaults to "".
 
