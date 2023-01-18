@@ -139,9 +139,11 @@ class MockElastAlerter(object):
 
         include = conf.get('include')
         if include:
-            for term in include:
-                if not lookup_es_key(terms, term) and '*' not in term:
-                    print("Included term %s may be missing or null" % (term), file=sys.stderr)
+            for item in include:
+                # items in includes are potentially compound fields, so split them
+                for term in item.split(','):
+                    if not lookup_es_key(terms, term) and '*' not in term:
+                        print("Included term %s may be missing or null" % (term), file=sys.stderr)
 
         for term in conf.get('top_count_keys', []):
             # If the index starts with 'logstash', fields with .raw will be available but won't in _source
