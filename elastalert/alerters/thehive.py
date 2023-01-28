@@ -1,15 +1,12 @@
 import json
 import time
 import uuid
-import logging
 
 import requests
 from requests import RequestException
 
 from elastalert.alerts import Alerter
 from elastalert.util import lookup_es_key, EAException, elastalert_logger
-
-log = logging.getLogger(__name__)
 
 class HiveAlerter(Alerter):
     """
@@ -99,6 +96,7 @@ class HiveAlerter(Alerter):
             return raw
         else:
             return raw
+
     def alert(self, matches):
         # Build TheHive alert object, starting with some defaults, updating with any
         # user-specified config
@@ -125,13 +123,23 @@ class HiveAlerter(Alerter):
 
         # Populate the customFields
         if len(matches) > 0:
-            #Populate description field
+            #Populate dynamic fields
+            alert_config['customFields'] = self.load_custom_fields(alert_config['customFields'], matches[0])
             alert_config['description']=self.load_args("description", alert_config['description'], matches[0])
-            alert_config['customFields'] = self.load_custom_fields(alert_config['customFields'],
-                                                               matches[0])
+            if 'description_args' in alert_config:
+                del alert_config['description_args']
+            
             alert_config["title"] = self.load_args("title", alert_config["title"], matches[0])
+            if 'title_args' in alert_config:
+                del alert_config['title_args']
+
             alert_config["type"] = self.load_args("type", alert_config["type"], matches[0])
+            if 'type_args' in alert_config:
+                del alert_config['type_args']
+
             alert_config["source"] = self.load_args("source", alert_config["source"], matches[0])
+            if 'source_args' in alert_config:
+                del alert_config['source_args']            
 
         # POST the alert to TheHive
         connection_details = self.rule['hive_connection']

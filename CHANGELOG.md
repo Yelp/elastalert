@@ -5,6 +5,7 @@
 
 ## New features
 - [Graylog GELF] Alerter added. [#1050](https://github.com/jertel/elastalert2/pull/1050) - @malinkinsa
+- [TheHive] Format `title`, `type`, and `source` with dynamic lookup values - [#1092](https://github.com/jertel/elastalert2/pull/1092) - @fandigunawan
 
 ## Other changes
 - [Docs] Clarify Jira Cloud authentication configuration - [94f7e8c](https://github.com/jertel/elastalert2/commit/94f7e8cc98d59a00349e3b23acd8a8549c80dbc8) - @jertel
@@ -13,7 +14,7 @@
 - Add support for Kibana 8.6 for Kibana Discover - [#1080](https://github.com/jertel/elastalert2/pull/1080) - @nsano-rururu
 - Modify schema to allow string and boolean for `*_ca_certs` to allow for one to specify a cert bundle for SSL certificate verification - [#1082](https://github.com/jertel/elastalert2/pull/1082) - @goggin
 - Fix UnicodeEncodeError in PagerDutyAlerter - [#1091](https://github.com/jertel/elastalert2/pull/1091) - @nsano-rururu
-- Adds `title`, `type`, and `source` args for The Hive Alerter - [#1092](https://github.com/jertel/elastalert2/pull/1092)- @fandigunawan  
+  
 # 2.9.0
 
 ## Breaking changes

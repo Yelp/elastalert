@@ -3329,18 +3329,9 @@ Only ``hive_apikey`` is required, ``hive_host`` and ``hive_port`` default to ``h
 
 ``hive_alert_config``: Configuration options for the alert, see example below for structure.
 
-``title`` is the main source of event's title in The Hive, you may adds parameter on the ``title`` by specifying
-it in ``title_args``
+``source``: Text content to use for TheHive event's "source" field. See the optional ``source_args`` parameter for dynamically formatting this content with dynamic lookup values.
 
-``type`` is the main source of event's type in The Hive, you may adds parameter on the ``type`` by specifying
-it in ``type_args``
-
-``source`` is the main source of event's source in The Hive, you may adds parameter on the ``source`` by specifying
-it in ``source_args``
-
-
-If not supplied, the alert title and description will be populated from the ElastAlert 2 default
-``title`` and ``alert_text`` fields, including any defined ``alert_text_args``.
+``type`` Text content to use for TheHive event's "type" field. See the optional ``type_args`` parameter for dynamically formatting this content with dynamic lookup values.
 
 Optional:
 
@@ -3364,8 +3355,17 @@ The tlp, message, and tags fields are optional for each observable. If not speci
 
 ``hive_verify``: Whether or not to enable SSL certificate validation. Defaults to False.
 
-``description_args``: can be used to call rule and match fileds in the description of the alert in TheHive
-``description_missing_value``: Text to replace any match field not found when formating the ``description``. Defaults to ``<MISSING VALUE>``.
+``description_args``: can be used to format the description field with additional rule and match field lookups. Note that the description will be initially populated from the ElastAlert 2 default ``alert_text`` fields, including any defined ``alert_text_args``. See the "Alert Content" section for more information on the default formatting.
+
+``description_missing_value``: Text to replace any match field not found when formatting the ``description``. Defaults to ``<MISSING VALUE>``.
+
+``source_args``: List of parameters to format into the ``source`` text content, with values originating from the first match event. The values will be used from the first match event.
+
+``title``: Text content to use for the new TheHive event's "title" field. This will override the default alert title generated from the ``alert_subject`` and associated arg parameters. See the "Alert Subject" section for more information on the default formatting.
+
+``title_args``: List of additional args to format against the "title" content. If the title argument is not provided then these optional arguments will be formatted against the already formatted title generated from the ``alert_subject`` and related parameters. This means that a two-phased formatting potentially could be utilized in very specific configuration scenarios.  See the "Alert Subject" section for more information on the default formatting. The values will be used from the first match event.
+
+``type_args``: List of parameters to format into the ``type`` text content, with values originating from the first match event.
 
 Example usage::
 
