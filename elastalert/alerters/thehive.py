@@ -8,7 +8,6 @@ from requests import RequestException
 from elastalert.alerts import Alerter
 from elastalert.util import lookup_es_key, EAException, elastalert_logger
 
-
 class HiveAlerter(Alerter):
     """
     Use matched data to create alerts containing observables in an instance of TheHive
@@ -79,23 +78,25 @@ class HiveAlerter(Alerter):
 
         return tag_values
 
-    def load_description(self, description_raw, match: dict):
-        missing = self.rule['hive_alert_config'].get('description_missing_value', '<MISSING VALUE>')
-        if 'description_args' in self.rule.get('hive_alert_config'):
-            description_args = self.rule['hive_alert_config'].get('description_args')
-            description_values=[]
-            for arg in description_args:
-                description_values.append(self.lookup_field(match, arg, missing))
-            for i, text_value in enumerate(description_values):
+    def load_args(self, field, raw, match: dict):
+        missing = self.rule['hive_alert_config'].get(field + '_missing_value', '<MISSING VALUE>')
+        args = field + "_args"
+        if args in self.rule.get('hive_alert_config'):
+            process_args = self.rule['hive_alert_config'].get(args)
+            process_values=[]
+            for arg in process_args:
+                process_values.append(self.lookup_field(match, arg, missing))
+            for i, text_value in enumerate(process_values):
                 if text_value is None:
-                    description_value = self.rule.get(description_args[i])
-                    if description_value:
-                        description_values[i] = description_value
-            description_values = [missing if val is None else val for val in description_values]
-            description_raw = description_raw.format(*description_values)
-            return description_raw
+                    process_value = self.rule.get(process_args[i])
+                    if process_value:
+                        process_values[i] = process_value
+            process_values = [missing if val is None else val for val in process_values]
+            raw = raw.format(*process_values)
+            return raw
         else:
-            return description_raw
+            return raw
+
     def alert(self, matches):
         # Build TheHive alert object, starting with some defaults, updating with any
         # user-specified config
@@ -120,12 +121,25 @@ class HiveAlerter(Alerter):
         alert_config['artifacts'] = artifacts
         alert_config['tags'] = list(tags)
 
-            # Populate the customFields
+        # Populate the customFields
         if len(matches) > 0:
-            #Populate description field
-            alert_config['description']=self.load_description(alert_config['description'], matches[0])
-            alert_config['customFields'] = self.load_custom_fields(alert_config['customFields'],
-                                                               matches[0])
+            #Populate dynamic fields
+            alert_config['customFields'] = self.load_custom_fields(alert_config['customFields'], matches[0])
+            alert_config['description']=self.load_args("description", alert_config['description'], matches[0])
+            if 'description_args' in alert_config:
+                del alert_config['description_args']
+            
+            alert_config["title"] = self.load_args("title", alert_config["title"], matches[0])
+            if 'title_args' in alert_config:
+                del alert_config['title_args']
+
+            alert_config["type"] = self.load_args("type", alert_config["type"], matches[0])
+            if 'type_args' in alert_config:
+                del alert_config['type_args']
+
+            alert_config["source"] = self.load_args("source", alert_config["source"], matches[0])
+            if 'source_args' in alert_config:
+                del alert_config['source_args']            
 
         # POST the alert to TheHive
         connection_details = self.rule['hive_connection']
