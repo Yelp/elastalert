@@ -3359,9 +3359,9 @@ The tlp, message, and tags fields are optional for each observable. If not speci
 
 ``description_missing_value``: Text to replace any match field not found when formatting the ``description``. Defaults to ``<MISSING VALUE>``.
 
-``source_args``: List of parameters to format into the ``source`` text content, with values originating from the first match event. The values will be used from the first match event.
+``source_args``: List of parameters to format into the ``source`` text content, with values originating from the first match event.
 
-``title``: Text content to use for the new TheHive event's "title" field. This will override the default alert title generated from the ``alert_subject`` and associated arg parameters. See the "Alert Subject" section for more information on the default formatting.
+``title``: Text content to use for TheHive event's "title" field. This will override the default alert title generated from the ``alert_subject`` and associated arg parameters. See the "Alert Subject" section for more information on the default formatting.
 
 ``title_args``: List of additional args to format against the "title" content. If the title argument is not provided then these optional arguments will be formatted against the already formatted title generated from the ``alert_subject`` and related parameters. This means that a two-phased formatting potentially could be utilized in very specific configuration scenarios.  See the "Alert Subject" section for more information on the default formatting. The values will be used from the first match event.
 
