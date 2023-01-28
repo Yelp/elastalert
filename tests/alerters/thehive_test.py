@@ -341,7 +341,7 @@ def test_load_description_default():
         "@timestamp": "2021-05-09T14:43:30",
     }
 
-    actual = alert.load_description(alert.create_alert_body(match), match)
+    actual = alert.load_args("description", alert.create_alert_body(match), match)
     expected = alert.create_alert_body(match)
     assert actual == expected
 
@@ -382,7 +382,7 @@ def test_load_description_no_args():
         },
         "@timestamp": "2021-05-09T14:43:30",
     }
-    actual = alert.load_description(rule['hive_alert_config']['description'], match)
+    actual = alert.load_args("description", rule['hive_alert_config']['description'], match)
     expected = rule['hive_alert_config']['description']
     assert actual == expected
 
@@ -427,7 +427,7 @@ def test_load_description_args():
         },
         "@timestamp": "2021-05-09T14:43:30",
     }
-    actual = alert.load_description(rule['hive_alert_config']['description'], match)
+    actual = alert.load_args("description", rule['hive_alert_config']['description'], match)
     expected = "Unit test from host:<Value not found in logs> to 127.0.0.1"
     assert actual == expected
 
@@ -470,7 +470,7 @@ def test_load_description_missing_value_default():
         },
         "@timestamp": "2021-05-09T14:43:30",
     }
-    actual = alert.load_description(rule['hive_alert_config']['description'], match)
+    actual = alert.load_args("description", rule['hive_alert_config']['description'], match)
     expected = "Unit test from host:<MISSING VALUE> to 127.0.0.1"
     assert actual == expected
 

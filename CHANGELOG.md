@@ -13,7 +13,7 @@
 - Add support for Kibana 8.6 for Kibana Discover - [#1080](https://github.com/jertel/elastalert2/pull/1080) - @nsano-rururu
 - Modify schema to allow string and boolean for `*_ca_certs` to allow for one to specify a cert bundle for SSL certificate verification - [#1082](https://github.com/jertel/elastalert2/pull/1082) - @goggin
 - Fix UnicodeEncodeError in PagerDutyAlerter - [#1091](https://github.com/jertel/elastalert2/pull/1091) - @nsano-rururu
-
+- Adds `title`, `type`, and `source` args for The Hive Alerter - @fandigunawan  
 # 2.9.0
 
 ## Breaking changes

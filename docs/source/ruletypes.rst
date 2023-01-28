@@ -3329,6 +3329,16 @@ Only ``hive_apikey`` is required, ``hive_host`` and ``hive_port`` default to ``h
 
 ``hive_alert_config``: Configuration options for the alert, see example below for structure.
 
+``title`` is the main source of event's title in The Hive, you may adds parameter on the ``title`` by specifying
+it in ``title_args``
+
+``type`` is the main source of event's type in The Hive, you may adds parameter on the ``type`` by specifying
+it in ``type_args``
+
+``source`` is the main source of event's source in The Hive, you may adds parameter on the ``source`` by specifying
+it in ``source_args``
+
+
 If not supplied, the alert title and description will be populated from the ElastAlert 2 default
 ``title`` and ``alert_text`` fields, including any defined ``alert_text_args``.
 
@@ -3377,13 +3387,16 @@ Example usage::
       follow: True
       severity: 2
       status: 'New'
-      source: 'elastalert'
+      source: 'src-{}'
+      source_args: [ data.source ]
       description_args: [ name, description]
       description: '{0} : {1}'
       tags: ['tag1', 'tag2']
-      title: 'Title'
+      title: 'Title {}'
+      title_args: [ data.title ]
       tlp: 3
-      type: 'external'
+      type: 'type-{}'
+      type_args: [ data.type ]
 
     hive_observable_data_mapping:
       - domain: agent.hostname
