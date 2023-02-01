@@ -876,11 +876,31 @@ def test_set_starttime(ea):
     ea.set_starttime(ea.rules[0], end)
     assert ea.rules[0]['starttime'] == end - ea.buffer_time
 
-    # scan_entire_timeframe
-    ea.rules[0].pop('previous_endtime')
+    # scan_entire_timeframe without use_count_query or use_terms_query
     ea.rules[0].pop('starttime')
     ea.rules[0]['timeframe'] = datetime.timedelta(days=3)
     ea.rules[0]['scan_entire_timeframe'] = True
+    with mock.patch.object(ea, 'get_starttime') as mock_gs:
+        mock_gs.return_value = None
+        ea.set_starttime(ea.rules[0], end)
+    assert ea.rules[0]['starttime'] == end - datetime.timedelta(days=3)
+
+    # scan_entire_timeframe with use_count_query, first run
+    ea.rules[0].pop('starttime')
+    ea.rules[0]['timeframe'] = datetime.timedelta(days=3)
+    ea.rules[0]['scan_entire_timeframe'] = True
+    ea.rules[0]['use_count_query'] = True
+    with mock.patch.object(ea, 'get_starttime') as mock_gs:
+        mock_gs.return_value = None
+        ea.set_starttime(ea.rules[0], end)
+    assert ea.rules[0]['starttime'] == end - datetime.timedelta(days=3)
+
+    # scan_entire_timeframe with use_count_query, subsequent run
+    ea.rules[0].pop('starttime')
+    ea.rules[0]['timeframe'] = datetime.timedelta(days=3)
+    ea.rules[0]['scan_entire_timeframe'] = True
+    ea.rules[0]['use_count_query'] = True
+    ea.rules[0]['previous_endtime'] = end
     with mock.patch.object(ea, 'get_starttime') as mock_gs:
         mock_gs.return_value = None
         ea.set_starttime(ea.rules[0], end)

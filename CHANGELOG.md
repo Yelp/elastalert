@@ -14,6 +14,7 @@
 - Add support for Kibana 8.6 for Kibana Discover - [#1080](https://github.com/jertel/elastalert2/pull/1080) - @nsano-rururu
 - Modify schema to allow string and boolean for `*_ca_certs` to allow for one to specify a cert bundle for SSL certificate verification - [#1082](https://github.com/jertel/elastalert2/pull/1082) - @goggin
 - Fix UnicodeEncodeError in PagerDutyAlerter - [#1091](https://github.com/jertel/elastalert2/pull/1091) - @nsano-rururu
+- The scan_entire_timeframe setting, when used with use_count_query or use_terms_query will now scan entire timeframe on subsequent rule runs - [#1097](https://github.com/jertel/elastalert2/pull/1097) - @rschirin
   
 # 2.9.0
 
