@@ -2,6 +2,7 @@
 
 ## Breaking changes
 - [Alerta] All matches will now be sent with the alert - [#1068](https://github.com/jertel/elastalert2/pull/1068) - @dakotacody
+- Renamed the `overwrites` parameter to `overrides` in the load_conf method of config.py
 
 ## New features
 - [Graylog GELF] Alerter added. [#1050](https://github.com/jertel/elastalert2/pull/1050) - @malinkinsa
