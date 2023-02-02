@@ -37,6 +37,48 @@ def test_config_loads():
     assert conf['alert_time_limit'] == datetime.timedelta(days=2)
 
 
+def test_config_defaults():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+    test_args = mock.Mock()
+    test_args.config = dir_path + '/example.config.yaml'
+    test_args.rule = None
+    test_args.debug = False
+    test_args.es_debug_trace = None
+
+    conf = load_conf(
+        test_args,
+        defaults={
+            'new_key': 'new_value',
+            'rules_folder': '/new/rules/folder'
+        }
+    )
+
+    assert conf['new_key'] == 'new_value'
+    assert conf['rules_folder'] == '/opt/elastalert/rules'
+
+
+def test_config_overrides():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+    test_args = mock.Mock()
+    test_args.config = dir_path + '/example.config.yaml'
+    test_args.rule = None
+    test_args.debug = False
+    test_args.es_debug_trace = None
+
+    conf = load_conf(
+        test_args,
+        overrides={
+            'new_key': 'new_value',
+            'rules_folder': '/new/rules/folder'
+        }
+    )
+
+    assert conf['new_key'] == 'new_value'
+    assert conf['rules_folder'] == '/new/rules/folder'
+
+
 def test_config_loads_ea_execption():
     with pytest.raises(EAException) as ea:
         os.environ['ELASTIC_PASS'] = 'password_from_env'
