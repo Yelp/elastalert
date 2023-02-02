@@ -7,8 +7,10 @@ from requests import RequestException
 from elastalert.alerts import Alerter, DateTimeEncoder
 from elastalert.util import lookup_es_key, EAException, elastalert_logger
 
+
 def _json_escape(s):
     return json.encoder.encode_basestring(s)[1:-1]
+
 
 def _escape_all_values(x):
     """recursively rebuilds, and escapes all strings for json, the given dict/list"""
