@@ -65,7 +65,7 @@ def load_conf(args, defaults=None, overrides=None):
         if key not in conf:
             conf[key] = value
 
-    for key, value in (overrides.iteritems() if overrides is not None else []):
+    for key, value in (iter(overrides.items()) if overrides is not None else []):
         conf[key] = value
 
     # Make sure we have all required globals
