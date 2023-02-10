@@ -424,7 +424,7 @@ def test_http_alerter_with_payload_unexpected_error(caplog):
         with mock.patch('requests.post'):
             alert.alert([match])
 
-    assert "HTTP Post 2: An unexpected error occurred with the 'http_post2_{field}' value." in str(error)
+    assert "HTTP Post 2: An unexpected error occurred with the 'http_post2_payload' value." in str(error)
 
 
 def test_http_alerter_with_payload_json_decode_error(caplog):
