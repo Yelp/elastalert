@@ -403,6 +403,30 @@ def test_http_alerter_with_payload_template_error(caplog):
     assert "HTTP Post 2: The value of 'http_post2_payload' has an invalid Jinja2 syntax." in str(error)
 
 
+def test_http_alerter_with_payload_unexpected_error(caplog):
+    with pytest.raises(ValueError) as error:
+        rule = {
+            'name': 'Test HTTP Post Alerter With unexpected error',
+            'type': 'any',
+            'jinja_root_name': '_data',
+            'http_post2_url': 'http://test.webhook.url',
+            'http_post2_headers': {'header_name': 'toto'},
+            'http_post2_payload': {'posted_name': '{% for k,v in titi %}{% endfor %}'},
+            'alert': []
+        }
+        rules_loader = FileRulesLoader({})
+        rules_loader.load_modules(rule)
+        alert = HTTPPost2Alerter(rule)
+        match = {
+            '@timestamp': '2017-01-01T00:00:00',
+            'titi': {'foobarbaz': 'tata'}
+        }
+        with mock.patch('requests.post'):
+            alert.alert([match])
+
+    assert "HTTP Post 2: An unexpected error occurred with the 'http_post2_{field}' value." in str(error)
+
+
 def test_http_alerter_with_payload_json_decode_error(caplog):
     with pytest.raises(ValueError) as error:
         rule = yaml.safe_load(
