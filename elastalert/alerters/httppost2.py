@@ -81,6 +81,10 @@ class HTTPPost2Alerter(Alerter):
                 raise ValueError(f"HTTP Post 2: The rendered value for 'http_post2_{field}' contains invalid JSON. "
                                  f"Please check your template syntax: {e}")
 
+            except Exception as e:
+                raise ValueError(f"HTTP Post 2: An unexpected error occurred with the 'http_post2_{field}' value. "
+                                 f"Please check your template syntax: {e}")
+
             for post_key, es_key in list(self.post_raw_fields.items()):
                 payload[post_key] = lookup_es_key(match, es_key)
 
