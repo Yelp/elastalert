@@ -2445,11 +2445,11 @@ Required:
 
 Optional:
 
-``http_post2_payload``: List of keys:values to use for the payload of the HTTP Post. You can use {{ field }} (Jinja2 template) in the key and the value to reference any field in the matched events (works for nested ES fields and nested payload keys). If not defined, all the Elasticsearch keys will be sent. Ex: `"description_{{ my_field }}": "Type: {{ type }}\\nSubject: {{ title }}"`.
+``http_post2_payload``: A JSON string or list of keys:values to use for the payload of the HTTP Post. You can use {{ field }} (Jinja2 template) in the key and the value to reference any field in the matched events (works for nested ES fields and nested payload keys). If not defined, all the Elasticsearch keys will be sent. Ex: `"description_{{ my_field }}": "Type: {{ type }}\\nSubject: {{ title }}"`. When field names use dot notation or reserved characters, _data can be used to access these fields. If _data conflicts with your top level data, use jinja_root_name to change its name.
 
 ``http_post2_raw_fields``: List of keys:values to use as the content of the POST. Example - ip:clientip will map the value from the clientip field of Elasticsearch to JSON key named ip. This field overwrite the keys with the same name in `http_post2_payload`.
 
-``http_post2_headers``: List of keys:values to use for as headers of the HTTP Post. You can use {{ field }} (Jinja2 template) in the key and the value to reference any field in the matched events (works for nested fields). Ex: `"Authorization": "{{ user }}"`. Headers `"Content-Type": "application/json"` and `"Accept": "application/json;charset=utf-8"` are present by default, you can overwrite them if you think this is necessary.
+``http_post2_headers``: A JSON string or list of keys:values to use for as headers of the HTTP Post. You can use {{ field }} (Jinja2 template) in the key and the value to reference any field in the matched events (works for nested fields). Ex: `"Authorization": "{{ user }}"`. Headers `"Content-Type": "application/json"` and `"Accept": "application/json;charset=utf-8"` are present by default, you can overwrite them if you think this is necessary. When field names use dot notation or reserved characters, _data can be used to access these fields. If _data conflicts with your top level data, use jinja_root_name to change its name.
 
 ``http_post2_proxy``: URL of proxy, if required. only supports https.
 
@@ -2460,6 +2460,32 @@ Optional:
 ``http_post2_ca_certs``: Set this option to ``True`` or a path to a CA cert bundle or directory (eg: ``/etc/ssl/certs/ca-certificates.crt``) to validate the SSL certificate.
 
 ``http_post2_ignore_ssl_errors``: By default ElastAlert 2 will verify SSL certificate. Set this option to ``True`` if you want to ignore SSL errors.
+
+.. note:: Due to how values are rendered to JSON, the http_post2_headers and http_post2_payload fields require single quotes where quotes are required for Jinja templating. This only applies when using the YAML key:value pairs. Any quotes can be used with the new JSON string format. See below for examples of how to properly use quotes as well as an example of the new JSON string formatting.
+
+Incorrect usage with double quotes::
+
+    alert: post2
+    http_post2_url: "http://example.com/api"
+    http_post2_payload:
+      # this will result in an error as " is escaped to \"
+      description: 'hello {{ _data["name"] }}'
+      # this will result in an error as " is escaped to \"
+      state: '{{ ["low","medium","high","critical"][event.severity] }}'
+    http_post2_headers:
+      authorization: Basic 123dr3234
+      X-custom-type: '{{type}}'
+
+Correct usage with single quotes::
+
+    alert: post2
+    http_post2_url: "http://example.com/api"
+    http_post2_payload:
+      description: hello {{ _data['name'] }}
+      state: "{{ ['low','medium','high','critical'][event.severity] }}"
+    http_post2_headers:
+      authorization: Basic 123dr3234
+      X-custom-type: '{{type}}'
 
 Example usage::
 
@@ -2473,6 +2499,27 @@ Example usage::
     http_post2_headers:
       authorization: Basic 123dr3234
       X-custom-type: {{type}}
+
+Example usage with json string formatting::
+
+    alert: post2
+    jinja_root_name: _new_root
+    http_post2_url: "http://example.com/api"
+    http_post2_payload: |
+      {
+        "description": "An event came from IP {{ _new_root["client.ip"] }}",
+        "username": "{{ _new_root['username'] }}"
+        {%- for k, v in some_field.items() -%}
+        ,"{{ k }}": "changed_{{ v }}"
+        {%- endfor -%}
+      }
+    http_post2_raw_fields:
+      ip: clientip
+    http_post2_headers: |
+      {
+        "authorization": "Basic 123dr3234",
+        "X-custom-{{key}}": "{{type}}"
+      }
 
 Jira
 ~~~~

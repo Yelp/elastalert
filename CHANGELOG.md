@@ -7,6 +7,9 @@
 ## New features
 - [Graylog GELF] Alerter added. [#1050](https://github.com/jertel/elastalert2/pull/1050) - @malinkinsa
 - [TheHive] Format `title`, `type`, and `source` with dynamic lookup values - [#1092](https://github.com/jertel/elastalert2/pull/1092) - @fandigunawan
+- [HTTP POST2] `http_post2_payload` and `http_post2_headers` now support multiline JSON strings for better control over jinja templates - @akusei
+- [HTTP POST2] This alerter now supports the use of `jinja_root_name` - @akusei
+- [Rule Testing] The data file passed with `--data` can now contain a single JSON document or a list of JSON objects - @akusei
 
 ## Other changes
 - [Docs] Clarify Jira Cloud authentication configuration - [94f7e8c](https://github.com/jertel/elastalert2/commit/94f7e8cc98d59a00349e3b23acd8a8549c80dbc8) - @jertel
@@ -16,7 +19,10 @@
 - Modify schema to allow string and boolean for `*_ca_certs` to allow for one to specify a cert bundle for SSL certificate verification - [#1082](https://github.com/jertel/elastalert2/pull/1082) - @goggin
 - Fix UnicodeEncodeError in PagerDutyAlerter - [#1091](https://github.com/jertel/elastalert2/pull/1091) - @nsano-rururu
 - The scan_entire_timeframe setting, when used with use_count_query or use_terms_query will now scan entire timeframe on subsequent rule runs - [#1097](https://github.com/jertel/elastalert2/pull/1097) - @rschirin
-  
+- Add new unit tests to cover changes in the HTTP POST2 alerter - @akusei  
+- [Docs] Updated HTTP POST2 documentation to outline changes with payloads, headers and multiline JSON strings - @akusei
+- [HTTP POST2] Additional error checking around rendering and dumping payloads/headers to JSON - @akusei
+
 # 2.9.0
 
 ## Breaking changes

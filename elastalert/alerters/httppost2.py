@@ -1,14 +1,17 @@
 import json
+from json import JSONDecodeError
 
 import requests
-from jinja2 import Template
+from jinja2 import Template, TemplateSyntaxError
 from requests import RequestException
 
 from elastalert.alerts import Alerter, DateTimeEncoder
 from elastalert.util import lookup_es_key, EAException, elastalert_logger
 
+
 def _json_escape(s):
     return json.encoder.encode_basestring(s)[1:-1]
+
 
 def _escape_all_values(x):
     """recursively rebuilds, and escapes all strings for json, the given dict/list"""
@@ -19,6 +22,14 @@ def _escape_all_values(x):
     elif isinstance(x, str):
         x = _json_escape(x)
     return x
+
+
+def _render_json_template(template, match):
+    if not isinstance(template, str):
+        template = json.dumps(template)
+    template = Template(template)
+
+    return json.loads(template.render(**match))
 
 
 class HTTPPost2Alerter(Alerter):
@@ -39,15 +50,40 @@ class HTTPPost2Alerter(Alerter):
         self.post_ca_certs = self.rule.get('http_post2_ca_certs')
         self.post_ignore_ssl_errors = self.rule.get('http_post2_ignore_ssl_errors', False)
         self.timeout = self.rule.get('http_post2_timeout', 10)
+        self.jinja_root_name = self.rule.get('jinja_root_name', None)
 
     def alert(self, matches):
         """ Each match will trigger a POST to the specified endpoint(s). """
         for match in matches:
             match_js_esc = _escape_all_values(match)
-            payload = match if self.post_all_values else {}
-            payload_template = Template(json.dumps(self.post_payload))
-            payload_res = json.loads(payload_template.render(**match_js_esc))
-            payload = {**payload, **payload_res}
+            args = {**match_js_esc}
+            if self.jinja_root_name:
+                args[self.jinja_root_name] = match_js_esc
+
+            try:
+                field = 'payload'
+                payload = match if self.post_all_values else {}
+                payload_res = _render_json_template(self.post_payload, args)
+                payload = {**payload, **payload_res}
+
+                field = 'headers'
+                header_res = _render_json_template(self.post_http_headers, args)
+                headers = {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json;charset=utf-8",
+                    **header_res
+                }
+            except TemplateSyntaxError as e:
+                raise ValueError(f"HTTP Post 2: The value of 'http_post2_{field}' has an invalid Jinja2 syntax. "
+                                 f"Please check your template syntax: {e}")
+
+            except JSONDecodeError as e:
+                raise ValueError(f"HTTP Post 2: The rendered value for 'http_post2_{field}' contains invalid JSON. "
+                                 f"Please check your template syntax: {e}")
+
+            except Exception as e:
+                raise ValueError(f"HTTP Post 2: An unexpected error occurred with the 'http_post2_{field}' value. "
+                                 f"Please check your template syntax: {e}")
 
             for post_key, es_key in list(self.post_raw_fields.items()):
                 payload[post_key] = lookup_es_key(match, es_key)
@@ -58,14 +94,6 @@ class HTTPPost2Alerter(Alerter):
                 verify = not self.post_ignore_ssl_errors
             if self.post_ignore_ssl_errors:
                 requests.packages.urllib3.disable_warnings()
-
-            header_template = Template(json.dumps(self.post_http_headers))
-            header_res = json.loads(header_template.render(**match_js_esc))
-            headers = {
-                "Content-Type": "application/json",
-                "Accept": "application/json;charset=utf-8",
-                **header_res
-            }
 
             for key, value in headers.items():
                 if type(value) in [type(None), list, dict]:
