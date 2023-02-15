@@ -408,6 +408,7 @@ class EmailAlerter(Alerter):
 
         self.smtp_host = self.rule.get('smtp_host', 'localhost')
         self.smtp_ssl = self.rule.get('smtp_ssl', False)
+        self.smtp_tls = self.rule.get('smtp_tls', True)
         self.from_addr = self.rule.get('from_addr', 'ElastAlert')
         self.smtp_port = self.rule.get('smtp_port')
         if self.rule.get('smtp_auth_file'):
@@ -476,7 +477,7 @@ class EmailAlerter(Alerter):
                 else:
                     self.smtp = SMTP(self.smtp_host)
                 self.smtp.ehlo()
-                if self.smtp.has_extn('STARTTLS'):
+                if self.smtp.has_extn('STARTTLS') and self.smtp_tls:
                     self.smtp.starttls(keyfile=self.smtp_key_file, certfile=self.smtp_cert_file)
             if 'smtp_auth_file' in self.rule:
                 self.smtp.login(self.user, self.password)

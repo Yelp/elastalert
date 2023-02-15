@@ -1479,8 +1479,10 @@ an email would be sent to ``qlo@example.com``
 
 ``smtp_port``: The port to use. Default is 25.
 
-``smtp_ssl``: Connect the SMTP host using TLS, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
+``smtp_ssl``: Connect the SMTP host using SSL, defaults to ``false``. If ``smtp_ssl`` is not used, ElastAlert will still attempt
 STARTTLS.
+
+``smtp_tls``: Connect the SMTP host using TLS, defaults to ``true``.
 
 ``smtp_auth_file``: The path to a file which contains SMTP authentication credentials. The path can be either absolute or relative
 to the given rule. It should be YAML formatted and contain two fields, ``user`` and ``password``. If this is not present,
