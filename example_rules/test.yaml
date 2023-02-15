@@ -1,0 +1,47 @@
+index: test
+type: any
+alert:
+  - hivealerter
+
+description: test
+
+hive_connection:
+  hive_host: "http://127.0.0.1"
+  hive_port: "9000"
+  hive_apikey: "3CzaozXquJi7jzVJSoyEr3xvepy4XaUU"
+
+name: 'New test for stackstorm'
+
+query_key: field1
+
+timeframe:
+  minutes: 1
+
+realert:
+  minutes: 0
+
+filter:
+- query:
+    query_string:
+      query: "(type:test)"
+
+alert_text_related_event_text: |
+  * From {0} to {1}
+alert_text_related_event_text_args:
+  - field1
+  - field2
+
+hive_alert_config_type: classic
+
+hive_alert_config:
+  type: 'test'
+  source: 'elastalert-{rule[name]}'
+  severity: 3
+  tags: ['malicious behavior', 'pcidss']
+  tlp: 2
+  status: 'New'
+  follow: True
+
+hive_observable_data_mapping:
+  - ip: "{match[field1]}"
+  - source: "{match[field2]}"

@@ -53,12 +53,14 @@ class RuleType(object):
 
         :param event: The matching event, a dictionary of terms.
         """
+
+        copy_event = copy.deepcopy(event)
         # Convert datetime's back to timestamps
         ts = self.rules.get('timestamp_field')
-        if ts in event:
-            event[ts] = dt_to_ts(event[ts])
+        if ts in copy_event:
+            copy_event[ts] = dt_to_ts(copy_event[ts])
 
-        self.matches.append(copy.deepcopy(event))
+        self.matches.append(copy_event)
 
     def get_match_str(self, match):
         """ Returns a string that gives more context about a match.
@@ -908,6 +910,7 @@ class CardinalityRule(RuleType):
         self.cardinality_cache = {}
         self.first_event = {}
         self.timeframe = self.rules['timeframe']
+        self.attach_related = self.rules.get('attach_related', False)
 
     def add_data(self, data):
         qk = self.rules.get('query_key')
@@ -938,6 +941,10 @@ class CardinalityRule(RuleType):
                 self.check_for_match(key, event, False)
             else:
                 self.first_event.pop(key, None)
+                if self.attach_related:
+                    event['related_events'] = [
+                        occurence for _, occurence in self.cardinality_cache[key].items() if occurence['_id'] != event['_id']
+                    ]
                 self.add_match(event)
 
     def garbage_collect(self, timestamp):

@@ -4,7 +4,6 @@ import datetime
 import json
 import logging
 import os
-import re
 import subprocess
 import sys
 import time
@@ -29,6 +28,10 @@ from requests.auth import HTTPProxyAuth
 from requests.exceptions import RequestException
 from staticconf.loader import yaml_loader
 from texttable import Texttable
+from thehive4py.api import TheHiveApi
+from thehive4py.models import Alert
+from thehive4py.models import AlertArtifact
+from thehive4py.models import CustomFieldHelper
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
 
@@ -60,13 +63,15 @@ class BasicMatchString(object):
         while self.text[-2:] != '\n\n':
             self.text += '\n'
 
-    def _add_custom_alert_text(self):
+    def _create_custom_alert_text(self, event=None, alert_text_key='alert_text'):
+        if event is None:
+            event = self.match
         missing = self.rule.get('alert_missing_value', '<MISSING VALUE>')
-        alert_text = str(self.rule.get('alert_text', ''))
-        if 'alert_text_args' in self.rule:
-            alert_text_args = self.rule.get('alert_text_args')
-            alert_text_values = [lookup_es_key(self.match, arg) for arg in alert_text_args]
+        alert_text = str(self.rule.get(alert_text_key, ''))
 
+        if alert_text_key + '_args' in self.rule:
+            alert_text_args = self.rule.get(alert_text_key + '_args')
+            alert_text_values = [lookup_es_key(event, arg) for arg in alert_text_args]
             # Support referencing other top-level rule properties
             # This technically may not work if there is a top-level rule property with the same name
             # as an es result key, since it would have been matched in the lookup_es_key call above
@@ -78,7 +83,7 @@ class BasicMatchString(object):
 
             alert_text_values = [missing if val is None else val for val in alert_text_values]
             alert_text = alert_text.format(*alert_text_values)
-        elif 'alert_text_kw' in self.rule:
+        elif alert_text_key + '_kw' in self.rule:
             kw = {}
             for name, kw_name in list(self.rule.get('alert_text_kw').items()):
                 val = lookup_es_key(self.match, name)
@@ -91,8 +96,12 @@ class BasicMatchString(object):
 
                 kw[kw_name] = missing if val is None else val
             alert_text = alert_text.format(**kw)
+        else:
+            alert_text = alert_text.format(**event)
+        return alert_text
 
-        self.text += alert_text
+    def _add_custom_alert_text(self):
+        self.text += self._create_custom_alert_text()
 
     def _add_rule_text(self):
         self.text += self.rule['type'].get_match_str(self.match)
@@ -148,7 +157,25 @@ class BasicMatchString(object):
             if self.rule.get('top_count_keys'):
                 self._add_top_counts()
             if self.rule.get('alert_text_type') != 'exclude_fields':
-                self._add_match_items()
+                if 'related_events' in self.match:
+                    related_events = self.match['related_events']
+                    del self.match['related_events']
+                    alert_text_related_event_text = str(self.rule.get('alert_text_related_event_text', ''))
+                    if alert_text_related_event_text == '':
+                        self.text += '\n----------------------------------------\n'
+                        self._add_match_items()
+                    else:
+                        self.text += self._create_custom_alert_text(self.match, 'alert_text_related_event_text')
+
+                    for related_event in related_events:
+                        if alert_text_related_event_text == '':
+                            self.text += '\n----------------------------------------\n'
+                            self.match = related_event
+                            self._add_match_items()
+                        else:
+                            self.text += self._create_custom_alert_text(related_event, 'alert_text_related_event_text')
+                else:
+                    self._add_match_items()
         return self.text
 
 
@@ -2116,67 +2143,99 @@ class HiveAlerter(Alerter):
 
     required_options = set(['hive_connection', 'hive_alert_config'])
 
-    def alert(self, matches):
+    def get_aggregation_summary_text(self, matches):
+        text = super(HiveAlerter, self).get_aggregation_summary_text(matches)
+        if text:
+            text = u'```\n{0}```\n'.format(text)
+        return text
 
+    def create_artifacts(self, match):
+        artifacts = []
+        context = {'rule': self.rule, 'match': match}
+        for mapping in self.rule.get('hive_observable_data_mapping', []):
+            for observable_type, match_data_key in mapping.items():
+                try:
+                    artifacts.append(AlertArtifact(dataType=observable_type, data=match_data_key.format(**context)))
+                except KeyError:
+                    print('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
+
+        if self.rule.get('hive_observables_key', 'observables') in match:
+            for mapping in match[self.rule.get('hive_observables_key', 'observables')]:
+                for observable_type, observable_data in mapping.items():
+                    artifacts.append(AlertArtifact(dataType=observable_type, data=observable_data))
+
+        return artifacts
+
+    def create_alert_config(self, match):
+        context = {'rule': self.rule, 'match': match}
+        alert_config = {
+            'artifacts': self.create_artifacts(match),
+            'sourceRef': str(uuid.uuid4())[0:6],
+            'title': '{rule[index]}_{rule[name]}'.format(**context)
+        }
+
+        alert_config.update(self.rule.get('hive_alert_config', {}))
+
+        for alert_config_field, alert_config_value in alert_config.items():
+            if alert_config_field == 'customFields':
+                custom_fields = CustomFieldHelper()
+                for cf_key, cf_value in alert_config_value.items():
+                    try:
+                        func = getattr(custom_fields, 'add_{}'.format(cf_value['type']))
+                    except AttributeError:
+                        raise Exception('unsupported custom field type {}'.format(cf_value['type']))
+                    value = cf_value['value'].format(**context)
+                    func(cf_key, value)
+                alert_config[alert_config_field] = custom_fields.build()
+            elif isinstance(alert_config_value, str):
+                if alert_config_field in ['tlp', 'severity']:
+                    alert_config[alert_config_field] = int(alert_config_value.format(**context), 10)
+                else:
+                    alert_config[alert_config_field] = alert_config_value.format(**context)
+            elif isinstance(alert_config_value, (list, tuple)):
+                formatted_list = []
+                for element in alert_config_value:
+                    try:
+                        formatted_list.append(element.format(**context))
+                    except (AttributeError, KeyError, IndexError):
+                        formatted_list.append(element)
+                alert_config[alert_config_field] = formatted_list
+
+        return alert_config
+
+    def send_to_thehive(self, alert_config):
         connection_details = self.rule['hive_connection']
 
-        for match in matches:
-            context = {'rule': self.rule, 'match': match}
+        api = TheHiveApi(
+            connection_details.get('hive_host'),
+            connection_details.get('hive_apikey', ''),
+            proxies=connection_details.get('hive_proxies', {'http': '', 'https': ''}),
+            cert=connection_details.get('hive_verify', False))
 
+        alert = Alert(**alert_config)
+        response = api.create_alert(alert)
+
+        if response.status_code != 201:
+            raise Exception('alert not successfully created in TheHive\n{}'.format(response.text))
+
+    def alert(self, matches):
+        if self.rule.get('hive_alert_config_type', 'custom') != 'classic':
+            for match in matches:
+                alert_config = self.create_alert_config(match)
+                self.send_to_thehive(alert_config)
+        else:
+            alert_config = self.create_alert_config(matches[0])
             artifacts = []
-            for mapping in self.rule.get('hive_observable_data_mapping', []):
-                for observable_type, match_data_key in mapping.items():
-                    try:
-                        match_data_keys = re.findall(r'\{match\[([^\]]*)\]', match_data_key)
-                        rule_data_keys = re.findall(r'\{rule\[([^\]]*)\]', match_data_key)
-                        data_keys = match_data_keys + rule_data_keys
-                        context_keys = list(context['match'].keys()) + list(context['rule'].keys())
-                        if all([True if k in context_keys else False for k in data_keys]):
-                            artifact = {'tlp': 2, 'tags': [], 'message': None, 'dataType': observable_type,
-                                        'data': match_data_key.format(**context)}
-                            artifacts.append(artifact)
-                    except KeyError:
-                        raise KeyError('\nformat string\n{}\nmatch data\n{}'.format(match_data_key, context))
+            for match in matches:
+                artifacts += self.create_artifacts(match)
+                if 'related_events' in match:
+                    for related_event in match['related_events']:
+                        artifacts += self.create_artifacts(related_event)
 
-            alert_config = {
-                'artifacts': artifacts,
-                'sourceRef': str(uuid.uuid4())[0:6],
-                'customFields': {},
-                'caseTemplate': None,
-                'title': '{rule[index]}_{rule[name]}'.format(**context),
-                'date': int(time.time()) * 1000
-            }
-            alert_config.update(self.rule.get('hive_alert_config', {}))
-            custom_fields = {}
-            for alert_config_field, alert_config_value in alert_config.items():
-                if alert_config_field == 'customFields':
-                    n = 0
-                    for cf_key, cf_value in alert_config_value.items():
-                        cf = {'order': n, cf_value['type']: cf_value['value'].format(**context)}
-                        n += 1
-                        custom_fields[cf_key] = cf
-                elif isinstance(alert_config_value, str):
-                    alert_config[alert_config_field] = alert_config_value.format(**context)
-                elif isinstance(alert_config_value, (list, tuple)):
-                    formatted_list = []
-                    for element in alert_config_value:
-                        try:
-                            formatted_list.append(element.format(**context))
-                        except (AttributeError, KeyError, IndexError):
-                            formatted_list.append(element)
-                    alert_config[alert_config_field] = formatted_list
-            if custom_fields:
-                alert_config['customFields'] = custom_fields
-
-            alert_body = json.dumps(alert_config, indent=4, sort_keys=True)
-            req = '{}:{}/api/alert'.format(connection_details['hive_host'], connection_details['hive_port'])
-            headers = {'Content-Type': 'application/json', 'Authorization': 'Bearer {}'.format(connection_details.get('hive_apikey', ''))}
-            proxies = connection_details.get('hive_proxies', {'http': '', 'https': ''})
-            verify = connection_details.get('hive_verify', False)
-            response = requests.post(req, headers=headers, data=alert_body, proxies=proxies, verify=verify)
-
-            if response.status_code != 201:
-                raise Exception('alert not successfully created in TheHive\n{}'.format(response.text))
+            alert_config['artifacts'] = artifacts
+            alert_config['title'] = self.create_title(matches)
+            alert_config['description'] = self.create_alert_body(matches)
+            self.send_to_thehive(alert_config)
 
     def get_info(self):
 
