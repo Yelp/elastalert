@@ -43,12 +43,14 @@ class TestElasticsearch(object):
             assert test_index + '_status' in indices_mappings
             assert test_index + '_silence' in indices_mappings
             assert test_index + '_past' in indices_mappings
+            assert test_index + '_control' in indices_mappings
         else:
             assert 'elastalert' in indices_mappings[test_index]['mappings']
             assert 'elastalert_error' in indices_mappings[test_index]['mappings']
             assert 'elastalert_status' in indices_mappings[test_index]['mappings']
             assert 'silence' in indices_mappings[test_index]['mappings']
             assert 'past_elastalert' in indices_mappings[test_index]['mappings']
+            assert 'control_elastalert' in indices_mappings[test_index]['mappings']
 
     @pytest.mark.usefixtures("ea")
     def test_aggregated_alert(self, ea, es_client):  # noqa: F811

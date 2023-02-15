@@ -68,3 +68,14 @@ an alert with ``realert`` is triggered, a ``silence`` record will be written wit
 
 Whenever an alert is triggered, ElastAlert will check for a matching ``silence`` document, and if the ``until`` timestamp is in the future, it will ignore
 the alert completely. See the :ref:`Running ElastAlert <runningelastalert>` section for information on how to silence an alert.
+
+
+control_elastalert
+~~~~~~~~~~~~~~~~~~
+
+A summary of each ElastAlert's execution is written to Elasticsearch. The ``control_elastalert`` type contains:
+
+- ``@timestamp``: The time when the execution finished.
+- ``total_rules``: The total of rules executed.
+- ``disabled_rules``: The rules disabled in this execution.
+- ``sleep_duration``: Time to rest, the next execution starts in this time.
