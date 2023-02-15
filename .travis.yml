@@ -1,4 +1,7 @@
 language: python
+arch: 
+    - amd64
+    - ppc64le
 python:
 - '3.6'
 env:
@@ -29,7 +32,28 @@ jobs:
     - env: TOXENV=py36 ES_VERSION=6.2.4
     - env: TOXENV=py36 ES_VERSION=6.0.1
     - env: TOXENV=py36 ES_VERSION=5.6.16
-
+    # adding code to run on powersystems
+    - stage: 'Elasticsearch test'
+      env: TOXENV=py36 ES_VERSION=7.0.0-linux-x86_64
+      arch: ppc64le
+    - env: TOXENV=py36 ES_VERSION=6.6.2
+      arch: ppc64le
+    - env: TOXENV=py36 ES_VERSION=6.3.2
+      arch: ppc64le
+    - env: TOXENV=py36 ES_VERSION=6.2.4
+      arch: ppc64le
+    - env: TOXENV=py36 ES_VERSION=6.0.1
+      arch: ppc64le
+    - env: TOXENV=py36 ES_VERSION=5.6.16
+      arch: ppc64le
+jobs:
+  exclude:
+    - env: TOXENV=py36 ES_VERSION=7.0.0-linux-x86_64
+      arch: ppc64le
+    - env: TOXENV=py36 ES_VERSION=6.6.2
+      arch: ppc64le
+    - env: TOXENV=py36 ES_VERSION=6.3.2
+      arch: ppc64le
 deploy:
   provider: pypi
   user: yelplabs
