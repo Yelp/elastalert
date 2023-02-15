@@ -51,6 +51,7 @@ class RulesLoader(object):
         'metric_aggregation': ruletypes.MetricAggregationRule,
         'percentage_match': ruletypes.PercentageMatchRule,
         'spike_aggregation': ruletypes.SpikeMetricAggregationRule,
+        'find_match': ruletypes.FindMatchRule,
     }
 
     # Used to map names of alerts to their classes
