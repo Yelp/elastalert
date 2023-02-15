@@ -625,6 +625,11 @@ run_enhancements_first
 or dropped before affecting realert or being added to an aggregation. Silence stashes will still be created before the
 enhancement runs, meaning even if a ``DropMatchException`` is raised, the rule will still be silenced. (Optional, boolean, default false)
 
+block_enhancements_in_writeback
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``block_enhancements_in_writeback``: If true, enhancements will be run only on the content of alerts send by Alerters,
+whereas info about the alerts to be written back into Elasticsearch will not processed by enhancements. (Optional, boolean, default false)
+
 query_key
 ^^^^^^^^^
 
