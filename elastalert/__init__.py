@@ -23,6 +23,7 @@ class ElasticSearchClient(Elasticsearch):
                                                   verify_certs=conf['verify_certs'],
                                                   ca_certs=conf['ca_certs'],
                                                   connection_class=RequestsHttpConnection,
+                                                  headers=conf['http_headers'],
                                                   http_auth=conf['http_auth'],
                                                   timeout=conf['es_conn_timeout'],
                                                   send_get_body_as=conf['send_get_body_as'],
