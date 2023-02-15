@@ -1158,7 +1158,7 @@ def test_ms_teams():
         rule['ms_teams_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None, timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1198,7 +1198,8 @@ def test_ms_teams_uses_color_and_fixed_width_text():
         rule['ms_teams_webhook_url'],
         data=mock.ANY,
         headers={'content-type': 'application/json'},
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
@@ -1772,7 +1773,7 @@ def test_pagerduty_alerter():
         'service_key': 'magicalbadgers',
     }
     mock_post_request.assert_called_once_with('https://events.pagerduty.com/generic/2010-04-15/create_event.json',
-                                              data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+                                              data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None, timeout=10)
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1818,7 +1819,7 @@ def test_pagerduty_alerter_v2():
         'routing_key': 'magicalbadgers',
     }
     mock_post_request.assert_called_once_with('https://events.pagerduty.com/v2/enqueue',
-                                              data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+                                              data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None, timeout=10)
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1850,7 +1851,13 @@ def test_pagerduty_alerter_custom_incident_key():
         'incident_key': 'custom key',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        timeout=10
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1883,7 +1890,13 @@ def test_pagerduty_alerter_custom_incident_key_with_args():
         'incident_key': 'custom foobarbaz',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        timeout=10
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1917,7 +1930,13 @@ def test_pagerduty_alerter_custom_alert_subject():
         'incident_key': 'custom foobarbaz',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        timeout=10
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1953,7 +1972,13 @@ def test_pagerduty_alerter_custom_alert_subject_with_args():
         'incident_key': 'custom foobarbaz',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        timeout=10
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -1990,7 +2015,13 @@ def test_pagerduty_alerter_custom_alert_subject_with_args_specifying_trigger():
         'incident_key': 'custom foobarbaz',
         'service_key': 'magicalbadgers',
     }
-    mock_post_request.assert_called_once_with(alert.url, data=mock.ANY, headers={'content-type': 'application/json'}, proxies=None)
+    mock_post_request.assert_called_once_with(
+        alert.url,
+        data=mock.ANY,
+        headers={'content-type': 'application/json'},
+        proxies=None,
+        timeout=10
+    )
     assert expected_data == json.loads(mock_post_request.call_args_list[0][1]['data'])
 
 
@@ -2124,7 +2155,8 @@ def test_stride_plain_text():
             'content-type': 'application/json',
             'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
         verify=True,
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
@@ -2170,7 +2202,8 @@ def test_stride_underline_text():
             'content-type': 'application/json',
             'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
         verify=True,
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
@@ -2216,7 +2249,8 @@ def test_stride_bold_text():
             'content-type': 'application/json',
             'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
         verify=True,
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
@@ -2262,7 +2296,8 @@ def test_stride_strong_text():
             'content-type': 'application/json',
             'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
         verify=True,
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
@@ -2308,7 +2343,8 @@ def test_stride_hyperlink():
             'content-type': 'application/json',
             'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
         verify=True,
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
@@ -2357,7 +2393,8 @@ def test_stride_html():
             'content-type': 'application/json',
             'Authorization': 'Bearer {}'.format(rule['stride_access_token'])},
         verify=True,
-        proxies=None
+        proxies=None,
+        timeout=10
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
@@ -2479,7 +2516,8 @@ def test_alerta_no_auth(ea):
         data=mock.ANY,
         headers={
             'content-type': 'application/json'},
-        verify=False
+        verify=False,
+        timeout=10
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])
@@ -2514,6 +2552,7 @@ def test_alerta_auth(ea):
         alert.url,
         data=mock.ANY,
         verify=True,
+        timeout=10,
         headers={
             'content-type': 'application/json',
             'Authorization': 'Key {}'.format(rule['alerta_api_key'])})
@@ -2578,7 +2617,8 @@ def test_alerta_new_style(ea):
         data=mock.ANY,
         verify=True,
         headers={
-            'content-type': 'application/json'}
+            'content-type': 'application/json'},
+        timeout=10
     )
     assert expected_data == json.loads(
         mock_post_request.call_args_list[0][1]['data'])

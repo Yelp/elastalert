@@ -982,6 +982,7 @@ class HipChatAlerter(Alerter):
         self.url = 'https://%s/v2/room/%s/notification?auth_token=%s' % (
             self.hipchat_domain, self.hipchat_room_id, self.hipchat_auth_token)
         self.hipchat_proxy = self.rule.get('hipchat_proxy', None)
+        self.post_timeout = self.rule.get('hipchat_post_timeout', 10)
 
     def create_alert_body(self, matches):
         body = super(HipChatAlerter, self).create_alert_body(matches)
@@ -1035,11 +1036,18 @@ class HipChatAlerter(Alerter):
                     data=json.dumps(ping_msg, cls=DateTimeEncoder),
                     headers=headers,
                     verify=not self.hipchat_ignore_ssl_errors,
-                    proxies=proxies)
+                    proxies=proxies,
+                    timeout=self.post_timeout
+                )
 
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers,
-                                     verify=not self.hipchat_ignore_ssl_errors,
-                                     proxies=proxies)
+            response = requests.post(
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                verify=not self.hipchat_ignore_ssl_errors,
+                proxies=proxies,
+                timeout=self.post_timeout
+            )
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -1064,6 +1072,7 @@ class MsTeamsAlerter(Alerter):
         self.ms_teams_alert_summary = self.rule.get('ms_teams_alert_summary', 'ElastAlert Message')
         self.ms_teams_alert_fixed_width = self.rule.get('ms_teams_alert_fixed_width', False)
         self.ms_teams_theme_color = self.rule.get('ms_teams_theme_color', '')
+        self.post_timeout = self.rule.get('ms_teams_post_timeout', 10)
 
     def format_body(self, body):
         if self.ms_teams_alert_fixed_width:
@@ -1091,7 +1100,13 @@ class MsTeamsAlerter(Alerter):
 
         for url in self.ms_teams_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+                response = requests.post(
+                    url,
+                    data=json.dumps(payload, cls=DateTimeEncoder),
+                    headers=headers,
+                    proxies=proxies,
+                    timeout=self.post_timeout
+                )
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting to ms teams: %s" % e)
@@ -1125,7 +1140,7 @@ class SlackAlerter(Alerter):
         self.slack_text_string = self.rule.get('slack_text_string', '')
         self.slack_alert_fields = self.rule.get('slack_alert_fields', '')
         self.slack_ignore_ssl_errors = self.rule.get('slack_ignore_ssl_errors', False)
-        self.slack_timeout = self.rule.get('slack_timeout', 10)
+        self.post_timeout = self.rule.get('slack_timeout', 10)
         self.slack_ca_certs = self.rule.get('slack_ca_certs')
         self.slack_attach_kibana_discover_url = self.rule.get('slack_attach_kibana_discover_url', False)
         self.slack_kibana_discover_color = self.rule.get('slack_kibana_discover_color', '#ec4b98')
@@ -1215,7 +1230,8 @@ class SlackAlerter(Alerter):
                         url, data=json.dumps(payload, cls=DateTimeEncoder),
                         headers=headers, verify=verify,
                         proxies=proxies,
-                        timeout=self.slack_timeout)
+                        timeout=self.post_timeout
+                    )
                     warnings.resetwarnings()
                     response.raise_for_status()
                 except RequestException as e:
@@ -1240,6 +1256,7 @@ class MattermostAlerter(Alerter):
             self.mattermost_webhook_url = [self.mattermost_webhook_url]
         self.mattermost_proxy = self.rule.get('mattermost_proxy', None)
         self.mattermost_ignore_ssl_errors = self.rule.get('mattermost_ignore_ssl_errors', False)
+        self.post_timeout = self.rule.get('mattermost_post_timeout', 10)
 
         # Override webhook config
         self.mattermost_username_override = self.rule.get('mattermost_username_override', 'elastalert')
@@ -1320,9 +1337,13 @@ class MattermostAlerter(Alerter):
                     requests.urllib3.disable_warnings()
 
                 response = requests.post(
-                    url, data=json.dumps(payload, cls=DateTimeEncoder),
-                    headers=headers, verify=not self.mattermost_ignore_ssl_errors,
-                    proxies=proxies)
+                    url,
+                    data=json.dumps(payload, cls=DateTimeEncoder),
+                    headers=headers,
+                    verify=not self.mattermost_ignore_ssl_errors,
+                    proxies=proxies,
+                    timeout=self.post_timeout
+                )
 
                 warnings.resetwarnings()
                 response.raise_for_status()
@@ -1348,6 +1369,7 @@ class PagerDutyAlerter(Alerter):
         self.pagerduty_incident_key_args = self.rule.get('pagerduty_incident_key_args', None)
         self.pagerduty_event_type = self.rule.get('pagerduty_event_type', 'trigger')
         self.pagerduty_proxy = self.rule.get('pagerduty_proxy', None)
+        self.post_timeout = self.rule.get('pagerduty_post_timeout', 10)
 
         self.pagerduty_api_version = self.rule.get('pagerduty_api_version', 'v1')
         self.pagerduty_v2_payload_class = self.rule.get('pagerduty_v2_payload_class', '')
@@ -1418,7 +1440,8 @@ class PagerDutyAlerter(Alerter):
                 self.url,
                 data=json.dumps(payload, cls=DateTimeEncoder, ensure_ascii=False),
                 headers=headers,
-                proxies=proxies
+                proxies=proxies,
+                timeout=self.post_timeout
             )
             response.raise_for_status()
         except RequestException as e:
@@ -1478,6 +1501,7 @@ class PagerTreeAlerter(Alerter):
         super(PagerTreeAlerter, self).__init__(rule)
         self.url = self.rule['pagertree_integration_url']
         self.pagertree_proxy = self.rule.get('pagertree_proxy', None)
+        self.post_timeout = self.rule.get('pagertree_post_timeout', 10)
 
     def alert(self, matches):
         # post to pagertree
@@ -1492,7 +1516,13 @@ class PagerTreeAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                proxies=proxies,
+                timeout=self.post_timeout
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to PagerTree: %s" % e)
@@ -1572,6 +1602,7 @@ class VictorOpsAlerter(Alerter):
         self.url = 'https://alert.victorops.com/integrations/generic/20131114/alert/%s/%s' % (
             self.victorops_api_key, self.victorops_routing_key)
         self.victorops_proxy = self.rule.get('victorops_proxy', None)
+        self.post_timeout = self.rule.get('victorops_post_timeout', 10)
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
@@ -1590,7 +1621,13 @@ class VictorOpsAlerter(Alerter):
             payload["entity_id"] = self.victorops_entity_id
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                proxies=proxies,
+                timeout=self.post_timeout
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to VictorOps: %s" % e)
@@ -1614,6 +1651,7 @@ class TelegramAlerter(Alerter):
         self.telegram_proxy = self.rule.get('telegram_proxy', None)
         self.telegram_proxy_login = self.rule.get('telegram_proxy_login', None)
         self.telegram_proxy_password = self.rule.get('telegram_proxy_pass', None)
+        self.post_timeout = self.rule.get('telgram_post_timeout', 10)
 
     def alert(self, matches):
         body = '⚠ *%s* ⚠ ```\n' % (self.create_title(matches))
@@ -1638,7 +1676,14 @@ class TelegramAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.url, data=json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies, auth=auth)
+            response = requests.post(
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                proxies=proxies,
+                auth=auth,
+                timeout=self.post_timeout
+            )
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -1666,6 +1711,7 @@ class GoogleChatAlerter(Alerter):
         self.googlechat_header_subtitle = self.rule.get('googlechat_header_subtitle', None)
         self.googlechat_header_image = self.rule.get('googlechat_header_image', None)
         self.googlechat_footer_kibanalink = self.rule.get('googlechat_footer_kibanalink', None)
+        self.post_timeout = self.rule.get('googlechat_post_timeout', 10)
 
     def create_header(self):
         header = None
@@ -1730,7 +1776,12 @@ class GoogleChatAlerter(Alerter):
         headers = {'content-type': 'application/json'}
         for url in self.googlechat_webhook_url:
             try:
-                response = requests.post(url, data=json.dumps(message), headers=headers)
+                response = requests.post(
+                    url,
+                    data=json.dumps(message),
+                    headers=headers,
+                    timeout=self.post_timeout
+                )
                 response.raise_for_status()
             except RequestException as e:
                 raise EAException("Error posting to google chat: {}".format(e))
@@ -1750,6 +1801,7 @@ class GitterAlerter(Alerter):
         self.gitter_webhook_url = self.rule['gitter_webhook_url']
         self.gitter_proxy = self.rule.get('gitter_proxy', None)
         self.gitter_msg_level = self.rule.get('gitter_msg_level', 'error')
+        self.post_timeout = self.rule.get('glitter_post_timeout', 10)
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
@@ -1764,7 +1816,13 @@ class GitterAlerter(Alerter):
         }
 
         try:
-            response = requests.post(self.gitter_webhook_url, json.dumps(payload, cls=DateTimeEncoder), headers=headers, proxies=proxies)
+            response = requests.post(
+                self.gitter_webhook_url,
+                json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                proxies=proxies,
+                timeout=self.post_timeout
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Gitter: %s" % e)
@@ -1794,6 +1852,7 @@ class ServiceNowAlerter(Alerter):
         super(ServiceNowAlerter, self).__init__(rule)
         self.servicenow_rest_url = self.rule['servicenow_rest_url']
         self.servicenow_proxy = self.rule.get('servicenow_proxy', None)
+        self.post_timeout = self.rule.get('servicenow_post_timeout', 10)
 
     def alert(self, matches):
         for match in matches:
@@ -1822,7 +1881,8 @@ class ServiceNowAlerter(Alerter):
                 auth=(self.rule['username'], self.rule['password']),
                 headers=headers,
                 data=json.dumps(payload, cls=DateTimeEncoder),
-                proxies=proxies
+                proxies=proxies,
+                timeout=self.post_timeout
             )
             response.raise_for_status()
         except RequestException as e:
@@ -1865,6 +1925,7 @@ class AlertaAlerter(Alerter):
         self.attributes_keys = self.rule.get('alerta_attributes_keys', [])
         self.attributes_values = self.rule.get('alerta_attributes_values', [])
         self.value = self.rule.get('alerta_value', '')
+        self.post_timeout = self.rule.get('alerta_post_timeout', 10)
 
     def alert(self, matches):
         # Override the resource if requested
@@ -1877,7 +1938,13 @@ class AlertaAlerter(Alerter):
         alerta_payload = self.get_json_payload(matches[0])
 
         try:
-            response = requests.post(self.url, data=alerta_payload, headers=headers, verify=self.verify_ssl)
+            response = requests.post(
+                self.url,
+                data=alerta_payload,
+                headers=headers,
+                verify=self.verify_ssl,
+                timeout=self.post_timeout
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Alerta: %s" % e)
@@ -1958,7 +2025,7 @@ class HTTPPostAlerter(Alerter):
         self.post_static_payload = self.rule.get('http_post_static_payload', {})
         self.post_all_values = self.rule.get('http_post_all_values', not self.post_payload)
         self.post_http_headers = self.rule.get('http_post_headers', {})
-        self.timeout = self.rule.get('http_post_timeout', 10)
+        self.post_timeout = self.rule.get('http_post_timeout', 10)
 
     def alert(self, matches):
         """ Each match will trigger a POST to the specified endpoint(s). """
@@ -1975,8 +2042,13 @@ class HTTPPostAlerter(Alerter):
             proxies = {'https': self.post_proxy} if self.post_proxy else None
             for url in self.post_url:
                 try:
-                    response = requests.post(url, data=json.dumps(payload, cls=DateTimeEncoder),
-                                             headers=headers, proxies=proxies, timeout=self.timeout)
+                    response = requests.post(
+                        url,
+                        data=json.dumps(payload, cls=DateTimeEncoder),
+                        headers=headers,
+                        proxies=proxies,
+                        timeout=self.post_timeout
+                    )
                     response.raise_for_status()
                 except RequestException as e:
                     raise EAException("Error posting HTTP Post alert: %s" % e)
@@ -2035,6 +2107,7 @@ class StrideAlerter(Alerter):
         self.stride_proxy = self.rule.get('stride_proxy', None)
         self.url = 'https://api.atlassian.com/site/%s/conversation/%s/message' % (
             self.stride_cloud_id, self.stride_conversation_id)
+        self.post_timeout = self.rule.get('stride_post_timeout', 10)
 
     def alert(self, matches):
         body = self.create_alert_body(matches).strip()
@@ -2064,9 +2137,13 @@ class StrideAlerter(Alerter):
             if self.stride_ignore_ssl_errors:
                 requests.packages.urllib3.disable_warnings()
             response = requests.post(
-                self.url, data=json.dumps(payload, cls=DateTimeEncoder),
-                headers=headers, verify=not self.stride_ignore_ssl_errors,
-                proxies=proxies)
+                self.url,
+                data=json.dumps(payload, cls=DateTimeEncoder),
+                headers=headers,
+                verify=not self.stride_ignore_ssl_errors,
+                proxies=proxies,
+                timeout=self.post_timeout
+            )
             warnings.resetwarnings()
             response.raise_for_status()
         except RequestException as e:
@@ -2087,6 +2164,7 @@ class LineNotifyAlerter(Alerter):
     def __init__(self, rule):
         super(LineNotifyAlerter, self).__init__(rule)
         self.linenotify_access_token = self.rule["linenotify_access_token"]
+        self.post_timeout = self.rule.get('linenotify_post_timeout', 10)
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
@@ -2099,7 +2177,12 @@ class LineNotifyAlerter(Alerter):
             "message": body
         }
         try:
-            response = requests.post("https://notify-api.line.me/api/notify", data=payload, headers=headers)
+            response = requests.post(
+                "https://notify-api.line.me/api/notify",
+                data=payload,
+                headers=headers,
+                timeout=self.post_timeout
+            )
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Line Notify: %s" % e)
