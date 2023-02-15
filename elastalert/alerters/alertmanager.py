@@ -30,7 +30,7 @@ class AlertmanagerAlerter(Alerter):
         self.timeout = self.rule.get('alertmanager_timeout', 10)
         self.alertmanager_basic_auth_login = self.rule.get('alertmanager_basic_auth_login', None)
         self.alertmanager_basic_auth_password = self.rule.get('alertmanager_basic_auth_password', None)
-
+        self.tenant = self.rule.get('tenant', "haystack")
 
     @staticmethod
     def _json_or_string(obj):
@@ -41,6 +41,7 @@ class AlertmanagerAlerter(Alerter):
 
     def alert(self, matches):
         headers = {'content-type': 'application/json'}
+        headers.update({"X-Scope-OrgID": self.tenant})
         proxies = {'https': self.proxies} if self.proxies else None
         auth = HTTPBasicAuth(self.alertmanager_basic_auth_login, self.alertmanager_basic_auth_password) if self.alertmanager_basic_auth_login else None
 
@@ -60,7 +61,7 @@ class AlertmanagerAlerter(Alerter):
 
         for host in self.hosts:
             try:
-                url = '{}/api/{}/alerts'.format(host, self.api_version)
+                url = host
 
                 if self.ca_certs:
                     verify = self.ca_certs

@@ -1,38 +1,18 @@
-# -*- coding: utf-8 -*-
 import collections
 import datetime
 import logging
 import os
-import re
-import sys
-import time
 import types
 
 import dateutil.parser
-import pytz
+import dateutil.tz
+from auth import Auth
+from elasticsearch import RequestsHttpConnection
+from elasticsearch.client import Elasticsearch
 from six import string_types
 
-from elastalert import ElasticSearchClient
-from elastalert.auth import Auth
-from elasticsearch.exceptions import TransportError
-
 logging.basicConfig()
-logging.captureWarnings(True)
 elastalert_logger = logging.getLogger('elastalert')
-
-
-def get_module(module_name):
-    """ Loads a module and returns a specific object.
-    module_name should 'module.file.object'.
-    Returns object or raises EAException on error. """
-    sys.path.append(os.getcwd())
-    try:
-        module_path, module_class = module_name.rsplit('.', 1)
-        base_module = __import__(module_path, globals(), locals(), [module_class])
-        module = getattr(base_module, module_class)
-    except (ImportError, AttributeError, ValueError) as e:
-        raise EAException("Could not import module %s: %s" % (module_name, e)).with_traceback(sys.exc_info()[2])
-    return module
 
 
 def new_get_event_ts(ts_field):
@@ -80,45 +60,27 @@ def _find_es_dict_by_key(lookup_dict, term):
     # For example:
     #  {'foo.bar': {'bar': 'ray'}} to look up foo.bar will return {'bar': 'ray'}, not 'ray'
     dict_cursor = lookup_dict
+    subkeys = term.split('.')
+    subkey = ''
 
-    while term:
-        split_results = re.split(r'\[(\d)\]', term, maxsplit=1)
-        if len(split_results) == 3:
-            sub_term, index, term = split_results
-            index = int(index)
-        else:
-            sub_term, index, term = split_results + [None, '']
+    while len(subkeys) > 0:
+        if not dict_cursor:
+            return {}, None
 
-        subkeys = sub_term.split('.')
+        subkey += subkeys.pop(0)
 
-        subkey = ''
+        if subkey in dict_cursor:
+            if len(subkeys) == 0:
+                break
 
-        while len(subkeys) > 0:
-            if not dict_cursor:
-                return {}, None
-
-            subkey += subkeys.pop(0)
-
-            if subkey in dict_cursor:
-                if len(subkeys) == 0:
-                    break
-                dict_cursor = dict_cursor[subkey]
-                subkey = ''
-            elif len(subkeys) == 0:
-                # If there are no keys left to match, return None values
-                dict_cursor = None
-                subkey = None
-            else:
-                subkey += '.'
-
-        if index is not None and subkey:
             dict_cursor = dict_cursor[subkey]
-            if type(dict_cursor) == list and len(dict_cursor) > index:
-                subkey = index
-                if term:
-                    dict_cursor = dict_cursor[subkey]
-            else:
-                return {}, None
+            subkey = ''
+        elif len(subkeys) == 0:
+            # If there are no keys left to match, return None values
+            dict_cursor = None
+            subkey = None
+        else:
+            subkey += '.'
 
     return dict_cursor, subkey
 
@@ -150,13 +112,13 @@ def ts_to_dt(timestamp):
     dt = dateutil.parser.parse(timestamp)
     # Implicitly convert local timestamps to UTC
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=pytz.utc)
+        dt = dt.replace(tzinfo=dateutil.tz.tzutc())
     return dt
 
 
 def dt_to_ts(dt):
     if not isinstance(dt, datetime.datetime):
-        elastalert_logger.warning('Expected datetime, got %s' % (type(dt)))
+        logging.warning('Expected datetime, got %s' % (type(dt)))
         return dt
     ts = dt.isoformat()
     # Round microseconds to milliseconds
@@ -180,7 +142,7 @@ def ts_to_dt_with_format(timestamp, ts_format):
 
 def dt_to_ts_with_format(dt, ts_format):
     if not isinstance(dt, datetime.datetime):
-        elastalert_logger.warning('Expected datetime, got %s' % (type(dt)))
+        logging.warning('Expected datetime, got %s' % (type(dt)))
         return dt
     ts = dt.strftime(ts_format)
     return ts
@@ -190,11 +152,6 @@ def ts_now():
     return datetime.datetime.utcnow().replace(tzinfo=dateutil.tz.tzutc())
 
 
-def ts_utc_to_tz(ts, tz_name):
-    """Convert utc time to local time."""
-    return ts.astimezone(dateutil.tz.gettz(tz_name))
-
-
 def inc_ts(timestamp, milliseconds=1):
     """Increment a timestamp by milliseconds."""
     dt = ts_to_dt(timestamp)
@@ -202,7 +159,7 @@ def inc_ts(timestamp, milliseconds=1):
     return dt_to_ts(dt)
 
 
-def pretty_ts(timestamp, tz=True, ts_format=None):
+def pretty_ts(timestamp, tz=True):
     """Pretty-format the given timestamp (to be printed or logged hereafter).
     If tz, the timestamp will be converted to local time.
     Format: YYYY-MM-DD HH:MM TZ"""
@@ -211,10 +168,7 @@ def pretty_ts(timestamp, tz=True, ts_format=None):
         dt = ts_to_dt(timestamp)
     if tz:
         dt = dt.astimezone(dateutil.tz.tzlocal())
-    if ts_format is None:
-        return dt.strftime('%Y-%m-%d %H:%M %Z')
-    else:
-        return dt.strftime(ts_format)
+    return dt.strftime('%Y-%m-%d %H:%M %Z')
 
 
 def ts_add(ts, td):
@@ -262,10 +216,13 @@ def seconds(td):
 
 
 def total_seconds(dt):
+    # For python 2.6 compatability
     if dt is None:
         return 0
-    else:
+    elif hasattr(dt, 'total_seconds'):
         return dt.total_seconds()
+    else:
+        return (dt.microseconds + (dt.seconds + dt.days * 24 * 3600) * 10**6) / 10**6
 
 
 def dt_to_int(dt):
@@ -275,7 +232,6 @@ def dt_to_int(dt):
 
 def unixms_to_dt(ts):
     return unix_to_dt(float(ts) / 1000)
-
 
 def unix_to_dt(ts):
     if(type(ts) == types.UnicodeType):
@@ -327,26 +283,27 @@ def replace_dots_in_field_names(document):
 
 
 def elasticsearch_client(conf):
-    """ returns an :class:`ElasticSearchClient` instance configured using an es_conn_config """
+    """ returns an Elasticsearch instance configured using an es_conn_config """
     es_conn_conf = build_es_conn_config(conf)
     auth = Auth()
-    username = es_conn_conf['es_username']
-    password = es_conn_conf['es_password']
-    if es_conn_conf['es_bearer'] or es_conn_conf['es_api_key']:
-        username = None
-        password = None
     es_conn_conf['http_auth'] = auth(host=es_conn_conf['es_host'],
-                                     username=username,
-                                     password=password,
+                                     username=es_conn_conf['es_username'],
+                                     password=es_conn_conf['es_password'],
                                      aws_region=es_conn_conf['aws_region'],
                                      profile_name=es_conn_conf['profile'])
-    if es_conn_conf['es_bearer']:
-        es_conn_conf['headers'] = {"Authorization": "Bearer " + es_conn_conf['es_bearer']}
-    if es_conn_conf['es_api_key']:
-        es_conn_conf['headers'] = {"Authorization": "ApiKey " + es_conn_conf['es_api_key']}
 
-    return ElasticSearchClient(es_conn_conf)
-
+    return Elasticsearch(host=es_conn_conf['es_host'],
+                         port=es_conn_conf['es_port'],
+                         url_prefix=es_conn_conf['es_url_prefix'],
+                         use_ssl=es_conn_conf['use_ssl'],
+                         verify_certs=es_conn_conf['verify_certs'],
+                         ca_certs=es_conn_conf['ca_certs'],
+                         connection_class=RequestsHttpConnection,
+                         http_auth=es_conn_conf['http_auth'],
+                         timeout=es_conn_conf['es_conn_timeout'],
+                         send_get_body_as=es_conn_conf['send_get_body_as'],
+                         client_cert=es_conn_conf['client_cert'],
+                         client_key=es_conn_conf['client_key'])
 
 def kibana_adapter_client(conf):
     """ returns an Elasticsearch instance configured using an es_conn_config """
@@ -358,84 +315,20 @@ def kibana_adapter_client(conf):
                                      aws_region=es_conn_conf['aws_region'],
                                      profile_name=es_conn_conf['profile'])
 
-    return ElasticSearchClient(es_conn_conf)
+    return Elasticsearch(host=es_conn_conf['es_host'],
+                         port=es_conn_conf['es_port'],
+                         url_prefix=es_conn_conf['es_url_prefix'],
+                         use_ssl=es_conn_conf['use_ssl'],
+                         verify_certs=es_conn_conf['verify_certs'],
+                         ca_certs=es_conn_conf['ca_certs'],
+                         connection_class=RequestsHttpConnection,
+                         http_auth=es_conn_conf['http_auth'],
+                         timeout=es_conn_conf['es_conn_timeout'],
+                         send_get_body_as=es_conn_conf['send_get_body_as'],
+                         client_cert=es_conn_conf['client_cert'],
+                         client_key=es_conn_conf['client_key'])
 
 def build_adapter_conn_config(conf):
-    """ Given a conf dictionary w/ raw config properties 'use_ssl', 'es_host', 'es_port'
-    'es_username' and 'es_password', this will return a new dictionary
-    with properly initialized values for 'es_host', 'es_port', 'use_ssl' and 'http_auth' which
-    will be a basicauth username:password formatted string """
-    parsed_conf = {}
-    parsed_conf['use_ssl'] = os.environ.get('ES_USE_SSL', False)
-    parsed_conf['verify_certs'] = True
-    parsed_conf['ca_certs'] = None
-    parsed_conf['client_cert'] = None
-    parsed_conf['client_key'] = None
-    parsed_conf['http_auth'] = None
-    parsed_conf['es_username'] = None
-    parsed_conf['es_password'] = None
-    parsed_conf['es_api_key'] = None
-    parsed_conf['es_bearer'] = None
-    parsed_conf['aws_region'] = None
-    parsed_conf['profile'] = None
-    parsed_conf['headers'] = None
-    parsed_conf['es_host'] = conf['kibana_adapter']
-    parsed_conf['es_port'] = conf['kibana_adapter_port']
-    parsed_conf['es_url_prefix'] = ''
-    parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
-    parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
-    parsed_conf['ssl_show_warn'] = conf.get('ssl_show_warn', True)
-
-    if os.environ.get('ES_USERNAME'):
-        parsed_conf['es_username'] = os.environ.get('ES_USERNAME')
-        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD')
-    elif 'es_username' in conf:
-        parsed_conf['es_username'] = conf['es_username']
-        parsed_conf['es_password'] = conf['es_password']
-
-    if os.environ.get('ES_API_KEY'):
-        parsed_conf['es_api_key'] = os.environ.get('ES_API_KEY')
-    elif 'es_api_key' in conf:
-        parsed_conf['es_api_key'] = conf['es_api_key']
-
-    if os.environ.get('ES_BEARER'):
-        parsed_conf['es_bearer'] = os.environ.get('ES_BEARER')
-    elif 'es_bearer' in conf:
-        parsed_conf['es_bearer'] = conf['es_bearer']
-
-    if 'aws_region' in conf:
-        parsed_conf['aws_region'] = conf['aws_region']
-
-    if 'profile' in conf:
-        parsed_conf['profile'] = conf['profile']
-
-    if 'use_ssl' in conf:
-        parsed_conf['use_ssl'] = conf['use_ssl']
-
-    if 'verify_certs' in conf:
-        parsed_conf['verify_certs'] = conf['verify_certs']
-
-    if 'ca_certs' in conf:
-        parsed_conf['ca_certs'] = conf['ca_certs']
-
-    if 'client_cert' in conf:
-        parsed_conf['client_cert'] = conf['client_cert']
-
-    if 'client_key' in conf:
-        parsed_conf['client_key'] = conf['client_key']
-
-    if 'es_url_prefix' in conf:
-        parsed_conf['es_url_prefix'] = conf['es_url_prefix']
-
-    if 'kibana_adapter_url_prefix' in conf:
-        parsed_conf['es_url_prefix'] = conf['kibana_adapter_url_prefix']
-  
-
-    return parsed_conf
-
-
-
-def build_es_conn_config(conf):
     """ Given a conf dictionary w/ raw config properties 'use_ssl', 'es_host', 'es_port'
     'es_username' and 'es_password', this will return a new dictionary
     with properly initialized values for 'es_host', 'es_port', 'use_ssl' and 'http_auth' which
@@ -510,13 +403,66 @@ def build_es_conn_config(conf):
     return parsed_conf
 
 
-def pytzfy(dt):
-    # apscheduler requires pytz timezone objects
-    # This function will replace a dateutil.tz one with a pytz one
-    if dt.tzinfo is not None:
-        new_tz = pytz.timezone(dt.tzinfo.tzname('Y is this even required??'))
-        return dt.replace(tzinfo=new_tz)
-    return dt
+
+def build_es_conn_config(conf):
+    """ Given a conf dictionary w/ raw config properties 'use_ssl', 'es_host', 'es_port'
+    'es_username' and 'es_password', this will return a new dictionary
+    with properly initialized values for 'es_host', 'es_port', 'use_ssl' and 'http_auth' which
+    will be a basicauth username:password formatted string """
+    parsed_conf = {}
+    parsed_conf['use_ssl'] = os.environ.get('ES_USE_SSL', False)
+    parsed_conf['verify_certs'] = True
+    parsed_conf['ca_certs'] = None
+    parsed_conf['client_cert'] = None
+    parsed_conf['client_key'] = None
+    parsed_conf['http_auth'] = None
+    parsed_conf['es_username'] = None
+    parsed_conf['es_password'] = None
+    parsed_conf['aws_region'] = None
+    parsed_conf['profile'] = None
+    parsed_conf['es_host'] = os.environ.get('ES_HOST', conf['es_host'])
+    parsed_conf['es_port'] = int(os.environ.get('ES_PORT', conf['es_port']))
+    parsed_conf['es_url_prefix'] = ''
+    parsed_conf['es_conn_timeout'] = conf.get('es_conn_timeout', 20)
+    parsed_conf['send_get_body_as'] = conf.get('es_send_get_body_as', 'GET')
+
+    if os.environ.get('ES_USERNAME'):
+        parsed_conf['es_username'] = os.environ.get('ES_USERNAME')
+        parsed_conf['es_password'] = os.environ.get('ES_PASSWORD')
+    elif 'es_username' in conf:
+        parsed_conf['es_username'] = conf['es_username']
+        parsed_conf['es_password'] = conf['es_password']
+
+    if 'aws_region' in conf:
+        parsed_conf['aws_region'] = conf['aws_region']
+
+    # Deprecated
+    if 'boto_profile' in conf:
+        logging.warning('Found deprecated "boto_profile", use "profile" instead!')
+        parsed_conf['profile'] = conf['boto_profile']
+
+    if 'profile' in conf:
+        parsed_conf['profile'] = conf['profile']
+
+    if 'use_ssl' in conf:
+        parsed_conf['use_ssl'] = conf['use_ssl']
+
+    if 'verify_certs' in conf:
+        parsed_conf['verify_certs'] = conf['verify_certs']
+
+    if 'ca_certs' in conf:
+        parsed_conf['ca_certs'] = conf['ca_certs']
+
+    if 'client_cert' in conf:
+        parsed_conf['client_cert'] = conf['client_cert']
+
+    if 'client_key' in conf:
+        parsed_conf['client_key'] = conf['client_key']
+
+    if 'es_url_prefix' in conf:
+        parsed_conf['es_url_prefix'] = conf['es_url_prefix']
+
+    return parsed_conf
 
 
 def parse_duration(value):
@@ -533,7 +479,7 @@ def parse_deadline(value):
 
 def flatten_dict(dct, delim='.', prefix=''):
     ret = {}
-    for key, val in list(dct.items()):
+    for key, val in dct.items():
         if type(val) == dict:
             ret.update(flatten_dict(val, prefix=prefix + key + delim))
         else:
@@ -564,115 +510,8 @@ def resolve_string(string, match, missing_text='<MISSING VALUE>'):
             string = string.format(**dd_match)
             break
         except KeyError as e:
-            if '{%s}' % str(e).strip("'") not in string:
+            if '{%s}' % e.message not in string:
                 break
-            string = string.replace('{%s}' % str(e).strip("'"), '{_missing_value}')
+            string = string.replace('{%s}' % e.message, '{_missing_value}')
 
     return string
-
-
-def should_scrolling_continue(rule_conf):
-    """
-    Tells about a rule config if it can scroll still or should stop the scrolling.
-
-    :param: rule_conf as dict
-    :rtype: bool
-    """
-    max_scrolling = rule_conf.get('max_scrolling_count')
-    stop_the_scroll = 0 < max_scrolling <= rule_conf.get('scrolling_cycle')
-
-    return not stop_the_scroll
-
-
-def _expand_string_into_dict(string, value, sep='.'):
-    """
-    Converts a encapsulated string-dict to a sequence of dict. Use separator (default '.') to split the string.
-    Example:
-        string1.string2.stringN : value  -> {string1: {string2: {string3: value}}
-
-    :param string: The encapsulated "string-dict"
-    :param value: Value associated to the last field of the "string-dict"
-    :param sep: Separator character. Default: '.'
-    :rtype: dict
-    """
-    if sep not in string:
-        return {string: value}
-    key, val = string.split(sep, 1)
-    return {key: _expand_string_into_dict(val, value)}
-
-
-def expand_string_into_dict(dictionary, string, value, sep='.'):
-    """
-    Useful function to "compile" a string-dict string used in metric and percentage rules into a dictionary sequence.
-
-    :param dictionary: The dictionary dict
-    :param string:  String Key
-    :param value: String Value
-    :param sep: Separator character. Default: '.'
-    :rtype: dict
-    """
-
-    if sep not in string:
-        dictionary[string] = value
-        return dictionary
-    else:
-        field1, new_string = string.split(sep, 1)
-        dictionary[field1] = _expand_string_into_dict(new_string, value)
-    return dictionary
-
-
-def format_string(format_config, target_value):
-    """
-    Formats number, supporting %-format and str.format() syntax.
-
-    :param format_config: string format syntax, for example '{:.2%}' or '%.2f'
-    :param target_value: number to format
-    :rtype: string
-    """
-    if (format_config.startswith('{')):
-        return format_config.format(target_value)
-    else:
-        return format_config % (target_value)
-
-
-def format_host_port(host, port):
-    host = host.strip()
-    if ":" not in host:
-        return "{host}:{port}".format(host=host, port=port)
-    return host
-
-
-def parse_hosts(host, port=9200):
-    """
-    Convert host str like "host1:port1, host2:port2" to list
-    :param host str: hostnames (separated with comma ) or single host name
-    :param port: default to 9200
-    :return: list of hosts
-    """
-    host_list = host.split(",")
-    host_list = [format_host_port(x, port) for x in host_list]
-    return host_list
-
-
-def get_version_from_cluster_info(client):
-    esversion = None
-    for retry in range(3):
-        try:
-            esinfo = client.info()['version']
-            esversion = esinfo['number']
-            if esinfo.get('distribution') == "opensearch":
-                # https://opensearch.org/
-                if esversion[0] == "1":
-                    # OpenSearch 1.x is based on Elasticsearch 7.10.2
-                    esversion = "7.10.2"
-                else:
-                    # OpenSearch 2.x has qualities similar to 8.2.0
-                    esversion = "8.2.0"
-            break
-        except TransportError:
-            if retry == 2:
-                raise
-            elastalert_logger.warning('Failed to retrieve cluster version information, retrying in 3 seconds')
-            time.sleep(3)
-
-    return esversion

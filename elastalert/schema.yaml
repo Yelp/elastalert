@@ -72,7 +72,7 @@ definitions:
 
   filter: &filter {}
 
-required: [type, index, alert]
+required: [type, alert]
 type: object
 
 ### Rule Types section
@@ -211,6 +211,14 @@ oneOf:
     properties:
       # custom rules include a period in the rule type
       type: {pattern: "[.]"}
+  
+  - title: Error Rate
+    required: [sampling, threshold]
+    properties:
+      sampling: {type: integer}
+      threshold: {type: number}
+      error_condition: {type: string}
+      unique_column: {type: string}
 
 properties:
 

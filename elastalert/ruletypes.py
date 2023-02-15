@@ -2,6 +2,7 @@
 import copy
 import datetime
 import sys
+import time
 
 from sortedcontainers import SortedKeyList as sortedlist
 
@@ -1045,6 +1046,32 @@ class BaseAggregationRule(RuleType):
     def check_matches(self, timestamp, query_key, aggregation_data):
         raise NotImplementedError()
 
+
+class ErrorRateRule(BaseAggregationRule):
+    """ A rule that determines error rate with sampling rate"""
+    required_options = frozenset(['sampling', 'threshold','error_condition','unique_column'])
+    def __init__(self, *args):
+        super(ErrorRateRule, self).__init__(*args)
+
+        self.ts_field = self.rules.get('timestamp_field', '@timestamp')
+        self.rules['total_agg_key'] = self.rules['unique_column']
+        self.rules['count_all_errors'] = True
+
+        if (self.rules.has_key('error_calculation_method') and self.rules['error_calculation_method']=='count_traces_with_errors' ):
+            self.rules['count_all_errors'] = False
+
+        # hardcoding uniq aggregation for total count
+        self.rules['total_agg_type'] = "uniq"
+
+    def calculate_err_rate(self,payload):
+        for timestamp, payload_data in payload.iteritems():
+            if int(payload_data['total_count']) > 0:
+                rate = float(payload_data['error_count'])/float(payload_data['total_count'])
+                rate = float(rate)/float(self.rules['sampling'])
+                rate = rate*100
+                if 'threshold' in self.rules and rate > self.rules['threshold']:
+                    match = {self.rules['timestamp_field']: timestamp, 'error_rate': rate, 'from': payload_data['start_time'], 'to': payload_data['end_time']}
+                    self.add_match(match)
 
 class MetricAggregationRule(BaseAggregationRule):
     """ A rule that matches when there is a low number of events given a timeframe. """

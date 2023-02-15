@@ -93,6 +93,7 @@ class RulesLoader(object):
         'metric_aggregation': ruletypes.MetricAggregationRule,
         'percentage_match': ruletypes.PercentageMatchRule,
         'spike_aggregation': ruletypes.SpikeMetricAggregationRule,
+        'error_rate': ruletypes.ErrorRateRule
     }
 
     # Used to map names of alerts to their classes
@@ -252,6 +253,9 @@ class RulesLoader(object):
         while True:
             loaded = self.get_yaml(current_path)
 
+            if 'query_string' in loaded['filter'][0]:
+                loaded['filter'][0]['query_string']['default_operator'] = "AND"
+
             # Special case for merging filters - if both files specify a filter merge (AND) them
             if 'filter' in rule and 'filter' in loaded:
                 rule['filter'] = loaded['filter'] + rule['filter']
@@ -392,6 +396,10 @@ class RulesLoader(object):
 
         if 'include' in rule and type(rule['include']) != list:
             raise EAException('include option must be a list')
+
+        if (rule['type'] == 'error_rate'):
+            rule.setdefault('error_condition','exception.type:*')
+            rule.setdefault('unique_column','traceID')
 
         raw_query_key = rule.get('query_key')
         if isinstance(raw_query_key, list):
