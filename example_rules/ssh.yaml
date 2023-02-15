@@ -1,5 +1,5 @@
 # Rule name, must be unique
-  name: SSH abuse (ElastAlert 3.0.1) - 2
+name: SSH abuse (ElastAlert 3.0.1) - 2
 
 # Alert on x events in y seconds
 type: frequency
