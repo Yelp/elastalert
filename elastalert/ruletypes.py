@@ -436,7 +436,7 @@ class SpikeRule(RuleType):
     def clear_windows(self, qk, event):
         # Reset the state and prevent alerts until windows filled again
         self.ref_windows[qk].clear()
-        self.first_event.pop(qk)
+#         self.first_event.pop(qk)
         self.skip_checks[qk] = lookup_es_key(event, self.ts_field) + self.rules['timeframe'] * 2
 
     def handle_event(self, event, count, qk='all'):
