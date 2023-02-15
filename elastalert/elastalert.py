@@ -42,7 +42,7 @@ from elastalert.util import (add_raw_postfix, cronite_datetime_to_timestamp, dt_
                              elastalert_logger, elasticsearch_client,kibana_adapter_client, format_index, lookup_es_key, parse_deadline,
                              parse_duration, pretty_ts, replace_dots_in_field_names, seconds, set_es_key,
                              should_scrolling_continue, total_seconds, ts_add, ts_now, ts_to_dt, unix_to_dt,
-                             ts_utc_to_tz)
+                             ts_utc_to_tz, dt_to_ts_with_format)
 
 
 class ElastAlerter(object):
