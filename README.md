@@ -44,7 +44,6 @@ Currently, we have built-in support for the following alert types:
 - JIRA
 - OpsGenie
 - Commands
-- HipChat
 - MS Teams
 - Slack
 - Telegram
