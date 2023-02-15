@@ -2243,3 +2243,36 @@ Required:
 ``zbx_sender_port``: The port where zabbix server is listenning.
 ``zbx_host``: This field setup the host in zabbix that receives the value sent by Elastalert.
 ``zbx_item``: This field setup the item in the host that receives the value sent by Elastalert.
+
+
+IDMEF
+~~~~~~~~~~~
+
+IDMEF will send notification to a Prelude SIEM server (https://www.prelude-siem.org). With this alert, you will send all the notables or suspicious events to IDMEF standard format (RFC 4765: https://tools.ietf.org/html/rfc4765). Events are enriched to facilitate automation and correlation processes but also to provide as much information to the operator (contextualization alerts) to allow it to respond quickly and effectively.
+
+Required:
+
+``alert_fields``: Define how to fill an IDMEF message. This is a "key: value" list and all keys refer to an IDMEF class. Possible keys:
+         * classification: alert.classification.text,
+         * description: alert.assessment.impact.description,
+         * severity: alert.assessment.impact.severity,
+         * impact_type: alert.assessment.impact.type,
+         * target_address: alert.target.node.address.address,
+         * target_port: alert.target.service.port,
+         * target_process: alert.target.process.name,
+         * target_pid: alert.target.process.pid,
+         * src_address: alert.source.node.address.address,
+         * src_port: alert.source.service.port,
+         * user_category: alert.target(0).user.category,
+         * user_type: alert.target(0).user.user_id(0).type,
+         * user: alert.target(0).user.user_id(0).name
+                  
+Example usage::
+
+    alert: IDMEFAlerter
+
+    alert_fields:
+    - classification: "Abnormally high quantity of logs"
+    - description: "The host {hostname} is generating an abnormally high quantity of logs ({spike_count} while {reference_count} were generated in the last time frame)"
+    - severity: "medium"
+    - impact_type: "other"

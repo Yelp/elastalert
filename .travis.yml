@@ -4,6 +4,8 @@ python:
 env:
 - TOXENV=docs
 - TOXENV=py36
+before_install:
+  - sudo apt-get -y install python3.6-prelude
 install:
 - pip install tox
 - >
