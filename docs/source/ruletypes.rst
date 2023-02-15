@@ -901,7 +901,7 @@ of tens of thousands or more. ``doc_type`` must be set to use this.
 
 ``use_terms_query``: If true, ElastAlert will make an aggregation query against Elasticsearch to get counts of documents matching
 each unique value of ``query_key``. This must be used with ``query_key`` and ``doc_type``. This will only return a maximum of ``terms_size``,
-default 50, unique terms.
+default 50, unique terms. Since, this will only get the count of documents and not the actual documents, the alerts can be enriched by referencing ``{key}`` which has the value of query_key in alert formatting. 
 
 ``terms_size``: When used with ``use_terms_query``, this is the maximum number of terms returned per query. Default is 50.
 
