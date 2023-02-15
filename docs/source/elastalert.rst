@@ -112,6 +112,8 @@ The environment variable ``ES_HOST`` will override this field.
 
 ``es_port``: The port corresponding to ``es_host``. The environment variable ``ES_PORT`` will override this field.
 
+``es_version``: The version of the Elasticsearch cluster. If not set, ElastAlert will send a request and retrieve it automatically.
+
 ``use_ssl``: Optional; whether or not to connect to ``es_host`` using TLS; set to ``True`` or ``False``.
 The environment variable ``ES_USE_SSL`` will override this field.
 

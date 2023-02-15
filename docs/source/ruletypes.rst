@@ -20,6 +20,8 @@ Rule Configuration Cheat Sheet
 +--------------------------------------------------------------+           |
 | ``es_port`` (number)                                         |           |
 +--------------------------------------------------------------+           |
+| ``es_version`` (string)                                      |           |
++--------------------------------------------------------------+           |
 | ``index`` (string)                                           |           |
 +--------------------------------------------------------------+           |
 | ``type`` (string)                                            |           |
@@ -211,6 +213,12 @@ es_port
 
 ``es_port``: The port of the Elasticsearch cluster. (Required, number, no default)
 The environment variable ``ES_PORT`` will override this field.
+
+es_version
+^^^^^^^^^^
+
+``es_version``: The version of the Elasticsearch cluster. (Optional - If not set, ElastAlert will send a request and retrieve it automatically)
+The environment variable ``ES_VERSION`` will override this field.
 
 index
 ^^^^^

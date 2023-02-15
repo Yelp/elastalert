@@ -50,6 +50,8 @@ Next, open up config.yaml.example. In it, you will find several configuration op
 
 ``es_port`` is the port corresponding to ``es_host``.
 
+``es_version`` is the version corresponding to ``es_host``.
+
 ``use_ssl``: Optional; whether or not to connect to ``es_host`` using TLS; set to ``True`` or ``False``.
 
 ``verify_certs``: Optional; whether or not to verify TLS certificates; set to ``True`` or ``False``. The default is ``True``
