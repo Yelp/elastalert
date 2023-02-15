@@ -1231,7 +1231,9 @@ def test_slack_uses_custom_title():
                 'title': rule['alert_subject'],
                 'text': BasicMatchString(rule, match).__str__(),
                 'mrkdwn_in': ['text', 'pretext'],
-                'fields': []
+                'fields': [],
+                'footer': '',
+                'footer_icon': ''
             }
         ],
         'text': '',
@@ -1277,7 +1279,9 @@ def test_slack_uses_custom_timeout():
                 'title': rule['alert_subject'],
                 'text': BasicMatchString(rule, match).__str__(),
                 'mrkdwn_in': ['text', 'pretext'],
-                'fields': []
+                'fields': [],
+                'footer': '',
+                'footer_icon': ''
             }
         ],
         'text': '',
@@ -1321,7 +1325,9 @@ def test_slack_uses_rule_name_when_custom_title_is_not_provided():
                 'title': rule['name'],
                 'text': BasicMatchString(rule, match).__str__(),
                 'mrkdwn_in': ['text', 'pretext'],
-                'fields': []
+                'fields': [],
+                'footer': '',
+                'footer_icon': ''
             }
         ],
         'text': '',
@@ -1366,7 +1372,9 @@ def test_slack_uses_custom_slack_channel():
                 'title': rule['name'],
                 'text': BasicMatchString(rule, match).__str__(),
                 'mrkdwn_in': ['text', 'pretext'],
-                'fields': []
+                'fields': [],
+                'footer': '',
+                'footer_icon': ''
             }
         ],
         'text': '',
@@ -1411,7 +1419,9 @@ def test_slack_uses_list_of_custom_slack_channel():
                 'title': rule['name'],
                 'text': BasicMatchString(rule, match).__str__(),
                 'mrkdwn_in': ['text', 'pretext'],
-                'fields': []
+                'fields': [],
+                'footer': '',
+                'footer_icon': ''
             }
         ],
         'text': '',
@@ -1427,7 +1437,9 @@ def test_slack_uses_list_of_custom_slack_channel():
                 'title': rule['name'],
                 'text': BasicMatchString(rule, match).__str__(),
                 'mrkdwn_in': ['text', 'pretext'],
-                'fields': []
+                'fields': [],
+                'footer': '',
+                'footer_icon': ''
             }
         ],
         'text': '',

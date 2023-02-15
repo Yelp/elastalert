@@ -1127,6 +1127,8 @@ class SlackAlerter(Alerter):
         self.slack_ignore_ssl_errors = self.rule.get('slack_ignore_ssl_errors', False)
         self.slack_timeout = self.rule.get('slack_timeout', 10)
         self.slack_ca_certs = self.rule.get('slack_ca_certs')
+        self.footer = self.rule.get('slack_footer', '')
+        self.footer_icon = self.rule.get('slack_footer_icon', '')
         self.slack_attach_kibana_discover_url = self.rule.get('slack_attach_kibana_discover_url', False)
         self.slack_kibana_discover_color = self.rule.get('slack_kibana_discover_color', '#ec4b98')
         self.slack_kibana_discover_title = self.rule.get('slack_kibana_discover_title', 'Discover in Kibana')
@@ -1172,7 +1174,9 @@ class SlackAlerter(Alerter):
                     'title': self.create_title(matches),
                     'text': body,
                     'mrkdwn_in': ['text', 'pretext'],
-                    'fields': []
+                    'fields': [],
+                    'footer': self.footer,
+                    'footer_icon': self.footer_icon
                 }
             ]
         }
