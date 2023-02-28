@@ -19,3 +19,8 @@ my_rules
 *~
 /rules/
 mod/
+comparisonFile
+comparisonFile2
+examples/ex/*
+examples/ex1/*
+comparisonFile*

@@ -1,44 +1,35 @@
-FROM python:3-slim-buster as builder
+# UNDER DEVELOPMENT
 
-LABEL description="ElastAlert 2 Official Image"
-LABEL maintainer="Jason Ertel"
+# FROM python:3-slim as build
 
-COPY . /tmp/elastalert
+# ENV ELASTALERT_HOME /opt/elastalert
+# ADD . /opt/elastalert/
 
-RUN mkdir -p /opt/elastalert && \
-    cd /tmp/elastalert && \
-    pip install setuptools wheel && \
-    python setup.py sdist bdist_wheel
+# WORKDIR /opt
 
-FROM python:3-slim-buster
+# RUN apk add --update --no-cache jq curl gcc openssl-dev libffi-dev openssl ca-certificates musl-dev python-dev
+# RUN pip install "setuptools==36.2.7" "elasticsearch==6.3.1"
 
-ARG GID=1000
-ARG UID=1000
-ARG USERNAME=elastalert
+# WORKDIR "${ELASTALERT_HOME}"
 
-COPY --from=builder /tmp/elastalert/dist/*.tar.gz /tmp/
+# RUN pip install -r requirements.txt
+# RUN  python setup.py install
 
-RUN apt update && apt -y upgrade && \
-    apt -y install jq curl gcc libffi-dev && \
-    rm -rf /var/lib/apt/lists/* && \
-    pip install /tmp/*.tar.gz && \
-    rm -rf /tmp/* && \
-    apt -y remove gcc libffi-dev && \
-    apt -y autoremove && \
-    mkdir -p /opt/elastalert && \
-    echo "#!/bin/sh" >> /opt/elastalert/run.sh && \
-    echo "set -e" >> /opt/elastalert/run.sh && \
-    echo "elastalert-create-index --config /opt/elastalert/config.yaml" \
-        >> /opt/elastalert/run.sh && \
-    echo "elastalert --config /opt/elastalert/config.yaml \"\$@\"" \
-        >> /opt/elastalert/run.sh && \
-    chmod +x /opt/elastalert/run.sh && \
-    groupadd -g ${GID} ${USERNAME} && \
-    useradd -u ${UID} -g ${GID} -M -b /opt -s /sbin/nologin \
-        -c "ElastAlert 2 User" ${USERNAME}
+# FROM gcr.io/distroless/python3:debug as runtime
 
-USER ${USERNAME}
-ENV TZ "UTC"
+# COPY --from=build /opt/elastalert /opt/elastalert
+# COPY --from=build /usr/local/lib/python3 /usr/local/lib/python3
+# COPY --from=build /usr/local/bin/elastalert* /usr/local/bin/
+# COPY --from=build /usr/local/lib/libpython2.7.so.1.0 /usr/local/lib/
+# COPY --from=build /usr/lib/libpython2.7.so.1.0 /usr/lib/
+# COPY --from=build /lib/libc.musl-x86_64.so.1 /lib/
 
-WORKDIR /opt/elastalert
-ENTRYPOINT ["/opt/elastalert/run.sh"]
+# #COPY  --from=build /data/elastalert /data/elastalert
+
+# ENV PYTHONPATH=/usr/local/lib/python2.7/site-packages
+# ENV PATH=/usr/local/lib:/usr/lib:$PATH
+
+# WORKDIR /opt/elastalert
+
+# CMD ["/usr/local/bin/elastalert-create-index","--config","/data/elastalert/config.yaml", "--verbose"]
+# CMD ["/usr/local/bin/elastalert","--config","/data/elastalert/config.yaml", "--verbose"]

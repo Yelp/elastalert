@@ -736,7 +736,7 @@ class NewTermsRule(RuleType):
                     index = format_index(self.rules['index'], tmp_start, tmp_end)
                 else:
                     index = self.rules['index']
-                res = self.es.search(body=query, index=index, ignore_unavailable=True, timeout='50s')
+                res = self.es.search(body=query, index=index, doc_type='elastalert_status', ignore_unavailable=True, timeout='50s')
                 if 'aggregations' in res:
                     buckets = res['aggregations']['filtered']['values']['buckets']
                     if type(field) == list:
@@ -1057,14 +1057,14 @@ class ErrorRateRule(BaseAggregationRule):
         self.rules['total_agg_key'] = self.rules['unique_column']
         self.rules['count_all_errors'] = True
 
-        if (self.rules.has_key('error_calculation_method') and self.rules['error_calculation_method']=='count_traces_with_errors' ):
+        if ( 'error_calculation_method' in self.rules and self.rules['error_calculation_method']=='count_traces_with_errors' ):
             self.rules['count_all_errors'] = False
 
         # hardcoding uniq aggregation for total count
         self.rules['total_agg_type'] = "uniq"
 
     def calculate_err_rate(self,payload):
-        for timestamp, payload_data in payload.iteritems():
+        for timestamp, payload_data in payload.items():
             if int(payload_data['total_count']) > 0:
                 rate = float(payload_data['error_count'])/float(payload_data['total_count'])
                 rate = float(rate)/float(self.rules['sampling'])
@@ -1119,7 +1119,7 @@ class MetricAggregationRule(BaseAggregationRule):
 
         else:
             if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
-                metric_val = list(aggregation_data[self.metric_key]['values'].values())[0]
+                metric_val = list(aggregation_data[self.metric_key]['values'][0].values())[0]
             else:
                 metric_val = aggregation_data[self.metric_key]['value']
             if self.crossed_thresholds(metric_val):
@@ -1166,9 +1166,9 @@ class MetricAggregationRule(BaseAggregationRule):
     def crossed_thresholds(self, metric_value):
         if metric_value is None:
             return False
-        if 'max_threshold' in self.rules and metric_value > self.rules['max_threshold']:
+        if 'max_threshold' in self.rules and int(metric_value) > self.rules['max_threshold']:
             return True
-        if 'min_threshold' in self.rules and metric_value < self.rules['min_threshold']:
+        if 'min_threshold' in self.rules and int(metric_value) < self.rules['min_threshold']:
             return True
         return False
 
