@@ -127,12 +127,15 @@ def ea():
             'alert_time_limit': datetime.timedelta(hours=24),
             'es_host': 'es',
             'es_port': 14900,
+            'kibana_adapter': '',
+            'kibana_adapter_port': 14900,
             'writeback_index': 'wb',
             'rules': rules,
             'max_query_size': 10000,
             'old_query_limit': datetime.timedelta(weeks=1),
             'disable_rules_on_error': False,
             'scroll_keepalive': '30s',
+            'query_endpoint': 'http://localhost:9999/v2/sherlock-alerts/traces/visualize',
             'custom_pretty_ts_format': '%Y-%m-%d %H:%M'}
     elastalert.util.elasticsearch_client = mock_es_client
     conf['rules_loader'] = mock_rule_loader(conf)

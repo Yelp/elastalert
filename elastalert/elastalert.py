@@ -597,7 +597,7 @@ class ElastAlerter(object):
         payload = {'error_count': error_data, 'total_count': total_data, 'start_time': starttime, 'end_time': endtime}
         elastalert_logger.info("query start time and endtime %s at %s , error_count %d ,total_count %d" % (starttime, endtime, error_data, total_data))
 
-        self.thread_data.num_hits += int(error_count)
+        self.thread_data.num_hits += int(error_data)
         
         return {endtime: payload}
 
