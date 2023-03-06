@@ -1,12 +1,11 @@
-FROM python:3.9-slim-buster as build
+FROM python:3.9-alpine as build
 
 ENV ELASTALERT_HOME /opt/elastalert
 ADD . /opt/elastalert/
 
 WORKDIR /opt
 
-RUN apt-get update
-RUN apt-get -y install jq curl gcc openssl libssl-dev libffi-dev ca-certificates musl-dev python-dev
+RUN apk add --update --no-cache jq curl gcc openssl-dev libffi-dev ca-certificates musl-dev
 RUN pip install "setuptools==65.5.0" "elasticsearch==6.3.1"
 
 WORKDIR "${ELASTALERT_HOME}"
@@ -26,11 +25,11 @@ FROM gcr.io/distroless/python3:debug as runtime
 COPY --from=build /opt/elastalert /opt/elastalert
 COPY --from=build /usr/local/bin/elastalert* /usr/local/bin/
 
-COPY --from=build /opt/elastalert /opt/elastalert
+COPY --from=build /opt/elastalert /opt/elastalert 
 COPY --from=build /usr/local/lib/python3.9 /usr/local/lib/python3.9
 COPY --from=build /usr/local/bin/elastalert* /usr/local/bin/
 COPY --from=build /usr/local/lib/libpython3.9.so.1.0 /usr/local/lib/
-# COPY --from=build /lib/libc.musl-x86_64.so.1 /lib/
+COPY --from=build /lib/libc.musl-x86_64.so.1 /lib/
 
 #COPY  --from=build /data/elastalert /data/elastalert
 
@@ -42,5 +41,5 @@ RUN python --version
 
 WORKDIR /opt/elastalert
 
-ENTRYPOINT ["python","-m","elastalert.create_index","--config","/data/elastalert/config.yaml", "--verbose"]
-ENTRYPOINT ["python","-m","elastalert.elastalert","--config","/data/elastalert/config.yaml", "--verbose"]
+ENTRYPOINT ["python","-m","elastalert.create_index","--config","config.yaml", "--verbose"]
+ENTRYPOINT ["python","-m","elastalert.elastalert","--config","config.yaml", "--verbose"]
