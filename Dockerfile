@@ -41,5 +41,5 @@ RUN python --version
 
 WORKDIR /opt/elastalert
 
-ENTRYPOINT ["python","-m","elastalert.create_index","--config","config.yaml", "--verbose"]
-ENTRYPOINT ["python","-m","elastalert.elastalert","--config","config.yaml", "--verbose"]
+ENTRYPOINT ["python","-m","elastalert.create_index","--config","/data/elastalert/config.yaml", "--verbose"]
+ENTRYPOINT ["python","-m","elastalert.elastalert","--config","/data/elastalert/config.yaml", "--verbose"]
