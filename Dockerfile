@@ -30,7 +30,7 @@ COPY --from=build /opt/elastalert /opt/elastalert
 COPY --from=build /usr/local/lib/python3.9 /usr/local/lib/python3.9
 COPY --from=build /usr/local/bin/elastalert* /usr/local/bin/
 COPY --from=build /usr/local/lib/libpython3.9.so.1.0 /usr/local/lib/
-COPY --from=build /lib/ld-musl-aarch64.so.1 /lib/
+COPY --from=build /lib/libc.musl-x86_64.so.1 /lib/
 
 #COPY  --from=build /data/elastalert /data/elastalert
 
