@@ -41,5 +41,6 @@ RUN python --version
 
 WORKDIR /opt/elastalert
 
-ENTRYPOINT ["python","-m","elastalert.create_index","--config","/data/elastalert/config.yaml", "--verbose"]
-ENTRYPOINT ["python","-m","elastalert.elastalert","--config","/data/elastalert/config.yaml", "--verbose"]
+COPY commands.sh /opt/elastalert/commands.sh
+RUN ["chmod", "+x", "/opt/elastalert/commands.sh"]
+ENTRYPOINT ["sh","/opt/elastalert/commands.sh"]
