@@ -262,9 +262,27 @@ class ElastAlerter(object):
         query_element = query['query']
         if 'sort' in query_element:
             query_element.pop('sort')
-        aggs_query = query
-        aggs_query['aggs'] = {'counts': {'terms': {'field': field, 'size': size}}}
         
+        if 'nested_query_key' in rule and rule['nested_query_key'] == True and len(field.split(",")) > 1:
+            aggs_query = query
+            query_key_list = field.split(",")
+            first_query_key = query_key_list.pop()
+            aggs_element = {'counts': {'terms': {'field': first_query_key,
+                                                    'size': size,
+                                                    'min_doc_count': rule.get('min_doc_count', 1)}}}
+            
+            if len(query_key_list) > 0:
+                for key in reversed(query_key_list):
+                    aggs_element = {'counts': {'terms': {'field': key, 'size': size,
+                                                        'min_doc_count': rule.get('min_doc_count', 1)}, 'aggs': aggs_element}}
+            aggs_query['aggs'] = aggs_element
+        else:
+            aggs_query = query
+            aggs_query['aggs'] = {'counts': {'terms': {'field': field,
+                                                    'size': size,
+                                                    'min_doc_count': rule.get('min_doc_count', 1)}}}
+
+
         return aggs_query
 
     def get_aggregation_query(self, query, rule, query_key, terms_size, timestamp_field='@timestamp'):

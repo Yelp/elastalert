@@ -223,12 +223,33 @@ class FrequencyRule(RuleType):
         self.check_for_match('all')
 
     def add_terms_data(self, terms):
-        for timestamp, buckets in terms.items():
-            for bucket in buckets:
+        if 'nested_query_key' in self.rules and self.rules['nested_query_key'] == True:
+            #letting this log message stay inorder to debug issues in future
+            elastalert_logger.info(terms)
+            for timestamp, buckets in terms.items():
+                self.flatten_nested_aggregations(timestamp,buckets)
+        else:
+            for timestamp, buckets in terms.items():
+                for bucket in buckets:
+                    event = ({self.ts_field: timestamp,
+                            self.rules['query_key']: bucket['key']}, bucket['doc_count'])
+                    self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
+                    self.check_for_match(bucket['key'])
+
+    def flatten_nested_aggregations(self,timestamp,buckets,key=None):
+        for bucket in buckets:
+            if key == None:
+                nestedkey = str(bucket['key'])
+            else:
+                nestedkey = key + ',' + str(bucket['key'])
+            if 'counts' in bucket:
+                self.flatten_nested_aggregations(timestamp,bucket['counts']['buckets'],nestedkey)
+            else:
                 event = ({self.ts_field: timestamp,
-                          self.rules['query_key']: bucket['key']}, bucket['doc_count'])
-                self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
-                self.check_for_match(bucket['key'])
+                        self.rules['query_key']: nestedkey}, bucket['doc_count'])
+                self.occurrences.setdefault(nestedkey, EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
+                self.check_for_match(nestedkey)
+
 
     def add_data(self, data):
         if 'query_key' in self.rules:
