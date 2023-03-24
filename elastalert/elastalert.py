@@ -283,8 +283,6 @@ class ElastAlerter(object):
                                                     'min_doc_count': rule.get('min_doc_count', 1)}}}
 
 
-        print(aggs_query)
-
         return aggs_query
 
     def get_aggregation_query(self, query, rule, query_key, terms_size, timestamp_field='@timestamp'):
