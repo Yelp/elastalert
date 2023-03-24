@@ -226,10 +226,10 @@ class FrequencyRule(RuleType):
         if 'nested_query_key' in self.rules and self.rules['nested_query_key'] == True:
             #letting this log message stay inorder to debug issues in future
             elastalert_logger.info(terms)
-            for timestamp, buckets in terms.iteritems():
+            for timestamp, buckets in terms.items():
                 self.flatten_nested_aggregations(timestamp,buckets)
         else:
-            for timestamp, buckets in terms.iteritems():
+            for timestamp, buckets in terms.items():
                 for bucket in buckets:
                     event = ({self.ts_field: timestamp,
                             self.rules['query_key']: bucket['key']}, bucket['doc_count'])
