@@ -15,10 +15,6 @@ RUN python setup.py install
 
 RUN pip show elastalert2
 
-RUN echo "coming here..."
-RUN ls /usr/local/lib/
-RUN ls /usr/lib/
-RUN ls /lib/
 
 FROM gcr.io/distroless/python3:debug as runtime
 
@@ -36,7 +32,6 @@ COPY --from=build /lib/libc.musl-x86_64.so.1 /lib/
 ENV PYTHONPATH=/usr/local/lib/python3.9/site-packages
 ENV PATH=/usr/local/lib:/usr/lib:$PATH
 
-RUN ls /usr/local/bin/
 RUN python --version
 
 WORKDIR /opt/elastalert
