@@ -24,13 +24,9 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
     esversion = get_version_from_cluster_info(es_client)
 
     es_index_mappings = {}
-    if is_atleasteight(esversion):
-        es_index_mappings = read_es_index_mappings()
-    elif is_atleastseven(esversion):
-        es_index_mappings = read_es_index_mappings(7)
-    else:                                      
-        print('FATAL - Unsupported Elasticsearch version: ' + esversion + '. Aborting.')
-        exit(1)
+    
+    #using es_mappings 7
+    es_index_mappings = read_es_index_mappings(7)
 
     es_index = IndicesClient(es_client)
     if not recreate:
