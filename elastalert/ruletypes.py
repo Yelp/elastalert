@@ -222,6 +222,7 @@ class FrequencyRule(RuleType):
         self.occurrences.setdefault('all', EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
         self.check_for_match('all')
 
+    #nested query key optimizations
     def add_terms_data(self, terms):
         if 'nested_query_key' in self.rules and self.rules['nested_query_key'] == True:
             #letting this log message stay inorder to debug issues in future
@@ -236,6 +237,7 @@ class FrequencyRule(RuleType):
                     self.occurrences.setdefault(bucket['key'], EventWindow(self.rules['timeframe'], getTimestamp=self.get_ts)).append(event)
                     self.check_for_match(bucket['key'])
 
+    #nested query key optimizations
     def flatten_nested_aggregations(self,timestamp,buckets,key=None):
         for bucket in buckets:
             if key == None:
@@ -1067,7 +1069,7 @@ class BaseAggregationRule(RuleType):
     def check_matches(self, timestamp, query_key, aggregation_data):
         raise NotImplementedError()
 
-
+#Error Rate Rule Definition
 class ErrorRateRule(BaseAggregationRule):
     """ A rule that determines error rate with sampling rate"""
     required_options = frozenset(['sampling', 'threshold','error_condition','unique_column'])
@@ -1140,6 +1142,7 @@ class MetricAggregationRule(BaseAggregationRule):
 
         else:
             if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
+                #backwards compatibility with existing elasticsearch library
                 metric_val = list(aggregation_data[self.metric_key]['values'][0].values())[0]
             else:
                 metric_val = aggregation_data[self.metric_key]['value']

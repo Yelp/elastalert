@@ -280,7 +280,7 @@ def unixms_to_dt(ts):
 def unix_to_dt(ts):
     if(type(ts) == types.UnicodeType):
         dt = datetime.datetime.strptime(ts, '%Y-%m-%d %H:%M:%S.%f')
-    else:
+    else: #if timestamp is in float format
         dt = datetime.datetime.utcfromtimestamp(float(ts))
     dt = dt.replace(tzinfo=dateutil.tz.tzutc())
     return dt
@@ -348,6 +348,7 @@ def elasticsearch_client(conf):
     return ElasticSearchClient(es_conn_conf)
 
 
+#modded version of elasticsearch_client that suits haystack's needs
 def kibana_adapter_client(conf):
     """ returns an Elasticsearch instance configured using an es_conn_config """
     es_conn_conf = build_adapter_conn_config(conf)

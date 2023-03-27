@@ -1282,7 +1282,7 @@ def test_metric_aggregation_scripted():
     rule.check_matches(datetime.datetime.now(), None, {'metric_cpu_pct_avg': {'value': -0.5}})
     assert rule.matches[0]['metric_cpu_pct_avg'] == -0.5
 
-
+#mock_Response for get_ch_date
 def _mock_response(
             status=200,
             content='{"test": "test"}',
@@ -1302,6 +1302,7 @@ def _mock_response(
         mock_resp.json = mock.Mock(return_value=json_data)
     return mock_resp
 
+#Error rate rule testing methods
 def get_error_rate_tester(ea,total_count= 5,error_count= 10, count_all_errors=True):
     #testing elastalert function that hits query_endpoint and gets aggregation data
     rules = [{'es_host': '',

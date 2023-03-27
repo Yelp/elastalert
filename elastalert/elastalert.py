@@ -93,6 +93,7 @@ class ElastAlerter(object):
             dest='es_debug_trace',
             help='Enable logging from Elasticsearch queries as curl command. Queries will be logged to file. Note that '
                  'this will incorrectly display localhost:9200 as the host/port')
+        #prometheus port changes
         parser.add_argument('--prometheus_port', type=int, dest='prometheus_port', default=9090, help='Enables Prometheus metrics on specified port.')
         self.args = parser.parse_args(args)
 
@@ -172,9 +173,12 @@ class ElastAlerter(object):
         self.pretty_ts_format = self.conf.get('custom_pretty_ts_format')
 
         self.writeback_es = elasticsearch_client(self.conf)
+
+        #kibana adapter is the modded elasticsearch_client
         self.kibana_adapter = kibana_adapter_client(self.conf)
         self._es_version = None
 
+        #query_endpoint used by error_rate rule
         self.query_endpoint = self.conf['query_endpoint']
 
         remove = []
@@ -208,6 +212,8 @@ class ElastAlerter(object):
         else:
             return index
 
+
+    #backwards compatibility with es6 msearch
     @staticmethod
     def get_msearch_query(query, rule):
         search_arr = []
@@ -399,6 +405,7 @@ class ElastAlerter(object):
 
         request = self.get_msearch_query(query,rule)
 
+        #removed scroll as it aint supported
         # extra_args = {'_source_includes': rule['include']}
         # scroll_keepalive = rule.get('scroll_keepalive', self.scroll_keepalive)
         # if not rule.get('_source_enabled'):
@@ -406,9 +413,12 @@ class ElastAlerter(object):
         #     extra_args = {}
 
         try:
+            #using backwards compatibile msearch
             res = self.thread_data.current_es.msearch(body=request)
             res = res['responses'][0]
             self.thread_data.total_hits = int(res['hits']['total'])
+
+            #removed scroll as it aint supported
             # if scroll:
             #     res = self.thread_data.current_es.scroll(scroll_id=rule['scroll_id'], scroll=scroll_keepalive)
             # else:
@@ -483,6 +493,7 @@ class ElastAlerter(object):
         request = self.get_msearch_query(query,rule)
 
         try:
+            #using backwards compatibile msearch
             res = self.thread_data.current_es.msearch(body=request)
             res = res['responses'][0]
         except ElasticsearchException as e:
@@ -535,6 +546,7 @@ class ElastAlerter(object):
         request = self.get_msearch_query(query,rule)
 
         try:
+            #using backwards compatibile msearch
             res = self.thread_data.current_es.msearch(body=request)
             res = res['responses'][0]
 
@@ -573,6 +585,7 @@ class ElastAlerter(object):
         query = self.get_aggregation_query(base_query, rule, query_key, term_size, rule['timestamp_field'])
         request = self.get_msearch_query(query,rule)
         try:
+            #using backwards compatibile msearch
             res = self.thread_data.current_es.msearch(body=request)
             res = res['responses'][0]
         except ElasticsearchException as e:
@@ -587,6 +600,8 @@ class ElastAlerter(object):
         self.thread_data.num_hits += res['hits']['total']
         return {endtime: payload}
 
+
+    #trace_alert specific error rate method
     def get_error_rate(self, rule, starttime, endtime):
         agg_key = '{}({})'.format(rule['total_agg_type'],rule['total_agg_key'])
         query = self.get_query_string(rule)
@@ -619,11 +634,13 @@ class ElastAlerter(object):
         
         return {endtime: payload}
 
+    #method used by get_error_rate
     def get_query_string(self, rule):
         if rule['filter'] and ('query_string' in rule['filter'][0]['query']) and ('query' in rule['filter'][0]['query']['query_string']):
             return rule['filter'][0]['query']['query_string']['query']
         return ""
 
+    #method used by get_error_rate for calculating aggregates from ch data using query_endpoint
     def get_ch_data(self, rule, starttime, endtime, agg_key, freshquery,aggregation):
         data = {
                     "selects":[],
@@ -727,6 +744,9 @@ class ElastAlerter(object):
             else:
                 rule_inst.add_data(data)
 
+
+        #Removed scrolling as in old elastalert
+
         # try:
         #     if rule.get('scroll_id') and self.thread_data.num_hits < self.thread_data.total_hits and should_scrolling_continue(rule):
         #         if not self.run_query(rule, start, end, scroll=True):
@@ -757,6 +777,7 @@ class ElastAlerter(object):
         try:
             doc_type = 'elastalert_status'
             index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
+            #modded for elasticsearch ver 6 library compatibility
             res = self.writeback_es.search(index=index, doc_type='elastalert_status',
                                                size=1, body=query, _source_include=['endtime', 'rule_name'])
             if res['hits']['hits']:
@@ -1587,6 +1608,7 @@ class ElastAlerter(object):
         query = {'query': {'bool': {'must': inner_query, 'filter': time_filter}}}
         query.update(sort)
         try:
+            #modded for elasticsearch ver 6 library compatibility
             res = self.writeback_es.search(index=self.writeback_index,
                                            doc_type='elastalert',
                                            body=query,
@@ -1674,6 +1696,7 @@ class ElastAlerter(object):
         query = {'query': {'query_string': {'query': 'aggregate_id:"%s"' % (_id)}}, 'sort': {'@timestamp': 'asc'}}
         matches = []
         try:
+            #modded for elasticsearch ver 6 library compatibility
             res = self.writeback_es.search(index=self.writeback_index,
                                            doc_type='elastalert',
                                            body=query,
@@ -1697,6 +1720,7 @@ class ElastAlerter(object):
         query = {'query': {'bool': query}}
         query['sort'] = {'alert_time': {'order': 'desc'}}
         try:
+            #modded for elasticsearch ver 6 library compatibility
             res = self.writeback_es.search(index=self.writeback_index,
                                            doc_type='elastalert',
                                            body=query,
@@ -1844,6 +1868,7 @@ class ElastAlerter(object):
         try:
             doc_type = 'silence'
             index = self.writeback_es.resolve_writeback_index(self.writeback_index, doc_type)
+            #modded for elasticsearch ver 6 library compatibility
             res = self.writeback_es.search(index=index, doc_type='silence',
                                                size=1, body=query, _source_include=['until', 'exponent'])
         except ElasticsearchException as e:
