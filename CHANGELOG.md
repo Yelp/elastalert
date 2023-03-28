@@ -1,6 +1,6 @@
 # 2.9.1 FW updates
 
-## Removals / Downgrades
+## Breaking changes
 - Downgraded elasticsearch library from 8 to 6 to support the existing es clusters of haystack.
 - Downgraded various other libraries for the same
 - es scrolls disabled
