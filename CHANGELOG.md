@@ -1,25 +1,23 @@
 # 2.9.1 FW updates
 
-## Breaking changes
-- Downgraded elasticsearch library from 8 to 6 to support the existing es clusters of haystack.
-- Downgraded various other libraries for the same
-- es scrolls disabled
+## Breaking Changes
+- Downgraded elasticsearch library from version 8 to version 6 for the engine support the existing es clusters of haystack.
+- Downgraded various other libraries for the same.
+- es scrolls disabled as per requirement
 - replaced search queries with msearch for all es querying
 
-
 ## New Features
-- [Alertmanager] added tenant specific config to alertmanager
-- [Prometheus] added tenant and modified prometheus route and port as per haystack requirements
+- [Alertmanager] Added tenant specific config to alertmanager
+- [Prometheus] Added tenant config and modified prometheus route & port as per haystack requirements
 - [Haystack] Added Kibana adapter support for querying from router 
 - [Haystack] Added url_prefix for kibana adapter
 - [Haystack] Term-query optimzations
 - [Engine changes] Common index can be configured directly in config.yaml
 - [Trace Alerts] Added Error Rate rule that hits router aggregagte endpoint 
 - [Trace Alerts] Error rate rule enhancements
-	- error_calculation_method config for users to decide between two different error rate calculation methods. 
-	- default values for unique_column and 	
-	- Improved test cases
-	- default error_rate configs - unique_column and error_condition
+	- error_calculation_method config for users to decide between two different error_rate calculation methods. 
+	- Default values for unique_column and error_condition
+	- Added Test cases for Error Rate Alert type
 - [Dockerfile] Distroless Docker setup for python 3 - elastalert
 - [Dockerfile] Docker optimization to fix create_index not running bug
 
