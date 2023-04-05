@@ -1509,7 +1509,7 @@ class ElastAlerter(object):
             try:
                 alert.alert(matches)
             except EAException as e:
-                self.handle_error('Error while running alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
+                self.handle_error('Error while running alert %s ( Tenant : %s , Rule : %s ) - %s' % (alert.get_info()['type'], rule.get('tenant') , rule.get('name'), e), {'rule': rule['name']})
                 alert_exception = str(e)
             else:
                 self.thread_data.alerts_sent += 1
