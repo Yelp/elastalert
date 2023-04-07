@@ -21,20 +21,20 @@
 
 # (Required)
 # Rule name, must be unique
-name: New country login
+name: filebeat-7.3.0-2022.08.16-000001
 
 # (Required)
 # Type of alert.
 # the change rule will alert when a certain field changes in two documents within a timeframe
-type: change
+type: blacklist
 
 # (Required)
 # Index to search, wildcard supported
-index: logstash-*
+index: filebeat-7.3.0-2022.08.16-000001
 
 # (Required, change specific)
 # The field to look for changes in
-compare_key: country_name
+compare_key: "INFO"
 
 # (Required, change specific)
 # Ignore documents without the compare_key (country_name) field
@@ -56,7 +56,7 @@ timeframe:
 filter:
 - query:
     query_string:
-      query: "document_type: login"
+      query: "kubernetes.pod.name: game-server and INFO"
 
 # (Required)
 # The alert is use when a match is found
