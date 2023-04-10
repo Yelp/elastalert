@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
+import base64
 import collections
 import datetime
+import hashlib
+import hmac
 import logging
 import os
 import re
 import sys
+import time
+import urllib
 
 import dateutil.parser
 import pytz
@@ -460,3 +465,16 @@ def should_scrolling_continue(rule_conf):
     stop_the_scroll = 0 < max_scrolling <= rule_conf.get('scrolling_cycle')
 
     return not stop_the_scroll
+
+
+def get_timestamp_sign(token):
+    timestamp = str(round(time.time() * 1000))
+    secret_enc = token.encode('utf-8')
+    string_to_sign = '{}\n{}'.format(timestamp, token)
+    string_to_sign_enc = string_to_sign.encode('utf-8')
+    hmac_code = hmac.new(secret_enc, string_to_sign_enc,
+                         digestmod=hashlib.sha256).digest()
+    sign = urllib.parse.quote_plus(base64.b64encode(hmac_code))
+    print("timestamp: ", timestamp)
+    print("sign:", sign)
+    return timestamp, sign

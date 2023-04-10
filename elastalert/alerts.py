@@ -32,7 +32,7 @@ from texttable import Texttable
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client as TwilioClient
 
-from .util import EAException
+from .util import EAException, get_timestamp_sign
 from .util import elastalert_logger
 from .util import lookup_es_key
 from .util import pretty_ts
@@ -1073,7 +1073,6 @@ class MsTeamsAlerter(Alerter):
 
     def alert(self, matches):
         body = self.create_alert_body(matches)
-
         body = self.format_body(body)
         # post to Teams
         headers = {'content-type': 'application/json'}
@@ -2183,4 +2182,56 @@ class HiveAlerter(Alerter):
         return {
             'type': 'hivealerter',
             'hive_host': self.rule.get('hive_connection', {}).get('hive_host', '')
+        }
+
+
+class DingTalkAlerter(Alerter):
+    required_options = frozenset(['dingtalk_webhook', 'dingtalk_message', "dingtalk_isAtAll", "dingtalk_token", "dingtalk_title"])
+
+    def __init__(self, rule):
+        super(DingTalkAlerter, self).__init__(rule)
+        self.dingtalk_webhook_url = self.rule['dingtalk_webhook']
+        self.dingtalk_message = self.rule.get('dingtalk_msgtype', 'text')
+        self.dingtalk_isAtAll = self.rule.get('dingtalk_isAtAll', False)
+        self.dingtalk_token = self.rule.get('dingtalk_token', '')
+        self.dingtalk_title = self.rule.get('dingtalk_title', '')
+
+    def format_body(self, body):
+        return body.encode('utf8')
+
+    def get_signed_url(self):
+        timestamp, sign = get_timestamp_sign(self.dingtalk_token)
+        webhook = self.dingtalk_webhook_url + "&timestamp=" + timestamp + "&sign=" + sign
+        return webhook
+
+    def alert(self, matches):
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json;charset=utf-8"
+        }
+        body = self.create_alert_body(matches)
+        payload = {
+            "msgtype": self.dingtalk_message,
+            "text": {
+                "content": body
+            },
+            "at": {
+                "isAtAll": self.dingtalk_isAtAll
+            }
+        }
+        try:
+            response = requests.post(self.get_signed_url(),
+                                     data=json.dumps(payload),
+                                     headers=headers)
+            response.raise_for_status()
+            print(response.text)
+        except RequestException as e:
+            print(e)
+            pass
+            raise EAException("Error request to Dingtalk: {0}".format(str(e)))
+
+    def get_info(self):
+        return {
+            "type": "dingtalk",
+            "dingtalk_webhook": self.dingtalk_webhook_url
         }
