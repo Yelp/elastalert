@@ -24,9 +24,14 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
     esversion = get_version_from_cluster_info(es_client)
 
     es_index_mappings = {}
-    
-    #using es_mappings 7
-    es_index_mappings = read_es_index_mappings(7)
+
+    if is_atleasteight(esversion):
+        es_index_mappings = read_es_index_mappings()
+    elif is_atleastseven(esversion) or is_atleastsix(esversion):
+        es_index_mappings = read_es_index_mappings(7)
+    else:                                      
+        print('FATAL - Unsupported Elasticsearch version: ' + esversion + '. Aborting.')
+        exit(1)
 
     es_index = IndicesClient(es_client)
     if not recreate:
@@ -35,7 +40,7 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
             return None
 
     # (Re-)Create indices.
-    if is_atleastseven(esversion):
+    if is_atleastseven(esversion) or is_atleastsix(esversion):
         index_names = (
             ea_index,
             ea_index + '_status',
@@ -70,18 +75,17 @@ def create_index_mappings(es_client, ea_index, recreate=False, old_ea_index=None
                                       body=es_index_mappings['elastalert_error'])
         es_client.indices.put_mapping(index=ea_index + '_past',
                                       body=es_index_mappings['past_elastalert'])
-    elif is_atleastseven(esversion):
-        es_client.indices.put_mapping(index=ea_index, doc_type='_doc',
-                                      body=es_index_mappings['elastalert'], include_type_name=True)
-        es_client.indices.put_mapping(index=ea_index + '_status', doc_type='_doc',
-                                      body=es_index_mappings['elastalert_status'], include_type_name=True)
-        es_client.indices.put_mapping(index=ea_index + '_silence', doc_type='_doc',
-                                      body=es_index_mappings['silence'], include_type_name=True)
-        es_client.indices.put_mapping(index=ea_index + '_error', doc_type='_doc',
-                                      body=es_index_mappings['elastalert_error'], include_type_name=True)
-        es_client.indices.put_mapping(index=ea_index + '_past', doc_type='_doc',
-                                      body=es_index_mappings['past_elastalert'], include_type_name=True)
-
+    elif is_atleastseven(esversion) or is_atleastsix(esversion):
+        es_client.indices.put_mapping(index=ea_index, doc_type='elastalert',
+                                      body=es_index_mappings['elastalert'])
+        es_client.indices.put_mapping(index=ea_index + '_status', doc_type='elastalert_status',
+                                      body=es_index_mappings['elastalert_status'])
+        es_client.indices.put_mapping(index=ea_index + '_silence', doc_type='silence',
+                                      body=es_index_mappings['silence'])
+        es_client.indices.put_mapping(index=ea_index + '_error', doc_type='elastalert_error',
+                                      body=es_index_mappings['elastalert_error'])
+        es_client.indices.put_mapping(index=ea_index + '_past', doc_type='past_elastalert',
+                                      body=es_index_mappings['past_elastalert'])
     print('New index %s created' % ea_index)
     if old_ea_index:
         print("Copying all data from old index '{0}' to new index '{1}'".format(old_ea_index, ea_index))
@@ -109,6 +113,9 @@ def read_es_index_mapping(mapping, es_version=7):
     with open(path, 'r') as f:
         print("Reading index mapping '{0}'".format(mapping_path))
         return json.load(f)
+
+def is_atleastsix(es_version):
+    return int(es_version.split(".")[0]) >= 6
 
 def is_atleastseven(es_version):
     return int(es_version.split(".")[0]) >= 7
