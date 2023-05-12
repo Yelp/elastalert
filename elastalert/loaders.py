@@ -256,9 +256,11 @@ class RulesLoader(object):
             #Setting default operator for filters as AND as in elastalert-0.1.35
             if 'filter' in loaded:
                 for filter in loaded['filter']:
-                    if 'query' in filter:
-                        if 'query_string' in filter['query']: 
+                    if 'query' in filter and filter['query'] != None:
+                        if 'query_string' in filter['query'] and filter['query']['query_string']!= None: 
                             filter['query']['query_string']['default_operator'] = "AND"
+                    else:
+                        elastalert_logger.info("Query is None in file: %s",filename)
 
             # Special case for merging filters - if both files specify a filter merge (AND) them
             if 'filter' in rule and 'filter' in loaded:
