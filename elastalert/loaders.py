@@ -254,8 +254,11 @@ class RulesLoader(object):
             loaded = self.get_yaml(current_path)
 
             #Setting default operator for filters as AND as in elastalert-0.1.35
-            if 'query_string' in loaded['filter'][0]:
-                loaded['filter'][0]['query_string']['default_operator'] = "AND"
+            if 'filter' in loaded:
+                for filter in loaded['filter']:
+                    if 'query' in filter:
+                        if 'query_string' in filter['query']: 
+                            filter['query']['query_string']['default_operator'] = "AND"
 
             # Special case for merging filters - if both files specify a filter merge (AND) them
             if 'filter' in rule and 'filter' in loaded:
