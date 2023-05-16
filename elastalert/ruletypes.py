@@ -1134,6 +1134,7 @@ class MetricAggregationRule(BaseAggregationRule):
         query = {self.metric_key: {self.rules['metric_agg_type']: {'field': self.rules['metric_agg_key']}}}
         if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
             query[self.metric_key][self.rules['metric_agg_type']]['percents'] = [self.rules['percentile_range']]
+            query[self.metric_key][self.rules['metric_agg_type']]['keyed'] = False
         return query
 
     def check_matches(self, timestamp, query_key, aggregation_data):
@@ -1143,7 +1144,8 @@ class MetricAggregationRule(BaseAggregationRule):
         else:
             if self.rules['metric_agg_type'] in self.allowed_percent_aggregations:
                 #backwards compatibility with existing elasticsearch library
-                metric_val = list(aggregation_data[self.metric_key]['values'][0].values())[0]
+                #aggregation_data = {"doc_count":258757,"key":"appmailer","metric_qt_percentiles":{"values":[{"key":95,"value":0}]}}
+                metric_val = aggregation_data[self.metric_key]['values'][0]['value']
             else:
                 metric_val = aggregation_data[self.metric_key]['value']
             if self.crossed_thresholds(metric_val):
