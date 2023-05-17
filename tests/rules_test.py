@@ -1207,6 +1207,74 @@ def test_metric_aggregation():
     rule.check_matches(datetime.datetime.now(), 'qk_val', {'metric_cpu_pct_avg': {'value': 0.95}})
     assert rule.matches[0]['subdict1']['subdict2']['subdict3'] == 'qk_val'
 
+def test_percentile_metric_aggregation():
+    rules = {'buffer_time': datetime.timedelta(minutes=5),
+             'timestamp_field': '@timestamp',
+             'metric_agg_type': 'percentiles',
+             'percentile_range': 95,
+             'metric_agg_key': 'cpu_pct'}
+
+    # Check threshold logic
+    with pytest.raises(EAException):
+        rule = MetricAggregationRule(rules)
+
+    rules['min_threshold'] = 0.1
+    rules['max_threshold'] = 0.8
+
+    rule = MetricAggregationRule(rules)
+
+    assert rule.rules['aggregation_query_element'] == {'metric_cpu_pct_percentiles': {'percentiles': {'field': 'cpu_pct', 'percents': [95]}}}
+
+    assert rule.crossed_thresholds(None) is False
+    assert rule.crossed_thresholds(0.09) is True
+    assert rule.crossed_thresholds(0.10) is False
+    assert rule.crossed_thresholds(0.79) is False
+    assert rule.crossed_thresholds(0.81) is True
+
+    rule.check_matches(datetime.datetime.now(), None, {"doc_count":258757,"key":"appmailer","metric_cpu_pct_percentiles":{"values":[{"key":95,"value":None}]}})
+    rule.check_matches(datetime.datetime.now(), None, {"doc_count":258757,"key":"appmailer","metric_cpu_pct_percentiles":{"values":[{"key":95,"value":0.5}]}})
+    assert len(rule.matches) == 0
+
+    rule.check_matches(datetime.datetime.now(), None, {"doc_count":258757,"key":"appmailer","metric_cpu_pct_percentiles":{"values":[{"key":95,"value":0.05}]}})
+    rule.check_matches(datetime.datetime.now(), None, {"doc_count":258757,"key":"appmailer","metric_cpu_pct_percentiles":{"values":[{"key":95,"value":0.95}]}})
+    assert len(rule.matches) == 2
+
+    rule = MetricAggregationRule(rules)
+    rule.check_matches(datetime.datetime.now(), None, {"doc_count":258757,"key":"appmailer","metric_cpu_pct_percentiles":{"values":[{"key":95,"value":0.966666667}]}})
+    assert '0.966666667' in rule.get_match_str(rule.matches[0])
+    assert rule.matches[0]['metric_cpu_pct_percentiles'] == 0.966666667
+    assert rule.matches[0]['metric_agg_value'] == 0.966666667
+    assert 'metric_cpu_pct_avg_formatted' not in rule.matches[0]
+    assert 'metric_agg_value_formatted' not in rule.matches[0]
+
+    rules['metric_format_string'] = '{:.2%}'
+    rule = MetricAggregationRule(rules)
+    rule.check_matches(datetime.datetime.now(), None, {"doc_count":258757,"key":"appmailer","metric_cpu_pct_percentiles":{"values":[{"key":95,"value":0.966666667}]}})
+    assert '96.67%' in rule.get_match_str(rule.matches[0])
+    assert rule.matches[0]['metric_cpu_pct_percentiles'] == 0.966666667
+    assert rule.matches[0]['metric_agg_value'] == 0.966666667
+    assert rule.matches[0]['metric_cpu_pct_percentiles_formatted'] == '96.67%'
+    assert rule.matches[0]['metric_agg_value_formatted'] == '96.67%'
+
+    rules['metric_format_string'] = '%.2f'
+    rule = MetricAggregationRule(rules)
+    rule.check_matches(datetime.datetime.now(), None, {"doc_count":258757,"key":"appmailer","metric_cpu_pct_percentiles":{"values":[{"key":95,"value":0.966666667}]}})
+    assert '0.97' in rule.get_match_str(rule.matches[0])
+    assert rule.matches[0]['metric_cpu_pct_percentiles'] == 0.966666667
+    assert rule.matches[0]['metric_agg_value'] == 0.966666667
+    assert rule.matches[0]['metric_cpu_pct_percentiles_formatted'] == '0.97'
+    assert rule.matches[0]['metric_agg_value_formatted'] == '0.97'
+
+    rules['query_key'] = 'subdict'
+    rule = MetricAggregationRule(rules)
+    rule.check_matches(datetime.datetime.now(), 'qk_val', {'metric_cpu_pct_percentiles': {"values":[{"key":95,"value":0.95}]}})
+    assert rule.matches[0]['subdict'] == 'qk_val'
+
+    rules['query_key'] = 'subdict1.subdict2.subdict3'
+    rule = MetricAggregationRule(rules)
+    rule.check_matches(datetime.datetime.now(), 'qk_val', {'metric_cpu_pct_percentiles': {"values":[{"key":95,"value":0.95}]}})
+    assert rule.matches[0]['subdict1']['subdict2']['subdict3'] == 'qk_val'
+
 
 def test_metric_aggregation_complex_query_key():
     rules = {'buffer_time': datetime.timedelta(minutes=5),
