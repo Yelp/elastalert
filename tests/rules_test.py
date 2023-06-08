@@ -1222,8 +1222,7 @@ def test_percentile_metric_aggregation():
     rules['max_threshold'] = 0.8
 
     rule = MetricAggregationRule(rules)
-
-    assert rule.rules['aggregation_query_element'] == {'metric_cpu_pct_percentiles': {'percentiles': {'field': 'cpu_pct', 'percents': [95]}}}
+    assert rule.rules['aggregation_query_element'] == {'metric_cpu_pct_percentiles': {'percentiles': {'field': 'cpu_pct', 'percents': [95],'keyed': False}}}
 
     assert rule.crossed_thresholds(None) is False
     assert rule.crossed_thresholds(0.09) is True
