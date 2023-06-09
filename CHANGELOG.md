@@ -1,4 +1,16 @@
-# 2.9.1 FW updates
+# fw_2.9.0.5
+- New Term Rule type modified to work with haystack usecase
+- Updated terms aggregation query to get existing terms
+- Updated Query used to get current terms to make use of terms aggregation instead of a search query
+- Added ability to refresh existing terms in a configureable refresh interval
+- Added Upper and Lower bounds for configureable query parameters like window_size, step_size and terms_size 
+- Modified Default values for new-term rule configurations
+
+# 2.9.0.1 FW updates
+- Downgraded elasticsearch library from version 8 to version 6 for the engine support the existing es clusters of haystack.
+- Downgraded various other libraries for the same.
+- es scrolls disabled as per requirement
+- replaced search queries with msearch for all es querying
 
 ## Breaking Changes
 - Downgraded elasticsearch library from version 8 to version 6 for the engine support the existing es clusters of haystack.
