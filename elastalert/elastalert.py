@@ -29,7 +29,7 @@ from elasticsearch.exceptions import ConnectionError
 from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch.exceptions import TransportError
-from elastalert.ruletypes import ErrorRateRule
+from elastalert.ruletypes import ErrorRateRule, NewTermsRule
 
 from elastalert.alerters.debug import DebugAlerter
 from elastalert.config import load_conf
@@ -39,7 +39,7 @@ from elastalert.kibana_external_url_formatter import create_kibana_external_url_
 from elastalert.prometheus_wrapper import PrometheusWrapper
 from elastalert.ruletypes import FlatlineRule
 from elastalert.util import (add_raw_postfix, cronite_datetime_to_timestamp, dt_to_ts, dt_to_unix, EAException,
-                             elastalert_logger, elasticsearch_client,kibana_adapter_client, format_index, lookup_es_key, parse_deadline,
+                             elastalert_logger, elasticsearch_client, get_msearch_query,kibana_adapter_client, format_index, lookup_es_key, parse_deadline,
                              parse_duration, pretty_ts, replace_dots_in_field_names, seconds, set_es_key,
                              should_scrolling_continue, total_seconds, ts_add, ts_now, ts_to_dt, unix_to_dt,
                              ts_utc_to_tz, dt_to_ts_with_format)
@@ -211,23 +211,6 @@ class ElastAlerter(object):
                 return index[:format_start] + '*' + index[format_end:]
         else:
             return index
-
-
-    #backwards compatibility with es6 msearch
-    @staticmethod
-    def get_msearch_query(query, rule):
-        search_arr = []
-        search_arr.append({'index': [rule['index']]})
-        if rule.get('use_count_query'):
-            query['size'] = 0
-        if rule['include']:
-            query['_source'] = {}
-            query['_source']['includes'] = rule['include']
-        search_arr.append(query)
-        request = ''
-        for each in search_arr:
-            request += '%s \n' %json.dumps(each)
-        return request
 
     @staticmethod
     def get_query(filters, starttime=None, endtime=None, sort=True, timestamp_field='@timestamp', to_ts_func=dt_to_ts, desc=False):
@@ -402,7 +385,7 @@ class ElastAlerter(object):
             to_ts_func=rule['dt_to_ts'],
         )
 
-        request = self.get_msearch_query(query,rule)
+        request = get_msearch_query(query,rule)
 
         #removed scroll as it aint supported
         # extra_args = {'_source_includes': rule['include']}
@@ -470,6 +453,58 @@ class ElastAlerter(object):
 
         return hits
 
+    def get_new_terms_data(self, rule, starttime, endtime, field):
+        new_terms = []
+
+        rule_inst = rule["type"]
+        try:
+            query = rule_inst.get_new_term_query(starttime,endtime,field)
+            request = get_msearch_query(query,rule)
+            res = self.thread_data.current_es.msearch(body=request)
+            res = res['responses'][0] 
+
+            if 'aggregations' in res:
+                buckets = res['aggregations']['values']['buckets']
+                if type(field) == list:
+                    for bucket in buckets:
+                        new_terms += rule_inst.flatten_aggregation_hierarchy(bucket)
+                else:     
+                    new_terms = [bucket['key'] for bucket in buckets]
+                
+        except ElasticsearchException as e:
+            if len(str(e)) > 1024:
+                e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
+            self.handle_error('Error running new terms query: %s' % (e), {'rule': rule['name'], 'query': query})
+            return []
+        
+        return new_terms
+
+
+            
+
+    def get_new_terms(self,rule, starttime, endtime):
+        data = {}
+
+        for field in rule['fields']:
+            new_terms = self.get_new_terms_data(rule,starttime,endtime,field)
+            self.thread_data.num_hits += len(new_terms)
+            if type(field) == list:
+                data[tuple(field)] = new_terms
+            else:
+                data[field] = new_terms
+        
+        lt = rule.get('use_local_time')
+        status_log = "Queried rule %s from %s to %s: %s / %s hits" % (
+            rule['name'],
+            pretty_ts(starttime, lt, self.pretty_ts_format),
+            pretty_ts(endtime, lt, self.pretty_ts_format),
+            self.thread_data.num_hits,
+            self.thread_data.num_hits,
+        )
+        elastalert_logger.info(status_log)
+
+        return {endtime : data} 
+
     def get_hits_count(self, rule, starttime, endtime, index):
         """ Query Elasticsearch for the count of results and returns a list of timestamps
         equal to the endtime. This allows the results to be passed to rules which expect
@@ -489,7 +524,7 @@ class ElastAlerter(object):
             to_ts_func=rule['dt_to_ts'],
         )
 
-        request = self.get_msearch_query(query,rule)
+        request = get_msearch_query(query,rule)
 
         try:
             #using backwards compatibile msearch
@@ -542,7 +577,7 @@ class ElastAlerter(object):
         if size is None:
             size = rule.get('terms_size', 50)
         query = self.get_terms_query(base_query, rule, size, key)
-        request = self.get_msearch_query(query,rule)
+        request = get_msearch_query(query,rule)
 
         try:
             #using backwards compatibile msearch
@@ -582,7 +617,7 @@ class ElastAlerter(object):
         if term_size is None:
             term_size = rule.get('terms_size', 50)
         query = self.get_aggregation_query(base_query, rule, query_key, term_size, rule['timestamp_field'])
-        request = self.get_msearch_query(query,rule)
+        request = get_msearch_query(query,rule)
         try:
             #using backwards compatibile msearch
             res = self.thread_data.current_es.msearch(body=request)
@@ -713,7 +748,9 @@ class ElastAlerter(object):
         rule_inst = rule['type']
         rule['scrolling_cycle'] = rule.get('scrolling_cycle', 0) + 1
         index = self.get_index(rule, start, end)
-        if rule.get('use_count_query'):
+        if isinstance(rule_inst, NewTermsRule):
+            data = self.get_new_terms(rule, start, end)
+        elif rule.get('use_count_query'):
             data = self.get_hits_count(rule, start, end, index)
         elif rule.get('use_terms_query'):
             data = self.get_hits_terms(rule, start, end, index, rule['query_key'])
@@ -732,7 +769,9 @@ class ElastAlerter(object):
         if data is None:
             return False
         elif data:
-            if rule.get('use_count_query'):
+            if isinstance(rule_inst, NewTermsRule):
+                rule_inst.add_new_term_data(data)
+            elif rule.get('use_count_query'):
                 rule_inst.add_count_data(data)
             elif rule.get('use_terms_query'):
                 rule_inst.add_terms_data(data)

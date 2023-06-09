@@ -7,7 +7,7 @@ import time
 from sortedcontainers import SortedKeyList as sortedlist
 
 from elastalert.util import (add_raw_postfix, dt_to_ts, EAException, elastalert_logger, elasticsearch_client,
-                             format_index, hashable, lookup_es_key, new_get_event_ts, pretty_ts, total_seconds,
+                             format_index, get_msearch_query, hashable, kibana_adapter_client, lookup_es_key, new_get_event_ts, pretty_ts, total_seconds,
                              ts_now, ts_to_dt, expand_string_into_dict, format_string)
 
 
@@ -677,6 +677,21 @@ class NewTermsRule(RuleType):
     def __init__(self, rule, args=None):
         super(NewTermsRule, self).__init__(rule, args)
         self.seen_values = {}
+        self.last_updated_at = None
+        self.es = kibana_adapter_client(self.rules)
+
+        # terms_window_size : Default & Upperbound - 7 Days
+        self.window_size = min(datetime.timedelta(**self.rules.get('terms_window_size', {'days': 7})), datetime.timedelta(**{'days': 7}))
+        
+        # window_step_size : Default - 1 Days, Lowerbound: 6 hours
+        self.step =  max( datetime.timedelta(**self.rules.get('window_step_size', {'days': 1})), datetime.timedelta(**{'hours': 6}) )
+        
+        # refresh_interval : Default - 6 hours, Lowerbound: 6 hours
+        self.refresh_interval =  max( datetime.timedelta(**self.rules.get('refresh_interval', {'hours': 6})), datetime.timedelta(**{'hours': 6}) )
+
+        # refresh_interval : Default - 500, Upperbound: 1000
+        self.terms_size = min(self.rules.get('terms_size', 500),1000)
+
         # Allow the use of query_key or fields
         if 'fields' not in self.rules:
             if 'query_key' not in self.rules:
@@ -695,73 +710,116 @@ class NewTermsRule(RuleType):
             if [self.rules['query_key']] != self.fields:
                 raise EAException('If use_terms_query is specified, you cannot specify different query_key and fields')
             if not self.rules.get('query_key').endswith('.keyword') and not self.rules.get('query_key').endswith('.raw'):
-                if self.rules.get('use_keyword_postfix', True):
+                if self.rules.get('use_keyword_postfix', False): # making it false by default as we wont use the keyword suffix
                     elastalert_logger.warn('Warning: If query_key is a non-keyword field, you must set '
                                            'use_keyword_postfix to false, or add .keyword/.raw to your query_key.')
+        
+    def should_refresh_terms(self):
+        return self.last_updated_at is None or self.last_updated_at < ( ts_now() - self.refresh_interval)
+
+    def update_terms(self,args=None):
         try:
-            self.get_all_terms(args)
+            self.get_all_terms(args=args)
         except Exception as e:
             # Refuse to start if we cannot get existing terms
             raise EAException('Error searching for existing terms: %s' % (repr(e))).with_traceback(sys.exc_info()[2])
 
-    def get_all_terms(self, args):
+        
+
+    def get_new_term_query(self,starttime,endtime,field):
+        
+        field_name = {
+            "field": "",
+            "size": self.terms_size,
+            "order": {
+                "_count": "desc"
+            }
+        }  
+        
+        query = {
+            "aggs": {
+                "values": {
+                    "terms": field_name
+                }
+            }
+        }
+
+        query["query"] = {
+            'bool': {
+                'filter': {
+                    'bool': {
+                        'must': [{
+                            'range': {
+                                self.rules['timestamp_field']: {
+                                    'lt': self.rules['dt_to_ts'](endtime),
+                                    'gte': self.rules['dt_to_ts'](starttime)
+                                }
+                            }
+                        }]
+                    }
+                }
+            }
+        }
+
+        filter_level = query['query']['bool']['filter']['bool']['must']
+        if 'filter' in self.rules:
+            for item in self.rules['filter']:
+                filter_level.append(item)
+
+        # For composite keys, we will need to perform sub-aggregations
+        if type(field) == list:
+            self.seen_values.setdefault(tuple(field), [])
+            level = query['aggs']
+            # Iterate on each part of the composite key and add a sub aggs clause to the elastic search query
+            for i, sub_field in enumerate(field):
+                if self.rules.get('use_keyword_postfix', False): # making it false by default as we wont use the keyword suffix
+                    level['values']['terms']['field'] = add_raw_postfix(sub_field, True)
+                else:
+                    level['values']['terms']['field'] = sub_field
+                if i < len(field) - 1:
+                    # If we have more fields after the current one, then set up the next nested structure
+                    level['values']['aggs'] = {'values': {'terms': copy.deepcopy(field_name)}}
+                    level = level['values']['aggs']
+        else:
+            self.seen_values.setdefault(field, [])
+            # For non-composite keys, only a single agg is needed
+            if self.rules.get('use_keyword_postfix', False):# making it false by default as we wont use the keyword suffix
+                field_name['field'] = add_raw_postfix(field, True)
+            else:
+                field_name['field'] = field
+
+        return query
+
+
+
+
+    def get_all_terms(self,args):
         """ Performs a terms aggregation for each field to get every existing term. """
-        self.es = elasticsearch_client(self.rules)
-        window_size = datetime.timedelta(**self.rules.get('terms_window_size', {'days': 30}))
-        field_name = {"field": "", "size": 2147483647}  # Integer.MAX_VALUE
-        query_template = {"aggs": {"values": {"terms": field_name}}}
+
         if args and hasattr(args, 'start') and args.start:
             end = ts_to_dt(args.start)
         elif 'start_date' in self.rules:
             end = ts_to_dt(self.rules['start_date'])
         else:
             end = ts_now()
-        start = end - window_size
-        step = datetime.timedelta(**self.rules.get('window_step_size', {'days': 1}))
 
+        start = end - self.window_size
+        
         for field in self.fields:
             tmp_start = start
-            tmp_end = min(start + step, end)
-
-            time_filter = {self.rules['timestamp_field']: {'lt': self.rules['dt_to_ts'](tmp_end), 'gte': self.rules['dt_to_ts'](tmp_start)}}
-            query_template['filter'] = {'bool': {'must': [{'range': time_filter}]}}
-            query = {'aggs': {'filtered': query_template}, 'size': 0}
-
-            if 'filter' in self.rules:
-                for item in self.rules['filter']:
-                    query_template['filter']['bool']['must'].append(item)
-
-            # For composite keys, we will need to perform sub-aggregations
-            if type(field) == list:
-                self.seen_values.setdefault(tuple(field), [])
-                level = query_template['aggs']
-                # Iterate on each part of the composite key and add a sub aggs clause to the elastic search query
-                for i, sub_field in enumerate(field):
-                    if self.rules.get('use_keyword_postfix', True):
-                        level['values']['terms']['field'] = add_raw_postfix(sub_field, True)
-                    else:
-                        level['values']['terms']['field'] = sub_field
-                    if i < len(field) - 1:
-                        # If we have more fields after the current one, then set up the next nested structure
-                        level['values']['aggs'] = {'values': {'terms': copy.deepcopy(field_name)}}
-                        level = level['values']['aggs']
-            else:
-                self.seen_values.setdefault(field, [])
-                # For non-composite keys, only a single agg is needed
-                if self.rules.get('use_keyword_postfix', True):
-                    field_name['field'] = add_raw_postfix(field, True)
-                else:
-                    field_name['field'] = field
+            tmp_end = min(start + self.step, end)
+            query = self.get_new_term_query(tmp_start,tmp_end,field)
 
             # Query the entire time range in small chunks
             while tmp_start < end:
-                if self.rules.get('use_strftime_index'):
-                    index = format_index(self.rules['index'], tmp_start, tmp_end)
-                else:
-                    index = self.rules['index']
-                res = self.es.search(body=query, index=index, doc_type='elastalert_status', ignore_unavailable=True, timeout='50s')
+                
+                msearch_query = get_msearch_query(query,self.rules)
+                
+                res = self.es.msearch(msearch_query,request_timeout=50)
+                res = res['responses'][0] 
+
                 if 'aggregations' in res:
-                    buckets = res['aggregations']['filtered']['values']['buckets']
+                    buckets = res['aggregations']['values']['buckets']
                     if type(field) == list:
                         # For composite keys, make the lookup based on all fields
                         # Make it a tuple since it can be hashed and used in dictionary lookups
@@ -779,9 +837,9 @@ class NewTermsRule(RuleType):
                 if tmp_start == tmp_end:
                     break
                 tmp_start = tmp_end
-                tmp_end = min(tmp_start + step, end)
-                time_filter[self.rules['timestamp_field']] = {'lt': self.rules['dt_to_ts'](tmp_end),
-                                                              'gte': self.rules['dt_to_ts'](tmp_start)}
+                tmp_end = min(tmp_start + self.step, end)
+                query = self.get_new_term_query(tmp_start,tmp_end,field)
+                
 
             for key, values in self.seen_values.items():
                 if not values:
@@ -798,6 +856,7 @@ class NewTermsRule(RuleType):
                     continue
                 self.seen_values[key] = list(set(values))
                 elastalert_logger.info('Found %s unique values for %s' % (len(set(values)), key))
+        self.last_updated_at = ts_now()
 
     def flatten_aggregation_hierarchy(self, root, hierarchy_tuple=()):
         """ For nested aggregations, the results come back in the following format:
@@ -902,6 +961,23 @@ class NewTermsRule(RuleType):
                     results.append(hierarchy_tuple + (node['key'],))
         return results
 
+    def add_new_term_data(self, payload):
+        if self.should_refresh_terms():
+            self.update_terms()
+        timestamp = list(payload.keys())[0]
+        data = payload[timestamp]
+        for field in self.fields:
+            lookup_key =tuple(field) if type(field) == list else field
+            for value in data[lookup_key]:
+                if value not in self.seen_values[lookup_key]:
+                    match = {
+                        "field": lookup_key,
+                        self.rules['timestamp_field']: timestamp,
+                        'new_value': tuple(value) if type(field) == list else value
+                        }
+                    self.add_match(copy.deepcopy(match))
+                    self.seen_values[lookup_key].append(value)
+                
     def add_data(self, data):
         for document in data:
             for field in self.fields:

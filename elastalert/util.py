@@ -7,6 +7,7 @@ import re
 import sys
 import time
 import types
+import json
 
 import dateutil.parser
 import pytz
@@ -19,6 +20,21 @@ from elasticsearch.exceptions import TransportError
 logging.basicConfig()
 logging.captureWarnings(True)
 elastalert_logger = logging.getLogger('elastalert')
+
+#backwards compatibility with es6 msearch
+def get_msearch_query(query, rule):
+    search_arr = []
+    search_arr.append({'index': [rule['index']]})
+    if rule.get('use_count_query'):
+        query['size'] = 0
+    if rule.get('include'):
+        query['_source'] = {}
+        query['_source']['includes'] = rule['include']
+    search_arr.append(query)
+    request = ''
+    for each in search_arr:
+        request += '%s \n' %json.dumps(each)
+    return request
 
 
 def get_module(module_name):

@@ -173,7 +173,7 @@ class RulesLoader(object):
                     continue
                 if rule['name'] in names:
                     raise EAException('Duplicate rule named %s' % (rule['name']))
-            except EAException as e:
+            except EAException as e: 
                 raise EAException('Error loading file %s: %s' % (rule_file, e))
 
             rules.append(rule)
