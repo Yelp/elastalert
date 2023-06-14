@@ -92,6 +92,8 @@ def load_conf(args, defaults=None, overrides=None):
             conf['old_query_limit'] = datetime.timedelta(**conf['old_query_limit'])
         else:
             conf['old_query_limit'] = datetime.timedelta(weeks=1)
+        if 'query_delay' in conf:
+            conf['query_delay'] = datetime.timedelta(**conf['query_delay'])
     except (KeyError, TypeError) as e:
         raise EAException('Invalid time format used: %s' % e)
 
