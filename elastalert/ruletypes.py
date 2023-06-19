@@ -764,7 +764,8 @@ class NewTermsRule(RuleType):
         filter_level = query['query']['bool']['filter']['bool']['must']
         if 'filter' in self.rules:
             for item in self.rules['filter']:
-                filter_level.append(item)
+                if "query" in item:
+                    filter_level.append(item['query'])
 
         # For composite keys, we will need to perform sub-aggregations
         if type(field) == list:
