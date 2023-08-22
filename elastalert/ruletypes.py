@@ -679,6 +679,10 @@ class NewTermsRule(RuleType):
         self.seen_values = {}
         self.last_updated_at = None
         self.es = kibana_adapter_client(self.rules)
+        self.ts_field = self.rules.get('timestamp_field', '@timestamp')
+        self.get_ts = new_get_event_ts(self.ts_field)
+        self.new_terms = {}
+
 
         # terms_window_size : Default & Upperbound - 7 Days
         self.window_size = min(datetime.timedelta(**self.rules.get('terms_window_size', {'days': 7})), datetime.timedelta(**{'days': 7}))
@@ -691,6 +695,9 @@ class NewTermsRule(RuleType):
 
         # refresh_interval : Default - 500, Upperbound: 1000
         self.terms_size = min(self.rules.get('terms_size', 500),1000)
+
+        # threshold_duration
+        self.threshold_duration =  min( datetime.timedelta(**self.rules.get('threshold_duration', {'hours': 1})), datetime.timedelta(**{'days': 2}) )
 
         # Allow the use of query_key or fields
         if 'fields' not in self.rules:
@@ -713,9 +720,10 @@ class NewTermsRule(RuleType):
                 if self.rules.get('use_keyword_postfix', False): # making it false by default as we wont use the keyword suffix
                     elastalert_logger.warn('Warning: If query_key is a non-keyword field, you must set '
                                            'use_keyword_postfix to false, or add .keyword/.raw to your query_key.')
+        self.update_terms()
         
-    def should_refresh_terms(self):
-        return self.last_updated_at is None or self.last_updated_at < ( ts_now() - self.refresh_interval)
+    # def should_refresh_terms(self):
+    #     return self.last_updated_at is None or self.last_updated_at < ( ts_now() - self.refresh_interval)
 
     def update_terms(self,args=None):
         try:
@@ -828,7 +836,8 @@ class NewTermsRule(RuleType):
                         # Make it a tuple since it can be hashed and used in dictionary lookups
                         for bucket in buckets:
                             # We need to walk down the hierarchy and obtain the value at each level
-                            self.seen_values[tuple(field)] += self.flatten_aggregation_hierarchy(bucket)
+                            keys, counts = self.flatten_aggregation_hierarchy(bucket)
+                            self.seen_values[tuple(field)] += keys
                     else:
                         keys = [bucket['key'] for bucket in buckets]
                         self.seen_values[field] += keys
@@ -859,7 +868,7 @@ class NewTermsRule(RuleType):
                     continue
                 self.seen_values[key] = list(set(values))
                 elastalert_logger.info('Found %s unique values for %s' % (len(set(values)), key))
-        self.last_updated_at = ts_now()
+        # self.last_updated_at = ts_now()
 
     def flatten_aggregation_hierarchy(self, root, hierarchy_tuple=()):
         """ For nested aggregations, the results come back in the following format:
@@ -950,36 +959,55 @@ class NewTermsRule(RuleType):
             A similar formatting will be performed in the add_data method and used as the basis for comparison
 
         """
-        results = []
+        keys = []
+        counts = []
         # There are more aggregation hierarchies left.  Traverse them.
         if 'values' in root:
-            results += self.flatten_aggregation_hierarchy(root['values']['buckets'], hierarchy_tuple + (root['key'],))
+            pair = self.flatten_aggregation_hierarchy(root['values']['buckets'], hierarchy_tuple + (root['key'],))
+            keys += pair[0]
+            counts += pair[1]
         else:
             # We've gotten to a sub-aggregation, which may have further sub-aggregations
             # See if we need to traverse further
             for node in root:
                 if 'values' in node:
-                    results += self.flatten_aggregation_hierarchy(node, hierarchy_tuple)
+                    pair = self.flatten_aggregation_hierarchy(node, hierarchy_tuple)
+                    keys += pair[0]
+                    counts += pair[1]
                 else:
-                    results.append(hierarchy_tuple + (node['key'],))
-        return results
+                    keys.append(hierarchy_tuple + (node['key'],))
+                    counts.append(node['doc_count'])
+        return keys, counts
 
     def add_new_term_data(self, payload):
-        if self.should_refresh_terms():
-            self.update_terms()
+        # if self.should_refresh_terms():
+        #     self.update_terms()
         timestamp = list(payload.keys())[0]
         data = payload[timestamp]
         for field in self.fields:
             lookup_key =tuple(field) if type(field) == list else field
-            for value in data[lookup_key]:
+            values, counts =  data[lookup_key]
+            for i in range(len(values)):
+                value = values[i]
+                count = counts[i]
+            
                 if value not in self.seen_values[lookup_key]:
-                    match = {
-                        "field": lookup_key,
-                        self.rules['timestamp_field']: timestamp,
-                        'new_value': tuple(value) if type(field) == list else value
-                        }
-                    self.add_match(copy.deepcopy(match))
-                    self.seen_values[lookup_key].append(value)
+                    new_term_key = hashable(lookup_key) + hashable(value)
+                    event = ({self.ts_field: timestamp}, count)
+                    window = self.new_terms.setdefault( new_term_key , EventWindow(self.threshold_duration, getTimestamp=self.get_ts))
+                    window.append(event)
+                    if window.count() >= self.rules.get("threshold",0):
+                        match = {
+                            "field": lookup_key,
+                            "start_"+self.rules['timestamp_field']: self.get_ts(self.new_terms.get(new_term_key).data[0]),
+                            "end_"+self.rules['timestamp_field']: timestamp,
+                            "new_value": tuple(value) if type(field) == list else value,
+                            "hits" : window.count()
+                            }
+                        window.clear()
+                        self.add_match(copy.deepcopy(match))
+                        self.seen_values[lookup_key].append(value)
+                     
                 
     def add_data(self, data):
         for document in data:

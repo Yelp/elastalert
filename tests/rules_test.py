@@ -620,8 +620,8 @@ def test_new_term(version):
     # Key1 and key2 shouldn't cause a match
     data = {
         ts_now() : {
-            "a": ["key1"],
-            "b": ["key2"]
+            "a": (["key1"],[1]),
+            "b": (["key2"], [1])
         }
     }
     rule.add_new_term_data(data)
@@ -636,8 +636,8 @@ def test_new_term(version):
     # Neither will missing values
     data = {
         ts_now() : {
-            "a": ["key2"],
-            "b": []
+            "a": (["key2"],[1]),
+            "b": ([],[])
         }
     }
     rule.add_new_term_data(data)
@@ -647,8 +647,8 @@ def test_new_term(version):
     # Key3 causes an alert for field b
     data = {
         ts_now() : {
-            "a": ["key2"],
-            "b": ["key3"]
+            "a": (["key2"],[1]),
+            "b": (["key3"],[1])
         }
     }
     rule.add_new_term_data(data)
@@ -662,8 +662,8 @@ def test_new_term(version):
     # Key3 doesn't cause another alert for field b
     data = {
         ts_now() : {
-            "a": ["key2"],
-            "b": ["key3"]
+            "a": (["key2"],[1]),
+            "b": (["key3"],[1])
         }
     }
     rule.add_new_term_data(data)
@@ -708,8 +708,8 @@ def test_new_term_nested_field():
     # Key3 causes an alert for nested field b.c
     data = {
         ts_now() : {
-            "a": [],
-            "b.c": ["key3"]
+            "a": ([],[]),
+            "b.c": (["key3"],[1])
         }
     }
     rule.add_new_term_data(data)
@@ -722,64 +722,64 @@ def test_new_term_nested_field():
     assert rule.matches[0]['new_value'] == 'key3'
     rule.matches = []
 
-def test_new_term_refresh_interval():
+# def test_new_term_refresh_interval():
 
-    rules = {'fields': ['a'],
-             'timestamp_field': '@timestamp',
-             'kibana_adapter_host': 'example.com', 'kibana_adapter_port': 10, 'index': 'logstash',
-             'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts, 'terms_window_size': {'days': 1  }  }
-    mock_res ={'responses' : [{'aggregations': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
-                                                                     {'key': 'key2', 'doc_count': 5}]}}}] }
+#     rules = {'fields': ['a'],
+#              'timestamp_field': '@timestamp',
+#              'kibana_adapter_host': 'example.com', 'kibana_adapter_port': 10, 'index': 'logstash',
+#              'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts, 'terms_window_size': {'days': 1  }  }
+#     mock_res ={'responses' : [{'aggregations': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
+#                                                                      {'key': 'key2', 'doc_count': 5}]}}}] }
 
-    #random_test_data
-    data = { ts_now() : { "a": [] } }   
+#     #random_test_data
+#     data = { ts_now() : { "a": [] } }   
 
-    with mock.patch('elastalert.ruletypes.kibana_adapter_client') as mock_es:
-        mock_es.return_value = mock.Mock()
-        mock_es.return_value.msearch.return_value = mock_res
-        mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
-
-
-        # Rule with refresh_interval not set, defaulting to 6 hours
-        rule = NewTermsRule(rules)
+#     with mock.patch('elastalert.ruletypes.kibana_adapter_client') as mock_es:
+#         mock_es.return_value = mock.Mock()
+#         mock_es.return_value.msearch.return_value = mock_res
+#         mock_es.return_value.info.return_value = {'version': {'number': '2.x.x'}}
 
 
-        # get_all_terms should not be called as last_updated will be less than now - 6 hours
-        rule.add_new_term_data(data)
-        assert rule.es.msearch.assert_called
-        mock_es.return_value.msearch.reset_mock()
+#         # Rule with refresh_interval not set, defaulting to 6 hours
+#         rule = NewTermsRule(rules)
 
-        # get_all_terms should be called when last_updated is none
-        rule.last_updated_at = None
-        rule.add_new_term_data(data)
-        assert rule.es.msearch.assert_called_once 
-        mock_es.return_value.msearch.reset_mock()
 
-        # get_all_terms should not be called as last_updated will not be less than now - 6 hours
-        rule.last_updated_at = ts_now() - datetime.timedelta(**{'hours': 4})
-        rule.add_new_term_data(data)
-        assert not rule.es.msearch.called
+#         # get_all_terms should not be called as last_updated will be less than now - 6 hours
+#         rule.add_new_term_data(data)
+#         assert rule.es.msearch.assert_called
+#         mock_es.return_value.msearch.reset_mock()
 
-        # get_all_terms should be called as last_updated will be less than now - 6 hours
-        rule.last_updated_at = ts_now() - datetime.timedelta(**{'hours': 7})
-        rule.add_new_term_data(data)
-        assert rule.es.msearch.assert_called_once 
-        mock_es.return_value.msearch.reset_mock()
+#         # get_all_terms should be called when last_updated is none
+#         rule.last_updated_at = None
+#         rule.add_new_term_data(data)
+#         assert rule.es.msearch.assert_called_once 
+#         mock_es.return_value.msearch.reset_mock()
 
-        # Rule with refresh_interval set to 2 hours
-        rules["refresh_interval"] = {'hours': 2}
-        rule = NewTermsRule(rules)
-        mock_es.return_value.msearch.reset_mock()
+#         # get_all_terms should not be called as last_updated will not be less than now - 6 hours
+#         rule.last_updated_at = ts_now() - datetime.timedelta(**{'hours': 4})
+#         rule.add_new_term_data(data)
+#         assert not rule.es.msearch.called
 
-        # get_all_terms should not be called as last_updated will not be less than now - 2 hours
-        rule.last_updated_at = ts_now() - datetime.timedelta(**{'hours': 1})
-        rule.add_new_term_data(data)
-        assert not rule.es.msearch.called
+#         # get_all_terms should be called as last_updated will be less than now - 6 hours
+#         rule.last_updated_at = ts_now() - datetime.timedelta(**{'hours': 7})
+#         rule.add_new_term_data(data)
+#         assert rule.es.msearch.assert_called_once 
+#         mock_es.return_value.msearch.reset_mock()
 
-        # get_all_terms should be called as last_updated will be less than now - 2 hours
-        rule.last_updated_at = ts_now() - datetime.timedelta(**{'hours': 3})
-        rule.add_new_term_data(data)
-        assert rule.es.msearch.assert_called_once 
+#         # Rule with refresh_interval set to 2 hours
+#         rules["refresh_interval"] = {'hours': 2}
+#         rule = NewTermsRule(rules)
+#         mock_es.return_value.msearch.reset_mock()
+
+#         # get_all_terms should not be called as last_updated will not be less than now - 2 hours
+#         rule.last_updated_at = ts_now() - datetime.timedelta(**{'hours': 1})
+#         rule.add_new_term_data(data)
+#         assert not rule.es.msearch.called
+
+#         # get_all_terms should be called as last_updated will be less than now - 2 hours
+#         rule.last_updated_at = ts_now() - datetime.timedelta(**{'hours': 3})
+#         rule.add_new_term_data(data)
+#         assert rule.es.msearch.assert_called_once 
 
 
 ## New implementation will never use with_terms 
@@ -868,8 +868,8 @@ def test_new_term_with_composite_fields():
     # key3 already exists, and thus shouldn't cause a match
     data = {
         ts_now() : {
-            tuple(['a','b','c']):  [tuple(["key1","key2","key3"])],
-            tuple(['d','e.f']):  []
+            tuple(['a','b','c']):  ([tuple(["key1","key2","key3"])],[1]),
+            tuple(['d','e.f']):  ([],[])
         }
     }
     rule.add_new_term_data(data)
@@ -881,8 +881,8 @@ def test_new_term_with_composite_fields():
     # key5 causes an alert for composite field [a, b, c]
     data = {
         ts_now() : {
-            ('a', 'b', 'c'):  [("key1","key2","key5")],
-            ('d','e.f'):  []
+            ('a', 'b', 'c'):  ([("key1","key2","key5")],[1]),
+            ('d','e.f'):  ([],[])
         }
     }
     rule.add_new_term_data(data)
@@ -891,18 +891,95 @@ def test_new_term_with_composite_fields():
     assert rule.matches[0]['new_value'] == ("key1","key2","key5")
     rule.matches = []
 
+def test_new_term_threshold():
+    rules = {'fields': ['a'],
+             'timestamp_field': '@timestamp',
+             'kibana_adapter': 'example.com', 'kibana_adapter_port': 10, 'index': 'logstash',
+             'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts, 'terms_window_size': {'days': 10  },
+             'window_step_size' : {'hours': 1  },'refresh_interval' : {'hours': 2  }, 'terms_size': 10000, 'threshold': 0 }
+      
+    mock_res ={'responses' : [{'aggregations': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1}]}}}] }
+    
+    with mock.patch('elastalert.ruletypes.kibana_adapter_client') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.msearch.return_value = mock_res
+        rule = NewTermsRule(rules)
+
+
+    # introducting new value for field a, should trigger as threshold is 0
+    data = {
+        ts_now() : {
+            ('a'):  ([("key2")],[1])
+        }
+    }
+    rule.add_new_term_data(data)
+    assert len(rule.matches) == 1
+
+    # changing threshold to 10 and threhold_duration to 2 hours
+    rules['threshold'] = 10
+    rules['threshold_duration'] = {"hours" : 2}
+
+    # used for incrementing time
+    time_pointer = ts_now()
+
+    with mock.patch('elastalert.ruletypes.kibana_adapter_client') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.msearch.return_value = mock_res
+        rule = NewTermsRule(rules)
+
+    # new value for field 'a' with count 8, shouldnt create a match
+    data = {
+        time_pointer : {
+            ('a'):  ([("key2")],[8])
+        }
+    }
+    rule.add_new_term_data(data)
+    assert len(rule.matches) == 0
+
+
+    # new value for field 'a' with count 8 after 3 hours, shouldnt create a match
+
+    time_pointer += datetime.timedelta(**{"hours":3})
+
+    data = {
+         time_pointer : {
+            ('a'):  ([("key2")],[9])
+        }
+    }
+    rule.add_new_term_data(data)
+    assert len(rule.matches) == 0
+
+    # new value for field a with count 1 after 10 minutes
+    # should create a match as the total count stored for the last 2 hours would be 10
+    time_pointer += datetime.timedelta(**{"minutes":10})
+
+    data = {
+         time_pointer : {
+            ('a'):  ([("key2")],[1])
+        }
+    }
+    rule.add_new_term_data(data)
+    assert len(rule.matches) == 1
+
 def test_new_term_bounds():
     rules = {'fields': ['a'],
              'timestamp_field': '@timestamp',
              'kibana_adapter': 'example.com', 'kibana_adapter_port': 10, 'index': 'logstash',
              'ts_to_dt': ts_to_dt, 'dt_to_ts': dt_to_ts, 'terms_window_size': {'days': 10  },
-             'window_step_size' : {'hours': 1  },'refresh_interval' : {'hours': 2  }, 'terms_size': 10000 }
+             'window_step_size' : {'hours': 1  },'refresh_interval' : {'hours': 2  }, 'terms_size': 10000, 'threshold_duration': {"days": 3} }
       
-    rule = NewTermsRule(rules)
+    mock_res ={'responses' : [{'aggregations': {'values': {'buckets': [{'key': 'key1', 'doc_count': 1},
+                                                                     {'key': 'key2', 'doc_count': 5}]}}}] }
+    
+    with mock.patch('elastalert.ruletypes.kibana_adapter_client') as mock_es:
+        mock_es.return_value = mock.Mock()
+        mock_es.return_value.msearch.return_value = mock_res
+        rule = NewTermsRule(rules)
 
     assert rule.window_size == datetime.timedelta(**{'days': 7})
     assert rule.step == datetime.timedelta(**{'hours': 6})
     assert rule.refresh_interval == datetime.timedelta(**{'hours': 6})
+    assert rule.threshold_duration == datetime.timedelta(**{'days': 2})
     assert rule.terms_size == 1000
 
 

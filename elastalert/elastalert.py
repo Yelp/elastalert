@@ -455,6 +455,7 @@ class ElastAlerter(object):
 
     def get_new_terms_data(self, rule, starttime, endtime, field):
         new_terms = []
+        counts = []
 
         rule_inst = rule["type"]
         try:
@@ -467,9 +468,13 @@ class ElastAlerter(object):
                 buckets = res['aggregations']['values']['buckets']
                 if type(field) == list:
                     for bucket in buckets:
-                        new_terms += rule_inst.flatten_aggregation_hierarchy(bucket)
+                        for pair in rule_inst.flatten_aggregation_hierarchy(bucket):
+                            new_terms += pair[0]
+                            counts += pair[1]
+
                 else:     
                     new_terms = [bucket['key'] for bucket in buckets]
+                    counts = [bucket['doc_count'] for bucket in buckets]
                 
         except ElasticsearchException as e:
             if len(str(e)) > 1024:
@@ -477,7 +482,7 @@ class ElastAlerter(object):
             self.handle_error('Error running new terms query: %s' % (e), {'rule': rule['name'], 'query': query})
             return []
         
-        return new_terms
+        return new_terms, counts
 
 
             
@@ -486,12 +491,13 @@ class ElastAlerter(object):
         data = {}
 
         for field in rule['fields']:
-            new_terms = self.get_new_terms_data(rule,starttime,endtime,field)
+            new_terms, counts = self.get_new_terms_data(rule,starttime,endtime,field)
             self.thread_data.num_hits += len(new_terms)
+            field_data = ( new_terms, counts )
             if type(field) == list:
-                data[tuple(field)] = new_terms
+                data[tuple(field)] = field_data
             else:
-                data[field] = new_terms
+                data[field] = field_data
         
         lt = rule.get('use_local_time')
         status_log = "Queried rule %s from %s to %s: %s / %s hits" % (
