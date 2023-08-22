@@ -909,7 +909,7 @@ def test_new_term_threshold():
     # introducting new value for field a, should trigger as threshold is 0
     data = {
         ts_now() : {
-            ('a'):  ([("key2")],[1])
+            ('a'):  (["key2"],[1])
         }
     }
     rule.add_new_term_data(data)
@@ -930,7 +930,7 @@ def test_new_term_threshold():
     # new value for field 'a' with count 8, shouldnt create a match
     data = {
         time_pointer : {
-            ('a'):  ([("key2")],[8])
+            ('a'):  (["key2"],[8])
         }
     }
     rule.add_new_term_data(data)
@@ -943,7 +943,7 @@ def test_new_term_threshold():
 
     data = {
          time_pointer : {
-            ('a'):  ([("key2")],[9])
+            ('a'):  (["key2"],[8])
         }
     }
     rule.add_new_term_data(data)
@@ -955,7 +955,19 @@ def test_new_term_threshold():
 
     data = {
          time_pointer : {
-            ('a'):  ([("key2")],[1])
+            ('a'):  (["key1","key2"],[1,2])
+        }
+    }
+    rule.add_new_term_data(data)
+    assert len(rule.matches) == 1
+
+    # no new matches should be added, when the rule crosses the threshold the second time
+
+    time_pointer += datetime.timedelta(**{"minutes":10})
+
+    data = {
+         time_pointer : {
+            ('a'):  (["key2"],[20])
         }
     }
     rule.add_new_term_data(data)

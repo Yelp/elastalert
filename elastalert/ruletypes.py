@@ -992,23 +992,25 @@ class NewTermsRule(RuleType):
                 count = counts[i]
             
                 if value not in self.seen_values[lookup_key]:
-                    new_term_key = hashable(lookup_key) + hashable(value)
+                    new_term_key = self.create_hash_key(lookup_key,value)
                     event = ({self.ts_field: timestamp}, count)
                     window = self.new_terms.setdefault( new_term_key , EventWindow(self.threshold_duration, getTimestamp=self.get_ts))
                     window.append(event)
                     if window.count() >= self.rules.get("threshold",0):
                         match = {
                             "field": lookup_key,
-                            "start_"+self.rules['timestamp_field']: self.get_ts(self.new_terms.get(new_term_key).data[0]),
-                            "end_"+self.rules['timestamp_field']: timestamp,
+                            self.rules['timestamp_field']: timestamp,
                             "new_value": tuple(value) if type(field) == list else value,
                             "hits" : window.count()
                             }
                         window.clear()
+                        self.new_terms.pop(new_term_key)
                         self.add_match(copy.deepcopy(match))
                         self.seen_values[lookup_key].append(value)
+
+    def create_hash_key(self, lookup_key, keys):
+        return hashable('.'.join(lookup_key) if type(lookup_key) == tuple else lookup_key ) + hashable('.'.join(keys) if type(keys) == tuple else keys )
                      
-                
     def add_data(self, data):
         for document in data:
             for field in self.fields:
